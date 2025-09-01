@@ -132,6 +132,13 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
    * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
    */
   getConfigurationJson(): Result<JsonObject>;
+
+  /**
+   * Validates configuration JSON data for this qualifier type.
+   * @param from - The unknown data to validate as configuration JSON.
+   * @returns `Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.
+   */
+  validateConfigurationJson(from: unknown): Result<JsonObject>;
 }
 
 /**
@@ -284,6 +291,11 @@ export abstract class QualifierType implements IQualifierType {
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public abstract getConfigurationJson(): Result<JsonObject>;
+
+  /**
+   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   */
+  public abstract validateConfigurationJson(from: unknown): Result<JsonObject>;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.setIndex}

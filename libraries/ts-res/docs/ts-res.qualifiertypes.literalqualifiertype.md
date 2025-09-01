@@ -312,5 +312,33 @@ Converts a string to a [literal condition value](./ts-res.qualifierconditionvalu
 
 
 </td></tr>
+<tr><td>
+
+[validateConfiguration(from)](./ts-res.qualifiertypes.literalqualifiertype.validateconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemliteralqualifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.literalqualifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
+
+
+</td></tr>
 </tbody></table>
 

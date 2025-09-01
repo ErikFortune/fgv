@@ -205,6 +205,27 @@ export class LiteralQualifierType extends QualifierType {
   }
 
   /**
+   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   */
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    return Config.Convert.systemLiteralQualifierTypeConfig
+      .convert(from)
+      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  }
+
+  /**
+   * Validates a {@link QualifierTypes.Config.ISystemLiteralQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @param from - The unknown data to validate as a configuration object.
+   * @returns `Success` with the validated configuration if successful, `Failure` with an error message otherwise.
+   */
+  public validateConfiguration(from: unknown): Result<Config.ISystemLiteralQualifierTypeConfig> {
+    return this.validateConfigurationJson(from).onSuccess((json) =>
+      Config.Convert.systemLiteralQualifierTypeConfig.convert(json)
+    );
+  }
+
+  /**
    * {@inheritdoc QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(

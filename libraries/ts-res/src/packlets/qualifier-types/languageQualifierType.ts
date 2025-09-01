@@ -150,6 +150,27 @@ export class LanguageQualifierType extends QualifierType {
   }
 
   /**
+   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   */
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    return Config.Convert.systemLanguageQualifierTypeConfig
+      .convert(from)
+      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  }
+
+  /**
+   * Validates a {@link QualifierTypes.Config.ISystemLanguageQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @param from - The unknown data to validate as a configuration object.
+   * @returns `Success` with the validated configuration if successful, `Failure` with an error message otherwise.
+   */
+  public validateConfiguration(from: unknown): Result<Config.ISystemLanguageQualifierTypeConfig> {
+    return this.validateConfigurationJson(from).onSuccess((json) =>
+      Config.Convert.systemLanguageQualifierTypeConfig.convert(json)
+    );
+  }
+
+  /**
    * Matches a single language condition against a single language context value using
    * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-bcp47#tag-matching | similarity matching}.
    * @param condition - The language condition value to match.

@@ -23,6 +23,18 @@
 import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../index';
 
+// Helper interface for testing JsonObject results with known structure
+interface ITerritoryConfigJsonResult {
+  name: string;
+  systemType: string;
+  configuration?: {
+    allowContextList?: boolean;
+    acceptLowercase?: boolean;
+    allowedTerritories?: string[];
+    hierarchy?: Record<string, string>;
+  };
+}
+
 const validTerritories: string[] = ['US', 'DE', 'SE', 'CN', 'TW', 'us', 'mx'];
 
 const invalidTerritories: string[] = ['419', 'mexico', 'usa', 'CAN'];
@@ -1289,6 +1301,392 @@ describe('TerritoryQualifierType', () => {
             expect(config.configuration.hierarchy).not.toBeNull();
           }
         });
+      });
+    });
+  });
+
+  describe('validateConfigurationJson', () => {
+    let qualifierType: TsRes.QualifierTypes.TerritoryQualifierType;
+
+    beforeEach(() => {
+      qualifierType = TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow();
+    });
+
+    test('succeeds with valid minimal configuration object', () => {
+      const validConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ITerritoryConfigJsonResult;
+        expect(typedResult.name).toBe('test-territory');
+        expect(typedResult.systemType).toBe('territory');
+        expect(typedResult.configuration).toEqual({ allowContextList: true });
+      });
+    });
+
+    test('succeeds with complete territory configuration', () => {
+      const validConfig = {
+        name: 'territory-with-options',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: false,
+          acceptLowercase: true,
+          allowedTerritories: ['US', 'CA', 'MX'],
+          hierarchy: {
+            CA: 'NA',
+            MX: 'NA',
+            US: 'NA'
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ITerritoryConfigJsonResult;
+        expect(typedResult.name).toBe('territory-with-options');
+        expect(typedResult.systemType).toBe('territory');
+        expect(typedResult.configuration?.allowContextList).toBe(false);
+        expect(typedResult.configuration?.acceptLowercase).toBe(true);
+        expect(typedResult.configuration?.allowedTerritories).toEqual(['US', 'CA', 'MX']);
+        expect(typedResult.configuration?.hierarchy).toEqual({
+          CA: 'NA',
+          MX: 'NA',
+          US: 'NA'
+        });
+      });
+    });
+
+    test('succeeds with configuration containing only required allowContextList', () => {
+      const validConfig = {
+        name: 'simple-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: false
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedWith(validConfig);
+    });
+
+    test('fails with missing name field', () => {
+      const invalidConfig = {
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/field name not found/i);
+    });
+
+    test('fails with missing systemType field', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        configuration: {
+          allowContextList: true
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(
+        /field systemType not found/i
+      );
+    });
+
+    test('fails with incorrect systemType value', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'language',
+        configuration: {
+          allowContextList: true
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/systemType.*territory/i);
+    });
+
+    test('fails with missing allowContextList in configuration', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          acceptLowercase: true
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(
+        /field allowContextList not found/i
+      );
+    });
+
+    test('fails with non-boolean allowContextList', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: 'invalid' as unknown as boolean
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/not a boolean/i);
+    });
+
+    test('fails with non-boolean acceptLowercase', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true,
+          acceptLowercase: 'invalid' as unknown as boolean
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/not a boolean/i);
+    });
+
+    test('fails with non-array allowedTerritories', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true,
+          allowedTerritories: 'US,CA,MX' as unknown as string[]
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/allowedTerritories.*array/i);
+    });
+
+    test('fails with invalid allowedTerritories array element', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true,
+          allowedTerritories: ['US', 123, 'MX'] as unknown as string[]
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/string/i);
+    });
+
+    test('fails with invalid hierarchy object', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true,
+          hierarchy: 'invalid' as unknown as Record<string, string>
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/hierarchy.*object/i);
+    });
+
+    test('fails with invalid hierarchy object values', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true,
+          hierarchy: {
+            CA: 'NA',
+            MX: 123 as unknown as string
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/string/i);
+    });
+
+    test('fails with null input', () => {
+      expect(qualifierType.validateConfigurationJson(null)).toFailWith(/object/i);
+    });
+
+    test('fails with undefined input', () => {
+      expect(qualifierType.validateConfigurationJson(undefined)).toFailWith(/object/i);
+    });
+
+    test('fails with non-object input', () => {
+      expect(qualifierType.validateConfigurationJson('not an object')).toFailWith(/object/i);
+    });
+
+    test('fails with array input', () => {
+      expect(qualifierType.validateConfigurationJson([])).toFailWith(/object/i);
+    });
+
+    test('fails with additional unexpected properties', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true
+        },
+        unexpectedProperty: 'value'
+      };
+
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/unexpected.*property/i);
+    });
+
+    test('succeeds with missing configuration object (configuration is optional)', () => {
+      const validConfig = {
+        name: 'test-territory',
+        systemType: 'territory'
+      };
+
+      expect(qualifierType.validateConfigurationJson(validConfig)).toSucceedAndSatisfy((result) => {
+        const typedResult = result as unknown as ITerritoryConfigJsonResult;
+        expect(typedResult.name).toBe('test-territory');
+        expect(typedResult.systemType).toBe('territory');
+        expect(typedResult.configuration).toBeUndefined();
+      });
+    });
+  });
+
+  describe('validateConfiguration', () => {
+    let qualifierType: TsRes.QualifierTypes.TerritoryQualifierType;
+
+    beforeEach(() => {
+      qualifierType = TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow();
+    });
+
+    test('succeeds with valid minimal configuration object', () => {
+      const validConfig = {
+        name: 'test-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(validConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.name).toBe('test-territory');
+        expect(result.systemType).toBe('territory');
+        expect(result.configuration?.allowContextList).toBe(true);
+      });
+    });
+
+    test('succeeds with complete territory configuration', () => {
+      const validConfig = {
+        name: 'territory-complete',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: false,
+          acceptLowercase: true,
+          allowedTerritories: ['US', 'CA', 'MX'],
+          hierarchy: {
+            CA: 'NA',
+            MX: 'NA',
+            US: 'NA'
+          }
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(validConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.name).toBe('territory-complete');
+        expect(result.systemType).toBe('territory');
+        expect(result.configuration?.allowContextList).toBe(false);
+        expect(result.configuration?.acceptLowercase).toBe(true);
+        expect(result.configuration?.allowedTerritories).toEqual(['US', 'CA', 'MX']);
+        expect(result.configuration?.hierarchy).toEqual({
+          CA: 'NA',
+          MX: 'NA',
+          US: 'NA'
+        });
+      });
+    });
+
+    test('returns strongly typed configuration object', () => {
+      const validConfig = {
+        name: 'typed-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: false,
+          acceptLowercase: true,
+          allowedTerritories: ['US', 'CA'],
+          hierarchy: { CA: 'NA', US: 'NA' }
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(validConfig)).toSucceedAndSatisfy((result) => {
+        // Verify strong typing - these should compile without errors
+        const name: string = result.name;
+        const systemType: 'territory' = result.systemType;
+        const allowContextList: boolean | undefined = result.configuration?.allowContextList;
+        const acceptLowercase: boolean | undefined = result.configuration?.acceptLowercase;
+        const allowedTerritories: string[] | undefined = result.configuration?.allowedTerritories;
+        const hierarchy: Record<string, string> | undefined = result.configuration?.hierarchy as
+          | Record<string, string>
+          | undefined;
+
+        expect(name).toBe('typed-territory');
+        expect(systemType).toBe('territory');
+        expect(allowContextList).toBe(false);
+        expect(acceptLowercase).toBe(true);
+        expect(allowedTerritories).toEqual(['US', 'CA']);
+        expect(hierarchy).toEqual({ CA: 'NA', US: 'NA' });
+      });
+    });
+
+    test('calls validateConfigurationJson internally', () => {
+      // Test that validateConfiguration properly chains through validateConfigurationJson
+      const invalidConfig = {
+        name: 'test-territory'
+        // Missing systemType and configuration
+      };
+
+      expect(qualifierType.validateConfiguration(invalidConfig)).toFailWith(/field systemType not found/i);
+    });
+
+    test('fails with same validation errors as validateConfigurationJson', () => {
+      const invalidConfig = {
+        name: 'test-territory',
+        systemType: 'language', // Wrong system type
+        configuration: {
+          allowContextList: true
+        }
+      };
+
+      // Both methods should fail with the same error pattern
+      expect(qualifierType.validateConfiguration(invalidConfig)).toFailWith(/systemType.*territory/i);
+      expect(qualifierType.validateConfigurationJson(invalidConfig)).toFailWith(/systemType.*territory/i);
+    });
+
+    test('handles complex invalid configurations', () => {
+      const invalidConfig = {
+        name: 123 as unknown as string,
+        systemType: 'territory',
+        configuration: {
+          allowContextList: 'invalid' as unknown as boolean,
+          acceptLowercase: 'invalid' as unknown as boolean,
+          allowedTerritories: 'not-array' as unknown as string[],
+          hierarchy: ['not-object'] as unknown as Record<string, string>,
+          unexpectedField: 'value'
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(invalidConfig)).toFail();
+    });
+
+    test('validates territory-specific configuration fields correctly', () => {
+      // Test edge cases specific to territory configuration
+      const edgeCaseConfig = {
+        name: 'edge-territory',
+        systemType: 'territory',
+        configuration: {
+          allowContextList: true,
+          acceptLowercase: false,
+          allowedTerritories: [], // Empty array should be valid
+          hierarchy: {} // Empty object should be valid
+        }
+      };
+
+      expect(qualifierType.validateConfiguration(edgeCaseConfig)).toSucceedAndSatisfy((result) => {
+        expect(result.configuration?.allowedTerritories).toEqual([]);
+        expect(result.configuration?.hierarchy).toEqual({});
       });
     });
   });

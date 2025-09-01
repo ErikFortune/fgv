@@ -214,6 +214,17 @@ Validates that a value and optional operator are valid for use in a condition fo
 </td></tr>
 <tr><td>
 
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.iqualifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
 [validateContextValue(value)](./ts-res.qualifiertypes.iqualifiertype.validatecontextvalue.md)
 
 

@@ -226,6 +226,27 @@ export class TerritoryQualifierType extends QualifierType {
   }
 
   /**
+   * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
+   */
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    return Config.Convert.systemTerritoryQualifierTypeConfig
+      .convert(from)
+      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  }
+
+  /**
+   * Validates a {@link QualifierTypes.Config.ISystemTerritoryQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @param from - The unknown data to validate as a configuration object.
+   * @returns `Success` with the validated configuration if successful, `Failure` with an error message otherwise.
+   */
+  public validateConfiguration(from: unknown): Result<Config.ISystemTerritoryQualifierTypeConfig> {
+    return this.validateConfigurationJson(from).onSuccess((json) =>
+      Config.Convert.systemTerritoryQualifierTypeConfig.convert(json)
+    );
+  }
+
+  /**
    * {@inheritdoc QualifierTypes.QualifierType._matchOne}
    */
   protected _matchOne(

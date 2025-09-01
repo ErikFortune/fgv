@@ -65,6 +65,21 @@ export class TestQualifierType extends TsRes.QualifierTypes.QualifierType {
     });
   }
 
+  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+    // Simple validation for test class
+    if (typeof from !== 'object' || from === null) {
+      return fail('Expected object');
+    }
+    const obj = from as Record<string, unknown>;
+    if (typeof obj.name !== 'string') {
+      return fail('name must be string');
+    }
+    if (obj.systemType !== 'test') {
+      return fail('systemType must be test');
+    }
+    return succeed(from as JsonObject);
+  }
+
   protected _matchOne(
     condition: TsRes.QualifierConditionValue,
     context: TsRes.QualifierContextValue,

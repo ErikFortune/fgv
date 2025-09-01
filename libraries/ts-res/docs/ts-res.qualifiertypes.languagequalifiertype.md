@@ -203,5 +203,33 @@ Validates a condition value for this qualifier type.
 
 
 </td></tr>
+<tr><td>
+
+[validateConfiguration(from)](./ts-res.qualifiertypes.languagequalifiertype.validateconfiguration.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates a [strongly typed configuration object](./ts-res.qualifiertypes.config.isystemlanguagequalifiertypeconfig.md) for this qualifier type.
+
+
+</td></tr>
+<tr><td>
+
+[validateConfigurationJson(from)](./ts-res.qualifiertypes.languagequalifiertype.validateconfigurationjson.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Validates configuration JSON data for this qualifier type.
+
+
+</td></tr>
 </tbody></table>
 

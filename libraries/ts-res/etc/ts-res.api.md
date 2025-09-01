@@ -2448,6 +2448,7 @@ interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIn
     setIndex(index: number): Result<QualifierTypeIndex>;
     readonly systemTypeName: QualifierTypeName;
     validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
+    validateConfigurationJson(from: unknown): Result<JsonObject>;
     validateContextValue(value: string): Result<QualifierContextValue>;
 }
 
@@ -3376,6 +3377,12 @@ class LanguageQualifierType extends QualifierType {
     //
     // (undocumented)
     readonly systemTypeName: QualifierTypeName;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateConfiguration(from: unknown): Result<Config_2.ISystemLanguageQualifierTypeConfig>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateConfigurationJson(from: unknown): Result<JsonObject>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3424,6 +3431,12 @@ class LiteralQualifierType extends QualifierType {
     // (undocumented)
     readonly systemTypeName: QualifierTypeName;
     static toLiteralConditionValue(from: string): Result<QualifierConditionValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateConfiguration(from: unknown): Result<Config_2.ISystemLiteralQualifierTypeConfig>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateConfigurationJson(from: unknown): Result<JsonObject>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3887,6 +3900,10 @@ export abstract class QualifierType implements IQualifierType {
     //
     // (undocumented)
     validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    abstract validateConfigurationJson(from: unknown): Result<JsonObject>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -4872,6 +4889,12 @@ class TerritoryQualifierType extends QualifierType {
     // (undocumented)
     readonly systemTypeName: QualifierTypeName;
     static toTerritoryConditionValue(value: string, acceptLowercase?: boolean): Result<QualifierConditionValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    validateConfiguration(from: unknown): Result<Config_2.ISystemTerritoryQualifierTypeConfig>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    validateConfigurationJson(from: unknown): Result<JsonObject>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
