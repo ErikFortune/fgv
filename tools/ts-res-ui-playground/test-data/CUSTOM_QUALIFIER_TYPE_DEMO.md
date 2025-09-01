@@ -16,25 +16,17 @@ This playground now includes a complete demonstration of custom qualifier types 
 
 ## 🚀 How to Test in the Playground
 
-1. **Start the Playground**: The playground is already running at http://localhost:3001
-
-2. **Load the Configuration**:
+1. **Load the Configuration**:
    - Go to the **Configuration** tab
-   - Import: `test-data/config-variations/accessibility-theming.json`
+   - Import: `data/test/ts-res/accessibility-theming/configuration.json` (from repo root)
    - Notice the **custom** qualifier type with orange styling ✨
 
-3. **Edit the Custom Qualifier Type**:
-   - Click **Edit** on the "contrast" qualifier type
-   - Notice it shows the **JSON editor** instead of the structured form
-   - Modify the configuration to see real-time validation
-
-4. **Load Theme Resources**:
+2. **Load Theme Resources**:
    - Go to the **Import** tab  
-   - Load: `test-data/accessibility-theming/colors/button-colors.res.json`
-   - Load: `test-data/accessibility-theming/colors/background-colors.res.json`
-   - Load: `test-data/accessibility-theming/colors/text-colors.res.json`
+   - Import directory: `data/test/ts-res/accessibility-theming/colors/` (from repo root)
+   - This loads all color resource files automatically
 
-5. **Test Resource Resolution**:
+3. **Test Resource Resolution**:
    - Go to the **Resolution** tab
    - Try these contexts to see the custom matching logic:
      ```
@@ -43,6 +35,11 @@ This playground now includes a complete demonstration of custom qualifier types 
      contrast=black, component=button
      contrast=white, component=text
      ```
+
+4. **Optional - Edit the Custom Qualifier Type**:
+   - In the **Configuration** tab, click **Edit** on the "contrast" qualifier type
+   - Notice it shows the **JSON editor** instead of the structured form
+   - Modify the configuration to see real-time validation
 
 ## 🎨 Key Features Demonstrated
 
@@ -69,8 +66,8 @@ This playground now includes a complete demonstration of custom qualifier types 
 ### Files Created:
 - `src/factories/ContrastQualifierType.ts` - Core qualifier type class
 - `src/factories/ContrastQualifierTypeFactory.ts` - Configuration factory
-- `test-data/config-variations/accessibility-theming.json` - System config
-- `test-data/accessibility-theming/colors/*.res.json` - Theme resources
+- `data/test/ts-res/accessibility-theming/configuration.json` - System config (at repo root)
+- `data/test/ts-res/accessibility-theming/colors/*.res.json` - Theme resources (at repo root)
 
 ### Integration Points:
 - `src/App.tsx` - Registers the factory with ResourceOrchestrator
