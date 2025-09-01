@@ -51,8 +51,8 @@ interface AppContentProps {
 const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
   const { state, actions } = orchestrator;
 
-  // Create observability context for systematic logging
-  const observabilityContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
+  // Use observability context from orchestrator actions
+  const { o11y } = actions;
   const [selectedTool, setSelectedTool] = useState<Tool>('import');
   const navigationWarning = useNavigationWarning();
   const { urlParams, hasUrlParams } = useUrlParams();
@@ -955,13 +955,13 @@ const App: React.FC = () => {
   const demoResourceTypeFactory = undefined;
 
   // Create observability context for ResourceOrchestrator
-  const appObservabilityContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
+  const appO11yContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
 
   return (
     <ResourceOrchestrator
       qualifierTypeFactory={demoQualifierTypeFactory}
       resourceTypeFactory={demoResourceTypeFactory}
-      logger={appObservabilityContext.console}
+      observabilityContext={appO11yContext}
     >
       {(orchestrator) => <AppContent orchestrator={orchestrator} />}
     </ResourceOrchestrator>

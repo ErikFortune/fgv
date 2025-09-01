@@ -114,8 +114,10 @@ class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
     success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
 }
 
+// Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
+//
 // @internal (undocumented)
-function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree;
+function convertImportedDirectoryToFileTree(directory: ImportedDirectory, o11y?: ObservabilityTools_2.IObservabilityContext): FileTree.FileTree;
 
 // @public
 function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
@@ -670,6 +672,15 @@ class ObservabilityContext implements IObservabilityContext {
     readonly user: IUserLogger;
 }
 
+// @public
+export const ObservabilityProvider: React_2.FC<ObservabilityProviderProps>;
+
+// @public
+export interface ObservabilityProviderProps {
+    children: ReactNode;
+    observabilityContext?: ObservabilityTools_2.IObservabilityContext;
+}
+
 declare namespace ObservabilityTools {
     export {
         IUserLogger,
@@ -737,9 +748,9 @@ export interface OrchestratorActions {
     // (undocumented)
     importFiles: (files: ImportedFile[]) => Promise<void>;
     // (undocumented)
-    log: (level: 'info' | 'warn' | 'error', message: string, ...args: unknown[]) => void;
-    // (undocumented)
     markResourceForDeletion: (resourceId: string) => void;
+    // (undocumented)
+    o11y: IObservabilityContext;
     // (undocumented)
     removePendingResource: (resourceId: string) => void;
     // (undocumented)
@@ -858,20 +869,20 @@ interface ProcessedResources {
 }
 
 // @internal (undocumented)
-function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<ExtendedProcessedResources>;
+function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<ExtendedProcessedResources>;
 
 // @internal (undocumented)
-function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<ExtendedProcessedResources>;
+function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<ExtendedProcessedResources>;
 
 // @public
 function processZipLoadResult(zipResult: {
     files: ImportedFile[];
     directory?: ImportedDirectory;
     config?: Config.Model.ISystemConfiguration;
-}, overrideConfig?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+}, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<ProcessedResources>>;
 
 // @public
-function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration): Promise<Result<ProcessedResources>>;
+function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<ProcessedResources>>;
 
 // Warning: (ae-forgotten-export) The symbol "QualifierContextControlProps" needs to be exported by the entry point index.d.ts
 //
@@ -1342,6 +1353,9 @@ function useConfigurationState(initialConfiguration?: Config.Model.ISystemConfig
 //
 // @public
 function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
+
+// @public
+export const useObservability: () => ObservabilityTools_2.IObservabilityContext;
 
 // Warning: (ae-forgotten-export) The symbol "UseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //

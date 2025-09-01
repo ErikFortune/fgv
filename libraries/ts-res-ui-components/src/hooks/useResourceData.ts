@@ -19,6 +19,7 @@ import {
   ResourceTypes
 } from '@fgv/ts-res';
 import { processImportedFiles, processImportedDirectory } from '../utils/tsResIntegration';
+import * as ObservabilityTools from '../utils/observability';
 
 /**
  * Parameters for the useResourceData hook.
@@ -37,6 +38,8 @@ export interface UseResourceDataParams {
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
   >;
+  /** Optional observability context for logging */
+  o11y?: ObservabilityTools.IObservabilityContext;
 }
 
 /**
@@ -123,6 +126,7 @@ const initialState: ResourceManagerState = {
  */
 export function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn {
   const [state, setState] = useState<ResourceManagerState>(initialState);
+  const o11y = params?.o11y ?? ObservabilityTools.DefaultObservabilityContext;
 
   const processDirectory = useCallback(
     async (directory: ImportedDirectory) => {
@@ -133,7 +137,8 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           directory,
           state.activeConfiguration || undefined,
           params?.qualifierTypeFactory,
-          params?.resourceTypeFactory
+          params?.resourceTypeFactory,
+          o11y
         );
 
         if (result.isSuccess()) {
@@ -156,7 +161,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         }));
       }
     },
-    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory]
+    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
   );
 
   const processDirectoryWithConfig = useCallback(
@@ -168,7 +173,8 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           directory,
           config,
           params?.qualifierTypeFactory,
-          params?.resourceTypeFactory
+          params?.resourceTypeFactory,
+          o11y
         ).orThrow();
 
         setState((prev) => ({
@@ -188,7 +194,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         }));
       }
     },
-    [params?.qualifierTypeFactory, params?.resourceTypeFactory]
+    [params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
   );
 
   const processFiles = useCallback(
@@ -200,7 +206,8 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
           files,
           state.activeConfiguration || undefined,
           params?.qualifierTypeFactory,
-          params?.resourceTypeFactory
+          params?.resourceTypeFactory,
+          o11y
         ).orThrow();
 
         setState((prev) => ({
@@ -219,232 +226,237 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         }));
       }
     },
-    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory]
+    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
   );
 
-  const processBundleFile = useCallback(async (bundle: Bundle.IBundle) => {
-    console.log('[Bundle Processing] Starting bundle processing...', bundle);
-    setState((prev) => ({ ...prev, isProcessing: true, error: null }));
+  const processBundleFile = useCallback(
+    async (bundle: Bundle.IBundle) => {
+      console.log('[Bundle Processing] Starting bundle processing...', bundle);
+      setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
-    try {
-      console.log('[Bundle Processing] Attempting to extract bundle components...');
+      try {
+        console.log('[Bundle Processing] Attempting to extract bundle components...');
 
-      // Extract bundle components (configuration and compiled collection)
-      const componentsResult = Bundle.BundleUtils.extractBundleComponents(bundle);
-      console.log(
-        '[Bundle Processing] Component extraction result:',
-        componentsResult.isSuccess() ? 'SUCCESS' : `FAILED: ${componentsResult.message}`
-      );
-
-      if (componentsResult.isFailure()) {
-        throw new Error(`Failed to extract bundle components: ${componentsResult.message}`);
-      }
-
-      const { systemConfiguration, compiledCollection, metadata } = componentsResult.value;
-      console.log('[Bundle Processing] Extracted components:', {
-        hasSystemConfiguration: !!systemConfiguration,
-        hasCompiledCollection: !!compiledCollection,
-        hasMetadata: !!metadata,
-        systemConfiguration: systemConfiguration
-      });
-
-      // Use BundleLoader to create a fully functional resource manager from the bundle
-      console.log('[Bundle Processing] Using BundleLoader to create resource manager from bundle');
-
-      const bundleManagerResult = Bundle.BundleLoader.createManagerFromBundle({
-        bundle: bundle,
-        skipChecksumVerification: true // Skip for now since we're in a browser environment
-      });
-
-      if (bundleManagerResult.isFailure()) {
-        throw new Error(`Failed to create resource manager from bundle: ${bundleManagerResult.message}`);
-      }
-
-      // The bundle's IResourceManager contains all the resources and candidates
-      // We'll use it directly for both UI and resolution
-      const bundleResourceManager = bundleManagerResult.value;
-
-      // Debug: Check what resources are in the original bundle manager
-      console.log('[Bundle Processing] Original bundle manager resources:', {
-        numResources: bundleResourceManager.numResources,
-        numCandidates: bundleResourceManager.numCandidates,
-        resourceIds: Array.from(bundleResourceManager.builtResources.keys())
-      });
-
-      // Convert the compiled collection to an editable ResourceManagerBuilder
-      // using createFromCompiledResourceCollection for exact reconstruction
-      const reconstructedBuilderResult =
-        Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
-          compiledCollection,
-          systemConfiguration
+        // Extract bundle components (configuration and compiled collection)
+        const componentsResult = Bundle.BundleUtils.extractBundleComponents(bundle);
+        console.log(
+          '[Bundle Processing] Component extraction result:',
+          componentsResult.isSuccess() ? 'SUCCESS' : `FAILED: ${componentsResult.message}`
         );
-      if (reconstructedBuilderResult.isFailure()) {
-        throw new Error(
-          `Failed to reconstruct builder from compiled collection: ${reconstructedBuilderResult.message}`
-        );
-      }
 
-      const editableResourceManager = reconstructedBuilderResult.value;
-      console.log('[Bundle Processing] Normalized builder resources:', {
-        numResources: editableResourceManager.resources.size,
-        numCandidates: Array.from(editableResourceManager.getAllCandidates()).length,
-        resourceIds: Array.from(editableResourceManager.resources.keys())
-      });
+        if (componentsResult.isFailure()) {
+          throw new Error(`Failed to extract bundle components: ${componentsResult.message}`);
+        }
 
-      // Create the system using the normalized, editable resource manager
-      const system = {
-        qualifierTypes: systemConfiguration.qualifierTypes,
-        qualifiers: systemConfiguration.qualifiers,
-        resourceTypes: systemConfiguration.resourceTypes,
-        resourceManager: editableResourceManager, // Now editable ResourceManagerBuilder
-        importManager: Import.ImportManager.create({
-          resources: Resources.ResourceManagerBuilder.create({
-            qualifiers: systemConfiguration.qualifiers,
-            resourceTypes: systemConfiguration.resourceTypes
+        const { systemConfiguration, compiledCollection, metadata } = componentsResult.value;
+        console.log('[Bundle Processing] Extracted components:', {
+          hasSystemConfiguration: !!systemConfiguration,
+          hasCompiledCollection: !!compiledCollection,
+          hasMetadata: !!metadata,
+          systemConfiguration: systemConfiguration
+        });
+
+        // Use BundleLoader to create a fully functional resource manager from the bundle
+        console.log('[Bundle Processing] Using BundleLoader to create resource manager from bundle');
+
+        const bundleManagerResult = Bundle.BundleLoader.createManagerFromBundle({
+          bundle: bundle,
+          skipChecksumVerification: true // Skip for now since we're in a browser environment
+        });
+
+        if (bundleManagerResult.isFailure()) {
+          throw new Error(`Failed to create resource manager from bundle: ${bundleManagerResult.message}`);
+        }
+
+        // The bundle's IResourceManager contains all the resources and candidates
+        // We'll use it directly for both UI and resolution
+        const bundleResourceManager = bundleManagerResult.value;
+
+        // Debug: Check what resources are in the original bundle manager
+        console.log('[Bundle Processing] Original bundle manager resources:', {
+          numResources: bundleResourceManager.numResources,
+          numCandidates: bundleResourceManager.numCandidates,
+          resourceIds: Array.from(bundleResourceManager.builtResources.keys())
+        });
+
+        // Convert the compiled collection to an editable ResourceManagerBuilder
+        // using createFromCompiledResourceCollection for exact reconstruction
+        const reconstructedBuilderResult =
+          Resources.ResourceManagerBuilder.createFromCompiledResourceCollection(
+            compiledCollection,
+            systemConfiguration
+          );
+        if (reconstructedBuilderResult.isFailure()) {
+          throw new Error(
+            `Failed to reconstruct builder from compiled collection: ${reconstructedBuilderResult.message}`
+          );
+        }
+
+        const editableResourceManager = reconstructedBuilderResult.value;
+        console.log('[Bundle Processing] Normalized builder resources:', {
+          numResources: editableResourceManager.resources.size,
+          numCandidates: Array.from(editableResourceManager.getAllCandidates()).length,
+          resourceIds: Array.from(editableResourceManager.resources.keys())
+        });
+
+        // Create the system using the normalized, editable resource manager
+        const system = {
+          qualifierTypes: systemConfiguration.qualifierTypes,
+          qualifiers: systemConfiguration.qualifiers,
+          resourceTypes: systemConfiguration.resourceTypes,
+          resourceManager: editableResourceManager, // Now editable ResourceManagerBuilder
+          importManager: Import.ImportManager.create({
+            resources: Resources.ResourceManagerBuilder.create({
+              qualifiers: systemConfiguration.qualifiers,
+              resourceTypes: systemConfiguration.resourceTypes
+            }).orThrow()
+          }).orThrow(),
+          contextQualifierProvider: Runtime.Context.ValidatingSimpleContextQualifierProvider.create({
+            qualifiers: systemConfiguration.qualifiers
           }).orThrow()
-        }).orThrow(),
-        contextQualifierProvider: Runtime.Context.ValidatingSimpleContextQualifierProvider.create({
-          qualifiers: systemConfiguration.qualifiers
-        }).orThrow()
-      };
+        };
 
-      // Extract configuration for UI display using the new getConfigurationJson method
-      const qualifierTypesResult = Array.from(system.qualifierTypes.values()).map((qt) =>
-        qt
-          .getConfigurationJson()
-          .onSuccess((jsonConfig) => QualifierTypes.Config.Convert.anyQualifierTypeConfig.convert(jsonConfig))
-      );
-
-      // Check if any qualifier type extraction failed
-      const failedQualifierTypes = qualifierTypesResult.filter((result) => result.isFailure());
-      if (failedQualifierTypes.length > 0) {
-        throw new Error(
-          `Failed to extract qualifier type configurations: ${failedQualifierTypes
-            .map((r) => r.message)
-            .join(', ')}`
+        // Extract configuration for UI display using the new getConfigurationJson method
+        const qualifierTypesResult = Array.from(system.qualifierTypes.values()).map((qt) =>
+          qt
+            .getConfigurationJson()
+            .onSuccess((jsonConfig) =>
+              QualifierTypes.Config.Convert.anyQualifierTypeConfig.convert(jsonConfig)
+            )
         );
-      }
 
-      // Filter to only system qualifier types for UI compatibility
-      const allQualifierTypes = qualifierTypesResult
-        .map((result) => result.value)
-        .filter((config): config is QualifierTypes.Config.IAnyQualifierTypeConfig => config !== undefined);
-      const systemQualifierTypes = allQualifierTypes.filter(
-        QualifierTypes.Config.isSystemQualifierTypeConfig
-      );
+        // Check if any qualifier type extraction failed
+        const failedQualifierTypes = qualifierTypesResult.filter((result) => result.isFailure());
+        if (failedQualifierTypes.length > 0) {
+          throw new Error(
+            `Failed to extract qualifier type configurations: ${failedQualifierTypes
+              .map((r) => r.message)
+              .join(', ')}`
+          );
+        }
 
-      const configForStorage: Config.Model.ISystemConfiguration = {
-        name: 'Bundle Configuration',
-        description: metadata?.description || 'Configuration extracted from bundle',
-        qualifierTypes: systemQualifierTypes as QualifierTypes.Config.ISystemQualifierTypeConfig[],
-        qualifiers: Array.from(system.qualifiers.values()).map((q) => {
-          console.log('[Bundle Processing] Extracting qualifier:', q);
-          // Instantiated Qualifier objects have .type property which is a QualifierType object
-          const typeName = q.type.name;
-          if (!typeName) {
-            console.error('[Bundle Processing] Missing typeName for qualifier:', q);
+        // Filter to only system qualifier types for UI compatibility
+        const allQualifierTypes = qualifierTypesResult
+          .map((result) => result.value)
+          .filter((config): config is QualifierTypes.Config.IAnyQualifierTypeConfig => config !== undefined);
+        const systemQualifierTypes = allQualifierTypes.filter(
+          QualifierTypes.Config.isSystemQualifierTypeConfig
+        );
+
+        const configForStorage: Config.Model.ISystemConfiguration = {
+          name: 'Bundle Configuration',
+          description: metadata?.description || 'Configuration extracted from bundle',
+          qualifierTypes: systemQualifierTypes as QualifierTypes.Config.ISystemQualifierTypeConfig[],
+          qualifiers: Array.from(system.qualifiers.values()).map((q) => {
+            console.log('[Bundle Processing] Extracting qualifier:', q);
+            // Instantiated Qualifier objects have .type property which is a QualifierType object
+            const typeName = q.type.name;
+            if (!typeName) {
+              console.error('[Bundle Processing] Missing typeName for qualifier:', q);
+            }
+            return {
+              name: q.name,
+              typeName,
+              token: q.token,
+              defaultPriority: q.defaultPriority,
+              tokenIsOptional: q.tokenIsOptional,
+              ...(q.defaultValue !== undefined ? { defaultValue: q.defaultValue } : {})
+            };
+          }),
+          resourceTypes: Array.from(system.resourceTypes.values()).map((rt, index: number) => {
+            console.log('[Bundle Processing] Extracting resource type:', rt);
+            // ResourceTypes in bundles might not have a name property
+            // Default to 'json' for JsonResourceType
+            const typeName = rt.systemTypeName;
+            return {
+              name: rt.key,
+              typeName: rt.systemTypeName
+            };
+          })
+        };
+
+        console.log('[Bundle Processing] Extracted configuration for UI:', configForStorage);
+
+        // Extract resource IDs from the loaded resource manager
+        const resourceIds: string[] = [];
+        let resourceCount = 0;
+
+        // The resource manager is now fully loaded with all bundle resources
+        // Extract resource IDs from the compiled collection for tracking
+        if (compiledCollection.resources) {
+          for (const resource of compiledCollection.resources) {
+            const resourceId = resource.id || `resource-${resourceCount}`;
+            resourceIds.push(resourceId);
+            resourceCount++;
           }
-          return {
-            name: q.name,
-            typeName,
-            token: q.token,
-            defaultPriority: q.defaultPriority,
-            tokenIsOptional: q.tokenIsOptional,
-            ...(q.defaultValue !== undefined ? { defaultValue: q.defaultValue } : {})
-          };
-        }),
-        resourceTypes: Array.from(system.resourceTypes.values()).map((rt, index: number) => {
-          console.log('[Bundle Processing] Extracting resource type:', rt);
-          // ResourceTypes in bundles might not have a name property
-          // Default to 'json' for JsonResourceType
-          const typeName = rt.systemTypeName;
-          return {
-            name: rt.key,
-            typeName: rt.systemTypeName
-          };
-        })
-      };
-
-      console.log('[Bundle Processing] Extracted configuration for UI:', configForStorage);
-
-      // Extract resource IDs from the loaded resource manager
-      const resourceIds: string[] = [];
-      let resourceCount = 0;
-
-      // The resource manager is now fully loaded with all bundle resources
-      // Extract resource IDs from the compiled collection for tracking
-      if (compiledCollection.resources) {
-        for (const resource of compiledCollection.resources) {
-          const resourceId = resource.id || `resource-${resourceCount}`;
-          resourceIds.push(resourceId);
-          resourceCount++;
         }
-      }
 
-      console.log(`Bundle loaded with ${resourceCount} resources (with candidates):`, resourceIds);
+        console.log(`Bundle loaded with ${resourceCount} resources (with candidates):`, resourceIds);
 
-      // Create a resolver using the bundle's resource manager
-      const resolverResult = Runtime.ResourceResolver.create({
-        resourceManager: system.resourceManager,
-        qualifierTypes: system.qualifierTypes,
-        contextQualifierProvider: system.contextQualifierProvider
-      });
-
-      if (resolverResult.isFailure()) {
-        throw new Error(`Failed to create resolver: ${resolverResult.message}`);
-      }
-
-      // No longer create a separate CompiledResourceCollection manager
-      // We'll derive the compiled collection from ResourceManagerBuilder when needed
-
-      // Create the processed resources structure with bundle data
-      const processedResources: ProcessedResources = {
-        system: {
-          qualifierTypes: system.qualifierTypes,
-          qualifiers: system.qualifiers,
-          resourceTypes: system.resourceTypes,
+        // Create a resolver using the bundle's resource manager
+        const resolverResult = Runtime.ResourceResolver.create({
           resourceManager: system.resourceManager,
-          importManager: system.importManager,
+          qualifierTypes: system.qualifierTypes,
           contextQualifierProvider: system.contextQualifierProvider
-        },
-        compiledCollection,
-        resolver: resolverResult.value,
-        resourceCount,
-        summary: {
-          totalResources: resourceCount,
-          resourceIds,
-          errorCount: 0,
-          warnings: [`Bundle loaded with ${resourceCount} resources from compiled collection`]
+        });
+
+        if (resolverResult.isFailure()) {
+          throw new Error(`Failed to create resolver: ${resolverResult.message}`);
         }
-      };
 
-      console.log('[Bundle Processing] Setting final state...', {
-        resourceCount,
-        resourceIds,
-        configForStorage,
-        hasProcessedResources: !!processedResources
-      });
+        // No longer create a separate CompiledResourceCollection manager
+        // We'll derive the compiled collection from ResourceManagerBuilder when needed
 
-      setState((prev) => ({
-        ...prev,
-        isProcessing: false,
-        processedResources,
-        hasProcessedData: true,
-        error: null,
-        activeConfiguration: configForStorage,
-        isLoadedFromBundle: true,
-        bundleMetadata: metadata
-      }));
+        // Create the processed resources structure with bundle data
+        const processedResources: ProcessedResources = {
+          system: {
+            qualifierTypes: system.qualifierTypes,
+            qualifiers: system.qualifiers,
+            resourceTypes: system.resourceTypes,
+            resourceManager: system.resourceManager,
+            importManager: system.importManager,
+            contextQualifierProvider: system.contextQualifierProvider
+          },
+          compiledCollection,
+          resolver: resolverResult.value,
+          resourceCount,
+          summary: {
+            totalResources: resourceCount,
+            resourceIds,
+            errorCount: 0,
+            warnings: [`Bundle loaded with ${resourceCount} resources from compiled collection`]
+          }
+        };
 
-      console.log('[Bundle Processing] Bundle processing completed successfully!');
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        isProcessing: false,
-        error: error instanceof Error ? error.message : String(error)
-      }));
-    }
-  }, []);
+        console.log('[Bundle Processing] Setting final state...', {
+          resourceCount,
+          resourceIds,
+          configForStorage,
+          hasProcessedResources: !!processedResources
+        });
+
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          processedResources,
+          hasProcessedData: true,
+          error: null,
+          activeConfiguration: configForStorage,
+          isLoadedFromBundle: true,
+          bundleMetadata: metadata
+        }));
+
+        console.log('[Bundle Processing] Bundle processing completed successfully!');
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: error instanceof Error ? error.message : String(error)
+        }));
+      }
+    },
+    [o11y]
+  );
 
   const clearError = useCallback(() => {
     setState((prev) => ({ ...prev, error: null }));

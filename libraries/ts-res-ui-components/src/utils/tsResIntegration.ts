@@ -10,6 +10,7 @@ import {
   Config
 } from '@fgv/ts-res';
 import { ImportedDirectory, ImportedFile, ExtendedProcessedResources } from '../types';
+import * as ObservabilityTools from '../utils/observability';
 
 /**
  * Get the default system configuration from ts-res library
@@ -76,7 +77,10 @@ export function createSimpleContext(
  * Convert ImportedDirectory to FileTree format
  */
 /** @internal */
-export function convertImportedDirectoryToFileTree(directory: ImportedDirectory): FileTree.FileTree {
+export function convertImportedDirectoryToFileTree(
+  directory: ImportedDirectory,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
+): FileTree.FileTree {
   // Convert files to IInMemoryFile format and flatten the directory structure
   const flattenFiles = (
     dir: ImportedDirectory,
@@ -108,7 +112,7 @@ export function convertImportedDirectoryToFileTree(directory: ImportedDirectory)
 
   const inMemoryFiles = flattenFiles(directory);
 
-  console.log('[convertImportedDirectoryToFileTree] Converting directory to FileTree:', {
+  o11y.diag.info('[convertImportedDirectoryToFileTree] Converting directory to FileTree:', {
     directoryName: directory.name,
     directoryPath: directory.path,
     numFiles: directory.files?.length || 0,
@@ -195,7 +199,8 @@ export function processImportedFiles(
   resourceTypeFactory?: Config.IConfigInitFactory<
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
-  >
+  >,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<ExtendedProcessedResources> {
   if (files.length === 0) {
     return fail('No files provided for processing');
@@ -251,12 +256,13 @@ export function processImportedDirectory(
   resourceTypeFactory?: Config.IConfigInitFactory<
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
-  >
+  >,
+  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): Result<ExtendedProcessedResources> {
   return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
     .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
       // Convert directory to file tree
-      const fileTree = convertImportedDirectoryToFileTree(directory);
+      const fileTree = convertImportedDirectoryToFileTree(directory, o11y);
 
       return Import.ImportManager.create({
         fileTree,
@@ -264,11 +270,11 @@ export function processImportedDirectory(
       }).onSuccess((importManager) => {
         // Simply try to import from the filesystem root
         // The ImportManager will handle finding and importing all resources
-        console.log('[tsResIntegration] Starting resource import from FileTree');
+        o11y.diag.info('[tsResIntegration] Starting resource import from FileTree');
 
         const importResult = importManager.importFromFileSystem('/');
         if (importResult.isFailure()) {
-          console.warn(`[tsResIntegration] Failed to import from root, trying individual files`);
+          o11y.diag.warn(`[tsResIntegration] Failed to import from root, trying individual files`);
 
           // If root import fails, try to import files individually
           // We'll recursively traverse the tree using the FileTree API
@@ -283,13 +289,13 @@ export function processImportedDirectory(
               if (childrenResult.isSuccess()) {
                 for (const child of childrenResult.value) {
                   if (child.type === 'file' && child.name.endsWith('.json')) {
-                    console.log(`[tsResIntegration] Importing file: ${child.absolutePath}`);
+                    o11y.diag.info(`[tsResIntegration] Importing file: ${child.absolutePath}`);
                     const fileImportResult = importManager.importFromFileSystem(child.absolutePath);
                     if (fileImportResult.isSuccess()) {
                       importedCount++;
-                      console.log(`[tsResIntegration] Successfully imported ${child.absolutePath}`);
+                      o11y.diag.info(`[tsResIntegration] Successfully imported ${child.absolutePath}`);
                     } else {
-                      console.warn(
+                      o11y.diag.warn(
                         `[tsResIntegration] Failed to import ${child.absolutePath}: ${fileImportResult.message}`
                       );
                       failedImports.push({ file: child.absolutePath, error: fileImportResult.message });
@@ -310,7 +316,7 @@ export function processImportedDirectory(
             importDirectory('');
           }
 
-          console.log(`[tsResIntegration] Import complete. Imported ${importedCount} files`);
+          o11y.diag.info(`[tsResIntegration] Import complete. Imported ${importedCount} files`);
 
           if (importedCount === 0 && failedImports.length > 0) {
             // Create a summary of unique errors
@@ -334,7 +340,7 @@ export function processImportedDirectory(
             return fail(`No resource files found in ${directory.name}`);
           }
         } else {
-          console.log('[tsResIntegration] Successfully imported resources from root');
+          o11y.diag.info('[tsResIntegration] Successfully imported resources from root');
         }
 
         // Finalize processing

@@ -1369,8 +1369,8 @@ export interface OrchestratorActions {
   addMessage: (type: Message['type'], message: string) => void;
   clearMessages: () => void;
 
-  // Logging (for dependency injection)
-  log: (level: 'info' | 'warn' | 'error', message: string, ...args: unknown[]) => void;
+  // Observability context for diagnostic and user logging
+  o11y: import('../utils/observability').IObservabilityContext;
 
   // Resource resolution
   resolveResource: (resourceId: string, context?: Record<string, string>) => Promise<Result<JsonValue>>;

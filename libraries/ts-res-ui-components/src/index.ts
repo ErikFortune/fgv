@@ -34,6 +34,9 @@ export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestr
 // Export utilities
 export { DownloadUtils } from './utils/downloadHelper';
 
+// Export contexts and hooks
+export { ObservabilityProvider, useObservability, type ObservabilityProviderProps } from './contexts';
+
 // Export common components (likely to be used by consumers)
 export { ResourceTreeView } from './components/common/ResourceTreeView';
 export { ResourceListView } from './components/common/ResourceListView';

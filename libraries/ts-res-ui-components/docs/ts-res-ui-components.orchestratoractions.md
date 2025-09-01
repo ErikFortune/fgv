@@ -502,23 +502,6 @@ Description
 </td></tr>
 <tr><td>
 
-[log](./ts-res-ui-components.orchestratoractions.log.md)
-
-
-</td><td>
-
-
-</td><td>
-
-(level: 'info' \| 'warn' \| 'error', message: string, ...args: unknown\[\]) =&gt; void
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [markResourceForDeletion](./ts-res-ui-components.orchestratoractions.markresourcefordeletion.md)
 
 
@@ -528,6 +511,23 @@ Description
 </td><td>
 
 (resourceId: string) =&gt; void
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[o11y](./ts-res-ui-components.orchestratoractions.o11y.md)
+
+
+</td><td>
+
+
+</td><td>
+
+import('../utils/observability').[IObservabilityContext](./ts-res-ui-components.observabilitytools.iobservabilitycontext.md)
 
 
 </td><td>
