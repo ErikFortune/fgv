@@ -181,6 +181,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
+            importError={state.error}
             onImport={(data) => {
               if (Array.isArray(data)) {
                 actions.importFiles(data);
@@ -382,6 +383,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             onMessage={actions.addMessage}
+            importError={state.error}
             onImport={(data) => {
               if (Array.isArray(data)) {
                 actions.importFiles(data);

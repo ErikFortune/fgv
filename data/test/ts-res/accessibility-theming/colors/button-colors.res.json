@@ -1,99 +1,93 @@
 {
-  "resourceType": "color",
-  "id": "button-colors",
-  "description": "Button color variations for different contrast and theme combinations",
-  "candidates": [
-    {
-      "id": "button-default",
-      "description": "Default button colors for standard contrast",
-      "conditions": [
-        { "qualifier": "component", "value": "button" },
-        { "qualifier": "contrast", "value": "standard" }
-      ],
-      "value": {
-        "background": "#007bff",
-        "foreground": "#ffffff",
-        "border": "#0056b3",
-        "hover": {
-          "background": "#0056b3",
-          "foreground": "#ffffff",
-          "border": "#004085"
+  "resources": {
+    "button-colors": {
+      "resourceTypeName": "color",
+      "candidates": [
+        {
+          "conditions": {
+            "component": "button",
+            "contrast": "standard"
+          },
+          "json": {
+            "background": "#007bff",
+            "foreground": "#ffffff",
+            "border": "#0056b3",
+            "hover": {
+              "background": "#0056b3",
+              "foreground": "#ffffff",
+              "border": "#004085"
+            },
+            "disabled": {
+              "background": "#6c757d",
+              "foreground": "#ffffff",
+              "border": "#5a6268"
+            }
+          }
         },
-        "disabled": {
-          "background": "#6c757d",
-          "foreground": "#ffffff",
-          "border": "#5a6268"
-        }
-      }
-    },
-    {
-      "id": "button-high-contrast",
-      "description": "High contrast button colors - matches 'high', 'black', or 'white'",
-      "conditions": [
-        { "qualifier": "component", "value": "button" },
-        { "qualifier": "contrast", "value": "high" }
-      ],
-      "value": {
-        "background": "#000000",
-        "foreground": "#ffffff",
-        "border": "#ffffff",
-        "hover": {
-          "background": "#333333",
-          "foreground": "#ffffff",
-          "border": "#ffffff"
+        {
+          "conditions": {
+            "component": "button",
+            "contrast": "high"
+          },
+          "json": {
+            "background": "#000000",
+            "foreground": "#ffffff",
+            "border": "#ffffff",
+            "hover": {
+              "background": "#333333",
+              "foreground": "#ffffff",
+              "border": "#ffffff"
+            },
+            "disabled": {
+              "background": "#666666",
+              "foreground": "#cccccc",
+              "border": "#999999"
+            }
+          }
         },
-        "disabled": {
-          "background": "#666666",
-          "foreground": "#cccccc",
-          "border": "#999999"
-        }
-      }
-    },
-    {
-      "id": "button-white-theme",
-      "description": "Button colors for white high-contrast theme",
-      "conditions": [
-        { "qualifier": "component", "value": "button" },
-        { "qualifier": "contrast", "value": "white" }
-      ],
-      "value": {
-        "background": "#ffffff",
-        "foreground": "#000000",
-        "border": "#000000",
-        "hover": {
-          "background": "#f8f9fa",
-          "foreground": "#000000",
-          "border": "#000000"
+        {
+          "conditions": {
+            "component": "button",
+            "contrast": "white"
+          },
+          "json": {
+            "background": "#ffffff",
+            "foreground": "#000000",
+            "border": "#000000",
+            "hover": {
+              "background": "#f8f9fa",
+              "foreground": "#000000",
+              "border": "#000000"
+            },
+            "disabled": {
+              "background": "#e9ecef",
+              "foreground": "#6c757d",
+              "border": "#adb5bd"
+            }
+          }
         },
-        "disabled": {
-          "background": "#e9ecef",
-          "foreground": "#6c757d",
-          "border": "#adb5bd"
+        {
+          "conditions": {
+            "component": "button",
+            "contrast": "black"
+          },
+          "json": {
+            "background": "#000000",
+            "foreground": "#ffffff",
+            "border": "#ffffff",
+            "hover": {
+              "background": "#1a1a1a",
+              "foreground": "#ffffff",
+              "border": "#ffffff"
+            },
+            "disabled": {
+              "background": "#333333",
+              "foreground": "#999999",
+              "border": "#666666"
+            }
+          }
         }
-      }
-    },
-    {
-      "id": "button-black-theme",
-      "description": "Button colors for black high-contrast theme",
-      "conditions": [
-        { "qualifier": "component", "value": "button" },
-        { "qualifier": "contrast", "value": "black" }
-      ],
-      "value": {
-        "background": "#000000",
-        "foreground": "#ffffff",
-        "border": "#ffffff",
-        "hover": {
-          "background": "#1a1a1a",
-          "foreground": "#ffffff",
-          "border": "#ffffff"
-        },
-        "disabled": {
-          "background": "#333333",
-          "foreground": "#999999",
-          "border": "#666666"
-        }
-      }
+      ]
     }
-  ]
+  }
 }
