@@ -4,10 +4,10 @@
 
 ## QualifierTypes.ILiteralQualifierTypeCreateParams.hierarchy property
 
-Optional [hierarchy declaration](./ts-res.qualifiertypes.literalvaluehierarchydecl.md) of literal values to use for matching. If not provided, no hierarchy will be used.
+Optional [hierarchy declaration](./ts-res.qualifiertypes.config.literalvaluehierarchydecl.md) of literal values to use for matching. If not provided, no hierarchy will be used.
 
 **Signature:**
 
 ```typescript
-hierarchy?: LiteralValueHierarchyDecl<string>;
+hierarchy?: Config.LiteralValueHierarchyDecl<string>;
 ```

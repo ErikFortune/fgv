@@ -397,7 +397,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
               {state.activeTab === 'qualifiers' && (
                 <QualifiersPanel
                   qualifiers={state.currentConfiguration.qualifiers || []}
-                  qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+                  qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
+                    QualifierTypes.Config.isSystemQualifierTypeConfig
+                  )}
                   onUpdateItem={actions.updateQualifier}
                   onRemove={actions.removeQualifier}
                   onShowAdd={() => setShowAddQualifier(true)}
@@ -407,7 +409,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
 
               {state.activeTab === 'qualifierTypes' && (
                 <QualifierTypesPanel
-                  qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+                  qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
+                    QualifierTypes.Config.isSystemQualifierTypeConfig
+                  )}
                   onUpdateItem={actions.updateQualifierType}
                   onRemove={actions.removeQualifierType}
                   onShowAdd={() => setShowAddQualifierType(true)}
@@ -468,7 +472,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
 
       {showAddQualifier && (
         <QualifierEditForm
-          qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+          qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
+            QualifierTypes.Config.isSystemQualifierTypeConfig
+          )}
           onSave={(qualifier) => {
             actions.addQualifier(qualifier);
             setShowAddQualifier(false);
@@ -482,7 +488,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
       {editingQualifier && (
         <QualifierEditForm
           qualifier={editingQualifier.item}
-          qualifierTypes={state.currentConfiguration.qualifierTypes || []}
+          qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
+            QualifierTypes.Config.isSystemQualifierTypeConfig
+          )}
           onSave={(qualifier) => {
             actions.updateQualifier(editingQualifier.index, qualifier);
             setEditingQualifier(null);

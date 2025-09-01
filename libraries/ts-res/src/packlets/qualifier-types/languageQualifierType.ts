@@ -131,7 +131,9 @@ export class LanguageQualifierType extends QualifierType {
    * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
    */
   public getConfiguration(): Result<Config.ISystemLanguageQualifierTypeConfig> {
-    return this.getConfigurationJson().onSuccess(Config.Convert.systemLanguageQualifierTypeConfig.convert);
+    return this.getConfigurationJson().onSuccess((json) =>
+      Config.Convert.systemLanguageQualifierTypeConfig.convert(json)
+    );
   }
 
   /**

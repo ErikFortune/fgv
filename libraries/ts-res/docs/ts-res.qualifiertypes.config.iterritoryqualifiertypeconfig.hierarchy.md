@@ -4,7 +4,7 @@
 
 ## QualifierTypes.Config.ITerritoryQualifierTypeConfig.hierarchy property
 
-Optional [hierarchy declaration](./ts-res.qualifiertypes.literalvaluehierarchydecl.md) of territory values to use for matching. If not provided, no hierarchy will be used.
+Optional [hierarchy declaration](./ts-res.qualifiertypes.config.literalvaluehierarchydecl.md) of territory values to use for matching. If not provided, no hierarchy will be used.
 
 **Signature:**
 

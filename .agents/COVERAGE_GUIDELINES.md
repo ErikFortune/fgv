@@ -4,6 +4,46 @@ This document provides comprehensive guidance for achieving and maintaining 100%
 
 ## Coverage Philosophy: Function-First, Coverage-Second
 
+### Critical: Never Paper Over Legitimate Test Failures
+
+**IMPORTANT**: If tests fail because the functionality being tested is broken, DO NOT work around the failure to make tests pass. This is a critical anti-pattern that hides real bugs and defeats the purpose of testing.
+
+#### When Tests Fail:
+1. **Analyze the failure**: Determine if the failure indicates a real bug in the code being tested
+2. **Report legitimate bugs**: If the test failure reveals a problem with the actual functionality, report it to the user immediately with:
+   - Exact error message
+   - What functionality is broken
+   - Steps to reproduce the issue
+3. **Fix the underlying issue**: Only proceed with test implementation after the underlying bug is fixed
+4. **Never use workarounds**: Do not use mocking, stubbing, or test modifications to bypass legitimate failures
+
+#### Examples of Legitimate Failures That Should NOT Be Hidden:
+- Methods that throw errors when they should return Results
+- Functions that return `undefined` when they should return typed objects  
+- Circular dependency issues that prevent code from working
+- Missing properties or incorrect type conversions
+- Runtime errors in the functionality being tested
+
+#### Valid Test Modifications vs. Invalid Workarounds:
+```typescript
+// ✅ VALID: Testing that a method properly handles expected errors
+expect(parser.parse('invalid-input')).toFailWith(/syntax error/);
+
+// ❌ INVALID: Hiding a broken method with TODO comments
+// TODO: Add test when method is fixed - just verify method exists for now
+expect(typeof brokenMethod.convert).toBe('function');
+
+// ✅ VALID: Using proper test setup for complex scenarios  
+beforeEach(() => {
+  validInstance = createValidInstance().orThrow();
+});
+
+// ❌ INVALID: Mocking to hide that the real method doesn't work
+jest.mock('./brokenModule', () => ({ 
+  brokenMethod: jest.fn().mockReturnValue(mockResult) 
+}));
+```
+
 ### Primary: Functional Testing
 Start by writing tests that "make sense" functionally, focusing on the component's intended behavior:
 

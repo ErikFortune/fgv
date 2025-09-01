@@ -102,7 +102,7 @@ _(Optional)_
 
 </td><td>
 
-[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)<!-- -->&lt;string&gt;
+LiteralValueHierarchyDecl&lt;string&gt;
 
 
 </td><td>

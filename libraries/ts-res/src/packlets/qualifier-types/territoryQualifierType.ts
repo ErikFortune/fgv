@@ -33,7 +33,7 @@ import {
   QualifierTypeName
 } from '../common';
 import { QualifierType } from './qualifierType';
-import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
+import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
 import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
@@ -69,10 +69,10 @@ export interface ITerritoryQualifierTypeCreateParams {
   acceptLowercase?: boolean;
 
   /**
-   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration}
+   * Optional {@link QualifierTypes.Config.LiteralValueHierarchyDecl | hierarchy declaration}
    * of territory values to use for matching. If not provided, no hierarchy will be used.
    */
-  hierarchy?: LiteralValueHierarchyDecl<string>;
+  hierarchy?: Config.LiteralValueHierarchyDecl<string>;
 }
 
 /**
@@ -200,7 +200,9 @@ export class TerritoryQualifierType extends QualifierType {
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public getConfiguration(): Result<Config.ISystemTerritoryQualifierTypeConfig> {
-    return this.getConfigurationJson().onSuccess(Config.Convert.systemTerritoryQualifierTypeConfig.convert);
+    return this.getConfigurationJson().onSuccess((json) =>
+      Config.Convert.systemTerritoryQualifierTypeConfig.convert(json)
+    );
   }
 
   /**

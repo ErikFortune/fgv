@@ -226,4 +226,234 @@ describe('LanguageQualifierType', () => {
       );
     });
   });
+
+  describe('getConfigurationJson', () => {
+    test('returns valid configuration JSON with default settings', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'language',
+            systemType: 'language',
+            configuration: {
+              allowContextList: true
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with custom name', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create({ name: 'custom-lang' })).toSucceedAndSatisfy(
+        (qt) => {
+          expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+            expect(config).toEqual({
+              name: 'custom-lang',
+              systemType: 'language',
+              configuration: {
+                allowContextList: true
+              }
+            });
+          });
+        }
+      );
+    });
+
+    test('returns valid configuration JSON with allowContextList disabled', () => {
+      expect(
+        TsRes.QualifierTypes.LanguageQualifierType.create({ allowContextList: false })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'language',
+            systemType: 'language',
+            configuration: {
+              allowContextList: false
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with all custom settings', () => {
+      const params = {
+        name: 'specialized-language',
+        allowContextList: false,
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'specialized-language',
+            systemType: 'language',
+            configuration: {
+              allowContextList: false
+            }
+          });
+        });
+      });
+    });
+  });
+
+  describe('getConfiguration', () => {
+    test('strongly-typed getConfiguration method exists', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(typeof qt.getConfiguration).toBe('function');
+      });
+    });
+
+    test('returns strongly-typed configuration matching getConfigurationJson', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'language',
+          systemType: 'language',
+          configuration: {
+            allowContextList: true
+          }
+        });
+      });
+    });
+
+    test('getConfiguration returns correct values for custom name', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create({ name: 'custom-lang' })).toSucceedAndSatisfy(
+        (qt) => {
+          expect(qt.getConfiguration()).toSucceedWith({
+            name: 'custom-lang',
+            systemType: 'language',
+            configuration: {
+              allowContextList: true
+            }
+          });
+        }
+      );
+    });
+
+    test('getConfiguration returns correct values with allowContextList disabled', () => {
+      expect(
+        TsRes.QualifierTypes.LanguageQualifierType.create({ allowContextList: false })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'language',
+          systemType: 'language',
+          configuration: {
+            allowContextList: false
+          }
+        });
+      });
+    });
+
+    test('getConfiguration returns correct values with all custom settings', () => {
+      const params = {
+        name: 'specialized-language',
+        allowContextList: false,
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'specialized-language',
+          systemType: 'language',
+          configuration: {
+            allowContextList: false
+          }
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            // Both should return equivalent data structures
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'language',
+              systemType: 'language',
+              configuration: {
+                allowContextList: true
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with custom name', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create({ name: 'custom-lang' })).toSucceedAndSatisfy(
+        (qt) => {
+          expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+            expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+              expect(typedConfig).toEqual(jsonConfig);
+              expect(typedConfig).toEqual({
+                name: 'custom-lang',
+                systemType: 'language',
+                configuration: {
+                  allowContextList: true
+                }
+              });
+            });
+          });
+        }
+      );
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with allowContextList disabled', () => {
+      expect(
+        TsRes.QualifierTypes.LanguageQualifierType.create({ allowContextList: false })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'language',
+              systemType: 'language',
+              configuration: {
+                allowContextList: false
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with all custom settings', () => {
+      const params = {
+        name: 'specialized-language',
+        allowContextList: false,
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'specialized-language',
+              systemType: 'language',
+              configuration: {
+                allowContextList: false
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration method returns strongly typed results', () => {
+      expect(TsRes.QualifierTypes.LanguageQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedAndSatisfy((config) => {
+          // Verify the configuration has the expected structure and types
+          expect(config.name).toBe('language');
+          expect(config.systemType).toBe('language');
+          expect(config.configuration).toBeDefined();
+          if (config.configuration) {
+            expect(config.configuration.allowContextList).toBe(true);
+
+            // The method should provide compile-time type safety
+            // (this is verified by TypeScript compilation, not runtime assertions)
+            expect(typeof config.name).toBe('string');
+            expect(typeof config.systemType).toBe('string');
+            expect(typeof config.configuration.allowContextList).toBe('boolean');
+          }
+        });
+      });
+    });
+  });
 });

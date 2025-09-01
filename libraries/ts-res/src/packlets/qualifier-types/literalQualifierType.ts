@@ -33,7 +33,7 @@ import {
   Validate
 } from '../common';
 import { QualifierType } from './qualifierType';
-import { LiteralValueHierarchy, LiteralValueHierarchyDecl } from './literalValueHierarchy';
+import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
 import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
@@ -67,10 +67,10 @@ export interface ILiteralQualifierTypeCreateParams {
   enumeratedValues?: ReadonlyArray<string>;
 
   /**
-   * Optional {@link QualifierTypes.LiteralValueHierarchyDecl | hierarchy declaration}
+   * Optional {@link QualifierTypes.Config.LiteralValueHierarchyDecl | hierarchy declaration}
    * of literal values to use for matching. If not provided, no hierarchy will be used.
    */
-  hierarchy?: LiteralValueHierarchyDecl<string>;
+  hierarchy?: Config.LiteralValueHierarchyDecl<string>;
 
   /**
    * Global index for this qualifier type.
@@ -179,7 +179,9 @@ export class LiteralQualifierType extends QualifierType {
    * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
    */
   public getConfiguration(): Result<Config.ISystemLiteralQualifierTypeConfig> {
-    return this.getConfigurationJson().onSuccess(Config.Convert.systemLiteralQualifierTypeConfig.convert);
+    return this.getConfigurationJson().onSuccess((json) =>
+      Config.Convert.systemLiteralQualifierTypeConfig.convert(json)
+    );
   }
 
   /**

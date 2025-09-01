@@ -840,6 +840,7 @@ declare namespace Config_2 {
         isSystemQualifierTypeConfig,
         IQualifierTypeConfig,
         ILanguageQualifierTypeConfig,
+        LiteralValueHierarchyDecl,
         ITerritoryQualifierTypeConfig,
         ILiteralQualifierTypeConfig,
         ISystemLanguageQualifierTypeConfig,
@@ -2152,7 +2153,7 @@ interface ILiteralQualifierTypeCreateParams {
     caseSensitive?: boolean;
     enumeratedValues?: ReadonlyArray<string>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    hierarchy?: LiteralValueHierarchyDecl<string>;
+    hierarchy?: Config_2.LiteralValueHierarchyDecl<string>;
     index?: number;
     name?: string;
 }
@@ -3095,7 +3096,7 @@ interface ITerritoryQualifierTypeCreateParams {
     allowContextList?: boolean;
     allowedTerritories?: string[];
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    hierarchy?: LiteralValueHierarchyDecl<string>;
+    hierarchy?: Config_2.LiteralValueHierarchyDecl<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3956,7 +3957,6 @@ declare namespace QualifierTypes {
         LanguageQualifierType,
         ILiteralQualifierTypeCreateParams,
         LiteralQualifierType,
-        LiteralValueHierarchyDecl,
         ILiteralValue,
         ILiteralValueHierarchyCreateParams,
         LiteralValueHierarchy,

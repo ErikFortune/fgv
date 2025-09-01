@@ -30,17 +30,7 @@ import {
   QualifierMatchScore,
   Convert as CommonConverters
 } from '../common';
-
-/**
- * Declares a hierarchy of literal values. The keys are the names of the values, and the
- * values are the names of their parents.
- * @remarks
- * The hierarchy is defined as a tree, where each value can have multiple children but
- * only one parent. The root of the tree has no parent. The hierarchy is used to
- * determine the relationship between values when matching conditions and contexts.
- * @public
- */
-export type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
+import { LiteralValueHierarchyDecl } from './config';
 
 /**
  * Describes a single valid literal value including optional parent and child values.

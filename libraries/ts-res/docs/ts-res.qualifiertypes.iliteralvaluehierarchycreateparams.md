@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[LiteralValueHierarchyDecl](./ts-res.qualifiertypes.literalvaluehierarchydecl.md)<!-- -->&lt;T&gt;
+LiteralValueHierarchyDecl&lt;T&gt;
 
 
 </td><td>

@@ -888,4 +888,408 @@ describe('TerritoryQualifierType', () => {
       });
     });
   });
+
+  describe('getConfigurationJson', () => {
+    test('returns valid configuration JSON with default settings', () => {
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'territory',
+            systemType: 'territory',
+            configuration: {
+              allowContextList: false,
+              acceptLowercase: false
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with custom name and allowContextList enabled', () => {
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          name: 'custom-territory',
+          allowContextList: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'custom-territory',
+            systemType: 'territory',
+            configuration: {
+              allowContextList: true,
+              acceptLowercase: false
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with acceptLowercase enabled', () => {
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          acceptLowercase: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'territory',
+            systemType: 'territory',
+            configuration: {
+              allowContextList: false,
+              acceptLowercase: true
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with allowedTerritories', () => {
+      const allowedTerritories = ['US', 'CA', 'MX'];
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'territory',
+            systemType: 'territory',
+            configuration: {
+              allowContextList: false,
+              acceptLowercase: false,
+              allowedTerritories: ['US', 'CA', 'MX']
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with hierarchy', () => {
+      const hierarchy = {
+        US: 'NA',
+        CA: 'NA',
+        MX: 'NA'
+      };
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories: ['US', 'CA', 'MX', 'NA'],
+          hierarchy
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'territory',
+            systemType: 'territory',
+            configuration: {
+              allowContextList: false,
+              acceptLowercase: false,
+              allowedTerritories: ['US', 'CA', 'MX', 'NA'],
+              hierarchy
+            }
+          });
+        });
+      });
+    });
+
+    test('returns valid configuration JSON with all custom settings', () => {
+      const params = {
+        name: 'specialized-territory',
+        allowContextList: true,
+        acceptLowercase: true,
+        allowedTerritories: ['US', 'GB', 'DE'],
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((config) => {
+          expect(config).toEqual({
+            name: 'specialized-territory',
+            systemType: 'territory',
+            configuration: {
+              allowContextList: true,
+              acceptLowercase: true,
+              allowedTerritories: ['US', 'GB', 'DE']
+            }
+          });
+        });
+      });
+    });
+  });
+
+  describe('getConfiguration', () => {
+    test('strongly-typed getConfiguration method exists', () => {
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(typeof qt.getConfiguration).toBe('function');
+      });
+    });
+
+    test('returns strongly-typed configuration matching getConfigurationJson', () => {
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: false,
+            acceptLowercase: false
+          }
+        });
+      });
+    });
+
+    test('getConfiguration returns correct values for custom settings', () => {
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          name: 'custom-territory',
+          allowContextList: true,
+          acceptLowercase: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'custom-territory',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: true,
+            acceptLowercase: true
+          }
+        });
+      });
+    });
+
+    test('getConfiguration returns correct values with allowedTerritories', () => {
+      const allowedTerritories = ['US', 'CA', 'MX'];
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: false,
+            acceptLowercase: false,
+            allowedTerritories: ['US', 'CA', 'MX']
+          }
+        });
+      });
+    });
+
+    test('getConfiguration returns correct values with hierarchy', () => {
+      const hierarchy = {
+        US: 'NA',
+        CA: 'NA',
+        MX: 'NA'
+      };
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories: ['US', 'CA', 'MX', 'NA'],
+          hierarchy
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedWith({
+          name: 'territory',
+          systemType: 'territory',
+          configuration: {
+            allowContextList: false,
+            acceptLowercase: false,
+            allowedTerritories: ['US', 'CA', 'MX', 'NA'],
+            hierarchy
+          }
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data', () => {
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            // Both should return equivalent data structures
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'territory',
+              systemType: 'territory',
+              configuration: {
+                allowContextList: false,
+                acceptLowercase: false
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with custom settings', () => {
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          name: 'custom-territory',
+          allowContextList: true,
+          acceptLowercase: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'custom-territory',
+              systemType: 'territory',
+              configuration: {
+                allowContextList: true,
+                acceptLowercase: true
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with acceptLowercase enabled', () => {
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          acceptLowercase: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'territory',
+              systemType: 'territory',
+              configuration: {
+                allowContextList: false,
+                acceptLowercase: true
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with allowedTerritories', () => {
+      const allowedTerritories = ['US', 'CA', 'MX'];
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'territory',
+              systemType: 'territory',
+              configuration: {
+                allowContextList: false,
+                acceptLowercase: false,
+                allowedTerritories: ['US', 'CA', 'MX']
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with hierarchy', () => {
+      const hierarchy = {
+        US: 'NA',
+        CA: 'NA',
+        MX: 'NA'
+      };
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories: ['US', 'CA', 'MX', 'NA'],
+          hierarchy
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'territory',
+              systemType: 'territory',
+              configuration: {
+                allowContextList: false,
+                acceptLowercase: false,
+                allowedTerritories: ['US', 'CA', 'MX', 'NA'],
+                hierarchy
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration and getConfigurationJson return equivalent data with all custom settings', () => {
+      const params = {
+        name: 'specialized-territory',
+        allowContextList: true,
+        acceptLowercase: true,
+        allowedTerritories: ['US', 'GB', 'DE'],
+        index: 42
+      };
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create(params)).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfigurationJson()).toSucceedAndSatisfy((jsonConfig) => {
+          expect(qt.getConfiguration()).toSucceedAndSatisfy((typedConfig) => {
+            expect(typedConfig).toEqual(jsonConfig);
+            expect(typedConfig).toEqual({
+              name: 'specialized-territory',
+              systemType: 'territory',
+              configuration: {
+                allowContextList: true,
+                acceptLowercase: true,
+                allowedTerritories: ['US', 'GB', 'DE']
+              }
+            });
+          });
+        });
+      });
+    });
+
+    test('getConfiguration method returns strongly typed results', () => {
+      expect(TsRes.QualifierTypes.TerritoryQualifierType.create()).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedAndSatisfy((config) => {
+          // Verify the configuration has the expected structure and types
+          expect(config.name).toBe('territory');
+          expect(config.systemType).toBe('territory');
+          expect(config.configuration).toBeDefined();
+          if (config.configuration) {
+            expect(config.configuration.allowContextList).toBe(false);
+            expect(config.configuration.acceptLowercase).toBe(false);
+
+            // The method should provide compile-time type safety
+            // (this is verified by TypeScript compilation, not runtime assertions)
+            expect(typeof config.name).toBe('string');
+            expect(typeof config.systemType).toBe('string');
+            expect(typeof config.configuration.allowContextList).toBe('boolean');
+            expect(typeof config.configuration.acceptLowercase).toBe('boolean');
+          }
+        });
+      });
+    });
+
+    test('getConfiguration method returns strongly typed results with complex configuration', () => {
+      const allowedTerritories = ['US', 'CA', 'MX'];
+      const hierarchy = { US: 'NA', CA: 'NA', MX: 'NA' };
+      expect(
+        TsRes.QualifierTypes.TerritoryQualifierType.create({
+          allowedTerritories: [...allowedTerritories, 'NA'],
+          hierarchy,
+          acceptLowercase: true
+        })
+      ).toSucceedAndSatisfy((qt) => {
+        expect(qt.getConfiguration()).toSucceedAndSatisfy((config) => {
+          // Verify complex configuration structures
+          if (config.configuration) {
+            expect(config.configuration.allowedTerritories).toEqual(['US', 'CA', 'MX', 'NA']);
+            expect(config.configuration.hierarchy).toEqual(hierarchy);
+            expect(config.configuration.acceptLowercase).toBe(true);
+
+            // Type safety verification
+            expect(Array.isArray(config.configuration.allowedTerritories)).toBe(true);
+            expect(typeof config.configuration.hierarchy).toBe('object');
+            expect(config.configuration.hierarchy).not.toBeNull();
+          }
+        });
+      });
+    });
+  });
 });

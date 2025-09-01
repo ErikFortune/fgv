@@ -18,12 +18,7 @@ import {
   Qualifiers,
   ResourceTypes
 } from '@fgv/ts-res';
-import {
-  processImportedFiles,
-  processImportedDirectory,
-  createSimpleContext,
-  createTsResSystemFromConfig
-} from '../utils/tsResIntegration';
+import { processImportedFiles, processImportedDirectory } from '../utils/tsResIntegration';
 
 /**
  * Parameters for the useResourceData hook.
@@ -313,89 +308,60 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         }).orThrow()
       };
 
-      // Extract configuration for UI display using the collector API
-      // Note: The collectors contain instantiated objects, not raw config
+      // Extract configuration for UI display using the new getConfigurationJson method
+      const qualifierTypesResult = Array.from(system.qualifierTypes.values()).map((qt) =>
+        qt
+          .getConfigurationJson()
+          .onSuccess((jsonConfig) => QualifierTypes.Config.Convert.anyQualifierTypeConfig.convert(jsonConfig))
+      );
+
+      // Check if any qualifier type extraction failed
+      const failedQualifierTypes = qualifierTypesResult.filter((result) => result.isFailure());
+      if (failedQualifierTypes.length > 0) {
+        throw new Error(
+          `Failed to extract qualifier type configurations: ${failedQualifierTypes
+            .map((r) => r.message)
+            .join(', ')}`
+        );
+      }
+
+      // Filter to only system qualifier types for UI compatibility
+      const allQualifierTypes = qualifierTypesResult
+        .map((result) => result.value)
+        .filter((config): config is QualifierTypes.Config.IAnyQualifierTypeConfig => config !== undefined);
+      const systemQualifierTypes = allQualifierTypes.filter(
+        QualifierTypes.Config.isSystemQualifierTypeConfig
+      );
+
       const configForStorage: Config.Model.ISystemConfiguration = {
         name: 'Bundle Configuration',
         description: metadata?.description || 'Configuration extracted from bundle',
-        qualifierTypes: Array.from(system.qualifierTypes.values()).map((qt) => {
-          console.log('[Bundle Processing] Extracting qualifier type:', qt);
-          // Determine the system type based on the class name
-          let systemType: 'literal' | 'language' | 'territory' = 'literal';
-          if (qt.constructor?.name === 'LanguageQualifierType') {
-            systemType = 'language';
-          } else if (qt.constructor?.name === 'TerritoryQualifierType') {
-            systemType = 'territory';
-          } else if (qt.constructor?.name === 'LiteralQualifierType') {
-            systemType = 'literal';
-          }
-
-          // Extract configuration properties based on type
-          const configuration: Record<string, unknown> = {};
-
-          // Common properties
-          if (qt.allowContextList !== undefined) {
-            configuration.allowContextList = qt.allowContextList;
-          }
-
-          // LiteralQualifierType specific
-          if (systemType === 'literal') {
-            const qtAny = qt as unknown as Record<string, unknown>;
-            if (qtAny.caseSensitive !== undefined) {
-              configuration.caseSensitive = qtAny.caseSensitive;
-            }
-            if (qtAny.enumeratedValues) {
-              configuration.enumeratedValues = qtAny.enumeratedValues;
-            }
-            if (qtAny.hierarchy) {
-              configuration.hierarchy = qtAny.hierarchy;
-            }
-          }
-
-          // TerritoryQualifierType specific
-          if (systemType === 'territory') {
-            const qtAny = qt as unknown as Record<string, unknown>;
-            if (qtAny.acceptLowercase !== undefined) {
-              configuration.acceptLowercase = qtAny.acceptLowercase;
-            }
-            if (qtAny.allowedTerritories) {
-              configuration.allowedTerritories = qtAny.allowedTerritories;
-            }
-          }
-
-          return {
-            name: qt.name,
-            systemType: systemType,
-            configuration: configuration
-          };
-        }),
+        qualifierTypes: systemQualifierTypes as QualifierTypes.Config.ISystemQualifierTypeConfig[],
         qualifiers: Array.from(system.qualifiers.values()).map((q) => {
           console.log('[Bundle Processing] Extracting qualifier:', q);
           // Instantiated Qualifier objects have .type property which is a QualifierType object
-          const qAny = q as unknown as Record<string, unknown>;
-          const typeName = (q.type as QualifierTypes.QualifierType)?.name || qAny.typeName;
+          const typeName = q.type.name;
           if (!typeName) {
             console.error('[Bundle Processing] Missing typeName for qualifier:', q);
           }
           return {
             name: q.name,
-            typeName: (typeName || 'unknown') as string,
+            typeName,
             token: q.token,
-            defaultPriority: q.defaultPriority || 500,
-            defaultValue: q.defaultValue,
-            tokenIsOptional: q.tokenIsOptional || false
-          } as Qualifiers.IQualifierDecl;
+            defaultPriority: q.defaultPriority,
+            tokenIsOptional: q.tokenIsOptional,
+            ...(q.defaultValue !== undefined ? { defaultValue: q.defaultValue } : {})
+          };
         }),
         resourceTypes: Array.from(system.resourceTypes.values()).map((rt, index: number) => {
           console.log('[Bundle Processing] Extracting resource type:', rt);
           // ResourceTypes in bundles might not have a name property
           // Default to 'json' for JsonResourceType
-          const rtAny = rt as unknown as Record<string, unknown>;
-          const typeName = rt.constructor?.name === 'JsonResourceType' ? 'json' : rtAny.typeName || 'json';
+          const typeName = rt.systemTypeName;
           return {
-            name: (rtAny.name || `resourceType${index}`) as string, // Provide a default name if missing
-            typeName: typeName as string
-          } as ResourceTypes.Config.IResourceTypeConfig;
+            name: rt.key,
+            typeName: rt.systemTypeName
+          };
         })
       };
 
@@ -577,12 +543,18 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
       ...prev,
       processedResources: {
         // Preserve activeConfiguration and bundle metadata from existing state as defaults
-        ...(prev.processedResources?.activeConfiguration && { activeConfiguration: prev.processedResources.activeConfiguration }),
-        ...(prev.processedResources?.isLoadedFromBundle !== undefined && { isLoadedFromBundle: prev.processedResources.isLoadedFromBundle }),
-        ...(prev.processedResources?.bundleMetadata && { bundleMetadata: prev.processedResources.bundleMetadata }),
+        ...(prev.processedResources?.activeConfiguration && {
+          activeConfiguration: prev.processedResources.activeConfiguration
+        }),
+        ...(prev.processedResources?.isLoadedFromBundle !== undefined && {
+          isLoadedFromBundle: prev.processedResources.isLoadedFromBundle
+        }),
+        ...(prev.processedResources?.bundleMetadata && {
+          bundleMetadata: prev.processedResources.bundleMetadata
+        }),
         // Then spread the new processedResources, which can override the defaults above
         ...processedResources
-      } as ExtendedProcessedResources,
+      },
       hasProcessedData: true
     }));
   }, []);
