@@ -47,7 +47,6 @@ A `string` ([CageId](./ts-sudoku-lib.cageid.md)<!-- -->) or [ICage](./ts-sudoku-
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Set&lt;number&gt;
