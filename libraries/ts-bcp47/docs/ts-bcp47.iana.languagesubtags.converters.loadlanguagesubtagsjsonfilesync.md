@@ -45,6 +45,7 @@ String path from which file is to be loaded.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;Model.RegistryFile&gt;
