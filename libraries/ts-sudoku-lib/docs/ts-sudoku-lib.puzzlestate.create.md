@@ -47,7 +47,6 @@ An array of [CellState](./ts-sudoku-lib.icellstate.md) used to initialize the st
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[PuzzleState](./ts-sudoku-lib.puzzlestate.md)<!-- -->&gt;

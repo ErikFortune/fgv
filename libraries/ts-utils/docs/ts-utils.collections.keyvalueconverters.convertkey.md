@@ -47,7 +47,6 @@ The unknown to be converted.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TK, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;

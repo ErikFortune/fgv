@@ -47,7 +47,6 @@ The string ID of the puzzle to be returned.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)<!-- -->&gt;

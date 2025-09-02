@@ -47,7 +47,6 @@ The map function to be applied to each element of the result of this [Converter]
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TI\[\], TC&gt;

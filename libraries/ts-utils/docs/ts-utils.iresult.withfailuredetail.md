@@ -47,7 +47,6 @@ The detail to be added if this operation failed.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

@@ -47,4 +47,3 @@ _(Optional)_ Optional partial [configuration or context](./ts-json.conditionaljs
 
 </td></tr>
 </tbody></table>
-

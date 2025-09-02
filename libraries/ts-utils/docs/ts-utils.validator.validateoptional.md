@@ -63,7 +63,6 @@ _(Optional)_ Optional validation context.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T \| undefined&gt;

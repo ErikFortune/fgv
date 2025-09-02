@@ -47,7 +47,6 @@ the messages to add.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 this

@@ -62,14 +62,4 @@ Description
 
 
 </td></tr>
-<tr><td>
-
-[ZipFileTree](./ts-extras.zipfiletree.md)
-
-
-</td><td>
-
-
-</td></tr>
 </tbody></table>
-

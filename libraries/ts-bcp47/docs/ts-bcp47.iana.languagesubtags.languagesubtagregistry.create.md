@@ -43,7 +43,6 @@ RegistryFile
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;LanguageSubtagRegistry&gt;

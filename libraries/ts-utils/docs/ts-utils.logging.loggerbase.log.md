@@ -4,12 +4,10 @@
 
 ## Logging.LoggerBase.log() method
 
-Logs a message at the given level.
-
 **Signature:**
 
 ```typescript
-log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+log(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
 ```
 
 ## Parameters
@@ -32,22 +30,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-level
-
-
-</td><td>
-
-[MessageLogLevel](./ts-utils.messageloglevel.md)
-
-
-</td><td>
-
-The level of the message.
-
-
-</td></tr>
-<tr><td>
-
 message
 
 
@@ -58,7 +40,7 @@ unknown
 
 </td><td>
 
-_(Optional)_ The message to log.
+_(Optional)_
 
 
 </td></tr>
@@ -74,15 +56,10 @@ unknown\[\]
 
 </td><td>
 
-The parameters to log.
-
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;string \| undefined&gt;
-
-`Success` with the logged message if the level is enabled, or `Success` with `undefined` if the message is suppressed.
 

@@ -63,7 +63,6 @@ _(Optional)_ An optional conversion context of type `<TC>` to be used in the con
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

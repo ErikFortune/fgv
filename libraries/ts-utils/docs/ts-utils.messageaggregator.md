@@ -212,4 +212,3 @@ Returns all messages as a single string joined using the optionally-supplied `se
 
 </td></tr>
 </tbody></table>
-

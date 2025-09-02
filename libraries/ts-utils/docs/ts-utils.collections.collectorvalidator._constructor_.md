@@ -47,4 +47,3 @@ Required parameters for constructing the collector validator.
 
 </td></tr>
 </tbody></table>
-

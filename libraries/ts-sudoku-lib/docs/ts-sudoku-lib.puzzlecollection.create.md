@@ -47,7 +47,6 @@ The  to be loaded.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[PuzzleCollection](./ts-sudoku-lib.puzzlecollection.md)<!-- -->&gt;

@@ -63,7 +63,6 @@ _(Optional)_ optional context for the conversion.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;T \| TD&gt;

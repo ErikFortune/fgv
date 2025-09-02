@@ -29,4 +29,3 @@ Determines if a supplied value is an iterable object or some other type.
 
 </td></tr>
 </tbody></table>
-

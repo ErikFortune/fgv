@@ -63,7 +63,6 @@ _(Optional)_ The item to be tested.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 boolean

@@ -63,7 +63,6 @@ _(Optional)_ An optional
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T, TC&gt;

@@ -47,7 +47,6 @@ The action to be applied.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T2, TC&gt;

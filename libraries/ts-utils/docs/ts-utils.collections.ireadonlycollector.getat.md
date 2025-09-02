@@ -47,7 +47,6 @@ The index of the item to retrieve.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;TITEM&gt;

@@ -47,7 +47,6 @@ _(Optional)_ [Range initializer](./ts-extras.experimental.rangeofproperties.md)<
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[RangeOf](./ts-extras.experimental.rangeof.md)<!-- -->&lt;T&gt;&gt;

@@ -47,4 +47,3 @@ The [constructor params](./ts-utils.validation.base.genericvalidatorconstructorp
 
 </td></tr>
 </tbody></table>
-

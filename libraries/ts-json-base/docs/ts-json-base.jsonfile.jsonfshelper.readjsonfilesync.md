@@ -47,7 +47,6 @@ Path of the file to read
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;

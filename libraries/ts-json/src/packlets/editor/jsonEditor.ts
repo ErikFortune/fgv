@@ -49,7 +49,6 @@ import {
 import { IJsonContext } from '../context';
 import {
   IJsonCloneEditor,
-  IJsonEditorMergeOptions,
   IJsonEditorOptions,
   IJsonEditorValidationOptions,
   JsonEditFailureReason,
@@ -138,11 +137,6 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Creates a complete IJsonEditorOptions object from partial options, filling in
-   * default values for any missing properties. This ensures all editor instances
-   * have consistent, complete configuration including validation rules and merge behavior.
-   * @param options - Optional partial editor options to merge with defaults
-   * @returns Success with complete editor options, or Failure if validation fails
    * @internal
    */
   protected static _getDefaultOptions(options?: Partial<IJsonEditorOptions>): Result<IJsonEditorOptions> {
@@ -155,19 +149,7 @@ export class JsonEditor implements IJsonCloneEditor {
         onUndefinedPropertyValue: 'ignore'
       };
     }
-    let merge: IJsonEditorMergeOptions | undefined = options?.merge;
-    if (merge === undefined) {
-      merge = {
-        arrayMergeBehavior: 'append',
-        nullAsDelete: false
-      };
-    } else {
-      merge = {
-        arrayMergeBehavior: merge.arrayMergeBehavior,
-        nullAsDelete: merge.nullAsDelete ?? false
-      };
-    }
-    return succeed({ context, validation, merge });
+    return succeed({ context, validation });
   }
 
   /**
@@ -250,7 +232,7 @@ export class JsonEditor implements IJsonCloneEditor {
     if (isJsonPrimitive(value) || value === null) {
       return succeedWithDetail(value, 'edited');
     } else if (isJsonObject(value)) {
-      return this._cloneObjectWithoutNullAsDelete({}, value, state);
+      return this.mergeObjectInPlace({}, value, state.context).withFailureDetail('error');
     } else if (isJsonArray(value)) {
       return this._cloneArray(value, state.context);
     } else if (value === undefined) {
@@ -263,13 +245,11 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Merges properties from a source object into a target object, applying editor rules and
-   * null-as-delete logic. This is the core merge implementation that handles property-by-property
-   * merging with rule processing and deferred property handling.
-   * @param target - The target object to merge properties into
-   * @param src - The source object containing properties to merge
-   * @param state - The editor state containing options and context
-   * @returns Success with the modified target object, or Failure with error details
+   *
+   * @param target -
+   * @param src -
+   * @param state -
+   * @returns
    * @internal
    */
   protected _mergeObjectInPlace(
@@ -279,10 +259,6 @@ export class JsonEditor implements IJsonCloneEditor {
   ): Result<JsonObject> {
     for (const key in src) {
       if (src.hasOwnProperty(key)) {
-        // Skip dangerous property names to prevent prototype pollution
-        if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-          continue;
-        }
         const propResult = this._editProperty(key, src[key], state);
         if (propResult.isSuccess()) {
           if (propResult.detail === 'deferred') {
@@ -312,12 +288,10 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Creates a deep clone of a JSON array by recursively cloning each element.
-   * Each array element is cloned using the main clone method, preserving the
-   * editor's rules and validation settings.
-   * @param src - The source JSON array to clone
-   * @param context - Optional JSON context for cloning operations
-   * @returns Success with the cloned array, or Failure with error details
+   *
+   * @param src -
+   * @param context -
+   * @returns
    * @internal
    */
   protected _cloneArray(
@@ -336,15 +310,12 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Merges a single cloned property value into a target object. This method handles
-   * the core merge logic including null-as-delete behavior, array merging, and
-   * recursive object merging. The null-as-delete check occurs before primitive
-   * handling to ensure null values can signal property deletion.
-   * @param target - The target object to merge the property into
-   * @param key - The property key being merged
-   * @param newValue - The cloned value to merge (from source object)
-   * @param state - The editor state containing merge options and context
-   * @returns Success with the merged value, or Failure with error details
+   *
+   * @param target -
+   * @param key -
+   * @param newValue -
+   * @param state -
+   * @returns
    * @internal
    */
   protected _mergeClonedProperty(
@@ -353,19 +324,7 @@ export class JsonEditor implements IJsonCloneEditor {
     newValue: JsonValue,
     state: JsonEditorState
   ): DetailedResult<JsonValue, JsonEditFailureReason> {
-    // Skip dangerous property names to prevent prototype pollution
-    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-      return succeedWithDetail(newValue, 'edited');
-    }
-
     const existing = target[key];
-
-    // Handle null-as-delete behavior before primitive check
-    /* c8 ignore next 1 - ? is defense in depth */
-    if (newValue === null && state.options.merge?.nullAsDelete === true) {
-      delete target[key];
-      return succeedWithDetail(null, 'edited');
-    }
 
     // merge is called right after clone so this should never happen
     // since clone itself will have failed
@@ -386,19 +345,7 @@ export class JsonEditor implements IJsonCloneEditor {
     /* c8 ignore else */
     if (isJsonArray(newValue)) {
       if (isJsonArray(existing)) {
-        /* c8 ignore next 1 - ?? is defense in depth */
-        const arrayMergeBehavior = state.options.merge?.arrayMergeBehavior ?? 'append';
-        switch (arrayMergeBehavior) {
-          case 'append':
-            target[key] = existing.concat(...newValue);
-            break;
-          case 'replace':
-            target[key] = newValue;
-            break;
-          /* c8 ignore next 2 - exhaustive switch for ArrayMergeBehavior type */
-          default:
-            return failWithDetail(`Invalid array merge behavior: ${arrayMergeBehavior as string}`, 'error');
-        }
+        target[key] = existing.concat(...newValue);
         return succeedWithDetail(target[key], 'edited');
       }
       target[key] = newValue;
@@ -409,13 +356,11 @@ export class JsonEditor implements IJsonCloneEditor {
   } /* c8 ignore stop */
 
   /**
-   * Applies editor rules to a single property during merge operations. This method
-   * iterates through all configured editor rules to process the property, handling
-   * templates, conditionals, multi-value properties, and references.
-   * @param key - The property key to edit
-   * @param value - The property value to edit
-   * @param state - The editor state containing rules and context
-   * @returns Success with transformed property object, or Failure if rules cannot process
+   *
+   * @param key -
+   * @param value -
+   * @param state -
+   * @returns
    * @internal
    */
   protected _editProperty(
@@ -433,12 +378,10 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Applies editor rules to a single JSON value during clone operations. This method
-   * iterates through all configured editor rules to process the value, handling
-   * templates, conditionals, multi-value expressions, and references.
-   * @param value - The JSON value to edit and transform
-   * @param state - The editor state containing rules and context
-   * @returns Success with transformed value, or Failure if rules cannot process
+   *
+   * @param value -
+   * @param state -
+   * @returns
    * @internal
    */
   protected _editValue(
@@ -455,46 +398,10 @@ export class JsonEditor implements IJsonCloneEditor {
   }
 
   /**
-   * Clone an object without applying null-as-delete behavior.
-   * This preserves null values during cloning so they can be used for deletion signaling during merge.
-   * @param target - The target object to clone into
-   * @param src - The source object to clone
-   * @param state - The editor state
-   * @returns The cloned object
-   * @internal
-   */
-  protected _cloneObjectWithoutNullAsDelete(
-    target: JsonObject,
-    src: JsonObject,
-    state: JsonEditorState
-  ): DetailedResult<JsonObject, JsonEditFailureReason> {
-    // Temporarily disable null-as-delete during cloning
-    const modifiedOptions: IJsonEditorOptions = {
-      context: state.options.context,
-      validation: state.options.validation,
-      merge: {
-        /* c8 ignore next 1 - ? is defense in depth */
-        arrayMergeBehavior: state.options.merge?.arrayMergeBehavior ?? 'append',
-        nullAsDelete: false
-      }
-    };
-    const modifiedState = new JsonEditorState(state.editor, modifiedOptions, state.context);
-
-    return this._mergeObjectInPlace(target, src, modifiedState)
-      .onSuccess((merged) => {
-        return this._finalizeAndMerge(merged, modifiedState);
-      })
-      .withFailureDetail('error');
-  }
-
-  /**
-   * Finalizes the merge operation by processing any deferred properties and merging
-   * them into the target object. Deferred properties are those that require special
-   * processing after the initial merge phase, such as references that depend on
-   * other properties being resolved first.
-   * @param target - The target object that has been merged
-   * @param state - The editor state containing deferred properties and rules
-   * @returns Success with the finalized target object, or Failure with error details
+   *
+   * @param target -
+   * @param state -
+   * @returns
    * @internal
    */
   protected _finalizeAndMerge(

@@ -79,7 +79,6 @@ _(Optional)_ (optional) The current [validity level](./ts-bcp47.bcp47.tagvalidit
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;boolean&gt;

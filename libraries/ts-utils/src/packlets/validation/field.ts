@@ -75,7 +75,7 @@ export class FieldValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
   /**
    * {@inheritdoc Validation.ValidatorBase._validate}
    */
-  protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {
+  protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
     if (typeof from === 'object' && !Array.isArray(from) && from !== null) {
       const optional = this._fieldOptions.optional === true;
 

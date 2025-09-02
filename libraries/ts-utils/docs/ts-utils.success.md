@@ -155,7 +155,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[aggregateError(\_\_errors)](./ts-utils.success.aggregateerror.md)
+[aggregateError(errors)](./ts-utils.success.aggregateerror.md)
 
 
 </td><td>
@@ -283,7 +283,7 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td></tr>
 <tr><td>
 
-[orThrow(logger)](./ts-utils.success.orthrow.md)
+[orThrow(\_\_logger)](./ts-utils.success.orthrow.md)
 
 
 </td><td>
@@ -292,50 +292,6 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td><td>
 
 Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
-
-
-</td></tr>
-<tr><td>
-
-[orThrow(cb)](./ts-utils.success.orthrow_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
-
-
-</td></tr>
-<tr><td>
-
-[report(reporter, options)](./ts-utils.success.report.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Reports the result to the supplied reporter
-
-
-</td></tr>
-<tr><td>
-
-[with(value)](./ts-utils.success.with.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Creates a [Success&lt;T&gt;](./ts-utils.success.md) with the supplied value.
 
 
 </td></tr>
@@ -382,4 +338,3 @@ Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, 
 
 </td></tr>
 </tbody></table>
-

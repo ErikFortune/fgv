@@ -329,4 +329,3 @@ Describes the validation level of a particular tag.
 
 </td></tr>
 </tbody></table>
-

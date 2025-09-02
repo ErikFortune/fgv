@@ -47,7 +47,6 @@ _(Optional)_ An optional default [IJsonContext](./ts-json.ijsoncontext.md) to us
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [TemplateVars](./ts-json.templatevars.md) \| undefined

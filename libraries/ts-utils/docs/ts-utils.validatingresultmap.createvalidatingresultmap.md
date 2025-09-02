@@ -47,7 +47,6 @@ Required parameters for constructing the map.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[ValidatingResultMap](./ts-utils.validatingresultmap.md)<!-- -->&lt;TK, TV&gt;&gt;

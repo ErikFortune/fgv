@@ -47,4 +47,3 @@ _(Optional)_ Optional [initialization parameters](./ts-utils.collections.icollec
 
 </td></tr>
 </tbody></table>
-

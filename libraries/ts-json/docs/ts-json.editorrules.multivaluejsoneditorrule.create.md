@@ -47,7 +47,6 @@ _(Optional)_ Optional [configuration options](./ts-json.ijsoneditoroptions.md)<!
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[MultiValueJsonEditorRule](./ts-json.editorrules.multivaluejsoneditorrule.md)<!-- -->&gt;

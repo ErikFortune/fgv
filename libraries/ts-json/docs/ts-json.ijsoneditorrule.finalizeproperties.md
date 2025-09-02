@@ -63,7 +63,6 @@ state
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 DetailedResult&lt;JsonObject\[\], [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

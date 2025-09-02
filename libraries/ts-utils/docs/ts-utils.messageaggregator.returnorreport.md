@@ -65,7 +65,6 @@ _(Optional)_ Optional string separator used to construct the error message.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

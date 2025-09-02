@@ -56,25 +56,6 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[merge?](./ts-json.ijsoneditoroptions.merge.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[IJsonEditorMergeOptions](./ts-json.ijsoneditormergeoptions.md)
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
 [validation](./ts-json.ijsoneditoroptions.validation.md)
 
 
@@ -91,4 +72,3 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
-

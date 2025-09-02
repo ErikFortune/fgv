@@ -82,4 +82,3 @@ Static method which validates that a supplied `unknown` value is a `boolean`<!--
 
 </td></tr>
 </tbody></table>
-

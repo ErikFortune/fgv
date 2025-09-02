@@ -74,4 +74,3 @@ _(Optional)_ if `onError` is `'fail'` (default), then the entire conversion fail
 
 </td></tr>
 </tbody></table>
-

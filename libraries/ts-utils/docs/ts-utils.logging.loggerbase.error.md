@@ -4,12 +4,10 @@
 
 ## Logging.LoggerBase.error() method
 
-Logs an error message.
-
 **Signature:**
 
 ```typescript
-error(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+error<T>(message?: unknown, ...parameters: unknown[]): Failure<T>;
 ```
 
 ## Parameters
@@ -42,7 +40,7 @@ unknown
 
 </td><td>
 
-_(Optional)_ The message to log.
+_(Optional)_
 
 
 </td></tr>
@@ -58,15 +56,10 @@ unknown\[\]
 
 </td><td>
 
-The parameters to log.
-
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
-[Success](./ts-utils.success.md)<!-- -->&lt;string \| undefined&gt;
-
-`Success` with the logged message if the level is enabled, or `Success` with `undefined` if the message is suppressed.
+[Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;
 

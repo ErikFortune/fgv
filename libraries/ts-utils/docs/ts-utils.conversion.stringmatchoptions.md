@@ -55,4 +55,3 @@ _(Optional)_ An optional message to be displayed if a non-matching string is enc
 
 </td></tr>
 </tbody></table>
-

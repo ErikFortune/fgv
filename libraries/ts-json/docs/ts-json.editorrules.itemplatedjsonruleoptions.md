@@ -75,4 +75,3 @@ _(Optional)_ If `true` (default) then templates in property values are rendered
 
 </td></tr>
 </tbody></table>
-

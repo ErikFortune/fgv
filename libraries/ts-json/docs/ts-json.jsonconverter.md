@@ -82,4 +82,3 @@ Creates a new [JsonConverter](./ts-json.jsonconverter.md)<!-- -->.
 
 </td></tr>
 </tbody></table>
-

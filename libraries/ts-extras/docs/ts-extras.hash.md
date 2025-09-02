@@ -29,4 +29,3 @@ A hashing normalizer which computes object hash using the MD5 algorithm.
 
 </td></tr>
 </tbody></table>
-

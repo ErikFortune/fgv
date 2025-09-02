@@ -66,7 +66,6 @@ _(Optional)_ optional parameters to control the processing
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;unknown&gt;

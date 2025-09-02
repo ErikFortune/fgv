@@ -112,7 +112,6 @@ export function endOfTagRangeOrUndefined<TTAG extends string>(
  * @internal
  */
 export const extlangPrefix = Converters.arrayOf(languageSubtag).map((tags) => {
-  /* c8 ignore next 3 - defense in depth */
   if (tags.length !== 1) {
     return fail<LanguageSubtag>(`[${tags.join(', ')}]: malformed extlang prefix`);
   }

@@ -47,4 +47,3 @@ Optional [init params](./ts-utils.validation.classes.oneofvalidatorconstructorpa
 
 </td></tr>
 </tbody></table>
-

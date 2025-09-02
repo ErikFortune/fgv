@@ -47,7 +47,6 @@ The brand to be applied to the result value.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;[Brand](./ts-utils.brand.md)<!-- -->&lt;T \| TD, B&gt;, TC&gt;

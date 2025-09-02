@@ -75,7 +75,6 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [JsonValue](./ts-json-base.jsonvalue.md) \| undefined

@@ -63,7 +63,6 @@ _(Optional)_ The [format strings](./ts-extras.experimental.rangeofformats.md) us
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 string \| undefined

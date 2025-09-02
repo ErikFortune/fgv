@@ -47,7 +47,6 @@ _(Optional)_ Optional [variable values](./ts-json.variablevalue.md) to be added 
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[TemplateVars](./ts-json.templatevars.md) \| undefined&gt;

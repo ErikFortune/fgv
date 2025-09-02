@@ -63,7 +63,6 @@ _(Optional)_ Optional [params](./ts-utils.validation.classes.oneofvalidatorconst
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->&lt;T, TC&gt;

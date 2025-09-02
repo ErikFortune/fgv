@@ -63,7 +63,6 @@ The source representation of the item to build, or a factory callback to create 
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;TITEM&gt;

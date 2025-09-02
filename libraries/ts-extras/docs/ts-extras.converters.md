@@ -88,4 +88,3 @@ A `Converter` which converts an iso formatted string, a number or a `Date` objec
 
 </td></tr>
 </tbody></table>
-

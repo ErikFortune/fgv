@@ -3,7 +3,6 @@ import { Context, toMatchSnapshot } from 'jest-snapshot';
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';
-import { stripAnsiColors } from '../../utils/colorHelpers';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -41,7 +40,7 @@ export default {
     }
     return toMatchSnapshot.call(
       context,
-      stripAnsiColors(cbResult.value),
+      cbResult.value,
       'toFailTestAndMatchSnapshot'
     ) as jest.CustomMatcherResult;
   }

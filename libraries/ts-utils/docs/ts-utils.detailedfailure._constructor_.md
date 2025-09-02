@@ -9,7 +9,7 @@ Constructs a new [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) w
 **Signature:**
 
 ```typescript
-constructor(message: string, detail?: TD);
+constructor(message: string, detail: TD);
 ```
 
 ## Parameters
@@ -58,9 +58,8 @@ TD
 
 </td><td>
 
-_(Optional)_ The error detail to be returned.
+The error detail to be returned.
 
 
 </td></tr>
 </tbody></table>
-

@@ -150,10 +150,6 @@ describe('JsonConverter module', () => {
           onInvalidPropertyName: 'error',
           onInvalidPropertyValue: 'error',
           onUndefinedPropertyValue: 'ignore'
-        },
-        merge: {
-          arrayMergeBehavior: 'append',
-          nullAsDelete: false
         }
       };
 

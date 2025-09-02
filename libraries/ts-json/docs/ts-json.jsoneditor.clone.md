@@ -63,7 +63,6 @@ _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) supplying var
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 DetailedResult&lt;JsonValue, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

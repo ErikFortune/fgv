@@ -54,12 +54,6 @@ export interface IReadOnlyCollector<
    * with an error if the index is out of range.
    */
   getAt(index: number): Result<TITEM>;
-
-  /**
-   * Gets all items in the collection, ordered by index.
-   * @returns An array of items in the collection, ordered by index.
-   */
-  valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
 /**
@@ -153,7 +147,7 @@ export class Collector<
   /**
    * {@inheritdoc Collections.ResultMap.entries}
    */
-  public entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
+  public entries(): MapIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey.entries();
   }
 
@@ -256,13 +250,6 @@ export class Collector<
    */
   public values(): IterableIterator<TITEM> {
     return this._byKey.values();
-  }
-
-  /**
-   * {@inheritdoc Collections.IReadOnlyCollector.valuesByIndex}
-   */
-  public valuesByIndex(): ReadonlyArray<TITEM> {
-    return this._byIndex;
   }
 
   /**

@@ -83,7 +83,7 @@ _(Optional)_
 
 </td><td>
 
-[ValidatorFunc](./ts-utils.validation.validatorfunc.md)<!-- -->&lt;T, TC&gt;
+[ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>
@@ -93,4 +93,3 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
-

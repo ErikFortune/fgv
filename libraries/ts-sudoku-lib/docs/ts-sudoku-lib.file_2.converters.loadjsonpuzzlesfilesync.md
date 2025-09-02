@@ -47,7 +47,6 @@ String path to the file
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[IPuzzlesFile](./ts-sudoku-lib.file_2.model.ipuzzlesfile.md)<!-- -->&gt;

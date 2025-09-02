@@ -231,28 +231,6 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td></tr>
 <tr><td>
 
-[orThrow(cb)](./ts-utils.iresult.orthrow_1.md)
-
-
-</td><td>
-
-Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
-
-
-</td></tr>
-<tr><td>
-
-[report(reporter, options)](./ts-utils.iresult.report.md)
-
-
-</td><td>
-
-Reports the result to the supplied reporter
-
-
-</td></tr>
-<tr><td>
-
 [withDetail(detail, successDetail)](./ts-utils.iresult.withdetail.md)
 
 
@@ -285,4 +263,3 @@ Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, 
 
 </td></tr>
 </tbody></table>
-

@@ -9,11 +9,11 @@ Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) enco
 **Signature:**
 
 ```typescript
-export type DetailedFailureContinuation<T, TD> = (message: string, detail?: TD) => DetailedResult<T, TD>;
+export type DetailedFailureContinuation<T, TD> = (message: string, detail: TD) => DetailedResult<T, TD>;
 ```
 **References:** [DetailedResult](./ts-utils.detailedresult.md)
 
 ## Remarks
 
-A failure callback can change [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) to [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) (e.g. by returning a default value) or it can change or embellish the error message, but it cannot change the success return type.
+A failure callback can change [Failure](./ts-utils.failure.md) to [Success](./ts-utils.success.md) (e.g. by returning a default value) or it can change or embellish the error message, but it cannot change the success return type.
 

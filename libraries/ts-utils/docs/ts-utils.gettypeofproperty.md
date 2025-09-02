@@ -63,7 +63,6 @@ The object from which the property is to be tested.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 'string' \| 'number' \| 'bigint' \| 'boolean' \| 'symbol' \| 'undefined' \| 'undefined' \| 'object' \| 'function' \| undefined

@@ -47,7 +47,6 @@ An optional iterable to initialize the map.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;&gt;

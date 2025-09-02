@@ -44,7 +44,7 @@ export abstract class ValidatorBase<T, TC = unknown> extends GenericValidator<T,
    */
   protected constructor(params: Partial<ValidatorBaseConstructorParams<T, TC>>) {
     super({
-      validator: (from, context, self) => this._validate(from, context, self),
+      validator: (from, context) => this._validate(from, context),
       ...params
     });
   }
@@ -53,14 +53,9 @@ export abstract class ValidatorBase<T, TC = unknown> extends GenericValidator<T,
    * Abstract validation method to me implemented by derived classes.
    * @param from - Value to be converted.
    * @param context - Optional validation context.
-   * @param self - Optional self-reference for recursive validation.
    * @returns `true` if `from` is valid, {@link Failure | Failure<T>}
    * with an error message if `from` is invalid.
    * @internal
    */
-  protected abstract _validate(
-    from: unknown,
-    context?: TC,
-    self?: import('./validator').Validator<T, TC>
-  ): boolean | Failure<T>;
+  protected abstract _validate(from: unknown, context?: TC): boolean | Failure<T>;
 }

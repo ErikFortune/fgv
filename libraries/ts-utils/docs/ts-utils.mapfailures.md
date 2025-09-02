@@ -63,7 +63,6 @@ _(Optional)_ Optional string array to which any returned error messages will be 
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 string\[\]

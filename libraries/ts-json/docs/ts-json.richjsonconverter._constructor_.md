@@ -47,4 +47,3 @@ _(Optional)_ Optional partial [configuration or context](./ts-json.richjsonconve
 
 </td></tr>
 </tbody></table>
-

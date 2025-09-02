@@ -59,4 +59,3 @@ Called for each rule after all properties have been merged. Any properties that 
 
 </td></tr>
 </tbody></table>
-

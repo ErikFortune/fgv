@@ -61,7 +61,6 @@ The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 DetailedResult&lt;[IMultiValuePropertyParts](./ts-json.editorrules.imultivaluepropertyparts.md)<!-- -->, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

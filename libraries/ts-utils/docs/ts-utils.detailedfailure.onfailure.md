@@ -47,7 +47,6 @@ The [failure callback](./ts-utils.detailedfailurecontinuation.md) to be invoked.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

@@ -57,7 +57,6 @@ lt2
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 number

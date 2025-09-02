@@ -248,4 +248,3 @@ Gets a read-only version of this collector.
 
 </td></tr>
 </tbody></table>
-

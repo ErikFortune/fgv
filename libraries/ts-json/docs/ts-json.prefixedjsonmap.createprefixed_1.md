@@ -95,7 +95,6 @@ _(Optional)_ Optional [JsonEditor](./ts-json.jsoneditor.md) used to format retur
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[PrefixedJsonMap](./ts-json.prefixedjsonmap.md)<!-- -->&gt;

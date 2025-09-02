@@ -4,8 +4,6 @@
 
 ## Logging.InMemoryLogger.clear() method
 
-Clears the logged and suppressed messages.
-
 **Signature:**
 
 ```typescript

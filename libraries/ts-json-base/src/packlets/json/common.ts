@@ -173,15 +173,3 @@ export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject
 export function sanitizeJson(from: unknown): Result<JsonValue> {
   return captureResult(() => JSON.parse(JSON.stringify(from)));
 }
-
-/**
- * Sanitizes some value using JSON stringification and parsing, returning an
- * returning a matching strongly-typed value.
- * @param from - The value to be sanitized.
- * @returns `Success` with a {@link JsonObject | JsonObject} if conversion succeeds,
- * `Failure` with details if an error occurs.
- * @public
- */
-export function sanitizeJsonObject<T>(from: T): Result<T> {
-  return captureResult(() => JSON.parse(JSON.stringify(from)));
-}

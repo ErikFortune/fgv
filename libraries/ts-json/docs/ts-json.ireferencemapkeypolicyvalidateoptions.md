@@ -55,4 +55,3 @@ _(Optional)_ If `true`<!-- -->, the validator coerces keys to some valid value. 
 
 </td></tr>
 </tbody></table>
-

@@ -15,7 +15,7 @@
    * path segment in the "$schema" field for all your Rush config files.  This will ensure
    * correct error-underlining and tab-completion for editors such as VS Code.
    */
-  "rushVersion": "5.158.1",
+  "rushVersion": "5.155.1",
   /**
    * The next field selects which package manager should be installed and determines its version.
    * Rush installs its own local copy of the package manager to ensure that your build process
@@ -426,13 +426,6 @@
     {
       "packageName": "@fgv/ts-json-base",
       "projectFolder": "libraries/ts-json-base",
-      "shouldPublish": true,
-      "versionPolicyName": "base-utils",
-      "tags": ["libraries"]
-    },
-    {
-      "packageName": "@fgv/ts-res",
-      "projectFolder": "libraries/ts-res",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]

@@ -47,7 +47,6 @@ A function which maps from the the result type `<T>` of this converter to a new 
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T2, TC&gt;

@@ -47,7 +47,6 @@ The key to test.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 boolean

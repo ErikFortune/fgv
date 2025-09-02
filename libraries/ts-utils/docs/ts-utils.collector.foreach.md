@@ -61,7 +61,6 @@ _(Optional)_ An optional argument to pass to the callback.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 void

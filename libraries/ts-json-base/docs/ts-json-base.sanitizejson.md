@@ -47,7 +47,6 @@ The `unknown` to be sanitized.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;

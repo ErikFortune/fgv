@@ -63,7 +63,6 @@ The [JsonValue](./ts-json-base.jsonvalue.md) to be written.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;boolean&gt;

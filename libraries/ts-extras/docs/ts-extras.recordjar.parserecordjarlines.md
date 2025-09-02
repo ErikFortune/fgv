@@ -63,7 +63,6 @@ _(Optional)_ Optional parser configuration
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[JarRecord](./ts-extras.recordjar.jarrecord.md)<!-- -->\[\]&gt;
