@@ -62,3 +62,4 @@ Converts an arbitrary value to a [PuzzleType](./ts-sudoku-lib.puzzletype.md)<!--
 
 </td></tr>
 </tbody></table>
+

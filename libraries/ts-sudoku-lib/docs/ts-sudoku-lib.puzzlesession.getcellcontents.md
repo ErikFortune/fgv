@@ -50,6 +50,7 @@ A `string` ([CellId](./ts-sudoku-lib.cellid.md)<!-- -->), [RowColumn](./ts-sudok
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;{ cell: [ICell](./ts-sudoku-lib.icell.md)<!-- -->; contents: [ICellContents](./ts-sudoku-lib.icellcontents.md)<!-- -->; }&gt;
