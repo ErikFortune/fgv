@@ -42,7 +42,7 @@
     "@fgv/ts-utils-jest": "workspace:*",
     "@rushstack/heft": "0.74.3",
     "@rushstack/heft-node-rig": "2.9.4",
-    "@rushstack/eslint-config": "~4.4.0",
+    "@rushstack/eslint-config": "4.4.0",
     "@types/heft-jest": "1.0.6",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.14.9",
@@ -51,7 +51,8 @@
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.4.1",
-    "typescript": "^5.8.3"
+    "typescript": "5.8.3",
+    "@rushstack/heft-jest-plugin": "0.16.12"
   },
   "peerDependencies": {
     "typescript": "^5.7.3"
