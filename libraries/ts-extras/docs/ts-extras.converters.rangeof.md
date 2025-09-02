@@ -47,6 +47,7 @@ Converter&lt;T, TC&gt;
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Converter&lt;[RangeOf](./ts-extras.experimental.rangeof.md)<!-- -->&lt;T&gt;, TC&gt;
