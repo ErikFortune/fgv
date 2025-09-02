@@ -1,0 +1,25 @@
+{
+  "resources": {
+    "app-config": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "currency": "GBP",
+            "dateFormat": "DD/MM/YYYY",
+            "timeFormat": "24h",
+            "numberFormat": "en-GB",
+            "measurement": "metric",
+            "phoneFormat": "+44 #### ######",
+            "supportEmail": "support@example.co.uk",
+            "supportPhone": "+44-800-555-0125",
+            "legalEntity": "Example UK Ltd",
+            "privacyPolicy": "https://example.co.uk/privacy",
+            "termsOfService": "https://example.co.uk/terms"
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

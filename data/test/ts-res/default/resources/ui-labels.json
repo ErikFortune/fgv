@@ -1,0 +1,80 @@
+{
+  "resources": {
+    "ui-labels": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "welcomeMessage": "Welcome (DEFAULT)",
+            "dateFormat": "MM/DD/YYYY (US format)",
+            "currencySymbol": "$ (USD default)",
+            "phoneLabel": "Phone Number (default)",
+            "source": "DEFAULT - no conditions"
+          }
+        },
+        {
+          "json": {
+            "welcomeMessage": "Welcome (CANADA TERRITORY)",
+            "dateFormat": "DD/MM/YYYY (Canadian format)",
+            "currencySymbol": "$ CAD (Canadian)",
+            "phoneLabel": "Phone Number (Canadian)",
+            "source": "TERRITORY: Canada"
+          },
+          "conditions": {
+            "currentTerritory": "CA"
+          }
+        },
+        {
+          "json": {
+            "welcomeMessage": "Welcome (BRITAIN TERRITORY)",
+            "dateFormat": "DD/MM/YYYY (British format)",
+            "currencySymbol": "£ GBP (British)",
+            "phoneLabel": "Phone Number (British)",
+            "source": "TERRITORY: Great Britain"
+          },
+          "conditions": {
+            "currentTerritory": "GB"
+          }
+        },
+        {
+          "json": {
+            "welcomeMessage": "Bienvenue (FRENCH LANGUAGE)",
+            "dateFormat": "JJ/MM/AAAA (format français)",
+            "currencySymbol": "$ (langue française)",
+            "phoneLabel": "Numéro de téléphone (français)",
+            "source": "LANGUAGE: French"
+          },
+          "conditions": {
+            "language": "fr"
+          }
+        },
+        {
+          "json": {
+            "welcomeMessage": "Bienvenue (FRENCH + CANADA)",
+            "dateFormat": "JJ/MM/AAAA (français canadien)",
+            "currencySymbol": "$ CAD (français canadien)",
+            "phoneLabel": "Numéro de téléphone (Canada)",
+            "source": "BOTH: French + Canada Territory"
+          },
+          "conditions": {
+            "language": "fr",
+            "currentTerritory": "CA"
+          }
+        },
+        {
+          "json": {
+            "welcomeMessage": "Bienvenue (FRENCH + FRANCE)",
+            "dateFormat": "JJ/MM/AAAA (français France)",
+            "currencySymbol": "€ EUR (français France)",
+            "phoneLabel": "Numéro de téléphone (France)",
+            "source": "BOTH: French + France Territory"
+          },
+          "conditions": {
+            "language": "fr",
+            "currentTerritory": "FR"
+          }
+        }
+      ]
+    }
+  }
+}
