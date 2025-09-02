@@ -1,0 +1,9 @@
+{
+  "testMatch": ["<rootDir>/src/test/**/*.test.ts", "<rootDir>/test/**/*.test.ts"],
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "extensionsToTreatAsEsm": [],
+  "transform": {
+    "^.+\\.ts$": "ts-jest"
+  }
+}

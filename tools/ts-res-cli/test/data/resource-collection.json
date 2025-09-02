@@ -1,0 +1,28 @@
+{
+  "resources": [
+    {
+      "id": "buttons.submit",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": { "label": "Submit" },
+          "conditions": { "language": "en" }
+        },
+        {
+          "json": { "label": "Enviar" },
+          "conditions": { "language": "es" }
+        }
+      ]
+    },
+    {
+      "id": "buttons.cancel",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": { "label": "Cancel" },
+          "conditions": { "language": "en" }
+        }
+      ]
+    }
+  ]
+}
