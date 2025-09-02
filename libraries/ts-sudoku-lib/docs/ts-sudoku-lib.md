@@ -311,4 +311,3 @@ Describes the rules that apply to the puzzle.
 
 </td></tr>
 </tbody></table>
-

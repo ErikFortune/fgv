@@ -29,4 +29,3 @@ Parsed file containing a collection of puzzles.
 
 </td></tr>
 </tbody></table>
-

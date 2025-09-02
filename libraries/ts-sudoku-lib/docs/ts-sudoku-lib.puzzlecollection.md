@@ -137,4 +137,3 @@ Creates a new puzzle from a JSON file.
 
 </td></tr>
 </tbody></table>
-

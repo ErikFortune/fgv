@@ -47,7 +47,6 @@ the identifier to be searched.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 boolean

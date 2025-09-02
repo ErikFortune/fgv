@@ -43,7 +43,6 @@ puzzle
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;Puzzle&gt;

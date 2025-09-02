@@ -47,7 +47,6 @@ The [id](./ts-sudoku-lib.cellid.md) of the cell to be retrieved.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[ICellContents](./ts-sudoku-lib.icellcontents.md)<!-- -->&gt;
