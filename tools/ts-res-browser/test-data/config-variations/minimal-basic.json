@@ -1,0 +1,37 @@
+{
+  "name": "Minimal Basic Configuration",
+  "description": "Simplified configuration with only essential qualifiers for basic applications",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "device",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["phone", "tablet", "desktop"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 600
+    },
+    {
+      "name": "device",
+      "typeName": "device",
+      "defaultPriority": 500
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

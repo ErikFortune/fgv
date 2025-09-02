@@ -471,6 +471,13 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["tools", "cli"]
+    },
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "projectFolder": "tools/ts-res-browser",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "ui", "browser"]
     }
   ]
 }
