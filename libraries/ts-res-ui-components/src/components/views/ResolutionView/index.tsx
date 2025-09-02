@@ -1,0 +1,754 @@
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import {
+  MagnifyingGlassIcon,
+  DocumentTextIcon,
+  CubeIcon,
+  CheckIcon,
+  XMarkIcon,
+  PencilIcon,
+  TrashIcon,
+  ListBulletIcon,
+  FolderIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
+import {
+  ResolutionViewProps,
+  CandidateInfo,
+  ResolutionActions,
+  ResolutionState,
+  ResourceEditorFactory,
+  ResourceEditorResult,
+  ResolutionContextOptions
+} from '../../../types';
+import { ResourceId } from '@fgv/ts-res';
+import { QualifierContextControl } from '../../common/QualifierContextControl';
+import { UnifiedChangeControls } from './UnifiedChangeControls';
+import { ResourcePicker } from '../../pickers/ResourcePicker';
+import {
+  ResourceSelection,
+  ResourceAnnotations,
+  ResourcePickerOptions,
+  PendingResource
+} from '../../pickers/ResourcePicker/types';
+import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
+import { ResolutionResults } from '../../common/ResolutionResults';
+import { NewResourceModal } from './NewResourceModal';
+import { useObservability } from '../../../contexts';
+
+/**
+ * ResolutionView component for resource resolution testing and editing.
+ *
+ * Provides a comprehensive interface for testing resource resolution with different
+ * qualifier contexts, viewing resolution results, and editing resource values with
+ * custom editors. Supports real-time resolution testing and conflict detection.
+ *
+ * **Key Features:**
+ * - **Context management**: Set and update resolution context (qualifier values)
+ * - **Real-time resolution**: See how resources resolve with current context
+ * - **Resource editing**: Edit resource values with custom type-specific editors
+ * - **Conflict detection**: Detect when edits would conflict with existing resources
+ * - **Preview mode**: See how edits affect resolution without committing changes
+ * - **Custom editors**: Support for type-specific resource editors via factory pattern
+ * - **Fallback editing**: JSON editor fallback when custom editors aren't available
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionView } from '@fgv/ts-res-ui-components';
+ *
+ * // Custom editor factory for specific resource types
+ * const editorFactory = {
+ *   createEditor: (resourceId, resourceType, value) => {
+ *     if (resourceType === 'market-info') {
+ *       return {
+ *         success: true,
+ *         editor: MarketInfoEditor
+ *       };
+ *     }
+ *     return { success: false };
+ *   }
+ * };
+ *
+ * function MyResolutionTool() {
+ *   return (
+ *     <ResolutionView
+ *       resources={processedResources}
+ *       resolutionState={resolutionState}
+ *       resolutionActions={resolutionActions}
+ *       availableQualifiers={['language', 'territory', 'platform']}
+ *       resourceEditorFactory={editorFactory}
+ *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
+ *     />
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
+export const ResolutionView: React.FC<ResolutionViewProps> = ({
+  resources,
+  filterState,
+  filterResult,
+  resolutionState,
+  resolutionActions,
+  availableQualifiers = [],
+  resourceEditorFactory,
+  onMessage,
+  pickerOptions,
+  pickerOptionsPresentation = 'hidden',
+  contextOptions,
+  lockedViewMode,
+  sectionTitles,
+  allowResourceCreation = false,
+  defaultResourceType,
+  resourceTypeFactory,
+  onPendingResourcesApplied,
+  showPendingResourcesInList = true,
+  className = ''
+}) => {
+  // Get observability context
+  const o11y = useObservability();
+  // State for picker options control
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
+    pickerOptions || {}
+  );
+
+  // State for context options control
+  const [currentContextOptions, setCurrentContextOptions] = useState<ResolutionContextOptions>(
+    contextOptions || {}
+  );
+
+  // State for new resource modal
+  const [showNewResourceModal, setShowNewResourceModal] = useState(false);
+
+  // Local toggles for editing/creation features (controllable via options dialog)
+  const [allowResourceCreationInternal, setAllowResourceCreationInternal] = useState<boolean>(
+    !!allowResourceCreation
+  );
+  const [showPendingResourcesInListInternal, setShowPendingResourcesInListInternal] = useState<boolean>(
+    !!showPendingResourcesInList
+  );
+
+  // Sync internal toggles when props change
+  useEffect(() => {
+    setAllowResourceCreationInternal(!!allowResourceCreation);
+  }, [allowResourceCreation]);
+  useEffect(() => {
+    setShowPendingResourcesInListInternal(!!showPendingResourcesInList);
+  }, [showPendingResourcesInList]);
+
+  // Update currentContextOptions when contextOptions prop changes
+  // This is important for host-managed values
+  React.useEffect(() => {
+    if (contextOptions?.hostManagedValues) {
+      setCurrentContextOptions((prev) => ({
+        ...prev,
+        hostManagedValues: contextOptions.hostManagedValues
+      }));
+    }
+  }, [contextOptions?.hostManagedValues]);
+
+  // Use filtered resources when filtering is active and successful
+  const isFilteringActive = filterState?.enabled && filterResult?.success === true;
+  const baseProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
+
+  // For now, just use the base processed resources directly
+  // TODO: Implement merging of pending resources for display
+  const activeProcessedResources = baseProcessedResources;
+
+  // Merge picker options with resolution-specific defaults
+  const effectivePickerOptions = useMemo(
+    () => ({
+      defaultView: 'list' as const,
+      showViewToggle: true,
+      enableSearch: true,
+      searchPlaceholder: 'Search resources for resolution testing...',
+      searchScope: 'all' as const,
+      height: '520px',
+      emptyMessage: 'No resources available for resolution testing',
+      // Override with user-provided options
+      ...pickerOptions,
+      // Override with current picker options from control
+      ...currentPickerOptions
+    }),
+    [pickerOptions, currentPickerOptions]
+  );
+
+  // Create resource annotations for resolution results and edit states
+  const resourceAnnotations = useMemo(() => {
+    const annotations: ResourceAnnotations = {};
+
+    // Get all resource IDs (existing + pending)
+    const allResourceIds = new Set<string>();
+
+    if (activeProcessedResources?.summary?.resourceIds) {
+      activeProcessedResources.summary.resourceIds.forEach((id) => allResourceIds.add(id));
+    }
+
+    // Add pending resource IDs
+    if (resolutionState?.pendingResources) {
+      resolutionState.pendingResources.forEach((_, id) => allResourceIds.add(id));
+    }
+
+    allResourceIds.forEach((resourceId) => {
+      const hasEdit = resolutionActions?.hasEdit?.(resourceId);
+      const isPending = resolutionState?.pendingResources?.has(resourceId);
+      const isMarkedForDeletion = resolutionState?.pendingResourceDeletions?.has(resourceId);
+      const isSelected = resolutionState?.selectedResourceId === resourceId;
+      const hasResolutionResult = isSelected && resolutionState?.resolutionResult;
+
+      // Base annotation with appropriate indicator
+      let indicator = undefined;
+      if (isPending) {
+        indicator = {
+          type: 'icon' as const,
+          value: '➕',
+          tooltip: 'New resource (pending)'
+        };
+      } else if (isMarkedForDeletion) {
+        indicator = {
+          type: 'icon' as const,
+          value: '🗑️',
+          tooltip: 'Marked for deletion'
+        };
+      } else if (hasEdit) {
+        indicator = {
+          type: 'icon' as const,
+          value: '✏️',
+          tooltip: 'Resource has unsaved edits'
+        };
+      }
+
+      annotations[resourceId] = {
+        indicator
+      };
+
+      // Add resolution result annotations for selected resource
+      if (hasResolutionResult && resolutionState?.resolutionResult?.success) {
+        const result = resolutionState.resolutionResult;
+
+        // Show match status as badge
+        if (result.bestCandidate) {
+          annotations[resourceId].badge = {
+            text: 'Resolved',
+            variant: 'info'
+          };
+        } else if (result.candidateDetails) {
+          const matchingCount = result.candidateDetails.filter((c: CandidateInfo) => c.matched).length;
+          const totalCount = result.candidateDetails.length;
+
+          if (matchingCount === 0) {
+            annotations[resourceId].badge = {
+              text: 'No Match',
+              variant: 'error'
+            };
+          } else {
+            annotations[resourceId].badge = {
+              text: `${matchingCount}/${totalCount}`,
+              variant: 'warning'
+            };
+          }
+        }
+
+        // Add suffix with candidate count
+        if (result.resource) {
+          const totalCandidates = result.resource.candidates.length;
+          annotations[resourceId].suffix = `${totalCandidates} candidate${totalCandidates !== 1 ? 's' : ''}`;
+        }
+      } else if (
+        isSelected &&
+        resolutionState?.resolutionResult &&
+        !resolutionState.resolutionResult.success
+      ) {
+        // Show error state
+        annotations[resourceId].badge = {
+          text: 'Error',
+          variant: 'error'
+        };
+      }
+    });
+
+    return annotations;
+  }, [
+    activeProcessedResources?.summary?.resourceIds,
+    resolutionActions,
+    resolutionState?.selectedResourceId,
+    resolutionState?.resolutionResult,
+    resolutionState?.pendingResources,
+    resolutionState?.pendingResourceDeletions
+  ]);
+
+  // Merge context options with current options from control
+  const effectiveContextOptions = useMemo(() => {
+    // Deep merge to preserve hostManagedValues from contextOptions
+    const merged = {
+      ...contextOptions,
+      ...currentContextOptions,
+      // Preserve hostManagedValues from contextOptions if currentContextOptions doesn't explicitly set it
+      hostManagedValues:
+        currentContextOptions?.hostManagedValues !== undefined
+          ? currentContextOptions.hostManagedValues
+          : contextOptions?.hostManagedValues
+    };
+    o11y.diag.info('ResolutionView - effectiveContextOptions:', merged);
+    o11y.diag.info('ResolutionView - contextOptions hostManagedValues:', contextOptions?.hostManagedValues);
+    o11y.diag.info(
+      'ResolutionView - currentContextOptions hostManagedValues:',
+      currentContextOptions?.hostManagedValues
+    );
+    o11y.diag.info('ResolutionView - final hostManagedValues:', merged.hostManagedValues);
+    return merged;
+  }, [contextOptions, currentContextOptions]);
+
+  // Handle context value changes using the shared component's callback pattern
+  const handleQualifierChange = useCallback(
+    (qualifierName: string, value: string | undefined) => {
+      // Don't update context if this qualifier is host-managed
+      const qualifierOptions = effectiveContextOptions?.qualifierOptions?.[qualifierName];
+      const isHostManaged = qualifierOptions?.hostValue !== undefined;
+
+      if (!isHostManaged) {
+        resolutionActions?.updateContextValue(qualifierName, value);
+      }
+    },
+    [resolutionActions, effectiveContextOptions?.qualifierOptions]
+  );
+
+  // Apply host-managed values when they change
+  const prevHostValuesRef = useRef<string | undefined>(undefined);
+  React.useEffect(() => {
+    if (!effectiveContextOptions?.hostManagedValues || !resolutionActions?.applyContext) return;
+
+    const hostValuesStr = JSON.stringify(effectiveContextOptions.hostManagedValues);
+    if (prevHostValuesRef.current !== hostValuesStr) {
+      console.log(
+        'ResolutionView: Host values changed, applying:',
+        effectiveContextOptions.hostManagedValues
+      );
+      prevHostValuesRef.current = hostValuesStr;
+      // Pass host values to the resolution state
+      resolutionActions.applyContext(effectiveContextOptions.hostManagedValues);
+    }
+  }, [effectiveContextOptions?.hostManagedValues, resolutionActions]);
+
+  // Determine which qualifiers to show and their options
+  const visibleQualifiers = useMemo(() => {
+    if (!effectiveContextOptions?.qualifierOptions) {
+      return availableQualifiers;
+    }
+
+    return availableQualifiers.filter((qualifierName) => {
+      const options = effectiveContextOptions.qualifierOptions![qualifierName];
+      return options?.visible !== false;
+    });
+  }, [availableQualifiers, effectiveContextOptions?.qualifierOptions]);
+
+  // Get effective context values - contextValues already includes host values from the hook
+  const effectiveContextValues = useMemo(() => {
+    // contextValues from state already includes host values (it's effectiveContext from the hook)
+    // Don't double-apply host values here
+    return resolutionState?.contextValues || {};
+  }, [resolutionState?.contextValues]);
+
+  // Convert pending resources to PendingResource format for ResourcePicker
+  const pendingResourcesList = useMemo<PendingResource[]>(() => {
+    const pending: PendingResource[] = [];
+
+    // Add new pending resources
+    if (resolutionState?.pendingResources) {
+      resolutionState.pendingResources.forEach((resource, id) => {
+        pending.push({
+          id,
+          type: 'new',
+          resourceType: resource.resourceTypeName,
+          displayName: id // Use the resource ID as display name
+        });
+      });
+    }
+
+    // Add deleted resources
+    if (resolutionState?.pendingResourceDeletions) {
+      resolutionState.pendingResourceDeletions.forEach((id) => {
+        pending.push({
+          id,
+          type: 'deleted',
+          displayName: id
+        });
+      });
+    }
+
+    // Add edited resources
+    if (resolutionState?.editedResources) {
+      resolutionState.editedResources.forEach((_, id) => {
+        // Only add if not already in pending as new
+        if (!resolutionState.pendingResources?.has(id)) {
+          pending.push({
+            id,
+            type: 'modified',
+            displayName: id
+          });
+        }
+      });
+    }
+
+    return pending;
+  }, [
+    resolutionState?.pendingResources,
+    resolutionState?.pendingResourceDeletions,
+    resolutionState?.editedResources
+  ]);
+
+  // Handle resource selection from ResourcePicker
+  const handleResourceSelect = useCallback(
+    (selection: ResourceSelection) => {
+      if (selection.resourceId) {
+        resolutionActions?.selectResource(selection.resourceId);
+      }
+    },
+    [resolutionActions]
+  );
+
+  // Handle new resource creation
+  const handleStartNewResource = useCallback(() => {
+    resolutionActions?.startNewResource({ defaultTypeName: defaultResourceType });
+    setShowNewResourceModal(true);
+  }, [resolutionActions]);
+
+  const handleCloseNewResourceModal = useCallback(() => {
+    setShowNewResourceModal(false);
+    resolutionActions?.cancelNewResource();
+  }, [resolutionActions]);
+
+  const handleApplyPendingResources = useCallback(async () => {
+    await resolutionActions?.applyPendingResources();
+    if (onPendingResourcesApplied && resolutionState) {
+      const added = Array.from(resolutionState.pendingResources.values());
+      const deleted = Array.from(resolutionState.pendingResourceDeletions);
+      onPendingResourcesApplied(added, deleted);
+    }
+  }, [resolutionActions, resolutionState, onPendingResourcesApplied]);
+
+  // Automatically set locked view mode when provided
+  useEffect(() => {
+    if (lockedViewMode && resolutionActions?.setViewMode) {
+      resolutionActions.setViewMode(lockedViewMode);
+    }
+  }, [lockedViewMode, resolutionActions]);
+
+  // Handle view mode change
+  const handleViewModeChange = useCallback(
+    (mode: 'composed' | 'best' | 'all' | 'raw') => {
+      // Don't allow view mode changes when locked
+      if (!lockedViewMode) {
+        resolutionActions?.setViewMode(mode);
+      }
+    },
+    [resolutionActions, lockedViewMode]
+  );
+
+  if (!resources) {
+    return (
+      <div className={`p-6 ${className}`}>
+        <div className="flex items-center space-x-3 mb-6">
+          <MagnifyingGlassIcon className="h-8 w-8 text-blue-600" />
+          <h2 className="text-2xl font-bold text-gray-900">Resolution Viewer</h2>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+          <div className="max-w-2xl mx-auto">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">No Resources Loaded</h3>
+            <p className="text-gray-600 mb-6">
+              Import resources first to test resource resolution with different contexts.
+            </p>
+            <div className="bg-blue-50 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>Resolution Viewer:</strong> Test how resources resolve with different qualifier
+                contexts. Set context values and see which candidates match.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`p-6 ${className}`}>
+      <div className="flex items-center space-x-3 mb-6">
+        <MagnifyingGlassIcon className="h-8 w-8 text-blue-600" />
+        <h2 className="text-2xl font-bold text-gray-900">Resolution Viewer</h2>
+        {isFilteringActive && (
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+            Filtered
+          </span>
+        )}
+      </div>
+
+      {/* ResourcePicker Options Control */}
+      <ResourcePickerOptionsControl
+        options={currentPickerOptions}
+        onOptionsChange={setCurrentPickerOptions}
+        presentation={pickerOptionsPresentation}
+        title="Resolution Viewer Picker Options"
+        className="mb-6"
+      />
+
+      {/* ResolutionContext Options Control */}
+      <ResolutionContextOptionsControl
+        options={currentContextOptions}
+        onOptionsChange={setCurrentContextOptions}
+        availableQualifiers={availableQualifiers}
+        presentation={pickerOptionsPresentation}
+        title="Resolution Context Options"
+        className="mb-6"
+        allowResourceCreation={allowResourceCreationInternal}
+        onAllowResourceCreationChange={setAllowResourceCreationInternal}
+        showPendingResourcesInList={showPendingResourcesInListInternal}
+        onShowPendingResourcesInListChange={setShowPendingResourcesInListInternal}
+      />
+
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        {/* Context Configuration Panel */}
+        {effectiveContextOptions?.showContextControls !== false && (
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {effectiveContextOptions?.contextPanelTitle || 'Context Configuration'}
+            </h3>
+            <div
+              className={`bg-gray-50 rounded-lg p-4 ${effectiveContextOptions?.contextPanelClassName || ''}`}
+            >
+              <div className="mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {visibleQualifiers.map((qualifierName) => {
+                    const qualifierOptions = effectiveContextOptions?.qualifierOptions?.[qualifierName];
+                    const hostManagedValue = effectiveContextOptions?.hostManagedValues?.[qualifierName];
+                    const globalPlaceholder =
+                      typeof effectiveContextOptions?.globalPlaceholder === 'function'
+                        ? effectiveContextOptions.globalPlaceholder(qualifierName)
+                        : effectiveContextOptions?.globalPlaceholder;
+
+                    // Merge host-managed values with qualifier options
+                    const mergedOptions = {
+                      ...qualifierOptions,
+                      // Host-managed values override qualifier-specific host values
+                      hostValue:
+                        hostManagedValue !== undefined ? hostManagedValue : qualifierOptions?.hostValue
+                    };
+
+                    return (
+                      <QualifierContextControl
+                        key={qualifierName}
+                        qualifierName={qualifierName}
+                        value={resolutionState?.pendingContextValues[qualifierName]}
+                        onChange={handleQualifierChange}
+                        placeholder={globalPlaceholder || `Enter ${qualifierName} value`}
+                        resources={activeProcessedResources}
+                        options={mergedOptions}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {effectiveContextOptions?.showCurrentContext !== false && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    Current:{' '}
+                    {Object.entries(effectiveContextValues)
+                      .map(([key, value]) => `${key}=${value === undefined ? '(undefined)' : value}`)
+                      .join(', ')}
+                  </div>
+                  {effectiveContextOptions?.showContextActions !== false && (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={resolutionActions?.resetCache}
+                        className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        title="Clear resolution cache"
+                      >
+                        Clear Cache
+                      </button>
+                      <button
+                        onClick={() => resolutionActions?.applyContext()}
+                        disabled={!resolutionState?.hasPendingChanges}
+                        className={`px-4 py-2 rounded-md text-sm font-medium ${
+                          resolutionState?.hasPendingChanges
+                            ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        {resolutionState?.hasPendingChanges
+                          ? 'Apply Changes'
+                          : resolutionState?.currentResolver
+                          ? 'Context Applied'
+                          : 'Apply Context'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Unified Change Controls - replaces separate edit/pending controls */}
+        {(resolutionState?.hasUnsavedEdits || resolutionState?.hasPendingResourceChanges) && (
+          <div className="mt-6">
+            <UnifiedChangeControls
+              editCount={resolutionState?.editedResources?.size || 0}
+              addCount={resolutionState?.pendingResources?.size || 0}
+              deleteCount={resolutionState?.pendingResourceDeletions?.size || 0}
+              isApplying={resolutionState?.isApplyingEdits}
+              disabled={!resolutionState?.currentResolver}
+              onApplyAll={async () => {
+                await handleApplyPendingResources();
+              }}
+              onDiscardAll={() => {
+                resolutionActions?.discardEdits?.();
+                resolutionActions?.discardPendingResources?.();
+              }}
+            />
+          </div>
+        )}
+
+        {/* Main Browser/Details Layout */}
+        <div className="flex flex-col lg:flex-row gap-6 h-[600px]">
+          {/* Left side: Resource Selection */}
+          <div className="lg:w-1/2 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {sectionTitles?.resources || 'Resources'}
+              </h3>
+              {allowResourceCreationInternal && (
+                <button
+                  onClick={handleStartNewResource}
+                  className="flex items-center space-x-1 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  title="Create a new resource"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  <span>Add Resource</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex-1">
+              <ResourcePicker
+                resources={activeProcessedResources || null}
+                selectedResourceId={resolutionState?.selectedResourceId || null}
+                onResourceSelect={handleResourceSelect}
+                resourceAnnotations={resourceAnnotations}
+                pendingResources={showPendingResourcesInListInternal ? pendingResourcesList : undefined}
+                options={effectivePickerOptions}
+                onMessage={onMessage}
+              />
+            </div>
+          </div>
+
+          {/* Right side: Resolution Results */}
+          <div className="lg:w-1/2 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {sectionTitles?.results || 'Results'}
+                {lockedViewMode && (
+                  <span className="ml-2 inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                    {lockedViewMode.charAt(0).toUpperCase() + lockedViewMode.slice(1)} View
+                  </span>
+                )}
+              </h3>
+              {resolutionState?.selectedResourceId && !lockedViewMode && (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleViewModeChange('composed')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      resolutionState?.viewMode === 'composed'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Composed
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('best')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      resolutionState?.viewMode === 'best'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Best
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('all')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      resolutionState?.viewMode === 'all'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('raw')}
+                    className={`px-3 py-1 text-xs rounded ${
+                      resolutionState?.viewMode === 'raw'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700'
+                    }`}
+                  >
+                    Raw
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+              {!resolutionState?.selectedResourceId ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <CubeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">Select a resource to view resolution results</p>
+                  </div>
+                </div>
+              ) : !resolutionState?.currentResolver ? (
+                <div className="text-center text-gray-500">
+                  <p>Apply a context to resolve resources</p>
+                </div>
+              ) : !resolutionState?.resolutionResult ? (
+                <div className="text-center text-gray-500">
+                  <p>Resolving...</p>
+                </div>
+              ) : (
+                <ResolutionResults
+                  result={resolutionState.resolutionResult}
+                  viewMode={resolutionState.viewMode}
+                  contextValues={resolutionState.contextValues}
+                  resolutionActions={resolutionActions}
+                  resolutionState={resolutionState}
+                  resourceEditorFactory={resourceEditorFactory}
+                  onMessage={onMessage}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* New Resource Modal */}
+      {resolutionState?.newResourceDraft && (
+        <NewResourceModal
+          isOpen={showNewResourceModal}
+          onClose={handleCloseNewResourceModal}
+          resourceId={resolutionState.newResourceDraft.resourceId}
+          resourceType={resolutionState.newResourceDraft.resourceType}
+          availableResourceTypes={resolutionState.availableResourceTypes}
+          isValid={resolutionState.newResourceDraft.isValid}
+          defaultResourceType={defaultResourceType}
+          onUpdateResourceId={resolutionActions?.updateNewResourceId || (() => {})}
+          onSelectResourceType={resolutionActions?.selectResourceType || (() => {})}
+          onSave={resolutionActions?.saveNewResourceAsPending || (() => {})}
+        />
+      )}
+    </div>
+  );
+};
+
+export default ResolutionView;

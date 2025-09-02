@@ -438,6 +438,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-res-ui-components",
+      "projectFolder": "libraries/ts-res-ui-components",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
+    },
+    {
       "packageName": "@fgv/ts-sudoku-lib",
       "projectFolder": "libraries/ts-sudoku-lib",
       "shouldPublish": true,
