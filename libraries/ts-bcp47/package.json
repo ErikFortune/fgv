@@ -56,9 +56,9 @@
     "typescript": "^5.8.3",
     "eslint-plugin-n": "^16.6.2",
     "@rushstack/eslint-config": "~4.4.0",
-    "@rushstack/heft": "~0.74.2",
-    "@rushstack/heft-jest-plugin": "~0.16.11",
-    "@rushstack/heft-node-rig": "~2.9.3",
+    "@rushstack/heft": "0.74.3",
+    "@rushstack/heft-jest-plugin": "~0.16.12",
+    "@rushstack/heft-node-rig": "2.9.4",
     "@types/heft-jest": "1.0.6",
     "eslint-plugin-tsdoc": "~0.4.0"
   },

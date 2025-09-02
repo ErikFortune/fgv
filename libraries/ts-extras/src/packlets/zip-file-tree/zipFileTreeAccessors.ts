@@ -89,11 +89,7 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
         return captureResult(() => {
           const parsed = JSON.parse(contents);
           if (converter) {
-            if ('convert' in converter) {
-              return converter.convert(parsed);
-            } /* c8 ignore next 3 - validator branch functionally tested but coverage tool misses due to interface complexity */ else {
-              return (converter as Validator<T>).validate(parsed);
-            }
+            return converter.convert(parsed);
           }
           return succeed(parsed);
         }).onFailure(() => {
