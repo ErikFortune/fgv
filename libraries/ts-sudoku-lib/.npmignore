@@ -1,21 +1,32 @@
-# Exclude build and temp files
+# Agent-specific files
+CLAUDE.md
+.agents/
+
+# Test and coverage files  
+coverage/
+*.test.ts
+*.test.js
+src/test/
+
+# Development files
+*.log
+.eslintrc*
+jest.config.*
+tsconfig.json
+*.map
+
+# Source files (if publishing only built output)
+# Uncomment if you only want to publish dist/lib
+src/
+
+# Rush/Heft temporary files
 .heft/
 .rush/
+rush-logs/
 temp/
-*.log
 
-# Exclude source and test
-src/
-test/
-*/**/*.test.{d.ts,d.ts.map,js,js.map}
-lib/test
-
-# Exclude built docs & api docs
+# Documentation source
 docs/
-etc/
-
-# Exclude configs
-config/
-.eslintrc.js
-tsconfig.json
-.vscode/
+*.md
+!README.md
+!LICENSE.md

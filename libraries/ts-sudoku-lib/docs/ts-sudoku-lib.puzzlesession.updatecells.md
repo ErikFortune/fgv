@@ -47,6 +47,7 @@ An array of [cell state](./ts-sudoku-lib.icellstate.md) objects, each describing
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;this&gt;
