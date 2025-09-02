@@ -127,4 +127,3 @@ Validates supplied [subtags](./ts-bcp47.bcp47.subtags.md) to a requested [validi
 
 </td></tr>
 </tbody></table>
-

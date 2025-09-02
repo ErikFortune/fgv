@@ -37,7 +37,7 @@ validator
 
 </td><td>
 
-[ValidatorFunc](./ts-utils.validation.validatorfunc.md)<!-- -->&lt;T, TC&gt;
+[ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>
@@ -47,7 +47,6 @@ A [validator function](./ts-utils.validation.validatorfunc.md) that a supplied u
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;

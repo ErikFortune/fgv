@@ -72,27 +72,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[asResult](./ts-utils.detailedsuccess.asresult.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
-
-
-</td><td>
-
-Returns this [DetailedSuccess](./ts-utils.detailedsuccess.md) as a [Result](./ts-utils.result.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [detail](./ts-utils.detailedsuccess.detail.md)
 
 
@@ -176,36 +155,6 @@ Invokes the supplied [success callback](./ts-utils.detailedsuccesscontinuation.m
 </td></tr>
 <tr><td>
 
-[report(reporter, options)](./ts-utils.detailedsuccess.report.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Reports the result to the supplied reporter
-
-
-</td></tr>
-<tr><td>
-
-[with(value, detail)](./ts-utils.detailedsuccess.with.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Creates a [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with the supplied value and optional detail.
-
-
-</td></tr>
-<tr><td>
-
 [withErrorFormat(cb)](./ts-utils.detailedsuccess.witherrorformat.md)
 
 
@@ -219,4 +168,3 @@ Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operatio
 
 </td></tr>
 </tbody></table>
-

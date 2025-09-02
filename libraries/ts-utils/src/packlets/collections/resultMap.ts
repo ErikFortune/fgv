@@ -154,7 +154,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Returns an iterator over the map entries.
    * @returns An iterator over the map entries.
    */
-  public entries(): IterableIterator<KeyValueEntry<TK, TV>> {
+  public entries(): MapIterator<KeyValueEntry<TK, TV>> {
     return this._inner.entries();
   }
 
@@ -239,7 +239,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Returns an iterator over the map keys.
    * @returns An iterator over the map keys.
    */
-  public keys(): IterableIterator<TK> {
+  public keys(): MapIterator<TK> {
     return this._inner.keys();
   }
 
@@ -287,7 +287,7 @@ export class ResultMap<TK extends string = string, TV = unknown> implements IRea
    * Returns an iterator over the map values.
    * @returns An iterator over the map values.
    */
-  public values(): IterableIterator<TV> {
+  public values(): MapIterator<TV> {
     return this._inner.values();
   }
 

@@ -274,4 +274,3 @@ _(Optional)_ The variables (mustache view) used to render templated string names
 
 </td></tr>
 </tbody></table>
-

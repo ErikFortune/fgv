@@ -63,7 +63,6 @@ _(Optional)_ Optional string array to which any error messages will be appended.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T\[\]&gt;

@@ -43,7 +43,6 @@ Iana.Model.UnM49RegionCode
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Region](./ts-bcp47.unsd.region.md) \| [ICountryOrArea](./ts-bcp47.unsd.icountryorarea.md) \| undefined

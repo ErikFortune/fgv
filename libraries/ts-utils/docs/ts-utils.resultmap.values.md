@@ -9,11 +9,11 @@ Returns an iterator over the map values.
 **Signature:**
 
 ```typescript
-values(): IterableIterator<TV>;
+values(): MapIterator<TV>;
 ```
 **Returns:**
 
-IterableIterator&lt;TV&gt;
+MapIterator&lt;TV&gt;
 
 An iterator over the map values.
 

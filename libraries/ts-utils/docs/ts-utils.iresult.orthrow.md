@@ -47,7 +47,6 @@ _(Optional)_ An optional [logger](./ts-utils.iresultlogger.md) to which the erro
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 T
@@ -56,5 +55,5 @@ The return value, if the operation was successful.
 
 ## Exceptions
 
-The error message if the operation failed. 
+The error message if the operation failed.
 

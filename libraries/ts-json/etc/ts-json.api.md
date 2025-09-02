@@ -14,9 +14,6 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
 // @public
-export type ArrayMergeBehavior = 'append' | 'replace';
-
-// @public
 export class CompositeJsonMap implements IJsonReferenceMap {
     // @internal
     protected constructor(maps: IJsonReferenceMap[]);
@@ -84,24 +81,6 @@ export { Converters }
 // @public
 export function defaultExtendVars(base: TemplateVars | undefined, values: VariableValue[]): Result<TemplateVars | undefined>;
 
-declare namespace Diff {
-    export {
-        jsonDiff,
-        jsonEquals,
-        DiffChangeType,
-        IDiffChange,
-        IDiffResult,
-        IJsonDiffOptions,
-        jsonThreeWayDiff,
-        IThreeWayDiffMetadata,
-        IThreeWayDiff
-    }
-}
-export { Diff }
-
-// @public
-type DiffChangeType = 'added' | 'removed' | 'modified' | 'unchanged';
-
 declare namespace EditorRules {
     export {
         IConditionalJsonKeyResult,
@@ -142,24 +121,6 @@ interface IConditionalJsonRuleOptions extends Partial<IJsonEditorOptions> {
 }
 
 // @public
-interface IDiffChange {
-    newValue?: JsonValue;
-    oldValue?: JsonValue;
-    path: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "DiffChangeType"
-    type: DiffChangeType;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDiffChange"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface IDiffResult {
-    changes: IDiffChange[];
-    identical: boolean;
-}
-
-// @public
 export interface IJsonCloneEditor {
     clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
 }
@@ -191,24 +152,9 @@ export interface IJsonConverterOptions {
 }
 
 // @public
-interface IJsonDiffOptions {
-    arrayOrderMatters?: boolean;
-    includeUnchanged?: boolean;
-    pathSeparator?: string;
-}
-
-// @public
-export interface IJsonEditorMergeOptions {
-    arrayMergeBehavior: ArrayMergeBehavior;
-    nullAsDelete?: boolean;
-}
-
-// @public
 export interface IJsonEditorOptions {
     // (undocumented)
     context?: IJsonContext;
-    // (undocumented)
-    merge?: IJsonEditorMergeOptions;
     // (undocumented)
     validation: IJsonEditorValidationOptions;
 }
@@ -265,27 +211,6 @@ interface ITemplatedJsonRuleOptions extends Partial<IJsonEditorOptions> {
     useValueTemplates?: boolean;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IThreeWayDiffMetadata"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "jsonThreeWayDiff"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-interface IThreeWayDiff {
-    identical: boolean;
-    metadata: IThreeWayDiffMetadata;
-    onlyInA: JsonValue;
-    onlyInB: JsonValue;
-    unchanged: JsonValue;
-}
-
-// @public
-interface IThreeWayDiffMetadata {
-    added: number;
-    modified: number;
-    removed: number;
-    unchanged: number;
-}
-
 // @public
 const json: JsonConverter;
 
@@ -320,15 +245,6 @@ export class JsonConverter extends JsonEditorConverter {
     static create(options?: Partial<IJsonConverterOptions>): Result<JsonConverter>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDiffResult"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IDiffChange"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IJsonDiffOptions"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "jsonThreeWayDiff"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "jsonEquals"
-//
-// @public
-function jsonDiff(obj1: JsonValue, obj2: JsonValue, options?: IJsonDiffOptions): Result<IDiffResult>;
-
 // @public
 export type JsonEditFailureReason = 'ignore' | 'inapplicable' | 'edited' | 'error';
 
@@ -337,27 +253,25 @@ export class JsonEditor implements IJsonCloneEditor {
     // @internal
     protected constructor(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]);
     clone(src: JsonValue, context?: IJsonContext): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // @internal
+    // @internal (undocumented)
     protected _cloneArray(src: JsonArray, context?: IJsonContext): DetailedResult<JsonArray, JsonEditFailureReason>;
-    // @internal
-    protected _cloneObjectWithoutNullAsDelete(target: JsonObject, src: JsonObject, state: JsonEditorState): DetailedResult<JsonObject, JsonEditFailureReason>;
     static create(options?: Partial<IJsonEditorOptions>, rules?: IJsonEditorRule[]): Result<JsonEditor>;
     static get default(): JsonEditor;
     // @internal
     protected static _default?: JsonEditor;
-    // @internal
+    // @internal (undocumented)
     protected _editProperty(key: string, value: JsonValue, state: JsonEditorState): DetailedResult<JsonObject, JsonPropertyEditFailureReason>;
-    // @internal
+    // @internal (undocumented)
     protected _editValue(value: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
-    // @internal
+    // @internal (undocumented)
     protected _finalizeAndMerge(target: JsonObject, state: JsonEditorState): DetailedResult<JsonObject, JsonEditFailureReason>;
-    // @internal
+    // @internal (undocumented)
     protected static _getDefaultOptions(options?: Partial<IJsonEditorOptions>): Result<IJsonEditorOptions>;
     static getDefaultRules(options?: IJsonEditorOptions): Result<IJsonEditorRule[]>;
-    // @internal
+    // @internal (undocumented)
     protected _mergeClonedProperty(target: JsonObject, key: string, newValue: JsonValue, state: JsonEditorState): DetailedResult<JsonValue, JsonEditFailureReason>;
     mergeObjectInPlace(target: JsonObject, src: JsonObject, runtimeContext?: IJsonContext): Result<JsonObject>;
-    // @internal
+    // @internal (undocumented)
     protected _mergeObjectInPlace(target: JsonObject, src: JsonObject, state: JsonEditorState): Result<JsonObject>;
     mergeObjectsInPlace(target: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
     mergeObjectsInPlaceWithContext(context: IJsonContext | undefined, base: JsonObject, srcObjects: JsonObject[]): Result<JsonObject>;
@@ -414,13 +328,6 @@ export class JsonEditorState {
 // @public
 export type JsonEditorValidationRules = 'invalidPropertyName' | 'invalidPropertyValue' | 'undefinedPropertyValue';
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "jsonThreeWayDiff"
-//
-// @public
-function jsonEquals(obj1: JsonValue, obj2: JsonValue): boolean;
-
 // @public
 const jsonObject: Converter<JsonObject, IJsonContext>;
 
@@ -429,16 +336,6 @@ export type JsonPropertyEditFailureReason = JsonEditFailureReason | 'deferred';
 
 // @public
 export type JsonReferenceMapFailureReason = 'unknown' | 'error';
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IThreeWayDiff"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "IThreeWayDiffMetadata"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json" does not have an export "jsonEquals"
-//
-// @public
-function jsonThreeWayDiff(obj1: JsonValue, obj2: JsonValue): Result<IThreeWayDiff>;
 
 // @public
 export function mergeDefaultJsonConverterOptions(partial?: Partial<IJsonConverterOptions>): IJsonConverterOptions;

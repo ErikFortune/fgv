@@ -79,7 +79,6 @@ Objects to be merged into the target object, in the order supplied.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;JsonObject&gt;

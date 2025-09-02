@@ -47,7 +47,6 @@ The message to add - pass `undefined` or the empty string to continue without ad
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 this

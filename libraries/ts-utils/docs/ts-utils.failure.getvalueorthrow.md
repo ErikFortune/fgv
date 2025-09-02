@@ -6,7 +6,7 @@
 
 > Warning: This API is now obsolete.
 > 
-> Use [orThrow(logger)](./ts-utils.failure.orthrow.md) or [orThrow(formatter)](./ts-utils.failure.orthrow_1.md) instead.
+> Use [orThrow](./ts-utils.failure.orthrow.md) instead.
 > 
 
 Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
@@ -54,7 +54,6 @@ _(Optional)_ An optional [logger](./ts-utils.iresultlogger.md) to which the erro
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 never

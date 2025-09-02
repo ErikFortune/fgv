@@ -79,4 +79,3 @@ _(Optional)_ An optional [JSON context](./ts-json.ijsoncontext.md) to be used fo
 
 </td></tr>
 </tbody></table>
-

@@ -47,4 +47,3 @@ Optional [init params](./ts-utils.validation.classes.arrayvalidatorconstructorpa
 
 </td></tr>
 </tbody></table>
-

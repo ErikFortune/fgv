@@ -94,17 +94,6 @@ Picks a nested field from a supplied [JsonObject](./ts-json-base.jsonobject.md)<
 
 
 </td></tr>
-<tr><td>
-
-[sanitizeJsonObject(from)](./ts-json-base.sanitizejsonobject.md)
-
-
-</td><td>
-
-Sanitizes some value using JSON stringification and parsing, returning an returning a matching strongly-typed value.
-
-
-</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -233,4 +222,3 @@ Classes of [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->.
 
 </td></tr>
 </tbody></table>
-

@@ -63,7 +63,6 @@ _(Optional)_ [Options](./ts-utils.conversion.constraintoptions.md) for constrain
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T \| TD, TC&gt;

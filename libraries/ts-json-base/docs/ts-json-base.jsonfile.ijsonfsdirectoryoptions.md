@@ -74,4 +74,3 @@ _(Optional)_ Filter applied to items in the directory
 
 </td></tr>
 </tbody></table>
-

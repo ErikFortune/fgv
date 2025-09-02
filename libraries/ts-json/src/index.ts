@@ -23,7 +23,3 @@
 export * from './packlets/context';
 export * from './packlets/converters';
 export * from './packlets/editor';
-
-import * as Diff from './packlets/diff';
-
-export { Diff };

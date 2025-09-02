@@ -4,10 +4,8 @@
 
 ## Logging.LoggerBase.logLevel property
 
-The level of logging to be used.
-
 **Signature:**
 
 ```typescript
-logLevel: ReporterLogLevel;
+logLevel: LogLevel;
 ```

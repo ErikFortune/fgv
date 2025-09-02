@@ -47,7 +47,6 @@ _(Optional)_ Optional [configuration options](./ts-json.editorrules.iconditional
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[ConditionalJsonEditorRule](./ts-json.editorrules.conditionaljsoneditorrule.md)<!-- -->&gt;

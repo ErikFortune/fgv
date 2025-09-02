@@ -93,4 +93,3 @@ If `onUndefinedPropertyValue` is `'error'`<!-- -->, then any property with value
 
 </td></tr>
 </tbody></table>
-

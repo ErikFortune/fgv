@@ -48,7 +48,7 @@ A [collector](./ts-utils.collector.md) that collects [ICollectible](./ts-utils.c
 
 </td><td>
 
-A [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) extends [Failure&lt;T&gt;](./ts-utils.failure.md) to report optional failure details in addition to the error message.
+A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message.
 
 
 </td></tr>
@@ -218,28 +218,6 @@ Wraps a function which might throw to convert exception results to [Failure](./t
 </td><td>
 
 Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
-
-
-</td></tr>
-<tr><td>
-
-[fails(message)](./ts-utils.fails.md)
-
-
-</td><td>
-
-Returns [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
-
-
-</td></tr>
-<tr><td>
-
-[failsWithDetail(message, detail)](./ts-utils.failswithdetail.md)
-
-
-</td><td>
-
-Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a supplied error message and detail.
 
 
 </td></tr>
@@ -465,45 +443,12 @@ Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value
 </td></tr>
 <tr><td>
 
-[succeeds(value)](./ts-utils.succeeds.md)
-
-
-</td><td>
-
-Returns [Success&lt;T&gt;](./ts-utils.success.md) with the supplied result value.
-
-
-</td></tr>
-<tr><td>
-
-[succeedsWithDetail(value, detail)](./ts-utils.succeedswithdetail.md)
-
-
-</td><td>
-
-Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a supplied value and optional detail.
-
-
-</td></tr>
-<tr><td>
-
 [succeedWithDetail(value, detail)](./ts-utils.succeedwithdetail.md)
 
 
 </td><td>
 
 Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a supplied value and optional detail.
-
-
-</td></tr>
-<tr><td>
-
-[useOrInitialize(value, initializer)](./ts-utils.useorinitialize.md)
-
-
-</td><td>
-
-Uses a value or calls a supplied initializer if the supplied value is undefined.
 
 
 </td></tr>
@@ -584,29 +529,7 @@ Represents the result of some operation of sequence of operations.
 
 </td><td>
 
-Simple logger interface used by [orThrow(logger)](./ts-utils.iresult.orthrow.md) and [orThrow(formatter)](./ts-utils.iresult.orthrow_1.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[IResultReporter](./ts-utils.iresultreporter.md)
-
-
-</td><td>
-
-Interface for reporting a result.
-
-
-</td></tr>
-<tr><td>
-
-[IResultReportOptions](./ts-utils.iresultreportoptions.md)
-
-
-</td><td>
-
-Options for reporting a result.
+Simple logger interface used by [IResult.orThrow()](./ts-utils.iresult.orthrow.md)<!-- -->.
 
 
 </td></tr>
@@ -668,15 +591,6 @@ Description
 <tr><td>
 
 [Converters](./ts-utils.converters.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[FileTree](./ts-utils.filetree.md)
 
 
 </td><td>
@@ -813,17 +727,6 @@ String-keyed record of initialization functions to be passed to [populateObject(
 </td></tr>
 <tr><td>
 
-[MessageLogLevel](./ts-utils.messageloglevel.md)
-
-
-</td><td>
-
-The severity level at which a message should be logged.
-
-
-</td></tr>
-<tr><td>
-
 [Result](./ts-utils.result.md)
 
 
@@ -867,4 +770,3 @@ Continuation callback to be called in the event that an [Result](./ts-utils.resu
 
 </td></tr>
 </tbody></table>
-

@@ -9,7 +9,7 @@ Helper function to create a [Validation.Validator](./ts-utils.validation.validat
 **Signature:**
 
 ```typescript
-export declare function enumeratedValue<T extends string>(values: ReadonlyArray<T>): Validator<T, ReadonlyArray<T>>;
+export declare function enumeratedValue<T extends string>(values: T[]): Validator<T, T[]>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ values
 
 </td><td>
 
-ReadonlyArray&lt;T&gt;
+T\[\]
 
 
 </td><td>
@@ -45,8 +45,7 @@ ReadonlyArray&lt;T&gt;
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;T, ReadonlyArray&lt;T&gt;&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, T\[\]&gt;
 

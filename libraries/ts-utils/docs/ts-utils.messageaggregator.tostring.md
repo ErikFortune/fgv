@@ -47,7 +47,6 @@ _(Optional)_ The optional separator used to join strings.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 string

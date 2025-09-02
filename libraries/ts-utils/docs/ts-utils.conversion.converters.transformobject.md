@@ -63,7 +63,6 @@ _(Optional)_ Options which affect the transformation.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TDEST, TC&gt;

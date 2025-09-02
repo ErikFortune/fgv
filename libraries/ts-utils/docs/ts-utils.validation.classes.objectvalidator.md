@@ -165,4 +165,3 @@ Creates a new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md
 
 </td></tr>
 </tbody></table>
-

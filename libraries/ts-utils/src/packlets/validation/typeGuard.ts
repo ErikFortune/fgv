@@ -24,7 +24,7 @@ import { Failure, fail } from '../base';
 import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
 
 import { TypeGuardWithContext } from './common';
-import { Validator, ValidatorOptions } from './validator';
+import { ValidatorOptions } from './validator';
 
 /**
  * Parameters used to construct a {@link Validation.Classes.TypeGuardValidator}.
@@ -69,12 +69,11 @@ export class TypeGuardValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
    * type guard, returning a `Failure<T>` containing more information about a failure.
    * @param from - Value to be converted.
    * @param context - Optional validation context.
-   * @param self - Optional self-reference for recursive validation.
    * @returns `true` if `from` is valid, {@link Failure | Failure<T>}
    * with an error message if `from` is invalid.
    * @internal
    */
-  protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {
+  protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
     if (this._guard(from, context)) {
       return true;
     }

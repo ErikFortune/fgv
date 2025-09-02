@@ -106,4 +106,3 @@ Variant subtag in the IANA language subtag registry.
 
 </td></tr>
 </tbody></table>
-

@@ -9,5 +9,5 @@ Converts an arbitrary value to a [PuzzleType](./ts-sudoku-lib.puzzletype.md)<!--
 **Signature:**
 
 ```typescript
-puzzleType: Converter<PuzzleType, ReadonlyArray<PuzzleType>>
+puzzleType: Converter<PuzzleType, PuzzleType[]>
 ```

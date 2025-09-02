@@ -47,7 +47,6 @@ A `Converter<T>` to validate each entry
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Converter&lt;IDatedRegistry&lt;T&gt;, unknown&gt;

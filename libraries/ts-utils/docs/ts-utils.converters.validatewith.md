@@ -63,7 +63,6 @@ _(Optional)_ A description of the validated type for use in error messages.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

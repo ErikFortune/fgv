@@ -48,7 +48,6 @@ string
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;string&gt;

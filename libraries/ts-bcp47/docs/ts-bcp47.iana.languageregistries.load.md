@@ -43,7 +43,6 @@ string
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[LanguageRegistries](./ts-bcp47.iana.languageregistries.md)<!-- -->&gt;

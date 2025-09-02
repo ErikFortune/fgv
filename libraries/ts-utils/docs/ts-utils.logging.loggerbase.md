@@ -4,14 +4,12 @@
 
 ## Logging.LoggerBase class
 
-Abstract base class which implements [ILogger](./ts-utils.logging.ilogger.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare abstract class LoggerBase implements ILogger 
+export declare abstract class LoggerBase 
 ```
-**Implements:** [ILogger](./ts-utils.logging.ilogger.md)
 
 ## Constructors
 
@@ -37,8 +35,6 @@ Description
 
 
 </td><td>
-
-`protected`
 
 
 </td><td>
@@ -82,12 +78,10 @@ Description
 
 </td><td>
 
-[ReporterLogLevel](./ts-utils.logging.reporterloglevel.md)
+[LogLevel](./ts-utils.logging.loglevel.md)
 
 
 </td><td>
-
-The level of logging to be used.
 
 
 </td></tr>
@@ -123,13 +117,11 @@ Description
 
 </td><td>
 
-Formats a message and parameters into a string.
-
 
 </td></tr>
 <tr><td>
 
-[\_log(message, level)](./ts-utils.logging.loggerbase._log.md)
+[\_innerLog(message)](./ts-utils.logging.loggerbase._innerlog.md)
 
 
 </td><td>
@@ -145,7 +137,7 @@ Formats a message and parameters into a string.
 </td></tr>
 <tr><td>
 
-[\_suppressLog(\_\_level, \_\_message, \_\_parameters)](./ts-utils.logging.loggerbase._suppresslog.md)
+[\_innerSilent(\_\_message)](./ts-utils.logging.loggerbase._innersilent.md)
 
 
 </td><td>
@@ -154,8 +146,6 @@ Formats a message and parameters into a string.
 
 
 </td><td>
-
-Inner method called for suppressed log messages.
 
 
 </td></tr>
@@ -169,8 +159,6 @@ Inner method called for suppressed log messages.
 
 </td><td>
 
-Logs a detail message.
-
 
 </td></tr>
 <tr><td>
@@ -182,8 +170,6 @@ Logs a detail message.
 
 
 </td><td>
-
-Logs an error message.
 
 
 </td></tr>
@@ -197,21 +183,17 @@ Logs an error message.
 
 </td><td>
 
-Logs an info message.
-
 
 </td></tr>
 <tr><td>
 
-[log(level, message, parameters)](./ts-utils.logging.loggerbase.log.md)
+[log(message, parameters)](./ts-utils.logging.loggerbase.log.md)
 
 
 </td><td>
 
 
 </td><td>
-
-Logs a message at the given level.
 
 
 </td></tr>
@@ -225,9 +207,18 @@ Logs a message at the given level.
 
 </td><td>
 
-Logs a warning message.
+
+</td></tr>
+<tr><td>
+
+[warnAndFail(message, parameters)](./ts-utils.logging.loggerbase.warnandfail.md)
+
+
+</td><td>
+
+
+</td><td>
 
 
 </td></tr>
 </tbody></table>
-

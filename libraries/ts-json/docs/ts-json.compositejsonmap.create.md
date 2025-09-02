@@ -47,7 +47,6 @@ one or more [object maps](./ts-json.ijsonreferencemap.md) to be composed.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[CompositeJsonMap](./ts-json.compositejsonmap.md)<!-- -->&gt;

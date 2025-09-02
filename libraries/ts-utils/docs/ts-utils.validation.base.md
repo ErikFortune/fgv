@@ -56,3 +56,28 @@ Options used to initialize a [GenericValidator](./ts-utils.validation.base.gener
 </td></tr>
 </tbody></table>
 
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ValidatorFunc](./ts-utils.validation.base.validatorfunc.md)
+
+
+</td><td>
+
+Type for a validation function, which validates that a supplied `unknown` value is a valid value of type `<T>`<!-- -->, possibly as influenced by an optionally-supplied validation context of type `<TC>`<!-- -->.
+
+
+</td></tr>
+</tbody></table>

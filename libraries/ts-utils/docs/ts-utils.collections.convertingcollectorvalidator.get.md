@@ -47,7 +47,6 @@ The key to retrieve.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TITEM, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;

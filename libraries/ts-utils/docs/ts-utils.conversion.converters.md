@@ -514,4 +514,3 @@ Options for the [Converters.strictObject()](./ts-utils.converters.strictobject.m
 
 </td></tr>
 </tbody></table>
-

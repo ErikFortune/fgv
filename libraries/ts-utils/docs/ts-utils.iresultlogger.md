@@ -4,12 +4,12 @@
 
 ## IResultLogger interface
 
-Simple logger interface used by [orThrow(logger)](./ts-utils.iresult.orthrow.md) and [orThrow(formatter)](./ts-utils.iresult.orthrow_1.md)<!-- -->.
+Simple logger interface used by [IResult.orThrow()](./ts-utils.iresult.orthrow.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export interface IResultLogger<TD = unknown> 
+export interface IResultLogger 
 ```
 
 ## Methods
@@ -27,7 +27,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[error(message, detail)](./ts-utils.iresultlogger.error.md)
+[error(message)](./ts-utils.iresultlogger.error.md)
 
 
 </td><td>
@@ -37,4 +37,3 @@ Log an error message.
 
 </td></tr>
 </tbody></table>
-

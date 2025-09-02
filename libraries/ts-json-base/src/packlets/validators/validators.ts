@@ -40,11 +40,7 @@ export interface IJsonValidatorContext {
  */
 export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
   new Validation.Base.GenericValidator({
-    validator: (
-      from: unknown,
-      ctx?: IJsonValidatorContext,
-      self?: Validator<JsonPrimitive, IJsonValidatorContext>
-    ): boolean | Failure<JsonPrimitive> => {
+    validator: (from: unknown, ctx?: IJsonValidatorContext): boolean | Failure<JsonPrimitive> => {
       if (from === null) {
         return true;
       }
@@ -73,11 +69,7 @@ export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
  * @public
  */
 export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Validation.Base.GenericValidator({
-  validator: (
-    from: unknown,
-    ctx?: IJsonValidatorContext,
-    self?: Validator<JsonObject, IJsonValidatorContext>
-  ) => {
+  validator: (from: unknown, ctx?: IJsonValidatorContext) => {
     if (!isJsonObject(from)) {
       return fail('not a valid JSON object.');
     }
@@ -103,11 +95,7 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
  * @public
  */
 export const jsonArray: Validator<JsonArray, IJsonValidatorContext> = new Validation.Base.GenericValidator({
-  validator: (
-    from: unknown,
-    ctx?: IJsonValidatorContext,
-    self?: Validator<JsonArray, IJsonValidatorContext>
-  ) => {
+  validator: (from: unknown, ctx?: IJsonValidatorContext) => {
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
@@ -137,11 +125,7 @@ export const jsonValue: Validator<JsonValue, IJsonValidatorContext> = new Valida
   JsonValue,
   IJsonValidatorContext
 >({
-  validator: (
-    from: unknown,
-    ctx?: IJsonValidatorContext,
-    self?: Validator<JsonValue, IJsonValidatorContext>
-  ) => {
+  validator: (from: unknown, ctx?: IJsonValidatorContext) => {
     if (isJsonArray(from)) {
       const result = jsonArray.validate(from, ctx);
       return result.success === true ? true : result;

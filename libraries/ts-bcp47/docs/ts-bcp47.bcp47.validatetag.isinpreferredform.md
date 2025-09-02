@@ -47,7 +47,6 @@ The [subtags](./ts-bcp47.bcp47.subtags.md) to test.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 boolean

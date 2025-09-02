@@ -79,7 +79,6 @@ _(Optional)_ An optional distinct event detail to be added to [Success](./ts-uti
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

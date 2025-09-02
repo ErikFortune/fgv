@@ -63,7 +63,6 @@ A [Converter](./ts-utils.converter.md) or [Validator](./ts-utils.validator.md) f
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

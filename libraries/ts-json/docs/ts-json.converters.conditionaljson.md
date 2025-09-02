@@ -47,7 +47,6 @@ _(Optional)_ [Options and context](./ts-json.conditionaljsonconverteroptions.md)
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [JsonConverter](./ts-json.jsonconverter.md)

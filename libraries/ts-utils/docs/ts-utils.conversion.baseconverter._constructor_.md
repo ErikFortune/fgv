@@ -79,4 +79,3 @@ _(Optional)_ Optional [traits](./ts-utils.conversion.convertertraits.md) to be a
 
 </td></tr>
 </tbody></table>
-

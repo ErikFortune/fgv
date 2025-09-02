@@ -61,7 +61,6 @@ _(Optional)_ (optional) set of [init options](./ts-bcp47.bcp47.ilanguagetaginito
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[LanguageTag](./ts-bcp47.bcp47.languagetag.md)<!-- -->&gt;

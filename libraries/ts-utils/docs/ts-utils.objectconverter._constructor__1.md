@@ -4,11 +4,6 @@
 
 ## ObjectConverter.(constructor)
 
-> Warning: This API is now obsolete.
-> 
-> Use [.optional()](./ts-utils.conversion.converter.optional.md) on the individual fields, or pass [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md) to the constructor.
-> 
-
 Constructs a new [ObjectConverter&lt;T, TC&gt;](./ts-utils.conversion.objectconverter.md) with optional properties specified as an array of `keyof T`<!-- -->.
 
 **Signature:**
@@ -68,4 +63,3 @@ _(Optional)_ An array of `keyof T` listing fields that are not required.
 
 </td></tr>
 </tbody></table>
-

@@ -56,4 +56,3 @@ _(Optional)_ If true (default) then properties with unconditional names (which s
 
 </td></tr>
 </tbody></table>
-

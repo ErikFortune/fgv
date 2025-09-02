@@ -47,7 +47,6 @@ The [Converter](./ts-utils.converter.md) to be applied to the converted result f
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T2, TC&gt;

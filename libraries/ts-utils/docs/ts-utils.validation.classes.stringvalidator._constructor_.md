@@ -47,4 +47,3 @@ _(Optional)_ Optional [init params](./ts-utils.validation.classes.stringvalidato
 
 </td></tr>
 </tbody></table>
-

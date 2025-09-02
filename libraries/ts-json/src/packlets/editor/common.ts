@@ -45,32 +45,6 @@ export type JsonEditorValidationRules =
   | 'undefinedPropertyValue';
 
 /**
- * Array merge behavior options for a {@link JsonEditor | JsonEditor}.
- * @public
- */
-export type ArrayMergeBehavior = 'append' | 'replace';
-
-/**
- * Merge options for a {@link JsonEditor | JsonEditor}.
- * @public
- */
-export interface IJsonEditorMergeOptions {
-  /**
-   * Controls how arrays are merged when combining JSON values.
-   * - `'append'` (default): Existing array elements are preserved and new elements are appended
-   * - `'replace'`: Existing array is completely replaced with the new array
-   */
-  arrayMergeBehavior: ArrayMergeBehavior;
-
-  /**
-   * Controls whether null values should be treated as property deletion during merge operations.
-   * - `false` (default): Null values are merged normally, setting the property to null
-   * - `true`: Null values delete the property from the target object during merge
-   */
-  nullAsDelete?: boolean;
-}
-
-/**
  * Validation options for a {@link JsonEditor | JsonEditor}.
  * @public
  */
@@ -107,7 +81,6 @@ export interface IJsonEditorValidationOptions {
 export interface IJsonEditorOptions {
   context?: IJsonContext;
   validation: IJsonEditorValidationOptions;
-  merge?: IJsonEditorMergeOptions;
 }
 
 /**

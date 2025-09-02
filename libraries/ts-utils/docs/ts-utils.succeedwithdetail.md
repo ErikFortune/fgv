@@ -63,14 +63,9 @@ _(Optional)_ An optional detail of type `<TD>` to be returned.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->&lt;T, TD&gt;
 
 A [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with the supplied value and detail, if supplied.
-
-## Remarks
-
-The `succeedsWithDetail` alias was added in release 5.0 for naming consistency with [fails](./ts-utils.fails.md)<!-- -->, which was added to avoid conflicts with test frameworks and libraries.
 

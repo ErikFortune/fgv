@@ -130,4 +130,3 @@ Constructs a new [TemplatedJsonConverter](./ts-json.templatedjsonconverter.md) w
 
 </td></tr>
 </tbody></table>
-

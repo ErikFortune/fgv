@@ -47,4 +47,3 @@ _(Optional)_ Optional partial [options](./ts-json.templatedjsonconverteroptions.
 
 </td></tr>
 </tbody></table>
-

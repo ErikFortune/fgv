@@ -47,4 +47,3 @@ _(Optional)_ Optional [init params](./ts-utils.validation.classes.booleanvalidat
 
 </td></tr>
 </tbody></table>
-

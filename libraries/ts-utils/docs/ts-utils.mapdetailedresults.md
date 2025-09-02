@@ -79,7 +79,6 @@ _(Optional)_ Optional string array to which any non-ignorable error messages wil
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T\[\]&gt;

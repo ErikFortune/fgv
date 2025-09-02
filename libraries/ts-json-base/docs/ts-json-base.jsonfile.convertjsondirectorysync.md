@@ -63,7 +63,6 @@ options
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[IReadDirectoryItem](./ts-json-base.jsonfile.ireaddirectoryitem.md)<!-- -->&lt;T&gt;\[\]&gt;

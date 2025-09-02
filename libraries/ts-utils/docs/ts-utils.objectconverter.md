@@ -166,49 +166,7 @@ Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derive
 </td></tr>
 <tr><td>
 
-[convertPartial(from, context)](./ts-utils.objectconverter.convertpartial.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Converts the supplied object using the [ObjectConverter](./ts-utils.conversion.objectconverter.md) with all fields optional.
-
-
-</td></tr>
-<tr><td>
-
-[convertRequired(from, context)](./ts-utils.objectconverter.convertrequired.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Converts the supplied object using the [ObjectConverter](./ts-utils.conversion.objectconverter.md) with all fields required.
-
-
-</td></tr>
-<tr><td>
-
-[partial()](./ts-utils.objectconverter.partial.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with all properties optional.
-
-
-</td></tr>
-<tr><td>
-
-[partial(options)](./ts-utils.objectconverter.partial_1.md)
+[partial(options)](./ts-utils.objectconverter.partial.md)
 
 
 </td><td>
@@ -222,7 +180,7 @@ Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derive
 </td></tr>
 <tr><td>
 
-[partial(optional)](./ts-utils.objectconverter.partial_2.md)
+[partial(optional)](./ts-utils.objectconverter.partial_1.md)
 
 
 </td><td>
@@ -234,19 +192,4 @@ Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derive
 
 
 </td></tr>
-<tr><td>
-
-[required()](./ts-utils.objectconverter.required.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with all properties required.
-
-
-</td></tr>
 </tbody></table>
-

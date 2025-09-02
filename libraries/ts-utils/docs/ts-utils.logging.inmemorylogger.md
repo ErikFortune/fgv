@@ -4,7 +4,6 @@
 
 ## Logging.InMemoryLogger class
 
-An in-memory logger that stores logged and suppressed messages.
 
 **Signature:**
 
@@ -41,7 +40,7 @@ Description
 
 </td><td>
 
-Creates a new in-memory logger.
+Constructs a new instance of the `InMemoryLogger` class
 
 
 </td></tr>
@@ -72,7 +71,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_logged](./ts-utils.logging.inmemorylogger._logged.md)
+[\_messages](./ts-utils.logging.inmemorylogger._messages.md)
 
 
 </td><td>
@@ -87,13 +86,11 @@ string\[\]
 
 </td><td>
 
-The messages that have been logged.
-
 
 </td></tr>
 <tr><td>
 
-[\_suppressed](./ts-utils.logging.inmemorylogger._suppressed.md)
+[\_silent](./ts-utils.logging.inmemorylogger._silent.md)
 
 
 </td><td>
@@ -108,13 +105,11 @@ string\[\]
 
 </td><td>
 
-The messages that have been suppressed.
-
 
 </td></tr>
 <tr><td>
 
-[logged](./ts-utils.logging.inmemorylogger.logged.md)
+[messages](./ts-utils.logging.inmemorylogger.messages.md)
 
 
 </td><td>
@@ -129,13 +124,11 @@ string\[\]
 
 </td><td>
 
-The messages that have been logged.
-
 
 </td></tr>
 <tr><td>
 
-[suppressed](./ts-utils.logging.inmemorylogger.suppressed.md)
+[silent](./ts-utils.logging.inmemorylogger.silent.md)
 
 
 </td><td>
@@ -149,8 +142,6 @@ string\[\]
 
 
 </td><td>
-
-The messages that have been suppressed.
 
 
 </td></tr>
@@ -176,7 +167,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_log(message, \_\_level)](./ts-utils.logging.inmemorylogger._log.md)
+[\_innerLog(message)](./ts-utils.logging.inmemorylogger._innerlog.md)
 
 
 </td><td>
@@ -185,13 +176,12 @@ Description
 
 
 </td><td>
-
 
 
 </td></tr>
 <tr><td>
 
-[\_suppressLog(level, message, parameters)](./ts-utils.logging.inmemorylogger._suppresslog.md)
+[\_innerSilent(message)](./ts-utils.logging.inmemorylogger._innersilent.md)
 
 
 </td><td>
@@ -200,8 +190,6 @@ Description
 
 
 </td><td>
-
-Inner method called for suppressed log messages.
 
 
 </td></tr>
@@ -215,9 +203,6 @@ Inner method called for suppressed log messages.
 
 </td><td>
 
-Clears the logged and suppressed messages.
-
 
 </td></tr>
 </tbody></table>
-

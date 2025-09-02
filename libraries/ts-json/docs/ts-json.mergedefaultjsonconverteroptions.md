@@ -47,7 +47,6 @@ _(Optional)_ An optional partial [IJsonConverterOptions](./ts-json.ijsonconverte
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [IJsonConverterOptions](./ts-json.ijsonconverteroptions.md)

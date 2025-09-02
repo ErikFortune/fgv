@@ -47,4 +47,3 @@ _(Optional)_ An iterable to initialize the map.
 
 </td></tr>
 </tbody></table>
-

@@ -63,7 +63,6 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;string\[\], string&gt;

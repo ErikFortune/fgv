@@ -9,7 +9,7 @@ Propagates interior result, appending any error message to the supplied errors a
 **Signature:**
 
 ```typescript
-aggregateError(__errors: IMessageAggregator): this;
+aggregateError(errors: IMessageAggregator): this;
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-\_\_errors
+errors
 
 
 </td><td>
@@ -42,10 +42,11 @@ Description
 
 </td><td>
 
+[Error aggregator](./ts-utils.imessageaggregator.md) in which errors will be aggregated.
+
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 this

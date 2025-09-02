@@ -155,62 +155,62 @@ describe('GenericValidator class', () => {
 
       test('validate passes undefined context by default', () => {
         expect(tv.validate('foo')).toSucceedWith('foo');
-        expect(tvv).toHaveBeenCalledWith('foo', undefined, expect.any(Object));
+        expect(tvv).toHaveBeenCalledWith('foo', undefined);
       });
 
       test('validate passes default context if present', () => {
         expect(tvctx.validate('foo')).toSucceedWith('foo');
-        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext, expect.any(Object));
+        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext);
       });
 
       test('validate passes call site context if supplied', () => {
         expect(tv.validate('foo', explicitContext)).toSucceedWith('foo');
-        expect(tvv).toHaveBeenCalledWith('foo', explicitContext, expect.any(Object));
+        expect(tvv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
       test('validate passes call site context if supplied if default context is present', () => {
         expect(tvctx.validate('foo', explicitContext)).toSucceedWith('foo');
-        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext, expect.any(Object));
+        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
       test('convert passes undefined context by default', () => {
         expect(tv.convert('foo')).toSucceedWith('foo');
-        expect(tvv).toHaveBeenCalledWith('foo', undefined, expect.any(Object));
+        expect(tvv).toHaveBeenCalledWith('foo', undefined);
       });
 
       test('convert passes default context if present', () => {
         expect(tvctx.convert('foo')).toSucceedWith('foo');
-        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext, expect.any(Object));
+        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext);
       });
 
       test('convert passes call site context if supplied', () => {
         expect(tv.convert('foo', explicitContext)).toSucceedWith('foo');
-        expect(tvv).toHaveBeenCalledWith('foo', explicitContext, expect.any(Object));
+        expect(tvv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
       test('convert passes call site context if supplied if default context is present', () => {
         expect(tvctx.convert('foo', explicitContext)).toSucceedWith('foo');
-        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext, expect.any(Object));
+        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
       test('guard passes undefined context by default', () => {
         expect(tv.guard('foo')).toBe(true);
-        expect(tvv).toHaveBeenCalledWith('foo', undefined, expect.any(Object));
+        expect(tvv).toHaveBeenCalledWith('foo', undefined);
       });
 
       test('guard passes default context if present', () => {
         expect(tvctx.guard('foo')).toBe(true);
-        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext, expect.any(Object));
+        expect(tvctxv).toHaveBeenCalledWith('foo', defaultContext);
       });
 
       test('guard passes call site context if supplied', () => {
         expect(tv.guard('foo', explicitContext)).toBe(true);
-        expect(tvv).toHaveBeenCalledWith('foo', explicitContext, expect.any(Object));
+        expect(tvv).toHaveBeenCalledWith('foo', explicitContext);
       });
 
       test('guard passes call site context if supplied if default context is present', () => {
         expect(tvctx.guard('foo', explicitContext)).toBe(true);
-        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext, expect.any(Object));
+        expect(tvctxv).toHaveBeenCalledWith('foo', explicitContext);
       });
     });
   });

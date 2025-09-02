@@ -4,7 +4,7 @@
 
 ## DetailedFailure class
 
-A [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) extends [Failure&lt;T&gt;](./ts-utils.failure.md) to report optional failure details in addition to the error message.
+A [DetailedFailure](./ts-utils.detailedfailure.md) extends [Failure](./ts-utils.failure.md) to report optional failure details in addition to the error message.
 
 **Signature:**
 
@@ -72,27 +72,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[asResult](./ts-utils.detailedfailure.asresult.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Result](./ts-utils.result.md)<!-- -->&lt;T&gt;
-
-
-</td><td>
-
-Returns this [DetailedFailure](./ts-utils.detailedfailure.md) as a [Result](./ts-utils.result.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [detail](./ts-utils.detailedfailure.detail.md)
 
 
@@ -103,7 +82,7 @@ Returns this [DetailedFailure](./ts-utils.detailedfailure.md) as a [Result](./ts
 
 </td><td>
 
-TD \| undefined
+TD
 
 
 </td><td>
@@ -176,60 +155,6 @@ Propagates the error message and detail from this result.
 </td></tr>
 <tr><td>
 
-[orThrow(logOrFormat)](./ts-utils.detailedfailure.orthrow.md)
-
-
-</td><td>
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[orThrow(cb)](./ts-utils.detailedfailure.orthrow_1.md)
-
-
-</td><td>
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[report(reporter, options)](./ts-utils.detailedfailure.report.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Reports the result to the supplied reporter
-
-
-</td></tr>
-<tr><td>
-
-[with(message, detail)](./ts-utils.detailedfailure.with.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Creates a [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with the supplied error message and optional detail.
-
-
-</td></tr>
-<tr><td>
-
 [withErrorFormat(cb)](./ts-utils.detailedfailure.witherrorformat.md)
 
 
@@ -243,4 +168,3 @@ Calls a supplied [error formatter](./ts-utils.errorformatter.md) if the operatio
 
 </td></tr>
 </tbody></table>
-

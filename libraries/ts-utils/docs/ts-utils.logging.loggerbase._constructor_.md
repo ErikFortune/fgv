@@ -9,7 +9,7 @@ Constructs a new instance of the `LoggerBase` class
 **Signature:**
 
 ```typescript
-protected constructor(logLevel?: ReporterLogLevel);
+constructor(logLevel?: LogLevel);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ logLevel
 
 </td><td>
 
-[ReporterLogLevel](./ts-utils.logging.reporterloglevel.md)
+[LogLevel](./ts-utils.logging.loglevel.md)
 
 
 </td><td>
@@ -47,4 +47,3 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
-

@@ -94,43 +94,6 @@ Helper function to create a [Validator](./ts-utils.validation.validator.md) whic
 
 
 </td></tr>
-<tr><td>
-
-[recordOf(validator, options)](./ts-utils.validators.recordof.md)
-
-
-</td><td>
-
-A helper function to create a [Validator](./ts-utils.validation.validator.md) which validates the `string`<!-- -->-keyed properties using a supplied [Validator&lt;T, TC&gt;](./ts-utils.validation.validator.md) to produce a `Record<TK, T>`<!-- -->.
-
-
-</td></tr>
-</tbody></table>
-
-## Interfaces
-
-<table><thead><tr><th>
-
-Interface
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[IRecordOfValidatorOptions](./ts-utils.validators.irecordofvalidatoroptions.md)
-
-
-</td><td>
-
-Options for [Validators.recordOf()](./ts-utils.validators.recordof.md) helper function.
-
-
-</td></tr>
 </tbody></table>
 
 ## Variables
@@ -180,4 +143,3 @@ A [StringValidator](./ts-utils.validation.classes.stringvalidator.md) which vali
 
 </td></tr>
 </tbody></table>
-

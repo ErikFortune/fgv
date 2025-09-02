@@ -79,4 +79,3 @@ _(Optional)_ Optional [ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md
 
 </td></tr>
 </tbody></table>
-

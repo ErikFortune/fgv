@@ -102,4 +102,3 @@ Represents a single record in a JAR file
 
 </td></tr>
 </tbody></table>
-

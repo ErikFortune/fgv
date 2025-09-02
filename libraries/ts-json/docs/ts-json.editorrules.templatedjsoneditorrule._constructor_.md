@@ -47,4 +47,3 @@ _(Optional)_ Optional [configuration options](./ts-json.editorrules.itemplatedjs
 
 </td></tr>
 </tbody></table>
-

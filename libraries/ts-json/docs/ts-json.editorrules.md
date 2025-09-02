@@ -140,4 +140,3 @@ Configuration options for the [Templated JSON editor rule](./ts-json.editorrules
 
 </td></tr>
 </tbody></table>
-

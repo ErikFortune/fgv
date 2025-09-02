@@ -63,7 +63,6 @@ An array of [VariableValue](./ts-json.variablevalue.md) to be added to the conte
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;

@@ -9,7 +9,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) which converts 
 **Signature:**
 
 ```typescript
-export declare function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, ReadonlyArray<T>>;
+export declare function enumeratedValue<T>(values: T[]): Converter<T, T[]>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ values
 
 </td><td>
 
-ReadonlyArray&lt;T&gt;
+T\[\]
 
 
 </td><td>
@@ -47,10 +47,9 @@ Array of allowed values.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
-[Converter](./ts-utils.converter.md)<!-- -->&lt;T, ReadonlyArray&lt;T&gt;&gt;
+[Converter](./ts-utils.converter.md)<!-- -->&lt;T, T\[\]&gt;
 
 A new [Converter](./ts-utils.converter.md) returning `<T>`<!-- -->.
 

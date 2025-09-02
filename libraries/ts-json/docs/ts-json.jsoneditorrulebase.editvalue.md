@@ -59,7 +59,6 @@ JsonValue
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 DetailedResult&lt;JsonValue, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

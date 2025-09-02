@@ -63,7 +63,6 @@ _(Optional)_ Optional [Conversion.StringMatchOptions](./ts-utils.conversion.stri
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 [StringConverter](./ts-utils.stringconverter.md)<!-- -->&lt;T, TC&gt;

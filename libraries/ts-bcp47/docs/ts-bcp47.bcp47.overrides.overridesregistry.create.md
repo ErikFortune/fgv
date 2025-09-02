@@ -43,7 +43,6 @@ ILanguageOverride\[\]
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[OverridesRegistry](./ts-bcp47.bcp47.overrides.overridesregistry.md)<!-- -->&gt;

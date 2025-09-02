@@ -82,7 +82,6 @@ The [Formatter&lt;T&gt;](./ts-extras.experimental.formatter.md) used to format e
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;string&gt;

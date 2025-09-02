@@ -79,7 +79,6 @@ The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 DetailedResult&lt;JsonObject, [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)<!-- -->&gt;

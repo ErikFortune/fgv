@@ -63,7 +63,6 @@ JsonObject\[\]
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;JsonObject&gt;

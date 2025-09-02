@@ -63,7 +63,6 @@ Dot-separated path of the member to be picked.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;

@@ -63,7 +63,6 @@ The keys of the properties to be picked from `from`<!-- -->.
 
 </td></tr>
 </tbody></table>
-
 **Returns:**
 
 Pick&lt;T, K&gt;

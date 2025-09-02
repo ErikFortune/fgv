@@ -63,4 +63,3 @@ _(Optional)_ Optional maximum extent of the range.
 
 </td></tr>
 </tbody></table>
-

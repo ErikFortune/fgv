@@ -258,4 +258,3 @@ Gets a [TemplateVars](./ts-json.templatevars.md) from the context of this [JsonE
 
 </td></tr>
 </tbody></table>
-

@@ -58,4 +58,3 @@ A [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md) which valid
 
 </td></tr>
 </tbody></table>
-
