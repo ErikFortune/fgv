@@ -265,3 +265,4 @@ Creates a new [Collectible](./ts-utils.collections.collectible.md) instance.
 
 </td></tr>
 </tbody></table>
+

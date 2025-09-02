@@ -47,6 +47,7 @@ params
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[Collectible](./ts-utils.collections.collectible.md)<!-- -->&lt;TKEY, TINDEX&gt;&gt;

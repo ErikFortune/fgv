@@ -4,6 +4,7 @@
 
 ## Logging.InMemoryLogger class
 
+An in-memory logger that stores logged and suppressed messages.
 
 **Signature:**
 
@@ -40,7 +41,7 @@ Description
 
 </td><td>
 
-Constructs a new instance of the `InMemoryLogger` class
+Creates a new in-memory logger.
 
 
 </td></tr>
@@ -71,7 +72,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_messages](./ts-utils.logging.inmemorylogger._messages.md)
+[\_logged](./ts-utils.logging.inmemorylogger._logged.md)
 
 
 </td><td>
@@ -86,11 +87,13 @@ string\[\]
 
 </td><td>
 
+The messages that have been logged.
+
 
 </td></tr>
 <tr><td>
 
-[\_silent](./ts-utils.logging.inmemorylogger._silent.md)
+[\_suppressed](./ts-utils.logging.inmemorylogger._suppressed.md)
 
 
 </td><td>
@@ -105,11 +108,13 @@ string\[\]
 
 </td><td>
 
+The messages that have been suppressed.
+
 
 </td></tr>
 <tr><td>
 
-[messages](./ts-utils.logging.inmemorylogger.messages.md)
+[logged](./ts-utils.logging.inmemorylogger.logged.md)
 
 
 </td><td>
@@ -124,11 +129,13 @@ string\[\]
 
 </td><td>
 
+The messages that have been logged.
+
 
 </td></tr>
 <tr><td>
 
-[silent](./ts-utils.logging.inmemorylogger.silent.md)
+[suppressed](./ts-utils.logging.inmemorylogger.suppressed.md)
 
 
 </td><td>
@@ -142,6 +149,8 @@ string\[\]
 
 
 </td><td>
+
+The messages that have been suppressed.
 
 
 </td></tr>
@@ -167,7 +176,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_innerLog(message)](./ts-utils.logging.inmemorylogger._innerlog.md)
+[\_log(message, \_\_level)](./ts-utils.logging.inmemorylogger._log.md)
 
 
 </td><td>
@@ -176,12 +185,13 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
 <tr><td>
 
-[\_innerSilent(message)](./ts-utils.logging.inmemorylogger._innersilent.md)
+[\_suppressLog(level, message, parameters)](./ts-utils.logging.inmemorylogger._suppresslog.md)
 
 
 </td><td>
@@ -190,6 +200,8 @@ Description
 
 
 </td><td>
+
+Inner method called for suppressed log messages.
 
 
 </td></tr>
@@ -203,6 +215,9 @@ Description
 
 </td><td>
 
+Clears the logged and suppressed messages.
+
 
 </td></tr>
 </tbody></table>
+

@@ -134,7 +134,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_validate(from, context)](./ts-utils.validation.classes.oneofvalidator._validate.md)
+[\_validate(from, context, self)](./ts-utils.validation.classes.oneofvalidator._validate.md)
 
 
 </td><td>
@@ -149,3 +149,4 @@ Static method which validates that a supplied `unknown` value matches at least o
 
 </td></tr>
 </tbody></table>
+

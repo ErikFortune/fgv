@@ -63,6 +63,7 @@ Optional [KeyedConverterOptions&lt;TK, TC&gt;](./ts-utils.converters.keyedconver
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;Record&lt;TK, T&gt;, TC&gt;

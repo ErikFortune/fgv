@@ -47,3 +47,4 @@ Required parameters for constructing the collector.
 
 </td></tr>
 </tbody></table>
+

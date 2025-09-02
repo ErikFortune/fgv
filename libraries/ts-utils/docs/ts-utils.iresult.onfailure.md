@@ -47,6 +47,7 @@ The [failure continuation](./ts-utils.failurecontinuation.md) to be called in th
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

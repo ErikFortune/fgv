@@ -47,6 +47,7 @@ The `unknown` value to be tested.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 boolean \| [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;
