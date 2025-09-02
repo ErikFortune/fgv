@@ -1,0 +1,32 @@
+{
+  "name": "territory-hierarchy-unconstrained",
+  "description": "Test configuration for unconstrained territory qualifier type with hierarchy (no allowedTerritories)",
+  "qualifierTypes": [
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": true,
+        "acceptLowercase": true,
+        "hierarchy": {
+          "PR": "US",
+          "VI": "US",
+          "GU": "US",
+          "AS": "US"
+        }
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "territory",
+      "type": "territory"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "message",
+      "qualifiers": ["territory"]
+    }
+  ]
+}
