@@ -63,6 +63,7 @@ The [values](./ts-json.variablevalue.md) to be added or overridden in the new va
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[TemplateVars](./ts-json.templatevars.md) \| undefined&gt;

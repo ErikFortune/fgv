@@ -47,3 +47,4 @@ _(Optional)_ Optional partial [options](./ts-json.ijsonconverteroptions.md) to c
 
 </td></tr>
 </tbody></table>
+

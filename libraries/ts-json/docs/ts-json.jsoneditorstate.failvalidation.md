@@ -79,6 +79,7 @@ _(Optional)_ The [validation options](./ts-json.ijsoneditorvalidationoptions.md)
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedFailure&lt;T, [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;
