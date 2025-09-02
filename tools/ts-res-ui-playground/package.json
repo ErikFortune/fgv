@@ -51,7 +51,7 @@
     "@types/react": "~19.1.10",
     "@types/react-dom": "~19.1.7",
     "@types/node": "^20.14.9",
-    "typescript": "^5.8.3",
+    "typescript": "5.8.3",
     "webpack": "~5.101.2",
     "webpack-cli": "~6.0.1",
     "webpack-dev-server": "~5.2.2",
@@ -72,7 +72,7 @@
     "@rushstack/heft-web-rig": "0.29.8",
     "@rushstack/heft": "0.74.3",
     "@rushstack/heft-api-extractor-plugin": "~0.4.11",
-    "@rushstack/heft-jest-plugin": "~0.16.12",
+    "@rushstack/heft-jest-plugin": "0.16.12",
     "@rushstack/heft-lint-plugin": "~0.7.4",
     "@rushstack/heft-sass-plugin": "~0.17.12",
     "@rushstack/heft-webpack5-plugin": "~0.11.40"
