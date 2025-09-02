@@ -47,6 +47,7 @@ The [id](./ts-sudoku-lib.cellid.md) of the cell to be tested.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 boolean

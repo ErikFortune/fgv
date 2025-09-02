@@ -1,0 +1,79 @@
+{
+  "resources": {
+    "background-colors": {
+      "resourceTypeName": "color",
+      "candidates": [
+        {
+          "conditions": {
+            "component": "background",
+            "theme": "light",
+            "contrast": "standard"
+          },
+          "json": {
+            "primary": "#ffffff",
+            "secondary": "#f8f9fa",
+            "tertiary": "#e9ecef"
+          }
+        },
+        {
+          "conditions": {
+            "component": "background",
+            "theme": "dark",
+            "contrast": "standard"
+          },
+          "json": {
+            "primary": "#1a1a1a",
+            "secondary": "#2d2d2d",
+            "tertiary": "#404040"
+          }
+        },
+        {
+          "conditions": {
+            "component": "background",
+            "theme": "light",
+            "contrast": "high"
+          },
+          "json": {
+            "primary": "#ffffff",
+            "secondary": "#ffffff",
+            "tertiary": "#f0f0f0"
+          }
+        },
+        {
+          "conditions": {
+            "component": "background",
+            "theme": "dark",
+            "contrast": "high"
+          },
+          "json": {
+            "primary": "#000000",
+            "secondary": "#000000",
+            "tertiary": "#1a1a1a"
+          }
+        },
+        {
+          "conditions": {
+            "component": "background",
+            "contrast": "white"
+          },
+          "json": {
+            "primary": "#ffffff",
+            "secondary": "#ffffff",
+            "tertiary": "#ffffff"
+          }
+        },
+        {
+          "conditions": {
+            "component": "background",
+            "contrast": "black"
+          },
+          "json": {
+            "primary": "#000000",
+            "secondary": "#000000",
+            "tertiary": "#000000"
+          }
+        }
+      ]
+    }
+  }
+}

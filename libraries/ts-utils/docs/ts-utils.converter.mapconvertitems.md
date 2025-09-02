@@ -47,6 +47,7 @@ The [Converter](./ts-utils.converter.md) to be applied to each element of the re
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TI\[\], TC&gt;

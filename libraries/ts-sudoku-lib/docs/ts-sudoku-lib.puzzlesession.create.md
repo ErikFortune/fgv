@@ -47,6 +47,7 @@ The  from which the session is to be initialized.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[PuzzleSession](./ts-sudoku-lib.puzzlesession.md)<!-- -->&gt;

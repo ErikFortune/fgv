@@ -50,6 +50,7 @@ _(Optional)_ Optional message to be displayed in the event of failure.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;T&gt;

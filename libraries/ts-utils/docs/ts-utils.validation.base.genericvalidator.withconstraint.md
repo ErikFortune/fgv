@@ -63,6 +63,7 @@ _(Optional)_ As optional [ConstraintTrait](./ts-utils.validation.constrainttrait
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;

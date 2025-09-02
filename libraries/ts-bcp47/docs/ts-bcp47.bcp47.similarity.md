@@ -79,6 +79,7 @@ _(Optional)_ (optional) A set of [language tag options](./ts-bcp47.bcp47.ilangua
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;number&gt;

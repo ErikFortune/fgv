@@ -63,6 +63,7 @@ _(Optional)_ Specifies treatment of unconvertible elements.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

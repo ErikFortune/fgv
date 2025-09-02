@@ -79,6 +79,7 @@ _(Optional)_ An optional [IJsonContext](./ts-json.ijsoncontext.md) supplying var
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;JsonObject&gt;

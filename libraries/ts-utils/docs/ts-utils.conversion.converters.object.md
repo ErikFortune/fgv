@@ -63,6 +63,7 @@ _(Optional)_ An [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectco
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;T, TC&gt;

@@ -26,12 +26,12 @@ import { FieldValidators, ObjectValidator, ObjectValidatorConstructorParams } fr
 import { TypeGuardValidator, TypeGuardValidatorConstructorParams } from './typeGuard';
 
 import { BooleanValidator } from './boolean';
-import { TypeGuardWithContext, ValidatorFunc } from './common';
+import { TypeGuardWithContext } from './common';
 import { GenericValidator } from './genericValidator';
 import { NumberValidator } from './number';
 import { OneOfValidator, OneOfValidatorConstructorParams } from './oneOf';
 import { StringValidator } from './string';
-import { Validator } from './validator';
+import { Validator, ValidatorFunc } from './validator';
 
 /**
  * A {@link Validation.Classes.StringValidator | StringValidator} which validates a string in place.
@@ -121,7 +121,11 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
   const opts: IRecordOfValidatorOptions<TK, TC> = { onError: 'fail', ...options };
 
   return new GenericValidator({
-    validator: (from: unknown, context?: TC): boolean | Failure<Record<TK, T>> => {
+    validator: (
+      from: unknown,
+      context?: TC,
+      self?: Validator<Record<TK, T>, TC>
+    ): boolean | Failure<Record<TK, T>> => {
       if (typeof from !== 'object' || from === null || Array.isArray(from)) {
         return fail(`Not a string-keyed object: ${JSON.stringify(from)}`);
       }
@@ -158,6 +162,7 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
         }
       }
 
+      /* c8 ignore next 1 - defense in depth */
       return errors.hasMessages ? fail(errors.toString()) : true;
     }
   });
@@ -168,9 +173,13 @@ export function recordOf<T, TC = unknown, TK extends string = string>(
  * value in place.
  * @public
  */
-export function enumeratedValue<T extends string>(values: T[]): Validator<T, T[]> {
+export function enumeratedValue<T extends string>(values: ReadonlyArray<T>): Validator<T, ReadonlyArray<T>> {
   return new GenericValidator({
-    validator: (from: unknown, context?: T[]): boolean | Failure<T> => {
+    validator: (
+      from: unknown,
+      context?: ReadonlyArray<T>,
+      self?: Validator<T, ReadonlyArray<T>>
+    ): boolean | Failure<T> => {
       if (typeof from === 'string') {
         const v = context ?? values;
         const index = v.indexOf(from as T);
@@ -190,7 +199,7 @@ export function literal<T extends string | number | boolean | symbol | null | un
   value: T
 ): Validator<T> {
   return new GenericValidator({
-    validator: (from: unknown): boolean | Failure<T> => {
+    validator: (from: unknown, context?: unknown, self?: Validator<T>): boolean | Failure<T> => {
       return from === value
         ? true
         : fail(`Expected literal ${String(value)}, found "${JSON.stringify(from, undefined, 2)}`);
