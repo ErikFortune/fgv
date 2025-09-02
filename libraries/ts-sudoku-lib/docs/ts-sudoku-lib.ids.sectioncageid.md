@@ -57,6 +57,7 @@ number
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [CageId](./ts-sudoku-lib.cageid.md)
