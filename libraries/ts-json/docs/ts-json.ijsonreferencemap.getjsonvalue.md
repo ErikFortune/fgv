@@ -63,6 +63,7 @@ _(Optional)_ Optional [JSON Context](./ts-json.ijsoncontext.md) used to format t
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;JsonValue, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "- add json diff engine, ability to control array merge behavior",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}
