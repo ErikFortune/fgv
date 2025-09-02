@@ -54,7 +54,8 @@
     "@microsoft/api-documenter": "^7.26.31",
     "@fgv/ts-json-base": "workspace:*",
     "@rushstack/eslint-config": "4.4.0",
-    "eslint-plugin-tsdoc": "~0.4.0"
+    "eslint-plugin-tsdoc": "~0.4.0",
+    "@rushstack/heft-jest-plugin": "0.16.12"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",

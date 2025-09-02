@@ -237,6 +237,9 @@ importers:
       '@rushstack/heft':
         specifier: 0.74.3
         version: 0.74.3(@types/node@20.19.11)
+      '@rushstack/heft-jest-plugin':
+        specifier: 0.16.12
+        version: 0.16.12(@rushstack/heft@0.74.3)(@types/node@20.19.11)(jest-environment-node@29.5.0)(ts-node@10.9.2)
       '@rushstack/heft-node-rig':
         specifier: 2.9.4
         version: 2.9.4(@rushstack/heft@0.74.3)(@types/node@20.19.11)(ts-node@10.9.2)
