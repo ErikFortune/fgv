@@ -2,21 +2,6 @@
   "name": "@fgv/ts-bcp47",
   "entries": [
     {
-      "version": "5.0.0",
-      "tag": "@fgv/ts-bcp47_v5.0.0",
-      "date": "Thu, 17 Jul 2025 00:13:24 GMT",
-      "comments": {
-        "none": [
-          {
-            "comment": "ugrade dependences"
-          },
-          {
-            "comment": "bump version"
-          }
-        ]
-      }
-    },
-    {
       "version": "4.6.0",
       "tag": "@fgv/ts-bcp47_v4.6.0",
       "date": "Wed, 02 Jul 2025 05:48:16 GMT",
