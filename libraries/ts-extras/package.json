@@ -61,9 +61,10 @@
     "@fgv/ts-utils": "workspace:*"
   },
   "dependencies": {
-    "luxon": "^3.5.0",
+    "luxon": "^3.7.1",
     "mustache": "^4.2.0",
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.4.1",
+    "fflate": "~0.8.2"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
