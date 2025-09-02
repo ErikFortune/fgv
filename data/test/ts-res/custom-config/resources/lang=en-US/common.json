@@ -1,0 +1,14 @@
+{
+  "candidates": [
+    {
+      "resourceTypeName": "json",
+      "json": {
+        "welcome": "Welcome to the United States version",
+        "hello": "Hello there",
+        "goodbye": "Goodbye",
+        "timezone": "America/New_York",
+        "measurement": "Imperial"
+      }
+    }
+  ]
+}
