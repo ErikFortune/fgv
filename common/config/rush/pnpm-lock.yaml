@@ -1132,6 +1132,160 @@ importers:
         specifier: 5.8.3
         version: 5.8.3
 
+  ../../tools/ts-res-ui-playground:
+    dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-extras
+      '@fgv/ts-json':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
+      '@fgv/ts-res':
+        specifier: workspace:*
+        version: link:../../libraries/ts-res
+      '@fgv/ts-res-ui-components':
+        specifier: workspace:*
+        version: link:../../libraries/ts-res-ui-components
+      '@fgv/ts-utils':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils
+      '@heroicons/react':
+        specifier: ~2.2.0
+        version: 2.2.0(react@19.1.1)
+      assert:
+        specifier: ~2.1.0
+        version: 2.1.0
+      browserify-zlib:
+        specifier: ~0.2.0
+        version: 0.2.0
+      buffer:
+        specifier: ~6.0.3
+        version: 6.0.3
+      core-js:
+        specifier: ~3.45.0
+        version: 3.45.1
+      crypto-browserify:
+        specifier: ~3.12.1
+        version: 3.12.1
+      json-edit-react:
+        specifier: ~1.28.2
+        version: 1.28.2(react@19.1.1)
+      path-browserify:
+        specifier: ~1.0.1
+        version: 1.0.1
+      process:
+        specifier: ~0.11.10
+        version: 0.11.10
+      react:
+        specifier: ~19.1.1
+        version: 19.1.1
+      react-dom:
+        specifier: ~19.1.1
+        version: 19.1.1(react@19.1.1)
+      serve-handler:
+        specifier: ~6.1.6
+        version: 6.1.6
+      stream-browserify:
+        specifier: ~3.0.0
+        version: 3.0.0
+      util:
+        specifier: ~0.12.5
+        version: 0.12.5
+      whatwg-fetch:
+        specifier: ~3.6.20
+        version: 3.6.20
+    devDependencies:
+      '@babel/core':
+        specifier: ~7.28.3
+        version: 7.28.3
+      '@babel/preset-env':
+        specifier: ~7.28.3
+        version: 7.28.3(@babel/core@7.28.3)
+      '@babel/preset-react':
+        specifier: ~7.27.1
+        version: 7.27.1(@babel/core@7.28.3)
+      '@babel/preset-typescript':
+        specifier: ~7.27.1
+        version: 7.27.1(@babel/core@7.28.3)
+      '@fgv/ts-utils-jest':
+        specifier: workspace:*
+        version: link:../../libraries/ts-utils-jest
+      '@rushstack/heft':
+        specifier: 0.74.3
+        version: 0.74.3(@types/node@20.14.9)
+      '@rushstack/heft-api-extractor-plugin':
+        specifier: ~0.4.11
+        version: 0.4.11(@rushstack/heft@0.74.3)(@types/node@20.14.9)
+      '@rushstack/heft-jest-plugin':
+        specifier: 0.16.12
+        version: 0.16.12(@rushstack/heft@0.74.3)(@types/node@20.14.9)(jest-environment-jsdom@29.5.0)
+      '@rushstack/heft-lint-plugin':
+        specifier: ~0.7.4
+        version: 0.7.4(@rushstack/heft@0.74.3)(@types/node@20.14.9)
+      '@rushstack/heft-sass-plugin':
+        specifier: ~0.17.12
+        version: 0.17.12(@rushstack/heft@0.74.3)(@types/node@20.14.9)
+      '@rushstack/heft-web-rig':
+        specifier: 0.29.8
+        version: 0.29.8(@rushstack/heft@0.74.3)(@types/node@20.14.9)(webpack-cli@6.0.1)
+      '@rushstack/heft-webpack5-plugin':
+        specifier: ~0.11.40
+        version: 0.11.40(@rushstack/heft@0.74.3)(@types/node@20.14.9)(webpack-cli@6.0.1)(webpack@5.101.3)
+      '@types/node':
+        specifier: ^20.14.9
+        version: 20.14.9
+      '@types/react':
+        specifier: ~19.1.10
+        version: 19.1.12
+      '@types/react-dom':
+        specifier: ~19.1.7
+        version: 19.1.9(@types/react@19.1.12)
+      autoprefixer:
+        specifier: ~10.4.21
+        version: 10.4.21(postcss@8.5.6)
+      babel-loader:
+        specifier: ~10.0.0
+        version: 10.0.0(@babel/core@7.28.3)(webpack@5.101.3)
+      css-loader:
+        specifier: ~7.1.2
+        version: 7.1.2(webpack@5.101.3)
+      html-webpack-plugin:
+        specifier: ~5.6.4
+        version: 5.6.4(webpack@5.101.3)
+      jest:
+        specifier: ^29.7.0
+        version: 29.7.0(@types/node@20.14.9)(ts-node@10.9.2)
+      postcss:
+        specifier: ~8.5.6
+        version: 8.5.6
+      postcss-loader:
+        specifier: ~8.1.1
+        version: 8.1.1(postcss@8.5.6)(typescript@5.8.3)(webpack@5.101.3)
+      rimraf:
+        specifier: ^5.0.7
+        version: 5.0.7
+      style-loader:
+        specifier: ~4.0.0
+        version: 4.0.0(webpack@5.101.3)
+      tailwindcss:
+        specifier: ^3.4.0
+        version: 3.4.17
+      typescript:
+        specifier: 5.8.3
+        version: 5.8.3
+      webpack:
+        specifier: ~5.101.2
+        version: 5.101.3(webpack-cli@6.0.1)
+      webpack-cli:
+        specifier: ~6.0.1
+        version: 6.0.1(webpack-dev-server@5.2.2)(webpack@5.101.3)
+      webpack-dev-server:
+        specifier: ~5.2.2
+        version: 5.2.2(webpack-cli@6.0.1)(webpack@5.101.3)
+
 packages:
 
   /@aashutoshrathi/word-wrap@1.2.6:

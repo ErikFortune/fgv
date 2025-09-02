@@ -1,0 +1,744 @@
+import React, { useState, useCallback, useMemo } from 'react';
+import { PickerTools } from '@fgv/ts-res-ui-components';
+import { PlusIcon, TrashIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+
+// Quick Branch Selector Component
+interface QuickBranchSelectorProps {
+  resources: any;
+  currentRootPath: string;
+  onRootPathChange: (path: string) => void;
+}
+
+const QuickBranchSelector: React.FC<QuickBranchSelectorProps> = ({
+  resources,
+  currentRootPath,
+  onRootPathChange
+}) => {
+  // Extract available branches from resource tree
+  const availableBranches = useMemo(() => {
+    if (!resources?.system?.resourceManager) return [];
+
+    const treeResult = resources.system.resourceManager.getBuiltResourceTree();
+    if (treeResult.isFailure()) return [];
+
+    const tree = treeResult.value;
+    const branches: string[] = [];
+
+    // Get top-level branches (direct children of root that have children themselves)
+    const collectBranches = (node: any, path: string = '') => {
+      if (!node.isLeaf && node.children) {
+        for (const [key, child] of node.children.entries()) {
+          const childPath = path ? `${path}.${key}` : key;
+
+          // Add this as a branch if it has children (non-leaf)
+          if (!child.isLeaf && child.children && child.children.size > 0) {
+            branches.push(childPath);
+
+            // Also collect deeper branches if they're reasonably short
+            if (childPath.split('.').length < 3) {
+              collectBranches(child, childPath);
+            }
+          }
+        }
+      }
+    };
+
+    collectBranches(tree);
+
+    // Sort and limit to most useful branches
+    return branches
+      .sort()
+      .filter((branch) => branch.split('.').length <= 2) // Keep it to reasonable depth
+      .slice(0, 8); // Limit to 8 branches max
+  }, [resources]);
+
+  if (availableBranches.length === 0) {
+    return <div className="text-xs text-gray-500 italic">No branches available in current resource tree</div>;
+  }
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {availableBranches.map((path) => (
+        <button
+          key={path}
+          onClick={() => onRootPathChange(path)}
+          className={`px-3 py-1 text-xs rounded border ${
+            currentRootPath === path
+              ? 'bg-blue-100 border-blue-300 text-blue-700'
+              : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+          }`}
+        >
+          {path}
+        </button>
+      ))}
+      <button
+        onClick={() => onRootPathChange('')}
+        className={`px-3 py-1 text-xs rounded border ${
+          !currentRootPath
+            ? 'bg-blue-100 border-blue-300 text-blue-700'
+            : 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
+        }`}
+      >
+        Clear
+      </button>
+    </div>
+  );
+};
+
+interface ResourcePickerToolProps {
+  resources: any; // Using the orchestrator state.resources
+  onMessage: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
+  presentation?: 'hidden' | 'inline' | 'collapsible';
+}
+
+const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
+  resources,
+  onMessage,
+  presentation = 'inline'
+}) => {
+  const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'tree'>('tree');
+  const [enableSearch, setEnableSearch] = useState(true);
+  const [showViewToggle, setShowViewToggle] = useState(true);
+  const [rootPath, setRootPath] = useState<string>('');
+  const [hideRootNode, setHideRootNode] = useState(false);
+  const [useAnnotations, setUseAnnotations] = useState(true);
+  const [usePendingResources, setUsePendingResources] = useState(false);
+
+  // Interactive pending resources management
+  const [customPendingResources, setCustomPendingResources] = useState<PickerTools.PendingResource[]>([]);
+  const [showAddResourceModal, setShowAddResourceModal] = useState(false);
+  const [isConfigExpanded, setIsConfigExpanded] = useState(true);
+  const [newResourceForm, setNewResourceForm] = useState({
+    id: '',
+    isAbsolute: false
+  });
+
+  const handleResourceSelect = useCallback(
+    (selection: PickerTools.ResourceSelection) => {
+      setSelectedResourceId(selection.resourceId);
+
+      // Enhanced callback with resource data information
+      const messageDetails = [
+        `ID: ${selection.resourceId || 'none'}`,
+        selection.isPending ? `Type: ${selection.pendingType}` : 'Type: existing',
+        selection.resourceData ? `Has data: Yes` : 'Has data: No'
+      ].join(', ');
+
+      onMessage('info', `Selected resource - ${messageDetails}`);
+
+      // Log the full selection object for debugging
+      console.log('Resource selected:', selection);
+    },
+    [onMessage]
+  );
+
+  const handleAddResource = useCallback(() => {
+    if (!newResourceForm.id.trim()) {
+      onMessage('error', 'Resource ID is required');
+      return;
+    }
+
+    let finalResourceId = newResourceForm.id.trim();
+
+    // Handle relative vs absolute paths based on explicit toggle
+    if (!newResourceForm.isAbsolute && rootPath) {
+      // Relative path - prepend the current root path
+      finalResourceId = `${rootPath}.${finalResourceId}`;
+    }
+
+    // Check if resource already exists (either as real resource or pending)
+    if (resources?.summary?.resourceIds?.includes(finalResourceId)) {
+      onMessage('warning', `Resource "${finalResourceId}" already exists`);
+      return;
+    }
+
+    if (customPendingResources.some((pr) => pr.id === finalResourceId)) {
+      onMessage('warning', `Pending resource "${finalResourceId}" already exists`);
+      return;
+    }
+
+    // Check if this conflicts with an existing branch node
+    // A branch node is any non-leaf node in the tree
+    const checkBranchConflict = () => {
+      if (!resources?.system?.resourceManager) return false;
+
+      const treeResult = resources.system.resourceManager.getBuiltResourceTree();
+      if (treeResult.isFailure()) return false;
+
+      const tree = treeResult.value;
+
+      // Check if finalResourceId matches any branch (non-leaf) node
+      const checkNode = (node: any): boolean => {
+        if (node.id === finalResourceId && !node.isLeaf) {
+          return true; // Conflict - trying to add resource with same ID as a branch
+        }
+        if (!node.isLeaf && node.children) {
+          for (const child of node.children.values()) {
+            if (checkNode(child)) return true;
+          }
+        }
+        return false;
+      };
+
+      for (const child of tree.children.values()) {
+        if (checkNode(child)) return true;
+      }
+
+      return false;
+    };
+
+    if (checkBranchConflict()) {
+      onMessage('error', `Cannot add resource "${finalResourceId}" - a branch with this ID already exists`);
+      return;
+    }
+
+    // Derive display name from the last segment of the ID
+    const displayName = finalResourceId.split('.').pop() || finalResourceId;
+
+    const newResource: PendingResource = {
+      id: finalResourceId,
+      type: 'new',
+      displayName: displayName,
+      resourceData: {
+        value: `Sample value for ${displayName}`,
+        createdAt: new Date().toISOString(),
+        createdBy: 'playground-user',
+        type: 'user-created',
+        path: finalResourceId
+      }
+    };
+
+    setCustomPendingResources((prev) => [...prev, newResource]);
+    setShowAddResourceModal(false);
+    setNewResourceForm({ id: '', isAbsolute: false });
+    onMessage('success', `Added new resource: ${finalResourceId}`);
+  }, [newResourceForm, rootPath, resources, customPendingResources, onMessage]);
+
+  const handleRemovePendingResource = useCallback(
+    (resourceId: string) => {
+      setCustomPendingResources((prev) => prev.filter((pr) => pr.id !== resourceId));
+      onMessage('info', `Removed pending resource: ${resourceId}`);
+    },
+    [onMessage]
+  );
+
+  const handleClearAllPendingResources = useCallback(() => {
+    setCustomPendingResources([]);
+    onMessage('info', 'Cleared all pending resources');
+  }, [onMessage]);
+
+  // Sample annotations for demo
+  const resourceAnnotations: PickerTools.ResourceAnnotations = useAnnotations
+    ? {
+        'dashboard-config': {
+          badge: { text: 'multi', variant: 'info' },
+          suffix: '(6 candidates)'
+        },
+        'financial-ui': {
+          badge: { text: 'i18n', variant: 'success' },
+          indicator: { type: 'dot', value: '●', tooltip: 'Has localized variants' }
+        },
+        'regional-features': {
+          badge: { text: 'market', variant: 'warning' },
+          suffix: 'region-specific'
+        },
+        // Annotations for pending resources
+        'new-feature-config': {
+          badge: { text: 'NEW', variant: 'new' },
+          suffix: '(unsaved)'
+        },
+        'updated-dashboard': {
+          badge: { text: 'EDITED', variant: 'edited' },
+          indicator: { type: 'dot', value: '●', tooltip: 'Has pending changes' }
+        },
+        'strings.common.greeting': {
+          badge: { text: 'MODIFIED', variant: 'edited' }
+        },
+        'app.ui.new-component': {
+          badge: { text: 'NEW', variant: 'new' },
+          suffix: '(created)'
+        }
+      }
+    : {};
+
+  // Sample pending resources for demo with resource data
+  const demoPendingResources: PendingResource[] = usePendingResources
+    ? [
+        {
+          id: 'strings.new-feature-config',
+          type: 'new',
+          displayName: 'new-feature-config (unsaved)',
+          resourceData: {
+            value: 'New Feature Configuration',
+            description: 'Configuration for the upcoming feature release',
+            priority: 'high'
+          }
+        },
+        {
+          id: 'updated-dashboard',
+          type: 'modified',
+          displayName: 'Updated Dashboard (pending changes)',
+          resourceData: {
+            value: 'Dashboard - Now with enhanced analytics',
+            originalValue: 'Dashboard',
+            modifiedAt: new Date().toISOString(),
+            changes: ['Added analytics', 'Updated layout']
+          }
+        },
+        {
+          id: 'strings.common.greeting',
+          type: 'modified',
+          displayName: 'greeting (edited)',
+          resourceData: {
+            value: 'Hello, welcome to our enhanced app!',
+            originalValue: 'Hello, welcome!',
+            modifiedBy: 'demo-user'
+          }
+        },
+        {
+          id: 'app.ui.new-component',
+          type: 'new',
+          displayName: 'new-component (created)',
+          resourceData: {
+            componentType: 'React.FC',
+            props: ['title', 'onAction'],
+            status: 'draft'
+          }
+        }
+      ]
+    : [];
+
+  // Combine demo and custom pending resources
+  const allPendingResources = [...demoPendingResources, ...customPendingResources];
+
+  // Check if we have processed resources
+  const hasResources = resources && resources.compiledCollection;
+  const resourceCount = hasResources ? Object.keys(resources.compiledCollection.resources || {}).length : 0;
+
+  // Pass resources through without transformation
+  const resourcesForPicker = React.useMemo(() => {
+    return hasResources ? resources : null;
+  }, [hasResources, resources]);
+
+  // Debug: Log resource structure to understand the tree issue
+  React.useEffect(() => {
+    if (hasResources) {
+      console.log('ResourcePicker Debug - resourceIds:', resources.summary?.resourceIds?.slice(0, 10));
+    }
+  }, [hasResources, resources]);
+
+  if (!hasResources || resourceCount === 0) {
+    return (
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Resource Picker</h1>
+            <p className="text-gray-600 mt-2">
+              Interactive ResourcePicker component demo and testing environment.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <div className="text-gray-500">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Resources Loaded</h3>
+              <p className="text-sm mb-4">
+                Load a configuration and import resources to start testing the ResourcePicker component.
+              </p>
+              <p className="text-xs text-gray-400">
+                Use the Configuration or Import tools in the sidebar to get started.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <div className="mb-6">
+          <p className="text-gray-600">
+            Interactive ResourcePicker component
+            {hasResources ? ` with ${resourceCount} loaded resources` : ' demo and testing environment'}.
+          </p>
+          {!hasResources && (
+            <p className="text-sm text-amber-600 mt-1">
+              💡 Load configuration and resources to test with real data, or use the picker in empty state
+              mode.
+            </p>
+          )}
+        </div>
+
+        {/* Configuration Panel */}
+        {(presentation === 'inline' || presentation === 'collapsible') && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            {presentation === 'inline' ? (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-700 mb-4">Component Configuration</h2>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsConfigExpanded(!isConfigExpanded)}
+                className="flex items-center justify-between w-full p-4 text-left hover:bg-gray-50 rounded-t-lg transition-colors"
+              >
+                <span className="text-sm font-medium text-gray-700">Component Configuration</span>
+                <ChevronDownIcon
+                  className={`w-4 h-4 text-gray-500 transition-transform ${
+                    isConfigExpanded ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+            )}
+
+            {(presentation === 'inline' || (presentation === 'collapsible' && isConfigExpanded)) && (
+              <div className={presentation === 'collapsible' ? 'px-4 pb-4 border-t border-gray-200' : ''}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Basic Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-700">Basic Settings</h3>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Default View</label>
+                      <select
+                        value={viewMode}
+                        onChange={(e) => setViewMode(e.target.value as 'list' | 'tree')}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="list">List</option>
+                        <option value="tree">Tree</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={enableSearch}
+                          onChange={(e) => setEnableSearch(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Enable Search
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={showViewToggle}
+                          onChange={(e) => setShowViewToggle(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Show View Toggle
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={useAnnotations}
+                          onChange={(e) => setUseAnnotations(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Show Annotations
+                      </label>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={usePendingResources}
+                          onChange={(e) => setUsePendingResources(e.target.checked)}
+                          className="mr-2 rounded"
+                        />
+                        Show Pending Resources
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Branch Isolation Settings */}
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-700">Branch Isolation</h3>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-1">Root Path</label>
+                      <input
+                        type="text"
+                        value={rootPath}
+                        onChange={(e) => setRootPath(e.target.value)}
+                        placeholder="e.g., strings or app.ui"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enter a resource path to show only that branch
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="flex items-center text-sm">
+                        <input
+                          type="checkbox"
+                          checked={hideRootNode}
+                          onChange={(e) => setHideRootNode(e.target.checked)}
+                          className="mr-2 rounded"
+                          disabled={!rootPath}
+                        />
+                        Hide Root Node
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1 ml-6">
+                        Show only children of the root path (requires Root Path)
+                      </p>
+                    </div>
+
+                    {/* Quick Branch Selection - Dynamic based on actual resource tree */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-600 mb-2">
+                        Quick Branch Selection
+                      </label>
+                      <QuickBranchSelector
+                        resources={resources}
+                        currentRootPath={rootPath}
+                        onRootPathChange={setRootPath}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pending Resources Management */}
+                  <div className="space-y-4">
+                    <h3 className="text-md font-medium text-gray-700">Pending Resources</h3>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center text-sm">
+                          <input
+                            type="checkbox"
+                            checked={usePendingResources}
+                            onChange={(e) => setUsePendingResources(e.target.checked)}
+                            className="mr-2 rounded"
+                          />
+                          Show Demo Resources
+                        </label>
+                        <button
+                          onClick={() => setShowAddResourceModal(true)}
+                          className="flex items-center px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          <PlusIcon className="w-3 h-3 mr-1" />
+                          Add Resource
+                        </button>
+                      </div>
+
+                      {/* Custom pending resources list */}
+                      {customPendingResources.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-gray-600">
+                              Custom Resources ({customPendingResources.length})
+                            </span>
+                            <button
+                              onClick={handleClearAllPendingResources}
+                              className="text-xs text-red-500 hover:text-red-700"
+                            >
+                              Clear All
+                            </button>
+                          </div>
+                          <div className="max-h-32 overflow-y-auto space-y-1">
+                            {customPendingResources.map((pr) => (
+                              <div
+                                key={pr.id}
+                                className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{pr.id}</div>
+                                  <div className="text-gray-500">
+                                    {pr.type} • {pr.displayName}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleRemovePendingResource(pr.id)}
+                                  className="ml-2 p-1 text-red-500 hover:text-red-700"
+                                >
+                                  <TrashIcon className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Demo Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Resource Picker */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">ResourcePicker Component</h2>
+              <div className="border border-gray-200 rounded-lg">
+                <PickerTools.ResourcePicker
+                  resources={resourcesForPicker}
+                  selectedResourceId={selectedResourceId}
+                  onResourceSelect={handleResourceSelect}
+                  resourceAnnotations={resourceAnnotations}
+                  pendingResources={allPendingResources}
+                  options={{
+                    defaultView: viewMode,
+                    showViewToggle: showViewToggle,
+                    rootPath: rootPath || undefined,
+                    hideRootNode: hideRootNode,
+                    enableSearch: enableSearch,
+                    height: 500
+                  }}
+                  onMessage={onMessage}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* State Display */}
+          <div>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-700 mb-4">Component State</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Selected Resource</label>
+                  <div className="p-3 bg-gray-50 rounded border text-sm font-mono">
+                    {selectedResourceId || 'null'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Resource Summary</label>
+                  <div className="p-3 bg-gray-50 rounded border text-sm space-y-1">
+                    <div>
+                      <strong>Total:</strong> {resourceCount}
+                    </div>
+                    <div>
+                      <strong>Resources:</strong>
+                    </div>
+                    <div className="ml-2 text-xs text-gray-600">
+                      {Object.keys(resources.compiledCollection.resources || {})
+                        .slice(0, 5)
+                        .map((id) => (
+                          <div key={id}>• {id}</div>
+                        ))}
+                      {Object.keys(resources.compiledCollection.resources || {}).length > 5 && (
+                        <div>
+                          ... and {Object.keys(resources.compiledCollection.resources || {}).length - 5} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Configuration</label>
+                  <pre className="p-3 bg-gray-50 rounded border text-xs overflow-x-auto">
+                    {JSON.stringify(
+                      {
+                        defaultView: viewMode,
+                        showViewToggle,
+                        enableSearch,
+                        branchIsolation: {
+                          rootPath: rootPath || null,
+                          hideRootNode: hideRootNode && !!rootPath
+                        },
+                        features: {
+                          hasAnnotations: useAnnotations,
+                          hasPendingResources: usePendingResources
+                        }
+                      },
+                      null,
+                      2
+                    )}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Resource Modal */}
+      {showAddResourceModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add New Resource</h3>
+
+            <div className="space-y-4">
+              {rootPath && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Path Type</label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        checked={!newResourceForm.isAbsolute}
+                        onChange={() => setNewResourceForm((prev) => ({ ...prev, isAbsolute: false }))}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">
+                        Relative to <span className="font-mono bg-gray-100 px-1 rounded">{rootPath}</span>
+                      </span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        checked={newResourceForm.isAbsolute}
+                        onChange={() => setNewResourceForm((prev) => ({ ...prev, isAbsolute: true }))}
+                        className="mr-2"
+                      />
+                      <span className="text-sm">Absolute path</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Resource ID *</label>
+                <input
+                  type="text"
+                  value={newResourceForm.id}
+                  onChange={(e) => setNewResourceForm((prev) => ({ ...prev, id: e.target.value }))}
+                  placeholder={
+                    !rootPath || newResourceForm.isAbsolute
+                      ? 'e.g., strings.common.my-resource'
+                      : 'e.g., my-resource'
+                  }
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {rootPath && !newResourceForm.isAbsolute && (
+                  <p className="text-xs text-gray-600 mt-1">
+                    Will create:{' '}
+                    <span className="font-mono">
+                      {rootPath}.{newResourceForm.id || '...'}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowAddResourceModal(false);
+                  setNewResourceForm({ id: '', isAbsolute: false });
+                }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddResource}
+                className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Add Resource
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ResourcePickerTool;

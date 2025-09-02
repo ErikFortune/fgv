@@ -473,6 +473,12 @@
       "tags": ["tools", "cli"]
     },
     {
+      "packageName": "@fgv/ts-res-ui-playground",
+      "projectFolder": "tools/ts-res-ui-playground",
+      "shouldPublish": false,
+      "tags": ["tools", "playground", "ui", "react"]
+    },
+    {
       "packageName": "@fgv/ts-res-browser-cli",
       "projectFolder": "tools/ts-res-browser-cli",
       "shouldPublish": true,
