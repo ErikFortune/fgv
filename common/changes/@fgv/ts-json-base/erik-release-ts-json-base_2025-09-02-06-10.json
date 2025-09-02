@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "minor validation improvements|add sanitizeJsonObject",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}
