@@ -1,15 +1,6 @@
 # Change Log - @fgv/ts-json-base
 
-This log was last generated on Thu, 17 Jul 2025 00:13:24 GMT and should not be manually modified.
-
-## 5.0.0
-Thu, 17 Jul 2025 00:13:24 GMT
-
-### Updates
-
-- add sanitizeJsonObject
-- upgrade dependencies
-- bump version
+This log was last generated on 02 Jul 2025 05:48:16 GMT and should not be manually modified.
 
 ## 4.6.0
 Wed, 02 Jul 2025 05:48:16 GMT
