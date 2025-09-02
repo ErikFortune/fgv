@@ -4,6 +4,8 @@
 
 ## Logging.LoggerBase.info() method
 
+Logs an info message.
+
 **Signature:**
 
 ```typescript
@@ -40,7 +42,7 @@ unknown
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ The message to log.
 
 
 </td></tr>
@@ -56,10 +58,15 @@ unknown\[\]
 
 </td><td>
 
+The parameters to log.
+
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;string \| undefined&gt;
+
+`Success` with the logged message if the level is enabled, or `Success` with `undefined` if the message is suppressed.
 

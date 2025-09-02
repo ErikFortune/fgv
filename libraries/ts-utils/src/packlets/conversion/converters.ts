@@ -51,12 +51,14 @@ export const string: StringConverter = new StringConverter();
  * @returns A new {@link Converter | Converter} returning `<T>`.
  * @public
  */
-export function enumeratedValue<T>(values: T[]): Converter<T, T[]> {
-  return new BaseConverter((from: unknown, __self: Converter<T, T[]>, context?: T[]): Result<T> => {
-    const v = context ?? values;
-    const index = v.indexOf(from as T);
-    return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${JSON.stringify(from)}`);
-  });
+export function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, ReadonlyArray<T>> {
+  return new BaseConverter(
+    (from: unknown, __self: Converter<T, ReadonlyArray<T>>, context?: ReadonlyArray<T>): Result<T> => {
+      const v = context ?? values;
+      const index = v.indexOf(from as T);
+      return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${JSON.stringify(from)}`);
+    }
+  );
 }
 
 /**
@@ -73,21 +75,23 @@ export function enumeratedValue<T>(values: T[]): Converter<T, T[]> {
  * @public
  */
 export function mappedEnumeratedValue<T, TC = unknown>(
-  map: [T, unknown[]][],
+  map: ReadonlyArray<[T, ReadonlyArray<TC>]>,
   message?: string
-): Converter<T, TC> {
-  return new BaseConverter((from: unknown, __self: Converter<T, TC>, __context?: TC) => {
-    for (const item of map) {
-      if (item[1].includes(from)) {
-        return succeed(item[0]);
+): Converter<T, ReadonlyArray<TC>> {
+  return new BaseConverter(
+    (from: unknown, __self: Converter<T, ReadonlyArray<TC>>, __context?: ReadonlyArray<TC>) => {
+      for (const item of map) {
+        if (item[1].includes(from as TC)) {
+          return succeed(item[0]);
+        }
       }
+      return fail(
+        message
+          ? `${JSON.stringify(from)}: ${message}`
+          : `Cannot map '${JSON.stringify(from)}' to a supported value`
+      );
     }
-    return fail(
-      message
-        ? `${JSON.stringify(from)}: ${message}`
-        : `Cannot map '${JSON.stringify(from)}' to a supported value`
-    );
-  });
+  );
 }
 
 /**
@@ -750,6 +754,7 @@ export function object<T, TC = unknown>(
   properties: FieldConverters<T, TC>,
   optional: (keyof T)[]
 ): ObjectConverter<T, TC>;
+
 /**
  * Concrete implementation of {@link Converters.(object:1) | Converters.object(fields, options)}
  * and {@link Converters.(object:2) | Converters.objects(fields, optionalKeys)}.

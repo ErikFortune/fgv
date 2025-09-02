@@ -63,6 +63,7 @@ The object to be tested.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 key is keyof T

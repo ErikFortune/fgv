@@ -350,3 +350,4 @@ Creates a [Converter](./ts-utils.converter.md) which applies a supplied type gua
 
 </td></tr>
 </tbody></table>
+
