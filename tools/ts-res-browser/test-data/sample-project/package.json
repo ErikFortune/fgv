@@ -1,0 +1,27 @@
+{
+  "name": "ts-res-sample-project",
+  "version": "1.0.0",
+  "description": "Sample project demonstrating ts-res resource management",
+  "scripts": {
+    "build": "ts-res-compile",
+    "dev": "ts-res-compile --watch",
+    "clean": "rimraf dist compiled"
+  },
+  "dependencies": {
+    "@fgv/ts-res": "workspace:*",
+    "@fgv/ts-utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@fgv/ts-res-cli": "workspace:*",
+    "rimraf": "^5.0.0"
+  },
+  "keywords": [
+    "ts-res",
+    "resources",
+    "localization",
+    "i18n",
+    "configuration"
+  ],
+  "author": "TS-RES Team",
+  "license": "MIT"
+}

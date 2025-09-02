@@ -1,0 +1,112 @@
+{
+  "name": "Composition Terminology Configuration",
+  "description": "Configuration demonstrating composition with international terminology variations plus full application context",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "role",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["admin", "user", "guest", "anonymous"]
+      }
+    },
+    {
+      "name": "environment",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["development", "integration", "production", "test"]
+      }
+    },
+    {
+      "name": "platform",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["ios", "android", "web", "mobile", "tv", "desktop"]
+      },
+      "hierarchy": {
+        "ios": "mobile",
+        "android": "mobile"
+      }
+    },
+    {
+      "name": "density",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["hdpi", "mdpi", "ldpi"]
+      }
+    },
+    {
+      "name": "region",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["north-america", "europe", "asia-pacific", "latin-america"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 800
+    },
+    {
+      "name": "homeTerritory",
+      "typeName": "territory",
+      "defaultPriority": 850,
+      "token": "home",
+      "tokenIsOptional": true
+    },
+    {
+      "name": "territory",
+      "typeName": "territory",
+      "defaultPriority": 700
+    },
+    {
+      "name": "role",
+      "typeName": "role",
+      "defaultPriority": 500
+    },
+    {
+      "name": "env",
+      "typeName": "environment",
+      "defaultPriority": 400
+    },
+    {
+      "name": "platform",
+      "typeName": "platform",
+      "defaultPriority": 300
+    },
+    {
+      "name": "density",
+      "typeName": "density",
+      "defaultPriority": 200
+    },
+    {
+      "name": "region",
+      "typeName": "region",
+      "defaultPriority": 600
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

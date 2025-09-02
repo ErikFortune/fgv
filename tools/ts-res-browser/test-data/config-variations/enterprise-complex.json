@@ -1,0 +1,129 @@
+{
+  "name": "Enterprise Complex Configuration",
+  "description": "Comprehensive configuration for enterprise applications with many conditional dimensions",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "role",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": true,
+        "caseSensitive": false,
+        "enumeratedValues": ["admin", "manager", "employee", "contractor", "guest", "api", "service"]
+      }
+    },
+    {
+      "name": "department",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["hr", "finance", "engineering", "sales", "marketing", "support", "legal"]
+      }
+    },
+    {
+      "name": "environment",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["development", "testing", "staging", "production", "dr"]
+      }
+    },
+    {
+      "name": "tenant",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": true,
+        "enumeratedValues": ["corp", "subsidiary1", "subsidiary2", "partner1", "partner2"]
+      }
+    },
+    {
+      "name": "feature-flag",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": true,
+        "caseSensitive": false,
+        "enumeratedValues": ["enabled", "disabled", "beta", "alpha"]
+      }
+    },
+    {
+      "name": "security-level",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["public", "internal", "confidential", "restricted"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "tenant",
+      "typeName": "tenant",
+      "defaultPriority": 1000
+    },
+    {
+      "name": "environment",
+      "typeName": "environment",
+      "defaultPriority": 950,
+      "token": "env"
+    },
+    {
+      "name": "securityLevel",
+      "typeName": "security-level",
+      "defaultPriority": 900,
+      "token": "security"
+    },
+    {
+      "name": "homeTerritory",
+      "typeName": "territory",
+      "defaultPriority": 850,
+      "token": "home",
+      "tokenIsOptional": true
+    },
+    {
+      "name": "currentTerritory",
+      "typeName": "territory",
+      "defaultPriority": 800
+    },
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 750
+    },
+    {
+      "name": "role",
+      "typeName": "role",
+      "defaultPriority": 700
+    },
+    {
+      "name": "department",
+      "typeName": "department",
+      "defaultPriority": 650,
+      "token": "dept"
+    },
+    {
+      "name": "featureFlag",
+      "typeName": "feature-flag",
+      "defaultPriority": 600,
+      "token": "feature",
+      "tokenIsOptional": true
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

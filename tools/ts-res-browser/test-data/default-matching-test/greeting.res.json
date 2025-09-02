@@ -1,0 +1,83 @@
+{
+  "id": "greeting",
+  "resourceType": "json",
+  "candidates": [
+    {
+      "json": {
+        "message": "Hello! (Regular Match)",
+        "type": "regular",
+        "context": "exact match for en-US/US"
+      },
+      "conditions": {
+        "language": "en-US",
+        "territory": "US"
+      }
+    },
+    {
+      "json": {
+        "message": "Hello! (Default Language Match)",
+        "type": "default-lang",
+        "context": "matches fr via default but territory exact"
+      },
+      "conditions": [
+        {
+          "qualifierName": "language",
+          "value": "fr",
+          "scoreAsDefault": 0.8
+        },
+        {
+          "qualifierName": "territory",
+          "value": "US"
+        }
+      ]
+    },
+    {
+      "json": {
+        "message": "Hello! (Default Territory Match)",
+        "type": "default-territory",
+        "context": "language exact but territory via default"
+      },
+      "conditions": [
+        {
+          "qualifierName": "language",
+          "value": "en-US"
+        },
+        {
+          "qualifierName": "territory",
+          "value": "CA",
+          "scoreAsDefault": 0.7
+        }
+      ]
+    },
+    {
+      "json": {
+        "message": "Hello! (Pure Default Match)",
+        "type": "pure-default",
+        "context": "both qualifiers match via defaults only"
+      },
+      "conditions": [
+        {
+          "qualifierName": "language",
+          "value": "de",
+          "scoreAsDefault": 0.6
+        },
+        {
+          "qualifierName": "territory",
+          "value": "DE",
+          "scoreAsDefault": 0.5
+        }
+      ]
+    },
+    {
+      "json": {
+        "message": "Hello! (No Match)",
+        "type": "no-match",
+        "context": "should not match the test context"
+      },
+      "conditions": {
+        "language": "ja",
+        "territory": "JP"
+      }
+    }
+  ]
+}
