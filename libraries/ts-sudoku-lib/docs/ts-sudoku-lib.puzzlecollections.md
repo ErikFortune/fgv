@@ -59,3 +59,4 @@ The default [puzzle collection](./ts-sudoku-lib.puzzlecollection.md)<!-- -->.
 
 </td></tr>
 </tbody></table>
+
