@@ -1,0 +1,32 @@
+[
+  {
+    "id": "some.resource.path",
+    "json": { "home": "United States" },
+    "conditions": {
+      "homeTerritory": "US"
+    }
+  },
+  {
+    "id": "some.resource.path",
+    "json": { "speaks": "English" },
+    "conditions": {
+      "language": "en"
+    }
+  },
+  {
+    "id": "some.resource.path",
+    "json": { "home": "Canada", "speaks": "Canadian English" },
+    "conditions": {
+      "homeTerritory": "CA",
+      "language": "en-CA"
+    },
+    "mergeMethod": "replace"
+  },
+  {
+    "id": "some.resource.path",
+    "json": { "speaks": "Español" },
+    "conditions": {
+      "language": "es"
+    }
+  }
+]
