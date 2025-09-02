@@ -63,6 +63,7 @@ A [factory function](./ts-utils.collections.resultmapvaluefactory.md) to create 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;

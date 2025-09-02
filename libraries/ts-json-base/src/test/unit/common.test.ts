@@ -27,7 +27,8 @@ import {
   isJsonObject,
   isJsonPrimitive,
   pickJsonObject,
-  pickJsonValue
+  pickJsonValue,
+  sanitizeJsonObject
 } from '../../packlets/json';
 
 describe('json/common module', () => {
@@ -152,6 +153,24 @@ describe('json/common module', () => {
       test('fails for a non-object property that exists', () => {
         expect(pickJsonObject(src, 'child.childArray')).toFailWith(/not an object/i);
         expect(pickJsonObject(src, 'child.grandChild.grandChildNumber')).toFailWith(/not an object/i);
+      });
+    });
+  });
+
+  describe('sanitizeJsonObject function', () => {
+    test('returns a sanitized object', () => {
+      interface ITestThing {
+        a: string;
+        b?: string;
+      }
+
+      expect(sanitizeJsonObject<ITestThing>({ a: 'hello' })).toSucceedWith({ a: 'hello' });
+      expect(sanitizeJsonObject<ITestThing>({ a: 'hello', b: 'world' })).toSucceedWith({
+        a: 'hello',
+        b: 'world'
+      });
+      expect(sanitizeJsonObject<ITestThing>({ a: 'hello', b: undefined })).toSucceedWith({
+        a: 'hello'
       });
     });
   });

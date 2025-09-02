@@ -9,7 +9,7 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 **Signature:**
 
 ```typescript
-orThrow(__logger?: IResultLogger): T;
+orThrow(logger?: IResultLogger): T;
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-\_\_logger
+logger
 
 
 </td><td>
@@ -42,11 +42,12 @@ Description
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ An optional [logger](./ts-utils.iresultlogger.md) to which the error will also be reported.
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 T

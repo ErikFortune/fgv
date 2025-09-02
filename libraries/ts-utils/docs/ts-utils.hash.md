@@ -66,3 +66,4 @@ Function to compute a hash from a pre-normalized array of strings.
 
 </td></tr>
 </tbody></table>
+

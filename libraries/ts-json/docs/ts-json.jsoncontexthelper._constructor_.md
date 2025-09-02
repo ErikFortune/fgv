@@ -47,3 +47,4 @@ _(Optional)_ The base [IJsonContext](./ts-json.ijsoncontext.md) on which to oper
 
 </td></tr>
 </tbody></table>
+

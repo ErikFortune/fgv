@@ -47,6 +47,7 @@ _(Optional)_ The default [JSON context](./ts-json.ijsoncontext.md) to use as def
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [IJsonContext](./ts-json.ijsoncontext.md) \| undefined

@@ -63,6 +63,7 @@ The factory method used to convert elements.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;Map&lt;TK, TD&gt; \| undefined&gt;

@@ -1,0 +1,21 @@
+{
+  "resources": {
+    "app-config": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "currency": "CAD",
+            "dateFormat": "DD/MM/YYYY",
+            "supportEmail": "support@example.ca",
+            "supportPhone": "+1-800-555-0124",
+            "legalEntity": "Example Canada Inc",
+            "privacyPolicy": "https://example.ca/privacy",
+            "termsOfService": "https://example.ca/terms"
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,177 @@
+{
+  "resources": {
+    "config": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "app_name": "Sample Application",
+            "version": "1.0.0",
+            "api_url": "https://api.example.com",
+            "timeout": 30000,
+            "max_retries": 3,
+            "debug": false,
+            "features": {
+              "authentication": true,
+              "notifications": true,
+              "analytics": true
+            }
+          }
+        },
+        {
+          "json": {
+            "app_name": "Sample Application (DEV)",
+            "version": "1.0.0-dev",
+            "api_url": "https://dev-api.example.com",
+            "timeout": 10000,
+            "max_retries": 1,
+            "debug": true,
+            "features": {
+              "authentication": true,
+              "notifications": false,
+              "analytics": false
+            }
+          },
+          "conditions": {
+            "env": "development"
+          }
+        },
+        {
+          "json": {
+            "app_name": "Sample Mobile App",
+            "version": "1.0.0",
+            "api_url": "https://mobile-api.example.com",
+            "timeout": 15000,
+            "max_retries": 2,
+            "debug": false,
+            "features": {
+              "authentication": true,
+              "notifications": true,
+              "analytics": true,
+              "offline_mode": true,
+              "push_notifications": true
+            }
+          },
+          "conditions": {
+            "platform": "mobile"
+          }
+        }
+      ]
+    }
+  },
+  "children": {
+    "ui": {
+      "resources": {
+        "dashboard": {
+          "resourceTypeName": "json",
+          "candidates": [
+            {
+              "json": {
+                "title": "Dashboard",
+                "overview": "Overview",
+                "stats": "Statistics",
+                "recent_activity": "Recent Activity",
+                "notifications": "Notifications",
+                "settings": "Settings",
+                "profile": "Profile",
+                "logout": "Logout"
+              }
+            },
+            {
+              "json": {
+                "title": "User Dashboard",
+                "overview": "My Overview",
+                "stats": "My Statistics",
+                "recent_activity": "My Recent Activity",
+                "notifications": "My Notifications",
+                "settings": "My Settings",
+                "profile": "My Profile",
+                "logout": "Sign Out",
+                "help": "Help & Support",
+                "tutorials": "Tutorials",
+                "account_info": "Account Information"
+              },
+              "conditions": {
+                "role": "user"
+              }
+            },
+            {
+              "json": {
+                "title": "Admin Dashboard",
+                "overview": "System Overview",
+                "stats": "System Statistics",
+                "recent_activity": "System Activity",
+                "notifications": "System Notifications",
+                "settings": "System Settings",
+                "profile": "Admin Profile",
+                "logout": "Admin Logout",
+                "user_management": "User Management",
+                "system_logs": "System Logs",
+                "monitoring": "System Monitoring",
+                "reports": "Reports",
+                "maintenance": "Maintenance Mode"
+              },
+              "conditions": {
+                "role": "admin"
+              }
+            }
+          ]
+        }
+      },
+      "children": {
+        "icons": {
+          "resources": {
+            "home": {
+              "resourceTypeName": "json",
+              "candidates": [
+                {
+                  "json": {
+                    "path": "/assets/icons/home.svg",
+                    "alt": "Home icon",
+                    "width": 24,
+                    "height": 24
+                  }
+                },
+                {
+                  "json": {
+                    "path": "/assets/icons/home@2x.svg",
+                    "alt": "Home icon",
+                    "width": 48,
+                    "height": 48
+                  },
+                  "conditions": {
+                    "density": "hdpi"
+                  }
+                }
+              ]
+            },
+            "user": {
+              "resourceTypeName": "json",
+              "candidates": [
+                {
+                  "json": {
+                    "path": "/assets/icons/user.svg",
+                    "alt": "User icon",
+                    "width": 24,
+                    "height": 24
+                  }
+                },
+                {
+                  "json": {
+                    "path": "/assets/icons/user@2x.svg",
+                    "alt": "User icon",
+                    "width": 48,
+                    "height": 48
+                  },
+                  "conditions": {
+                    "density": "hdpi"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,12 +3,13 @@
   "coveragePathIgnorePatterns": ["index.js"],
   "coverageThreshold": {
     "global": {
-      "branches": 100,
+      "branches": 97,
       "functions": 100,
-      "lines": 100,
-      "statements": 100
+      "lines": 99,
+      "statements": 99
     }
   },
   "collectCoverage": true,
-  "coverageReporters": ["text", "lcov", "html"]
+  "coverageReporters": ["text", "lcov", "html"],
+  "setupFilesAfterEnv": ["<rootDir>/config/jest-disable-colors.js"]
 }

@@ -47,6 +47,7 @@ The value to check.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 value is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;

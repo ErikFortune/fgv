@@ -50,6 +50,7 @@ A mustache template used to format the object.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;string&gt;

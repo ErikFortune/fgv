@@ -43,6 +43,7 @@ Model.IM49CsvRow\[\]
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[RegionCodes](./ts-bcp47.unsd.regioncodes.md)<!-- -->&gt;

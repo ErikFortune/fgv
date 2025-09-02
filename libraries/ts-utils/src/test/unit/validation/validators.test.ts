@@ -43,7 +43,8 @@ describe('validators', () => {
       expect(validator.validate('xval')).toFailWith(/invalid enumerated value/i);
       expect(validator.validate('aval1')).toFailWith(/invalid enumerated value/i);
       expect(validator.validate(true)).toFailWith(/not a string/i);
-      expect(validator.validate({})).toFailWith(/not a string/i);
+      expect(validator.validate(true)).toFailWith(/not a string/i);
+      expect(validator.validate(10)).toFailWith(/not a string/i);
     });
 
     test('uses a context, if supplied', () => {

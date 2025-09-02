@@ -1,77 +1,77 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with few calls 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)
 Expected no call with arguments matching:
-      [32m[Any<String>][39m
+      [Any<String>]
 Received (1 total):
-*000: [31m[\\"arg1\\"][39m"
+*000: [\\"arg1\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for a call in the middle" 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)
 Expected no call with arguments matching:
-      [32m[\\"arg3\\"][39m
+      [\\"arg3\\"]
 Received (7 total):
- 002: [31m[\\"arg2\\"][39m
-*003: [31m[\\"arg3\\"][39m
- 004: [31m[\\"arg4\\"][39m"
+ 002: [\\"arg2\\"]
+*003: [\\"arg3\\"]
+ 004: [\\"arg4\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the first call" 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)
 Expected no call with arguments matching:
-      [32m[\\"arg0\\"][39m
+      [\\"arg0\\"]
 Received (7 total):
-*000: [31m[\\"arg0\\"][39m
- 001: [31m[\\"arg1\\"][39m
- 002: [31m[\\"arg2\\"][39m"
+*000: [\\"arg0\\"]
+ 001: [\\"arg1\\"]
+ 002: [\\"arg2\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the last call" 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)
 Expected no call with arguments matching:
-      [32m[\\"arg6\\"][39m
+      [\\"arg6\\"]
 Received (7 total):
- 004: [31m[\\"arg4\\"][39m
- 005: [31m[\\"arg5\\"][39m
-*006: [31m[\\"arg6\\"][39m"
+ 004: [\\"arg4\\"]
+ 005: [\\"arg5\\"]
+*006: [\\"arg6\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the second call" 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)
 Expected no call with arguments matching:
-      [32m[StringMatching /1/][39m
+      [StringMatching /1/]
 Received (7 total):
- 000: [31m[\\"arg0\\"][39m
-*001: [31m[\\"arg1\\"][39m
- 002: [31m[\\"arg2\\"][39m"
+ 000: [\\"arg0\\"]
+*001: [\\"arg1\\"]
+ 002: [\\"arg2\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a .not test fails with many calls "for the second-to-last-call" 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toHaveBeenCalledWithArgumentsMatching([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toHaveBeenCalledWithArgumentsMatching(expected)
 Expected no call with arguments matching:
-      [32m[\\"arg5\\"][39m
+      [\\"arg5\\"]
 Received (7 total):
- 004: [31m[\\"arg4\\"][39m
-*005: [31m[\\"arg5\\"][39m
- 006: [31m[\\"arg6\\"][39m"
+ 004: [\\"arg4\\"]
+*005: [\\"arg5\\"]
+ 006: [\\"arg6\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if a call is not matched 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).[22mtoHaveBeenCalledWithArgumentsMatching[2m([22m[32mexpected[39m[2m)[22m
+"expect(received).toHaveBeenCalledWithArgumentsMatching(expected)
 Expected call with arguments matching:
-      [32m[\\"call7\\"][39m
+      [\\"call7\\"]
 Received (6 total):
- 003: [31m[\\"call4\\"][39m
- 004: [31m[\\"call5\\"][39m
- 005: [31m[\\"call6\\"][39m"
+ 003: [\\"call4\\"]
+ 004: [\\"call5\\"]
+ 005: [\\"call6\\"]"
 `;
 
 exports[`.toHaveBeenCalledWithArgumentsMatching reports a helpful message if function was not called 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).[22mtoHaveBeenCalledWithArgumentsMatching[2m([22m[32mexpected[39m[2m)[22m
+"expect(received).toHaveBeenCalledWithArgumentsMatching(expected)
 Expected call with arguments matching:
-      [32m[\\"call7\\"][39m
+      [\\"call7\\"]
 Received (0 total):"
 `;
 

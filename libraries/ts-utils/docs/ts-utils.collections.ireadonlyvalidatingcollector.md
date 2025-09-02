@@ -38,26 +38,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[getAt](./ts-utils.collections.ireadonlyvalidatingcollector.getat.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-(index: number) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TITEM&gt;
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [validating](./ts-utils.collections.ireadonlyvalidatingcollector.validating.md)
 
 
@@ -78,3 +58,40 @@ A [CollectorValidator](./ts-utils.collections.collectorvalidator.md) which valid
 
 </td></tr>
 </tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getAt(index)](./ts-utils.collections.ireadonlyvalidatingcollector.getat.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[valuesByIndex()](./ts-utils.collections.ireadonlyvalidatingcollector.valuesbyindex.md)
+
+
+</td><td>
+
+Gets all items in the collection, ordered by index.
+
+
+</td></tr>
+</tbody></table>
+

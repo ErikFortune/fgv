@@ -19,11 +19,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ConsoleLogger](./ts-utils.logging.consolelogger.md)
+
+
+</td><td>
+
+A console logger that outputs messages to the console.
+
+
+</td></tr>
+<tr><td>
+
 [InMemoryLogger](./ts-utils.logging.inmemorylogger.md)
 
 
 </td><td>
 
+An in-memory logger that stores logged and suppressed messages.
+
+
+</td></tr>
+<tr><td>
+
+[LogReporter](./ts-utils.logging.logreporter.md)
+
+
+</td><td>
+
+Abstract base class which wraps an existing [ILogger](./ts-utils.logging.ilogger.md) to implement both [ILogger](./ts-utils.logging.ilogger.md) and [IResultReporter](./ts-utils.iresultreporter.md)<!-- -->.
 
 
 </td></tr>
@@ -34,6 +57,7 @@ Description
 
 </td><td>
 
+A no-op [LoggerBase](./ts-utils.logging.loggerbase.md) that does not log anything.
 
 
 </td></tr>
@@ -59,6 +83,33 @@ Description
 
 </td><td>
 
+Abstract base class which implements [ILogger](./ts-utils.logging.ilogger.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[shouldLog(message, reporter)](./ts-utils.logging.shouldlog.md)
+
+
+</td><td>
+
+Compares two log levels.
 
 
 </td></tr>
@@ -79,11 +130,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Logger](./ts-utils.logging.logger.md)
+[ILogger](./ts-utils.logging.ilogger.md)
 
 
 </td><td>
 
+Generic Result-aware logger interface with multiple levels of logging.
+
+
+</td></tr>
+<tr><td>
+
+[ILogReporterCreateParams](./ts-utils.logging.ilogreportercreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [LogReporter](./ts-utils.logging.logreporter.md)<!-- -->.
 
 
 </td></tr>
@@ -104,12 +167,36 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[LogLevel](./ts-utils.logging.loglevel.md)
+[LogMessageFormatter](./ts-utils.logging.logmessageformatter.md)
 
 
 </td><td>
 
+A function that formats a message for logging.
+
+
+</td></tr>
+<tr><td>
+
+[LogValueFormatter](./ts-utils.logging.logvalueformatter.md)
+
+
+</td><td>
+
+A function that formats a value for logging.
+
+
+</td></tr>
+<tr><td>
+
+[ReporterLogLevel](./ts-utils.logging.reporterloglevel.md)
+
+
+</td><td>
+
+The level of logging to be used.
 
 
 </td></tr>
 </tbody></table>
+

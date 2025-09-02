@@ -179,7 +179,7 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
    * {@inheritdoc Validation.ValidatorBase._validate}
    * @internal
    */
-  protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
+  protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {
     if (typeof from !== 'object' || from === null || Array.isArray(from)) {
       return fail('source is not an object');
     }

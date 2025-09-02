@@ -130,3 +130,4 @@ Constructs a new [ConditionalJsonConverter](./ts-json.conditionaljsonconverter.m
 
 </td></tr>
 </tbody></table>
+
