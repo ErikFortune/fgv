@@ -32,6 +32,7 @@ babel.config.js
 webpack.config.js
 tailwind.config.js
 postcss.config.js
+config/
 
 # Source files (if publishing only built output)
 # Uncomment if you only want to publish dist/lib
