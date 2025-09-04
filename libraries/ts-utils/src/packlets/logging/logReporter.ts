@@ -50,8 +50,22 @@ export interface ILogReporterCreateParams<T, TD = unknown> {
  * @public
  */
 export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
+  /**
+   * The logger to wrap.
+   * @internal
+   */
   protected readonly _logger: ILogger;
+
+  /**
+   * The formatter to use for values.
+   * @internal
+   */
   protected readonly _valueFormatter: LogValueFormatter<T, TD>;
+
+  /**
+   * The formatter to use for messages.
+   * @internal
+   */
   protected readonly _messageFormatter: LogMessageFormatter<TD>;
 
   /**

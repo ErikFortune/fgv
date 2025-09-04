@@ -72,48 +72,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_logged](./ts-utils.logging.inmemorylogger._logged.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-string\[\]
-
-
-</td><td>
-
-The messages that have been logged.
-
-
-</td></tr>
-<tr><td>
-
-[\_suppressed](./ts-utils.logging.inmemorylogger._suppressed.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-string\[\]
-
-
-</td><td>
-
-The messages that have been suppressed.
-
-
-</td></tr>
-<tr><td>
-
 [logged](./ts-utils.logging.inmemorylogger.logged.md)
 
 
@@ -175,37 +133,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[\_log(message, \_\_level)](./ts-utils.logging.inmemorylogger._log.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[\_suppressLog(level, message, parameters)](./ts-utils.logging.inmemorylogger._suppresslog.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-Inner method called for suppressed log messages.
-
-
-</td></tr>
-<tr><td>
 
 [clear()](./ts-utils.logging.inmemorylogger.clear.md)
 

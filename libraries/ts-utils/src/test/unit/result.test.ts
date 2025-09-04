@@ -348,6 +348,33 @@ describe('Result module', () => {
           expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test');
         });
       });
+
+      test('does nothing when reporter is not provided', () => {
+        const success = succeed('test value');
+
+        // Should not throw and return self for chaining
+        const result = success.report();
+
+        expect(result).toBe(success);
+      });
+
+      test('does nothing when reporter is undefined', () => {
+        const success = succeed('test value');
+
+        // Should not throw and return self for chaining
+        const result = success.report(undefined);
+
+        expect(result).toBe(success);
+      });
+
+      test('does nothing with options when reporter is not provided', () => {
+        const success = succeed('test value');
+
+        // Should not throw and return self for chaining even with options
+        const result = success.report(undefined, { success: 'info' });
+
+        expect(result).toBe(success);
+      });
     });
   });
 
@@ -531,6 +558,33 @@ describe('Result module', () => {
           failure.report(reporter, { failure: level });
           expect(reporter.reportFailure).toHaveBeenCalledWith(level, 'test error');
         });
+      });
+
+      test('does nothing when reporter is not provided', () => {
+        const failure = fail('test error');
+
+        // Should not throw and return self for chaining
+        const result = failure.report();
+
+        expect(result).toBe(failure);
+      });
+
+      test('does nothing when reporter is undefined', () => {
+        const failure = fail('test error');
+
+        // Should not throw and return self for chaining
+        const result = failure.report(undefined);
+
+        expect(result).toBe(failure);
+      });
+
+      test('does nothing with options when reporter is not provided', () => {
+        const failure = fail('test error');
+
+        // Should not throw and return self for chaining even with options
+        const result = failure.report(undefined, { failure: 'warning' });
+
+        expect(result).toBe(failure);
       });
     });
 
@@ -747,6 +801,33 @@ describe('Result module', () => {
           expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test', 'detail');
         });
       });
+
+      test('does nothing when reporter is not provided', () => {
+        const detailedSuccess = succeedWithDetail('test value', 'test detail');
+
+        // Should not throw and return self for chaining
+        const result = detailedSuccess.report();
+
+        expect(result).toBe(detailedSuccess);
+      });
+
+      test('does nothing when reporter is undefined', () => {
+        const detailedSuccess = succeedWithDetail('test value', 'test detail');
+
+        // Should not throw and return self for chaining
+        const result = detailedSuccess.report(undefined);
+
+        expect(result).toBe(detailedSuccess);
+      });
+
+      test('does nothing with options when reporter is not provided', () => {
+        const detailedSuccess = succeedWithDetail('test value', 'test detail');
+
+        // Should not throw and return self for chaining even with options
+        const result = detailedSuccess.report(undefined, { success: 'info' });
+
+        expect(result).toBe(detailedSuccess);
+      });
     });
 
     describe('asResult getter', () => {
@@ -906,6 +987,33 @@ describe('Result module', () => {
           detailedFailure.report(reporter, { failure: level });
           expect(reporter.reportFailure).toHaveBeenCalledWith(level, 'test error', 'detail');
         });
+      });
+
+      test('does nothing when reporter is not provided', () => {
+        const detailedFailure = failWithDetail('test error', 'test detail');
+
+        // Should not throw and return self for chaining
+        const result = detailedFailure.report();
+
+        expect(result).toBe(detailedFailure);
+      });
+
+      test('does nothing when reporter is undefined', () => {
+        const detailedFailure = failWithDetail('test error', 'test detail');
+
+        // Should not throw and return self for chaining
+        const result = detailedFailure.report(undefined);
+
+        expect(result).toBe(detailedFailure);
+      });
+
+      test('does nothing with options when reporter is not provided', () => {
+        const detailedFailure = failWithDetail('test error', 'test detail');
+
+        // Should not throw and return self for chaining even with options
+        const result = detailedFailure.report(undefined, { failure: 'warning' });
+
+        expect(result).toBe(detailedFailure);
       });
     });
 

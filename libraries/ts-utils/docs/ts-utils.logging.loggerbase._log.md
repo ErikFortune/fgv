@@ -4,6 +4,8 @@
 
 ## Logging.LoggerBase.\_log() method
 
+Inner method called for logged messages. Should be implemented by derived classes.
+
 **Signature:**
 
 ```typescript
@@ -40,6 +42,8 @@ string
 
 </td><td>
 
+The message to log.
+
 
 </td></tr>
 <tr><td>
@@ -54,6 +58,8 @@ level
 
 </td><td>
 
+The [level](./ts-utils.messageloglevel.md) of the message.
+
 
 </td></tr>
 </tbody></table>
@@ -61,4 +67,6 @@ level
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;string \| undefined&gt;
+
+`Success` with the logged message, or `Success` with `undefined` if the message is suppressed.
 

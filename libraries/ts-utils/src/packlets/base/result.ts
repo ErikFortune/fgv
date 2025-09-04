@@ -324,7 +324,7 @@ export interface IResult<T> {
    * @param reporter - The {@link IResultReporter | reporter} to which the result will be reported.
    * @param options - The {@link IResultReportOptions | options} for reporting the result.
    */
-  report(reporter: IResultReporter<T>, options?: IResultReportOptions): this;
+  report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this;
 }
 
 /**
@@ -463,9 +463,9 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter: IResultReporter<T>, options?: IResultReportOptions): this {
+  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this {
     const level = options?.success ?? 'quiet';
-    reporter.reportSuccess(level, this._value);
+    reporter?.reportSuccess(level, this._value);
     return this;
   }
 
@@ -625,9 +625,9 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter: IResultReporter<T>, options?: IResultReportOptions): this {
+  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this {
     const level = options?.failure ?? 'error';
-    reporter.reportFailure(level, this._message);
+    reporter?.reportFailure(level, this._message);
     return this;
   }
 
@@ -799,9 +799,9 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter: IResultReporter<T, TD>, options?: IResultReportOptions): this {
+  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this {
     const level = options?.success ?? 'quiet';
-    reporter.reportSuccess(level, this._value, this._detail);
+    reporter?.reportSuccess(level, this._value, this._detail);
     return this;
   }
 
@@ -896,9 +896,9 @@ export class DetailedFailure<T, TD> extends Failure<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter: IResultReporter<T, TD>, options?: IResultReportOptions): this {
+  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this {
     const level = options?.failure ?? 'error';
-    reporter.reportFailure(level, this._message, this._detail);
+    reporter?.reportFailure(level, this._message, this._detail);
     return this;
   }
 
