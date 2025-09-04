@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-cli",
+      "comment": "",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res-cli"
+}
