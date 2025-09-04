@@ -47,38 +47,3 @@ Creates a new no-op logger.
 </td></tr>
 </tbody></table>
 
-## Methods
-
-<table><thead><tr><th>
-
-Method
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[\_log(message, \_\_level)](./ts-utils.logging.nooplogger._log.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-
-
-</td></tr>
-</tbody></table>
-

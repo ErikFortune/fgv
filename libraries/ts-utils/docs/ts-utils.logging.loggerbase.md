@@ -141,6 +141,8 @@ Formats a message and parameters into a string.
 
 </td><td>
 
+Inner method called for logged messages. Should be implemented by derived classes.
+
 
 </td></tr>
 <tr><td>

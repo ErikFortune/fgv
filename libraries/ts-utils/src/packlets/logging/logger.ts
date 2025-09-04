@@ -186,6 +186,7 @@ export abstract class LoggerBase implements ILogger {
 
   /**
    * Inner method called for suppressed log messages.
+   * @public
    */
   protected _suppressLog(
     __level: MessageLogLevel,
@@ -195,6 +196,13 @@ export abstract class LoggerBase implements ILogger {
     return succeed(undefined);
   }
 
+  /**
+   * Inner method called for logged messages. Should be implemented by derived classes.
+   * @param message - The message to log.
+   * @param level - The {@link MessageLogLevel | level} of the message.
+   * @returns `Success` with the logged message, or `Success` with `undefined` if the message is suppressed.
+   * @public
+   */
   protected abstract _log(message: string, level: MessageLogLevel): Success<string | undefined>;
 }
 
@@ -205,13 +213,15 @@ export abstract class LoggerBase implements ILogger {
 export class InMemoryLogger extends LoggerBase {
   /**
    * The messages that have been logged.
+   * @internal
    */
-  protected _logged: string[] = [];
+  private _logged: string[] = [];
 
   /**
    * The messages that have been suppressed.
+   * @internal
    */
-  protected _suppressed: string[] = [];
+  private _suppressed: string[] = [];
 
   /**
    * Creates a new in-memory logger.
@@ -245,6 +255,7 @@ export class InMemoryLogger extends LoggerBase {
 
   /**
    * {@inheritDoc Logging.LoggerBase._log}
+   * @internal
    */
   protected _log(message: string, __level: MessageLogLevel): Success<string | undefined> {
     this._logged.push(message);
@@ -257,6 +268,7 @@ export class InMemoryLogger extends LoggerBase {
    * @param message - The message to suppress.
    * @param parameters - The parameters to suppress.
    * @returns `Success` with `undefined` if the message is suppressed.
+   * @internal
    */
   protected _suppressLog(
     level: MessageLogLevel,
@@ -284,6 +296,7 @@ export class ConsoleLogger extends LoggerBase {
 
   /**
    * {@inheritDoc Logging.LoggerBase._log}
+   * @internal
    */
   protected _log(message: string, level: MessageLogLevel): Success<string | undefined> {
     switch (level) {
@@ -319,6 +332,7 @@ export class NoOpLogger extends LoggerBase {
 
   /**
    * {@inheritDoc Logging.LoggerBase._log}
+   * @internal
    */
   protected _log(message: string, __level: MessageLogLevel): Success<string | undefined> {
     // no-op
