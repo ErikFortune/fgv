@@ -4641,6 +4641,9 @@ class ResourceTreeResolver {
     constructor(resolver: ResourceResolver, resourceManager?: IResourceManager<IResource>);
     resolveComposedResourceTree(resourceId: string, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
     resolveComposedResourceTree(node: IReadOnlyResourceTreeNode<IResource>, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
+    get tree(): IReadOnlyResourceTreeRoot<IResource>;
+    // (undocumented)
+    protected _tree?: Result<IReadOnlyResourceTreeRoot<IResource>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -5230,7 +5233,7 @@ details: string) => void;
 // src/packlets/resources/resource.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:281:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/runtime/resourceResolver.ts:179:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceResolver.ts:178:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 

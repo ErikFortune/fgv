@@ -48,6 +48,73 @@ Creates a ResourceTreeResolver instance.
 </td></tr>
 </tbody></table>
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[\_tree?](./ts-res.runtime.resourcetreeresolver._tree.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Result&lt;[IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+[tree](./ts-res.runtime.resourcetreeresolver.tree.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;
+
+
+</td><td>
+
+Gets the built resource tree, building it lazily on first access.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>

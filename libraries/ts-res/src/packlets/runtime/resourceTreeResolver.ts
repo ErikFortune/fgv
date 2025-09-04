@@ -23,7 +23,7 @@
 import { Result, MessageAggregator, succeed, fail } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { IResourceManager, IResource } from './iResourceManager';
-import { IReadOnlyResourceTreeNode } from './resource-tree/common';
+import { IReadOnlyResourceTreeNode, IReadOnlyResourceTreeRoot } from './resource-tree/common';
 import { ResourceResolver } from './resourceResolver';
 
 /**
@@ -93,6 +93,7 @@ export interface IResolveResourceTreeOptions {
 export class ResourceTreeResolver {
   private readonly _resolver: ResourceResolver;
   private readonly _resourceManager?: IResourceManager<IResource>;
+  protected _tree?: Result<IReadOnlyResourceTreeRoot<IResource>>;
 
   /**
    * Creates a ResourceTreeResolver instance.
@@ -102,6 +103,22 @@ export class ResourceTreeResolver {
   public constructor(resolver: ResourceResolver, resourceManager?: IResourceManager<IResource>) {
     this._resolver = resolver;
     this._resourceManager = resourceManager;
+  }
+
+  /**
+   * Gets the built resource tree, building it lazily on first access.
+   * @returns The resource tree root
+   * @throws Error if no resource manager was provided or tree building fails
+   * @public
+   */
+  public get tree(): IReadOnlyResourceTreeRoot<IResource> {
+    if (!this._tree) {
+      if (!this._resourceManager) {
+        throw new Error('Cannot build resource tree: no resource manager provided');
+      }
+      this._tree = this._resourceManager.getBuiltResourceTree();
+    }
+    return this._tree.orThrow();
   }
 
   /**
@@ -153,14 +170,16 @@ export class ResourceTreeResolver {
       return fail(`Cannot resolve tree from resource ID '${resourceId}': no resource manager provided`);
     }
 
-    return this._resourceManager!.getBuiltResourceTree()
-      .onFailure((message) => fail(`Failed to build resource tree: ${message}`))
-      .onSuccess((tree) => {
-        return tree.children.validating
-          .getById(resourceId)
-          .onFailure((message) => fail(`Resource '${resourceId}' not found in resource tree: ${message}`))
-          .onSuccess((rootNode) => this._resolveFromTreeNode(rootNode, options));
-      });
+    try {
+      const tree = this.tree;
+      return tree.children.validating
+        .getById(resourceId)
+        .onFailure((message) => fail(`Resource '${resourceId}' not found in resource tree: ${message}`))
+        .onSuccess((rootNode) => this._resolveFromTreeNode(rootNode, options));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return fail(`Failed to build resource tree: ${message}`);
+    }
   }
 
   /**
