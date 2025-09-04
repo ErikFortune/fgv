@@ -1,0 +1,56 @@
+# Agent-specific files
+CLAUDE.md
+.agents/
+.claude/
+
+# IDE and system files
+.vscode/
+.DS_Store
+
+# Test and coverage files  
+coverage/
+*.test.ts
+*.test.js
+*.test.d.ts
+*.test.*.map
+src/test/
+lib/test/
+lib/**/*.test.*
+lib-commonjs/test/
+lib-commonjs/**/*.test.*
+
+# Development files
+*.log
+.eslintrc*
+jest.config.*
+tsconfig.json
+*.js.map
+*.d.ts.map
+config/
+
+# Source files (if publishing only built output)
+# Uncomment if you only want to publish dist/lib
+src/
+
+# Rush/Heft temporary files
+.heft/
+.rush/
+rush-logs/
+temp/
+
+# API Extractor files (development artifacts)
+etc/
+
+# Build artifacts that shouldn't be published
+lib-commonjs/
+
+# Planning and example documentation
+EXAMPLE_*.md
+*_PLAN.md
+
+# Documentation source
+docs/
+*.md
+!README.md
+!LICENSE.md
+!CHANGELOG.md

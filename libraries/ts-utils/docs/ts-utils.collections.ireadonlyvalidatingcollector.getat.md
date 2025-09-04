@@ -2,11 +2,50 @@
 
 [Home](./index.md) &gt; [@fgv/ts-utils](./ts-utils.md) &gt; [Collections](./ts-utils.collections.md) &gt; [IReadOnlyValidatingCollector](./ts-utils.collections.ireadonlyvalidatingcollector.md) &gt; [getAt](./ts-utils.collections.ireadonlyvalidatingcollector.getat.md)
 
-## Collections.IReadOnlyValidatingCollector.getAt property
+## Collections.IReadOnlyValidatingCollector.getAt() method
 
 
 **Signature:**
 
 ```typescript
-readonly getAt: (index: number) => Result<TITEM>;
+getAt(index: number): Result<TITEM>;
 ```
+
+## Parameters
+
+<table><thead><tr><th>
+
+Parameter
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+index
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
+
+**Returns:**
+
+[Result](./ts-utils.result.md)<!-- -->&lt;TITEM&gt;
+

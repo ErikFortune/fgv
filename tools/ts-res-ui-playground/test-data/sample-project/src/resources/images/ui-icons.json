@@ -1,0 +1,29 @@
+{
+  "resources": [
+    {
+      "id": "notification",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "path": "/assets/icons/notification.svg",
+            "alt": "Notification icon",
+            "width": 24,
+            "height": 24
+          }
+        },
+        {
+          "json": {
+            "path": "/assets/icons/notification@2x.svg",
+            "alt": "Notification icon",
+            "width": 48,
+            "height": 48
+          },
+          "conditions": {
+            "density": "hdpi"
+          }
+        }
+      ]
+    }
+  ]
+}

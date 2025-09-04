@@ -3,14 +3,14 @@ on:
   push:
     branches: ['main']
   pull_request:
-    branches: ['main']
+    branches: ['main', 'erik/release']
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Git config user
         uses: snow-actions/git-config-user@v1.0.0
         with:
@@ -20,7 +20,13 @@ jobs:
         with:
           node-version: 20
       - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            TARGET_BRANCH="${{ github.base_ref }}"
+          else
+            TARGET_BRANCH="main"
+          fi
+          node common/scripts/install-run-rush.js change --verify --target-branch origin/$TARGET_BRANCH
       - name: Rush Install
         run: node common/scripts/install-run-rush.js install
       - name: Rush rebuild

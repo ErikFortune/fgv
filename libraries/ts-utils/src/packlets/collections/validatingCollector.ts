@@ -46,7 +46,12 @@ export interface IReadOnlyValidatingCollector<
   /**
    * {@inheritdoc Collections.IReadOnlyValidatingCollector.getAt}
    */
-  readonly getAt: (index: number) => Result<TITEM>;
+  getAt(index: number): Result<TITEM>;
+
+  /**
+   * {@inheritdoc Collections.IReadOnlyCollector.valuesByIndex}
+   */
+  valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
 /**

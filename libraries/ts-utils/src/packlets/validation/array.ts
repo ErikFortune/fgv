@@ -65,10 +65,11 @@ export class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
    * validator.
    * @param from - The `unknown` value to be tested.
    * @param context - Optional validation context will be propagated to element validator.
+   * @param self - Optional self-reference for recursive validation.
    * @returns Returns `true` if `from` is an `array` of valid elements, or
    * {@link Failure} with an error message if not.
    */
-  protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T> {
+  protected _validate(from: unknown, context?: TC, self?: Validator<T[], TC>): boolean | Failure<T[]> {
     if (Array.isArray(from)) {
       for (const elem of from) {
         const result = this._validateElement.validate(elem, context);
@@ -78,6 +79,6 @@ export class ArrayValidator<T, TC = unknown> extends ValidatorBase<T[], TC> {
       }
       return true;
     }
-    return fail<T>(`"${from}": not an array`);
+    return fail<T[]>(`"${from}": not an array`);
   }
 }

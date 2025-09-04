@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras",
-  "version": "4.5.0",
+  "version": "5.0.0",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
@@ -29,10 +29,10 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-extras#ts-utils",
   "devDependencies": {
     "@jest/expect-utils": "^29.7.0",
-    "@microsoft/api-documenter": "^7.26.29",
-    "@microsoft/api-extractor": "^7.49.1",
+    "@microsoft/api-documenter": "^7.26.31",
+    "@microsoft/api-extractor": "^7.52.10",
     "@types/jest": "^29.5.14",
-    "@types/luxon": "^3.4.2",
+    "@types/luxon": "^3.7.1",
     "@types/mustache": "^4.2.5",
     "@types/node": "^20.14.9",
     "@types/papaparse": "^5.3.14",
@@ -46,24 +46,25 @@
     "jest-extended": "^4.0.2",
     "jest-matcher-utils": "^29.7.0",
     "rimraf": "^5.0.7",
-    "ts-jest": "^29.4.0",
+    "ts-jest": "^29.4.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
+    "typescript": "5.8.3",
     "eslint-plugin-n": "^16.6.2",
     "jest-snapshot": "~29.7.0",
-    "@rushstack/heft": "~0.74.0",
-    "@rushstack/heft-node-rig": "~2.9.0",
-    "@rushstack/eslint-config": "~4.4.0",
+    "@rushstack/heft": "0.74.3",
+    "@rushstack/heft-node-rig": "2.9.4",
+    "@rushstack/eslint-config": "4.4.0",
     "@types/heft-jest": "1.0.6",
-    "@rushstack/heft-jest-plugin": "~0.16.9",
+    "@rushstack/heft-jest-plugin": "0.16.12",
     "eslint-plugin-tsdoc": "~0.4.0",
     "@fgv/ts-utils-jest": "workspace:*",
     "@fgv/ts-utils": "workspace:*"
   },
   "dependencies": {
-    "luxon": "^3.5.0",
+    "luxon": "^3.7.1",
     "mustache": "^4.2.0",
-    "papaparse": "^5.4.1"
+    "papaparse": "^5.4.1",
+    "fflate": "~0.8.2"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

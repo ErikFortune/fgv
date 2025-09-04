@@ -47,3 +47,4 @@ _(Optional)_ optional array of errors to be included in the aggregation.
 
 </td></tr>
 </tbody></table>
+

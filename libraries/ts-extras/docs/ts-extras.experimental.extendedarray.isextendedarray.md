@@ -50,6 +50,7 @@ _(Optional)_ The `Array` to be tested.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 a is [ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->&lt;T&gt;

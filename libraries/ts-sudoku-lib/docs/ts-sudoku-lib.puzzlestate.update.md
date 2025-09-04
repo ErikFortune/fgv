@@ -47,6 +47,7 @@ An array of [CellState](./ts-sudoku-lib.icellstate.md) to be applied.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[PuzzleState](./ts-sudoku-lib.puzzlestate.md)<!-- -->&gt;

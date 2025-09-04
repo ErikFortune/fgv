@@ -47,6 +47,7 @@ The [error formatter](./ts-utils.errorformatter.md) to be called in the event of
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;

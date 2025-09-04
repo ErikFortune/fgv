@@ -47,6 +47,7 @@ _(Optional)_ Optional [configuration options](./ts-json.ijsoneditoroptions.md) f
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ReferenceJsonEditorRule](./ts-json.editorrules.referencejsoneditorrule.md)<!-- -->&gt;

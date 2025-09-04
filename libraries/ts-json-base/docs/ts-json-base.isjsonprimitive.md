@@ -47,6 +47,7 @@ The `unknown` to be tested
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 from is [JsonPrimitive](./ts-json-base.jsonprimitive.md)

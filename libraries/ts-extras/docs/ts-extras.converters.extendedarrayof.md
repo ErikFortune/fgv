@@ -80,6 +80,7 @@ _(Optional)_
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Converter&lt;[ExtendedArray](./ts-extras.experimental.extendedarray.md)<!-- -->&lt;T&gt;, TC&gt;

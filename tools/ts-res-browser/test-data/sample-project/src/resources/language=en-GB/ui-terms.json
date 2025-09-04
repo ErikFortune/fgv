@@ -1,0 +1,30 @@
+{
+  "resources": {
+    "ui-terms": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "Login": "Sign in",
+            "Logout": "Sign out",
+            "Settings": "Preferences",
+            "Delete": "Remove",
+            "MobilePhone": "Mobile phone",
+            "ShoppingCart": "Basket",
+            "ZipCode": "Postcode",
+            "Color": "Colour",
+            "Favorite": "Favourite",
+            "Checkbox": "Tick box",
+            "Update": "Refresh",
+            "Help": "Support",
+            "Home": "Homepage",
+            "Notifications": "Alerts",
+            "TermsOfService": "Terms and Conditions",
+            "Password": "Passcode"
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

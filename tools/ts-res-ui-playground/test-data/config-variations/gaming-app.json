@@ -1,0 +1,87 @@
+{
+  "name": "Gaming Application Configuration",
+  "description": "Configuration tailored for gaming applications with device and graphics quality considerations",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory"
+    },
+    {
+      "name": "platform",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["pc", "console", "mobile", "vr", "ar"]
+      }
+    },
+    {
+      "name": "graphics-quality",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["low", "medium", "high", "ultra", "rtx"]
+      }
+    },
+    {
+      "name": "player-level",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["beginner", "intermediate", "advanced", "expert", "pro"]
+      }
+    },
+    {
+      "name": "game-mode",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["single", "multiplayer", "cooperative", "competitive", "tutorial"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "platform",
+      "typeName": "platform",
+      "defaultPriority": 850
+    },
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 800
+    },
+    {
+      "name": "territory",
+      "typeName": "territory",
+      "defaultPriority": 750
+    },
+    {
+      "name": "graphics",
+      "typeName": "graphics-quality",
+      "defaultPriority": 700,
+      "token": "gfx"
+    },
+    {
+      "name": "playerLevel",
+      "typeName": "player-level",
+      "defaultPriority": 600,
+      "token": "level"
+    },
+    {
+      "name": "gameMode",
+      "typeName": "game-mode",
+      "defaultPriority": 550,
+      "token": "mode"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

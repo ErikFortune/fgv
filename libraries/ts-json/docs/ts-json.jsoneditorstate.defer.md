@@ -47,6 +47,7 @@ The `JsonObject` to be deferred.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 void
