@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { ILogger, ReporterLogLevel } from './logger';
+import { ILogger, ReporterLogLevel, NoOpLogger } from './logger';
 import { IResultReporter, MessageLogLevel, Success } from '../base';
 
 /**
@@ -39,7 +39,7 @@ export type LogMessageFormatter<TD = unknown> = (message: string, detail?: TD) =
  * @public
  */
 export interface ILogReporterCreateParams<T, TD = unknown> {
-  logger: ILogger;
+  logger?: ILogger;
   valueFormatter?: LogValueFormatter<T, TD>;
   messageFormatter?: LogMessageFormatter<TD>;
 }
@@ -72,8 +72,10 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
    * Creates a new {@link Logging.LogReporter | LogReporter}.
    * @param params - The parameters for creating the {@link Logging.LogReporter | LogReporter}.
    */
-  public constructor(params: ILogReporterCreateParams<T, TD>) {
-    this._logger = params.logger;
+  public constructor(params?: ILogReporterCreateParams<T, TD>) {
+    /* c8 ignore next 1 */
+    params = params ?? {};
+    this._logger = params.logger ?? new NoOpLogger();
     this._valueFormatter = params.valueFormatter ?? ((message, __detail) => String(message));
     this._messageFormatter = params.messageFormatter ?? ((message, __detail) => message);
   }
