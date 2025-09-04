@@ -364,7 +364,7 @@ class ConsoleLogger extends LoggerBase {
     constructor(logLevel?: ReporterLogLevel);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
-    // (undocumented)
+    // @internal (undocumented)
     protected _log(message: string, level: MessageLogLevel): Success<string | undefined>;
 }
 
@@ -624,7 +624,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
     orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;
     // (undocumented)
     orThrow(cb: ErrorFormatter): never;
-    report(reporter: IResultReporter<T, TD>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this;
     static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
@@ -650,7 +650,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
     onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
-    report(reporter: IResultReporter<T, TD>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this;
     static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD>;
@@ -739,7 +739,7 @@ export class Failure<T> implements IResult<T> {
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): never;
     orThrow(cb: ErrorFormatter): never;
-    report(reporter: IResultReporter<T>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this;
     readonly success: false;
     toString(): string;
     readonly value: undefined;
@@ -1249,15 +1249,13 @@ class InMemoryLogger extends LoggerBase {
     clear(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
-    // (undocumented)
+    // @internal (undocumented)
     protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
     get logged(): string[];
-    protected _logged: string[];
     get suppressed(): string[];
-    protected _suppressed: string[];
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
-    // (undocumented)
+    // @internal (undocumented)
     protected _suppressLog(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<undefined>;
 }
 
@@ -1441,7 +1439,7 @@ export interface IResult<T> {
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): T;
     orThrow(cb: ErrorFormatter): T;
-    report(reporter: IResultReporter<T>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this;
     readonly success: boolean;
     readonly value: T | undefined;
     // Warning: (ae-incompatible-release-tags) The symbol "withDetail" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -1609,7 +1607,6 @@ abstract class LoggerBase implements ILogger {
     //
     // (undocumented)
     log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // (undocumented)
     protected abstract _log(message: string, level: MessageLogLevel): Success<string | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1666,19 +1663,19 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     //
     // (undocumented)
     log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // (undocumented)
+    // @internal
     protected readonly _logger: ILogger;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get logLevel(): ReporterLogLevel;
-    // (undocumented)
+    // @internal
     protected readonly _messageFormatter: LogMessageFormatter<TD>;
     // (undocumented)
     reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
     // (undocumented)
     reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
-    // (undocumented)
+    // @internal
     protected readonly _valueFormatter: LogValueFormatter<T, TD>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1745,7 +1742,7 @@ class NoOpLogger extends LoggerBase {
     constructor(logLevel?: ReporterLogLevel);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
-    // (undocumented)
+    // @internal (undocumented)
     protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
 }
 
@@ -2294,7 +2291,7 @@ export class Success<T> implements IResult<T> {
     orDefault(): T | undefined;
     orThrow(logger?: IResultLogger): T;
     orThrow(cb: ErrorFormatter): T;
-    report(reporter: IResultReporter<T>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this;
     readonly success: true;
     get value(): T;
     // @internal (undocumented)
