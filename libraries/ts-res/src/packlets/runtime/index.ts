@@ -25,6 +25,7 @@ export * from './iResourceManager';
 export * from './context/simpleContextQualifierProvider';
 export * from './context/validatingSimpleContextQualifierProvider';
 export * from './resourceResolver';
+export * from './resourceTreeResolver';
 export * from './conditionSetResolutionResult';
 export * from './cacheListener';
 export * from './cacheMetrics';

@@ -1252,6 +1252,9 @@ const DefaultResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceTypeConf
 // @public
 const DefaultSystemConfiguration: ISystemConfiguration;
 
+// @public
+type EmptyBranchHandler = (branchNode: IReadOnlyResourceTreeNode<IResource>, failedChildNames: string[], resolver: ResourceResolver) => Result<JsonValue | undefined>;
+
 declare namespace Example {
     export {
         ExtendedQualifierTypes,
@@ -2597,6 +2600,12 @@ interface IReducedCandidate {
     readonly json?: JsonObject;
     // (undocumented)
     readonly mergeMethod?: ResourceValueMergeMethod;
+}
+
+// @public
+interface IResolveResourceTreeOptions {
+    onEmptyBranch?: 'allow' | 'omit' | EmptyBranchHandler;
+    onResourceError?: 'fail' | 'ignore' | ResourceErrorHandler;
 }
 
 // @public
@@ -4288,6 +4297,9 @@ class ResourceDeclTree implements IResourceDeclContainer {
 }
 
 // @public
+type ResourceErrorHandler = (resource: IResource, message: string, resolver: ResourceResolver) => Result<JsonValue | undefined>;
+
+// @public
 export type ResourceId = Brand<string, 'ResourceId'>;
 
 // @public
@@ -4624,6 +4636,19 @@ class ResourceTreeChildrenValidator<T> implements IReadOnlyResourceTreeChildren<
 // @public
 type ResourceTreeNodeInit<T> = IResourceTreeLeafInit<T> | IResourceTreeBranchInit<T>;
 
+// @public
+class ResourceTreeResolver {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(resolver: ResourceResolver);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(resolver: ResourceResolver): Result<ResourceTreeResolver>;
+    resolveComposedResourceTree(resourceId: string, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
+    resolveComposedResourceTree(node: IReadOnlyResourceTreeNode<IResource>, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly resolver: ResourceResolver;
+    get tree(): IReadOnlyResourceTreeRoot<IResource>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -4732,6 +4757,10 @@ declare namespace Runtime {
         IResourceResolverOptions,
         IResourceResolverCreateParams,
         ResourceResolver,
+        ResourceErrorHandler,
+        EmptyBranchHandler,
+        IResolveResourceTreeOptions,
+        ResourceTreeResolver,
         ConditionMatchType,
         IConditionMatchResult,
         ConditionSetResolutionResult,
@@ -5208,6 +5237,7 @@ details: string) => void;
 // src/packlets/resources/resourceCandidate.ts:281:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceResolver.ts:178:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceTreeResolver.ts:103:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)
 
