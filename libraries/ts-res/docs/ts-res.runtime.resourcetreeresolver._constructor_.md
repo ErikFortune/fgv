@@ -4,7 +4,7 @@
 
 ## Runtime.ResourceTreeResolver.(constructor)
 
-Creates a ResourceTreeResolver instance.
+Creates a [ResourceTreeResolver](./ts-res.runtime.resourcetreeresolver.md) instance.
 
 **Signature:**
 

@@ -4638,12 +4638,13 @@ type ResourceTreeNodeInit<T> = IResourceTreeLeafInit<T> | IResourceTreeBranchIni
 
 // @public
 class ResourceTreeResolver {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(resolver: ResourceResolver, resourceManager?: IResourceManager<IResource>);
     resolveComposedResourceTree(resourceId: string, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
     resolveComposedResourceTree(node: IReadOnlyResourceTreeNode<IResource>, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly resolver: ResourceResolver;
     get tree(): IReadOnlyResourceTreeRoot<IResource>;
-    // (undocumented)
-    protected _tree?: Result<IReadOnlyResourceTreeRoot<IResource>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

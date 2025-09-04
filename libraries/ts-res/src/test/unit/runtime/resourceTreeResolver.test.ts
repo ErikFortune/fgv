@@ -185,12 +185,12 @@ describe('ResourceTreeResolver', () => {
     }).orThrow();
 
     // Create tree resolver with resource manager for lazy construction
-    treeResolver = new TsRes.Runtime.ResourceTreeResolver(resourceResolver, resourceManager);
+    treeResolver = new TsRes.Runtime.ResourceTreeResolver(resourceResolver);
   });
 
   describe('constructor', () => {
     test('should create ResourceTreeResolver with resource manager', () => {
-      const resolver = new TsRes.Runtime.ResourceTreeResolver(resourceResolver, resourceManager);
+      const resolver = new TsRes.Runtime.ResourceTreeResolver(resourceResolver);
       expect(resolver).toBeDefined();
     });
 
@@ -241,30 +241,30 @@ describe('ResourceTreeResolver', () => {
       });
     });
 
-    test('should fail when resource manager not provided', () => {
+    test('should succeed when resource manager is available from resolver', () => {
       const resolverWithoutManager = new TsRes.Runtime.ResourceTreeResolver(resourceResolver);
 
-      expect(resolverWithoutManager.resolveComposedResourceTree('simple')).toFailWith(
-        /Cannot resolve tree from resource ID 'simple': no resource manager provided/
-      );
+      expect(resolverWithoutManager.resolveComposedResourceTree('simple')).toSucceedWith({
+        value: 'simple value'
+      });
     });
 
     test('should fail with invalid resource ID', () => {
       expect(treeResolver.resolveComposedResourceTree('')).toFailWith(
-        /Resource '' not found in resource tree/
+        /: Resource not found in resource tree/
       );
     });
 
     test('should fail with malformed resource ID', () => {
       expect(treeResolver.resolveComposedResourceTree('invalid..id')).toFailWith(
-        /Resource 'invalid\.\.id' not found in resource tree/
+        /invalid\.\.id: Resource not found in resource tree/
       );
     });
 
     test('should fail when resource not found in tree', () => {
       // Try to resolve a resource ID that definitely doesn't exist
       expect(treeResolver.resolveComposedResourceTree('completely.nonexistent.resource')).toFailWith(
-        /Resource 'completely\.nonexistent\.resource' not found in resource tree/
+        /completely\.nonexistent\.resource: Resource not found in resource tree/
       );
     });
 
@@ -300,19 +300,19 @@ describe('ResourceTreeResolver', () => {
     });
 
     test('should fail when tree building fails', () => {
-      // Create a resource manager that will fail when trying to get the built resource tree
-      // We'll mock the getBuiltResourceTree method to return a failure
+      // Create a mock resolver with a broken resource manager
       const mockResourceManager = {
         getBuiltResourceTree: jest.fn().mockReturnValue(fail('Simulated tree building failure'))
       } as unknown as TsRes.Resources.ResourceManagerBuilder;
 
-      const resolverWithBrokenManager = new TsRes.Runtime.ResourceTreeResolver(
-        resourceResolver,
-        mockResourceManager
-      );
+      const mockResolver = {
+        resourceManager: mockResourceManager
+      } as unknown as TsRes.Runtime.ResourceResolver;
+
+      const resolverWithBrokenManager = new TsRes.Runtime.ResourceTreeResolver(mockResolver);
 
       expect(resolverWithBrokenManager.resolveComposedResourceTree('simple')).toFailWith(
-        /Failed to build resource tree: Simulated tree building failure/
+        /Simulated tree building failure/
       );
     });
   });
@@ -658,7 +658,7 @@ describe('ResourceTreeResolver', () => {
         resolveComposedResourceValue: jest.fn().mockReturnValue(succeed({ resolved: 'by mock' }))
       } as unknown as TsRes.Runtime.ResourceResolver;
 
-      const mockTreeResolver = new TsRes.Runtime.ResourceTreeResolver(mockResolver, resourceManager);
+      const mockTreeResolver = new TsRes.Runtime.ResourceTreeResolver(mockResolver);
       const simpleResource = resourceManager.getBuiltResource('simple').orThrow();
       const leafNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
         'simple' as ResourceName,
@@ -781,8 +781,8 @@ describe('ResourceTreeResolver', () => {
       const resolverWithoutManager = new TsRes.Runtime.ResourceTreeResolver(resourceResolver);
 
       const result = resolverWithoutManager.resolveComposedResourceTree('simple');
-      expect(result).toFail();
-      expect(result.message).toMatch(/no resource manager provided/);
+      expect(result).toSucceed();
+      expect(result.value).toEqual({ value: 'simple value' });
     });
 
     test('should propagate Result failures through the chain', () => {
@@ -791,13 +791,14 @@ describe('ResourceTreeResolver', () => {
         getBuiltResourceTree: jest.fn().mockReturnValue(fail('Simulated tree building failure'))
       } as unknown as TsRes.Resources.ResourceManagerBuilder;
 
-      const resolverWithBrokenManager = new TsRes.Runtime.ResourceTreeResolver(
-        resourceResolver,
-        mockResourceManager
-      );
+      const mockResolver = {
+        resourceManager: mockResourceManager
+      } as unknown as TsRes.Runtime.ResourceResolver;
+
+      const resolverWithBrokenManager = new TsRes.Runtime.ResourceTreeResolver(mockResolver);
 
       expect(resolverWithBrokenManager.resolveComposedResourceTree('simple')).toFailWith(
-        /Failed to build resource tree: Simulated tree building failure/
+        /Simulated tree building failure/
       );
     });
   });
@@ -932,13 +933,13 @@ describe('ResourceTreeResolver', () => {
   describe('edge cases and boundary conditions', () => {
     test('should handle empty string resource ID', () => {
       expect(treeResolver.resolveComposedResourceTree('')).toFailWith(
-        /Resource '' not found in resource tree/
+        /: Resource not found in resource tree/
       );
     });
 
     test('should handle resource ID with special characters', () => {
       expect(treeResolver.resolveComposedResourceTree('invalid..id')).toFailWith(
-        /Resource 'invalid\.\.id' not found in resource tree/
+        /invalid\.\.id: Resource not found in resource tree/
       );
     });
 

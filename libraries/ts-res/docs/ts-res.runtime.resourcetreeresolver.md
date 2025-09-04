@@ -42,7 +42,7 @@ Description
 
 </td><td>
 
-Creates a ResourceTreeResolver instance.
+Creates a [ResourceTreeResolver](./ts-res.runtime.resourcetreeresolver.md) instance.
 
 
 </td></tr>
@@ -73,22 +73,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_tree?](./ts-res.runtime.resourcetreeresolver._tree.md)
+[resolver](./ts-res.runtime.resourcetreeresolver.resolver.md)
 
 
 </td><td>
 
-`protected`
+`readonly`
 
 
 </td><td>
 
-Result&lt;[IReadOnlyResourceTreeRoot](./ts-res.runtime.resourcetree.ireadonlyresourcetreeroot.md)<!-- -->&lt;[IResource](./ts-res.runtime.iresource.md)<!-- -->&gt;&gt;
+[ResourceResolver](./ts-res.resourceresolver.md)
 
 
 </td><td>
 
-_(Optional)_
+The [ResourceResolver](./ts-res.runtime.resourceresolver.md) to use for individual resource resolution
 
 
 </td></tr>

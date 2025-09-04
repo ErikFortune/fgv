@@ -21,7 +21,7 @@
  */
 
 import { Result, MessageAggregator, succeed, fail } from '@fgv/ts-utils';
-import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
+import { JsonValue, JsonObject, Converters as JsonConverters } from '@fgv/ts-json-base';
 import { IResourceManager, IResource } from './iResourceManager';
 import { IReadOnlyResourceTreeNode, IReadOnlyResourceTreeRoot } from './resource-tree/common';
 import { ResourceResolver } from './resourceResolver';
@@ -91,18 +91,22 @@ export interface IResolveResourceTreeOptions {
  * @public
  */
 export class ResourceTreeResolver {
-  private readonly _resolver: ResourceResolver;
-  private readonly _resourceManager?: IResourceManager<IResource>;
-  protected _tree?: Result<IReadOnlyResourceTreeRoot<IResource>>;
+  /**
+   * The {@link Runtime.ResourceResolver | ResourceResolver} to use for individual resource resolution
+   */
+  public readonly resolver: ResourceResolver;
+
+  private readonly _resourceManager: IResourceManager<IResource>;
+  private _tree?: Result<IReadOnlyResourceTreeRoot<IResource>>;
 
   /**
-   * Creates a ResourceTreeResolver instance.
+   * Creates a {@link Runtime.ResourceTreeResolver | ResourceTreeResolver} instance.
    * @param resolver - The ResourceResolver to use for individual resource resolution
    * @param resourceManager - Optional resource manager for lazy tree construction
    */
   public constructor(resolver: ResourceResolver, resourceManager?: IResourceManager<IResource>) {
-    this._resolver = resolver;
-    this._resourceManager = resourceManager;
+    this.resolver = resolver;
+    this._resourceManager = resolver.resourceManager;
   }
 
   /**
@@ -112,13 +116,7 @@ export class ResourceTreeResolver {
    * @public
    */
   public get tree(): IReadOnlyResourceTreeRoot<IResource> {
-    if (!this._tree) {
-      if (!this._resourceManager) {
-        throw new Error('Cannot build resource tree: no resource manager provided');
-      }
-      this._tree = this._resourceManager.getBuiltResourceTree();
-    }
-    return this._tree.orThrow();
+    return this._getTree().orThrow();
   }
 
   /**
@@ -158,6 +156,13 @@ export class ResourceTreeResolver {
     return this._resolveFromTreeNode(idOrNode, options);
   }
 
+  private _getTree(): Result<IReadOnlyResourceTreeRoot<IResource>> {
+    if (!this._tree) {
+      this._tree = this._resourceManager.getBuiltResourceTree();
+    }
+    return this._tree;
+  }
+
   /**
    * Resolves a tree from a resource ID by first building the tree from the resource manager.
    * @internal
@@ -166,20 +171,12 @@ export class ResourceTreeResolver {
     resourceId: string,
     options?: IResolveResourceTreeOptions
   ): Result<JsonObject | undefined> {
-    if (!this._resourceManager) {
-      return fail(`Cannot resolve tree from resource ID '${resourceId}': no resource manager provided`);
-    }
-
-    try {
-      const tree = this.tree;
+    return this._getTree().onSuccess((tree) => {
       return tree.children.validating
         .getById(resourceId)
-        .onFailure((message) => fail(`Resource '${resourceId}' not found in resource tree: ${message}`))
+        .onFailure((message) => fail(`${resourceId}: Resource not found in resource tree: ${message}`))
         .onSuccess((rootNode) => this._resolveFromTreeNode(rootNode, options));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return fail(`Failed to build resource tree: ${message}`);
-    }
+    });
   }
 
   /**
@@ -196,7 +193,7 @@ export class ResourceTreeResolver {
     // Handle root node with proper Result chaining
     return node.isLeaf
       ? this._processLeafNode(node, '', resourceErrorMode).onSuccess((value) =>
-          succeed(value !== undefined ? this._ensureJsonObject(value) : undefined)
+          value !== undefined ? JsonConverters.jsonObject.convert(value) : succeed(undefined)
         )
       : this._processBranchNode(node, '', {
           onResourceError: resourceErrorMode,
@@ -206,16 +203,6 @@ export class ResourceTreeResolver {
           // For 'omit' mode or custom handlers returning undefined, preserve undefined
           return succeed(value === undefined && emptyBranchMode === 'allow' ? {} : value);
         });
-  }
-
-  /**
-   * Ensures a JsonValue is converted to a JsonObject format.
-   * If the value is already a JsonObject, returns it as-is.
-   * Otherwise, wraps it in an object with a 'value' property.
-   * @internal
-   */
-  private _ensureJsonObject(value: JsonValue): JsonObject {
-    return isJsonObject(value) ? value : { value };
   }
 
   /**
@@ -240,7 +227,7 @@ export class ResourceTreeResolver {
       return fail(errorMessage);
     }
     // Custom handler - pass the resolver for recovery attempts
-    return mode(resource, message, this._resolver);
+    return mode(resource, message, this.resolver);
   }
 
   /**
@@ -264,7 +251,7 @@ export class ResourceTreeResolver {
       return succeed({});
     }
     // Custom handler - pass the resolver for recovery attempts
-    return mode(node, failedChildren, this._resolver);
+    return mode(node, failedChildren, this.resolver);
   }
 
   /**
@@ -279,17 +266,15 @@ export class ResourceTreeResolver {
     path: string,
     resourceErrorMode: 'fail' | 'ignore' | ResourceErrorHandler
   ): Result<JsonValue | undefined> {
+    /* c8 ignore next 3 - defense in depth */
     if (!node.isLeaf) {
       return fail(`Internal error: processLeafNode called on non-leaf node at ${path}`);
     }
 
-    const resolveResult = this._resolver.resolveComposedResourceValue(node.resource);
-    if (resolveResult.isSuccess()) {
-      return succeed(resolveResult.value);
-    }
-
-    // Handle the failure
-    return this._handleResourceError(node.resource, resolveResult.message, resourceErrorMode, path);
+    return this.resolver
+      .resolveComposedResourceValue(node.resource)
+      .onSuccess<JsonValue | undefined>((value) => succeed(value))
+      .onFailure((message) => this._handleResourceError(node.resource, message, resourceErrorMode, path));
   }
 
   /**
@@ -304,6 +289,7 @@ export class ResourceTreeResolver {
     path: string,
     options: IResolveResourceTreeOptions
   ): Result<JsonObject | undefined> {
+    /* c8 ignore next 3 - defense in depth */
     if (node.isLeaf) {
       return fail(`Internal error: processBranchNode called on leaf node at ${path}`);
     }
@@ -351,7 +337,7 @@ export class ResourceTreeResolver {
           return succeed(undefined);
         }
         // Ensure we return JsonObject or undefined
-        return succeed(isJsonObject(value) ? value : { value });
+        return JsonConverters.jsonObject.convert(value);
       });
     }
 
