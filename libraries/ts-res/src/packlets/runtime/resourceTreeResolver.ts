@@ -96,7 +96,15 @@ export class ResourceTreeResolver {
    */
   public readonly resolver: ResourceResolver;
 
+  /**
+   * The {@link Runtime.IResourceManager | IResourceManager} to use for lazy tree construction.
+   * @internal
+   */
   private readonly _resourceManager: IResourceManager<IResource>;
+  /**
+   * The built resource tree, lazily built on first access.
+   * @internal
+   */
   private _tree?: Result<IReadOnlyResourceTreeRoot<IResource>>;
 
   /**
