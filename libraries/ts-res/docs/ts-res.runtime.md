@@ -85,6 +85,19 @@ A metrics implementation of [Runtime.IResourceResolverCacheListener](./ts-res.ru
 </td></tr>
 <tr><td>
 
+[ResourceTreeResolver](./ts-res.runtime.resourcetreeresolver.md)
+
+
+</td><td>
+
+Specialized resolver for resource tree operations, providing enhanced APIs for resolving entire resource trees from either resource IDs or pre-built tree nodes.
+
+This class provides a clean separation between individual resource resolution (handled by ResourceResolver) and tree-based operations, with support for lazy tree construction and enhanced error handling.
+
+
+</td></tr>
+<tr><td>
+
 [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md)
 
 
@@ -150,6 +163,17 @@ Interface for parameters to create a [CompiledResourceCollection](./ts-res.runti
 </td><td>
 
 Represents a single condition match result with priority and outcome.
+
+
+</td></tr>
+<tr><td>
+
+[IResolveResourceTreeOptions](./ts-res.runtime.iresolveresourcetreeoptions.md)
+
+
+</td><td>
+
+Options for configuring resource tree resolution.
 
 
 </td></tr>
@@ -313,12 +337,34 @@ Represents the cached result of resolving a decision. Contains either a failure 
 </td></tr>
 <tr><td>
 
+[EmptyBranchHandler](./ts-res.runtime.emptybranchhandler.md)
+
+
+</td><td>
+
+Type for handling empty branch nodes during tree composition. The handler receives the branch node, names of failed children, and the resolver for recovery attempts. It can return: - Success(undefined) to omit the branch from the result - Success(value) to use an alternate value for the branch - Failure to propagate the error
+
+
+</td></tr>
+<tr><td>
+
 [OverallCacheMetrics](./ts-res.runtime.overallcachemetrics.md)
 
 
 </td><td>
 
 Overall cache metrics across all cache types.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceErrorHandler](./ts-res.runtime.resourceerrorhandler.md)
+
+
+</td><td>
+
+Type for handling resource resolution errors during tree traversal. The handler receives the resource that failed to resolve, the error message, and the resolver for recovery attempts. It can return: - Success(undefined) to omit the property from the result - Success(value) to use an alternate value - Failure to propagate the error
 
 
 </td></tr>
