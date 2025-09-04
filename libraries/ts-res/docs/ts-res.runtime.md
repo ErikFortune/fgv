@@ -85,6 +85,19 @@ A metrics implementation of [Runtime.IResourceResolverCacheListener](./ts-res.ru
 </td></tr>
 <tr><td>
 
+[ResourceTreeResolver](./ts-res.runtime.resourcetreeresolver.md)
+
+
+</td><td>
+
+Specialized resolver for resource tree operations, providing enhanced APIs for resolving entire resource trees from either resource IDs or pre-built tree nodes.
+
+This class provides a clean separation between individual resource resolution (handled by ResourceResolver) and tree-based operations, with support for lazy tree construction and enhanced error handling.
+
+
+</td></tr>
+<tr><td>
+
 [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md)
 
 

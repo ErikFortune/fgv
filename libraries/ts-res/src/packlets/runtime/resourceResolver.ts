@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, MessageAggregator, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { JsonEditor } from '@fgv/ts-json';
 import { IResourceResolver, NoMatch } from '../common';
@@ -36,7 +36,6 @@ import {
 } from './conditionSetResolutionResult';
 import { IResourceResolverCacheListener } from './cacheListener';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
-import { IReadOnlyResourceTreeNode } from './resource-tree/common';
 
 /**
  * Represents the cached result of resolving a decision.
@@ -60,60 +59,6 @@ export interface IResourceResolverOptions {
    * @defaultValue false
    */
   suppressNullAsDelete?: boolean;
-}
-
-/**
- * Type for handling resource resolution errors during tree traversal.
- * The handler receives the resource that failed to resolve, the error message, and the resolver for recovery attempts.
- * It can return:
- * - Success(undefined) to omit the property from the result
- * - Success(value) to use an alternate value
- * - Failure to propagate the error
- * @public
- */
-export type ResourceErrorHandler = (
-  resource: IResource,
-  message: string,
-  resolver: ResourceResolver
-) => Result<JsonValue | undefined>;
-
-/**
- * Type for handling empty branch nodes during tree composition.
- * The handler receives the branch node, names of failed children, and the resolver for recovery attempts.
- * It can return:
- * - Success(undefined) to omit the branch from the result
- * - Success(value) to use an alternate value for the branch
- * - Failure to propagate the error
- * @public
- */
-export type EmptyBranchHandler = (
-  branchNode: IReadOnlyResourceTreeNode<IResource>,
-  failedChildNames: string[],
-  resolver: ResourceResolver
-) => Result<JsonValue | undefined>;
-
-/**
- * Options for configuring resource tree resolution.
- * @public
- */
-export interface IResolveResourceTreeOptions {
-  /**
-   * Controls how errors are handled when resolving individual resources in the tree.
-   * - 'fail': Aggregate all errors and fail if any resource fails to resolve
-   * - 'ignore': Skip failed resources and omit them from the result
-   * - callback: Custom error handler that can provide alternate values or propagate errors
-   * @defaultValue 'fail'
-   */
-  onResourceError?: 'fail' | 'ignore' | ResourceErrorHandler;
-
-  /**
-   * Controls how empty branch nodes are handled during tree composition.
-   * - 'allow': Include empty branches as empty objects in the result
-   * - 'omit': Exclude empty branches from the parent object
-   * - callback: Custom handler that can provide alternate values or recovery logic
-   * @defaultValue 'allow'
-   */
-  onEmptyBranch?: 'allow' | 'omit' | EmptyBranchHandler;
 }
 
 /**
@@ -702,183 +647,6 @@ export class ResourceResolver implements IResourceResolver {
         .mergeObjectsInPlace({}, allCandidates)
         .withErrorFormat((err) => `${resource.id}: Composition failed: ${err}`);
     });
-  }
-
-  /**
-   * Ensures a JsonValue is converted to a JsonObject format.
-   * If the value is already a JsonObject, returns it as-is.
-   * Otherwise, wraps it in an object with a 'value' property.
-   * @internal
-   */
-  private _ensureJsonObject(value: JsonValue): JsonObject {
-    return isJsonObject(value) ? value : { value };
-  }
-
-  /**
-   * Handles resource resolution errors according to the specified mode.
-   * @param resource - The resource that failed to resolve
-   * @param message - The error message from the failed resolution
-   * @param mode - The error handling mode
-   * @param path - The path to the resource in the tree (for error context)
-   * @internal
-   */
-  private _handleResourceError(
-    resource: IResource,
-    message: string,
-    mode: 'fail' | 'ignore' | ResourceErrorHandler,
-    path: string
-  ): Result<JsonValue | undefined> {
-    if (mode === 'ignore') {
-      return succeed(undefined);
-    }
-    if (mode === 'fail') {
-      const errorMessage = path ? `${path}: ${message}` : message;
-      return fail(errorMessage);
-    }
-    // Custom handler
-    return mode(resource, message, this);
-  }
-
-  /**
-   * Handles empty branch nodes according to the specified mode.
-   * @param node - The empty branch node
-   * @param failedChildren - Names of children that failed to resolve
-   * @param mode - The empty branch handling mode
-   * @param path - The path to the branch in the tree (for error context)
-   * @internal
-   */
-  private _handleEmptyBranch(
-    node: IReadOnlyResourceTreeNode<IResource>,
-    failedChildren: string[],
-    mode: 'allow' | 'omit' | EmptyBranchHandler,
-    path: string
-  ): Result<JsonValue | undefined> {
-    if (mode === 'omit') {
-      return succeed(undefined);
-    }
-    if (mode === 'allow') {
-      return succeed({});
-    }
-    // Custom handler
-    return mode(node, failedChildren, this);
-  }
-
-  /**
-   * Processes a leaf node by resolving its resource value.
-   * @param node - The leaf node to process (must be a leaf node)
-   * @param path - The path to the node in the tree
-   * @param resourceErrorMode - How to handle resource resolution errors
-   * @internal
-   */
-  private _processLeafNode(
-    node: IReadOnlyResourceTreeNode<IResource>,
-    path: string,
-    resourceErrorMode: 'fail' | 'ignore' | ResourceErrorHandler
-  ): Result<JsonValue | undefined> {
-    if (!node.isLeaf) {
-      return fail(`Internal error: processLeafNode called on non-leaf node at ${path}`);
-    }
-
-    const resolveResult = this.resolveComposedResourceValue(node.resource);
-    if (resolveResult.isSuccess()) {
-      return succeed(resolveResult.value);
-    }
-
-    // Handle the failure
-    return this._handleResourceError(node.resource, resolveResult.message, resourceErrorMode, path);
-  }
-
-  /**
-   * Processes a branch node by recursively resolving all its children.
-   * @param node - The branch node to process (must be a branch node)
-   * @param path - The path to the node in the tree
-   * @param options - Resolution options
-   * @internal
-   */
-  private _processBranchNode(
-    node: IReadOnlyResourceTreeNode<IResource>,
-    path: string,
-    options: IResolveResourceTreeOptions
-  ): Result<JsonObject | undefined> {
-    if (node.isLeaf) {
-      return fail(`Internal error: processBranchNode called on leaf node at ${path}`);
-    }
-
-    const resourceErrorMode = options.onResourceError ?? 'fail';
-    const emptyBranchMode = options.onEmptyBranch ?? 'allow';
-    const aggregator = new MessageAggregator();
-
-    // Process all children
-    const childResults: JsonObject = {};
-    const failedChildren: string[] = [];
-
-    for (const [childName, childNode] of node.children) {
-      const childPath = path ? `${path}.${childName}` : childName;
-
-      const childResult = childNode.isLeaf
-        ? this._processLeafNode(childNode, childPath, resourceErrorMode)
-        : this._processBranchNode(childNode, childPath, options);
-
-      // Process the child result and update our state
-      if (childResult.isSuccess()) {
-        const value = childResult.value;
-        if (value !== undefined) {
-          childResults[childName] = value;
-        } else {
-          failedChildren.push(childName);
-        }
-      } else {
-        if (resourceErrorMode === 'fail') {
-          aggregator.addMessage(childResult.message);
-        }
-        failedChildren.push(childName);
-      }
-    }
-
-    // Check for accumulated errors in 'fail' mode
-    if (resourceErrorMode === 'fail' && aggregator.hasMessages) {
-      return fail(aggregator.toString('; '));
-    }
-
-    // Handle empty branch
-    if (Object.keys(childResults).length === 0) {
-      return this._handleEmptyBranch(node, failedChildren, emptyBranchMode, path).onSuccess((value) => {
-        if (value === undefined) {
-          return succeed(undefined);
-        }
-        // Ensure we return JsonObject or undefined
-        return succeed(isJsonObject(value) ? value : { value });
-      });
-    }
-
-    return succeed(childResults);
-  }
-
-  /**
-   * Resolves a resource tree to a composed JSON object by recursively resolving all resources in the tree.
-   * For leaf nodes, resolves the resource value. For branch nodes, creates nested objects with child properties.
-   * @param node - The resource tree node to resolve.
-   * @param options - Optional configuration for error handling during resolution.
-   * @returns `Success` with the composed JsonObject or undefined if successful,
-   * or `Failure` with an error message if resolution fails.
-   * @public
-   */
-  public resolveComposedResourceTree(
-    node: IReadOnlyResourceTreeNode<IResource>,
-    options?: IResolveResourceTreeOptions
-  ): Result<JsonObject | undefined> {
-    const resourceErrorMode = options?.onResourceError ?? 'fail';
-    const emptyBranchMode = options?.onEmptyBranch ?? 'allow';
-
-    // Handle root node with proper Result chaining
-    return node.isLeaf
-      ? this._processLeafNode(node, '', resourceErrorMode).onSuccess((value) => {
-          return value !== undefined ? succeed(this._ensureJsonObject(value)) : succeed(undefined);
-        })
-      : this._processBranchNode(node, '', {
-          onResourceError: resourceErrorMode,
-          onEmptyBranch: emptyBranchMode
-        });
   }
 
   /**

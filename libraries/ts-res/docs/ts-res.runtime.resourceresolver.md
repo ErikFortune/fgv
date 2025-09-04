@@ -383,20 +383,6 @@ Resolves all matching resource candidates in priority order. Uses the resource's
 </td></tr>
 <tr><td>
 
-[resolveComposedResourceTree(node, options)](./ts-res.runtime.resourceresolver.resolvecomposedresourcetree.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Resolves a resource tree to a composed JSON object by recursively resolving all resources in the tree. For leaf nodes, resolves the resource value. For branch nodes, creates nested objects with child properties.
-
-
-</td></tr>
-<tr><td>
-
 [resolveComposedResourceValue(resource)](./ts-res.runtime.resourceresolver.resolvecomposedresourcevalue.md)
 
 
