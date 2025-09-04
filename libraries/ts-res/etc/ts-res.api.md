@@ -2779,8 +2779,6 @@ interface IResourceManagerCloneOptions extends IResourceDeclarationOptions {
 
 // @public
 export interface IResourceResolver {
-    resolveComposedResourceTree?(node: unknown, // Will be IResourceTreeNode<IResource> but avoiding circular dependency
-    options?: unknown): Result<JsonValue>;
     resolveComposedResourceValue(resource: string): Result<JsonValue>;
     withContext(context: Record<string, string>): Result<IResourceResolver>;
 }

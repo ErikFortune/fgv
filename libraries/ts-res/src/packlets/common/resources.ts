@@ -111,20 +111,6 @@ export interface IResourceResolver {
   resolveComposedResourceValue(resource: string): Result<JsonValue>;
 
   /**
-   * Resolves a resource tree to a composed JSON object by recursively resolving all resources in the tree.
-   * For leaf nodes, resolves the resource value. For branch nodes, creates nested objects with child properties.
-   * @param node - The resource tree node to resolve.
-   * @param options - Optional configuration for error handling during resolution.
-   * @returns `Success` with the composed JsonObject if successful,
-   * or `Failure` with an error message if resolution fails.
-   * @public
-   */
-  resolveComposedResourceTree?(
-    node: unknown, // Will be IResourceTreeNode<IResource> but avoiding circular dependency
-    options?: unknown // Will be IResolveResourceTreeOptions
-  ): Result<JsonValue>;
-
-  /**
    * Creates a new {@link IResourceResolver | resource resolver} with the given context.
    * @param context - The context to use for the new resource resolver.
    * @returns `Success` with the new resource resolver if successful,
