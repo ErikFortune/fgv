@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[logger](./ts-utils.logging.ilogreportercreateparams.logger.md)
+[logger?](./ts-utils.logging.ilogreportercreateparams.logger.md)
 
 
 </td><td>
@@ -49,6 +49,8 @@ Description
 
 
 </td><td>
+
+_(Optional)_
 
 
 </td></tr>

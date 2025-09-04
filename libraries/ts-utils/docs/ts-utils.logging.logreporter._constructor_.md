@@ -9,7 +9,7 @@ Creates a new [LogReporter](./ts-utils.logging.logreporter.md)<!-- -->.
 **Signature:**
 
 ```typescript
-constructor(params: ILogReporterCreateParams<T, TD>);
+constructor(params?: ILogReporterCreateParams<T, TD>);
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-The parameters for creating the [LogReporter](./ts-utils.logging.logreporter.md)<!-- -->.
+_(Optional)_ The parameters for creating the [LogReporter](./ts-utils.logging.logreporter.md)<!-- -->.
 
 
 </td></tr>
