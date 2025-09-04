@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
+import { Result, MessageAggregator, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { JsonEditor } from '@fgv/ts-json';
 import { IResourceResolver, NoMatch } from '../common';
@@ -36,6 +36,7 @@ import {
 } from './conditionSetResolutionResult';
 import { IResourceResolverCacheListener } from './cacheListener';
 import { IReadOnlyQualifierCollector } from '../qualifiers';
+import { IReadOnlyResourceTreeNode } from './resource-tree/common';
 
 /**
  * Represents the cached result of resolving a decision.
@@ -59,6 +60,35 @@ export interface IResourceResolverOptions {
    * @defaultValue false
    */
   suppressNullAsDelete?: boolean;
+}
+
+/**
+ * Type for handling errors when resolving resource tree nodes.
+ * The handler receives the node that failed to resolve and the error message.
+ * It can return:
+ * - Success(undefined) to omit the property from the result
+ * - Success(value) to use an alternate value
+ * - Failure to propagate the error
+ * @public
+ */
+export type ResourceTreeErrorHandler = (
+  node: IReadOnlyResourceTreeNode<IResource>,
+  message: string
+) => Result<JsonValue | undefined>;
+
+/**
+ * Options for configuring resource tree resolution.
+ * @public
+ */
+export interface IResolveResourceTreeOptions {
+  /**
+   * Controls how errors are handled when resolving individual resources in the tree.
+   * - 'fail': Aggregate all errors and fail if any resource fails to resolve
+   * - 'ignore': Skip failed resources and omit them from the result
+   * - callback: Custom error handler that can provide alternate values or propagate errors
+   * @defaultValue 'fail'
+   */
+  onError?: 'fail' | 'ignore' | ResourceTreeErrorHandler;
 }
 
 /**
@@ -647,6 +677,117 @@ export class ResourceResolver implements IResourceResolver {
         .mergeObjectsInPlace({}, allCandidates)
         .withErrorFormat((err) => `${resource.id}: Composition failed: ${err}`);
     });
+  }
+
+  /**
+   * Resolves a resource tree to a composed JSON object by recursively resolving all resources in the tree.
+   * For leaf nodes, resolves the resource value. For branch nodes, creates nested objects with child properties.
+   * @param node - The resource tree node to resolve.
+   * @param options - Optional configuration for error handling during resolution.
+   * @returns `Success` with the composed JsonObject if successful,
+   * or `Failure` with an error message if resolution fails.
+   * @public
+   */
+  public resolveComposedResourceTree(
+    node: IReadOnlyResourceTreeNode<IResource>,
+    options?: IResolveResourceTreeOptions
+  ): Result<JsonObject> {
+    const errorMode = options?.onError ?? 'fail';
+    const aggregator = new MessageAggregator();
+
+    // Process a single node recursively
+    const processNode = (
+      currentNode: IReadOnlyResourceTreeNode<IResource>,
+      path: string
+    ): JsonValue | undefined => {
+      if (currentNode.isLeaf) {
+        // Leaf node: resolve the resource value
+        const resolveResult = this.resolveComposedResourceValue(currentNode.resource);
+
+        if (resolveResult.isFailure()) {
+          // Handle error based on mode
+          if (errorMode === 'ignore') {
+            return undefined; // Omit property
+          } else if (errorMode === 'fail') {
+            aggregator.addMessage(`${path}: ${resolveResult.message}`);
+            return undefined; // Continue processing other nodes
+          } else {
+            // Custom error handler
+            const handlerResult = errorMode(currentNode, resolveResult.message);
+            if (handlerResult.isFailure()) {
+              aggregator.addMessage(`${path}: ${handlerResult.message}`);
+              return undefined;
+            }
+            return handlerResult.value; // May be undefined or a value
+          }
+        }
+
+        return resolveResult.value;
+      } else {
+        // Branch node: recursively process children
+        const branchResult: JsonObject = {};
+
+        // Process each child
+        for (const [childName, childNode] of currentNode.children) {
+          const childPath = path ? `${path}.${childName}` : childName;
+          const childValue = processNode(childNode, childPath);
+
+          if (childValue !== undefined) {
+            branchResult[childName] = childValue;
+          }
+        }
+
+        return branchResult;
+      }
+    };
+
+    // Handle the root node specially
+    let result: JsonObject;
+
+    if (node.isLeaf) {
+      // If root is a leaf, resolve it directly
+      const resolveResult = this.resolveComposedResourceValue(node.resource);
+
+      if (resolveResult.isFailure()) {
+        if (errorMode === 'ignore') {
+          return succeed({});
+        } else if (errorMode === 'fail') {
+          return fail(resolveResult.message);
+        } else {
+          // Custom error handler
+          const handlerResult = errorMode(node, resolveResult.message);
+          if (handlerResult.isFailure()) {
+            return fail(handlerResult.message);
+          }
+          const value = handlerResult.value;
+          if (value === undefined) {
+            return succeed({});
+          }
+          // Ensure we return a JsonObject
+          result = isJsonObject(value) ? value : { value };
+        }
+      } else {
+        const value = resolveResult.value;
+        // Ensure we return a JsonObject
+        result = isJsonObject(value) ? value : { value };
+      }
+    } else {
+      // Branch node: process all children
+      result = {};
+      for (const [childName, childNode] of node.children) {
+        const childValue = processNode(childNode, childName);
+        if (childValue !== undefined) {
+          result[childName] = childValue;
+        }
+      }
+    }
+
+    // Check if we accumulated any errors in 'fail' mode
+    if (errorMode === 'fail' && aggregator.hasMessages) {
+      return fail(aggregator.toString('; '));
+    }
+
+    return succeed(result);
   }
 
   /**

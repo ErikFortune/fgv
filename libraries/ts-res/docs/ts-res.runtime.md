@@ -155,6 +155,17 @@ Represents a single condition match result with priority and outcome.
 </td></tr>
 <tr><td>
 
+[IResolveResourceTreeOptions](./ts-res.runtime.iresolveresourcetreeoptions.md)
+
+
+</td><td>
+
+Options for configuring resource tree resolution.
+
+
+</td></tr>
+<tr><td>
+
 [IResource](./ts-res.runtime.iresource.md)
 
 
@@ -341,6 +352,17 @@ Type indicating the action performed on a [ResourceResolver](./ts-res.runtime.re
 </td><td>
 
 Type indicating which [ResourceResolver](./ts-res.runtime.resourceresolver.md) cache is affected.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceTreeErrorHandler](./ts-res.runtime.resourcetreeerrorhandler.md)
+
+
+</td><td>
+
+Type for handling errors when resolving resource tree nodes. The handler receives the node that failed to resolve and the error message. It can return: - Success(undefined) to omit the property from the result - Success(value) to use an alternate value - Failure to propagate the error
 
 
 </td></tr>
