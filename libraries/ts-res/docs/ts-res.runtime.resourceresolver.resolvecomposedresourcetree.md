@@ -9,7 +9,7 @@ Resolves a resource tree to a composed JSON object by recursively resolving all 
 **Signature:**
 
 ```typescript
-resolveComposedResourceTree(node: IReadOnlyResourceTreeNode<IResource>, options?: IResolveResourceTreeOptions): Result<JsonObject>;
+resolveComposedResourceTree(node: IReadOnlyResourceTreeNode<IResource>, options?: IResolveResourceTreeOptions): Result<JsonObject | undefined>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional configuration for error handling during resolution.
 
 **Returns:**
 
-Result&lt;JsonObject&gt;
+Result&lt;JsonObject \| undefined&gt;
 
-`Success` with the composed JsonObject if successful, or `Failure` with an error message if resolution fails.
+`Success` with the composed JsonObject or undefined if successful, or `Failure` with an error message if resolution fails.
 

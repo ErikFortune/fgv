@@ -23,7 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { succeed, fail } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
-import { ResourceName } from '../../../packlets/common';
+import { ResourceName, ResourceId } from '../../../packlets/common';
 
 describe('ResourceResolver.resolveComposedResourceTree', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
@@ -145,6 +145,19 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
           {
             json: { text: 'This will never match' },
             conditions: { language: 'zh', territory: 'CN' } // Unmatchable conditions (Chinese China, but context is en-US)
+          }
+        ]
+      })
+      .orThrow();
+
+    resourceManager
+      .addResource({
+        id: 'broken2',
+        resourceTypeName: 'json',
+        candidates: [
+          {
+            json: { text: 'This will also never match' },
+            conditions: { language: 'de', territory: 'DE' } // Unmatchable conditions
           }
         ]
       })
@@ -342,7 +355,7 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         brokenResource
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(leafNode, { onError: 'fail' })).toFailWith(
+      expect(resolver.resolveComposedResourceTree(leafNode, { onResourceError: 'fail' })).toFailWith(
         /No matching candidates found/
       );
     });
@@ -363,7 +376,7 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(branchNode, { onError: 'fail' })).toFailWith(
+      expect(resolver.resolveComposedResourceTree(branchNode, { onResourceError: 'fail' })).toFailWith(
         /broken1.*No matching candidates.*broken2.*No matching candidates/
       );
     });
@@ -395,7 +408,7 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(appBranch, { onError: 'fail' })).toFailWith(
+      expect(resolver.resolveComposedResourceTree(appBranch, { onResourceError: 'fail' })).toFailWith(
         /deep\.nested\.broken.*No matching candidates/
       );
     });
@@ -410,7 +423,9 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         brokenResource
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(leafNode, { onError: 'ignore' })).toSucceedWith({});
+      expect(resolver.resolveComposedResourceTree(leafNode, { onResourceError: 'ignore' })).toSucceedWith(
+        undefined
+      );
     });
 
     test('should omit failed properties from result object', () => {
@@ -429,7 +444,7 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(branchNode, { onError: 'ignore' })).toSucceedWith({
+      expect(resolver.resolveComposedResourceTree(branchNode, { onResourceError: 'ignore' })).toSucceedWith({
         valid1: { value: 'simple value' },
         valid2: { value: 'simple value' }
         // broken property should be omitted
@@ -465,7 +480,7 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(appBranch, { onError: 'ignore' })).toSucceedWith({
+      expect(resolver.resolveComposedResourceTree(appBranch, { onResourceError: 'ignore' })).toSucceedWith({
         bad: {}, // Empty branch when all children failed
         good: {
           valid: { value: 'simple value' }
@@ -483,14 +498,16 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         brokenResource
       ).orThrow();
 
-      const customHandler: TsRes.Runtime.ResourceTreeErrorHandler = (node, message) => {
-        if (node.name === 'broken') {
+      const customHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        if (resource.id === 'broken') {
           return succeed({ fallback: 'default value' });
         }
         return fail(`Unhandled error: ${message}`);
       };
 
-      expect(resolver.resolveComposedResourceTree(leafNode, { onError: customHandler })).toSucceedWith({
+      expect(
+        resolver.resolveComposedResourceTree(leafNode, { onResourceError: customHandler })
+      ).toSucceedWith({
         fallback: 'default value'
       });
     });
@@ -510,11 +527,13 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      const customHandler: TsRes.Runtime.ResourceTreeErrorHandler = (node, message) => {
+      const customHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
         return succeed(undefined); // Omit the property
       };
 
-      expect(resolver.resolveComposedResourceTree(branchNode, { onError: customHandler })).toSucceedWith({
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, { onResourceError: customHandler })
+      ).toSucceedWith({
         valid: { value: 'simple value' }
         // broken property omitted due to undefined return
       });
@@ -534,16 +553,19 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      const customHandler: TsRes.Runtime.ResourceTreeErrorHandler = (node, message) => {
-        return fail(`Custom error for ${node.name}: ${message}`);
+      const customHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        return fail(`Custom error for ${resource.id}: ${message}`);
       };
 
-      expect(resolver.resolveComposedResourceTree(branchNode, { onError: customHandler })).toSucceedWith({}); // Both properties omitted due to handler returning failures
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, { onResourceError: customHandler })
+      ).toSucceedWith({}); // Both properties omitted due to handler returning failures
     });
 
     test('should handle mixed success, omitted, and replacement values from custom handler', () => {
       const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
       const validResource = resourceManager.getBuiltResource('simple').orThrow();
+      const broken2Resource = resourceManager.getBuiltResource('broken2').orThrow();
 
       const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
         'test' as ResourceName,
@@ -552,21 +574,23 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
           children: {
             broken1: { resource: brokenResource },
             valid: { resource: validResource },
-            broken2: { resource: brokenResource }
+            broken2: { resource: broken2Resource }
           } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
         }
       ).orThrow();
 
-      const customHandler: TsRes.Runtime.ResourceTreeErrorHandler = (node, message) => {
-        if (node.name === 'broken1') {
+      const customHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        if (resource.id === 'broken') {
           return succeed(undefined); // Omit property
-        } else if (node.name === 'broken2') {
+        } else if (resource.id === 'broken2') {
           return succeed('replacement value'); // Use replacement
         }
         return fail(`Unhandled error: ${message}`);
       };
 
-      expect(resolver.resolveComposedResourceTree(branchNode, { onError: customHandler })).toSucceedWith({
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, { onResourceError: customHandler })
+      ).toSucceedWith({
         valid: { value: 'simple value' },
         broken2: 'replacement value'
         // broken1 omitted
@@ -581,11 +605,11 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         brokenResource
       ).orThrow();
 
-      const customHandler: TsRes.Runtime.ResourceTreeErrorHandler = (node, message) => {
+      const customHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
         return fail(`Custom root error: ${message}`);
       };
 
-      expect(resolver.resolveComposedResourceTree(leafNode, { onError: customHandler })).toFailWith(
+      expect(resolver.resolveComposedResourceTree(leafNode, { onResourceError: customHandler })).toFailWith(
         /Custom root error.*No matching candidates/
       );
     });
@@ -598,11 +622,288 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         brokenResource
       ).orThrow();
 
-      const customHandler: TsRes.Runtime.ResourceTreeErrorHandler = (node, message) => {
+      const customHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
         return succeed(undefined);
       };
 
-      expect(resolver.resolveComposedResourceTree(leafNode, { onError: customHandler })).toSucceedWith({});
+      expect(
+        resolver.resolveComposedResourceTree(leafNode, { onResourceError: customHandler })
+      ).toSucceedWith(undefined);
+    });
+  });
+
+  describe('empty branch handling', () => {
+    test('should include empty branches with onEmptyBranch: allow', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'allow'
+        })
+      ).toSucceedWith({
+        emptyBranch: {} // Empty branch included
+      });
+    });
+
+    test('should omit empty branches with onEmptyBranch: omit', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const validResource = resourceManager.getBuiltResource('simple').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            },
+            validBranch: {
+              children: {
+                valid: { resource: validResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'omit'
+        })
+      ).toSucceedWith({
+        validBranch: {
+          valid: { value: 'simple value' }
+        }
+        // emptyBranch omitted
+      });
+    });
+
+    test('should return undefined for root empty branch with onEmptyBranch: omit', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const emptyRootBranch = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'empty' as ResourceName,
+        undefined,
+        {
+          children: {
+            broken: { resource: brokenResource }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(emptyRootBranch, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'omit'
+        })
+      ).toSucceedWith(undefined);
+    });
+
+    test('should use custom EmptyBranchHandler for recovery', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      const customEmptyHandler: TsRes.Runtime.EmptyBranchHandler = (
+        branchNode,
+        failedChildNames,
+        resolver
+      ) => {
+        expect(failedChildNames).toEqual(['broken']);
+        expect(branchNode.name).toBe('emptyBranch');
+        expect(resolver).toBeDefined();
+
+        // Provide fallback content for empty branch
+        return succeed({ fallbackMessage: 'No content available' });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: customEmptyHandler
+        })
+      ).toSucceedWith({
+        emptyBranch: { fallbackMessage: 'No content available' }
+      });
+    });
+
+    test('should handle custom EmptyBranchHandler that returns undefined', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const validResource = resourceManager.getBuiltResource('simple').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            },
+            validBranch: {
+              children: {
+                valid: { resource: validResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      const customEmptyHandler: TsRes.Runtime.EmptyBranchHandler = (
+        branchNode,
+        failedChildNames,
+        resolver
+      ) => {
+        return succeed(undefined); // Omit empty branch
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: customEmptyHandler
+        })
+      ).toSucceedWith({
+        validBranch: {
+          valid: { value: 'simple value' }
+        }
+        // emptyBranch omitted due to handler returning undefined
+      });
+    });
+
+    test('should handle custom EmptyBranchHandler that fails', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      const customEmptyHandler: TsRes.Runtime.EmptyBranchHandler = (
+        branchNode,
+        failedChildNames,
+        resolver
+      ) => {
+        return fail(`Empty branch error: test had ${failedChildNames.length} failed children`);
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: customEmptyHandler
+        })
+      ).toFailWith(/Empty branch error: test had 1 failed children/);
+    });
+
+    test('should handle nested empty branches with different modes', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const validResource = resourceManager.getBuiltResource('simple').orThrow();
+
+      const complexBranch = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'root' as ResourceName,
+        undefined,
+        {
+          children: {
+            level1: {
+              children: {
+                emptyLevel2: {
+                  children: {
+                    broken: { resource: brokenResource }
+                  } as Record<
+                    ResourceName,
+                    TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+                  >
+                },
+                validLevel2: {
+                  children: {
+                    valid: { resource: validResource }
+                  } as Record<
+                    ResourceName,
+                    TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+                  >
+                }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(complexBranch, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'omit'
+        })
+      ).toSucceedWith({
+        level1: {
+          validLevel2: {
+            valid: { value: 'simple value' }
+          }
+          // emptyLevel2 omitted
+        }
+      });
     });
   });
 
@@ -628,11 +929,476 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
       ).orThrow();
 
       const defaultResult = resolver.resolveComposedResourceTree(leafNode);
-      const explicitResult = resolver.resolveComposedResourceTree(leafNode, { onError: 'fail' });
+      const explicitResult = resolver.resolveComposedResourceTree(leafNode, { onResourceError: 'fail' });
 
       expect(defaultResult).toFail();
       expect(explicitResult).toFail();
       expect(defaultResult.message).toBe(explicitResult.message);
+    });
+
+    test('should use onEmptyBranch: allow by default', () => {
+      const emptyBranchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'empty' as ResourceName,
+        undefined,
+        {
+          children: {} as Record<
+            ResourceName,
+            TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+          >
+        }
+      ).orThrow();
+
+      const defaultResult = resolver.resolveComposedResourceTree(emptyBranchNode);
+      const explicitResult = resolver.resolveComposedResourceTree(emptyBranchNode, {
+        onEmptyBranch: 'allow'
+      });
+
+      expect(defaultResult).toSucceedWith({});
+      expect(explicitResult).toSucceedWith({});
+    });
+
+    test('should use both defaults when no options provided', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const emptyBranchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            broken: { resource: brokenResource }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      // Should fail due to onResourceError: 'fail' default
+      expect(resolver.resolveComposedResourceTree(emptyBranchNode)).toFailWith(/No matching candidates/);
+    });
+  });
+
+  describe('recovery mechanisms', () => {
+    test('should use resolver in ResourceErrorHandler for fallback resolution', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const leafNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
+        'broken' as ResourceName,
+        undefined,
+        brokenResource
+      ).orThrow();
+
+      const recoveryHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        // Try to resolve a fallback resource using the provided resolver
+        const fallbackResult = resolver.resolveResource('simple' as ResourceId);
+        return fallbackResult.onSuccess((candidate) => {
+          return succeed({
+            fallback: true,
+            originalId: resource.id,
+            fallbackValue: candidate.json
+          });
+        });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(leafNode, { onResourceError: recoveryHandler })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result).toEqual({
+          fallback: true,
+          originalId: 'broken',
+          fallbackValue: { value: 'simple value' }
+        });
+      });
+    });
+
+    test('should use resolver in EmptyBranchHandler for template injection', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      const templateHandler: TsRes.Runtime.EmptyBranchHandler = (branchNode, failedChildNames, resolver) => {
+        // Inject template content using resolver
+        const templateResult = resolver.resolveResource('app.config.timeout' as ResourceId);
+        return templateResult.onSuccess((candidate) => {
+          return succeed({
+            template: true,
+            branchName: branchNode.name,
+            failedChildren: failedChildNames,
+            templateValue: candidate.json
+          });
+        });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: templateHandler
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result).toEqual({
+          emptyBranch: {
+            template: true,
+            branchName: 'emptyBranch',
+            failedChildren: ['broken'],
+            templateValue: { timeout: 5000 }
+          }
+        });
+      });
+    });
+
+    test('should handle context switching in recovery handlers', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const leafNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
+        'broken' as ResourceName,
+        undefined,
+        brokenResource
+      ).orThrow();
+
+      const contextSwitchHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        // Try to create a new context with different qualifiers for recovery
+        const newContextProvider = TsRes.Runtime.ValidatingSimpleContextQualifierProvider.create({
+          qualifiers,
+          qualifierValues: {
+            language: 'en',
+            territory: 'US',
+            tone: 'formal' // Switch to formal tone
+          }
+        }).orThrow();
+
+        const newResolver = TsRes.Runtime.ResourceResolver.create({
+          resourceManager,
+          qualifierTypes,
+          contextQualifierProvider: newContextProvider
+        }).orThrow();
+
+        // Try to resolve the same resource with different context
+        const recoveryResult = newResolver.resolveResource(resource.id);
+        return recoveryResult
+          .onSuccess((candidate) => {
+            return succeed({
+              recovered: true,
+              context: 'formal',
+              value: candidate.json
+            });
+          })
+          .onFailure(() => {
+            return succeed({
+              recovered: false,
+              context: 'formal',
+              value: { noRecovery: true, originalError: message }
+            });
+          });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(leafNode, { onResourceError: contextSwitchHandler })
+      ).toSucceedAndSatisfy((result) => {
+        // The broken resource still can't resolve even with formal context, so we get noRecovery
+        expect(result).toEqual({
+          recovered: false,
+          context: 'formal',
+          value: {
+            noRecovery: true,
+            originalError: expect.stringMatching(/No matching candidates/)
+          }
+        });
+      });
+    });
+  });
+
+  describe('handler context validation', () => {
+    test('should provide correct resource object to ResourceErrorHandler', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const leafNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
+        'broken' as ResourceName,
+        undefined,
+        brokenResource
+      ).orThrow();
+
+      const contextValidator: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        // Validate resource object properties
+        expect(resource).toBeDefined();
+        expect(resource.id).toBe('broken');
+        expect(resource.resourceType).toBeDefined();
+        expect(resource.candidates).toBeDefined();
+        expect(Array.isArray(resource.candidates)).toBe(true);
+        expect(resource.candidates.length).toBe(1);
+
+        // Validate message
+        expect(typeof message).toBe('string');
+        expect(message).toMatch(/No matching candidates/);
+
+        // Validate resolver
+        expect(resolver).toBeDefined();
+        expect(typeof resolver.resolveResource).toBe('function');
+
+        return succeed({ validated: true });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(leafNode, { onResourceError: contextValidator })
+      ).toSucceedWith({
+        validated: true
+      });
+    });
+
+    test('should provide correct parameters to EmptyBranchHandler', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const broken2Resource = resourceManager.getBuiltResource('broken2').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'testBranch' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyChild: {
+              children: {
+                broken1: { resource: brokenResource },
+                broken2: { resource: broken2Resource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      const contextValidator: TsRes.Runtime.EmptyBranchHandler = (branchNode, failedChildNames, resolver) => {
+        // Validate branch node
+        expect(branchNode).toBeDefined();
+        expect(branchNode.name).toBe('emptyChild');
+        expect(branchNode.isBranch).toBe(true);
+
+        // Validate failed child names
+        expect(Array.isArray(failedChildNames)).toBe(true);
+        expect(failedChildNames).toEqual(['broken1', 'broken2']);
+        expect(failedChildNames.length).toBe(2);
+
+        // Validate resolver
+        expect(resolver).toBeDefined();
+        expect(typeof resolver.resolveResource).toBe('function');
+
+        return succeed({
+          contextValidated: true,
+          branchName: branchNode.name,
+          failedCount: failedChildNames.length
+        });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: contextValidator
+        })
+      ).toSucceedWith({
+        emptyChild: {
+          contextValidated: true,
+          branchName: 'emptyChild',
+          failedCount: 2
+        }
+      });
+    });
+
+    test('should provide same resolver instance to both handler types', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      const branchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'test' as ResourceName,
+        undefined,
+        {
+          children: {
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      let resourceHandlerResolver: TsRes.Runtime.ResourceResolver | undefined;
+      let emptyBranchHandlerResolver: TsRes.Runtime.ResourceResolver | undefined;
+
+      const resourceHandler: TsRes.Runtime.ResourceErrorHandler = (resource, message, resolver) => {
+        resourceHandlerResolver = resolver;
+        return succeed(undefined); // Let resource fail to trigger empty branch
+      };
+
+      const emptyBranchHandler: TsRes.Runtime.EmptyBranchHandler = (
+        branchNode,
+        failedChildNames,
+        resolver
+      ) => {
+        emptyBranchHandlerResolver = resolver;
+        return succeed({ bothReceived: true });
+      };
+
+      expect(
+        resolver.resolveComposedResourceTree(branchNode, {
+          onResourceError: resourceHandler,
+          onEmptyBranch: emptyBranchHandler
+        })
+      ).toSucceedWith({
+        emptyBranch: { bothReceived: true }
+      });
+
+      // Verify same resolver instance was passed to both handlers
+      expect(resourceHandlerResolver).toBe(emptyBranchHandlerResolver);
+      expect(resourceHandlerResolver).toBe(resolver);
+    });
+  });
+
+  describe('return type validation', () => {
+    test('should distinguish undefined from empty object for root nodes', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      // Test root leaf with ignore mode - should return undefined
+      const leafNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
+        'broken' as ResourceName,
+        undefined,
+        brokenResource
+      ).orThrow();
+
+      expect(resolver.resolveComposedResourceTree(leafNode, { onResourceError: 'ignore' })).toSucceedWith(
+        undefined
+      );
+
+      // Test root empty branch with omit mode - should return undefined
+      const emptyBranchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'empty' as ResourceName,
+        undefined,
+        {
+          children: {
+            broken: { resource: brokenResource }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(emptyBranchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'omit'
+        })
+      ).toSucceedWith(undefined);
+
+      // Test root empty branch with allow mode - should return {}
+      expect(
+        resolver.resolveComposedResourceTree(emptyBranchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'allow'
+        })
+      ).toSucceedWith({});
+    });
+
+    test('should handle mixed success and omit scenarios correctly', () => {
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+      const validResource = resourceManager.getBuiltResource('simple').orThrow();
+
+      const mixedBranchNode = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'mixed' as ResourceName,
+        undefined,
+        {
+          children: {
+            valid: { resource: validResource },
+            emptyBranch: {
+              children: {
+                broken: { resource: brokenResource }
+              } as Record<
+                ResourceName,
+                TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>
+              >
+            }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      // With omit mode, empty branch should be omitted but valid content preserved
+      expect(
+        resolver.resolveComposedResourceTree(mixedBranchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'omit'
+        })
+      ).toSucceedWith({
+        valid: { value: 'simple value' }
+        // emptyBranch omitted
+      });
+
+      // With allow mode, empty branch should be included as {}
+      expect(
+        resolver.resolveComposedResourceTree(mixedBranchNode, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'allow'
+        })
+      ).toSucceedWith({
+        valid: { value: 'simple value' },
+        emptyBranch: {}
+      });
+    });
+
+    test('should return Result<JsonObject | undefined> for all scenarios', () => {
+      const validResource = resourceManager.getBuiltResource('simple').orThrow();
+      const brokenResource = resourceManager.getBuiltResource('broken').orThrow();
+
+      // Successful resolution returns JsonObject
+      const validLeaf = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
+        'valid' as ResourceName,
+        undefined,
+        validResource
+      ).orThrow();
+
+      expect(resolver.resolveComposedResourceTree(validLeaf)).toSucceedAndSatisfy((result) => {
+        expect(result).toEqual({ value: 'simple value' });
+        expect(typeof result).toBe('object');
+        expect(result).not.toBe(undefined);
+      });
+
+      // Failed root leaf with ignore returns undefined
+      const brokenLeaf = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeLeaf.create(
+        'broken' as ResourceName,
+        undefined,
+        brokenResource
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(brokenLeaf, { onResourceError: 'ignore' })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result).toBe(undefined);
+      });
+
+      // Empty root branch with omit returns undefined
+      const emptyBranch = TsRes.Runtime.ResourceTree.ReadOnlyResourceTreeBranch.create(
+        'empty' as ResourceName,
+        undefined,
+        {
+          children: {
+            broken: { resource: brokenResource }
+          } as Record<ResourceName, TsRes.Runtime.ResourceTree.ResourceTreeNodeInit<TsRes.Runtime.IResource>>
+        }
+      ).orThrow();
+
+      expect(
+        resolver.resolveComposedResourceTree(emptyBranch, {
+          onResourceError: 'ignore',
+          onEmptyBranch: 'omit'
+        })
+      ).toSucceedAndSatisfy((result) => {
+        expect(result).toBe(undefined);
+      });
     });
   });
 
@@ -709,7 +1475,7 @@ describe('ResourceResolver.resolveComposedResourceTree', () => {
         }
       ).orThrow();
 
-      expect(resolver.resolveComposedResourceTree(branch1, { onError: 'fail' })).toFailWith(
+      expect(resolver.resolveComposedResourceTree(branch1, { onResourceError: 'fail' })).toFailWith(
         /level2\.level3\.broken.*No matching candidates/
       );
     });

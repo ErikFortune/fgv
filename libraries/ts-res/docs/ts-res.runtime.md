@@ -324,12 +324,34 @@ Represents the cached result of resolving a decision. Contains either a failure 
 </td></tr>
 <tr><td>
 
+[EmptyBranchHandler](./ts-res.runtime.emptybranchhandler.md)
+
+
+</td><td>
+
+Type for handling empty branch nodes during tree composition. The handler receives the branch node, names of failed children, and the resolver for recovery attempts. It can return: - Success(undefined) to omit the branch from the result - Success(value) to use an alternate value for the branch - Failure to propagate the error
+
+
+</td></tr>
+<tr><td>
+
 [OverallCacheMetrics](./ts-res.runtime.overallcachemetrics.md)
 
 
 </td><td>
 
 Overall cache metrics across all cache types.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceErrorHandler](./ts-res.runtime.resourceerrorhandler.md)
+
+
+</td><td>
+
+Type for handling resource resolution errors during tree traversal. The handler receives the resource that failed to resolve, the error message, and the resolver for recovery attempts. It can return: - Success(undefined) to omit the property from the result - Success(value) to use an alternate value - Failure to propagate the error
 
 
 </td></tr>
@@ -352,17 +374,6 @@ Type indicating the action performed on a [ResourceResolver](./ts-res.runtime.re
 </td><td>
 
 Type indicating which [ResourceResolver](./ts-res.runtime.resourceresolver.md) cache is affected.
-
-
-</td></tr>
-<tr><td>
-
-[ResourceTreeErrorHandler](./ts-res.runtime.resourcetreeerrorhandler.md)
-
-
-</td><td>
-
-Type for handling errors when resolving resource tree nodes. The handler receives the node that failed to resolve and the error message. It can return: - Success(undefined) to omit the property from the result - Success(value) to use an alternate value - Failure to propagate the error
 
 
 </td></tr>

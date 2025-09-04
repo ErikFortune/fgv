@@ -63,17 +63,33 @@ export interface IResourceResolverOptions {
 }
 
 /**
- * Type for handling errors when resolving resource tree nodes.
- * The handler receives the node that failed to resolve and the error message.
+ * Type for handling resource resolution errors during tree traversal.
+ * The handler receives the resource that failed to resolve, the error message, and the resolver for recovery attempts.
  * It can return:
  * - Success(undefined) to omit the property from the result
  * - Success(value) to use an alternate value
  * - Failure to propagate the error
  * @public
  */
-export type ResourceTreeErrorHandler = (
-  node: IReadOnlyResourceTreeNode<IResource>,
-  message: string
+export type ResourceErrorHandler = (
+  resource: IResource,
+  message: string,
+  resolver: ResourceResolver
+) => Result<JsonValue | undefined>;
+
+/**
+ * Type for handling empty branch nodes during tree composition.
+ * The handler receives the branch node, names of failed children, and the resolver for recovery attempts.
+ * It can return:
+ * - Success(undefined) to omit the branch from the result
+ * - Success(value) to use an alternate value for the branch
+ * - Failure to propagate the error
+ * @public
+ */
+export type EmptyBranchHandler = (
+  branchNode: IReadOnlyResourceTreeNode<IResource>,
+  failedChildNames: string[],
+  resolver: ResourceResolver
 ) => Result<JsonValue | undefined>;
 
 /**
@@ -88,7 +104,16 @@ export interface IResolveResourceTreeOptions {
    * - callback: Custom error handler that can provide alternate values or propagate errors
    * @defaultValue 'fail'
    */
-  onError?: 'fail' | 'ignore' | ResourceTreeErrorHandler;
+  onResourceError?: 'fail' | 'ignore' | ResourceErrorHandler;
+
+  /**
+   * Controls how empty branch nodes are handled during tree composition.
+   * - 'allow': Include empty branches as empty objects in the result
+   * - 'omit': Exclude empty branches from the parent object
+   * - callback: Custom handler that can provide alternate values or recovery logic
+   * @defaultValue 'allow'
+   */
+  onEmptyBranch?: 'allow' | 'omit' | EmptyBranchHandler;
 }
 
 /**
@@ -684,15 +709,16 @@ export class ResourceResolver implements IResourceResolver {
    * For leaf nodes, resolves the resource value. For branch nodes, creates nested objects with child properties.
    * @param node - The resource tree node to resolve.
    * @param options - Optional configuration for error handling during resolution.
-   * @returns `Success` with the composed JsonObject if successful,
+   * @returns `Success` with the composed JsonObject or undefined if successful,
    * or `Failure` with an error message if resolution fails.
    * @public
    */
   public resolveComposedResourceTree(
     node: IReadOnlyResourceTreeNode<IResource>,
     options?: IResolveResourceTreeOptions
-  ): Result<JsonObject> {
-    const errorMode = options?.onError ?? 'fail';
+  ): Result<JsonObject | undefined> {
+    const resourceErrorMode = options?.onResourceError ?? 'fail';
+    const emptyBranchMode = options?.onEmptyBranch ?? 'allow';
     const aggregator = new MessageAggregator();
 
     // Process a single node recursively
@@ -705,15 +731,15 @@ export class ResourceResolver implements IResourceResolver {
         const resolveResult = this.resolveComposedResourceValue(currentNode.resource);
 
         if (resolveResult.isFailure()) {
-          // Handle error based on mode
-          if (errorMode === 'ignore') {
+          // Handle resource error based on mode
+          if (resourceErrorMode === 'ignore') {
             return undefined; // Omit property
-          } else if (errorMode === 'fail') {
+          } else if (resourceErrorMode === 'fail') {
             aggregator.addMessage(`${path}: ${resolveResult.message}`);
             return undefined; // Continue processing other nodes
           } else {
-            // Custom error handler
-            const handlerResult = errorMode(currentNode, resolveResult.message);
+            // Custom resource error handler
+            const handlerResult = resourceErrorMode(currentNode.resource, resolveResult.message, this);
             if (handlerResult.isFailure()) {
               aggregator.addMessage(`${path}: ${handlerResult.message}`);
               return undefined;
@@ -726,6 +752,7 @@ export class ResourceResolver implements IResourceResolver {
       } else {
         // Branch node: recursively process children
         const branchResult: JsonObject = {};
+        const failedChildNames: string[] = [];
 
         // Process each child
         for (const [childName, childNode] of currentNode.children) {
@@ -734,6 +761,25 @@ export class ResourceResolver implements IResourceResolver {
 
           if (childValue !== undefined) {
             branchResult[childName] = childValue;
+          } else {
+            failedChildNames.push(childName);
+          }
+        }
+
+        // Handle empty branch based on mode
+        if (Object.keys(branchResult).length === 0) {
+          if (emptyBranchMode === 'omit') {
+            return undefined; // Omit this branch from parent
+          } else if (emptyBranchMode === 'allow') {
+            return branchResult; // Return empty object
+          } else {
+            // Custom empty branch handler
+            const handlerResult = emptyBranchMode(currentNode, failedChildNames, this);
+            if (handlerResult.isFailure()) {
+              aggregator.addMessage(`${path}: ${handlerResult.message}`);
+              return undefined;
+            }
+            return handlerResult.value; // May be undefined or a value
           }
         }
 
@@ -742,52 +788,79 @@ export class ResourceResolver implements IResourceResolver {
     };
 
     // Handle the root node specially
-    let result: JsonObject;
-
     if (node.isLeaf) {
       // If root is a leaf, resolve it directly
       const resolveResult = this.resolveComposedResourceValue(node.resource);
 
       if (resolveResult.isFailure()) {
-        if (errorMode === 'ignore') {
-          return succeed({});
-        } else if (errorMode === 'fail') {
+        if (resourceErrorMode === 'ignore') {
+          return succeed(undefined); // Root failed, return undefined
+        } else if (resourceErrorMode === 'fail') {
+          // Be consistent with nested behavior - use aggregator
           return fail(resolveResult.message);
         } else {
-          // Custom error handler
-          const handlerResult = errorMode(node, resolveResult.message);
+          // Custom resource error handler
+          const handlerResult = resourceErrorMode(node.resource, resolveResult.message, this);
           if (handlerResult.isFailure()) {
             return fail(handlerResult.message);
           }
           const value = handlerResult.value;
           if (value === undefined) {
-            return succeed({});
+            return succeed(undefined); // Root failed, return undefined
           }
-          // Ensure we return a JsonObject
-          result = isJsonObject(value) ? value : { value };
+          // Ensure we return a JsonObject for non-undefined values
+          const result = isJsonObject(value) ? value : { value };
+          return succeed(result);
         }
       } else {
         const value = resolveResult.value;
         // Ensure we return a JsonObject
-        result = isJsonObject(value) ? value : { value };
+        const result = isJsonObject(value) ? value : { value };
+        return succeed(result);
       }
     } else {
       // Branch node: process all children
-      result = {};
+      const result: JsonObject = {};
+      const rootFailedChildren: string[] = [];
+
       for (const [childName, childNode] of node.children) {
         const childValue = processNode(childNode, childName);
         if (childValue !== undefined) {
           result[childName] = childValue;
+        } else {
+          rootFailedChildren.push(childName);
         }
       }
-    }
 
-    // Check if we accumulated any errors in 'fail' mode
-    if (errorMode === 'fail' && aggregator.hasMessages) {
-      return fail(aggregator.toString('; '));
-    }
+      // Check if we accumulated any errors in 'fail' mode BEFORE handling empty branches
+      if (resourceErrorMode === 'fail' && aggregator.hasMessages) {
+        return fail(aggregator.toString('; '));
+      }
 
-    return succeed(result);
+      // Handle root empty branch
+      if (Object.keys(result).length === 0) {
+        if (emptyBranchMode === 'omit') {
+          return succeed(undefined); // Root is empty, return undefined
+        } else if (emptyBranchMode === 'allow') {
+          return succeed(result); // Explicit empty object return
+        } else {
+          // Custom empty branch handler for root
+          const handlerResult = emptyBranchMode(node, rootFailedChildren, this);
+          if (handlerResult.isFailure()) {
+            return fail(handlerResult.message);
+          }
+          if (handlerResult.value === undefined) {
+            return succeed(undefined); // Handler chose to omit root
+          }
+          // Use handler's value, ensure it's a JsonObject
+          const handlerValue = handlerResult.value;
+          const finalResult = isJsonObject(handlerValue) ? handlerValue : { value: handlerValue };
+          return succeed(finalResult);
+        }
+      }
+
+      return succeed(result);
+    }
   }
 
   /**

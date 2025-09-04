@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[onError?](./ts-res.runtime.iresolveresourcetreeoptions.onerror.md)
+[onEmptyBranch?](./ts-res.runtime.iresolveresourcetreeoptions.onemptybranch.md)
 
 
 </td><td>
@@ -45,7 +45,26 @@ Description
 
 </td><td>
 
-'fail' \| 'ignore' \| [ResourceTreeErrorHandler](./ts-res.runtime.resourcetreeerrorhandler.md)
+'allow' \| 'omit' \| [EmptyBranchHandler](./ts-res.runtime.emptybranchhandler.md)
+
+
+</td><td>
+
+_(Optional)_ Controls how empty branch nodes are handled during tree composition. - 'allow': Include empty branches as empty objects in the result - 'omit': Exclude empty branches from the parent object - callback: Custom handler that can provide alternate values or recovery logic
+
+
+</td></tr>
+<tr><td>
+
+[onResourceError?](./ts-res.runtime.iresolveresourcetreeoptions.onresourceerror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'fail' \| 'ignore' \| [ResourceErrorHandler](./ts-res.runtime.resourceerrorhandler.md)
 
 
 </td><td>
