@@ -34,7 +34,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(resolver, resourceManager)](./ts-res.runtime.resourcetreeresolver._constructor_.md)
+[(constructor)(resolver)](./ts-res.runtime.resourcetreeresolver._constructor_.md)
 
 
 </td><td>
@@ -134,6 +134,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[create(resolver)](./ts-res.runtime.resourcetreeresolver.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a [ResourceTreeResolver](./ts-res.runtime.resourcetreeresolver.md) instance.
+
+
+</td></tr>
+<tr><td>
 
 [resolveComposedResourceTree(resourceId, options)](./ts-res.runtime.resourcetreeresolver.resolvecomposedresourcetree.md)
 

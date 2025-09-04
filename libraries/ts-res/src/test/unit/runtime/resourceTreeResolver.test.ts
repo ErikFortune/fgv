@@ -189,14 +189,13 @@ describe('ResourceTreeResolver', () => {
   });
 
   describe('constructor', () => {
-    test('should create ResourceTreeResolver with resource manager', () => {
+    test('should create ResourceTreeResolver', () => {
       const resolver = new TsRes.Runtime.ResourceTreeResolver(resourceResolver);
       expect(resolver).toBeDefined();
     });
 
-    test('should create ResourceTreeResolver without resource manager', () => {
-      const resolver = new TsRes.Runtime.ResourceTreeResolver(resourceResolver);
-      expect(resolver).toBeDefined();
+    test('should create ResourceTreeResolver with static create method', () => {
+      expect(TsRes.Runtime.ResourceTreeResolver.create(resourceResolver)).toSucceed();
     });
   });
 

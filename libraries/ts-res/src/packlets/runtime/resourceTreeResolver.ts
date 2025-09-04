@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, MessageAggregator, succeed, fail } from '@fgv/ts-utils';
+import { Result, MessageAggregator, succeed, fail, captureResult } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, Converters as JsonConverters } from '@fgv/ts-json-base';
 import { IResourceManager, IResource } from './iResourceManager';
 import { IReadOnlyResourceTreeNode, IReadOnlyResourceTreeRoot } from './resource-tree/common';
@@ -110,11 +110,18 @@ export class ResourceTreeResolver {
   /**
    * Creates a {@link Runtime.ResourceTreeResolver | ResourceTreeResolver} instance.
    * @param resolver - The ResourceResolver to use for individual resource resolution
-   * @param resourceManager - Optional resource manager for lazy tree construction
    */
-  public constructor(resolver: ResourceResolver, resourceManager?: IResourceManager<IResource>) {
+  public constructor(resolver: ResourceResolver) {
     this.resolver = resolver;
     this._resourceManager = resolver.resourceManager;
+  }
+
+  /**
+   * Creates a {@link Runtime.ResourceTreeResolver | ResourceTreeResolver} instance.
+   * @param resolver - The ResourceResolver to use for individual resource resolution
+   */
+  public static create(resolver: ResourceResolver): Result<ResourceTreeResolver> {
+    return captureResult(() => new ResourceTreeResolver(resolver));
   }
 
   /**
