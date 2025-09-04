@@ -1,12 +1,23 @@
 # Agent-specific files
 CLAUDE.md
 .agents/
+.claude/
+
+# IDE and system files
+.vscode/
+.DS_Store
 
 # Test and coverage files  
 coverage/
 *.test.ts
 *.test.js
+*.test.d.ts
+*.test.*.map
 src/test/
+lib/test/
+lib/**/*.test.*
+lib-commonjs/test/
+lib-commonjs/**/*.test.*
 
 # Development files
 *.log
@@ -24,6 +35,13 @@ src/
 .rush/
 rush-logs/
 temp/
+
+# API Extractor files (development artifacts)
+etc/
+
+# Build artifacts that shouldn't be published
+dist/
+lib-commonjs/
 
 # Documentation source
 docs/
