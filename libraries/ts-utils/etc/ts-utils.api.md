@@ -1214,7 +1214,7 @@ interface ILogger {
 // @public
 interface ILogReporterCreateParams<T, TD = unknown> {
     // (undocumented)
-    logger: ILogger;
+    logger?: ILogger;
     // (undocumented)
     messageFormatter?: LogMessageFormatter<TD>;
     // (undocumented)
@@ -1646,7 +1646,7 @@ type LogMessageFormatter<TD = unknown> = (message: string, detail?: TD) => strin
 class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(params: ILogReporterCreateParams<T, TD>);
+    constructor(params?: ILogReporterCreateParams<T, TD>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

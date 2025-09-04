@@ -226,6 +226,17 @@ describe('Logger class', () => {
         expect(reporter.logLevel).toBe('info');
       });
 
+      test('should create LogReporter with all defaults', () => {
+        const reporter = new LogReporter<ITestValue>();
+        expect(reporter.logLevel).toBe('info');
+      });
+
+      test('should create LogReporter with undefined logger and all defaults', () => {
+        const logger: ILogger | undefined = undefined;
+        const reporter = new LogReporter<ITestValue>({ logger });
+        expect(reporter.logLevel).toBe('info');
+      });
+
       test('should create LogReporter with both custom formatters', () => {
         const logger = new InMemoryLogger();
         const valueFormatter = (value: ITestValue, detail?: ITestDetail): string =>
