@@ -24,7 +24,9 @@ lib-commonjs/**/*.test.*
 .eslintrc*
 jest.config.*
 tsconfig.json
-*.map
+*.js.map
+*.d.ts.map
+config/
 
 # Build configuration files (for web tools)
 babel.config.js
@@ -46,7 +48,6 @@ temp/
 etc/
 
 # Build artifacts that shouldn't be published
-dist/
 lib-commonjs/
 
 # Development and test data

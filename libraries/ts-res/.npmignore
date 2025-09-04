@@ -24,7 +24,9 @@ lib-commonjs/**/*.test.*
 .eslintrc*
 jest.config.*
 tsconfig.json
-*.map
+*.js.map
+*.d.ts.map
+config/
 
 # Source files (if publishing only built output)
 # Uncomment if you only want to publish dist/lib
@@ -40,7 +42,6 @@ temp/
 etc/
 
 # Build artifacts that shouldn't be published
-dist/
 lib-commonjs/
 
 # Planning and example documentation
