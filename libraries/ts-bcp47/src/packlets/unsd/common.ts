@@ -38,10 +38,9 @@ export interface IGlobalRegion {
   name: string;
   code: Iana.Model.UnM49RegionCode;
   tier: 'global';
-  /* eslint-disable no-use-before-define */
+
   regions: IIntermediateRegion[];
   areas: ICountryOrArea[];
-  /* eslint-enable no-use-before-define */
 }
 
 /**
@@ -51,11 +50,10 @@ export interface IIntermediateRegion {
   name: string;
   code: Iana.Model.UnM49RegionCode;
   tier: RegionTier;
-  /* eslint-disable no-use-before-define */
+
   parent: Region;
   regions: IIntermediateRegion[];
   areas: ICountryOrArea[];
-  /* eslint-enable no-use-before-define */
 }
 
 /**

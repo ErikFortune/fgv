@@ -15,7 +15,6 @@ expect.extend({
 
 describe('toFailTestWith', () => {
   test('returns failure with an empty string for a callback that succeeds', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(predicate(() => {}, 'whatever')).toFailWith('');
   });
 

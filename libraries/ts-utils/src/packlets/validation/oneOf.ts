@@ -28,7 +28,7 @@ import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
  * Parameters used to construct a {@link Validation.Classes.OneOfValidator | OneOfValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface OneOfValidatorConstructorParams<T, TC = unknown>
   extends ValidatorBaseConstructorParams<T, TC> {
   validators: Validator<T, TC>[];

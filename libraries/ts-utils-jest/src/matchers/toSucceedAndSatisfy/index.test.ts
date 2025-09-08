@@ -13,7 +13,6 @@ describe('.toSucceedAndSatisfy', () => {
   });
 
   test('passes with a success value and a callback with no return', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(succeed('hello')).toSucceedAndSatisfy(() => {});
   });
 

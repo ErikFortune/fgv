@@ -151,7 +151,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
         o11y.diag.info('Filter state:', filterState.state);
 
         // Try the simplified filtering approach using provided values
-        let filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
+        const filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
           partialContextMatch: true,
           enableDebugLogging: false, // Disable debug logging to reduce console output
           reduceQualifiers: filterState.state.reduceQualifiers

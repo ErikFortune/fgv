@@ -14,7 +14,6 @@ describe('toSucceedAndSatisfy', () => {
   });
 
   test('succeeds with true for a successful result value and a callback with no return value', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(predicate(succeed('hello'), () => {}, true)).toSucceedWith(true);
   });
 

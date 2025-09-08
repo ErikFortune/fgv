@@ -984,7 +984,7 @@ export function useResolutionState(
     ): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         // Determine resource type to use
-        let targetTypeName = params?.resourceTypeName || params?.defaultTypeName;
+        const targetTypeName = params?.resourceTypeName || params?.defaultTypeName;
         const targetType = targetTypeName
           ? availableResourceTypes.find((t) => t.key === targetTypeName) || availableResourceTypes[0]
           : availableResourceTypes[0];

@@ -37,7 +37,6 @@ import {
 import { IJsonEditorOptions, JsonEditor, PrefixedJsonMap, SimpleJsonMap } from '../../packlets/editor';
 
 /* test data necessarily has lots of non-conformant names */
-/* eslint-disable @typescript-eslint/naming-convention */
 
 describe('JsonConverter module', () => {
   describe('mergeDefaultJsonConverterOptions function', () => {

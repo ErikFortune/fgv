@@ -445,7 +445,7 @@ describe('SystemConfiguration', () => {
         const configPath = path.join(testDataPath, 'default/language-priority.json');
         const initParams = {
           qualifierDefaultValues: {
-            language: null // eslint-disable-line @rushstack/no-new-null
+            language: null
           }
         };
 

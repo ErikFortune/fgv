@@ -29,6 +29,5 @@ import { YearMonthDaySpec } from '../common/model';
  * @internal
  */
 export interface IFileDateEntry extends RecordJar.JarRecord {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   'File-Date': YearMonthDaySpec;
 }

@@ -145,7 +145,7 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
     if (qualifierType) {
       const config = qualifierType.configuration || {};
       // Ensure hierarchy is a plain object with string values
-      let hierarchy: Record<string, string> = {};
+      const hierarchy: Record<string, string> = {};
       const rawHierarchy = (config as Record<string, unknown>)?.hierarchy;
       if (rawHierarchy && typeof rawHierarchy === 'object' && !Array.isArray(rawHierarchy)) {
         for (const [key, value] of Object.entries(rawHierarchy)) {

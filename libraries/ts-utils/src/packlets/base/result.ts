@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-/* eslint-disable no-use-before-define */
 /**
  * Represents the {@link IResult | result} of some operation or sequence of operations.
  * @remarks

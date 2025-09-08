@@ -22,7 +22,6 @@
 
 import '../helpers/jest';
 
-// eslint-disable-next-line @rushstack/packlets/mechanics
 import { InMemoryLogger, ILogger, LogReporter, NoOpLogger } from '../../packlets/logging';
 
 import { fail, MessageLogLevel, Result, succeed } from '../../packlets/base';

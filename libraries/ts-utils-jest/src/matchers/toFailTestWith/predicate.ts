@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars,no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { equals } from '@jest/expect-utils';
 import { stringify } from 'jest-matcher-utils';
 import { Result, captureResult, fail, succeed } from '../../ts-utils';

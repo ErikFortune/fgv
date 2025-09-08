@@ -30,7 +30,7 @@ import { field, optionalField } from './converters';
  * Options for an {@link Conversion.ObjectConverter | ObjectConverter}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ObjectConverterOptions<T> {
   /**
    * If present, lists optional fields. Missing non-optional fields cause an error.
@@ -221,7 +221,7 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
     options: ObjectConverterOptions<T>
   ): Result<T> {
     // eslint bug thinks key is used before defined
-    // eslint-disable-next-line no-use-before-define
+
     const converted = {} as { [key in keyof T]: T[key] };
     const errors: string[] = [];
     for (const key in fields) {
