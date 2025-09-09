@@ -197,7 +197,7 @@ export const ResourceTypeEditForm: React.FC<IResourceTypeEditFormProps> = ({
   }, [formData, validateForm, onSave]);
 
   const updateField = useCallback(
-    (field: keyof IFormData, value: any) => {
+    (field: keyof IFormData, value: string) => {
       setFormData((prev) => {
         const updated = { ...prev, [field]: value };
 

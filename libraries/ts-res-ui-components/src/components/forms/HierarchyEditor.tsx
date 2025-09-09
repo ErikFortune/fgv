@@ -16,6 +16,11 @@ export interface IHierarchyEditorProps {
   className?: string;
 }
 
+interface IHierarchyTreeNode {
+  value: string;
+  level: number;
+  children: IHierarchyTreeNode[];
+}
 /**
  * Interactive editor for defining hierarchical relationships between qualifier values.
  *
@@ -127,7 +132,7 @@ export const HierarchyEditor: React.FC<IHierarchyEditorProps> = ({
     onChange(updatedHierarchy);
   };
 
-  const getHierarchyTree = (): Array<{ value: string; level: number; children: unknown[] }> => {
+  const getHierarchyTree = (): Array<IHierarchyTreeNode> => {
     const roots = new Set(availableValues);
     const children = new Set(Object.keys(safeHierarchy));
     const parents = new Set(Object.values(safeHierarchy));
@@ -142,7 +147,7 @@ export const HierarchyEditor: React.FC<IHierarchyEditorProps> = ({
       }
     });
 
-    const buildTree = (value: string, level = 0): any => {
+    const buildTree = (value: string, level = 0): IHierarchyTreeNode => {
       const childrenOfValue = Object.entries(safeHierarchy).filter(([, parent]) => parent === value);
       return {
         value,
@@ -154,7 +159,7 @@ export const HierarchyEditor: React.FC<IHierarchyEditorProps> = ({
     return Array.from(roots).map((root) => buildTree(root));
   };
 
-  const renderTree = (nodes: any[]): React.ReactNode => {
+  const renderTree = (nodes: IHierarchyTreeNode[]): React.ReactNode => {
     return nodes.map((node) => {
       const parentValue = safeHierarchy[node.value];
 

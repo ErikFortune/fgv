@@ -833,7 +833,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
           }}
-          existingNames={(state.currentConfiguration.qualifierTypes || []).map((qt: any) => qt.name)}
+          existingNames={(state.currentConfiguration.qualifierTypes || []).map(
+            (qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name
+          )}
         />
       )}
 
@@ -850,7 +852,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
           }}
-          existingNames={(state.currentConfiguration.qualifierTypes || []).map((qt: any) => qt.name)}
+          existingNames={(state.currentConfiguration.qualifierTypes || []).map(
+            (qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name
+          )}
         />
       )}
 
@@ -865,8 +869,11 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             }}
             onCancel={() => setEditingQualifierType(null)}
             existingNames={(state.currentConfiguration.qualifierTypes || [])
-              .filter((__: any, i: number) => i !== editingQualifierType.index)
-              .map((qt: any) => qt.name)}
+              .filter(
+                (__: QualifierTypes.Config.IAnyQualifierTypeConfig, i: number) =>
+                  i !== editingQualifierType.index
+              )
+              .map((qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name)}
           />
         ) : (
           <GenericQualifierTypeEditForm
@@ -878,8 +885,11 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             }}
             onCancel={() => setEditingQualifierType(null)}
             existingNames={(state.currentConfiguration.qualifierTypes || [])
-              .filter((__: any, i: number) => i !== editingQualifierType.index)
-              .map((qt: any) => qt.name)}
+              .filter(
+                (__: QualifierTypes.Config.IAnyQualifierTypeConfig, i: number) =>
+                  i !== editingQualifierType.index
+              )
+              .map((qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name)}
           />
         ))}
 
@@ -894,7 +904,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             onMessage?.('success', `Added qualifier: ${qualifier.name}`);
           }}
           onCancel={() => setShowAddQualifier(false)}
-          existingNames={(state.currentConfiguration.qualifiers || []).map((q: any) => q.name)}
+          existingNames={(state.currentConfiguration.qualifiers || []).map(
+            (q: Qualifiers.IQualifierDecl) => q.name
+          )}
         />
       )}
 
@@ -911,8 +923,8 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           }}
           onCancel={() => setEditingQualifier(null)}
           existingNames={(state.currentConfiguration.qualifiers || [])
-            .filter((__: any, i: number) => i !== editingQualifier.index)
-            .map((q: any) => q.name)}
+            .filter((__: Qualifiers.IQualifierDecl, i: number) => i !== editingQualifier.index)
+            .map((q: Qualifiers.IQualifierDecl) => q.name)}
         />
       )}
 
@@ -924,7 +936,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             onMessage?.('success', `Added resource type: ${resourceType.name}`);
           }}
           onCancel={() => setShowAddResourceType(false)}
-          existingNames={(state.currentConfiguration.resourceTypes || []).map((rt: any) => rt.name)}
+          existingNames={(state.currentConfiguration.resourceTypes || []).map(
+            (rt: ResourceTypes.Config.IResourceTypeConfig) => rt.name
+          )}
         />
       )}
 
@@ -938,8 +952,10 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           }}
           onCancel={() => setEditingResourceType(null)}
           existingNames={(state.currentConfiguration.resourceTypes || [])
-            .filter((__: any, i: number) => i !== editingResourceType.index)
-            .map((rt: any) => rt.name)}
+            .filter(
+              (__: ResourceTypes.Config.IResourceTypeConfig, i: number) => i !== editingResourceType.index
+            )
+            .map((rt: ResourceTypes.Config.IResourceTypeConfig) => rt.name)}
         />
       )}
     </div>
