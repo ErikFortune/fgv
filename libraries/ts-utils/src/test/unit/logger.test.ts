@@ -336,6 +336,31 @@ describe('Logger class', () => {
 
           reporter.reportSuccess('info', value);
 
+          expect(logger.logged).toEqual([JSON.stringify(value)]);
+        });
+
+        test('should use tryFormatObject for plain objects and pass through strings/numbers', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+
+          reporter.reportSuccess('info', { a: 1, b: 'two' });
+          reporter.reportSuccess('info', 'plain string');
+          reporter.reportSuccess('info', 123);
+
+          expect(logger.logged[0]).toBe(JSON.stringify({ a: 1, b: 'two' }));
+          expect(logger.logged[1]).toBe('plain string');
+          expect(logger.logged[2]).toBe('123');
+        });
+
+        test('should fall back to [object Object] when JSON.stringify throws (circular)', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+          // create circular object
+          const obj: Record<string, unknown> = { a: 1 };
+          obj.self = obj;
+
+          reporter.reportSuccess('info', obj);
+
           expect(logger.logged).toEqual(['[object Object]']);
         });
 

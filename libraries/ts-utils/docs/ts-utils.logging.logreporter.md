@@ -195,6 +195,22 @@ Logs a message at the given level.
 </td></tr>
 <tr><td>
 
+[tryFormatObject(value, detail)](./ts-utils.logging.logreporter.tryformatobject.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Generic method to try to format an object for logging.
+
+
+</td></tr>
+<tr><td>
+
 [warn(message, parameters)](./ts-utils.logging.logreporter.warn.md)
 
 

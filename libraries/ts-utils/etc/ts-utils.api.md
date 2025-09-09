@@ -1676,6 +1676,7 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
     // (undocumented)
     reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
+    static tryFormatObject<T = unknown, TD = unknown>(value: T, detail?: TD): string;
     // @internal
     protected readonly _valueFormatter: LogValueFormatter<T, TD>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
