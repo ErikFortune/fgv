@@ -150,7 +150,7 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
   resolutionState,
   resourceEditorFactory
 }) => {
-  const observability = useObservability();
+  const o11y = useObservability();
 
   // Helper function to create the appropriate resource editor
   const createResourceEditor = useCallback(
@@ -188,13 +188,13 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
           } else {
             // Factory couldn't create editor, log and fall back to JSON editor
             if (factoryResult.message) {
-              observability.diag.info(`default-editor: Using default JSON editor - ${factoryResult.message}`);
+              o11y.diag.info(`default-editor: Using default JSON editor - ${factoryResult.message}`);
             }
             // Continue to fallback JSON editor below
           }
         } catch (error) {
           // Factory threw an error, log and fall back to JSON editor
-          observability.diag.warn(
+          o11y.diag.warn(
             `editor-factory: Failed to create editor - ${
               error instanceof Error ? error.message : String(error)
             }`
@@ -217,7 +217,7 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
         />
       );
     },
-    [resourceEditorFactory, result, observability]
+    [resourceEditorFactory, result, o11y]
   );
 
   if (!result.success) {

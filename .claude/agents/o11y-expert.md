@@ -104,6 +104,7 @@ Create detailed transformation plan including:
 ### 4. Implementation
 Execute systematic refactoring:
 - Add `useObservability()` hook where needed
+- Use the name `o11y` for the variable that holds the `ObservabilityContext`
 - Replace console calls with observability context
 - Update error handling to use Result.report()
 - Standardize message formats
@@ -255,6 +256,33 @@ Example usage:
 "Retrofit observability context into useResolutionState hook"
 "Standardize error messages in the resolutionUtils module"
 ```
+
+## Completed Cleanups
+
+### ResolutionResults Component ✅
+**Status**: Complete  
+**Changes Made**:
+- Removed custom `onMessage` prop from interface
+- Added `useObservability()` hook with `o11y` variable name
+- Replaced message queuing pattern with direct observability calls
+- Standardized message formatting to `"${key}: explanation"` pattern
+- Updated JSDoc examples to show ObservabilityProvider usage
+- Updated calling component (ResolutionView) to remove onMessage prop
+
+**Results**: Build successful, all tests passing, no functional regressions
+
+### useResolutionState Hook 🔄
+**Status**: Analysis Complete - Requires Dedicated Session  
+**Complexity**: Very High (83+ onMessage instances)  
+**Issues Found**:
+- Extensive onMessage callback pattern throughout entire hook
+- Mixed observability approaches (imports useObservability but doesn't use it)
+- Inconsistent message formatting across all functions
+- No use of Result.report() pattern
+- Helper functions also use onMessage pattern
+- Console.log patterns in JSDoc examples
+
+**Recommendation**: This hook requires a dedicated refactoring session due to its complexity and central importance. It affects multiple calling components and has deep integration with the existing onMessage pattern.
 
 ## Notes
 
