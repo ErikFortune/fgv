@@ -77,7 +77,7 @@ export interface IResolutionResultsProps {
  *   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
  *
  *   const customEditorFactory = {
- *     createEditor: (resourceId: string, value: any) => ({
+ *     createEditor: (resourceId: string, value: JsonValue) => ({
  *       success: true,
  *       editor: MyCustomEditor
  *     })
@@ -194,7 +194,7 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
       className?: string
     ) => {
       // Try to get resource type from the result
-      const resourceType = result?.resource?.resourceType?.key || 'unknown';
+      const resourceType = result?.resource?.resourceType?.key ?? 'unknown';
 
       // Try the factory first if provided
       if (resourceEditorFactory) {

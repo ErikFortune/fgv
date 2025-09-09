@@ -55,7 +55,7 @@ function InteractiveResolutionResults() {
   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
 
   const customEditorFactory = {
-    createEditor: (resourceId: string, value: any) => ({
+    createEditor: (resourceId: string, value: JsonValue) => ({
       success: true,
       editor: MyCustomEditor
     })
