@@ -4,6 +4,7 @@ import { Runtime } from '@fgv/ts-res';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { JsonValue } from '@fgv/ts-json-base';
 import type { IProcessedResources } from '../../../types';
+import { ObservabilityTools } from '../../../namespaces';
 
 function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();

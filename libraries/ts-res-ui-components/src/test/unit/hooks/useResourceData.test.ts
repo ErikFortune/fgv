@@ -15,6 +15,7 @@ import {
   Runtime,
   Bundle
 } from '@fgv/ts-res';
+import { ObservabilityTools } from '../../../namespaces';
 
 // Create minimal mock data for testing
 const createMockProcessedResources = (): IProcessedResources => ({
@@ -249,7 +250,9 @@ describe('useResourceData', () => {
 
   describe('resource editing workflow regression test', () => {
     test('should preserve updated resource system when applying edits with extended metadata', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const { result } = renderHook(() =>
+        useResourceData({ o11y: ObservabilityTools.TestObservabilityContext })
+      );
 
       // 1. Set up initial configuration and resources (like loading from files)
       const mockConfig = createMockConfiguration();

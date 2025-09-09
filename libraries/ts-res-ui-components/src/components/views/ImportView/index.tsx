@@ -10,7 +10,6 @@ import { IImportViewProps, IImportedFile, IImportedDirectory } from '../../../ty
 import { Bundle, ZipArchive } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
 import { useObservability } from '../../../contexts';
-import '../../../types/fileSystemAccess';
 
 /**
  * ImportView component for importing resource files, directories, and bundles.
