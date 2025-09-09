@@ -32,6 +32,7 @@ import {
 import { IImportedDirectory, IImportedFile } from '../../../types';
 import { loadTestConfiguration, loadTestResources } from '../../helpers/testDataLoader';
 import * as TsRes from '@fgv/ts-res';
+import { ObservabilityTools } from '../../../namespaces';
 
 describe('tsResIntegration', () => {
   describe('getDefaultSystemConfiguration', () => {
@@ -100,7 +101,10 @@ describe('tsResIntegration', () => {
         });
       } else {
         // If test data is not available, skip this test
-        console.warn('Skipping test - test configuration not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test configuration not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -116,7 +120,10 @@ describe('tsResIntegration', () => {
           expect(Array.from(system.qualifiers.values()).length).toBeGreaterThan(0);
         });
       } else {
-        console.warn('Skipping test - custom config test data not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - custom config test data not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -131,7 +138,10 @@ describe('tsResIntegration', () => {
           expect(Array.from(system.qualifierTypes.values()).length).toBeGreaterThan(0);
         });
       } else {
-        console.warn('Skipping test - extended example test data not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - extended example test data not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -185,7 +195,10 @@ describe('tsResIntegration', () => {
         subdirectories: []
       };
 
-      const result = convertImportedDirectoryToFileTree(directory);
+      const result = convertImportedDirectoryToFileTree(
+        directory,
+        ObservabilityTools.TestObservabilityContext
+      );
 
       expect(result).toBeDefined();
     });
@@ -219,7 +232,10 @@ describe('tsResIntegration', () => {
         ]
       };
 
-      const result = convertImportedDirectoryToFileTree(directory);
+      const result = convertImportedDirectoryToFileTree(
+        directory,
+        ObservabilityTools.TestObservabilityContext
+      );
 
       expect(result).toBeDefined();
     });
@@ -232,7 +248,10 @@ describe('tsResIntegration', () => {
         subdirectories: []
       };
 
-      const result = convertImportedDirectoryToFileTree(directory);
+      const result = convertImportedDirectoryToFileTree(
+        directory,
+        ObservabilityTools.TestObservabilityContext
+      );
 
       expect(result).toBeDefined();
     });
@@ -240,7 +259,7 @@ describe('tsResIntegration', () => {
 
   describe('processImportedFiles', () => {
     test('handles empty file list', () => {
-      const result = processImportedFiles([]);
+      const result = processImportedFiles({ files: [], o11y: ObservabilityTools.TestObservabilityContext });
 
       expect(result).toFail();
       expect(result.message).toContain('No files provided');
@@ -257,22 +276,33 @@ describe('tsResIntegration', () => {
         }));
 
         if (testFiles.length > 0) {
-          const result = processImportedFiles(testFiles);
+          const result = processImportedFiles({
+            files: testFiles,
+            o11y: ObservabilityTools.TestObservabilityContext
+          });
 
           if (result.isSuccess()) {
             expect(result.value.system).toBeDefined();
             expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
             expect(result.value.summary).toBeDefined();
           } else {
-            console.warn('Processing failed but this may be expected:', result.message);
+            ObservabilityTools.TestObservabilityContext.diag.warn(
+              'Processing failed but this may be expected:',
+              result.message
+            );
             expect(result.message).toBeDefined();
           }
         } else {
-          console.warn('No test files available for processing test');
+          ObservabilityTools.TestObservabilityContext.diag.warn(
+            'No test files available for processing test'
+          );
           expect(true).toBe(true);
         }
       } else {
-        console.warn('Skipping test - test resources not available:', resourcesResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test resources not available:',
+          resourcesResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -287,7 +317,10 @@ describe('tsResIntegration', () => {
         }
       ];
 
-      const result = processImportedFiles(invalidFiles);
+      const result = processImportedFiles({
+        files: invalidFiles,
+        o11y: ObservabilityTools.TestObservabilityContext
+      });
       expect(result).toFail();
     });
   });
@@ -301,7 +334,10 @@ describe('tsResIntegration', () => {
         subdirectories: []
       };
 
-      const result = processImportedDirectory(directory);
+      const result = processImportedDirectory({
+        directory,
+        o11y: ObservabilityTools.TestObservabilityContext
+      });
 
       if (result.isSuccess()) {
         expect(result.value.system).toBeDefined();
@@ -326,17 +362,25 @@ describe('tsResIntegration', () => {
           subdirectories: []
         };
 
-        const result = processImportedDirectory(directory);
+        const result = processImportedDirectory({
+          directory,
+          o11y: ObservabilityTools.TestObservabilityContext
+        });
 
         if (result.isSuccess()) {
           expect(result.value.system).toBeDefined();
           expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
         } else {
-          console.warn('Directory processing failed but this may be expected:', result.message);
+          ObservabilityTools.TestObservabilityContext.diag.warn(
+            'Directory processing failed but this may be expected:',
+            result.message
+          );
           expect(result.message).toBeDefined();
         }
       } else {
-        console.warn('Skipping test - test resources not available for directory test');
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test resources not available for directory test'
+        );
         expect(true).toBe(true);
       }
     });
@@ -363,7 +407,10 @@ describe('tsResIntegration', () => {
 
         expect(removedFunctionResult).toFail();
       } else {
-        console.warn('Skipping test - test configuration not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test configuration not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });

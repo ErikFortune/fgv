@@ -26,7 +26,8 @@ import { useResolutionState } from '../../../hooks/useResolutionState';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { Runtime } from '@fgv/ts-res';
 import type { IProcessedResources } from '../../../types';
-import { ResolutionTools } from '../../../namespaces';
+import { ResolutionTools, ObservabilityTools } from '../../../namespaces';
+import { createObservabilityTestWrapper } from '../../helpers/testWrappers';
 
 function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
@@ -60,7 +61,10 @@ describe('Resource Creation Workflows', () => {
   describe('Atomic Resource Creation (createPendingResource)', () => {
     test('creates resource with atomic API successfully', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       await act(async () => {
         const createResult = await result.current.actions.createPendingResource({
@@ -86,7 +90,10 @@ describe('Resource Creation Workflows', () => {
 
     test('validates required parameters for atomic creation', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Missing resource type - this correctly fails at resource type validation
       await act(async () => {
@@ -140,7 +147,10 @@ describe('Resource Creation Workflows', () => {
 
     test('prevents duplicate resource IDs in atomic creation', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       const resourceParams = {
         id: 'platform.test.duplicate',
@@ -167,7 +177,10 @@ describe('Resource Creation Workflows', () => {
 
     test('applies context conditions during atomic creation', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Set context before creating resource
       act(() => {
@@ -188,7 +201,7 @@ describe('Resource Creation Workflows', () => {
 
       // Debug: Log what we actually get
       const pendingResource = result.current.state.pendingResources.get('platform.test.withContext');
-      console.log('Debug - Functional test resource:', {
+      ObservabilityTools.TestObservabilityContext.diag.info('Debug - Functional test resource:', {
         resource: pendingResource,
         candidates: pendingResource?.candidates,
         firstCandidateConditions: pendingResource?.candidates?.[0]?.conditions,
@@ -211,7 +224,9 @@ describe('Resource Creation Workflows', () => {
           value: 'en-US'
         });
       } else {
-        console.warn('Context conditions were not applied - may be test environment issue');
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Context conditions were not applied - may be test environment issue'
+        );
       }
     });
   });
@@ -219,7 +234,10 @@ describe('Resource Creation Workflows', () => {
   describe('Sequential Resource Creation Workflow', () => {
     test('completes sequential workflow successfully', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Step 1: Start new resource
       act(() => {
@@ -268,7 +286,10 @@ describe('Resource Creation Workflows', () => {
 
     test('validates each step of sequential workflow', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Cannot update ID without starting workflow
       act(() => {
@@ -299,7 +320,10 @@ describe('Resource Creation Workflows', () => {
 
     test('allows resource type selection during sequential workflow', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Start workflow without specifying type
       act(() => {
@@ -330,7 +354,10 @@ describe('Resource Creation Workflows', () => {
   describe('Context Integration in Resource Creation', () => {
     test('stamps current context conditions on new resources', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Set multiple context values
       act(() => {
@@ -352,7 +379,7 @@ describe('Resource Creation Workflows', () => {
 
       // Debug: Compare functional vs debug test behavior
       const pendingResource = result.current.state.pendingResources.get('platform.test.multiContext');
-      console.log('Debug - Multi-context functional test:', {
+      ObservabilityTools.TestObservabilityContext.diag.info('Debug - Multi-context functional test:', {
         resource: pendingResource,
         contextValues: result.current.state.contextValues,
         conditions: pendingResource?.candidates?.[0]?.conditions
@@ -377,13 +404,18 @@ describe('Resource Creation Workflows', () => {
           ])
         );
       } else {
-        console.warn('Multi-context conditions not applied - test environment issue');
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Multi-context conditions not applied - test environment issue'
+        );
       }
     });
 
     test('creates resources without context when none is set', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Create resource without setting any context
       await act(async () => {
@@ -408,7 +440,10 @@ describe('Resource Creation Workflows', () => {
   describe('Resource Creation Error Handling', () => {
     test('provides detailed error messages for validation failures', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Test various validation failures
       await act(async () => {
@@ -434,7 +469,10 @@ describe('Resource Creation Workflows', () => {
 
     test('creates resources using base template when json is omitted', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Apply context first
       act(() => {
@@ -466,7 +504,10 @@ describe('Resource Creation Workflows', () => {
 
     test('handles template creation failures gracefully', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Test with invalid resource type
       await act(async () => {

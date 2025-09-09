@@ -16,11 +16,11 @@ export async function processZipResources(
 ): Promise<Result<IProcessedResources>> {
   try {
     if (directory) {
-      return processImportedDirectory(directory, config, undefined, undefined, o11y).withErrorFormat(
+      return processImportedDirectory({ directory, systemConfig: config, o11y }).withErrorFormat(
         (message: string) => `Failed to process resources from directory: ${message}`
       );
     } else if (files.length > 0) {
-      return processImportedFiles(files, config, undefined, undefined, o11y).withErrorFormat(
+      return processImportedFiles({ files, systemConfig: config, o11y }).withErrorFormat(
         (message: string) => `Failed to process resources from files: ${message}`
       );
     } else {

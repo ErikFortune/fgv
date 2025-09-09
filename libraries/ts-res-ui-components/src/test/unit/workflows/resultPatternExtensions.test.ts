@@ -6,6 +6,7 @@
 import '@fgv/ts-utils-jest';
 import { renderHook, act } from '@testing-library/react';
 import { useResolutionState } from '../../../hooks/useResolutionState';
+import { createObservabilityTestWrapper } from '../../helpers/testWrappers';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { Runtime } from '@fgv/ts-res';
 import type { IProcessedResources } from '../../../types';
@@ -42,7 +43,10 @@ describe('Result Pattern Extensions', () => {
   describe('Enhanced Cache Management', () => {
     test('resetCache provides detailed diagnostics', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Apply context creates resolver automatically, so resetCache should succeed
       act(() => {
@@ -67,7 +71,10 @@ describe('Result Pattern Extensions', () => {
   describe('Enhanced Edit Management', () => {
     test('clearEdits now works correctly with pending resources', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Apply context first
       act(() => {
@@ -113,7 +120,10 @@ describe('Result Pattern Extensions', () => {
 
     test('discardEdits now works correctly with pending resources', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Apply context first
       act(() => {
@@ -158,7 +168,10 @@ describe('Result Pattern Extensions', () => {
   describe('Enhanced Pending Resource Management', () => {
     test('removePendingResource validates resource existence', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Try to remove non-existent pending resource
       act(() => {
@@ -203,7 +216,10 @@ describe('Result Pattern Extensions', () => {
 
     test('removePendingResource clears selection if resource was selected', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Create and select a pending resource
       await act(async () => {
@@ -238,7 +254,10 @@ describe('Result Pattern Extensions', () => {
   describe('Enhanced Pending Resource Application', () => {
     test('applyPendingResources provides detailed diagnostics', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Apply context first
       act(() => {
@@ -316,8 +335,11 @@ describe('Result Pattern Extensions', () => {
 
     test('applyPendingResources fails gracefully with system errors', async () => {
       const processed = buildProcessedResources();
+      const wrapper = createObservabilityTestWrapper();
       // Pass undefined for system update handler to trigger error
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, undefined));
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, undefined), {
+        wrapper
+      });
 
       // Create a pending resource
       await act(async () => {
@@ -340,7 +362,10 @@ describe('Result Pattern Extensions', () => {
   describe('Error Handling Edge Cases', () => {
     test('methods handle various error conditions gracefully', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Test edge cases with detailed error messages
       act(() => {

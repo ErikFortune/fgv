@@ -1177,11 +1177,15 @@ declare namespace PickerTools {
 }
 export { PickerTools }
 
+// Warning: (ae-forgotten-export) The symbol "ICreateProcessImportedDirectoryParams" needs to be exported by the entry point index.d.ts
+//
 // @internal (undocumented)
-function processImportedDirectory(directory: IImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<IExtendedProcessedResources>;
+function processImportedDirectory(params: ICreateProcessImportedDirectoryParams): Result<IExtendedProcessedResources>;
 
+// Warning: (ae-forgotten-export) The symbol "ICreateProcessImportedFilesParams" needs to be exported by the entry point index.d.ts
+//
 // @internal (undocumented)
-function processImportedFiles(files: IImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<IExtendedProcessedResources>;
+function processImportedFiles(params: ICreateProcessImportedFilesParams): Result<IExtendedProcessedResources>;
 
 // @public
 function processZipLoadResult(zipResult: {

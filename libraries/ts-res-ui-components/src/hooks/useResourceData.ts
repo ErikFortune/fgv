@@ -125,13 +125,13 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        return processImportedDirectory(
+        return processImportedDirectory({
           directory,
-          state.activeConfiguration || undefined,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
+          systemConfig: state.activeConfiguration || undefined,
+          qualifierTypeFactory: params?.qualifierTypeFactory,
+          resourceTypeFactory: params?.resourceTypeFactory,
           o11y
-        )
+        })
           .onSuccess((value) => {
             o11y.diag.info(
               `[useResourceData] Directory processing succeeded, resources found: ${
@@ -190,13 +190,13 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
       setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
 
       try {
-        return processImportedDirectory(
+        return processImportedDirectory({
           directory,
-          config,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
+          systemConfig: config,
+          qualifierTypeFactory: params?.qualifierTypeFactory,
+          resourceTypeFactory: params?.resourceTypeFactory,
           o11y
-        )
+        })
           .onSuccess((value) => {
             setState((prev) => ({
               ...prev,
@@ -237,13 +237,13 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        return processImportedFiles(
+        return processImportedFiles({
           files,
-          state.activeConfiguration || undefined,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
+          systemConfig: state.activeConfiguration || undefined,
+          qualifierTypeFactory: params?.qualifierTypeFactory,
+          resourceTypeFactory: params?.resourceTypeFactory,
           o11y
-        )
+        })
           .onSuccess((value) => {
             setState((prev) => ({
               ...prev,

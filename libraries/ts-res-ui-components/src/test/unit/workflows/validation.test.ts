@@ -8,6 +8,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useResolutionState } from '../../../hooks/useResolutionState';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import type { IProcessedResources } from '../../../types';
+import { ObservabilityTools } from '../../../namespaces';
+import { createObservabilityTestWrapper } from '../../helpers/testWrappers';
 
 function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
@@ -48,18 +50,22 @@ describe('Validation Behavior Investigation', () => {
       const processed = buildProcessedResources();
       const mockOnMessage = jest.fn();
       const mockOnSystemUpdate = jest.fn();
+      const o11y = ObservabilityTools.TestObservabilityContext;
 
       // Log available qualifiers
-      console.log('Available qualifiers:', Array.from(processed.system.qualifiers.keys()));
+      o11y.diag.info('Available qualifiers:', Array.from(processed.system.qualifiers.keys()));
 
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Test 1: Set context step by step and log the state
-      console.log('=== SETTING CONTEXT ===');
+      o11y.diag.info('=== SETTING CONTEXT ===');
       act(() => {
         result.current.actions.updateContextValue('language', 'en-US');
       });
-      console.log('After updateContextValue:', {
+      o11y.diag.info('After updateContextValue:', {
         contextValues: result.current.state.contextValues,
         pendingContextValues: result.current.state.pendingContextValues
       });
@@ -67,13 +73,13 @@ describe('Validation Behavior Investigation', () => {
       act(() => {
         result.current.actions.applyContext();
       });
-      console.log('After applyContext:', {
+      o11y.diag.info('After applyContext:', {
         contextValues: result.current.state.contextValues,
         pendingContextValues: result.current.state.pendingContextValues
       });
 
       // Test 2: Create resource and inspect the result
-      console.log('=== CREATING RESOURCE ===');
+      o11y.diag.info('=== CREATING RESOURCE ===');
       await act(async () => {
         const createResult = await result.current.actions.createPendingResource({
           id: 'platform.test.contextTest',
@@ -81,15 +87,15 @@ describe('Validation Behavior Investigation', () => {
           json: { message: 'Context test' }
         });
 
-        console.log('Create result:', createResult);
+        o11y.diag.info('Create result:', createResult);
         if (createResult.isFailure()) {
-          console.error('Creation failed:', createResult.message);
+          o11y.diag.error('Creation failed:', createResult.message);
         }
       });
 
       // Test 3: Inspect the created resource
       const pendingResource = result.current.state.pendingResources.get('platform.test.contextTest');
-      console.log('Created pending resource:', {
+      o11y.diag.info('Created pending resource:', {
         id: 'platform.test.contextTest',
         resource: pendingResource,
         candidates: pendingResource?.candidates,
@@ -101,7 +107,7 @@ describe('Validation Behavior Investigation', () => {
       expect(pendingResource!.candidates?.length).toBe(1);
 
       // Log any messages from the process
-      console.log('Hook messages:', mockOnMessage.mock.calls);
+      o11y.diag.info('Hook messages:', mockOnMessage.mock.calls);
     });
   });
 });

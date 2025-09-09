@@ -183,13 +183,18 @@ export function loadTestBundleFile(
 /**
  * Clean up temp directory (optional - temp folder is git-ignored)
  */
-export function cleanupTempPath(tempPath: string): void {
+export async function cleanupTempPath(tempPath: string): Promise<void> {
   try {
     const fs = require('fs');
     if (existsSync(tempPath)) {
       fs.rmSync(tempPath, { recursive: true, force: true });
     }
   } catch (error) {
-    console.warn(`Warning: Failed to cleanup temp path ${tempPath}:`, error);
+    // Use test observability context to avoid console spew
+    const { ObservabilityTools } = await import('../../namespaces');
+    ObservabilityTools.TestObservabilityContext.diag.warn(
+      `Warning: Failed to cleanup temp path ${tempPath}:`,
+      error
+    );
   }
 }

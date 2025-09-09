@@ -5,6 +5,8 @@ import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { JsonValue } from '@fgv/ts-json-base';
 import type { IProcessedResources } from '../../../types';
 import { ObservabilityTools } from '../../../namespaces';
+import { ObservabilityProvider } from '../../../contexts';
+import React from 'react';
 
 function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
@@ -25,13 +27,22 @@ function buildProcessedResources(): IProcessedResources {
   } as unknown as IProcessedResources;
 }
 
+// Test wrapper with silent observability context
+const wrapper = ({ children }: { children: React.ReactNode }): React.ReactNode => (
+  <ObservabilityProvider observabilityContext={ObservabilityTools.TestObservabilityContext}>
+    {children}
+  </ObservabilityProvider>
+);
+
 describe('useResolutionState basic', () => {
   it('applies context and stamps conditions for new resources', async () => {
     const onSystemUpdate = jest.fn();
     const onMessage = jest.fn();
 
     const processed = buildProcessedResources();
-    const { result } = renderHook(() => useResolutionState(processed, onMessage, onSystemUpdate));
+    const { result } = renderHook(() => useResolutionState(processed, onMessage, onSystemUpdate), {
+      wrapper
+    });
 
     // set context pending value and apply so effectiveContext includes it
     act(() => {

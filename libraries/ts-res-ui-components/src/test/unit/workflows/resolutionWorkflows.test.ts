@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 import { renderHook, act } from '@testing-library/react';
 import { useResolutionState } from '../../../hooks/useResolutionState';
+import { createObservabilityTestWrapper } from '../../helpers/testWrappers';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { Runtime } from '@fgv/ts-res';
 import type { IProcessedResources } from '../../../types';
@@ -59,7 +60,10 @@ describe('Resolution Core Workflows', () => {
   describe('Context Management Workflow', () => {
     test('manages context values through complete workflow', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Initial state should have empty context
       expect(result.current.state.contextValues).toEqual({
@@ -112,7 +116,10 @@ describe('Resolution Core Workflows', () => {
 
     test('handles pending resource discarding', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Set and apply initial context
       act(() => {
@@ -170,7 +177,10 @@ describe('Resolution Core Workflows', () => {
         ]
       };
 
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Add test resource to pending
       act(() => {
@@ -210,7 +220,10 @@ describe('Resolution Core Workflows', () => {
 
     test('handles resource selection and deselection', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Initially no selection
       expect(result.current.state.selectedResourceId).toBeNull();
@@ -243,7 +256,10 @@ describe('Resolution Core Workflows', () => {
   describe('View Mode Management', () => {
     test('manages view mode switching', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Default view mode
       expect(result.current.state.viewMode).toBe('composed');
@@ -275,7 +291,10 @@ describe('Resolution Core Workflows', () => {
   describe('Resource Editing Workflow', () => {
     test('manages resource editing lifecycle', async () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Create a test resource first
       await act(async () => {
@@ -325,7 +344,10 @@ describe('Resolution Core Workflows', () => {
 
     test('handles editing non-existent resources', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Try to edit a resource that doesn't exist - should now fail with diagnostic
       act(() => {
@@ -338,7 +360,10 @@ describe('Resolution Core Workflows', () => {
   describe('Available Qualifiers', () => {
     test('provides available qualifiers from system', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Should include the default qualifiers from the system
       expect(result.current.availableQualifiers).toContain('language');
@@ -350,7 +375,10 @@ describe('Resolution Core Workflows', () => {
   describe('Error Handling and Edge Cases', () => {
     test('handles malformed context values gracefully', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Test with undefined context value (should be handled gracefully)
       act(() => {
@@ -379,7 +407,10 @@ describe('Resolution Core Workflows', () => {
 
     test('handles invalid qualifier names', () => {
       const processed = buildProcessedResources();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+        wrapper
+      });
 
       // Test with unknown qualifier name - should succeed but with warning
       act(() => {

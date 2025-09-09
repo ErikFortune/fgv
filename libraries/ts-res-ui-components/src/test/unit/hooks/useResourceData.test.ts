@@ -16,6 +16,7 @@ import {
   Bundle
 } from '@fgv/ts-res';
 import { ObservabilityTools } from '../../../namespaces';
+import { createObservabilityTestWrapper } from '../../helpers/testWrappers';
 
 // Create minimal mock data for testing
 const createMockProcessedResources = (): IProcessedResources => ({
@@ -63,7 +64,8 @@ const createMockProcessedResourcesWithUpdatedSystem = (
 describe('useResourceData', () => {
   describe('updateProcessedResources', () => {
     test('should preserve activeConfiguration when updating processed resources', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       // First, set an active configuration
       const mockConfig = createMockConfiguration();
@@ -120,7 +122,8 @@ describe('useResourceData', () => {
     });
 
     test('should preserve bundle metadata when updating processed resources', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       const mockConfig = createMockConfiguration();
       const mockBundleMetadata = {
@@ -162,7 +165,8 @@ describe('useResourceData', () => {
     });
 
     test('should handle updating resources when no previous configuration exists', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       const mockResources: IProcessedResources = createMockProcessedResources();
 
@@ -177,7 +181,8 @@ describe('useResourceData', () => {
     });
 
     test('should handle case where previous processedResources is null', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       // Ensure initial state
       expect(result.current.state.processedResources).toBeNull();

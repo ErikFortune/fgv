@@ -6,6 +6,8 @@ import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import type { IProcessedResources, IResolutionState, IResolutionActions } from '../../../types';
 import { JsonValue } from '@fgv/ts-json-base';
 import { ResourceJson } from '@fgv/ts-res';
+import { ObservabilityProvider } from '../../../contexts';
+import { ObservabilityTools } from '../../../namespaces';
 
 function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
@@ -79,13 +81,15 @@ describe('ResolutionView unified changes', () => {
 
     const processed = buildProcessedResources();
     render(
-      <ResolutionView
-        resources={processed}
-        resolutionState={state}
-        resolutionActions={actions}
-        availableQualifiers={['language']}
-        contextOptions={{ showContextControls: false }}
-      />
+      <ObservabilityProvider observabilityContext={ObservabilityTools.TestObservabilityContext}>
+        <ResolutionView
+          resources={processed}
+          resolutionState={state}
+          resolutionActions={actions}
+          availableQualifiers={['language']}
+          contextOptions={{ showContextControls: false }}
+        />
+      </ObservabilityProvider>
     );
 
     // Pending Changes bar present
@@ -100,15 +104,17 @@ describe('ResolutionView unified changes', () => {
     const { state, actions } = makeStateActions();
     const processed = buildProcessedResources();
     render(
-      <ResolutionView
-        resources={processed}
-        resolutionState={state}
-        resolutionActions={actions}
-        availableQualifiers={['language']}
-        lockedViewMode="best"
-        sectionTitles={{ resources: 'Items', results: 'Output' }}
-        contextOptions={{ showContextControls: false }}
-      />
+      <ObservabilityProvider observabilityContext={ObservabilityTools.TestObservabilityContext}>
+        <ResolutionView
+          resources={processed}
+          resolutionState={state}
+          resolutionActions={actions}
+          availableQualifiers={['language']}
+          lockedViewMode="best"
+          sectionTitles={{ resources: 'Items', results: 'Output' }}
+          contextOptions={{ showContextControls: false }}
+        />
+      </ObservabilityProvider>
     );
 
     expect(screen.getByText('Items')).toBeInTheDocument();
