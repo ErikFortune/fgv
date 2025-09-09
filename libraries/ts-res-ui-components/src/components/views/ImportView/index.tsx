@@ -181,7 +181,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
 
           const importedFile: IImportedFile = {
             name: file.name,
-            path: file.webkitRelativePath || file.name,
+            path: file.webkitRelativePath ?? file.name,
             content,
             type: file.type
           };

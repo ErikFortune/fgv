@@ -29,7 +29,7 @@ jest.mock('../../../utils/tsResIntegration', () => {
 });
 
 import '@fgv/ts-utils-jest';
-import { succeed, fail } from '@fgv/ts-utils';
+import { succeed, fail, Collections } from '@fgv/ts-utils';
 import {
   hasFilterValues,
   getFilterSummary,
@@ -38,7 +38,7 @@ import {
   type IFilterOptions
 } from '../../../utils/filterResources';
 import { IProcessedResources } from '../../../types';
-
+import { ResourceId, Resources } from '@fgv/ts-res';
 describe('filterResources utilities', () => {
   describe('hasFilterValues', () => {
     test('returns false for empty object', () => {
@@ -194,8 +194,13 @@ describe('filterResources utilities', () => {
   });
 
   describe('createFilteredResourceManagerSimple', () => {
-    let mockResourceManager: any;
-    let mockSystem: any;
+    let mockResourceManager: {
+      getCompiledResourceCollection: jest.Mock;
+      validateContext: jest.Mock;
+      clone: jest.Mock;
+      resources: Collections.IReadOnlyValidatingResultMap<ResourceId, Resources.ResourceBuilder>;
+    };
+    let mockSystem: IProcessedResources['system'];
 
     beforeEach(() => {
       mockResourceManager = {
@@ -205,7 +210,7 @@ describe('filterResources utilities', () => {
         resources: new Map([
           ['resource1', {}],
           ['resource2', {}]
-        ])
+        ]) as unknown as Collections.IReadOnlyValidatingResultMap<ResourceId, Resources.ResourceBuilder>
       };
 
       mockSystem = {
@@ -221,12 +226,12 @@ describe('filterResources utilities', () => {
         contextQualifierProvider: {
           create: jest.fn()
         }
-      };
+      } as unknown as IProcessedResources['system'];
     });
 
     test('returns error when original system is undefined', async () => {
       const result = await createFilteredResourceManagerSimple(
-        undefined as any,
+        undefined as unknown as IProcessedResources['system'],
         {},
         { partialContextMatch: true }
       );
@@ -237,7 +242,7 @@ describe('filterResources utilities', () => {
 
     test('returns error when resourceManager is undefined', async () => {
       const result = await createFilteredResourceManagerSimple(
-        { ...mockSystem, resourceManager: undefined },
+        { ...mockSystem, resourceManager: undefined as unknown as Resources.ResourceManagerBuilder },
         {},
         { partialContextMatch: true }
       );
@@ -365,15 +370,15 @@ describe('filterResources utilities', () => {
         system: {
           resourceManager: {
             getBuiltResource: jest.fn()
-          } as any,
-          qualifiers: {} as any, // TODO: Fix mock types after refactoring
-          qualifierTypes: {} as any,
-          resourceTypes: {} as any,
-          importManager: {} as any,
-          contextQualifierProvider: {} as any
+          },
+          qualifiers: {},
+          qualifierTypes: {},
+          resourceTypes: {},
+          importManager: {},
+          contextQualifierProvider: {}
         },
-        compiledCollection: {} as any,
-        resolver: {} as any,
+        compiledCollection: {},
+        resolver: {},
         resourceCount: 2,
         summary: {
           totalResources: 2,
@@ -381,21 +386,21 @@ describe('filterResources utilities', () => {
           errorCount: 0,
           warnings: []
         }
-      };
+      } as unknown as IProcessedResources;
 
       mockFilteredIProcessedResources = {
         system: {
           resourceManager: {
             getBuiltResource: jest.fn()
-          } as any,
-          qualifiers: {} as any, // TODO: Fix mock types after refactoring
-          qualifierTypes: {} as any,
-          resourceTypes: {} as any,
-          importManager: {} as any,
-          contextQualifierProvider: {} as any
+          },
+          qualifiers: {}, // TODO: Fix mock types after refactoring
+          qualifierTypes: {},
+          resourceTypes: {},
+          importManager: {},
+          contextQualifierProvider: {}
         },
-        compiledCollection: {} as any,
-        resolver: {} as any,
+        compiledCollection: {},
+        resolver: {},
         resourceCount: 1,
         summary: {
           totalResources: 1,
@@ -403,7 +408,7 @@ describe('filterResources utilities', () => {
           errorCount: 0,
           warnings: []
         }
-      };
+      } as unknown as IProcessedResources;
     });
 
     test('analyzes resources with successful filtering', () => {

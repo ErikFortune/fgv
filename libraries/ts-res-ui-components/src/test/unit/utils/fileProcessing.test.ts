@@ -27,17 +27,14 @@ import {
   exportAsJson,
   exportUsingFileSystemAPI
 } from '../../../utils/fileProcessing';
-import { IImportedFile } from '../../../types';
+import { IImportedDirectory, IImportedFile } from '../../../types';
+import { JsonObject } from '@fgv/ts-json-base';
 
 describe('fileProcessing utilities', () => {
   describe('readFilesFromInput', () => {
     test('reads single file from FileList', async () => {
       const mockFile = new File(['test content'], 'test.json', { type: 'application/json' });
-      const fileList = {
-        length: 1,
-        0: mockFile,
-        item: (index: number) => (index === 0 ? mockFile : null)
-      } as FileList;
+      const fileList = [mockFile] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
@@ -53,12 +50,7 @@ describe('fileProcessing utilities', () => {
     test('reads multiple files from FileList', async () => {
       const mockFile1 = new File(['content 1'], 'file1.json', { type: 'application/json' });
       const mockFile2 = new File(['content 2'], 'file2.json', { type: 'application/json' });
-      const fileList = {
-        length: 2,
-        0: mockFile1,
-        1: mockFile2,
-        item: (index: number) => (index === 0 ? mockFile1 : index === 1 ? mockFile2 : null)
-      } as FileList;
+      const fileList = [mockFile1, mockFile2] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
@@ -81,13 +73,9 @@ describe('fileProcessing utilities', () => {
       const mockFile = new File(['test content'], 'test.json', {
         type: 'application/json',
         webkitRelativePath: 'folder/test.json'
-      } as any);
+      } as unknown as FilePropertyBag);
 
-      const fileList = {
-        length: 1,
-        0: mockFile,
-        item: (index: number) => (index === 0 ? mockFile : null)
-      } as FileList;
+      const fileList = [mockFile] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
@@ -101,10 +89,7 @@ describe('fileProcessing utilities', () => {
     });
 
     test('handles empty FileList', async () => {
-      const fileList = {
-        length: 0,
-        item: () => null
-      } as FileList;
+      const fileList = [] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
@@ -117,8 +102,8 @@ describe('fileProcessing utilities', () => {
       // Override the global FileReader for this test
       const originalFileReader = global.FileReader;
       global.FileReader = class MockErrorFileReader {
-        public onload: ((event: any) => void) | null = null;
-        public onerror: ((event: any) => void) | null = null;
+        public onload: ((event: unknown) => void) | null = null;
+        public onerror: ((event: unknown) => void) | null = null;
         public readAsText(): void {
           setTimeout(() => {
             if (this.onerror) {
@@ -126,13 +111,9 @@ describe('fileProcessing utilities', () => {
             }
           }, 0);
         }
-      } as any;
+      } as unknown as typeof global.FileReader;
 
-      const fileList = {
-        length: 1,
-        0: mockFile,
-        item: (index: number) => (index === 0 ? mockFile : null)
-      } as FileList;
+      const fileList = [mockFile] as unknown as FileList;
 
       await expect(readFilesFromInput(fileList)).rejects.toThrow('Failed to read file test.json');
 
@@ -215,8 +196,8 @@ describe('fileProcessing utilities', () => {
 
       expect(result.subdirectories).toHaveLength(2);
 
-      const dir1 = result.subdirectories!.find((d: any) => d.name === 'dir1');
-      const dir3 = result.subdirectories!.find((d: any) => d.name === 'dir3');
+      const dir1 = result.subdirectories!.find((d: IImportedDirectory) => d.name === 'dir1');
+      const dir3 = result.subdirectories!.find((d: IImportedDirectory) => d.name === 'dir3');
 
       expect(dir1).toBeDefined();
       expect(dir1!.files).toHaveLength(1);
@@ -296,15 +277,26 @@ describe('fileProcessing utilities', () => {
   });
 
   describe('exportUsingFileSystemAPI', () => {
+    type WindowWithFileSystemAccess = Window & {
+      showSaveFilePicker: NonNullable<Window['showDirectoryPicker']>;
+    };
+
+    // Type guard to check if browser supports File System Access API
+    function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
+      return 'showSaveFilePicker' in w;
+    }
     test('returns false when File System Access API is not available', async () => {
-      const originalShowSaveFilePicker = (window as any).showSaveFilePicker;
-      delete (window as any).showSaveFilePicker;
+      if (!hasFileSystemAccess(window)) {
+        return;
+      }
+      const originalShowSaveFilePicker = window.showSaveFilePicker;
+      delete (window as unknown as JsonObject).showSaveFilePicker;
 
       const result = await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
       expect(result).toBe(false);
 
-      (window as any).showSaveFilePicker = originalShowSaveFilePicker;
+      window.showSaveFilePicker = originalShowSaveFilePicker;
     });
 
     test('successfully exports when File System Access API is available', async () => {
@@ -317,7 +309,11 @@ describe('fileProcessing utilities', () => {
       };
       const mockShowSaveFilePicker = jest.fn().mockResolvedValue(mockFileHandle);
 
-      (window as any).showSaveFilePicker = mockShowSaveFilePicker;
+      if (!hasFileSystemAccess(window)) {
+        return;
+      }
+
+      window.showSaveFilePicker = mockShowSaveFilePicker;
 
       const testData = { test: 'data' };
       const result = await exportUsingFileSystemAPI(testData, 'test.json', 'Test files');
@@ -344,7 +340,11 @@ describe('fileProcessing utilities', () => {
         .fn()
         .mockRejectedValue(Object.assign(new Error('User cancelled'), { name: 'AbortError' }));
 
-      (window as any).showSaveFilePicker = mockShowSaveFilePicker;
+      if (!hasFileSystemAccess(window)) {
+        return;
+      }
+
+      window.showSaveFilePicker = mockShowSaveFilePicker;
 
       const result = await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
@@ -354,7 +354,11 @@ describe('fileProcessing utilities', () => {
     test('throws error for non-AbortError exceptions', async () => {
       const mockShowSaveFilePicker = jest.fn().mockRejectedValue(new Error('Permission denied'));
 
-      (window as any).showSaveFilePicker = mockShowSaveFilePicker;
+      if (!hasFileSystemAccess(window)) {
+        return;
+      }
+
+      window.showSaveFilePicker = mockShowSaveFilePicker;
 
       await expect(exportUsingFileSystemAPI({ test: 'data' }, 'test.json')).rejects.toThrow(
         'Permission denied'
@@ -371,7 +375,11 @@ describe('fileProcessing utilities', () => {
       };
       const mockShowSaveFilePicker = jest.fn().mockResolvedValue(mockFileHandle);
 
-      (window as any).showSaveFilePicker = mockShowSaveFilePicker;
+      if (!hasFileSystemAccess(window)) {
+        return;
+      }
+
+      window.showSaveFilePicker = mockShowSaveFilePicker;
 
       await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
