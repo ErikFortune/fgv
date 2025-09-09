@@ -49,11 +49,9 @@ function buildProcessedResources(): IProcessedResources {
 }
 
 describe('Resolution Core Workflows', () => {
-  let mockOnMessage: jest.Mock;
   let mockOnSystemUpdate: jest.Mock;
 
   beforeEach(() => {
-    mockOnMessage = jest.fn();
     mockOnSystemUpdate = jest.fn();
   });
 
@@ -61,7 +59,7 @@ describe('Resolution Core Workflows', () => {
     test('manages context values through complete workflow', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -117,7 +115,7 @@ describe('Resolution Core Workflows', () => {
     test('handles pending resource discarding', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -178,7 +176,7 @@ describe('Resolution Core Workflows', () => {
       };
 
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -221,7 +219,7 @@ describe('Resolution Core Workflows', () => {
     test('handles resource selection and deselection', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -257,7 +255,7 @@ describe('Resolution Core Workflows', () => {
     test('manages view mode switching', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -292,7 +290,7 @@ describe('Resolution Core Workflows', () => {
     test('manages resource editing lifecycle', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -345,7 +343,7 @@ describe('Resolution Core Workflows', () => {
     test('handles editing non-existent resources', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -361,7 +359,7 @@ describe('Resolution Core Workflows', () => {
     test('provides available qualifiers from system', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -376,7 +374,7 @@ describe('Resolution Core Workflows', () => {
     test('handles malformed context values gracefully', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -408,7 +406,7 @@ describe('Resolution Core Workflows', () => {
     test('handles invalid qualifier names', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 

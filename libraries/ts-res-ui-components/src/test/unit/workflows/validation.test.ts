@@ -56,7 +56,7 @@ describe('Validation Behavior Investigation', () => {
       o11y.diag.info('Available qualifiers:', Array.from(processed.system.qualifiers.keys()));
 
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 

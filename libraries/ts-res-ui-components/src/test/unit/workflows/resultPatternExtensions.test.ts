@@ -32,11 +32,9 @@ function buildProcessedResources(): IProcessedResources {
 }
 
 describe('Result Pattern Extensions', () => {
-  let mockOnMessage: jest.Mock;
   let mockOnSystemUpdate: jest.Mock;
 
   beforeEach(() => {
-    mockOnMessage = jest.fn();
     mockOnSystemUpdate = jest.fn();
   });
 
@@ -44,7 +42,7 @@ describe('Result Pattern Extensions', () => {
     test('resetCache provides detailed diagnostics', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -72,7 +70,7 @@ describe('Result Pattern Extensions', () => {
     test('clearEdits now works correctly with pending resources', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -121,7 +119,7 @@ describe('Result Pattern Extensions', () => {
     test('discardEdits now works correctly with pending resources', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -169,7 +167,7 @@ describe('Result Pattern Extensions', () => {
     test('removePendingResource validates resource existence', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -217,7 +215,7 @@ describe('Result Pattern Extensions', () => {
     test('removePendingResource clears selection if resource was selected', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -255,7 +253,7 @@ describe('Result Pattern Extensions', () => {
     test('applyPendingResources provides detailed diagnostics', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -337,7 +335,7 @@ describe('Result Pattern Extensions', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
       // Pass undefined for system update handler to trigger error
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, undefined), {
+      const { result } = renderHook(() => useResolutionState(processed, undefined), {
         wrapper
       });
 
@@ -363,7 +361,7 @@ describe('Result Pattern Extensions', () => {
     test('methods handle various error conditions gracefully', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 

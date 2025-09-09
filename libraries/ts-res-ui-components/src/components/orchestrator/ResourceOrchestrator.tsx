@@ -75,11 +75,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<IResourceOrchestratorProps, 'o
     [resourceData.actions, viewState]
   );
 
-  const resolutionData = useResolutionState(
-    resourceData.state.processedResources,
-    viewState.addMessage,
-    handleSystemUpdate
-  );
+  const resolutionData = useResolutionState(resourceData.state.processedResources, handleSystemUpdate);
 
   // Local state for filter results
   const [filterResult, setFilterResult] = useState<IFilterResult | null>(null);

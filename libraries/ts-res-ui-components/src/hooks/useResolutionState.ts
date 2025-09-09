@@ -45,21 +45,17 @@ export interface IUseResolutionStateReturn {
  *
  * @param typeName - The resource type name to find
  * @param availableResourceTypes - Array of available resource types
- * @param onMessage - Optional callback for error messages
  * @returns Result containing the found resource type or error
  */
 function findResourceType(
   typeName: string,
-  availableResourceTypes: ResourceTypes.IResourceType[],
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
+  availableResourceTypes: ResourceTypes.IResourceType[]
 ): Result<ResourceTypes.IResourceType> {
   const resourceType = availableResourceTypes.find((t) => t.key === typeName);
 
   if (!resourceType) {
     const availableTypes = availableResourceTypes.map((t) => t.key).join(', ');
-    const error = `Resource type '${typeName}' not found`;
-    onMessage?.('error', error);
-    return fail(`${error}\nAvailable types: ${availableTypes}`);
+    return fail(`${typeName}: Resource type not found. Available types: ${availableTypes}`);
   }
 
   return succeed(resourceType);
@@ -70,19 +66,15 @@ function findResourceType(
  *
  * @param effectiveContext - The context values to create conditions from
  * @param qualifiers - The qualifiers collection for validation
- * @param onMessage - Optional callback for error messages
  * @returns Result containing condition declarations or error
  */
 function createContextConditions(
   effectiveContext: Record<string, string | undefined>,
-  qualifiers: Qualifiers.IReadOnlyQualifierCollector | undefined,
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void
+  qualifiers: Qualifiers.IReadOnlyQualifierCollector | undefined
 ): Result<ResourceJson.Json.ILooseConditionDecl[]> {
   // Qualifiers are required for proper validation
   if (!qualifiers) {
-    const error = 'Qualifiers not available - cannot validate context values';
-    onMessage?.('error', error);
-    return fail(error);
+    return fail('context-validation: Qualifiers not available - cannot validate context values');
   }
   const contextConditions: ResourceJson.Json.ILooseConditionDecl[] = [];
   const errors: MessageAggregator = new MessageAggregator();
@@ -94,19 +86,15 @@ function createContextConditions(
 
     qualifiers
       .get(qualifierName as QualifierName)
-      .asResult.withErrorFormat((error) => `${qualifierName}: unknown qualifier': ${error}`)
+      .asResult.withErrorFormat((error) => `${qualifierName}: Unknown qualifier - ${error}`)
       .onSuccess((qualifier) => {
         return qualifier
           .validateCondition(qualifierValue)
-          .withErrorFormat((error) => `${qualifierName}: invalid value '${qualifierValue}': ${error}`);
+          .withErrorFormat((error) => `${qualifierName}: Invalid value '${qualifierValue}' - ${error}`);
       })
       .onSuccess((qualifier) => {
         contextConditions.push({ qualifierName, operator: 'matches', value: qualifierValue });
         return succeed(qualifier);
-      })
-      .onFailure((error) => {
-        onMessage?.('error', error);
-        return fail(error);
       })
       .aggregateError(errors);
   }
@@ -153,7 +141,6 @@ function isResourceIdTaken(
  * function ResourceResolutionView({ processedResources }: { processedResources: ProcessedResources }) {
  *   const { state, actions, availableQualifiers } = useResolutionState(
  *     processedResources,
- *     (type, message) => console.log(`${type}: ${message}`),
  *     (updatedResources) => {
  *       // Handle system updates when edits are applied
  *       setProcessedResources(updatedResources);
@@ -191,14 +178,12 @@ function isResourceIdTaken(
  * ```
  *
  * @param processedResources - The processed resources to work with
- * @param onMessage - Optional callback for displaying messages to the user
  * @param onSystemUpdate - Optional callback when the resource system is updated with edits
  * @returns Object containing resolution state, actions, and available qualifiers
  * @public
  */
 export function useResolutionState(
   processedResources: IProcessedResources | null,
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,
   onSystemUpdate?: (updatedResources: IProcessedResources) => void
 ): IUseResolutionStateReturn {
   // Get observability context
@@ -325,8 +310,8 @@ export function useResolutionState(
         // Validate qualifier name using proper ts-res validator
         const qualifierNameResult = Validate.toQualifierName(qualifierName);
         if (qualifierNameResult.isFailure()) {
-          const error = `Invalid qualifier name: ${qualifierNameResult.message}`;
-          onMessage?.('error', error);
+          const error = `${qualifierName}: Invalid qualifier name - ${qualifierNameResult.message}`;
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -336,10 +321,10 @@ export function useResolutionState(
         if (processedResources?.system?.qualifiers) {
           const availableQualifiers = Array.from(processedResources.system.qualifiers.keys());
           if (!availableQualifiers.includes(validatedQualifierName)) {
-            const error = `Unknown qualifier '${qualifierName}'. Available qualifiers: ${availableQualifiers.join(
+            const error = `${qualifierName}: Unknown qualifier. Available qualifiers: ${availableQualifiers.join(
               ', '
             )}`;
-            onMessage?.('warning', error);
+            o11y.user.warn(error);
             // Continue anyway for flexibility, but warn user
           }
         }
@@ -349,38 +334,38 @@ export function useResolutionState(
           [validatedQualifierName as string]: value
         }));
 
-        onMessage?.('info', `Updated context value: ${validatedQualifierName} = ${value ?? 'undefined'}`);
+        o11y.diag.info(`${validatedQualifierName}: Updated context value to ${value ?? 'undefined'}`);
         return succeed(undefined);
       } catch (error) {
-        const errorMessage = `Failed to update context value '${validatedQualifierName ?? qualifierName}': ${
+        const errorMessage = `${validatedQualifierName ?? qualifierName}: Failed to update context value - ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [processedResources, onMessage]
+    [processedResources, o11y]
   );
 
   // Apply context changes - applies pending user values and/or updates host values
   const applyContext = useCallback(
     (newHostManagedValues?: Record<string, string | undefined>): Result<void> => {
       if (!processedResources) {
-        const error = 'No resources loaded - cannot apply context';
-        onMessage?.('error', error);
+        const error = 'context-apply: No resources loaded - cannot apply context';
+        o11y.user.error(error);
         return fail(error);
       }
 
       try {
         if (newHostManagedValues !== undefined) {
           // When called with host values, ONLY update host values
-          o11y.diag.info('Applying host managed values:', newHostManagedValues);
+          o11y.diag.info('context-apply: Applying host managed values', newHostManagedValues);
           setHostManagedValues(newHostManagedValues);
-          onMessage?.('success', 'Host-managed context values updated');
+          o11y.diag.info('context-apply: Host-managed context values updated');
           return succeed(undefined);
         } else {
           // When called without arguments (from Apply button), apply pending user values
-          o11y.diag.info('Applying pending user values:', pendingUserValues);
+          o11y.diag.info('context-apply: Applying pending user values', pendingUserValues);
           setAppliedUserValues(pendingUserValues);
 
           // Create resolver with the new effective context
@@ -397,7 +382,7 @@ export function useResolutionState(
 
           if (resolverResult.isFailure()) {
             const error = `Failed to create resolver: ${resolverResult.message}`;
-            onMessage?.('error', error);
+            o11y.user.error(error);
             return fail(error);
           }
 
@@ -414,9 +399,8 @@ export function useResolutionState(
             if (resolutionResult.isSuccess()) {
               setResolutionResult(resolutionResult.value);
             } else {
-              onMessage?.(
-                'warning',
-                `Failed to resolve selected resource after context change: ${resolutionResult.message}`
+              o11y.user.warn(
+                `resolution: Failed to resolve selected resource after context change - ${resolutionResult.message}`
               );
               // Don't fail the context apply just because selected resource failed
             }
@@ -446,25 +430,18 @@ export function useResolutionState(
             }
           }
 
-          onMessage?.('success', 'Context applied successfully');
+          o11y.user.success('context-apply: Context applied successfully');
           return succeed(undefined);
         }
       } catch (error) {
-        const errorMessage = `Failed to apply context: ${
+        const errorMessage = `context-apply: Failed to apply context - ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [
-      processedResources,
-      pendingUserValues,
-      selectedResourceId,
-      onMessage,
-      hostManagedValues,
-      pendingResources
-    ]
+    [processedResources, pendingUserValues, selectedResourceId, o11y, hostManagedValues, pendingResources]
   );
 
   // Select resource and resolve it
@@ -475,7 +452,7 @@ export function useResolutionState(
         const resourceIdResult = Validate.toResourceId(resourceId);
         if (resourceIdResult.isFailure()) {
           const error = `Invalid resource ID: ${resourceIdResult.message}`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -507,14 +484,14 @@ export function useResolutionState(
             }))
           };
           setResolutionResult(mockResult);
-          onMessage?.('info', `Selected pending resource: ${resourceId}`);
+          o11y.diag.info(`Selected pending resource: ${resourceId}`);
           return succeed(undefined);
         }
 
         // Check if resource exists in the system before setting selection
         if (!processedResources) {
           const error = 'No resource system available for resource lookup';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -531,7 +508,7 @@ export function useResolutionState(
           };
           setResolutionResult(errorResult);
           const error = `Resource '${resourceId}' not found in the system`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -542,14 +519,14 @@ export function useResolutionState(
         // For existing resources, resolve normally
         if (!currentResolver) {
           const error = 'No resolver available for resource resolution';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
         return resolveResourceDetailed(currentResolver, validatedResourceId, processedResources)
           .onSuccess((resolvedResult) => {
             setResolutionResult(resolvedResult);
-            onMessage?.('info', `Selected resource: ${resourceId}`);
+            o11y.diag.info(`Selected resource: ${resourceId}`);
             return succeed(undefined);
           })
           .onFailure((resolutionError) => {
@@ -561,46 +538,46 @@ export function useResolutionState(
             };
             setResolutionResult(errorResult);
             const error = `Failed to resolve resource '${resourceId}': ${resolutionError}`;
-            onMessage?.('error', error);
+            o11y.user.error(error);
             return fail(error);
           });
       } catch (error) {
         const errorMessage = `Unexpected error selecting resource '${resourceId}': ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [currentResolver, processedResources, pendingResources, onMessage]
+    [currentResolver, processedResources, pendingResources, o11y]
   );
 
   // Reset cache
   const resetCache = useCallback((): Result<void> => {
     if (!currentResolver) {
       const error = 'No resolver available - cache cannot be cleared';
-      onMessage?.('warning', error);
+      o11y.user.warn(error);
       return fail(error);
     }
 
     try {
       currentResolver.clearConditionCache();
-      onMessage?.('info', 'Resolution cache cleared successfully');
+      o11y.diag.info('resolution: Cache cleared successfully');
       return succeed(undefined);
     } catch (error) {
       const errorMessage = `Failed to clear cache: ${error instanceof Error ? error.message : String(error)}`;
-      onMessage?.('error', errorMessage);
+      o11y.user.error(errorMessage);
       return fail(errorMessage);
     }
-  }, [currentResolver, onMessage]);
+  }, [currentResolver, o11y]);
 
   // Auto-apply when resources are loaded or host values change
   React.useEffect(() => {
     if (!processedResources) return;
 
-    o11y.diag.info('Auto-applying effective context:', effectiveContext);
-    o11y.diag.info('Host managed values in hook:', hostManagedValues);
-    o11y.diag.info('Applied user values in hook:', appliedUserValues);
+    o11y.diag.info('context-auto: Auto-applying effective context', effectiveContext);
+    o11y.diag.info('context-hook: Host managed values', hostManagedValues);
+    o11y.diag.info('context-hook: Applied user values', appliedUserValues);
 
     // Create resolver with effective context whenever host values change
     const resolverResult = createResolverWithContext(processedResources, effectiveContext, {
@@ -651,14 +628,14 @@ export function useResolutionState(
         const resourceIdResult = Validate.toResourceId(resourceId);
         if (resourceIdResult.isFailure()) {
           const error = `Invalid resource ID: ${resourceIdResult.message}`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
         // Validate edited value is not null/undefined (JsonValue allows null, but we need a real value)
         if (editedValue === null || editedValue === undefined) {
           const error = 'Edited value cannot be null or undefined';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -666,13 +643,13 @@ export function useResolutionState(
         const validation = validateEditedResource(editedValue);
         if (!validation.isValid) {
           const error = `Invalid edit: ${validation.errors.join(', ')}`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
         // Show warnings if any
         if (validation.warnings.length > 0) {
-          validation.warnings.forEach((warning: string) => onMessage?.('warning', warning));
+          validation.warnings.forEach((warning: string) => o11y.user.warn(warning));
         }
 
         // Check if this is a pending new resource
@@ -719,14 +696,14 @@ export function useResolutionState(
             setResolutionResult(mockResult);
           }
 
-          onMessage?.('info', `Edit saved for pending resource: ${resourceId}`);
+          o11y.diag.info(`Edit saved for pending resource: ${resourceId}`);
           return succeed(undefined);
         }
 
         // Check if resource exists (for existing resources)
         if (!processedResources?.summary.resourceIds.includes(resourceId)) {
           const error = `Resource '${resourceId}' not found in the system`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -735,7 +712,7 @@ export function useResolutionState(
         const deltaResult = computeResourceDelta(undefined, resolvedValue, editedValue);
 
         if (deltaResult.isFailure()) {
-          onMessage?.('warning', `Could not compute delta, saving full value: ${deltaResult.message}`);
+          o11y.user.warn(`Could not compute delta, saving full value: ${deltaResult.message}`);
         }
 
         const delta = deltaResult.isSuccess() ? deltaResult.value : null;
@@ -756,19 +733,19 @@ export function useResolutionState(
           const deltaSize = JSON.stringify(delta).length;
           const fullSize = JSON.stringify(editedValue).length;
           const reduction = Math.round((1 - deltaSize / fullSize) * 100);
-          onMessage?.('info', `Edit saved for ${resourceId} (delta: ${reduction}% smaller)`);
+          o11y.diag.info(`Edit saved for ${resourceId} (delta: ${reduction}% smaller)`);
         } else {
-          onMessage?.('info', `Edit saved for resource ${resourceId}`);
+          o11y.diag.info(`Edit saved for resource ${resourceId}`);
         }
 
         return succeed(undefined);
       } catch (error) {
         const errorMessage = `Failed to save edit: ${error instanceof Error ? error.message : String(error)}`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [onMessage, pendingResources, selectedResourceId, effectiveContext, processedResources]
+    [o11y, pendingResources, selectedResourceId, effectiveContext, processedResources]
   );
 
   const getEditedValue = useCallback(
@@ -833,14 +810,14 @@ export function useResolutionState(
             }, ${pendingResourceEditCount} pending resource${pendingResourceEditCount === 1 ? '' : 's'})`
           : 'No pending edits to clear';
 
-      onMessage?.('info', message);
+      o11y.diag.info(message);
       return succeed({ clearedCount: totalCount });
     } catch (error) {
       const errorMessage = `Failed to clear edits: ${error instanceof Error ? error.message : String(error)}`;
-      onMessage?.('error', errorMessage);
+      o11y.user.error(errorMessage);
       return fail(errorMessage);
     }
-  }, [editedResourcesInternal, pendingResourceEdits, onMessage]);
+  }, [editedResourcesInternal, pendingResourceEdits, o11y]);
 
   const discardEdits = useCallback((): Result<{ discardedCount: number }> => {
     try {
@@ -849,7 +826,7 @@ export function useResolutionState(
       const totalCount = existingResourceEditCount + pendingResourceEditCount;
 
       if (!hasUnsavedEdits || totalCount === 0) {
-        onMessage?.('info', 'No unsaved edits to discard');
+        o11y.diag.info('edits: No unsaved edits to discard');
         return succeed({ discardedCount: 0 });
       }
 
@@ -862,16 +839,16 @@ export function useResolutionState(
       } (${existingResourceEditCount} existing resource${
         existingResourceEditCount === 1 ? '' : 's'
       }, ${pendingResourceEditCount} pending resource${pendingResourceEditCount === 1 ? '' : 's'})`;
-      onMessage?.('info', message);
+      o11y.diag.info(message);
       return succeed({ discardedCount: totalCount });
     } catch (error) {
       const errorMessage = `Failed to discard edits: ${
         error instanceof Error ? error.message : String(error)
       }`;
-      onMessage?.('error', errorMessage);
+      o11y.user.error(errorMessage);
       return fail(errorMessage);
     }
-  }, [editedResourcesInternal, pendingResourceEdits, hasUnsavedEdits, onMessage]);
+  }, [editedResourcesInternal, pendingResourceEdits, hasUnsavedEdits, o11y]);
 
   // Removed applyEdits in favor of unified applyPendingResources
 
@@ -904,11 +881,7 @@ export function useResolutionState(
         }
 
         // Validate resource type exists
-        const resourceTypeResult = findResourceType(
-          params.resourceTypeName,
-          availableResourceTypes,
-          onMessage
-        );
+        const resourceTypeResult = findResourceType(params.resourceTypeName, availableResourceTypes);
         if (resourceTypeResult.isFailure()) {
           return fail(resourceTypeResult.message);
         }
@@ -917,8 +890,7 @@ export function useResolutionState(
         // Create conditions from current effective context
         const contextConditionsResult = createContextConditions(
           effectiveContext,
-          processedResources?.system.qualifiers,
-          onMessage
+          processedResources?.system.qualifiers
         );
         if (contextConditionsResult.isFailure()) {
           return fail(contextConditionsResult.message);
@@ -953,17 +925,17 @@ export function useResolutionState(
           return newMap;
         });
 
-        onMessage?.('success', `Resource '${params.id}' created and added to pending resources`);
+        o11y.user.success(`Resource '${params.id}' created and added to pending resources`);
         return succeed(undefined);
       } catch (error) {
         const errorMessage = `Failed to create pending resource: ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [processedResources, pendingResources, availableResourceTypes, effectiveContext, onMessage]
+    [processedResources, pendingResources, availableResourceTypes, effectiveContext, o11y]
   );
 
   // Resource creation actions (enhanced with Result pattern return values)
@@ -980,7 +952,7 @@ export function useResolutionState(
 
         if (!targetType) {
           const error = 'No resource types available for resource creation';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           const diagnostics = `Available types: ${availableResourceTypes.map((t) => t.key).join(', ')}`;
           return fail(`${error}\n${diagnostics}`);
         }
@@ -992,7 +964,7 @@ export function useResolutionState(
         if (params?.id) {
           if (isResourceIdTaken(params.id, processedResources, pendingResources)) {
             const error = `Resource ID '${params.id}' already exists. Resource IDs must be unique.`;
-            onMessage?.('error', error);
+            o11y.user.error(error);
             return fail(`${error}\nUse a different resource ID or let the system generate a temporary one`);
           }
         }
@@ -1000,8 +972,7 @@ export function useResolutionState(
         // Stamp conditions from current effective context at creation time
         const contextConditionsResult = createContextConditions(
           effectiveContext,
-          processedResources?.system.qualifiers,
-          onMessage
+          processedResources?.system.qualifiers
         );
         if (contextConditionsResult.isFailure()) {
           return fail(contextConditionsResult.message);
@@ -1053,17 +1024,17 @@ export function useResolutionState(
         if (contextConditions.length > 0)
           diagnostics.push(`Stamped with ${contextConditions.length} context conditions`);
 
-        onMessage?.('info', `Started new ${targetType.key} resource: ${resourceId}`);
+        o11y.diag.info(`Started new ${targetType.key} resource: ${resourceId}`);
         return succeed({ draft, diagnostics });
       } catch (error) {
         const errorMessage = `Failed to start new resource: ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [availableResourceTypes, onMessage, effectiveContext, processedResources, pendingResources]
+    [availableResourceTypes, o11y, effectiveContext, processedResources, pendingResources]
   );
 
   const updateNewResourceId = useCallback(
@@ -1071,14 +1042,14 @@ export function useResolutionState(
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
         // Validate ID format
         if (!Validate.isValidResourceId(id)) {
           const error = `Invalid resource ID '${id}'. Resource IDs must be dot-separated identifiers and cannot be empty.`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -1115,21 +1086,21 @@ export function useResolutionState(
         setNewResourceDraft(updatedDraft);
 
         if (validationError) {
-          onMessage?.('warning', validationError);
+          o11y.user.warn(validationError);
           return fail(`${validationError}\n${diagnostics.join('\n')}`);
         } else {
-          onMessage?.('info', `Updated resource ID to: ${id}`);
+          o11y.diag.info(`Updated resource ID to: ${id}`);
           return succeed({ draft: updatedDraft, diagnostics });
         }
       } catch (error) {
         const errorMessage = `Failed to update resource ID: ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [newResourceDraft, processedResources, pendingResources, onMessage]
+    [newResourceDraft, processedResources, pendingResources, o11y]
   );
 
   const selectResourceType = useCallback(
@@ -1137,11 +1108,11 @@ export function useResolutionState(
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
-        const typeResult = findResourceType(typeName, availableResourceTypes, onMessage);
+        const typeResult = findResourceType(typeName, availableResourceTypes);
         if (typeResult.isFailure()) {
           return fail(typeResult.message);
         }
@@ -1177,7 +1148,7 @@ export function useResolutionState(
         };
 
         setNewResourceDraft(updatedDraft);
-        onMessage?.('info', `Selected resource type: ${typeName}`);
+        o11y.diag.info(`Selected resource type: ${typeName}`);
 
         return succeed({
           draft: updatedDraft,
@@ -1187,11 +1158,11 @@ export function useResolutionState(
         const errorMessage = `Failed to select resource type: ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [newResourceDraft, availableResourceTypes, onMessage]
+    [newResourceDraft, availableResourceTypes, o11y]
   );
 
   // New public updateNewResourceJson action
@@ -1200,14 +1171,14 @@ export function useResolutionState(
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
         }
 
         // Validate JSON content using proper validation
         if (json === undefined || json === null) {
           const error = 'JSON content cannot be null or undefined';
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -1219,7 +1190,7 @@ export function useResolutionState(
           const error = `Invalid JSON content: ${
             jsonError instanceof Error ? jsonError.message : String(jsonError)
           }`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
@@ -1243,7 +1214,7 @@ export function useResolutionState(
         };
 
         setNewResourceDraft(updatedDraft);
-        onMessage?.('info', `Updated JSON content for resource ${newResourceDraft.resourceId}`);
+        o11y.diag.info(`Updated JSON content for resource ${newResourceDraft.resourceId}`);
 
         return succeed({
           draft: updatedDraft,
@@ -1253,11 +1224,11 @@ export function useResolutionState(
         const errorMessage = `Failed to update resource JSON: ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [newResourceDraft, onMessage]
+    [newResourceDraft, o11y]
   );
 
   const saveNewResourceAsPending = useCallback((): Result<{
@@ -1268,7 +1239,7 @@ export function useResolutionState(
       // Enhanced validation with specific error messages
       if (!newResourceDraft) {
         const error = 'No resource draft in progress. Call startNewResource first.';
-        onMessage?.('error', error);
+        o11y.user.error(error);
         return fail(`${error}\nUse startNewResource() to begin creating a new resource`);
       }
 
@@ -1287,7 +1258,7 @@ export function useResolutionState(
         }
 
         const error = `Cannot save resource with validation errors: ${errors.join(', ')}`;
-        onMessage?.('error', error);
+        o11y.user.error(error);
         return fail(`${error}\n${errors.join('\n')}`);
       }
 
@@ -1299,22 +1270,18 @@ export function useResolutionState(
         const error = newResourceDraft.resourceId.startsWith('new-resource-')
           ? `Cannot save resource with temporary ID '${newResourceDraft.resourceId}'. Please set a final resource ID first.`
           : `Cannot save resource with invalid ID '${newResourceDraft.resourceId}'. Resource IDs must be dot-separated identifiers.`;
-        onMessage?.('error', error);
+        o11y.user.error(error);
         return fail(`${error}\nUse updateNewResourceId() to set a final resource ID before saving`);
       }
 
       // Check resource type exists
       if (!newResourceDraft.resourceType) {
         const error = `Resource type is required`;
-        onMessage?.('error', error);
+        o11y.user.error(error);
         return fail(error);
       }
 
-      const resourceTypeResult = findResourceType(
-        newResourceDraft.resourceType,
-        availableResourceTypes,
-        onMessage
-      );
+      const resourceTypeResult = findResourceType(newResourceDraft.resourceType, availableResourceTypes);
       if (resourceTypeResult.isFailure()) {
         return fail(resourceTypeResult.message);
       }
@@ -1322,7 +1289,7 @@ export function useResolutionState(
       // Check candidates exist
       if (!newResourceDraft.template.candidates || newResourceDraft.template.candidates.length === 0) {
         const error = 'Resource template must have at least one candidate';
-        onMessage?.('error', error);
+        o11y.user.error(error);
         return fail(`${error}\nUse updateNewResourceJson() to add JSON content to the resource`);
       }
 
@@ -1333,8 +1300,7 @@ export function useResolutionState(
         // Stamp conditions from current effective context onto all candidates for the new resource
         const contextConditionsResult = createContextConditions(
           effectiveContext,
-          processedResources?.system.qualifiers,
-          onMessage
+          processedResources?.system.qualifiers
         );
         if (contextConditionsResult.isFailure()) {
           o11y.diag.warn(`Failed to create context conditions: ${contextConditionsResult.message}`);
@@ -1366,7 +1332,7 @@ export function useResolutionState(
       }
       diagnostics.push('Resource draft cleared');
 
-      onMessage?.('success', `Resource '${newResourceDraft.resourceId}' added to pending resources`);
+      o11y.user.success(`${newResourceDraft.resourceId}: Resource added to pending resources`);
 
       return succeed({
         pendingResources: updatedPendingResources!,
@@ -1376,10 +1342,10 @@ export function useResolutionState(
       const errorMessage = `Failed to save resource as pending: ${
         error instanceof Error ? error.message : String(error)
       }`;
-      onMessage?.('error', errorMessage);
+      o11y.user.error(errorMessage);
       return fail(errorMessage);
     }
-  }, [newResourceDraft, onMessage, effectiveContext, availableResourceTypes]);
+  }, [newResourceDraft, o11y, effectiveContext, availableResourceTypes]);
 
   const cancelNewResource = useCallback(() => {
     setNewResourceDraft(undefined);
@@ -1392,14 +1358,14 @@ export function useResolutionState(
         const resourceIdResult = Validate.toResourceId(resourceId);
         if (resourceIdResult.isFailure()) {
           const error = `Invalid resource ID: ${resourceIdResult.message}`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
 
         // Check if the pending resource exists
         if (!pendingResources.has(resourceId)) {
           const error = `Pending resource '${resourceId}' not found`;
-          onMessage?.('warning', error);
+          o11y.user.warn(error);
           return fail(error);
         }
 
@@ -1423,17 +1389,17 @@ export function useResolutionState(
           setResolutionResult(null);
         }
 
-        onMessage?.('info', `Removed pending resource: ${resourceId}`);
+        o11y.diag.info(`Removed pending resource: ${resourceId}`);
         return succeed(undefined);
       } catch (error) {
         const errorMessage = `Failed to remove pending resource '${resourceId}': ${
           error instanceof Error ? error.message : String(error)
         }`;
-        onMessage?.('error', errorMessage);
+        o11y.user.error(errorMessage);
         return fail(errorMessage);
       }
     },
-    [pendingResources, selectedResourceId, onMessage]
+    [pendingResources, selectedResourceId, o11y]
   );
 
   const markResourceForDeletion = useCallback(
@@ -1443,9 +1409,9 @@ export function useResolutionState(
         newSet.add(resourceId);
         return newSet;
       });
-      onMessage?.('info', `Marked resource ${resourceId} for deletion`);
+      o11y.user.info(`${resourceId}: Marked resource for deletion`);
     },
-    [onMessage]
+    [o11y]
   );
 
   const applyPendingResources = useCallback(async (): Promise<
@@ -1465,19 +1431,19 @@ export function useResolutionState(
 
     if (!hasAnyChanges) {
       const error = 'No pending changes to apply';
-      onMessage?.('warning', error);
+      o11y.user.warn(error);
       return fail(error);
     }
 
     if (!processedResources) {
       const error = 'No resource system available';
-      onMessage?.('error', error);
+      o11y.user.error(error);
       return fail(error);
     }
 
     if (!onSystemUpdate) {
       const error = 'No system update handler provided';
-      onMessage?.('error', error);
+      o11y.user.error(error);
       return fail(error);
     }
 
@@ -1501,7 +1467,7 @@ export function useResolutionState(
         });
         if (resolverCreateResult.isFailure()) {
           const error = `Failed to create resolver: ${resolverCreateResult.message}`;
-          onMessage?.('error', error);
+          o11y.user.error(error);
           return fail(error);
         }
         resolverForContext = resolverCreateResult.value;
@@ -1546,7 +1512,7 @@ export function useResolutionState(
 
       if (rebuildResult.isFailure()) {
         const error = `Failed to apply changes: ${rebuildResult.message}`;
-        onMessage?.('error', error);
+        o11y.user.error(error);
         return fail(error);
       }
 
@@ -1560,8 +1526,7 @@ export function useResolutionState(
 
       onSystemUpdate(rebuildResult.value);
 
-      onMessage?.(
-        'success',
+      o11y.user.success(
         `Applied ${existingResourceEditCount} existing resource edits, ${pendingResourceEditCount} pending resource edits, ${newResourceCount} additions, and ${deletionCount} deletions`
       );
 
@@ -1582,7 +1547,7 @@ export function useResolutionState(
       const errorMessage = `Failed to apply pending resources: ${
         error instanceof Error ? error.message : String(error)
       }`;
-      onMessage?.('error', errorMessage);
+      o11y.user.error(errorMessage);
       return fail(errorMessage);
     } finally {
       setIsApplyingEdits(false);
@@ -1593,7 +1558,7 @@ export function useResolutionState(
     pendingResourceDeletions,
     processedResources,
     onSystemUpdate,
-    onMessage,
+    o11y,
     effectiveContext,
     currentResolver,
     editedResourcesInternal
@@ -1604,9 +1569,9 @@ export function useResolutionState(
       setPendingResources(new Map());
       setPendingResourceEdits(new Map());
       setPendingResourceDeletions(new Set());
-      onMessage?.('info', 'Discarded all pending resource changes and edits');
+      o11y.user.info('Discarded all pending resource changes and edits');
     }
-  }, [hasPendingResourceChanges, pendingResourceEdits, onMessage]);
+  }, [hasPendingResourceChanges, pendingResourceEdits, o11y]);
 
   const state: IResolutionState = {
     contextValues: effectiveContext, // Effective context (user + host)

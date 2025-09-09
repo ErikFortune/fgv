@@ -1397,7 +1397,7 @@ export const useObservability: () => ObservabilityTools_2.IObservabilityContext;
 // Warning: (ae-forgotten-export) The symbol "IUseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useResolutionState(processedResources: IProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
+function useResolutionState(processedResources: IProcessedResources | null, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
 
 // Warning: (ae-forgotten-export) The symbol "IUseResourceDataParams" needs to be exported by the entry point index.d.ts
 // Warning: (ae-forgotten-export) The symbol "IUseResourceDataReturn" needs to be exported by the entry point index.d.ts

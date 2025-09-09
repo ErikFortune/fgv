@@ -50,11 +50,9 @@ function buildProcessedResources(): IProcessedResources {
 }
 
 describe('Resource Creation Workflows', () => {
-  let mockOnMessage: jest.Mock;
   let mockOnSystemUpdate: jest.Mock;
 
   beforeEach(() => {
-    mockOnMessage = jest.fn();
     mockOnSystemUpdate = jest.fn();
   });
 
@@ -62,7 +60,7 @@ describe('Resource Creation Workflows', () => {
     test('creates resource with atomic API successfully', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -91,7 +89,7 @@ describe('Resource Creation Workflows', () => {
     test('validates required parameters for atomic creation', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -148,7 +146,7 @@ describe('Resource Creation Workflows', () => {
     test('prevents duplicate resource IDs in atomic creation', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -178,7 +176,7 @@ describe('Resource Creation Workflows', () => {
     test('applies context conditions during atomic creation', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -235,7 +233,7 @@ describe('Resource Creation Workflows', () => {
     test('completes sequential workflow successfully', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -287,7 +285,7 @@ describe('Resource Creation Workflows', () => {
     test('validates each step of sequential workflow', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -321,7 +319,7 @@ describe('Resource Creation Workflows', () => {
     test('allows resource type selection during sequential workflow', () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -355,7 +353,7 @@ describe('Resource Creation Workflows', () => {
     test('stamps current context conditions on new resources', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -413,7 +411,7 @@ describe('Resource Creation Workflows', () => {
     test('creates resources without context when none is set', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -441,7 +439,7 @@ describe('Resource Creation Workflows', () => {
     test('provides detailed error messages for validation failures', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -470,7 +468,7 @@ describe('Resource Creation Workflows', () => {
     test('creates resources using base template when json is omitted', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 
@@ -505,7 +503,7 @@ describe('Resource Creation Workflows', () => {
     test('handles template creation failures gracefully', async () => {
       const processed = buildProcessedResources();
       const wrapper = createObservabilityTestWrapper();
-      const { result } = renderHook(() => useResolutionState(processed, mockOnMessage, mockOnSystemUpdate), {
+      const { result } = renderHook(() => useResolutionState(processed, mockOnSystemUpdate), {
         wrapper
       });
 

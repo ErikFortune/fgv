@@ -37,10 +37,9 @@ const wrapper = ({ children }: { children: React.ReactNode }): React.ReactNode =
 describe('useResolutionState basic', () => {
   it('applies context and stamps conditions for new resources', async () => {
     const onSystemUpdate = jest.fn();
-    const onMessage = jest.fn();
 
     const processed = buildProcessedResources();
-    const { result } = renderHook(() => useResolutionState(processed, onMessage, onSystemUpdate), {
+    const { result } = renderHook(() => useResolutionState(processed, onSystemUpdate), {
       wrapper
     });
 
