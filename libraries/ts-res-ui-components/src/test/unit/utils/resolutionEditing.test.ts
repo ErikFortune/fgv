@@ -335,7 +335,7 @@ describe('resolutionEditing utilities', () => {
   });
 
   describe('extractResolutionContext', () => {
-    test('filters out empty and undefined values', () => {
+    test('filters out undefined values', () => {
       const mockResolver = {} as unknown as Runtime.ResourceResolver;
       const contextValues = {
         language: 'en',
@@ -349,7 +349,9 @@ describe('resolutionEditing utilities', () => {
 
       expect(result).toEqual({
         language: 'en',
-        theme: 'dark'
+        territory: '',
+        theme: 'dark',
+        empty: ''
       });
     });
 
@@ -387,7 +389,7 @@ describe('resolutionEditing utilities', () => {
 
       const result = extractResolutionContext(mockResolver, contextValues);
 
-      expect(result).toEqual({});
+      expect(result).toEqual({ language: '', territory: '' });
     });
   });
 

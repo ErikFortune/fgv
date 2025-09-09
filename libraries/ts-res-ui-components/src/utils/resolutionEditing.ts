@@ -289,7 +289,7 @@ export function extractResolutionContext(
   const cleanContext: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(contextValues)) {
-    if (value) {
+    if (value !== undefined) {
       cleanContext[key] = value.trim();
     }
   }
