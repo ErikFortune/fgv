@@ -9,7 +9,7 @@ Reports the result to the supplied reporter
 **Signature:**
 
 ```typescript
-report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this;
+report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ options
 
 </td><td>
 
-[IResultReportOptions](./ts-utils.iresultreportoptions.md)
+[IResultReportOptions](./ts-utils.iresultreportoptions.md)<!-- -->&lt;TD&gt;
 
 
 </td><td>

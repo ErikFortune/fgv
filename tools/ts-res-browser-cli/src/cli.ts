@@ -26,7 +26,7 @@ import * as TsRes from '@fgv/ts-res';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 
-import { IBrowseOptions, IBrowseCommandOptions } from './options';
+import { IBrowseOptions, IBrowseCommandOptions, IConfigCommandOptions } from './options';
 import { SimpleBrowserLauncher } from './simpleBrowserLauncher';
 
 /**
@@ -201,7 +201,7 @@ export class TsResBrowserCliApp {
   /**
    * Handles the config command (similar to ts-res-cli)
    */
-  private async _handleConfigCommand(options: any): Promise<void> {
+  private async _handleConfigCommand(options: IConfigCommandOptions): Promise<void> {
     try {
       // List all predefined configurations
       if (options.list) {

@@ -704,7 +704,6 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
                   resolutionActions={resolutionActions}
                   resolutionState={resolutionState}
                   resourceEditorFactory={resourceEditorFactory}
-                  onMessage={onMessage}
                 />
               )}
             </div>

@@ -22,8 +22,8 @@
 
 import { exec } from 'child_process';
 import * as path from 'path';
-import * as http from 'http';
 import { Result, succeed, fail } from '@fgv/ts-utils';
+import { ZipArchive } from '@fgv/ts-res';
 import { IBrowseOptions } from './options';
 import { zipArchiver } from './zipArchiver';
 
@@ -147,7 +147,7 @@ export class SimpleBrowserLauncher {
       }
 
       return new Promise((resolve) => {
-        const child = exec(command, (error) => {
+        exec(command, (error) => {
           if (error) {
             resolve(fail(`Failed to start server: ${error.message}`));
           } else {
@@ -265,7 +265,7 @@ export class SimpleBrowserLauncher {
    */
   private async _createZipArchive(
     options: IBrowseOptions
-  ): Promise<Result<{ zipPath: string; manifest: any }>> {
+  ): Promise<Result<{ zipPath: string; manifest: ZipArchive.IZipArchiveManifest }>> {
     try {
       return await zipArchiver.createArchive({
         input: options.input,

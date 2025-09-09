@@ -624,7 +624,7 @@ export class DetailedFailure<T, TD> extends Failure<T> {
     orThrow(logOrFormat?: IResultLogger<TD> | ErrorFormatter<TD>): never;
     // (undocumented)
     orThrow(cb: ErrorFormatter): never;
-    report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this;
     static with<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD>;
@@ -650,7 +650,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
     onFailure(__cb: DetailedFailureContinuation<T, TD>): DetailedResult<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "onSuccess" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     onSuccess<TN>(cb: DetailedSuccessContinuation<T, TD, TN>): DetailedResult<TN, TD>;
-    report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this;
+    report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this;
     static with<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
     // Warning: (ae-incompatible-release-tags) The symbol "withErrorFormat" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     withErrorFormat(cb: ErrorFormatter): DetailedResult<T, TD>;
@@ -1481,8 +1481,9 @@ export interface IResultReporter<T, TD = unknown> {
 }
 
 // @public
-export interface IResultReportOptions {
+export interface IResultReportOptions<TD = unknown> {
     failure?: MessageLogLevel;
+    message?: ErrorFormatter<TD>;
     success?: MessageLogLevel;
 }
 

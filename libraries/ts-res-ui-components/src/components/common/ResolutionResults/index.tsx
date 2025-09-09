@@ -9,6 +9,7 @@ import {
   IResolutionResult
 } from '../../../types';
 import { EditableJsonView } from '../../views/ResolutionView/EditableJsonView';
+import { useObservability } from '../../../contexts';
 
 /**
  * Props for the ResolutionResults component.
@@ -28,8 +29,6 @@ export interface IResolutionResultsProps {
   resolutionState?: IResolutionState;
   /** Optional factory for creating custom resource editors */
   resourceEditorFactory?: IResourceEditorFactory;
-  /** Optional callback for handling component messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
 
 /**
@@ -42,7 +41,7 @@ export interface IResolutionResultsProps {
  *
  * @example
  * ```tsx
- * import { ResolutionResults } from '@fgv/ts-res-ui-components';
+ * import { ResolutionResults, ObservabilityProvider } from '@fgv/ts-res-ui-components';
  *
  * function BasicResolutionDisplay() {
  *   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
@@ -50,20 +49,21 @@ export interface IResolutionResultsProps {
  *   const context = { language: 'en-US', platform: 'web' };
  *
  *   return (
- *     <div>
- *       <div className="view-controls">
- *         <button onClick={() => setViewMode('composed')}>Composed</button>
- *         <button onClick={() => setViewMode('best')}>Best</button>
- *         <button onClick={() => setViewMode('all')}>All</button>
- *         <button onClick={() => setViewMode('raw')}>Raw</button>
+ *     <ObservabilityProvider>
+ *       <div>
+ *         <div className="view-controls">
+ *           <button onClick={() => setViewMode('composed')}>Composed</button>
+ *           <button onClick={() => setViewMode('best')}>Best</button>
+ *           <button onClick={() => setViewMode('all')}>All</button>
+ *           <button onClick={() => setViewMode('raw')}>Raw</button>
+ *         </div>
+ *         <ResolutionResults
+ *           result={resolutionResult}
+ *           viewMode={viewMode}
+ *           contextValues={context}
+ *         />
  *       </div>
- *       <ResolutionResults
- *         result={resolutionResult}
- *         viewMode={viewMode}
- *         contextValues={context}
- *         onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
- *       />
- *     </div>
+ *     </ObservabilityProvider>
  *   );
  * }
  * ```
@@ -71,7 +71,7 @@ export interface IResolutionResultsProps {
  * @example
  * ```tsx
  * // Using with resolution state and editing capabilities
- * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ * import { ResolutionTools, ObservabilityProvider } from '@fgv/ts-res-ui-components';
  *
  * function InteractiveResolutionResults() {
  *   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
@@ -84,17 +84,16 @@ export interface IResolutionResultsProps {
  *   };
  *
  *   return (
- *     <ResolutionResults
- *       result={resolutionState.currentResult}
- *       viewMode={resolutionState.viewMode}
- *       contextValues={resolutionState.context}
- *       resolutionActions={resolutionActions}
- *       resolutionState={resolutionState}
- *       resourceEditorFactory={customEditorFactory}
- *       onMessage={(type, message) => {
- *         resolutionActions.addMessage(type, message);
- *       }}
- *     />
+ *     <ObservabilityProvider>
+ *       <ResolutionResults
+ *         result={resolutionState.currentResult}
+ *         viewMode={resolutionState.viewMode}
+ *         contextValues={resolutionState.context}
+ *         resolutionActions={resolutionActions}
+ *         resolutionState={resolutionState}
+ *         resourceEditorFactory={customEditorFactory}
+ *       />
+ *     </ObservabilityProvider>
  *   );
  * }
  * ```
@@ -135,7 +134,6 @@ export interface IResolutionResultsProps {
  *           saveEdit: actions.saveResourceEdit
  *         }}
  *         resolutionState={state.resolutionState}
- *         onMessage={actions.addMessage}
  *       />
  *     </div>
  *   );
@@ -150,36 +148,9 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
   contextValues,
   resolutionActions,
   resolutionState,
-  resourceEditorFactory,
-  onMessage
+  resourceEditorFactory
 }) => {
-  // Use a ref to store messages and useCallback to send them
-  const pendingMessagesRef = React.useRef<
-    Array<{ type: 'info' | 'warning' | 'error' | 'success'; message: string }>
-  >([]);
-
-  // Function to queue a message for later sending
-  const queueMessage = React.useCallback(
-    (type: 'info' | 'warning' | 'error' | 'success', message: string) => {
-      pendingMessagesRef.current.push({ type, message });
-    },
-    []
-  );
-
-  // Function to flush queued messages
-  const flushMessages = React.useCallback(() => {
-    if (pendingMessagesRef.current.length > 0 && onMessage) {
-      pendingMessagesRef.current.forEach(({ type, message }) => {
-        onMessage(type, message);
-      });
-      pendingMessagesRef.current = [];
-    }
-  }, [onMessage]);
-
-  // Flush messages after render is complete
-  React.useEffect(() => {
-    flushMessages();
-  });
+  const observability = useObservability();
 
   // Helper function to create the appropriate resource editor
   const createResourceEditor = useCallback(
@@ -215,17 +186,18 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
               />
             );
           } else {
-            // Factory couldn't create editor, queue message and fall back to JSON editor
+            // Factory couldn't create editor, log and fall back to JSON editor
             if (factoryResult.message) {
-              queueMessage('info', `Using default JSON editor: ${factoryResult.message}`);
+              observability.diag.info(`default-editor: Using default JSON editor - ${factoryResult.message}`);
             }
             // Continue to fallback JSON editor below
           }
         } catch (error) {
-          // Factory threw an error, queue message and fall back to JSON editor
-          queueMessage(
-            'warning',
-            `Resource editor factory failed: ${error instanceof Error ? error.message : String(error)}`
+          // Factory threw an error, log and fall back to JSON editor
+          observability.diag.warn(
+            `editor-factory: Failed to create editor - ${
+              error instanceof Error ? error.message : String(error)
+            }`
           );
           // Continue to fallback JSON editor below
         }
@@ -245,7 +217,7 @@ export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
         />
       );
     },
-    [resourceEditorFactory, result, queueMessage]
+    [resourceEditorFactory, result, observability]
   );
 
   if (!result.success) {
