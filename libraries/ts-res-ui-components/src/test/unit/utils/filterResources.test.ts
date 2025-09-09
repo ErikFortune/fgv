@@ -20,6 +20,14 @@
  * SOFTWARE.
  */
 
+// Mock the tsResIntegration module
+jest.mock('../../../utils/tsResIntegration', () => {
+  const { succeed } = require('@fgv/ts-utils');
+  return {
+    createCompiledResourceCollectionManager: jest.fn().mockReturnValue(succeed({}))
+  };
+});
+
 import '@fgv/ts-utils-jest';
 import { succeed, fail } from '@fgv/ts-utils';
 import {
@@ -27,14 +35,9 @@ import {
   getFilterSummary,
   createFilteredResourceManagerSimple,
   analyzeFilteredResources,
-  type FilterOptions
+  type IFilterOptions
 } from '../../../utils/filterResources';
-import { ProcessedResources, FilteredResource } from '../../../types';
-
-// Mock the tsResIntegration module
-jest.mock('../../../utils/tsResIntegration', () => ({
-  createCompiledResourceCollectionManager: jest.fn().mockReturnValue(succeed({}))
-}));
+import { IProcessedResources } from '../../../types';
 
 describe('filterResources utilities', () => {
   describe('hasFilterValues', () => {
@@ -305,7 +308,7 @@ describe('filterResources utilities', () => {
       mockResourceManager.validateContext.mockReturnValue(succeed({ language: 'en' }));
       mockResourceManager.clone.mockReturnValue(fail('Clone failed for test'));
 
-      const options: FilterOptions = {
+      const options: IFilterOptions = {
         partialContextMatch: false,
         enableDebugLogging: true,
         reduceQualifiers: true
@@ -354,11 +357,11 @@ describe('filterResources utilities', () => {
   });
 
   describe('analyzeFilteredResources', () => {
-    let mockOriginalProcessedResources: ProcessedResources;
-    let mockFilteredProcessedResources: ProcessedResources;
+    let mockOriginalIProcessedResources: IProcessedResources;
+    let mockFilteredIProcessedResources: IProcessedResources;
 
     beforeEach(() => {
-      mockOriginalProcessedResources = {
+      mockOriginalIProcessedResources = {
         system: {
           resourceManager: {
             getBuiltResource: jest.fn()
@@ -380,7 +383,7 @@ describe('filterResources utilities', () => {
         }
       };
 
-      mockFilteredProcessedResources = {
+      mockFilteredIProcessedResources = {
         system: {
           resourceManager: {
             getBuiltResource: jest.fn()
@@ -404,9 +407,9 @@ describe('filterResources utilities', () => {
     });
 
     test('analyzes resources with successful filtering', () => {
-      const originalGetBuiltResource = mockOriginalProcessedResources.system.resourceManager
+      const originalGetBuiltResource = mockOriginalIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
-      const filteredGetBuiltResource = mockFilteredProcessedResources.system.resourceManager
+      const filteredGetBuiltResource = mockFilteredIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
 
       originalGetBuiltResource
@@ -419,8 +422,8 @@ describe('filterResources utilities', () => {
 
       const result = analyzeFilteredResources(
         ['resource1', 'resource2'],
-        mockFilteredProcessedResources,
-        mockOriginalProcessedResources
+        mockFilteredIProcessedResources,
+        mockOriginalIProcessedResources
       );
 
       expect(result.success).toBe(true);
@@ -439,13 +442,13 @@ describe('filterResources utilities', () => {
       expect(resource2.hasWarning).toBe(false);
 
       expect(result.warnings).toEqual([]);
-      expect(result.processedResources).toBe(mockFilteredProcessedResources);
+      expect(result.processedResources).toBe(mockFilteredIProcessedResources);
     });
 
     test('detects resources filtered out completely', () => {
-      const originalGetBuiltResource = mockOriginalProcessedResources.system.resourceManager
+      const originalGetBuiltResource = mockOriginalIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
-      const filteredGetBuiltResource = mockFilteredProcessedResources.system.resourceManager
+      const filteredGetBuiltResource = mockFilteredIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
 
       originalGetBuiltResource.mockReturnValueOnce(succeed({ candidates: ['c1', 'c2'] }));
@@ -454,8 +457,8 @@ describe('filterResources utilities', () => {
 
       const result = analyzeFilteredResources(
         ['resource1'],
-        mockFilteredProcessedResources,
-        mockOriginalProcessedResources
+        mockFilteredIProcessedResources,
+        mockOriginalIProcessedResources
       );
 
       expect(result.success).toBe(true);
@@ -471,9 +474,9 @@ describe('filterResources utilities', () => {
     });
 
     test('handles resources that failed to load originally', () => {
-      const originalGetBuiltResource = mockOriginalProcessedResources.system.resourceManager
+      const originalGetBuiltResource = mockOriginalIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
-      const filteredGetBuiltResource = mockFilteredProcessedResources.system.resourceManager
+      const filteredGetBuiltResource = mockFilteredIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
 
       originalGetBuiltResource.mockReturnValueOnce(fail('Resource not found'));
@@ -482,8 +485,8 @@ describe('filterResources utilities', () => {
 
       const result = analyzeFilteredResources(
         ['resource1'],
-        mockFilteredProcessedResources,
-        mockOriginalProcessedResources
+        mockFilteredIProcessedResources,
+        mockOriginalIProcessedResources
       );
 
       expect(result.success).toBe(true);
@@ -499,9 +502,9 @@ describe('filterResources utilities', () => {
     });
 
     test('handles resources that failed to load after filtering', () => {
-      const originalGetBuiltResource = mockOriginalProcessedResources.system.resourceManager
+      const originalGetBuiltResource = mockOriginalIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
-      const filteredGetBuiltResource = mockFilteredProcessedResources.system.resourceManager
+      const filteredGetBuiltResource = mockFilteredIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
 
       originalGetBuiltResource.mockReturnValueOnce(succeed({ candidates: ['c1'] }));
@@ -510,8 +513,8 @@ describe('filterResources utilities', () => {
 
       const result = analyzeFilteredResources(
         ['resource1'],
-        mockFilteredProcessedResources,
-        mockOriginalProcessedResources
+        mockFilteredIProcessedResources,
+        mockOriginalIProcessedResources
       );
 
       expect(result.success).toBe(true);
@@ -529,8 +532,8 @@ describe('filterResources utilities', () => {
     test('handles empty resource list', () => {
       const result = analyzeFilteredResources(
         [],
-        mockFilteredProcessedResources,
-        mockOriginalProcessedResources
+        mockFilteredIProcessedResources,
+        mockOriginalIProcessedResources
       );
 
       expect(result.success).toBe(true);
@@ -539,9 +542,9 @@ describe('filterResources utilities', () => {
     });
 
     test('handles mixed success and failure scenarios', () => {
-      const originalGetBuiltResource = mockOriginalProcessedResources.system.resourceManager
+      const originalGetBuiltResource = mockOriginalIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
-      const filteredGetBuiltResource = mockFilteredProcessedResources.system.resourceManager
+      const filteredGetBuiltResource = mockFilteredIProcessedResources.system.resourceManager
         .getBuiltResource as jest.Mock;
 
       originalGetBuiltResource
@@ -556,8 +559,8 @@ describe('filterResources utilities', () => {
 
       const result = analyzeFilteredResources(
         ['resource1', 'resource2', 'resource3'],
-        mockFilteredProcessedResources,
-        mockOriginalProcessedResources
+        mockFilteredIProcessedResources,
+        mockOriginalIProcessedResources
       );
 
       expect(result.success).toBe(true);

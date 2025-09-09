@@ -6,13 +6,13 @@
  */
 
 export { StringCell } from './StringCell';
-export type { StringCellProps } from './StringCell';
+export type { IStringCellProps } from './StringCell';
 
 export { BooleanCell } from './BooleanCell';
-export type { BooleanCellProps } from './BooleanCell';
+export type { IBooleanCellProps } from './BooleanCell';
 
 export { TriStateCell } from './TriStateCell';
-export type { TriStateCellProps } from './TriStateCell';
+export type { ITriStateCellProps } from './TriStateCell';
 
 export { DropdownCell } from './DropdownCell';
-export type { DropdownCellProps } from './DropdownCell';
+export type { IDropdownCellProps } from './DropdownCell';

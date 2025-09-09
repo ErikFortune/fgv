@@ -9,7 +9,7 @@ import {
   ResourceJson,
   Config
 } from '@fgv/ts-res';
-import { ImportedDirectory, ImportedFile, ExtendedProcessedResources } from '../types';
+import { IImportedDirectory, IImportedFile, IExtendedProcessedResources } from '../types';
 import * as ObservabilityTools from '../utils/observability';
 
 /**
@@ -78,12 +78,12 @@ export function createSimpleContext(
  */
 /** @internal */
 export function convertImportedDirectoryToFileTree(
-  directory: ImportedDirectory,
+  directory: IImportedDirectory,
   o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): FileTree.FileTree {
   // Convert files to IInMemoryFile format and flatten the directory structure
   const flattenFiles = (
-    dir: ImportedDirectory,
+    dir: IImportedDirectory,
     parentPath: string = ''
   ): Array<{ path: string; contents: string }> => {
     const files: Array<{ path: string; contents: string }> = [];
@@ -190,7 +190,7 @@ export function createTsResSystemFromConfig(
  */
 /** @internal */
 export function processImportedFiles(
-  files: ImportedFile[],
+  files: IImportedFile[],
   systemConfig?: Config.Model.ISystemConfiguration,
   qualifierTypeFactory?: Config.IConfigInitFactory<
     QualifierTypes.Config.IAnyQualifierTypeConfig,
@@ -201,13 +201,13 @@ export function processImportedFiles(
     ResourceTypes.ResourceType
   >,
   o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): Result<ExtendedProcessedResources> {
+): Result<IExtendedProcessedResources> {
   if (files.length === 0) {
     return fail('No files provided for processing');
   }
 
   return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
-    .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
+    .onSuccess<IExtendedProcessedResources>((tsResSystem) => {
       // Convert ImportedFile[] to IInMemoryFile[] format
       const inMemoryFiles = files.map((file) => ({
         path: file.path || file.name,
@@ -247,7 +247,7 @@ export function processImportedFiles(
  */
 /** @internal */
 export function processImportedDirectory(
-  directory: ImportedDirectory,
+  directory: IImportedDirectory,
   systemConfig?: Config.Model.ISystemConfiguration,
   qualifierTypeFactory?: Config.IConfigInitFactory<
     QualifierTypes.Config.IAnyQualifierTypeConfig,
@@ -258,9 +258,9 @@ export function processImportedDirectory(
     ResourceTypes.ResourceType
   >,
   o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): Result<ExtendedProcessedResources> {
+): Result<IExtendedProcessedResources> {
   return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
-    .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
+    .onSuccess<IExtendedProcessedResources>((tsResSystem) => {
       // Convert directory to file tree
       const fileTree = convertImportedDirectoryToFileTree(directory, o11y);
 
@@ -368,7 +368,7 @@ function finalizeProcessing(
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   },
   systemConfig?: Config.Model.ISystemConfiguration
-): Result<ExtendedProcessedResources> {
+): Result<IExtendedProcessedResources> {
   return system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {

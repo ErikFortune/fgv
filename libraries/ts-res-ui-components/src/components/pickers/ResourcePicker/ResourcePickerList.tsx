@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { ResourcePickerListProps } from './types';
+import React, { useMemo, ReactElement } from 'react';
+import { IResourcePickerListProps } from './types';
 import { ResourceItem } from './ResourceItem';
 import { mergeWithPendingResources, filterTreeBranch } from './utils/treeNavigation';
 
@@ -18,7 +18,7 @@ export const ResourcePickerList = <T = unknown,>({
   hideRootNode,
   className = '',
   emptyMessage = 'No resources available'
-}: ResourcePickerListProps<T>) => {
+}: IResourcePickerListProps<T>): ReactElement => {
   // Merge existing and pending resources
   const allResourceIds = useMemo(() => {
     return mergeWithPendingResources(resourceIds, pendingResources);
@@ -40,7 +40,7 @@ export const ResourcePickerList = <T = unknown,>({
 
   // Helper function to get display name with prefix truncation
   const getDisplayName = useMemo(() => {
-    return (resourceId: string, pendingDisplayName?: string) => {
+    return (resourceId: string, pendingDisplayName?: string): string => {
       // For all resources (existing and pending), apply prefix truncation to show full relative ID
       if (rootPath) {
         if (hideRootNode && resourceId.startsWith(rootPath + '.')) {

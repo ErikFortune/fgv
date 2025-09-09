@@ -2,13 +2,13 @@ import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { ObservabilityProvider, useObservability } from '../../contexts';
 import { Config, Bundle, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
 import {
-  OrchestratorState,
-  OrchestratorActions,
-  ImportedDirectory,
-  ImportedFile,
-  ProcessedResources,
-  FilterState,
-  FilterResult
+  IOrchestratorState,
+  IOrchestratorActions,
+  IImportedDirectory,
+  IImportedFile,
+  IProcessedResources,
+  IFilterState,
+  IFilterResult
 } from '../../types';
 import * as ObservabilityTools from '../../utils/observability';
 import { useResourceData } from '../../hooks/useResourceData';
@@ -17,7 +17,6 @@ import { useViewState } from '../../hooks/useViewState';
 import { useResolutionState } from '../../hooks/useResolutionState';
 import { createFilteredResourceManagerSimple, analyzeFilteredResources } from '../../utils/filterResources';
 import { DownloadUtils } from '../../utils/downloadHelper';
-import { Runtime } from '@fgv/ts-res';
 
 /**
  * Props for the ResourceOrchestrator component.
@@ -25,9 +24,9 @@ import { Runtime } from '@fgv/ts-res';
  *
  * @public
  */
-export interface ResourceOrchestratorProps {
+export interface IResourceOrchestratorProps {
   /** Render function that receives orchestrator state and actions */
-  children: (orchestrator: { state: OrchestratorState; actions: OrchestratorActions }) => ReactNode;
+  children: (orchestrator: { state: IOrchestratorState; actions: IOrchestratorActions }) => ReactNode;
   /** Optional initial configuration to apply on mount */
   initialConfiguration?: Config.Model.ISystemConfiguration;
   /** Optional qualifier type factory for creating custom qualifier types */
@@ -41,7 +40,7 @@ export interface ResourceOrchestratorProps {
     ResourceTypes.ResourceType
   >;
   /** Callback fired when orchestrator state changes */
-  onStateChange?: (state: Partial<OrchestratorState>) => void;
+  onStateChange?: (state: Partial<IOrchestratorState>) => void;
   /** Optional observability context for logging and user feedback */
   observabilityContext?: ObservabilityTools.IObservabilityContext;
 }
@@ -49,7 +48,7 @@ export interface ResourceOrchestratorProps {
 /**
  * Internal orchestrator component that has access to observability context via hook.
  */
-const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'observabilityContext'>> = ({
+const ResourceOrchestratorInternal: React.FC<Omit<IResourceOrchestratorProps, 'observabilityContext'>> = ({
   children,
   initialConfiguration,
   qualifierTypeFactory,
@@ -69,7 +68,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   const viewState = useViewState();
   // System update handler for resolution editing
   const handleSystemUpdate = useCallback(
-    (updatedResources: ProcessedResources) => {
+    (updatedResources: IProcessedResources) => {
       resourceData.actions.updateProcessedResources(updatedResources);
       viewState.addMessage('success', 'Resource system updated with edits');
     },
@@ -83,7 +82,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   );
 
   // Local state for filter results
-  const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
+  const [filterResult, setFilterResult] = useState<IFilterResult | null>(null);
 
   // Track if filtering is in progress to prevent concurrent operations
   const isFilteringInProgress = React.useRef(false);
@@ -120,7 +119,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
 
   // Internal filtering logic (used by both manual and automatic application)
   const performFiltering = useCallback(
-    async (filterValues: Record<string, string | undefined>): Promise<FilterResult | null> => {
+    async (filterValues: Record<string, string | undefined>): Promise<IFilterResult | null> => {
       // Prevent concurrent filtering operations
       if (isFilteringInProgress.current) {
         o11y.diag.info('Filtering already in progress, skipping...');
@@ -158,7 +157,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
         });
 
         if (filteredResult.isFailure()) {
-          const result: FilterResult = {
+          const result: IFilterResult = {
             success: false,
             error: `Filtering failed: ${filteredResult.message}`,
             filteredResources: [],
@@ -197,7 +196,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
           }))
         );
 
-        const result: FilterResult = {
+        const result: IFilterResult = {
           success: true,
           processedResources: analysis.processedResources,
           filteredResources: analysis.filteredResources,
@@ -219,7 +218,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
         return result;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const result: FilterResult = {
+        const result: IFilterResult = {
           success: false,
           error: errorMessage,
           filteredResources: [],
@@ -229,6 +228,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
         viewState.addMessage('error', `Filtering error: ${errorMessage}`);
         return result;
       } finally {
+        // eslint-disable-next-line require-atomic-updates -- intentionally reset filtering flag regardless of concurrent operations
         isFilteringInProgress.current = false;
       }
     },
@@ -236,7 +236,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   );
 
   // Manual apply filter action (for the Apply button)
-  const applyFilter = useCallback(async (): Promise<FilterResult | null> => {
+  const applyFilter = useCallback(async (): Promise<IFilterResult | null> => {
     // Capture the current values before applying them
     const currentValues = { ...filterState.state.values };
 
@@ -280,7 +280,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   // ]);
 
   // Combined state
-  const state: OrchestratorState = useMemo(
+  const state: IOrchestratorState = useMemo(
     () => ({
       resources: resourceData.state.processedResources,
       configuration: resourceData.state.activeConfiguration,
@@ -303,10 +303,10 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   );
 
   // Combined actions
-  const actions: OrchestratorActions = useMemo(
+  const actions: IOrchestratorActions = useMemo(
     () => ({
       // Resource management
-      importDirectory: async (directory: ImportedDirectory) => {
+      importDirectory: async (directory: IImportedDirectory) => {
         viewState.addMessage('info', 'Importing directory...');
         const result = await resourceData.actions.processDirectory(directory);
         if (result.isSuccess()) {
@@ -316,7 +316,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
         }
       },
       importDirectoryWithConfig: async (
-        directory: ImportedDirectory,
+        directory: IImportedDirectory,
         config: Config.Model.ISystemConfiguration
       ) => {
         viewState.addMessage('info', 'Importing directory with configuration...');
@@ -327,7 +327,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
           viewState.addMessage('error', resourceData.state.error);
         }
       },
-      importFiles: async (files: ImportedFile[]) => {
+      importFiles: async (files: IImportedFile[]) => {
         viewState.addMessage('info', 'Importing files...');
         await resourceData.actions.processFiles(files);
         if (!resourceData.state.error) {
@@ -358,7 +358,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
       },
 
       // Filter management
-      updateFilterState: (updates: Partial<FilterState>) => {
+      updateFilterState: (updates: Partial<IFilterState>) => {
         if (updates.enabled !== undefined) {
           filterState.actions.updateFilterEnabled(updates.enabled);
         }
@@ -523,7 +523,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
  *
  * @public
  */
-export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
+export const ResourceOrchestrator: React.FC<IResourceOrchestratorProps> = ({
   observabilityContext = ObservabilityTools.DefaultObservabilityContext,
   ...props
 }) => (

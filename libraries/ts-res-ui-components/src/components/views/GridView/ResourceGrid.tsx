@@ -1,13 +1,13 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { ChevronUpIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import {
-  GridViewInitParams,
-  ResolutionResult,
-  ResolutionActions,
-  ResolutionState,
-  GridColumnDefinition,
-  ResourceTypeColumnMapping,
-  GridCellProps
+  IGridViewInitParams,
+  IResolutionResult,
+  IResolutionActions,
+  IResolutionState,
+  IGridColumnDefinition,
+  IResourceTypeColumnMapping,
+  IGridCellProps
 } from '../../../types';
 import { JsonValue } from '@fgv/ts-json-base';
 import { EditableGridCell } from './EditableGridCell';
@@ -15,17 +15,17 @@ import { EditableGridCell } from './EditableGridCell';
 /**
  * Props for the ResourceGrid component.
  */
-interface ResourceGridProps {
+interface IResourceGridProps {
   /** Grid configuration defining columns and display options */
-  gridConfig: GridViewInitParams;
+  gridConfig: IGridViewInitParams;
   /** Array of resource IDs to display in the grid */
   selectedResourceIds: string[];
   /** Map of resource resolutions for grid display */
-  resourceResolutions: Map<string, ResolutionResult>;
+  resourceResolutions: Map<string, IResolutionResult>;
   /** Resolution actions for editing integration */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Resolution state for edit tracking */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Callback for displaying messages */
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
@@ -42,7 +42,7 @@ function extractValueByPath(obj: any, path: string | string[]): JsonValue | unde
   if (Array.isArray(path)) {
     let current = obj;
     for (const segment of path) {
-      if (current == null) return undefined;
+      if (current === null || current === undefined) return undefined;
       current = current[segment];
     }
     return current;
@@ -54,7 +54,7 @@ function extractValueByPath(obj: any, path: string | string[]): JsonValue | unde
 /**
  * Component for rendering a basic grid cell.
  */
-const GridCell: React.FC<GridCellProps> = ({
+const GridCell: React.FC<IGridCellProps> = ({
   value,
   resourceId,
   column,
@@ -121,7 +121,7 @@ const GridCell: React.FC<GridCellProps> = ({
  *
  * @public
  */
-export const ResourceGrid: React.FC<ResourceGridProps> = ({
+export const ResourceGrid: React.FC<IResourceGridProps> = ({
   gridConfig,
   selectedResourceIds,
   resourceResolutions,
@@ -134,8 +134,8 @@ export const ResourceGrid: React.FC<ResourceGridProps> = ({
 
   // Build column definitions for all resources
   const allColumns = useMemo(() => {
-    const columnMap = new Map<string, GridColumnDefinition>();
-    const mappingMap = new Map<string, ResourceTypeColumnMapping>();
+    const columnMap = new Map<string, IGridColumnDefinition>();
+    const mappingMap = new Map<string, IResourceTypeColumnMapping>();
 
     // Index column mappings by resource type
     gridConfig.columnMapping.forEach((mapping) => {
@@ -199,9 +199,9 @@ export const ResourceGrid: React.FC<ResourceGridProps> = ({
         const bValue = b.values.get(sortColumn);
 
         // Handle null/undefined values
-        if (aValue == null && bValue == null) return 0;
-        if (aValue == null) return 1;
-        if (bValue == null) return -1;
+        if ((aValue === null || aValue === undefined) && (bValue === null || bValue === undefined)) return 0;
+        if (aValue === null || aValue === undefined) return 1;
+        if (bValue === null || bValue === undefined) return -1;
 
         // Compare values
         let comparison = 0;

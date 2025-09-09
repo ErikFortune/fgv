@@ -1,17 +1,17 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ConditionSet, ResourceJson, Resources, Runtime } from '@fgv/ts-res';
+import { ResourceJson, Resources, Runtime } from '@fgv/ts-res';
 import { Diff } from '@fgv/ts-json';
 import { JsonObject, isJsonObject } from '@fgv/ts-json-base';
-import { ProcessedResources, JsonValue } from '../types';
+import { IProcessedResources, JsonValue } from '../types';
 
-export interface EditedResourceInfo {
+export interface IEditedResourceInfo {
   resourceId: string;
   originalValue: JsonValue;
   editedValue: JsonValue;
   timestamp: Date;
 }
 
-export interface EditValidationResult {
+export interface IEditValidationResult {
   isValid: boolean;
   errors: string[];
   warnings: string[];
@@ -20,7 +20,7 @@ export interface EditValidationResult {
 /**
  * Validates an edited resource JSON value
  */
-export function validateEditedResource(editedValue: JsonValue): EditValidationResult {
+export function validateEditedResource(editedValue: JsonValue): IEditValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
@@ -197,13 +197,13 @@ export function convertLooseResourcesToCandidateDecls(
  * new resource candidates in a single clone → compile → resolver pass.
  */
 export async function rebuildSystemWithChanges(
-  originalSystem: ProcessedResources['system'],
+  originalSystem: IProcessedResources['system'],
   options: {
     editedResources?: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>;
     newResources?: ReadonlyArray<ResourceJson.Json.ILooseResourceDecl>;
   },
   currentContext: Record<string, string>
-): Promise<Result<ProcessedResources>> {
+): Promise<Result<IProcessedResources>> {
   try {
     const editCandidates = options.editedResources
       ? createCandidateDeclarations(options.editedResources, currentContext)
@@ -219,12 +219,12 @@ export async function rebuildSystemWithChanges(
 
     return originalSystem.resourceManager
       .clone({ candidates: allCandidates })
-      .withErrorFormat((message) => `Failed to clone manager: ${message}`)
-      .onSuccess((clonedManager) => {
+      .withErrorFormat((message: string) => `Failed to clone manager: ${message}`)
+      .onSuccess((clonedManager: Resources.ResourceManagerBuilder) => {
         return clonedManager
           .getCompiledResourceCollection({ includeMetadata: true })
-          .withErrorFormat((message) => `Failed to get compiled collection: ${message}`)
-          .onSuccess((compiledCollection) => {
+          .withErrorFormat((message: string) => `Failed to get compiled collection: ${message}`)
+          .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {
             return Runtime.ResourceResolver.create({
               resourceManager: clonedManager,
               qualifierTypes: originalSystem.qualifierTypes,
@@ -232,7 +232,7 @@ export async function rebuildSystemWithChanges(
             })
               .withErrorFormat((message) => `Failed to create resolver: ${message}`)
               .onSuccess((resolver) => {
-                const resourceIds = Array.from(clonedManager.resources.keys());
+                const resourceIds = Array.from(clonedManager.resources.keys()) as string[];
                 const summary = {
                   totalResources: resourceIds.length,
                   resourceIds,
@@ -240,7 +240,7 @@ export async function rebuildSystemWithChanges(
                   warnings: []
                 };
 
-                const updatedSystem: ProcessedResources = {
+                const updatedSystem: IProcessedResources = {
                   system: {
                     qualifierTypes: originalSystem.qualifierTypes,
                     qualifiers: originalSystem.qualifiers,
@@ -270,10 +270,10 @@ export async function rebuildSystemWithChanges(
  * Rebuilds the resource system with edited candidates using deltas
  */
 export async function rebuildSystemWithEdits(
-  originalSystem: ProcessedResources['system'],
+  originalSystem: IProcessedResources['system'],
   editedResources: Map<string, { originalValue: JsonValue; editedValue: JsonValue; delta: JsonValue }>,
   currentContext: Record<string, string>
-): Promise<Result<ProcessedResources>> {
+): Promise<Result<IProcessedResources>> {
   // Delegate to the unified change application helper
   return rebuildSystemWithChanges(originalSystem, { editedResources }, currentContext);
 }

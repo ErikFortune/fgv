@@ -1,6 +1,13 @@
 import React, { useCallback } from 'react';
-import { CubeIcon } from '@heroicons/react/24/outline';
-import { CandidateInfo, ResolutionActions, ResolutionState, ResourceEditorFactory } from '../../../types';
+import { JsonValue } from '@fgv/ts-json-base';
+import { Result } from '@fgv/ts-utils';
+import {
+  ICandidateInfo,
+  IResolutionActions,
+  IResolutionState,
+  IResourceEditorFactory,
+  IResolutionResult
+} from '../../../types';
 import { EditableJsonView } from '../../views/ResolutionView/EditableJsonView';
 
 /**
@@ -8,19 +15,19 @@ import { EditableJsonView } from '../../views/ResolutionView/EditableJsonView';
  *
  * @public
  */
-export interface ResolutionResultsProps {
+export interface IResolutionResultsProps {
   /** The resolution result data to display */
-  result: any;
+  result: IResolutionResult;
   /** View mode determining how resolution results are presented */
   viewMode: 'composed' | 'best' | 'all' | 'raw';
   /** Current context values used for resolution */
   contextValues: Record<string, string | undefined>;
   /** Optional resolution actions for interactive features */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Optional resolution state for editing features */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Optional factory for creating custom resource editors */
-  resourceEditorFactory?: ResourceEditorFactory;
+  resourceEditorFactory?: IResourceEditorFactory;
   /** Optional callback for handling component messages */
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
@@ -137,7 +144,7 @@ export interface ResolutionResultsProps {
  *
  * @public
  */
-export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
+export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
   result,
   viewMode,
   contextValues,
@@ -177,18 +184,17 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
   // Helper function to create the appropriate resource editor
   const createResourceEditor = useCallback(
     (
-      value: any,
+      value: JsonValue,
       resourceId: string,
       isEdited: boolean,
-      editedValue: any,
-      onSave?: (resourceId: string, editedValue: any, originalValue: any) => void,
+      editedValue: JsonValue | undefined,
+      onSave?: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>,
       onCancel?: (resourceId: string) => void,
       disabled?: boolean,
       className?: string
     ) => {
       // Try to get resource type from the result
-      const resourceType =
-        result?.resource?.resourceType?.key || result?.resource?.resourceType?.name || 'unknown';
+      const resourceType = result?.resource?.resourceType?.key || 'unknown';
 
       // Try the factory first if provided
       if (resourceEditorFactory) {
@@ -267,7 +273,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
                     }
                   : null,
                 bestCandidate: result.bestCandidate?.json,
-                allCandidates: result.allCandidates?.map((c: any) => c.json),
+                allCandidates: result.allCandidates?.map((c) => c.json),
                 composedValue: result.composedValue,
                 error: result.error
               },
@@ -347,12 +353,12 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
 
   // 'all' view mode
   const regularMatchingCandidates =
-    result.candidateDetails?.filter((c: CandidateInfo) => c.matched && !c.isDefaultMatch) || [];
+    result.candidateDetails?.filter((c: ICandidateInfo) => c.matched && !c.isDefaultMatch) || [];
   const defaultMatchingCandidates =
-    result.candidateDetails?.filter((c: CandidateInfo) => c.matched && c.isDefaultMatch) || [];
-  const nonMatchingCandidates = result.candidateDetails?.filter((c: CandidateInfo) => !c.matched) || [];
+    result.candidateDetails?.filter((c: ICandidateInfo) => c.matched && c.isDefaultMatch) || [];
+  const nonMatchingCandidates = result.candidateDetails?.filter((c: ICandidateInfo) => !c.matched) || [];
 
-  const getMatchTypeColor = (type: string) => {
+  const getMatchTypeColor = (type: string): string => {
     switch (type) {
       case 'match':
         return 'bg-green-100 text-green-800';
@@ -365,7 +371,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
     }
   };
 
-  const getMatchTypeIcon = (type: string) => {
+  const getMatchTypeIcon = (type: string): string => {
     switch (type) {
       case 'match':
         return '✓';
@@ -385,7 +391,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         <div>
           <h4 className="font-medium text-gray-800 mb-2">Regular Matches</h4>
           <div className="space-y-2">
-            {regularMatchingCandidates.map((candidateInfo: CandidateInfo, index: number) => (
+            {regularMatchingCandidates.map((candidateInfo: ICandidateInfo, index: number) => (
               <div
                 key={`regular-${candidateInfo.candidateIndex}`}
                 className="bg-white p-3 rounded border border-green-200"
@@ -416,7 +422,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         <div>
           <h4 className="font-medium text-gray-800 mb-2">Default Matches</h4>
           <div className="space-y-2">
-            {defaultMatchingCandidates.map((candidateInfo: CandidateInfo) => (
+            {defaultMatchingCandidates.map((candidateInfo: ICandidateInfo) => (
               <div
                 key={`default-${candidateInfo.candidateIndex}`}
                 className="bg-white p-3 rounded border border-amber-200"
@@ -453,7 +459,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         <div>
           <h4 className="font-medium text-gray-500 mb-2">Non-matching Candidates</h4>
           <div className="space-y-2">
-            {nonMatchingCandidates.slice(0, 3).map((candidateInfo: CandidateInfo) => (
+            {nonMatchingCandidates.slice(0, 3).map((candidateInfo: ICandidateInfo) => (
               <div
                 key={`non-matching-${candidateInfo.candidateIndex}`}
                 className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"

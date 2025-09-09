@@ -27,7 +27,7 @@ import {
   exportAsJson,
   exportUsingFileSystemAPI
 } from '../../../utils/fileProcessing';
-import { ImportedFile } from '../../../types';
+import { IImportedFile } from '../../../types';
 
 describe('fileProcessing utilities', () => {
   describe('readFilesFromInput', () => {
@@ -117,9 +117,9 @@ describe('fileProcessing utilities', () => {
       // Override the global FileReader for this test
       const originalFileReader = global.FileReader;
       global.FileReader = class MockErrorFileReader {
-        onload: ((event: any) => void) | null = null;
-        onerror: ((event: any) => void) | null = null;
-        readAsText() {
+        public onload: ((event: any) => void) | null = null;
+        public onerror: ((event: any) => void) | null = null;
+        public readAsText(): void {
           setTimeout(() => {
             if (this.onerror) {
               this.onerror(new Error('Read error'));
@@ -143,7 +143,7 @@ describe('fileProcessing utilities', () => {
 
   describe('filesToDirectory', () => {
     test('creates root directory from files without paths', () => {
-      const files: ImportedFile[] = [
+      const files: IImportedFile[] = [
         { name: 'file1.json', content: 'content1' },
         { name: 'file2.json', content: 'content2' }
       ];
@@ -162,7 +162,7 @@ describe('fileProcessing utilities', () => {
     });
 
     test('creates directory structure from files with paths', () => {
-      const files: ImportedFile[] = [
+      const files: IImportedFile[] = [
         { name: 'root.json', path: 'root.json', content: 'root content' },
         { name: 'sub1.json', path: 'folder1/sub1.json', content: 'sub1 content' },
         { name: 'sub2.json', path: 'folder1/sub2.json', content: 'sub2 content' },
@@ -205,7 +205,7 @@ describe('fileProcessing utilities', () => {
     });
 
     test('handles complex nested directory structure', () => {
-      const files: ImportedFile[] = [
+      const files: IImportedFile[] = [
         { name: 'a.json', path: 'dir1/dir2/a.json', content: 'a' },
         { name: 'b.json', path: 'dir1/b.json', content: 'b' },
         { name: 'c.json', path: 'dir3/c.json', content: 'c' }
@@ -215,8 +215,8 @@ describe('fileProcessing utilities', () => {
 
       expect(result.subdirectories).toHaveLength(2);
 
-      const dir1 = result.subdirectories!.find((d) => d.name === 'dir1');
-      const dir3 = result.subdirectories!.find((d) => d.name === 'dir3');
+      const dir1 = result.subdirectories!.find((d: any) => d.name === 'dir1');
+      const dir3 = result.subdirectories!.find((d: any) => d.name === 'dir3');
 
       expect(dir1).toBeDefined();
       expect(dir1!.files).toHaveLength(1);
@@ -242,7 +242,7 @@ describe('fileProcessing utilities', () => {
     });
 
     test('handles files with mixed path and no-path entries', () => {
-      const files: ImportedFile[] = [
+      const files: IImportedFile[] = [
         { name: 'root.json', content: 'root' },
         { name: 'sub.json', path: 'folder/sub.json', content: 'sub' }
       ];

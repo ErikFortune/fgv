@@ -46,4 +46,4 @@ export {
 } from '../utils/tsResIntegration';
 
 // Export view component props
-export type { SourceViewProps, CompiledViewProps } from '../types';
+export type { ISourceViewProps, ICompiledViewProps } from '../types';

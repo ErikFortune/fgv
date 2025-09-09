@@ -1,25 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import {
-  QualifierTypes,
-  Qualifiers,
-  Runtime,
-  ResourceJson,
-  ResourceTypes,
-  ResourceId,
-  Validate,
-  QualifierName
-} from '@fgv/ts-res';
+import { Qualifiers, Runtime, ResourceJson, ResourceTypes, Validate, QualifierName } from '@fgv/ts-res';
 import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
 import type { JsonObject as ResourceJsonObject } from '@fgv/ts-json-base';
 import { isJsonObject } from '@fgv/ts-json-base';
 import {
-  ResolutionState,
-  ResolutionActions,
-  ResolutionResult,
-  ProcessedResources,
+  IResolutionState,
+  IResolutionActions,
+  IResolutionResult,
+  IProcessedResources,
   JsonValue,
-  CreatePendingResourceParams,
-  StartNewResourceParams
+  ICreatePendingResourceParams,
+  IStartNewResourceParams
 } from '../types';
 import {
   createResolverWithContext,
@@ -31,10 +22,8 @@ import { useObservability } from '../contexts';
 import {
   validateEditedResource,
   computeResourceDelta,
-  rebuildSystemWithEdits,
   rebuildSystemWithChanges,
-  extractResolutionContext,
-  checkEditConflicts
+  extractResolutionContext
 } from '../utils/resolutionEditing';
 
 /**
@@ -42,11 +31,11 @@ import {
  *
  * @public
  */
-export interface UseResolutionStateReturn {
+export interface IUseResolutionStateReturn {
   /** Current resolution state including context, results, and editing state */
-  state: ResolutionState;
+  state: IResolutionState;
   /** Available actions for managing resolution and editing */
-  actions: ResolutionActions;
+  actions: IResolutionActions;
   /** List of available qualifier keys that can be used in the resolution context */
   availableQualifiers: string[];
 }
@@ -135,7 +124,7 @@ function createContextConditions(
  */
 function isResourceIdTaken(
   resourceId: string,
-  processedResources: ProcessedResources | null,
+  processedResources: IProcessedResources | null,
   pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>
 ): boolean {
   return (
@@ -208,10 +197,10 @@ function isResourceIdTaken(
  * @public
  */
 export function useResolutionState(
-  processedResources: ProcessedResources | null,
+  processedResources: IProcessedResources | null,
   onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void,
-  onSystemUpdate?: (updatedResources: ProcessedResources) => void
-): UseResolutionStateReturn {
+  onSystemUpdate?: (updatedResources: IProcessedResources) => void
+): IUseResolutionStateReturn {
   // Get observability context
   const o11y = useObservability();
   // Get available qualifiers
@@ -239,7 +228,7 @@ export function useResolutionState(
   const [pendingUserValues, setPendingUserValues] = useState<Record<string, string | undefined>>({});
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [currentResolver, setCurrentResolver] = useState<Runtime.ResourceResolver | null>(null);
-  const [resolutionResult, setResolutionResult] = useState<ResolutionResult | null>(null);
+  const [resolutionResult, setResolutionResult] = useState<IResolutionResult | null>(null);
   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
 
   // Store host-managed values that can be updated via applyContext
@@ -435,7 +424,7 @@ export function useResolutionState(
             // Re-create the mock result for pending resource with new context
             const pendingResource = pendingResources.get(selectedResourceId);
             if (pendingResource) {
-              const mockResult: ResolutionResult = {
+              const mockResult: IResolutionResult = {
                 success: true,
                 resourceId: selectedResourceId,
                 composedValue: pendingResource.candidates?.[0]?.json || {},
@@ -499,7 +488,7 @@ export function useResolutionState(
           setResolutionResult(null);
 
           // For pending new resources, create a mock resolution result
-          const mockResult: ResolutionResult = {
+          const mockResult: IResolutionResult = {
             success: true,
             resourceId,
             composedValue: pendingResource.candidates?.[0]?.json || {},
@@ -535,7 +524,7 @@ export function useResolutionState(
         if (!resourceExists) {
           // Resource doesn't exist - create error result but still set selection for UI consistency
           setSelectedResourceId(resourceId);
-          const errorResult: ResolutionResult = {
+          const errorResult: IResolutionResult = {
             success: false,
             resourceId,
             error: `Failed to get resource: ${resourceId}: not found.`
@@ -565,7 +554,7 @@ export function useResolutionState(
           })
           .onFailure((resolutionError) => {
             // Create error result
-            const errorResult: ResolutionResult = {
+            const errorResult: IResolutionResult = {
               success: false,
               resourceId,
               error: resolutionError
@@ -683,7 +672,7 @@ export function useResolutionState(
 
         // Show warnings if any
         if (validation.warnings.length > 0) {
-          validation.warnings.forEach((warning) => onMessage?.('warning', warning));
+          validation.warnings.forEach((warning: string) => onMessage?.('warning', warning));
         }
 
         // Check if this is a pending new resource
@@ -705,7 +694,7 @@ export function useResolutionState(
 
           // Update the resolution result to reflect the new value
           if (selectedResourceId === resourceId) {
-            const mockResult: ResolutionResult = {
+            const mockResult: IResolutionResult = {
               success: true,
               resourceId,
               composedValue: isJsonObject(editedValue) ? editedValue : { value: editedValue },
@@ -888,7 +877,7 @@ export function useResolutionState(
 
   // Atomic resource creation API
   const createPendingResource = useCallback(
-    (params: CreatePendingResourceParams): Result<void> => {
+    (params: ICreatePendingResourceParams): Result<void> => {
       try {
         if (!processedResources) {
           return fail('No resource system available');
@@ -980,8 +969,8 @@ export function useResolutionState(
   // Resource creation actions (enhanced with Result pattern return values)
   const startNewResource = useCallback(
     (
-      params?: StartNewResourceParams
-    ): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
+      params?: IStartNewResourceParams
+    ): Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         // Determine resource type to use
         const targetTypeName = params?.resourceTypeName || params?.defaultTypeName;
@@ -1075,7 +1064,7 @@ export function useResolutionState(
   );
 
   const updateNewResourceId = useCallback(
-    (id: string): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
+    (id: string): Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
@@ -1141,7 +1130,7 @@ export function useResolutionState(
   );
 
   const selectResourceType = useCallback(
-    (typeName: string): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
+    (typeName: string): Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
@@ -1202,7 +1191,7 @@ export function useResolutionState(
 
   // New public updateNewResourceJson action
   const updateNewResourceJson = useCallback(
-    (json: JsonValue): Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }> => {
+    (json: JsonValue): Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }> => {
       try {
         if (!newResourceDraft) {
           const error = 'No resource draft in progress. Call startNewResource first.';
@@ -1614,7 +1603,7 @@ export function useResolutionState(
     }
   }, [hasPendingResourceChanges, pendingResourceEdits, onMessage]);
 
-  const state: ResolutionState = {
+  const state: IResolutionState = {
     contextValues: effectiveContext, // Effective context (user + host)
     pendingContextValues: pendingUserValues, // Only user's pending values
     selectedResourceId,
@@ -1634,7 +1623,7 @@ export function useResolutionState(
     hasPendingResourceChanges
   };
 
-  const actions: ResolutionActions = useMemo(
+  const actions: IResolutionActions = useMemo(
     () => ({
       updateContextValue,
       applyContext,

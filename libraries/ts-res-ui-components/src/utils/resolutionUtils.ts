@@ -1,6 +1,6 @@
 import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
 import { Runtime } from '@fgv/ts-res';
-import { ProcessedResources, ResolutionResult, CandidateInfo, ConditionEvaluationResult } from '../types';
+import { IProcessedResources, IResolutionResult, ICandidateInfo, IConditionEvaluationResult } from '../types';
 
 /**
  * Configuration options for resource resolution operations.
@@ -43,7 +43,7 @@ import { ProcessedResources, ResolutionResult, CandidateInfo, ConditionEvaluatio
  *
  * @public
  */
-export interface ResolutionOptions {
+export interface IResolutionOptions {
   /** Enable caching for improved performance during repeated resolutions */
   enableCaching?: boolean;
   /** Enable detailed console logging for debugging resolution processes */
@@ -51,7 +51,7 @@ export interface ResolutionOptions {
 }
 
 // Helper function for conditional debug logging
-const debugLog = (enableDebug: boolean, ...args: any[]) => {
+const debugLog = (enableDebug: boolean, ...args: unknown[]): void => {
   if (enableDebug) {
     console.log(...args);
   }
@@ -124,9 +124,9 @@ const debugLog = (enableDebug: boolean, ...args: any[]) => {
  * @public
  */
 export function createResolverWithContext(
-  processedResources: ProcessedResources,
+  processedResources: IProcessedResources,
   contextValues: Record<string, string | undefined>,
-  options: ResolutionOptions = {}
+  options: IResolutionOptions = {}
 ): Result<Runtime.ResourceResolver> {
   const enableDebug = options.enableDebugLogging === true;
 
@@ -260,7 +260,7 @@ export function evaluateConditionsForCandidate(
   candidateIndex: number,
   compiledResource: any,
   compiledCollection: any
-): ConditionEvaluationResult[] {
+): IConditionEvaluationResult[] {
   try {
     const decision = compiledCollection.decisions[compiledResource.decision];
     if (!decision || !decision.conditionSets || candidateIndex >= decision.conditionSets.length) {
@@ -273,7 +273,7 @@ export function evaluateConditionsForCandidate(
       return [];
     }
 
-    const evaluations: ConditionEvaluationResult[] = [];
+    const evaluations: IConditionEvaluationResult[] = [];
 
     for (const conditionIndex of conditionSet.conditions) {
       const condition = compiledCollection.conditions[conditionIndex];
@@ -412,9 +412,9 @@ export function evaluateConditionsForCandidate(
 export function resolveResourceDetailed(
   resolver: Runtime.ResourceResolver,
   resourceId: string,
-  processedResources: ProcessedResources,
-  options: ResolutionOptions = {}
-): Result<ResolutionResult> {
+  processedResources: IProcessedResources,
+  options: IResolutionOptions = {}
+): Result<IResolutionResult> {
   const enableDebug = options.enableDebugLogging === true;
 
   debugLog(enableDebug, '=== RESOLVING RESOURCE ===');
@@ -464,7 +464,7 @@ export function resolveResourceDetailed(
   const decision = decisionResult.value;
 
   // Build detailed candidate information
-  const candidateDetails: CandidateInfo[] = [];
+  const candidateDetails: ICandidateInfo[] = [];
   const matchedCandidates = allResult.isSuccess() ? allResult.value : [];
 
   // Create lookup sets for regular and default matches
@@ -525,7 +525,7 @@ export function resolveResourceDetailed(
     }
   });
 
-  const result: ResolutionResult = {
+  const result: IResolutionResult = {
     success: true,
     resourceId,
     resource,
@@ -575,7 +575,7 @@ export function resolveResourceDetailed(
  * // Validate context against available qualifiers
  * function validateResolutionContext(
  *   context: Record<string, string>,
- *   processedResources: ProcessedResources
+ *   processedResources: IProcessedResources
  * ): string[] {
  *   const availableQualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
  *   const errors: string[] = [];
@@ -594,7 +594,7 @@ export function resolveResourceDetailed(
  * @example
  * ```typescript
  * // Build qualifier documentation
- * function generateQualifierDocs(processedResources: ProcessedResources) {
+ * function generateQualifierDocs(processedResources: IProcessedResources) {
  *   const qualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
  *
  *   return qualifiers.map(name => {
@@ -610,9 +610,9 @@ export function resolveResourceDetailed(
  *
  * @public
  */
-export function getAvailableQualifiers(processedResources: ProcessedResources): string[] {
+export function getAvailableQualifiers(processedResources: IProcessedResources): string[] {
   if (processedResources.compiledCollection.qualifiers) {
-    return processedResources.compiledCollection.qualifiers.map((q) => q.name);
+    return processedResources.compiledCollection.qualifiers.map((q: any) => q.name);
   }
   return [];
 }

@@ -60,10 +60,13 @@ export function createNoOpObservabilityContext(
  * Default console-only observability context for general use.
  * @public
  */
-export const DefaultObservabilityContext = createConsoleObservabilityContext('info', 'info');
+export const DefaultObservabilityContext: IObservabilityContext = createConsoleObservabilityContext(
+  'info',
+  'info'
+);
 
 /**
  * Test observability context with no-op loggers.
  * @public
  */
-export const TestObservabilityContext = createNoOpObservabilityContext();
+export const TestObservabilityContext: IObservabilityContext = createNoOpObservabilityContext();

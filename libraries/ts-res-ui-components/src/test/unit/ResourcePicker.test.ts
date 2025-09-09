@@ -15,7 +15,7 @@ import {
   flattenTree,
   searchResources
 } from '../../components/pickers/ResourcePicker/utils/treeNavigation';
-import { PendingResource } from '../../components/pickers/ResourcePicker/types';
+import { IPendingResource } from '../../components/pickers/ResourcePicker/types';
 
 describe('ResourcePicker Utilities', () => {
   describe('filterTreeBranch', () => {
@@ -68,7 +68,7 @@ describe('ResourcePicker Utilities', () => {
     });
 
     test('adds new pending resources', () => {
-      const pending: PendingResource[] = [
+      const pending: IPendingResource[] = [
         { id: 'strings.new-resource', type: 'new', displayName: 'New Resource' }
       ];
 
@@ -79,7 +79,7 @@ describe('ResourcePicker Utilities', () => {
     });
 
     test('removes deleted resources', () => {
-      const pending: PendingResource[] = [{ id: 'strings.common.ok', type: 'deleted' }];
+      const pending: IPendingResource[] = [{ id: 'strings.common.ok', type: 'deleted' }];
 
       const result = mergeWithPendingResources(existingIds, pending);
 
@@ -88,7 +88,7 @@ describe('ResourcePicker Utilities', () => {
     });
 
     test('handles modified resources', () => {
-      const pending: PendingResource[] = [
+      const pending: IPendingResource[] = [
         { id: 'strings.common.modified', type: 'modified', displayName: 'Modified Resource' }
       ];
 
@@ -99,7 +99,7 @@ describe('ResourcePicker Utilities', () => {
     });
 
     test('sorts the final result', () => {
-      const pending: PendingResource[] = [
+      const pending: IPendingResource[] = [
         { id: 'z-last', type: 'new' },
         { id: 'a-first', type: 'new' }
       ];
@@ -224,19 +224,19 @@ describe('ResourcePicker Utilities', () => {
 
 // Basic type checking tests
 describe('ResourcePicker Types', () => {
-  test('PendingResource type allows all required types', () => {
-    const newResource: PendingResource = {
+  test('IPendingResource type allows all required types', () => {
+    const newResource: IPendingResource = {
       id: 'test.new',
       type: 'new',
       displayName: 'Test New Resource'
     };
 
-    const modifiedResource: PendingResource = {
+    const modifiedResource: IPendingResource = {
       id: 'test.modified',
       type: 'modified'
     };
 
-    const deletedResource: PendingResource = {
+    const deletedResource: IPendingResource = {
       id: 'test.deleted',
       type: 'deleted'
     };
@@ -252,7 +252,7 @@ describe('ResourcePicker Types', () => {
 describe('ResourcePicker Integration', () => {
   test('branch isolation works with pending resources', () => {
     const existingIds = ['strings.common.ok', 'app.ui.buttons'];
-    const pending: PendingResource[] = [
+    const pending: IPendingResource[] = [
       { id: 'strings.new-feature', type: 'new' },
       { id: 'app.new-config', type: 'new' }
     ];
@@ -277,7 +277,7 @@ describe('ResourcePicker Integration', () => {
       'images.icons.home'
     ];
 
-    const pending: PendingResource[] = [
+    const pending: IPendingResource[] = [
       { id: 'strings.new-section', type: 'new' },
       { id: 'strings.common.modified', type: 'modified' },
       { id: 'strings.common.ok', type: 'deleted' },

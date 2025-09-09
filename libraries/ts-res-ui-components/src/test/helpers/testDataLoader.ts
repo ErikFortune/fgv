@@ -28,9 +28,9 @@ import { Config } from '@fgv/ts-res';
 /**
  * Base path for test fixtures - using existing test data in monorepo
  */
-const PROJECT_ROOT = dirname(dirname(dirname(__dirname)));
-const FIXTURES_PATH = join(PROJECT_ROOT, '../../data/test/ts-res');
-const TEMP_PATH = join(PROJECT_ROOT, 'temp');
+const PROJECT_ROOT: string = dirname(dirname(dirname(__dirname)));
+const FIXTURES_PATH: string = join(PROJECT_ROOT, '../../data/test/ts-res');
+const TEMP_PATH: string = join(PROJECT_ROOT, 'temp');
 
 /**
  * Generate a unique temp folder name with timestamp and random suffix
@@ -91,7 +91,7 @@ export function loadTestResources(
 
     const files: Array<{ path: string; content: string }> = [];
 
-    function readDirectory(dir: string, basePath: string = '') {
+    function readDirectory(dir: string, basePath: string = ''): void {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
 
       for (const entry of entries) {

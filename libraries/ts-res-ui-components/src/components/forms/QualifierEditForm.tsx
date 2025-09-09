@@ -8,7 +8,7 @@ import { Converters } from '@fgv/ts-utils';
  *
  * @public
  */
-export interface QualifierEditFormProps {
+export interface IQualifierEditFormProps {
   /** Existing qualifier to edit (undefined for creating new qualifier) */
   qualifier?: Qualifiers.IQualifierDecl;
   /** Available qualifier types for selection */
@@ -21,7 +21,7 @@ export interface QualifierEditFormProps {
   existingNames?: string[];
 }
 
-interface FormData {
+interface IFormData {
   name: string;
   typeName: string;
   defaultPriority: number;
@@ -117,14 +117,14 @@ interface FormData {
  *
  * @public
  */
-export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
+export const QualifierEditForm: React.FC<IQualifierEditFormProps> = ({
   qualifier,
   qualifierTypes,
   onSave,
   onCancel,
   existingNames = []
 }) => {
-  const [formData, setFormData] = useState<FormData>(() => {
+  const [formData, setFormData] = useState<IFormData>(() => {
     if (qualifier) {
       return {
         name: qualifier.name,
@@ -201,7 +201,7 @@ export const QualifierEditForm: React.FC<QualifierEditFormProps> = ({
   }, [formData, validateForm, onSave]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: FormData[keyof FormData]) => {
+    (field: keyof IFormData, value: IFormData[keyof IFormData]) => {
       setFormData((prev) => {
         const updated = { ...prev, [field]: value };
 

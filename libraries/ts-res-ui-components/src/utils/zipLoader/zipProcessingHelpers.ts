@@ -1,6 +1,6 @@
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, fail } from '@fgv/ts-utils';
 import { Config } from '@fgv/ts-res';
-import { ImportedDirectory, ImportedFile, ProcessedResources } from '../../types';
+import { IImportedDirectory, IImportedFile, IProcessedResources } from '../../types';
 import { processImportedFiles, processImportedDirectory } from '../tsResIntegration';
 import * as ObservabilityTools from '../observability';
 
@@ -9,19 +9,19 @@ import * as ObservabilityTools from '../observability';
  * @public
  */
 export async function processZipResources(
-  files: ImportedFile[],
-  directory: ImportedDirectory | undefined,
+  files: IImportedFile[],
+  directory: IImportedDirectory | undefined,
   config?: Config.Model.ISystemConfiguration,
   o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): Promise<Result<ProcessedResources>> {
+): Promise<Result<IProcessedResources>> {
   try {
     if (directory) {
       return processImportedDirectory(directory, config, undefined, undefined, o11y).withErrorFormat(
-        (message) => `Failed to process resources from directory: ${message}`
+        (message: string) => `Failed to process resources from directory: ${message}`
       );
     } else if (files.length > 0) {
       return processImportedFiles(files, config, undefined, undefined, o11y).withErrorFormat(
-        (message) => `Failed to process resources from files: ${message}`
+        (message: string) => `Failed to process resources from files: ${message}`
       );
     } else {
       return fail('No files or directory structure found to process');
@@ -37,13 +37,13 @@ export async function processZipResources(
  */
 export async function processZipLoadResult(
   zipResult: {
-    files: ImportedFile[];
-    directory?: ImportedDirectory;
+    files: IImportedFile[];
+    directory?: IImportedDirectory;
     config?: Config.Model.ISystemConfiguration;
   },
   overrideConfig?: Config.Model.ISystemConfiguration,
   o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): Promise<Result<ProcessedResources>> {
+): Promise<Result<IProcessedResources>> {
   const configToUse = overrideConfig || zipResult.config;
   return processZipResources(zipResult.files, zipResult.directory, configToUse, o11y);
 }

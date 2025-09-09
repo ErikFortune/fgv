@@ -85,7 +85,7 @@ export { MessagesWindow } from '../components/views/MessagesWindow';
 export { useViewState } from '../hooks/useViewState';
 
 // Export types for external consumption
-export type { Message, MessagesWindowProps } from '../components/views/MessagesWindow';
+export type { IMessage, IMessagesWindowProps } from '../components/views/MessagesWindow';
 
 // Export base view props (shared by all view components)
-export type { ViewBaseProps } from '../types';
+export type { IViewBaseProps } from '../types';

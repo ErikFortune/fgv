@@ -25,8 +25,9 @@ import { renderHook, act } from '@testing-library/react';
 import { useResolutionState } from '../../../hooks/useResolutionState';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { Runtime } from '@fgv/ts-res';
+import type { IProcessedResources } from '../../../types';
 
-function buildProcessedResources() {
+function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
   const compiledCollection = system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
@@ -43,7 +44,7 @@ function buildProcessedResources() {
     resolver,
     resourceCount: resourceIds.length,
     summary: { totalResources: resourceIds.length, resourceIds, errorCount: 0, warnings: [] }
-  };
+  } as unknown as IProcessedResources;
 }
 
 describe('Resource Creation Workflows', () => {

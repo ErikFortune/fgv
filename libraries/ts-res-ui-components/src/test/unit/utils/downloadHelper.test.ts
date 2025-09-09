@@ -153,7 +153,7 @@ describe('DownloadUtils', () => {
     });
 
     test('should apply filename transformer', () => {
-      const transformer = (filename: string) => `transformed-${filename}`;
+      const transformer = (filename: string): string => `transformed-${filename}`;
       const result = DownloadUtils.generateFilename('test-file', undefined, {
         includeTimestamp: false,
         filenameTransformer: transformer
@@ -162,7 +162,7 @@ describe('DownloadUtils', () => {
     });
 
     test('should handle complex filename generation with all options', () => {
-      const options: DownloadUtils.DownloadOptions = {
+      const options: DownloadUtils.IDownloadOptions = {
         extension: 'txt',
         timestampFormat: '2024-custom',
         filenameTransformer: (name) => `prefix-${name}-suffix`
@@ -270,7 +270,7 @@ describe('DownloadUtils', () => {
     });
 
     test('should pass through all download options', () => {
-      const options: DownloadUtils.DownloadOptions = {
+      const options: DownloadUtils.IDownloadOptions = {
         baseFilename: 'custom-base',
         extension: 'csv',
         includeTimestamp: false,

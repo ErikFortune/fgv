@@ -46,4 +46,4 @@ export { isZipFile } from '../utils/zipLoader/zipUtils';
 export { processZipResources, processZipLoadResult } from '../utils/zipLoader/zipProcessingHelpers';
 
 // Export view component props
-export type { ImportViewProps } from '../types';
+export type { IImportViewProps } from '../types';

@@ -27,13 +27,12 @@ import {
   resolveResourceDetailed,
   getAvailableQualifiers,
   hasPendingContextChanges,
-  evaluateConditionsForCandidate,
-  type ResolutionOptions
+  evaluateConditionsForCandidate
 } from '../../../utils/resolutionUtils';
-import { ProcessedResources, ResolutionResult } from '../../../types';
+import { IProcessedResources, IResolutionResult } from '../../../types';
 
 describe('resolutionUtils', () => {
-  let mockProcessedResources: ProcessedResources;
+  let mockProcessedResources: IProcessedResources;
   let mockResolver: any;
 
   beforeEach(() => {
@@ -372,7 +371,7 @@ describe('resolutionUtils', () => {
     test('resolves resource successfully', () => {
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(true);
         expect(resolution.resourceId).toBe('resource1');
         expect(resolution.resource).toBeDefined();
@@ -391,7 +390,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'nonexistent', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(false);
         expect(resolution.resourceId).toBe('nonexistent');
         expect(resolution.error).toBe('Failed to get resource: Resource not found');
@@ -409,7 +408,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'resource1', resourcesWithoutCompiledResource);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(false);
         expect(resolution.resourceId).toBe('resource1');
         expect(resolution.error).toBe('Failed to find compiled resource');
@@ -421,7 +420,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(false);
         expect(resolution.resourceId).toBe('resource1');
         expect(resolution.error).toBe('Failed to resolve decision: Decision failed');
@@ -445,19 +444,19 @@ describe('resolutionUtils', () => {
     test('builds candidate details with match information', () => {
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.candidateDetails).toBeDefined();
         if (resolution.candidateDetails) {
           expect(resolution.candidateDetails).toHaveLength(2);
 
           // First candidate should be matched
-          const matchedCandidate = resolution.candidateDetails.find((c) => c.matched);
+          const matchedCandidate = resolution.candidateDetails.find((c: any) => c.matched);
           expect(matchedCandidate).toBeDefined();
           expect(matchedCandidate!.matchType).toBe('match');
           expect(matchedCandidate!.isDefaultMatch).toBe(false);
 
           // Second candidate should be non-matched
-          const nonMatchedCandidate = resolution.candidateDetails.find((c) => !c.matched);
+          const nonMatchedCandidate = resolution.candidateDetails.find((c: any) => !c.matched);
           expect(nonMatchedCandidate).toBeDefined();
           expect(nonMatchedCandidate!.matchType).toBe('noMatch');
           expect(nonMatchedCandidate!.isDefaultMatch).toBe(false);
@@ -470,7 +469,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(true); // Still succeeds but with error info
         expect(resolution.error).toBe('Resolution failed');
         expect(resolution.bestCandidate).toBeUndefined();

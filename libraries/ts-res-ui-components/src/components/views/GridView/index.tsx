@@ -1,9 +1,8 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
 import { TableCellsIcon } from '@heroicons/react/24/outline';
-import { GridViewProps, ProcessedResources, ResolutionResult } from '../../../types';
+import { IGridViewProps, IResolutionResult } from '../../../types';
 import { selectResources } from '../../../utils/resourceSelector';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
-import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { UnifiedChangeControls } from '../ResolutionView/UnifiedChangeControls';
 import { ResourceGrid } from './ResourceGrid';
 
@@ -55,7 +54,7 @@ import { ResourceGrid } from './ResourceGrid';
  *
  * @public
  */
-export const GridView: React.FC<GridViewProps> = ({
+export const GridView: React.FC<IGridViewProps> = ({
   gridConfig,
   resources,
   resolutionState,
@@ -91,11 +90,10 @@ export const GridView: React.FC<GridViewProps> = ({
   // Resolve all selected resources with current context
   const resourceResolutions = useMemo(() => {
     if (!resolutionState?.currentResolver || !selectedResourceIds.length) {
-      return new Map<string, ResolutionResult>();
+      return new Map<string, IResolutionResult>();
     }
 
-    const resolutions = new Map<string, ResolutionResult>();
-    const context = resolutionState.contextValues;
+    const resolutions = new Map<string, IResolutionResult>();
 
     selectedResourceIds.forEach((resourceId) => {
       try {

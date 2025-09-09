@@ -92,13 +92,13 @@ export { ResourcePickerOptionsControl } from '../components/common/ResourcePicke
 
 // Export types related to resource picking and selection
 export type {
-  ResourcePickerProps,
-  ResourcePickerOptions,
-  ResourceSelection,
-  ResourceAnnotations,
-  ResourceAnnotation,
-  PendingResource
+  IResourcePickerProps,
+  IResourcePickerOptions,
+  IResourceSelection,
+  IResourceAnnotations,
+  IResourceAnnotation,
+  IPendingResource
 } from '../components/pickers/ResourcePicker/types';
 
 // Export types for the options control
-export type { ResourcePickerOptionsControlProps } from '../components/common/ResourcePickerOptionsControl';
+export type { IResourcePickerOptionsControlProps } from '../components/common/ResourcePickerOptionsControl';

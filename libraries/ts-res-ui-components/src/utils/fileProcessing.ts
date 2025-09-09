@@ -1,11 +1,11 @@
-import { ImportedFile, ImportedDirectory } from '../types';
+import { IImportedFile, IImportedDirectory } from '../types';
 
 /**
  * Read files from file input element
  */
 /** @internal */
-export async function readFilesFromInput(files: FileList): Promise<ImportedFile[]> {
-  const importedFiles: ImportedFile[] = [];
+export async function readFilesFromInput(files: FileList): Promise<IImportedFile[]> {
+  const importedFiles: IImportedFile[] = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -41,9 +41,9 @@ function readFileContent(file: File): Promise<string> {
  * Convert flat file list to directory structure
  */
 /** @internal */
-export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
+export function filesToDirectory(files: IImportedFile[]): IImportedDirectory {
   // Group files by directory path
-  const filesByPath = new Map<string, ImportedFile[]>();
+  const filesByPath = new Map<string, IImportedFile[]>();
   const dirPaths = new Set<string>();
 
   files.forEach((file) => {
@@ -78,8 +78,8 @@ export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
   });
 
   // Build directory tree
-  const buildDirectory = (path: string, name: string): ImportedDirectory => {
-    const dir: ImportedDirectory = {
+  const buildDirectory = (path: string, name: string): IImportedDirectory => {
+    const dir: IImportedDirectory = {
       name,
       path,
       files: filesByPath.get(path) || [],

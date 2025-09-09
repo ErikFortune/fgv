@@ -1,17 +1,14 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   DocumentTextIcon,
-  MagnifyingGlassIcon,
   DocumentArrowDownIcon,
   CodeBracketIcon,
   ChevronDownIcon,
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
-import { Resources, ResourceJson } from '@fgv/ts-res';
-import { Result } from '@fgv/ts-utils';
-import { SourceViewProps } from '../../../types';
+import { ISourceViewProps } from '../../../types';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import { ResourceSelection, ResourcePickerOptions } from '../../pickers/ResourcePicker/types';
+import { IResourceSelection, IResourcePickerOptions } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 
@@ -51,7 +48,7 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
  *
  * @public
  */
-export const SourceView: React.FC<SourceViewProps> = ({
+export const SourceView: React.FC<ISourceViewProps> = ({
   resources,
   onExport,
   onMessage,
@@ -63,8 +60,8 @@ export const SourceView: React.FC<SourceViewProps> = ({
   const [showJsonView, setShowJsonView] = useState(false);
 
   // State for picker options control
-  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
-    pickerOptions || {}
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<IResourcePickerOptions>(
+    (pickerOptions ?? {}) as IResourcePickerOptions
   );
 
   // Merge picker options with view-specific defaults
@@ -87,7 +84,7 @@ export const SourceView: React.FC<SourceViewProps> = ({
 
   // Handle resource selection with new enhanced callback
   const handleResourceSelect = useCallback(
-    (selection: ResourceSelection) => {
+    (selection: IResourceSelection) => {
       setSelectedResourceId(selection.resourceId);
       if (selection.resourceId) {
         onMessage?.('info', `Selected resource: ${selection.resourceId}`);

@@ -29,9 +29,7 @@ import {
   createCandidateDeclarations,
   extractResolutionContext,
   createEditCollisionKey,
-  checkEditConflicts,
-  type EditedResourceInfo,
-  type EditValidationResult
+  checkEditConflicts
 } from '../../../utils/resolutionEditing';
 
 describe('resolutionEditing utilities', () => {

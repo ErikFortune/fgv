@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { QualifierTypes } from '@fgv/ts-res';
 import { JsonObject } from '@fgv/ts-json-base';
-import { Result } from '@fgv/ts-utils';
 
 /**
  * Props for the GenericQualifierTypeEditForm component.
@@ -10,7 +9,7 @@ import { Result } from '@fgv/ts-utils';
  *
  * @public
  */
-export interface GenericQualifierTypeEditFormProps {
+export interface IGenericQualifierTypeEditFormProps {
   /** Existing qualifier type to edit (undefined for creating new type) */
   qualifierType?: QualifierTypes.Config.IAnyQualifierTypeConfig;
   /** Callback fired when qualifier type is saved */
@@ -21,13 +20,13 @@ export interface GenericQualifierTypeEditFormProps {
   existingNames?: string[];
 }
 
-interface FormData {
+interface IFormData {
   name: string;
   systemType: string;
   configuration: string; // JSON string
 }
 
-interface ValidationErrors {
+interface IValidationErrors {
   name?: string;
   systemType?: string;
   configuration?: string;
@@ -39,13 +38,13 @@ interface ValidationErrors {
  *
  * @public
  */
-export const GenericQualifierTypeEditForm: React.FC<GenericQualifierTypeEditFormProps> = ({
+export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFormProps> = ({
   qualifierType,
   onSave,
   onCancel,
   existingNames = []
 }) => {
-  const [formData, setFormData] = useState<FormData>(() => {
+  const [formData, setFormData] = useState<IFormData>(() => {
     if (qualifierType) {
       return {
         name: qualifierType.name,
@@ -60,40 +59,25 @@ export const GenericQualifierTypeEditForm: React.FC<GenericQualifierTypeEditForm
     };
   });
 
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [errors, setErrors] = useState<IValidationErrors>({});
   const [isJsonValid, setIsJsonValid] = useState(true);
-  const [configValidation, setConfigValidation] = useState<Result<any> | null>(null);
 
   // Validate JSON configuration on every change
   useEffect(() => {
     try {
-      const parsed = JSON.parse(formData.configuration);
+      JSON.parse(formData.configuration); // Validate JSON syntax
       setIsJsonValid(true);
 
       // Attempt to validate the configuration structure if we have both name and systemType
       if (formData.name && formData.systemType) {
-        try {
-          const testConfig: QualifierTypes.Config.IAnyQualifierTypeConfig = {
-            name: formData.name,
-            systemType: formData.systemType,
-            configuration: parsed as JsonObject
-          };
-
-          // For now, we'll just check basic structure
-          // In the future, this could call validateConfigurationJson if we had a qualifier type instance
-          setConfigValidation(null); // Could be enhanced with actual validation
-          setErrors((prev) => ({ ...prev, configuration: undefined }));
-        } catch (validationError) {
-          setConfigValidation(null); // Could store validation result
-          setErrors((prev) => ({ ...prev, configuration: undefined }));
-        }
+        // For now, we'll just check basic structure
+        // In the future, this could call validateConfigurationJson if we had a qualifier type instance
+        setErrors((prev) => ({ ...prev, configuration: undefined }));
       } else {
-        setConfigValidation(null);
         setErrors((prev) => ({ ...prev, configuration: undefined }));
       }
     } catch (error) {
       setIsJsonValid(false);
-      setConfigValidation(null);
       setErrors((prev) => ({
         ...prev,
         configuration: error instanceof Error ? `JSON Error: ${error.message}` : 'Invalid JSON'
@@ -102,7 +86,7 @@ export const GenericQualifierTypeEditForm: React.FC<GenericQualifierTypeEditForm
   }, [formData.configuration, formData.name, formData.systemType]);
 
   const validateForm = useCallback((): boolean => {
-    const newErrors: ValidationErrors = {};
+    const newErrors: IValidationErrors = {};
 
     // Validate name
     if (!formData.name.trim()) {
@@ -151,10 +135,10 @@ export const GenericQualifierTypeEditForm: React.FC<GenericQualifierTypeEditForm
   }, [formData, validateForm, onSave]);
 
   const handleInputChange = useCallback(
-    (field: keyof FormData, value: string) => {
+    (field: keyof IFormData, value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       // Clear error when user starts typing
-      if (errors[field as keyof ValidationErrors]) {
+      if (errors[field as keyof IValidationErrors]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     },

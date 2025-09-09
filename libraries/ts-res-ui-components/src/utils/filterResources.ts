@@ -1,13 +1,13 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { Runtime, Import, Resources } from '@fgv/ts-res';
-import { ProcessedResources, FilteredResource, FilterResult } from '../types';
+import { Runtime, Import } from '@fgv/ts-res';
+import { IProcessedResources, IFilteredResource, IFilterResult } from '../types';
 
 /**
  * Options for configuring filtering behavior and output.
  *
  * @public
  */
-export interface FilterOptions {
+export interface IFilterOptions {
   /** Allow partial context matches when filtering resources */
   partialContextMatch?: boolean;
   /** Enable detailed console logging for debugging filter operations */
@@ -17,7 +17,7 @@ export interface FilterOptions {
 }
 
 // Helper function for conditional debug logging
-const debugLog = (enableDebug: boolean, ...args: unknown[]) => {
+const debugLog = (enableDebug: boolean, ...args: unknown[]): void => {
   if (enableDebug) {
     console.log(...args);
   }
@@ -147,10 +147,10 @@ export function getFilterSummary(values: Record<string, string | undefined>): st
  * @public
  */
 export const createFilteredResourceManagerSimple = async (
-  originalSystem: ProcessedResources['system'],
+  originalSystem: IProcessedResources['system'],
   partialContext: Record<string, string | undefined>,
-  options: FilterOptions = { partialContextMatch: true }
-): Promise<Result<ProcessedResources>> => {
+  options: IFilterOptions = { partialContextMatch: true }
+): Promise<Result<IProcessedResources>> => {
   const enableDebug = options.enableDebugLogging === true;
 
   debugLog(enableDebug, '=== SIMPLE FILTER CREATION ===');
@@ -229,7 +229,7 @@ export const createFilteredResourceManagerSimple = async (
                         warnings: [] as string[]
                       };
 
-                      const processedResources: ProcessedResources = {
+                      const processedResources: IProcessedResources = {
                         system: newSystem,
                         compiledCollection,
                         resolver,
@@ -313,10 +313,10 @@ export const createFilteredResourceManagerSimple = async (
  */
 export function analyzeFilteredResources(
   originalResourceIds: string[],
-  filteredProcessedResources: ProcessedResources,
-  originalProcessedResources: ProcessedResources
-): FilterResult {
-  const filteredResources: FilteredResource[] = [];
+  filteredProcessedResources: IProcessedResources,
+  originalProcessedResources: IProcessedResources
+): IFilterResult {
+  const filteredResources: IFilteredResource[] = [];
   const warnings: string[] = [];
 
   for (const resourceId of originalResourceIds) {

@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { TableCellsIcon } from '@heroicons/react/24/outline';
-import { MultiGridViewProps, GridViewInitParams, ProcessedResources } from '../../../types';
+import { IMultiGridViewProps } from '../../../types';
 import { selectResources } from '../../../utils/resourceSelector';
 import { SharedContextControls } from './SharedContextControls';
 import { GridSelector } from './GridSelector';
 import { GridView } from './index';
 import { UnifiedChangeControls } from '../ResolutionView/UnifiedChangeControls';
-import { hasGridValidationErrors } from './EditableGridCell';
+import { hasGridValidationErrors, clearAllGridValidationErrors } from './EditableGridCell';
 
 /**
  * MultiGridView component for managing multiple grid instances with shared context.
@@ -88,7 +88,7 @@ import { hasGridValidationErrors } from './EditableGridCell';
  *
  * @public
  */
-export const MultiGridView: React.FC<MultiGridViewProps> = ({
+export const MultiGridView: React.FC<IMultiGridViewProps> = ({
   gridConfigurations,
   resources,
   resolutionState,
@@ -168,9 +168,7 @@ export const MultiGridView: React.FC<MultiGridViewProps> = ({
     resolutionActions?.discardEdits?.();
     resolutionActions?.discardPendingResources?.();
     // Clear validation errors when discarding
-    import('./EditableGridCell').then((module) => {
-      module.clearAllGridValidationErrors();
-    });
+    clearAllGridValidationErrors();
   }, [resolutionActions]);
 
   if (!resources) {

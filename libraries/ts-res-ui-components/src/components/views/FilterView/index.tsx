@@ -1,38 +1,22 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import {
-  FunnelIcon,
-  DocumentTextIcon,
-  ExclamationTriangleIcon,
-  ArrowPathIcon,
-  CheckIcon,
-  XMarkIcon,
-  DocumentArrowDownIcon,
-  CodeBracketIcon,
-  ChevronDownIcon,
-  ChevronUpIcon
-} from '@heroicons/react/24/outline';
-import { Resources } from '@fgv/ts-res';
-import { FilterViewProps, ResolutionContextOptions } from '../../../types';
-import { Config } from '@fgv/ts-res';
+import { FunnelIcon, ExclamationTriangleIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+// Resources import removed - unused
+import { IFilterViewProps, IResolutionContextOptions } from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import {
-  ResourceSelection,
-  ResourceAnnotations,
-  ResourcePickerOptions
-} from '../../pickers/ResourcePicker/types';
+// Unused II interfaces import removed
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import {
+  IResourcePickerOptions,
+  IResourceSelection,
+  IResourceAnnotations
+} from '../../pickers/ResourcePicker/types';
+import { IFilteredResource } from '../../../types';
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { useObservability } from '../../../contexts';
 
-// Import FilteredResource type from the utils
-interface FilteredResource {
-  id: string;
-  originalCandidateCount: number;
-  filteredCandidateCount: number;
-  hasWarning: boolean;
-}
+// IIFilteredResource interface removed - unused
 
 /**
  * FilterView component for context-based resource filtering and analysis.
@@ -82,7 +66,7 @@ interface FilteredResource {
  *
  * @public
  */
-export const FilterView: React.FC<FilterViewProps> = ({
+export const FilterView: React.FC<IFilterViewProps> = ({
   resources,
   filterState,
   filterActions,
@@ -99,15 +83,14 @@ export const FilterView: React.FC<FilterViewProps> = ({
 
   // Local UI state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
-  const [showFilteredJsonView, setShowFilteredJsonView] = useState(false);
 
   // State for picker options control
-  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
-    pickerOptions || {}
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<IResourcePickerOptions>(
+    (pickerOptions ?? {}) as IResourcePickerOptions
   );
 
   // State for context options control
-  const [currentContextOptions, setCurrentContextOptions] = useState<ResolutionContextOptions>(
+  const [currentContextOptions, setCurrentContextOptions] = useState<IResolutionContextOptions>(
     contextOptions || {}
   );
 
@@ -180,75 +163,6 @@ export const FilterView: React.FC<FilterViewProps> = ({
     return activeFilters.length > 0 ? activeFilters.join(', ') : 'No filters';
   }, []);
 
-  // Get filtered resource collection data (simplified)
-  const getFilteredResourceCollectionData = useCallback(() => {
-    if (!filterResult?.processedResources?.system.resourceManager) {
-      return null;
-    }
-
-    const resourceManager = filterResult.processedResources.system.resourceManager;
-
-    // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
-    if ('getResourceCollectionDecl' in resourceManager) {
-      const collectionResult = (
-        resourceManager as Resources.ResourceManagerBuilder
-      ).getResourceCollectionDecl();
-      if (collectionResult.isSuccess()) {
-        return {
-          ...collectionResult.value,
-          metadata: {
-            exportedAt: new Date().toISOString(),
-            totalResources: filterResult.processedResources.resourceCount,
-            type: 'ts-res-filtered-resource-collection',
-            filterContext: filterState.appliedValues,
-            reduceQualifiers: filterState.reduceQualifiers
-          }
-        };
-      } else {
-        onMessage?.('error', `Failed to get filtered resource collection: ${collectionResult.message}`);
-        return null;
-      }
-    } else if (filterResult.processedResources.compiledCollection) {
-      // For IResourceManager from bundles, use the compiled collection directly
-      return {
-        resources: filterResult.processedResources.compiledCollection.resources || [],
-        metadata: {
-          exportedAt: new Date().toISOString(),
-          totalResources: filterResult.processedResources.resourceCount,
-          type: 'ts-res-filtered-resource-collection',
-          filterContext: filterState.appliedValues,
-          reduceQualifiers: filterState.reduceQualifiers
-        }
-      };
-    } else {
-      onMessage?.('error', 'Filtered resource collection data not available');
-      return null;
-    }
-  }, [filterResult, onMessage, filterState.appliedValues, filterState.reduceQualifiers]);
-
-  // Export filtered resource collection data
-  const handleExportFilteredData = useCallback(() => {
-    try {
-      const collectionData = getFilteredResourceCollectionData();
-      if (!collectionData) {
-        onMessage?.('error', 'No filtered collection data available to export');
-        return;
-      }
-
-      const filterSummary = getFilterSummary(filterState.appliedValues);
-      // Use onExport callback instead of direct file download for flexibility
-      // onExport?.(collectionData, 'json');
-      onMessage?.('success', 'Filtered resource collection exported successfully');
-    } catch (error) {
-      onMessage?.(
-        'error',
-        `Failed to export filtered resource collection: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  }, [getFilteredResourceCollectionData, onMessage, filterState.appliedValues, getFilterSummary]);
-
   // Get resources to display (filtered or original) - now uses orchestrator's filterResult
   const displayResources = useMemo(() => {
     o11y.diag.info('FilterView displayResources calculation:', {
@@ -263,7 +177,7 @@ export const FilterView: React.FC<FilterViewProps> = ({
 
     if (!resources) return [];
 
-    let resourceList: FilteredResource[] = [];
+    let resourceList: IFilteredResource[] = [];
 
     if (isFilteringActive && filterResult?.success && filterResult.filteredResources) {
       o11y.diag.info('Using filtered resources:', filterResult.filteredResources.length);
@@ -300,7 +214,7 @@ export const FilterView: React.FC<FilterViewProps> = ({
 
   // Create resource annotations for filtering information
   const resourceAnnotations = useMemo(() => {
-    const annotations: ResourceAnnotations = {};
+    const annotations: IResourceAnnotations = {};
 
     displayResources.forEach((resource) => {
       if (isFilteringActive) {
@@ -365,17 +279,8 @@ export const FilterView: React.FC<FilterViewProps> = ({
     return { ...baseValues, ...hostValues };
   }, [filterState.values, effectiveContextOptions?.hostManagedValues]);
 
-  // Handle filter value changes
-  const handleFilterChange = useCallback(
-    (qualifierName: string, value: string | undefined) => {
-      const newValues = { ...filterState.values, [qualifierName]: value };
-      filterActions.updateFilterValues(newValues);
-    },
-    [filterState.values, filterActions]
-  );
-
   // Handle resource selection with enhanced callback
-  const handleResourceSelect = useCallback((selection: ResourceSelection) => {
+  const handleResourceSelect = useCallback((selection: IResourceSelection) => {
     setSelectedResourceId(selection.resourceId);
   }, []);
 

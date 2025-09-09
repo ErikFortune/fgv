@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, ReactElement } from 'react';
 import { MagnifyingGlassIcon, ListBulletIcon, FolderIcon } from '@heroicons/react/24/outline';
-import { ResourcePickerProps, ResourceSelection, ResourcePickerOptions } from './types';
+import { IResourcePickerProps, IResourceSelection } from './types';
 import { ResourcePickerList } from './ResourcePickerList';
 import { ResourcePickerTree } from './ResourcePickerTree';
 import { searchResources, filterTreeBranch } from './utils/treeNavigation';
@@ -70,7 +70,7 @@ export const ResourcePicker = <T = unknown,>({
   options,
   className = '',
   onMessage
-}: ResourcePickerProps<T>) => {
+}: IResourcePickerProps<T>): ReactElement => {
   // Extract options with defaults
   const {
     defaultView = 'list',
@@ -109,7 +109,7 @@ export const ResourcePicker = <T = unknown,>({
 
   // Handle resource selection
   const handleResourceSelect = useCallback(
-    (selection: ResourceSelection<T>) => {
+    (selection: IResourceSelection<T>) => {
       onResourceSelect(selection);
       if (selection.resourceId) {
         onMessage?.('info', `Selected resource: ${selection.resourceId}`);
@@ -119,7 +119,7 @@ export const ResourcePicker = <T = unknown,>({
   );
 
   // Calculate dynamic search placeholder
-  const getSearchPlaceholder = () => {
+  const getSearchPlaceholder = (): string => {
     if (searchPlaceholder) {
       return searchPlaceholder;
     }

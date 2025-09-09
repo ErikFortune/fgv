@@ -14,7 +14,7 @@ import { useObservability } from '../../contexts';
  *
  * @public
  */
-interface ResourceTreeViewProps {
+interface IResourceTreeViewProps {
   /** Resource manager or compiled collection to display as a tree */
   resources: Resources.ResourceManagerBuilder | Runtime.CompiledResourceCollection;
   /** Currently selected resource ID for highlighting */
@@ -25,22 +25,6 @@ interface ResourceTreeViewProps {
   searchTerm?: string;
   /** Optional CSS classes to apply to the container */
   className?: string;
-}
-
-/**
- * Internal tree node structure for rendering.
- *
- * @internal
- */
-interface TreeNode {
-  id: string;
-  name: string;
-  isLeaf: boolean;
-  resource?: Resources.Resource | Runtime.IResource;
-  children?: Map<string, TreeNode>;
-  isExpanded?: boolean;
-  isVisible?: boolean;
-  matchesSearch?: boolean;
 }
 
 /**
@@ -174,7 +158,7 @@ interface TreeNode {
  *
  * @public
  */
-export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
+export const ResourceTreeView: React.FC<IResourceTreeViewProps> = ({
   resources,
   selectedResourceId,
   onResourceSelect,
@@ -206,7 +190,7 @@ export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
 
     // Helper function to check if a node or its descendants match the search
     const markMatchingNodes = (
-      node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>,
+      node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<unknown>,
       searchLower: string
     ): boolean => {
       const nodeIdLower = node.id.toLowerCase();
@@ -253,7 +237,7 @@ export const ResourceTreeView: React.FC<ResourceTreeViewProps> = ({
     const searchLower = searchTerm.toLowerCase();
     const nodesToExpand = new Set<string>();
 
-    const checkNode = (node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>) => {
+    const checkNode = (node: Runtime.ResourceTree.IReadOnlyResourceTreeNode<unknown>): void => {
       if (node.id.toLowerCase().includes(searchLower)) {
         // Expand all parent nodes
         const parts = node.id.split('.');

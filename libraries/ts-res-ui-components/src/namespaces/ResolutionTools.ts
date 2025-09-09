@@ -47,7 +47,7 @@ export {
   resolveResourceDetailed,
   getAvailableQualifiers,
   hasPendingContextChanges,
-  type ResolutionOptions
+  type IResolutionOptions
 } from '../utils/resolutionUtils';
 
 // Export resource selector utility functions for pending resource management
@@ -63,18 +63,18 @@ export {
 
 // Export types related to resource resolution
 export type {
-  ResolutionState,
-  ResolutionActions,
-  ResolutionViewProps,
-  ResolutionResult,
-  CandidateInfo,
-  ConditionEvaluationResult,
-  EditedResourceInfo,
-  ResolutionContextOptions,
-  QualifierControlOptions,
-  CreatePendingResourceParams
+  IResolutionState,
+  IResolutionActions,
+  IResolutionViewProps,
+  IResolutionResult,
+  ICandidateInfo,
+  IConditionEvaluationResult,
+  IEditedResourceInfo,
+  IResolutionContextOptions,
+  IQualifierControlOptions,
+  ICreatePendingResourceParams
 } from '../types';
 
 // Export types for resolution components
-export type { EditableJsonViewProps } from '../components/views/ResolutionView/EditableJsonView';
-export type { ResolutionContextOptionsControlProps } from '../components/common/ResolutionContextOptionsControl';
+export type { IEditableJsonViewProps } from '../components/views/ResolutionView/EditableJsonView';
+export type { IResolutionContextOptionsControlProps } from '../components/common/ResolutionContextOptionsControl';

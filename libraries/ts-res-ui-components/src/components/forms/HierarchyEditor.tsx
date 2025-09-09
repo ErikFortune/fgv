@@ -5,7 +5,7 @@ import React, { useState } from 'react';
  *
  * @public
  */
-export interface HierarchyEditorProps {
+export interface IHierarchyEditorProps {
   /** Current hierarchy mapping of child to parent relationships */
   hierarchy: Record<string, string>;
   /** Callback fired when the hierarchy is modified */
@@ -88,7 +88,7 @@ export interface HierarchyEditorProps {
  *
  * @public
  */
-export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
+export const HierarchyEditor: React.FC<IHierarchyEditorProps> = ({
   hierarchy,
   onChange,
   availableValues,
@@ -112,7 +112,7 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
     return safe;
   }, [hierarchy]);
 
-  const handleAddRelationship = () => {
+  const handleAddRelationship = (): void => {
     if (newChild && newParent && newChild !== newParent) {
       const updatedHierarchy = { ...safeHierarchy, [newChild]: newParent };
       onChange(updatedHierarchy);
@@ -121,13 +121,13 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
     }
   };
 
-  const handleRemoveRelationship = (child: string) => {
+  const handleRemoveRelationship = (child: string): void => {
     const updatedHierarchy = { ...safeHierarchy };
     delete updatedHierarchy[child];
     onChange(updatedHierarchy);
   };
 
-  const getHierarchyTree = () => {
+  const getHierarchyTree = (): Array<{ value: string; level: number; children: unknown[] }> => {
     const roots = new Set(availableValues);
     const children = new Set(Object.keys(safeHierarchy));
     const parents = new Set(Object.values(safeHierarchy));

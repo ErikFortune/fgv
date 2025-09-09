@@ -57,10 +57,10 @@ export function getResourceDisplayName(
 /**
  * Builds a tree structure from flat resource IDs
  */
-export interface TreeNode {
+export interface ITreeNode {
   id: string;
   displayName: string;
-  children: TreeNode[];
+  children: ITreeNode[];
   isExpanded?: boolean;
   isPending?: boolean;
 }
@@ -70,9 +70,9 @@ export function buildResourceTree(
   rootPath?: string,
   hideRootNode?: boolean,
   expandedNodes?: Set<string>
-): TreeNode[] {
-  const tree: TreeNode[] = [];
-  const nodeMap = new Map<string, TreeNode>();
+): ITreeNode[] {
+  const tree: ITreeNode[] = [];
+  const nodeMap = new Map<string, ITreeNode>();
 
   // Filter resources based on root path
   const filteredIds = filterTreeBranch(resourceIds, rootPath, hideRootNode);
@@ -106,7 +106,7 @@ export function buildResourceTree(
     const adjustedId = adjustResourcePath(convertedId, rootPath, hideRootNode);
     const adjustedSegments = adjustedId.split('/');
 
-    const node: TreeNode = {
+    const node: ITreeNode = {
       id: originalId, // Keep original ID
       displayName: segments[segments.length - 1],
       children: [],
@@ -142,10 +142,10 @@ export function buildResourceTree(
 /**
  * Flattens a tree structure back to a list of IDs
  */
-export function flattenTree(nodes: TreeNode[]): string[] {
+export function flattenTree(nodes: ITreeNode[]): string[] {
   const result: string[] = [];
 
-  function traverse(node: TreeNode) {
+  function traverse(node: ITreeNode): void {
     result.push(node.id);
     for (const child of node.children) {
       traverse(child);

@@ -9,7 +9,7 @@ export namespace DownloadUtils {
    * Options for customizing file downloads
    * @public
    */
-  export interface DownloadOptions {
+  export interface IDownloadOptions {
     /** Base filename (without extension). If not provided, uses 'ts-res-export' */
     baseFilename?: string;
     /** File extension (without dot). Defaults to 'json' */
@@ -42,7 +42,7 @@ export namespace DownloadUtils {
   export function generateFilename(
     baseFilename: string,
     type?: string,
-    options: DownloadOptions = {}
+    options: IDownloadOptions = {}
   ): Result<string> {
     if (!baseFilename || !baseFilename.trim()) {
       return fail('Base filename cannot be empty');
@@ -78,7 +78,7 @@ export namespace DownloadUtils {
    * Downloads data as a file using the browser's download mechanism
    * @public
    */
-  export function downloadFile(data: unknown, type: string, options: DownloadOptions = {}): Result<void> {
+  export function downloadFile(data: unknown, type: string, options: IDownloadOptions = {}): Result<void> {
     const { baseFilename = 'ts-res-export', extension = 'json', mimeType } = options;
 
     // Generate filename
@@ -139,7 +139,7 @@ export namespace DownloadUtils {
    * @public
    */
   export function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void> {
-    const options: DownloadOptions = {
+    const options: IDownloadOptions = {
       baseFilename: 'ts-res-bundle',
       extension: 'json',
       includeTimestamp: true,
@@ -174,7 +174,7 @@ export namespace DownloadUtils {
     resourceCount?: number,
     collectionName?: string
   ): Result<void> {
-    const options: DownloadOptions = {
+    const options: IDownloadOptions = {
       baseFilename: 'ts-res-resources',
       extension: 'json',
       includeTimestamp: true,

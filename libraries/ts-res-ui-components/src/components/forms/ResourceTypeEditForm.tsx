@@ -7,7 +7,7 @@ import { ResourceTypes } from '@fgv/ts-res';
  *
  * @public
  */
-export interface ResourceTypeEditFormProps {
+export interface IResourceTypeEditFormProps {
   /** Existing resource type to edit (undefined for creating new type) */
   resourceType?: ResourceTypes.Config.IResourceTypeConfig;
   /** Callback fired when resource type is saved */
@@ -18,12 +18,12 @@ export interface ResourceTypeEditFormProps {
   existingNames?: string[];
 }
 
-interface FormData {
+interface IFormData {
   name: string;
   typeName: string;
 }
 
-const COMMON_TYPE_NAMES = [
+const COMMON_TYPE_NAMES: string[] = [
   'string',
   'object',
   'array',
@@ -135,13 +135,13 @@ const COMMON_TYPE_NAMES = [
  *
  * @public
  */
-export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
+export const ResourceTypeEditForm: React.FC<IResourceTypeEditFormProps> = ({
   resourceType,
   onSave,
   onCancel,
   existingNames = []
 }) => {
-  const [formData, setFormData] = useState<FormData>(() => {
+  const [formData, setFormData] = useState<IFormData>(() => {
     if (resourceType) {
       return {
         name: resourceType.name,
@@ -197,7 +197,7 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
   }, [formData, validateForm, onSave]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: any) => {
+    (field: keyof IFormData, value: any) => {
       setFormData((prev) => {
         const updated = { ...prev, [field]: value };
 

@@ -1,10 +1,10 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ProcessedResources, GridResourceSelector, CustomResourceSelector } from '../types';
+import { IProcessedResources, GridResourceSelector, ICustomResourceSelector } from '../types';
 
 /**
  * Handler function type for resource selector implementations.
  */
-type SelectorHandler = (selector: any, resources: ProcessedResources) => Result<string[]>;
+type SelectorHandler = (selector: any, resources: IProcessedResources) => Result<string[]>;
 
 /**
  * Resource selector utility for filtering resources based on various criteria.
@@ -30,9 +30,9 @@ type SelectorHandler = (selector: any, resources: ProcessedResources) => Result<
  * @public
  */
 export class ResourceSelector {
-  private registry = new Map<string, SelectorHandler>();
+  private registry: Map<string, SelectorHandler> = new Map<string, SelectorHandler>();
 
-  constructor() {
+  public constructor() {
     // Register built-in selectors
     this.registry.set('ids', this.selectByIds);
     this.registry.set('prefix', this.selectByPrefix);
@@ -49,14 +49,14 @@ export class ResourceSelector {
    * @param type - Unique identifier for the selector type
    * @param handler - Function that implements the selection logic
    */
-  registerSelector(type: string, handler: SelectorHandler): void {
+  public registerSelector(type: string, handler: SelectorHandler): void {
     this.registry.set(type, handler);
   }
 
   /**
    * Get all registered selector types (useful for debugging/tooling).
    */
-  getRegisteredTypes(): string[] {
+  public getRegisteredTypes(): string[] {
     return Array.from(this.registry.keys());
   }
 
@@ -67,7 +67,7 @@ export class ResourceSelector {
    * @param resources - Processed resources to select from
    * @returns Result containing array of selected resource IDs
    */
-  select(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]> {
+  public select(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
     const handler = this.registry.get(selector.type);
     if (!handler) {
       return fail(`Unknown selector type: ${selector.type}`);
@@ -85,7 +85,7 @@ export class ResourceSelector {
    */
   private selectByIds = (
     selector: { resourceIds: string[] },
-    resources: ProcessedResources
+    resources: IProcessedResources
   ): Result<string[]> => {
     const availableIds = new Set(resources.summary.resourceIds);
     const selectedIds = selector.resourceIds.filter((id) => availableIds.has(id));
@@ -102,7 +102,7 @@ export class ResourceSelector {
    */
   private selectByPrefix = (
     selector: { prefix: string },
-    resources: ProcessedResources
+    resources: IProcessedResources
   ): Result<string[]> => {
     if (!selector.prefix) {
       return fail('Prefix cannot be empty');
@@ -117,7 +117,7 @@ export class ResourceSelector {
    */
   private selectBySuffix = (
     selector: { suffix: string },
-    resources: ProcessedResources
+    resources: IProcessedResources
   ): Result<string[]> => {
     if (!selector.suffix) {
       return fail('Suffix cannot be empty');
@@ -132,7 +132,7 @@ export class ResourceSelector {
    */
   private selectByResourceTypes = (
     selector: { types: string[] },
-    resources: ProcessedResources
+    resources: IProcessedResources
   ): Result<string[]> => {
     if (!selector.types || selector.types.length === 0) {
       return fail('Resource types array cannot be empty');
@@ -166,7 +166,7 @@ export class ResourceSelector {
    */
   private selectByPattern = (
     selector: { pattern: string },
-    resources: ProcessedResources
+    resources: IProcessedResources
   ): Result<string[]> => {
     if (!selector.pattern) {
       return fail('Pattern cannot be empty');
@@ -190,7 +190,7 @@ export class ResourceSelector {
   /**
    * Select all available resources.
    */
-  private selectAll = (_selector: {}, resources: ProcessedResources): Result<string[]> => {
+  private selectAll = (_selector: {}, resources: IProcessedResources): Result<string[]> => {
     return succeed([...resources.summary.resourceIds]);
   };
 
@@ -198,8 +198,8 @@ export class ResourceSelector {
    * Select resources using custom selector logic.
    */
   private selectCustom = (
-    selector: { selector: CustomResourceSelector },
-    resources: ProcessedResources
+    selector: { selector: ICustomResourceSelector },
+    resources: IProcessedResources
   ): Result<string[]> => {
     if (!selector.selector) {
       return fail('Custom selector configuration is required');
@@ -210,10 +210,10 @@ export class ResourceSelector {
 
       // Validate that all returned IDs exist in the resource collection
       const availableIds = new Set(resources.summary.resourceIds);
-      const validIds = selectedIds.filter((id) => availableIds.has(id));
+      const validIds = selectedIds.filter((id: string) => availableIds.has(id));
 
       if (validIds.length !== selectedIds.length) {
-        const invalidIds = selectedIds.filter((id) => !availableIds.has(id));
+        const invalidIds = selectedIds.filter((id: string) => !availableIds.has(id));
         console.warn(`Custom selector returned invalid resource IDs: ${invalidIds.join(', ')}`);
       }
 
@@ -228,7 +228,7 @@ export class ResourceSelector {
  * Default resource selector instance for use throughout the application.
  * @public
  */
-export const defaultResourceSelector = new ResourceSelector();
+export const defaultResourceSelector: ResourceSelector = new ResourceSelector();
 
 /**
  * Utility function to select resources using the default selector.
@@ -240,7 +240,7 @@ export const defaultResourceSelector = new ResourceSelector();
  */
 export function selectResources(
   selector: GridResourceSelector,
-  resources: ProcessedResources
+  resources: IProcessedResources
 ): Result<string[]> {
   return defaultResourceSelector.select(selector, resources);
 }

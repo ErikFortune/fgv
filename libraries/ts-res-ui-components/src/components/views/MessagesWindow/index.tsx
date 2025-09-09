@@ -21,7 +21,7 @@ import { useObservability } from '../../../contexts';
  *
  * @public
  */
-export interface Message {
+export interface IMessage {
   /** Unique identifier for the message */
   id: string;
   /** Message type determining visual styling and filtering */
@@ -37,9 +37,9 @@ export interface Message {
  *
  * @public
  */
-export interface MessagesWindowProps {
+export interface IMessagesWindowProps {
   /** Array of messages to display */
-  messages: Message[];
+  messages: IMessage[];
   /** Callback fired when the user requests to clear all messages */
   onClearMessages: () => void;
   /** Optional CSS class name for the container */
@@ -66,13 +66,13 @@ export interface MessagesWindowProps {
  *
  * @example
  * ```typescript
- * import { MessagesWindow, Message } from '@fgv/ts-res-ui-components';
+ * import { MessagesWindow, IMessage } from '@fgv/ts-res-ui-components';
  *
  * function MyApplication() {
- *   const [messages, setMessages] = useState<Message[]>([]);
+ *   const [messages, setMessages] = useState<IMessage[]>([]);
  *
- *   const addMessage = (type: Message['type'], text: string) => {
- *     const newMessage: Message = {
+ *   const addMessage = (type: IMessage['type'], text: string) => {
+ *     const newMessage: IMessage = {
  *       id: `msg-${Date.now()}-${Math.random()}`,
  *       type,
  *       message: text,
@@ -112,10 +112,10 @@ export interface MessagesWindowProps {
  *
  * function MyTool() {
  *   const [viewState, setViewState] = useState({
- *     messages: [] as ViewStateTools.Message[]
+ *     messages: [] as ViewStateTools.IMessage[]
  *   });
  *
- *   const onMessage = (type: ViewStateTools.Message['type'], message: string) => {
+ *   const onMessage = (type: ViewStateTools.IMessage['type'], message: string) => {
  *     setViewState(prev => ({
  *       ...prev,
  *       messages: [...prev.messages, {
@@ -139,7 +139,7 @@ export interface MessagesWindowProps {
  *
  * @public
  */
-export const MessagesWindow: React.FC<MessagesWindowProps> = ({
+export const MessagesWindow: React.FC<IMessagesWindowProps> = ({
   messages,
   onClearMessages,
   className = ''
@@ -148,7 +148,7 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
   const o11y = useObservability();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [filter, setFilter] = useState<Message['type'] | 'all'>('all');
+  const [filter, setFilter] = useState<IMessage['type'] | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -163,7 +163,11 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
     });
   }, [messages, filter, searchTerm]);
 
-  const copyAllMessages = () => {
+  const formatTime = (date: Date): string => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
+
+  const copyAllMessages = (): void => {
     const messageText = filteredMessages
       .map((msg) => `[${msg.type.toUpperCase()}] ${formatTime(msg.timestamp)} - ${msg.message}`)
       .join('\n');
@@ -183,7 +187,7 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
     return null;
   }
 
-  const getMessageIcon = (type: Message['type']) => {
+  const getMessageIcon = (type: IMessage['type']): React.ReactElement => {
     switch (type) {
       case 'info':
         return <InformationCircleIcon className="h-5 w-5 text-blue-500" />;
@@ -198,7 +202,7 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
     }
   };
 
-  const getMessageBgColor = (type: Message['type']) => {
+  const getMessageBgColor = (type: IMessage['type']): string => {
     switch (type) {
       case 'info':
         return 'bg-blue-50 border-blue-200';
@@ -211,10 +215,6 @@ export const MessagesWindow: React.FC<MessagesWindowProps> = ({
       default:
         return 'bg-gray-50 border-gray-200';
     }
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
   return (

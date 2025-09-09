@@ -14,6 +14,7 @@ import { MessageLogLevel } from '@fgv/ts-utils';
 import { Qualifiers } from '@fgv/ts-res';
 import { QualifierTypes } from '@fgv/ts-res';
 import { default as React_2 } from 'react';
+import { ReactElement } from 'react';
 import { ReactNode } from 'react';
 import { ResourceJson } from '@fgv/ts-res';
 import { Resources } from '@fgv/ts-res';
@@ -23,23 +24,12 @@ import { Runtime } from '@fgv/ts-res';
 import { Success } from '@fgv/ts-utils';
 
 // @public
-function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
+function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: IProcessedResources, originalProcessedResources: IProcessedResources): IFilterResult;
 
-// Warning: (ae-forgotten-export) The symbol "BooleanCellProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IBooleanCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const BooleanCell: React_2.FC<BooleanCellProps>;
-
-// @public
-interface CandidateInfo {
-    candidate: Runtime.IResourceCandidate;
-    candidateIndex: number;
-    conditionEvaluations?: ConditionEvaluationResult[];
-    conditionSetKey: string | null;
-    isDefaultMatch: boolean;
-    matched: boolean;
-    matchType: 'match' | 'matchAsDefault' | 'noMatch';
-}
+const BooleanCell: React_2.FC<IBooleanCellProps>;
 
 // @public
 const clearAllGridValidationErrors: () => void;
@@ -48,30 +38,7 @@ const clearAllGridValidationErrors: () => void;
 function cloneConfiguration(config: Config.Model.ISystemConfiguration): Config.Model.ISystemConfiguration;
 
 // @public
-export const CompiledView: React_2.FC<CompiledViewProps>;
-
-// @public
-interface CompiledViewProps extends ViewBaseProps {
-    filterResult?: FilterResult | null;
-    filterState?: FilterState;
-    onExport?: (data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle, type: 'json' | 'bundle') => void;
-    pickerOptions?: ResourcePickerOptions;
-    resources?: ExtendedProcessedResources | null;
-    useNormalization?: boolean;
-}
-
-// @public
-interface ConditionEvaluationResult {
-    conditionIndex: number;
-    conditionValue: string | undefined;
-    matched: boolean;
-    matchType: 'match' | 'matchAsDefault' | 'noMatch';
-    operator: string;
-    qualifierName: string;
-    qualifierValue: string | undefined;
-    score: number;
-    scoreAsDefault?: number;
-}
+export const CompiledView: React_2.FC<ICompiledViewProps>;
 
 declare namespace ConfigurationTools {
     export {
@@ -80,26 +47,18 @@ declare namespace ConfigurationTools {
         QualifierEditForm,
         ResourceTypeEditForm,
         HierarchyEditor,
-        useConfigurationState,
+        useIConfigurationState,
         getDefaultConfiguration,
         validateConfiguration,
         cloneConfiguration,
         exportConfiguration,
         importConfiguration,
-        ConfigurationViewProps
+        IConfigurationViewProps
     }
 }
 
 // @public
-export const ConfigurationView: React_2.FC<ConfigurationViewProps>;
-
-// @public
-interface ConfigurationViewProps extends ViewBaseProps {
-    configuration?: Config.Model.ISystemConfiguration | null;
-    hasUnsavedChanges?: boolean;
-    onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void;
-    onSave?: (config: Config.Model.ISystemConfiguration) => void;
-}
+export const ConfigurationView: React_2.FC<IConfigurationViewProps>;
 
 // @public
 class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
@@ -114,26 +73,19 @@ class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
 // Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
 //
 // @internal (undocumented)
-function convertImportedDirectoryToFileTree(directory: ImportedDirectory, o11y?: ObservabilityTools_2.IObservabilityContext): FileTree.FileTree;
+function convertImportedDirectoryToFileTree(directory: IImportedDirectory, o11y?: ObservabilityTools_2.IObservabilityContext): FileTree.FileTree;
 
 // @public
 function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
 
 // @public
-const createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>;
+const createFilteredResourceManagerSimple: (originalSystem: IProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: IFilterOptions) => Promise<Result<IProcessedResources>>;
 
 // @public
 function createNoOpObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
 
 // @public
-interface CreatePendingResourceParams {
-    id: string;
-    json?: JsonValue;
-    resourceTypeName: string;
-}
-
-// @public
-function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
+function createResolverWithContext(processedResources: IProcessedResources, contextValues: Record<string, string | undefined>, options?: IResolutionOptions): Result<Runtime.ResourceResolver>;
 
 // @internal (undocumented)
 function createSimpleContext(qualifiers: Qualifiers.IReadOnlyQualifierCollector, values: Record<string, string | undefined>): Result<Runtime.ValidatingSimpleContextQualifierProvider>;
@@ -147,13 +99,6 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
     importManager: Import.ImportManager;
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
 }>;
-
-// @public
-interface CustomResourceSelector {
-    displayName?: string;
-    id: string;
-    select: (resources: ProcessedResources) => string[];
-}
 
 // @public
 const DefaultObservabilityContext: IObservabilityContext;
@@ -172,8 +117,12 @@ export namespace DownloadUtils {
     export function createTimestamp(customFormat?: string): string;
     export function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void>;
     export function downloadCompiledResources(data: unknown, resourceCount?: number): Result<void>;
-    export function downloadFile(data: unknown, type: string, options?: DownloadOptions): Result<void>;
-    export interface DownloadOptions {
+    export function downloadFile(data: unknown, type: string, options?: IDownloadOptions): Result<void>;
+    export function downloadResources(data: unknown, resourceCount?: number, collectionName?: string): Result<void>;
+    export function downloadSourceResources(data: unknown, resourceCount?: number): Result<void>;
+    export function downloadTsResJson(data: unknown, type: string): Result<void>;
+    export function generateFilename(baseFilename: string, type?: string, options?: IDownloadOptions): Result<string>;
+    export interface IDownloadOptions {
         baseFilename?: string;
         extension?: string;
         filenameTransformer?: (baseFilename: string) => string;
@@ -181,113 +130,37 @@ export namespace DownloadUtils {
         mimeType?: string;
         timestampFormat?: string;
     }
-    export function downloadResources(data: unknown, resourceCount?: number, collectionName?: string): Result<void>;
-    export function downloadSourceResources(data: unknown, resourceCount?: number): Result<void>;
-    export function downloadTsResJson(data: unknown, type: string): Result<void>;
-    export function generateFilename(baseFilename: string, type?: string, options?: DownloadOptions): Result<string>;
 }
 
-// Warning: (ae-forgotten-export) The symbol "DropdownCellProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IDropdownCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const DropdownCell: React_2.FC<DropdownCellProps>;
+const DropdownCell: React_2.FC<IDropdownCellProps>;
 
-// Warning: (ae-forgotten-export) The symbol "EditableGridCellProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IEditableGridCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const EditableGridCell: React_2.FC<EditableGridCellProps>;
+const EditableGridCell: React_2.FC<IEditableGridCellProps>;
 
 // @public
-const EditableJsonView: React_2.FC<EditableJsonViewProps>;
+const EditableJsonView: React_2.FC<IEditableJsonViewProps>;
 
 // @public
-interface EditableJsonViewProps {
-    className?: string;
-    disabled?: boolean;
-    editedValue?: any;
-    isEdited?: boolean;
-    onCancel?: (resourceId: string) => void;
-    onSave?: (resourceId: string, editedValue: any, originalValue: any) => void;
-    resourceId: string;
-    value: any;
-}
-
-// @public
-interface EditedResourceInfo {
-    // (undocumented)
-    editedValue: JsonValue;
-    // (undocumented)
-    originalValue: JsonValue;
-    resourceId: string;
-    // (undocumented)
-    timestamp: Date;
-}
-
-// @public
-function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): ConditionEvaluationResult[];
+function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): IConditionEvaluationResult[];
 
 // @internal (undocumented)
 function exportAsJson(data: any, filename: string): void;
 
-// Warning: (ae-forgotten-export) The symbol "ConfigurationExportOptions" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IConfigurationExportOptions" needs to be exported by the entry point index.d.ts
 //
 // @public
-function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: ConfigurationExportOptions): Result<string>;
+function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: IConfigurationExportOptions): Result<string>;
 
 // @internal (undocumented)
 function exportUsingFileSystemAPI(data: any, suggestedName: string, description?: string): Promise<boolean>;
 
-// @public
-interface ExtendedProcessedResources extends ProcessedResources {
-    activeConfiguration?: Config.Model.ISystemConfiguration | null;
-    bundleMetadata?: Bundle.IBundleMetadata | null;
-    isLoadedFromBundle?: boolean;
-}
-
 // @internal (undocumented)
-function filesToDirectory(files: ImportedFile[]): ImportedDirectory;
-
-// @public
-interface FilterActions {
-    applyFilterValues: () => void;
-    resetFilterValues: () => void;
-    updateFilterEnabled: (enabled: boolean) => void;
-    updateFilterValues: (values: Record<string, string | undefined>) => void;
-    updateReduceQualifiers: (reduceQualifiers: boolean) => void;
-}
-
-// @public
-interface FilteredResource {
-    filteredCandidateCount: number;
-    hasWarning: boolean;
-    id: string;
-    originalCandidateCount: number;
-}
-
-// @public
-interface FilterOptions {
-    enableDebugLogging?: boolean;
-    partialContextMatch?: boolean;
-    reduceQualifiers?: boolean;
-}
-
-// @public
-interface FilterResult {
-    error?: string;
-    filteredResources: FilteredResource[];
-    processedResources?: ProcessedResources;
-    success: boolean;
-    warnings: string[];
-}
-
-// @public
-interface FilterState {
-    appliedValues: Record<string, string | undefined>;
-    enabled: boolean;
-    hasPendingChanges: boolean;
-    reduceQualifiers: boolean;
-    values: Record<string, string | undefined>;
-}
+function filesToDirectory(files: IImportedFile[]): IImportedDirectory;
 
 declare namespace FilterTools {
     export {
@@ -297,38 +170,23 @@ declare namespace FilterTools {
         analyzeFilteredResources,
         hasFilterValues,
         getFilterSummary,
-        FilterOptions,
-        FilterState,
-        FilterActions,
-        FilterViewProps,
-        FilterResult,
-        FilteredResource
+        IFilterOptions,
+        IFilterState,
+        IFilterActions,
+        IFilterViewProps,
+        IFilterResult,
+        IFilteredResource
     }
 }
 
 // @public
-export const FilterView: React_2.FC<FilterViewProps>;
+export const FilterView: React_2.FC<IFilterViewProps>;
 
 // @public
-interface FilterViewProps extends ViewBaseProps {
-    contextOptions?: ResolutionContextOptions;
-    filterActions: FilterActions;
-    filterResult?: FilterResult | null;
-    filterState: FilterState;
-    onFilterResult?: (result: FilterResult | null) => void;
-    pickerOptions?: ResourcePickerOptions;
-    resources?: ProcessedResources | null;
-}
+const getAllGridValidationErrors: () => Record<string, Record<string, string>>;
 
 // @public
-const getAllGridValidationErrors: () => {
-    resourceId: string;
-    columnId: string;
-    error: string;
-}[];
-
-// @public
-function getAvailableQualifiers(processedResources: ProcessedResources): string[];
+function getAvailableQualifiers(processedResources: IProcessedResources): string[];
 
 // @public
 function getDefaultConfiguration(): Config.Model.ISystemConfiguration;
@@ -356,72 +214,6 @@ function getPendingResourceStats(pendingResources: Map<string, ResourceJson.Json
 function getPendingResourceTypes(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): string[];
 
 // @public
-interface GridCellEditorProps extends GridCellProps {
-    disabled?: boolean;
-    editedValue?: JsonValue;
-    onCancel: () => void;
-    onSave: (resourceId: string, newValue: JsonValue, originalValue: JsonValue) => void;
-}
-
-// @public
-interface GridCellProps {
-    className?: string;
-    column: GridColumnDefinition;
-    isEdited: boolean;
-    resolvedValue: JsonValue;
-    resourceId: string;
-    value: JsonValue;
-}
-
-// @public
-interface GridCellValidation {
-    custom?: (value: JsonValue) => string | null;
-    maxLength?: number;
-    minLength?: number;
-    pattern?: RegExp;
-    required?: boolean;
-}
-
-// @public
-interface GridColumnDefinition {
-    allowCustomValue?: boolean;
-    cellEditor?: React.ComponentType<GridCellEditorProps>;
-    cellRenderer?: React.ComponentType<GridCellProps>;
-    cellType?: 'string' | 'boolean' | 'tristate' | 'dropdown' | 'custom';
-    dataPath: string | string[];
-    dropdownOptions?: GridDropdownOption[] | (() => Promise<GridDropdownOption[]>);
-    editable?: boolean;
-    id: string;
-    sortable?: boolean;
-    title: string;
-    triStateLabels?: {
-        trueLabel: string;
-        falseLabel: string;
-        undefinedLabel: string;
-    };
-    triStatePresentation?: 'checkbox' | 'dropdown';
-    validation?: GridCellValidation;
-    width?: number;
-}
-
-// @public
-interface GridDropdownOption {
-    disabled?: boolean;
-    label: string;
-    value: string;
-}
-
-// @public
-interface GridPresentationOptions {
-    className?: string;
-    enableFiltering?: boolean;
-    enableSorting?: boolean;
-    pageSize?: number;
-    showRowNumbers?: boolean;
-    showSummaryRow?: boolean;
-}
-
-// @public
 type GridResourceSelector = {
     type: 'ids';
     resourceIds: string[];
@@ -441,13 +233,13 @@ type GridResourceSelector = {
     type: 'all';
 } | {
     type: 'custom';
-    selector: CustomResourceSelector;
+    selector: ICustomResourceSelector;
 };
 
-// Warning: (ae-forgotten-export) The symbol "GridSelectorProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IGridSelectorProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const GridSelector: React_2.FC<GridSelectorProps>;
+const GridSelector: React_2.FC<IGridSelectorProps>;
 
 declare namespace GridTools {
     export {
@@ -471,18 +263,18 @@ declare namespace GridTools {
         hasGridValidationErrors,
         getAllGridValidationErrors,
         clearAllGridValidationErrors,
-        GridViewProps,
-        MultiGridViewProps,
-        GridViewInitParams,
-        GridColumnDefinition,
-        GridDropdownOption,
-        GridCellValidation,
+        IGridViewProps,
+        IMultiGridViewProps,
+        IGridViewInitParams,
+        IGridColumnDefinition,
+        IGridDropdownOption,
+        IGridCellValidation,
         GridResourceSelector,
-        CustomResourceSelector,
-        GridPresentationOptions,
-        ResourceTypeColumnMapping,
-        GridCellProps,
-        GridCellEditorProps
+        ICustomResourceSelector,
+        IGridPresentationOptions,
+        IResourceTypeColumnMapping,
+        IGridCellProps,
+        IGridCellEditorProps
     }
 }
 
@@ -505,31 +297,7 @@ class GridValidationState {
 }
 
 // @public
-export const GridView: React_2.FC<GridViewProps>;
-
-// @public
-interface GridViewInitParams {
-    columnMapping: ResourceTypeColumnMapping[];
-    description?: string;
-    id: string;
-    presentationOptions?: GridPresentationOptions;
-    resourceSelection: GridResourceSelector;
-    title: string;
-}
-
-// @public
-interface GridViewProps extends ViewBaseProps {
-    availableQualifiers?: string[];
-    contextOptions?: ResolutionContextOptions;
-    filterResult?: FilterResult | null;
-    filterState?: FilterState;
-    gridConfig: GridViewInitParams;
-    resolutionActions?: ResolutionActions;
-    resolutionState?: ResolutionState;
-    resources?: ProcessedResources | null;
-    showChangeControls?: boolean;
-    showContextControls?: boolean;
-}
+export const GridView: React_2.FC<IGridViewProps>;
 
 // @public
 function hasFilterValues(values: Record<string, string | undefined>): boolean;
@@ -540,29 +308,283 @@ const hasGridValidationErrors: () => boolean;
 // @public
 function hasPendingContextChanges(contextValues: Record<string, string | undefined>, pendingContextValues: Record<string, string | undefined>): boolean;
 
-// Warning: (ae-forgotten-export) The symbol "HierarchyEditorProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IHierarchyEditorProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const HierarchyEditor: React_2.FC<HierarchyEditorProps>;
+const HierarchyEditor: React_2.FC<IHierarchyEditorProps>;
 
 // @public
-function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
-
-// @public
-interface ImportedDirectory {
-    files: ImportedFile[];
-    name: string;
-    path?: string;
-    subdirectories?: ImportedDirectory[];
+interface ICandidateInfo {
+    candidate: Runtime.IResourceCandidate;
+    candidateIndex: number;
+    conditionEvaluations?: IConditionEvaluationResult[];
+    conditionSetKey: string | null;
+    isDefaultMatch: boolean;
+    matched: boolean;
+    matchType: 'match' | 'matchAsDefault' | 'noMatch';
 }
 
 // @public
-interface ImportedFile {
+interface ICompiledViewProps extends IViewBaseProps {
+    filterResult?: IFilterResult | null;
+    filterState?: IFilterState;
+    onExport?: (data: ResourceJson.Compiled.ICompiledResourceCollection | Bundle.IBundle, type: 'json' | 'bundle') => void;
+    pickerOptions?: IResourcePickerOptions;
+    resources?: IExtendedProcessedResources | null;
+    useNormalization?: boolean;
+}
+
+// @public
+interface IConditionEvaluationResult {
+    conditionIndex: number;
+    conditionValue: string | undefined;
+    matched: boolean;
+    matchType: 'match' | 'matchAsDefault' | 'noMatch';
+    operator: string;
+    qualifierName: string;
+    qualifierValue: string | undefined;
+    score: number;
+    scoreAsDefault?: number;
+}
+
+// @public
+interface IConfigurationViewProps extends IViewBaseProps {
+    configuration?: Config.Model.ISystemConfiguration | null;
+    hasUnsavedChanges?: boolean;
+    onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void;
+    onSave?: (config: Config.Model.ISystemConfiguration) => void;
+}
+
+// @public
+interface ICreatePendingResourceParams {
+    id: string;
+    json?: JsonValue;
+    resourceTypeName: string;
+}
+
+// @public
+interface ICustomResourceSelector {
+    displayName?: string;
+    id: string;
+    select: (resources: IProcessedResources) => string[];
+}
+
+// @public
+interface IEditableJsonViewProps {
+    className?: string;
+    disabled?: boolean;
+    editedValue?: JsonValue;
+    isEdited?: boolean;
+    onCancel?: (resourceId: string) => void;
+    onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
+    resourceId: string;
+    value: JsonValue;
+}
+
+// @public
+interface IEditedResourceInfo {
+    // (undocumented)
+    editedValue: JsonValue;
+    // (undocumented)
+    originalValue: JsonValue;
+    resourceId: string;
+    // (undocumented)
+    timestamp: Date;
+}
+
+// @public
+interface IExtendedProcessedResources extends IProcessedResources {
+    activeConfiguration?: Config.Model.ISystemConfiguration | null;
+    bundleMetadata?: Bundle.IBundleMetadata | null;
+    isLoadedFromBundle?: boolean;
+}
+
+// @public
+interface IFilterActions {
+    applyFilterValues: () => void;
+    resetFilterValues: () => void;
+    updateFilterEnabled: (enabled: boolean) => void;
+    updateFilterValues: (values: Record<string, string | undefined>) => void;
+    updateReduceQualifiers: (reduceQualifiers: boolean) => void;
+}
+
+// @public
+interface IFilteredResource {
+    filteredCandidateCount: number;
+    hasWarning: boolean;
+    id: string;
+    originalCandidateCount: number;
+}
+
+// @public
+interface IFilterOptions {
+    enableDebugLogging?: boolean;
+    partialContextMatch?: boolean;
+    reduceQualifiers?: boolean;
+}
+
+// @public
+interface IFilterResult {
+    error?: string;
+    filteredResources: IFilteredResource[];
+    processedResources?: IProcessedResources;
+    success: boolean;
+    warnings: string[];
+}
+
+// @public
+interface IFilterState {
+    appliedValues: Record<string, string | undefined>;
+    enabled: boolean;
+    hasPendingChanges: boolean;
+    reduceQualifiers: boolean;
+    values: Record<string, string | undefined>;
+}
+
+// @public
+interface IFilterViewProps extends IViewBaseProps {
+    contextOptions?: IResolutionContextOptions;
+    filterActions: IFilterActions;
+    filterResult?: IFilterResult | null;
+    filterState: IFilterState;
+    onFilterResult?: (result: IFilterResult | null) => void;
+    // Warning: (ae-forgotten-export) The symbol "IResourcePickerOptions" needs to be exported by the entry point index.d.ts
+    pickerOptions?: IResourcePickerOptions;
+    resources?: IProcessedResources | null;
+}
+
+// @public
+interface IGridCellEditorProps extends IGridCellProps {
+    disabled?: boolean;
+    editedValue?: JsonValue;
+    onCancel: () => void;
+    onSave: (resourceId: string, newValue: JsonValue, originalValue: JsonValue) => void;
+}
+
+// @public
+interface IGridCellProps {
+    className?: string;
+    column: IGridColumnDefinition;
+    isEdited: boolean;
+    resolvedValue: JsonValue;
+    resourceId: string;
+    value: JsonValue;
+}
+
+// @public
+interface IGridCellValidation {
+    custom?: (value: JsonValue) => string | null;
+    maxLength?: number;
+    minLength?: number;
+    pattern?: RegExp;
+    required?: boolean;
+}
+
+// @public
+interface IGridColumnDefinition {
+    allowCustomValue?: boolean;
+    cellEditor?: React.ComponentType<IGridCellEditorProps>;
+    cellRenderer?: React.ComponentType<IGridCellProps>;
+    cellType?: 'string' | 'boolean' | 'tristate' | 'dropdown' | 'custom';
+    dataPath: string | string[];
+    dropdownOptions?: IGridDropdownOption[] | (() => Promise<IGridDropdownOption[]>);
+    editable?: boolean;
+    id: string;
+    sortable?: boolean;
+    title: string;
+    triStateLabels?: {
+        trueLabel: string;
+        falseLabel: string;
+        undefinedLabel: string;
+    };
+    triStatePresentation?: 'checkbox' | 'dropdown';
+    validation?: IGridCellValidation;
+    width?: number;
+}
+
+// @public
+interface IGridDropdownOption {
+    disabled?: boolean;
+    label: string;
+    value: string;
+}
+
+// @public
+interface IGridPresentationOptions {
+    className?: string;
+    enableFiltering?: boolean;
+    enableSorting?: boolean;
+    pageSize?: number;
+    showRowNumbers?: boolean;
+    showSummaryRow?: boolean;
+}
+
+// @public
+interface IGridViewInitParams {
+    columnMapping: IResourceTypeColumnMapping[];
+    description?: string;
+    id: string;
+    presentationOptions?: IGridPresentationOptions;
+    resourceSelection: GridResourceSelector;
+    title: string;
+}
+
+// @public
+interface IGridViewProps extends IViewBaseProps {
+    availableQualifiers?: string[];
+    contextOptions?: IResolutionContextOptions;
+    filterResult?: IFilterResult | null;
+    filterState?: IFilterState;
+    gridConfig: IGridViewInitParams;
+    resolutionActions?: IResolutionActions;
+    resolutionState?: IResolutionState;
+    resources?: IProcessedResources | null;
+    showChangeControls?: boolean;
+    showContextControls?: boolean;
+}
+
+// @public
+interface IImportedDirectory {
+    files: IImportedFile[];
+    name: string;
+    path?: string;
+    subdirectories?: IImportedDirectory[];
+}
+
+// @public
+interface IImportedFile {
     content: string;
     name: string;
     path?: string;
     type?: string;
 }
+
+// @public
+interface IImportViewProps extends IViewBaseProps {
+    acceptedFileTypes?: string[];
+    importError?: string | null;
+    onBundleImport?: (bundle: Bundle.IBundle) => void;
+    onImport?: (data: IImportedDirectory | IImportedFile[]) => void;
+    onZipImport?: (zipData: IImportedDirectory | IImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
+}
+
+// @public
+interface IMessage_2 {
+    id: string;
+    message: string;
+    timestamp: Date;
+    type: 'info' | 'warning' | 'error' | 'success';
+}
+
+// @public
+interface IMessagesWindowProps {
+    className?: string;
+    messages: IMessage_2[];
+    onClearMessages: () => void;
+}
+
+// @public
+function importConfiguration(data: string): Result<Config.Model.ISystemConfiguration>;
 
 declare namespace ImportTools {
     export {
@@ -571,22 +593,28 @@ declare namespace ImportTools {
         filesToDirectory,
         exportAsJson,
         exportUsingFileSystemAPI,
-        ImportedFile,
-        ImportedDirectory,
-        ImportViewProps
+        IImportedFile,
+        IImportedDirectory,
+        IImportViewProps
     }
 }
 
 // @public
-export const ImportView: React_2.FC<ImportViewProps>;
+export const ImportView: React_2.FC<IImportViewProps>;
 
 // @public
-interface ImportViewProps extends ViewBaseProps {
-    acceptedFileTypes?: string[];
-    importError?: string | null;
-    onBundleImport?: (bundle: Bundle.IBundle) => void;
-    onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
-    onZipImport?: (zipData: ImportedDirectory | ImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
+interface IMultiGridViewProps extends IViewBaseProps {
+    allowGridReordering?: boolean;
+    availableQualifiers?: string[];
+    contextOptions?: IResolutionContextOptions;
+    defaultActiveGrid?: string;
+    filterResult?: IFilterResult | null;
+    filterState?: IFilterState;
+    gridConfigurations: IGridViewInitParams[];
+    resolutionActions?: IResolutionActions;
+    resolutionState?: IResolutionState;
+    resources?: IProcessedResources | null;
+    tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
 }
 
 // @public
@@ -596,110 +624,21 @@ interface IObservabilityContext {
 }
 
 // @public
-function isPendingAddition(resourceId: string, pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): boolean;
-
-// @public
-function isZipFile(filename: string): boolean;
-
-// @public
-interface IUserLogger extends Logging.ILogger {
-    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-}
-
-export { JsonValue }
-
-// @public
-interface Message_2 {
-    id: string;
-    message: string;
-    timestamp: Date;
-    type: 'info' | 'warning' | 'error' | 'success';
-}
-
-// @public
-export const MessagesWindow: React_2.FC<MessagesWindowProps>;
-
-// @public
-interface MessagesWindowProps {
-    className?: string;
-    messages: Message_2[];
-    onClearMessages: () => void;
-}
-
-// @public
-export const MultiGridView: React_2.FC<MultiGridViewProps>;
-
-// @public
-interface MultiGridViewProps extends ViewBaseProps {
-    allowGridReordering?: boolean;
-    availableQualifiers?: string[];
-    contextOptions?: ResolutionContextOptions;
-    defaultActiveGrid?: string;
-    filterResult?: FilterResult | null;
-    filterState?: FilterState;
-    gridConfigurations: GridViewInitParams[];
-    resolutionActions?: ResolutionActions;
-    resolutionState?: ResolutionState;
-    resources?: ProcessedResources | null;
-    tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
-}
-
-// @public
-class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
-    constructor(logLevel?: Logging.ReporterLogLevel);
-    protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-}
-
-// @public
-class ObservabilityContext implements IObservabilityContext {
-    constructor(diag: Logging.ILogger, user: IUserLogger);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    readonly diag: Logging.ILogger;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    readonly user: IUserLogger;
-}
-
-// @public
-export const ObservabilityProvider: React_2.FC<ObservabilityProviderProps>;
-
-// @public
-export interface ObservabilityProviderProps {
+export interface IObservabilityProviderProps {
     children: ReactNode;
     observabilityContext?: ObservabilityTools_2.IObservabilityContext;
 }
 
-declare namespace ObservabilityTools {
-    export {
-        IUserLogger,
-        IObservabilityContext,
-        ConsoleUserLogger,
-        NoOpUserLogger,
-        ObservabilityContext,
-        createConsoleObservabilityContext,
-        createNoOpObservabilityContext,
-        DefaultObservabilityContext,
-        TestObservabilityContext
-    }
-}
-
 // @public
-export interface OrchestratorActions {
-    // Warning: (ae-forgotten-export) The symbol "Message" needs to be exported by the entry point index.d.ts
+export interface IOrchestratorActions {
+    // Warning: (ae-forgotten-export) The symbol "IMessage" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    addMessage: (type: Message['type'], message: string) => void;
+    addMessage: (type: IMessage['type'], message: string) => void;
     // (undocumented)
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
-    applyFilter: () => Promise<FilterResult | null>;
+    applyFilter: () => Promise<IFilterResult | null>;
     // (undocumented)
     applyPendingResources: () => Promise<Result<{
         appliedCount: number;
@@ -719,7 +658,7 @@ export interface OrchestratorActions {
     // (undocumented)
     clearResources: () => void;
     // (undocumented)
-    createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
+    createPendingResource: (params: ICreatePendingResourceParams) => Result<void>;
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)
@@ -737,11 +676,11 @@ export interface OrchestratorActions {
     // (undocumented)
     importBundle: (bundle: Bundle.IBundle) => Promise<void>;
     // (undocumented)
-    importDirectory: (directory: ImportedDirectory) => Promise<void>;
+    importDirectory: (directory: IImportedDirectory) => Promise<void>;
     // (undocumented)
-    importDirectoryWithConfig: (directory: ImportedDirectory, config: Config.Model.ISystemConfiguration) => Promise<void>;
+    importDirectoryWithConfig: (directory: IImportedDirectory, config: Config.Model.ISystemConfiguration) => Promise<void>;
     // (undocumented)
-    importFiles: (files: ImportedFile[]) => Promise<void>;
+    importFiles: (files: IImportedFile[]) => Promise<void>;
     // (undocumented)
     markResourceForDeletion: (resourceId: string) => void;
     // (undocumented)
@@ -767,30 +706,30 @@ export interface OrchestratorActions {
     selectResourceForResolution: (resourceId: string) => void;
     // (undocumented)
     selectResourceType: (type: string) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     // (undocumented)
     setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    // Warning: (ae-forgotten-export) The symbol "StartNewResourceParams" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-forgotten-export) The symbol "IStartNewResourceParams" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
-    startNewResource: (params?: StartNewResourceParams) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+    startNewResource: (params?: IStartNewResourceParams) => Result<{
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     // (undocumented)
     updateConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     // (undocumented)
-    updateFilterState: (state: Partial<FilterState>) => void;
+    updateFilterState: (state: Partial<IFilterState>) => void;
     // (undocumented)
     updateNewResourceId: (id: string) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     // (undocumented)
     updateNewResourceJson: (json: JsonValue) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     // (undocumented)
@@ -798,29 +737,29 @@ export interface OrchestratorActions {
 }
 
 // @public
-export interface OrchestratorState {
+export interface IOrchestratorState {
     // (undocumented)
     configuration: Config.Model.ISystemConfiguration | null;
     // (undocumented)
     error: string | null;
     // (undocumented)
-    filterResult: FilterResult | null;
+    filterResult: IFilterResult | null;
     // (undocumented)
-    filterState: FilterState;
+    filterState: IFilterState;
     // (undocumented)
     isProcessing: boolean;
     // (undocumented)
-    messages: Message[];
+    messages: IMessage[];
     // (undocumented)
-    resolutionState: ResolutionState;
+    resolutionState: IResolutionState;
     // (undocumented)
-    resources: ExtendedProcessedResources | null;
+    resources: IExtendedProcessedResources | null;
     // (undocumented)
     selectedResourceId: string | null;
 }
 
 // @public
-interface PendingResource<T = unknown> {
+interface IPendingResource<T = unknown> {
     displayName?: string;
     id: string;
     resourceData?: T;
@@ -828,22 +767,8 @@ interface PendingResource<T = unknown> {
     type: 'new' | 'modified' | 'deleted';
 }
 
-declare namespace PickerTools {
-    export {
-        ResourcePicker,
-        ResourcePickerOptionsControl,
-        ResourcePickerProps,
-        ResourcePickerOptions,
-        ResourceSelection,
-        ResourceAnnotations,
-        ResourceAnnotation,
-        PendingResource,
-        ResourcePickerOptionsControlProps
-    }
-}
-
 // @public
-interface ProcessedResources {
+interface IProcessedResources {
     compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection;
     resolver: Runtime.ResourceResolver;
     resourceCount: number;
@@ -863,29 +788,8 @@ interface ProcessedResources {
     };
 }
 
-// @internal (undocumented)
-function processImportedDirectory(directory: ImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<ExtendedProcessedResources>;
-
-// @internal (undocumented)
-function processImportedFiles(files: ImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<ExtendedProcessedResources>;
-
 // @public
-function processZipLoadResult(zipResult: {
-    files: ImportedFile[];
-    directory?: ImportedDirectory;
-    config?: Config.Model.ISystemConfiguration;
-}, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<ProcessedResources>>;
-
-// @public
-function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<ProcessedResources>>;
-
-// Warning: (ae-forgotten-export) The symbol "QualifierContextControlProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-const QualifierContextControl: React_2.FC<QualifierContextControlProps>;
-
-// @public
-interface QualifierControlOptions {
+interface IQualifierControlOptions {
     className?: string;
     editable?: boolean;
     hostValue?: string | undefined;
@@ -894,21 +798,8 @@ interface QualifierControlOptions {
     visible?: boolean;
 }
 
-// Warning: (ae-forgotten-export) The symbol "QualifierEditFormProps" needs to be exported by the entry point index.d.ts
-//
 // @public
-const QualifierEditForm: React_2.FC<QualifierEditFormProps>;
-
-// Warning: (ae-forgotten-export) The symbol "QualifierTypeEditFormProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-const QualifierTypeEditForm: React_2.FC<QualifierTypeEditFormProps>;
-
-// @internal (undocumented)
-function readFilesFromInput(files: FileList): Promise<ImportedFile[]>;
-
-// @public
-interface ResolutionActions {
+interface IResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
     applyPendingResources: () => Promise<Result<{
         appliedCount: number;
@@ -921,7 +812,7 @@ interface ResolutionActions {
     clearEdits: () => Result<{
         clearedCount: number;
     }>;
-    createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
+    createPendingResource: (params: ICreatePendingResourceParams) => Result<void>;
     discardEdits: () => Result<{
         discardedCount: number;
     }>;
@@ -938,27 +829,27 @@ interface ResolutionActions {
     }>;
     selectResource: (resourceId: string) => Result<void>;
     selectResourceType: (type: string) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     setViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-    startNewResource: (params?: StartNewResourceParams) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+    startNewResource: (params?: IStartNewResourceParams) => Result<{
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     updateContextValue: (qualifierName: string, value: string | undefined) => Result<void>;
     updateNewResourceId: (id: string) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
     updateNewResourceJson: (json: JsonValue) => Result<{
-        draft: ResolutionState['newResourceDraft'];
+        draft: IResolutionState['newResourceDraft'];
         diagnostics: string[];
     }>;
 }
 
 // @public
-interface ResolutionContextOptions {
+interface IResolutionContextOptions {
     contextPanelClassName?: string;
     contextPanelTitle?: string;
     defaultQualifierEditable?: boolean;
@@ -966,40 +857,37 @@ interface ResolutionContextOptions {
     defaultQualifierVisible?: boolean;
     globalPlaceholder?: string | ((qualifierName: string) => string);
     hostManagedValues?: Record<string, string | undefined>;
-    qualifierOptions?: Record<string, QualifierControlOptions>;
+    qualifierOptions?: Record<string, IQualifierControlOptions>;
     showContextActions?: boolean;
     showContextControls?: boolean;
     showCurrentContext?: boolean;
 }
 
 // @public
-const ResolutionContextOptionsControl: React_2.FC<ResolutionContextOptionsControlProps>;
-
-// @public
-interface ResolutionContextOptionsControlProps {
+interface IResolutionContextOptionsControlProps {
     allowResourceCreation?: boolean;
     availableQualifiers?: string[];
     className?: string;
     onAllowResourceCreationChange?: (allow: boolean) => void;
-    onOptionsChange: (options: ResolutionContextOptions) => void;
+    onOptionsChange: (options: IResolutionContextOptions) => void;
     onShowPendingResourcesInListChange?: (show: boolean) => void;
-    options: ResolutionContextOptions;
+    options: IResolutionContextOptions;
     presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
     showPendingResourcesInList?: boolean;
     title?: string;
 }
 
 // @public
-interface ResolutionOptions {
+interface IResolutionOptions {
     enableCaching?: boolean;
     enableDebugLogging?: boolean;
 }
 
 // @public
-interface ResolutionResult {
+interface IResolutionResult {
     allCandidates?: readonly Runtime.IResourceCandidate[];
     bestCandidate?: Runtime.IResourceCandidate;
-    candidateDetails?: CandidateInfo[];
+    candidateDetails?: ICandidateInfo[];
     composedValue?: JsonValue;
     error?: string;
     resource?: Runtime.IResource;
@@ -1007,13 +895,8 @@ interface ResolutionResult {
     success: boolean;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ResolutionResultsProps" needs to be exported by the entry point index.d.ts
-//
 // @public
-export const ResolutionResults: React_2.FC<ResolutionResultsProps>;
-
-// @public
-interface ResolutionState {
+interface IResolutionState {
     availableResourceTypes: ResourceTypes.IResourceType[];
     contextValues: Record<string, string | undefined>;
     currentResolver: Runtime.ResourceResolver | null;
@@ -1031,65 +914,26 @@ interface ResolutionState {
     pendingContextValues: Record<string, string | undefined>;
     pendingResourceDeletions: Set<string>;
     pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
-    resolutionResult: ResolutionResult | null;
+    resolutionResult: IResolutionResult | null;
     selectedResourceId: string | null;
     viewMode: 'composed' | 'best' | 'all' | 'raw';
 }
 
-declare namespace ResolutionTools {
-    export {
-        ResolutionView,
-        EditableJsonView,
-        UnifiedChangeControls,
-        QualifierContextControl,
-        ResolutionContextOptionsControl,
-        useResolutionState,
-        createResolverWithContext,
-        evaluateConditionsForCandidate,
-        resolveResourceDetailed,
-        getAvailableQualifiers,
-        hasPendingContextChanges,
-        ResolutionOptions,
-        getPendingAdditionsByType,
-        isPendingAddition,
-        deriveLeafId,
-        deriveFullId,
-        getPendingResourceTypes,
-        getPendingResourceStats,
-        validatePendingResourceKeys,
-        ResolutionState,
-        ResolutionActions,
-        ResolutionViewProps,
-        ResolutionResult,
-        CandidateInfo,
-        ConditionEvaluationResult,
-        EditedResourceInfo,
-        ResolutionContextOptions,
-        QualifierControlOptions,
-        CreatePendingResourceParams,
-        EditableJsonViewProps,
-        ResolutionContextOptionsControlProps
-    }
-}
-
 // @public
-export const ResolutionView: React_2.FC<ResolutionViewProps>;
-
-// @public
-interface ResolutionViewProps extends ViewBaseProps {
+interface IResolutionViewProps extends IViewBaseProps {
     allowResourceCreation?: boolean;
     availableQualifiers?: string[];
-    contextOptions?: ResolutionContextOptions;
+    contextOptions?: IResolutionContextOptions;
     defaultResourceType?: string;
-    filterResult?: FilterResult | null;
-    filterState?: FilterState;
+    filterResult?: IFilterResult | null;
+    filterState?: IFilterState;
     lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
     onPendingResourcesApplied?: (added: ResourceJson.Json.ILooseResourceDecl[], deleted: string[]) => void;
-    pickerOptions?: ResourcePickerOptions;
-    resolutionActions?: ResolutionActions;
-    resolutionState?: ResolutionState;
-    resourceEditorFactory?: ResourceEditorFactory;
-    resources?: ProcessedResources | null;
+    pickerOptions?: IResourcePickerOptions;
+    resolutionActions?: IResolutionActions;
+    resolutionState?: IResolutionState;
+    resourceEditorFactory?: IResourceEditorFactory;
+    resources?: IProcessedResources | null;
     resourceTypeFactory?: ResourceTypes.IResourceType[];
     sectionTitles?: {
         resources?: string;
@@ -1099,10 +943,7 @@ interface ResolutionViewProps extends ViewBaseProps {
 }
 
 // @public
-function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: ProcessedResources, options?: ResolutionOptions): Result<ResolutionResult>;
-
-// @public
-interface ResourceAnnotation {
+interface IResourceAnnotation {
     badge?: {
         text: string;
         variant: 'info' | 'warning' | 'success' | 'error' | 'edited' | 'new';
@@ -1117,86 +958,48 @@ interface ResourceAnnotation {
 }
 
 // @public
-interface ResourceAnnotations {
-    [resourceId: string]: ResourceAnnotation;
+interface IResourceAnnotations {
+    [resourceId: string]: IResourceAnnotation;
 }
 
 // @public
-interface ResourceDetailData {
+interface IResourceDetailData {
     candidateCount: number;
-    candidates: Array<{
-        json: JsonValue;
-        conditions: Array<{
-            qualifier: string;
-            operator: string;
-            value: string;
-            priority: number;
-            scoreAsDefault?: number;
-        }>;
-        isPartial: boolean;
-        mergeMethod: string;
-    }>;
+    candidates: Array<ResourceJson.Normalized.IChildResourceCandidateDecl>;
     id: string;
     resourceType: string;
 }
 
 // @public
-interface ResourceEditorFactory {
-    createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult;
+interface IResourceEditorFactory {
+    createEditor(resourceId: string, resourceType: string, value: JsonValue): ResourceEditorResult;
 }
 
 // @public
-interface ResourceEditorProps {
+interface IResourceEditorProps {
     className?: string;
     disabled?: boolean;
-    editedValue?: any;
+    editedValue?: JsonValue;
     isEdited?: boolean;
     onCancel?: (resourceId: string) => void;
-    onSave?: (resourceId: string, editedValue: any, originalValue: any) => void;
+    onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
     resourceId: string;
-    value: any;
+    value: JsonValue;
 }
 
 // @public
-type ResourceEditorResult = {
-    success: true;
-    editor: React.ComponentType<ResourceEditorProps>;
-} | {
-    success: false;
-    message?: string;
-};
-
-// Warning: (ae-forgotten-export) The symbol "ResourceGridProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-const ResourceGrid: React_2.FC<ResourceGridProps>;
-
-// Warning: (ae-forgotten-export) The symbol "ResourceListViewProps" needs to be exported by the entry point index.d.ts
-//
-// @public
-export const ResourceListView: React_2.FC<ResourceListViewProps>;
-
-// @public
-interface ResourceManagerState {
+interface IResourceManagerState {
     activeConfiguration: Config.Model.ISystemConfiguration | null;
     bundleMetadata: Bundle.IBundleMetadata | null;
     error: string | null;
     hasProcessedData: boolean;
     isLoadedFromBundle: boolean;
     isProcessing: boolean;
-    processedResources: ExtendedProcessedResources | null;
+    processedResources: IExtendedProcessedResources | null;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ResourceOrchestratorProps" needs to be exported by the entry point index.d.ts
-//
 // @public
-export const ResourceOrchestrator: React_2.FC<ResourceOrchestratorProps>;
-
-// @public
-const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: ResourcePickerProps<T>) => React_2.JSX.Element;
-
-// @public
-interface ResourcePickerOptions {
+interface IResourcePickerOptions_2 {
     defaultView?: 'list' | 'tree';
     emptyMessage?: string;
     enableSearch?: boolean;
@@ -1209,13 +1012,10 @@ interface ResourcePickerOptions {
 }
 
 // @public
-const ResourcePickerOptionsControl: React_2.FC<ResourcePickerOptionsControlProps>;
-
-// @public
-interface ResourcePickerOptionsControlProps {
+interface IResourcePickerOptionsControlProps {
     className?: string;
-    onOptionsChange: (options: ResourcePickerOptions) => void;
-    options: ResourcePickerOptions;
+    onOptionsChange: (options: IResourcePickerOptions_2) => void;
+    options: IResourcePickerOptions_2;
     presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
     quickBranchPaths?: string[];
     showAdvanced?: boolean;
@@ -1223,17 +1023,17 @@ interface ResourcePickerOptionsControlProps {
 }
 
 // @public
-interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
-    onResourceSelect: (selection: ResourceSelection<T>) => void;
-    options?: ResourcePickerOptions;
-    pendingResources?: PendingResource<T>[];
-    resourceAnnotations?: ResourceAnnotations;
-    resources: ProcessedResources | ExtendedProcessedResources | null;
+interface IResourcePickerProps<T = unknown> extends IViewBaseProps {
+    onResourceSelect: (selection: IResourceSelection<T>) => void;
+    options?: IResourcePickerOptions_2;
+    pendingResources?: IPendingResource<T>[];
+    resourceAnnotations?: IResourceAnnotations;
+    resources: IProcessedResources | IExtendedProcessedResources | null;
     selectedResourceId: string | null;
 }
 
 // @public
-interface ResourceSelection<T = unknown> {
+interface IResourceSelection<T = unknown> {
     isPending?: boolean;
     pendingType?: 'new' | 'modified' | 'deleted';
     resourceData?: T;
@@ -1241,83 +1041,277 @@ interface ResourceSelection<T = unknown> {
 }
 
 // @public
+interface IResourceTypeColumnMapping {
+    columns: IGridColumnDefinition[];
+    defaultColumn?: IGridColumnDefinition;
+    resourceType: string;
+}
+
+// @public
+interface ISourceViewProps extends IViewBaseProps {
+    onExport?: (data: unknown, type: 'json') => void;
+    onResourceSelect?: (resourceId: string) => void;
+    pickerOptions?: IResourcePickerOptions;
+    resources?: IExtendedProcessedResources | null;
+    selectedResourceId?: string | null;
+}
+
+// @public
+function isPendingAddition(resourceId: string, pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): boolean;
+
+// @public
+function isZipFile(filename: string): boolean;
+
+// @public
+interface IUserLogger extends Logging.ILogger {
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
+// @public
+interface IViewBaseProps {
+    className?: string;
+    onMessage?: (type: IMessage['type'], message: string) => void;
+    pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+}
+
+export { JsonValue }
+
+// @public
+export const MessagesWindow: React_2.FC<IMessagesWindowProps>;
+
+// @public
+export const MultiGridView: React_2.FC<IMultiGridViewProps>;
+
+// @public
+class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
+    constructor(logLevel?: Logging.ReporterLogLevel);
+    protected _log(message: string, __level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
+
+// @public
+class ObservabilityContext implements IObservabilityContext {
+    constructor(diag: Logging.ILogger, user: IUserLogger);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly diag: Logging.ILogger;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly user: IUserLogger;
+}
+
+// @public
+export const ObservabilityProvider: React_2.FC<IObservabilityProviderProps>;
+
+declare namespace ObservabilityTools {
+    export {
+        IUserLogger,
+        IObservabilityContext,
+        ConsoleUserLogger,
+        NoOpUserLogger,
+        ObservabilityContext,
+        createConsoleObservabilityContext,
+        createNoOpObservabilityContext,
+        DefaultObservabilityContext,
+        TestObservabilityContext
+    }
+}
+
+declare namespace PickerTools {
+    export {
+        ResourcePicker,
+        ResourcePickerOptionsControl,
+        IResourcePickerProps,
+        IResourcePickerOptions_2 as IResourcePickerOptions,
+        IResourceSelection,
+        IResourceAnnotations,
+        IResourceAnnotation,
+        IPendingResource,
+        IResourcePickerOptionsControlProps
+    }
+}
+
+// @internal (undocumented)
+function processImportedDirectory(directory: IImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<IExtendedProcessedResources>;
+
+// @internal (undocumented)
+function processImportedFiles(files: IImportedFile[], systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<IExtendedProcessedResources>;
+
+// @public
+function processZipLoadResult(zipResult: {
+    files: IImportedFile[];
+    directory?: IImportedDirectory;
+    config?: Config.Model.ISystemConfiguration;
+}, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
+
+// @public
+function processZipResources(files: IImportedFile[], directory: IImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
+
+// Warning: (ae-forgotten-export) The symbol "IQualifierContextControlProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const QualifierContextControl: React_2.FC<IQualifierContextControlProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IQualifierEditFormProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const QualifierEditForm: React_2.FC<IQualifierEditFormProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IQualifierTypeEditFormProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const QualifierTypeEditForm: React_2.FC<IQualifierTypeEditFormProps>;
+
+// @internal (undocumented)
+function readFilesFromInput(files: FileList): Promise<IImportedFile[]>;
+
+// @public
+const ResolutionContextOptionsControl: React_2.FC<IResolutionContextOptionsControlProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IResolutionResultsProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const ResolutionResults: React_2.FC<IResolutionResultsProps>;
+
+declare namespace ResolutionTools {
+    export {
+        ResolutionView,
+        EditableJsonView,
+        UnifiedChangeControls,
+        QualifierContextControl,
+        ResolutionContextOptionsControl,
+        useResolutionState,
+        createResolverWithContext,
+        evaluateConditionsForCandidate,
+        resolveResourceDetailed,
+        getAvailableQualifiers,
+        hasPendingContextChanges,
+        IResolutionOptions,
+        getPendingAdditionsByType,
+        isPendingAddition,
+        deriveLeafId,
+        deriveFullId,
+        getPendingResourceTypes,
+        getPendingResourceStats,
+        validatePendingResourceKeys,
+        IResolutionState,
+        IResolutionActions,
+        IResolutionViewProps,
+        IResolutionResult,
+        ICandidateInfo,
+        IConditionEvaluationResult,
+        IEditedResourceInfo,
+        IResolutionContextOptions,
+        IQualifierControlOptions,
+        ICreatePendingResourceParams,
+        IEditableJsonViewProps,
+        IResolutionContextOptionsControlProps
+    }
+}
+
+// @public
+export const ResolutionView: React_2.FC<IResolutionViewProps>;
+
+// @public
+function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: IProcessedResources, options?: IResolutionOptions): Result<IResolutionResult>;
+
+// @public
+type ResourceEditorResult = {
+    success: true;
+    editor: React.ComponentType<IResourceEditorProps>;
+} | {
+    success: false;
+    message?: string;
+};
+
+// Warning: (ae-forgotten-export) The symbol "IResourceGridProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+const ResourceGrid: React_2.FC<IResourceGridProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IResourceListViewProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const ResourceListView: React_2.FC<IResourceListViewProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IResourceOrchestratorProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const ResourceOrchestrator: React_2.FC<IResourceOrchestratorProps>;
+
+// @public
+const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: IResourcePickerProps<T>) => ReactElement;
+
+// @public
+const ResourcePickerOptionsControl: React_2.FC<IResourcePickerOptionsControlProps>;
+
+// @public
 class ResourceSelector {
     constructor();
     getRegisteredTypes(): string[];
     // Warning: (ae-forgotten-export) The symbol "SelectorHandler" needs to be exported by the entry point index.d.ts
     registerSelector(type: string, handler: SelectorHandler): void;
-    select(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]>;
+    select(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]>;
 }
 
 declare namespace ResourceTools {
     export {
         useResourceData,
-        ProcessedResources,
-        ExtendedProcessedResources,
-        ResourceManagerState,
-        ResourceEditorFactory,
+        IProcessedResources,
+        IExtendedProcessedResources,
+        IResourceManagerState,
+        IResourceEditorFactory,
         ResourceEditorResult,
-        ResourceEditorProps,
-        ResourceDetailData
+        IResourceEditorProps,
+        IResourceDetailData
     }
 }
 
-// Warning: (ae-forgotten-export) The symbol "ResourceTreeViewProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IResourceTreeViewProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-export const ResourceTreeView: React_2.FC<ResourceTreeViewProps>;
+export const ResourceTreeView: React_2.FC<IResourceTreeViewProps>;
 
-// @public
-interface ResourceTypeColumnMapping {
-    columns: GridColumnDefinition[];
-    defaultColumn?: GridColumnDefinition;
-    resourceType: string;
-}
-
-// Warning: (ae-forgotten-export) The symbol "ResourceTypeEditFormProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IResourceTypeEditFormProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const ResourceTypeEditForm: React_2.FC<ResourceTypeEditFormProps>;
+const ResourceTypeEditForm: React_2.FC<IResourceTypeEditFormProps>;
 
 export { Result }
 
 // @public
-function selectResources(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]>;
+function selectResources(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]>;
 
-// Warning: (ae-forgotten-export) The symbol "SharedContextControlsProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ISharedContextControlsProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const SharedContextControls: React_2.FC<SharedContextControlsProps>;
+const SharedContextControls: React_2.FC<ISharedContextControlsProps>;
 
-// Warning: (ae-forgotten-export) The symbol "SourceResourceDetailProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ISourceResourceDetailProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-export const SourceResourceDetail: React_2.FC<SourceResourceDetailProps>;
+export const SourceResourceDetail: React_2.FC<ISourceResourceDetailProps>;
 
 // @public
-export const SourceView: React_2.FC<SourceViewProps>;
+export const SourceView: React_2.FC<ISourceViewProps>;
 
-// @public
-interface SourceViewProps extends ViewBaseProps {
-    onExport?: (data: unknown, type: 'json') => void;
-    onResourceSelect?: (resourceId: string) => void;
-    pickerOptions?: ResourcePickerOptions;
-    resources?: ExtendedProcessedResources | null;
-    selectedResourceId?: string | null;
-}
-
-// Warning: (ae-forgotten-export) The symbol "StringCellProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IStringCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const StringCell: React_2.FC<StringCellProps>;
+const StringCell: React_2.FC<IStringCellProps>;
 
 // @public
 const TestObservabilityContext: IObservabilityContext;
 
-// Warning: (ae-forgotten-export) The symbol "TriStateCellProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ITriStateCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const TriStateCell: React_2.FC<TriStateCellProps>;
+const TriStateCell: React_2.FC<ITriStateCellProps>;
 
 declare namespace TsResTools {
     export {
@@ -1329,54 +1323,54 @@ declare namespace TsResTools {
         createTsResSystemFromConfig,
         processImportedFiles,
         processImportedDirectory,
-        SourceViewProps,
-        CompiledViewProps
+        ISourceViewProps,
+        ICompiledViewProps
     }
 }
 
-// Warning: (ae-forgotten-export) The symbol "UnifiedChangeControlsProps" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUnifiedChangeControlsProps" needs to be exported by the entry point index.d.ts
 //
 // @public
-const UnifiedChangeControls: React_2.FC<UnifiedChangeControlsProps>;
+const UnifiedChangeControls: React_2.FC<IUnifiedChangeControlsProps>;
 
-// Warning: (ae-forgotten-export) The symbol "UseConfigurationStateReturn" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUseFilterStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useConfigurationState(initialConfiguration?: Config.Model.ISystemConfiguration, onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void, onUnsavedChanges?: (hasChanges: boolean) => void): UseConfigurationStateReturn;
+function useFilterState(initialState?: Partial<IFilterState>): IUseFilterStateReturn;
 
-// Warning: (ae-forgotten-export) The symbol "UseFilterStateReturn" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUseIConfigurationStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
+function useIConfigurationState(initialConfiguration?: Config.Model.ISystemConfiguration, onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void, onUnsavedChanges?: (hasChanges: boolean) => void): IUseIConfigurationStateReturn;
 
 // @public
 export const useObservability: () => ObservabilityTools_2.IObservabilityContext;
 
-// Warning: (ae-forgotten-export) The symbol "UseResolutionStateReturn" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUseResolutionStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
+function useResolutionState(processedResources: IProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
 
-// Warning: (ae-forgotten-export) The symbol "UseResourceDataParams" needs to be exported by the entry point index.d.ts
-// Warning: (ae-forgotten-export) The symbol "UseResourceDataReturn" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUseResourceDataParams" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUseResourceDataReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn;
+function useResourceData(params?: IUseResourceDataParams): IUseResourceDataReturn;
 
-// Warning: (ae-forgotten-export) The symbol "UseViewStateReturn" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IUseViewStateReturn" needs to be exported by the entry point index.d.ts
 //
 // @public
-function useViewState(): UseViewStateReturn;
+function useViewState(): IUseViewStateReturn;
 
-// Warning: (ae-forgotten-export) The symbol "CellValidationResult" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ICellValidationResult" needs to be exported by the entry point index.d.ts
 //
 // @public
-function validateCellValue(value: JsonValue, validation?: GridCellValidation): Result<CellValidationResult>;
+function validateCellValue(value: JsonValue, validation?: IGridCellValidation): Result<ICellValidationResult>;
 
-// Warning: (ae-forgotten-export) The symbol "ConfigurationValidationResult" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "IConfigurationValidationResult" needs to be exported by the entry point index.d.ts
 //
 // @public
-function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
+function validateConfiguration(config: Config.Model.ISystemConfiguration): IConfigurationValidationResult;
 
 // @public
 function validatePendingResourceKeys(pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): Result<void>;
@@ -1390,30 +1384,15 @@ const ValidationFunctions: {
 };
 
 // @public
-const ValidationPatterns: {
-    email: RegExp;
-    url: RegExp;
-    phone: RegExp;
-    alphanumeric: RegExp;
-    noWhitespace: RegExp;
-    positiveInteger: RegExp;
-    nonNegativeInteger: RegExp;
-};
-
-// @public
-interface ViewBaseProps {
-    className?: string;
-    onMessage?: (type: Message['type'], message: string) => void;
-    pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
-}
+const ValidationPatterns: Record<string, RegExp>;
 
 declare namespace ViewStateTools {
     export {
         MessagesWindow,
         useViewState,
-        Message_2 as Message,
-        MessagesWindowProps,
-        ViewBaseProps
+        IMessage_2 as IMessage,
+        IMessagesWindowProps,
+        IViewBaseProps
     }
 }
 
@@ -1423,7 +1402,7 @@ declare namespace ZipTools {
         isZipFile,
         processZipResources,
         processZipLoadResult,
-        ImportViewProps
+        IImportViewProps
     }
 }
 

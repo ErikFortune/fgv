@@ -2,12 +2,12 @@ import { renderHook, act } from '@testing-library/react';
 import '@fgv/ts-utils-jest';
 
 import { useResourceData } from '../../../hooks/useResourceData';
-import { ProcessedResources, ExtendedProcessedResources } from '../../../types';
+import { IProcessedResources, IExtendedProcessedResources } from '../../../types';
 import { getDefaultSystemConfiguration } from '../../../utils/tsResIntegration';
 import { Config } from '@fgv/ts-res';
 
 // Create minimal mock data for testing
-const createMockProcessedResources = (): ProcessedResources => ({
+const createMockProcessedResources = (): IProcessedResources => ({
   system: {
     resourceManager: {} as any,
     qualifierTypes: {} as any,
@@ -30,8 +30,8 @@ const createMockProcessedResources = (): ProcessedResources => ({
 const createMockConfiguration = (): Config.Model.ISystemConfiguration => getDefaultSystemConfiguration();
 
 const createMockProcessedResourcesWithUpdatedSystem = (
-  originalResources: ProcessedResources
-): ProcessedResources => ({
+  originalResources: IProcessedResources
+): IProcessedResources => ({
   ...originalResources,
   system: {
     ...originalResources.system,
@@ -61,7 +61,7 @@ describe('useResourceData', () => {
       expect(result.current.state.activeConfiguration).toBe(mockConfig);
 
       // Create initial extended processed resources with configuration
-      const initialResources: ExtendedProcessedResources = {
+      const initialResources: IExtendedProcessedResources = {
         ...createMockProcessedResources(),
         activeConfiguration: mockConfig,
         isLoadedFromBundle: false,
@@ -79,7 +79,7 @@ describe('useResourceData', () => {
 
       // Now simulate what happens when resolution editing updates resources
       // This would be called with plain ProcessedResources (without activeConfiguration)
-      const updatedResources: ProcessedResources = {
+      const updatedResources: IProcessedResources = {
         ...createMockProcessedResources(),
         resourceCount: 10, // Changed value to verify update
         summary: {
@@ -116,7 +116,7 @@ describe('useResourceData', () => {
       } as any;
 
       // Set initial state with bundle metadata
-      const initialResources: ExtendedProcessedResources = {
+      const initialResources: IExtendedProcessedResources = {
         ...createMockProcessedResources(),
         activeConfiguration: mockConfig,
         isLoadedFromBundle: true,
@@ -129,7 +129,7 @@ describe('useResourceData', () => {
       });
 
       // Update with plain ProcessedResources
-      const updatedResources: ProcessedResources = {
+      const updatedResources: IProcessedResources = {
         ...createMockProcessedResources(),
         resourceCount: 15
       };
@@ -150,7 +150,7 @@ describe('useResourceData', () => {
     test('should handle updating resources when no previous configuration exists', () => {
       const { result } = renderHook(() => useResourceData({}));
 
-      const mockResources: ProcessedResources = createMockProcessedResources();
+      const mockResources: IProcessedResources = createMockProcessedResources();
 
       act(() => {
         result.current.actions.updateProcessedResources(mockResources);
@@ -169,7 +169,7 @@ describe('useResourceData', () => {
       expect(result.current.state.processedResources).toBeNull();
 
       const mockConfig = createMockConfiguration();
-      const mockResources: ProcessedResources = createMockProcessedResources();
+      const mockResources: IProcessedResources = createMockProcessedResources();
 
       // Set configuration but no processed resources yet
       act(() => {
@@ -202,7 +202,7 @@ describe('useResourceData', () => {
 
       act(() => {
         // 2. Import/process resources with configuration
-        const initialResources: ExtendedProcessedResources = {
+        const initialResources: IExtendedProcessedResources = {
           ...createMockProcessedResources(),
           activeConfiguration: mockConfig,
           isLoadedFromBundle: false,
@@ -213,7 +213,7 @@ describe('useResourceData', () => {
 
       act(() => {
         // 3. Simulate resource editing (resolution system updates with plain ProcessedResources)
-        const editedResources: ProcessedResources = {
+        const editedResources: IProcessedResources = {
           ...createMockProcessedResources(),
           resourceCount: 8 // Simulate edited resources
         };
@@ -252,7 +252,7 @@ describe('useResourceData', () => {
       });
 
       // 2. Load initial resources with extended properties
-      const initialResources: ExtendedProcessedResources = {
+      const initialResources: IExtendedProcessedResources = {
         ...createMockProcessedResources(),
         activeConfiguration: mockConfig,
         isLoadedFromBundle: true,

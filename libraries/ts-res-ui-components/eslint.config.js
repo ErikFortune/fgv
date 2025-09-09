@@ -10,7 +10,9 @@ module.exports = [
   {
     // Override specific rules if needed
     rules: {
-      '@rushstack/packlets/mechanics': 'warn'
+      '@rushstack/packlets/mechanics': 'warn',
+      // Disable no-new-null rule for React components where null is conventional
+      '@rushstack/no-new-null': 'off'
     }
   }
 ];

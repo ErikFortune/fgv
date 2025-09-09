@@ -40,8 +40,14 @@ export {
   analyzeFilteredResources,
   hasFilterValues,
   getFilterSummary,
-  type FilterOptions
+  type IFilterOptions
 } from '../utils/filterResources';
 
 // Export types related to filtering
-export type { FilterState, FilterActions, FilterViewProps, FilterResult, FilteredResource } from '../types';
+export type {
+  IFilterState,
+  IFilterActions,
+  IFilterViewProps,
+  IFilterResult,
+  IFilteredResource
+} from '../types';

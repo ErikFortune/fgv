@@ -8,7 +8,7 @@ import { HierarchyEditor } from './HierarchyEditor';
  *
  * @public
  */
-export interface QualifierTypeEditFormProps {
+export interface IQualifierTypeEditFormProps {
   /** Existing qualifier type to edit (undefined for creating new type) */
   qualifierType?: QualifierTypes.Config.ISystemQualifierTypeConfig;
   /** Callback fired when qualifier type is saved */
@@ -19,7 +19,7 @@ export interface QualifierTypeEditFormProps {
   existingNames?: string[];
 }
 
-interface FormData {
+interface IFormData {
   name: string;
   systemType: 'language' | 'territory' | 'literal';
   allowContextList: boolean;
@@ -135,13 +135,13 @@ interface FormData {
  *
  * @public
  */
-export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
+export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
   qualifierType,
   onSave,
   onCancel,
   existingNames = []
 }) => {
-  const [formData, setFormData] = useState<FormData>(() => {
+  const [formData, setFormData] = useState<IFormData>(() => {
     if (qualifierType) {
       const config = qualifierType.configuration || {};
       // Ensure hierarchy is a plain object with string values
@@ -265,7 +265,7 @@ export const QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps> = ({
   }, [formData, validateForm, onSave]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: FormData[keyof FormData]) => {
+    (field: keyof IFormData, value: IFormData[keyof IFormData]) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: '' }));

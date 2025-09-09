@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { succeed, fail } from '@fgv/ts-utils';
+import { fail } from '@fgv/ts-utils';
 import {
   getDefaultSystemConfiguration,
   createTsResSystemFromConfig,
@@ -29,7 +29,7 @@ import {
   processImportedDirectory,
   convertImportedDirectoryToFileTree
 } from '../../../utils/tsResIntegration';
-import { ImportedDirectory, ImportedFile } from '../../../types';
+import { IImportedDirectory, IImportedFile } from '../../../types';
 import { loadTestConfiguration, loadTestResources } from '../../helpers/testDataLoader';
 
 describe('tsResIntegration', () => {
@@ -168,7 +168,7 @@ describe('tsResIntegration', () => {
 
   describe('convertImportedDirectoryToFileTree', () => {
     test('converts simple directory structure', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'test-resources',
         path: '/test/path',
         files: [
@@ -188,7 +188,7 @@ describe('tsResIntegration', () => {
     });
 
     test('converts directory with subdirectories', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'root',
         path: '/test',
         files: [
@@ -222,7 +222,7 @@ describe('tsResIntegration', () => {
     });
 
     test('handles empty directory', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'empty',
         path: '/empty',
         files: [],
@@ -246,7 +246,7 @@ describe('tsResIntegration', () => {
     test('processes real test resource files', () => {
       const resourcesResult = loadTestResources('default');
       if (resourcesResult.isSuccess()) {
-        const testFiles: ImportedFile[] = resourcesResult.value.map((file) => ({
+        const testFiles: IImportedFile[] = resourcesResult.value.map((file) => ({
           name: file.path.split('/').pop() || file.path,
           path: file.path,
           content: file.content,
@@ -275,7 +275,7 @@ describe('tsResIntegration', () => {
     });
 
     test('handles invalid JSON files gracefully', () => {
-      const invalidFiles: ImportedFile[] = [
+      const invalidFiles: IImportedFile[] = [
         {
           name: 'invalid.json',
           path: '/invalid.json',
@@ -291,7 +291,7 @@ describe('tsResIntegration', () => {
 
   describe('processImportedDirectory', () => {
     test('handles empty directory', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'empty-dir',
         path: '/empty',
         files: [],
@@ -311,7 +311,7 @@ describe('tsResIntegration', () => {
     test('processes directory with real test resources', () => {
       const resourcesResult = loadTestResources('default');
       if (resourcesResult.isSuccess() && resourcesResult.value.length > 0) {
-        const directory: ImportedDirectory = {
+        const directory: IImportedDirectory = {
           name: 'test-resources',
           path: '/test',
           files: resourcesResult.value.map((file) => ({
@@ -369,19 +369,7 @@ describe('tsResIntegration', () => {
       const systemResult = createTsResSystemFromConfig();
       expect(systemResult).toSucceed();
 
-      const system = systemResult.orThrow();
-
-      const invalidCompiledCollection = {
-        resources: null as unknown as any,
-        qualifiers: [],
-        qualifierTypes: [],
-        resourceTypes: [],
-        conditions: [],
-        conditionSets: [],
-        decisions: []
-      };
-
-      // Function removed in refactoring
+      // Function removed in refactoring - variables removed as they were unused
       const result = fail('createCompiledResourceCollectionManager was removed');
       /* createCompiledResourceCollectionManager(
         invalidCompiledCollection,

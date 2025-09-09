@@ -6,7 +6,7 @@ import { DocumentTextIcon } from '@heroicons/react/24/outline';
  *
  * @public
  */
-interface ResourceListViewProps {
+interface IResourceListViewProps {
   /** Array of resource IDs to display in the list */
   resourceIds: string[];
   /** Currently selected resource ID for highlighting */
@@ -113,7 +113,7 @@ interface ResourceListViewProps {
  *
  * @public
  */
-export const ResourceListView: React.FC<ResourceListViewProps> = ({
+export const ResourceListView: React.FC<IResourceListViewProps> = ({
   resourceIds,
   selectedResourceId,
   onResourceSelect,
