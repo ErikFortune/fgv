@@ -31,8 +31,10 @@ import {
   exportConfiguration,
   importConfiguration,
   getIConfigurationTemplates as getIConfigurationTemplates,
-  generateConfigurationFilename
+  generateConfigurationFilename,
+  IConfigurationTemplate
 } from '../../../utils/configurationUtils';
+import { JsonObject } from '@fgv/ts-json-base';
 
 describe('configurationUtils', () => {
   let defaultConfig: Config.Model.ISystemConfiguration;
@@ -110,9 +112,9 @@ describe('configurationUtils', () => {
     });
 
     test('reports error for undefined qualifierTypes', () => {
-      const config = { ...defaultConfig };
-      delete (config as any).qualifierTypes;
-      const result = validateConfiguration(config);
+      const config: Partial<Config.Model.ISystemConfiguration> = { ...defaultConfig };
+      delete config.qualifierTypes;
+      const result = validateConfiguration(config as Config.Model.ISystemConfiguration);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
@@ -315,10 +317,10 @@ describe('configurationUtils', () => {
 
     test('handles nested object modifications', () => {
       const cloned = cloneConfiguration(defaultConfig);
-      (cloned.qualifiers[0] as any).customProperty = 'added';
+      (cloned.qualifiers[0] as unknown as JsonObject).customProperty = 'added';
 
-      expect((defaultConfig.qualifiers[0] as any).customProperty).toBeUndefined();
-      expect((cloned.qualifiers[0] as any).customProperty).toBe('added');
+      expect((defaultConfig.qualifiers[0] as unknown as JsonObject).customProperty).toBeUndefined();
+      expect((cloned.qualifiers[0] as unknown as JsonObject).customProperty).toBe('added');
     });
   });
 
@@ -343,15 +345,18 @@ describe('configurationUtils', () => {
     });
 
     test('returns false for different property order', () => {
-      const config1 = { a: 1, b: 2 } as any;
-      const config2 = { b: 2, a: 1 } as any;
+      const config1 = { a: 1, b: 2 } as unknown as Config.Model.ISystemConfiguration;
+      const config2 = { b: 2, a: 1 } as unknown as Config.Model.ISystemConfiguration;
 
       expect(compareConfigurations(config1, config2)).toBe(false);
     });
 
     test('handles null and undefined values', () => {
-      const config1 = { ...defaultConfig, description: null } as any;
-      const config2 = { ...defaultConfig, description: undefined } as any;
+      const config1 = { ...defaultConfig, description: null } as unknown as Config.Model.ISystemConfiguration;
+      const config2 = {
+        ...defaultConfig,
+        description: undefined
+      } as unknown as Config.Model.ISystemConfiguration;
 
       expect(compareConfigurations(config1, config2)).toBe(false);
     });
@@ -456,8 +461,8 @@ describe('configurationUtils', () => {
     });
 
     test('handles export errors gracefully', () => {
-      const circularConfig = defaultConfig as any;
-      circularConfig.self = circularConfig; // Create circular reference
+      const circularConfig = defaultConfig as unknown as Config.Model.ISystemConfiguration;
+      (circularConfig as unknown as JsonObject).self = circularConfig as unknown as JsonObject; // Create circular reference
 
       const result = exportConfiguration(circularConfig);
 
@@ -533,7 +538,7 @@ describe('configurationUtils', () => {
       expect(templates).toHaveLength(expectedConfigs.length);
 
       expectedConfigs.forEach((configId) => {
-        const template = templates.find((t: any) => t.id === configId);
+        const template = templates.find((t: IConfigurationTemplate) => t.id === configId);
         expect(template).toBeDefined();
         expect(template!.configuration).toBeDefined();
       });
@@ -541,7 +546,7 @@ describe('configurationUtils', () => {
 
     test('default template has correct properties', () => {
       const templates = getIConfigurationTemplates();
-      const defaultTemplate = templates.find((t: any) => t.id === 'default');
+      const defaultTemplate = templates.find((t: IConfigurationTemplate) => t.id === 'default');
 
       expect(defaultTemplate).toBeDefined();
       expect(defaultTemplate!.category).toBe('basic');
@@ -550,7 +555,7 @@ describe('configurationUtils', () => {
 
     test('extended-example template has advanced category', () => {
       const templates = getIConfigurationTemplates();
-      const extendedTemplate = templates.find((t: any) => t.id === 'extended-example');
+      const extendedTemplate = templates.find((t: IConfigurationTemplate) => t.id === 'extended-example');
 
       expect(extendedTemplate).toBeDefined();
       expect(extendedTemplate!.category).toBe('advanced');
@@ -559,8 +564,12 @@ describe('configurationUtils', () => {
 
     test('language-priority and territory-priority have intermediate category', () => {
       const templates = getIConfigurationTemplates();
-      const languagePriorityTemplate = templates.find((t: any) => t.id === 'language-priority');
-      const territoryPriorityTemplate = templates.find((t: any) => t.id === 'territory-priority');
+      const languagePriorityTemplate = templates.find(
+        (t: IConfigurationTemplate) => t.id === 'language-priority'
+      );
+      const territoryPriorityTemplate = templates.find(
+        (t: IConfigurationTemplate) => t.id === 'territory-priority'
+      );
 
       expect(languagePriorityTemplate!.category).toBe('intermediate');
       expect(territoryPriorityTemplate!.category).toBe('intermediate');
@@ -569,7 +578,7 @@ describe('configurationUtils', () => {
     test('all templates have valid configurations', () => {
       const templates = getIConfigurationTemplates();
 
-      templates.forEach((template: any) => {
+      templates.forEach((template: IConfigurationTemplate) => {
         const validation = validateConfiguration(template.configuration);
         expect(validation.isValid).toBe(true);
       });
@@ -578,7 +587,7 @@ describe('configurationUtils', () => {
     test('all templates have required properties', () => {
       const templates = getIConfigurationTemplates();
 
-      templates.forEach((template: any) => {
+      templates.forEach((template: IConfigurationTemplate) => {
         expect(template.id).toBeTruthy();
         expect(template.name).toBeTruthy();
         expect(template.description).toBeTruthy();

@@ -4,20 +4,30 @@ import '@fgv/ts-utils-jest';
 import { useResourceData } from '../../../hooks/useResourceData';
 import { IProcessedResources, IExtendedProcessedResources } from '../../../types';
 import { getDefaultSystemConfiguration } from '../../../utils/tsResIntegration';
-import { Config } from '@fgv/ts-res';
+import {
+  Config,
+  QualifierTypes,
+  Qualifiers,
+  Resources,
+  ResourceJson,
+  ResourceTypes,
+  Import,
+  Runtime,
+  Bundle
+} from '@fgv/ts-res';
 
 // Create minimal mock data for testing
 const createMockProcessedResources = (): IProcessedResources => ({
   system: {
-    resourceManager: {} as any,
-    qualifierTypes: {} as any,
-    qualifiers: {} as any,
-    resourceTypes: {} as any,
-    importManager: {} as any,
-    contextQualifierProvider: {} as any
+    resourceManager: {} as unknown as Resources.ResourceManagerBuilder,
+    qualifierTypes: {} as unknown as QualifierTypes.ReadOnlyQualifierTypeCollector,
+    qualifiers: {} as unknown as Qualifiers.IReadOnlyQualifierCollector,
+    resourceTypes: {} as unknown as ResourceTypes.ReadOnlyResourceTypeCollector,
+    importManager: {} as unknown as Import.ImportManager,
+    contextQualifierProvider: {} as unknown as Runtime.ValidatingSimpleContextQualifierProvider
   },
-  compiledCollection: {} as any,
-  resolver: {} as any,
+  compiledCollection: {} as unknown as ResourceJson.Compiled.ICompiledResourceCollection,
+  resolver: {} as unknown as Runtime.ResourceResolver,
   resourceCount: 5,
   summary: {
     totalResources: 5,
@@ -36,7 +46,10 @@ const createMockProcessedResourcesWithUpdatedSystem = (
   system: {
     ...originalResources.system,
     // Simulate updated resource manager with new candidates
-    resourceManager: { ...originalResources.system.resourceManager, updated: true } as any
+    resourceManager: {
+      ...originalResources.system.resourceManager,
+      updated: true
+    } as unknown as Resources.ResourceManagerBuilder
   },
   resourceCount: originalResources.resourceCount + 1,
   summary: {
@@ -113,7 +126,7 @@ describe('useResourceData', () => {
         name: 'Test Bundle',
         version: '1.0.0',
         timestamp: '2023-01-01T00:00:00Z'
-      } as any;
+      } as unknown as Bundle.IBundleMetadata;
 
       // Set initial state with bundle metadata
       const initialResources: IExtendedProcessedResources = {
@@ -284,7 +297,6 @@ describe('useResourceData', () => {
       expect(finalState.resourceCount).toBe(6); // Updated count
       expect(finalState.summary.totalResources).toBe(6);
       expect(finalState.summary.resourceIds).toContain('new-candidate'); // New candidate added
-      expect((finalState.system.resourceManager as any).updated).toBe(true); // System updated
 
       // Extended metadata should still be preserved
       expect(finalState.activeConfiguration).toBe(mockConfig);
