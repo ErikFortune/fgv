@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { succeed, fail } from '@fgv/ts-utils';
-import { JsonValue } from '@fgv/ts-json-base';
+import { JsonObject, JsonValue } from '@fgv/ts-json-base';
 import {
   validateEditedResource,
   computeResourceDelta,
@@ -31,6 +31,7 @@ import {
   createEditCollisionKey,
   checkEditConflicts
 } from '../../../utils/resolutionEditing';
+import { Runtime } from '@fgv/ts-res';
 
 describe('resolutionEditing utilities', () => {
   describe('validateEditedResource', () => {
@@ -109,12 +110,12 @@ describe('resolutionEditing utilities', () => {
 
     test('detects JSON serialization errors', () => {
       // Create an object with a property that can't be serialized
-      const badObj = {
+      const badObj: JsonObject = {
         name: 'test'
       };
 
       // Add a circular reference to cause JSON serialization to fail
-      (badObj as any).self = badObj;
+      badObj.self = badObj;
 
       const result = validateEditedResource(badObj);
 
@@ -335,11 +336,11 @@ describe('resolutionEditing utilities', () => {
 
   describe('extractResolutionContext', () => {
     test('filters out empty and undefined values', () => {
-      const mockResolver = {} as any;
+      const mockResolver = {} as unknown as Runtime.ResourceResolver;
       const contextValues = {
         language: 'en',
         territory: '',
-        platform: undefined as any,
+        platform: undefined,
         theme: 'dark',
         empty: '   '
       };
@@ -353,7 +354,7 @@ describe('resolutionEditing utilities', () => {
     });
 
     test('trims whitespace from values', () => {
-      const mockResolver = {} as any;
+      const mockResolver = {} as unknown as Runtime.ResourceResolver;
       const contextValues = {
         language: '  en  ',
         territory: ' US '
@@ -368,7 +369,7 @@ describe('resolutionEditing utilities', () => {
     });
 
     test('handles empty context', () => {
-      const mockResolver = {} as any;
+      const mockResolver = {} as unknown as Runtime.ResourceResolver;
       const contextValues = {};
 
       const result = extractResolutionContext(mockResolver, contextValues);
@@ -377,11 +378,11 @@ describe('resolutionEditing utilities', () => {
     });
 
     test('handles all empty values', () => {
-      const mockResolver = {} as any;
+      const mockResolver = {} as unknown as Runtime.ResourceResolver;
       const contextValues = {
         language: '',
         territory: '   ',
-        platform: undefined as any
+        platform: undefined
       };
 
       const result = extractResolutionContext(mockResolver, contextValues);
@@ -446,7 +447,7 @@ describe('resolutionEditing utilities', () => {
   });
 
   describe('checkEditConflicts', () => {
-    let mockResourceManager: any;
+    let mockResourceManager: { getBuiltResource: jest.Mock };
 
     beforeEach(() => {
       mockResourceManager = {
@@ -463,7 +464,11 @@ describe('resolutionEditing utilities', () => {
       const editedResources = new Map([['resource1', { some: 'edit' }]]);
       const currentContext = { language: 'en' };
 
-      const result = checkEditConflicts(mockResourceManager, editedResources, currentContext);
+      const result = checkEditConflicts(
+        mockResourceManager as unknown as Runtime.IResourceManager,
+        editedResources,
+        currentContext
+      );
 
       expect(result.conflicts).toEqual([]);
       expect(result.warnings).toEqual([]);
@@ -478,7 +483,11 @@ describe('resolutionEditing utilities', () => {
       const editedResources = new Map([['resource1', { some: 'edit' }]]);
       const currentContext = { language: 'en' };
 
-      const result = checkEditConflicts(mockResourceManager, editedResources, currentContext);
+      const result = checkEditConflicts(
+        mockResourceManager as unknown as Runtime.IResourceManager,
+        editedResources,
+        currentContext
+      );
 
       expect(result.conflicts).toEqual([]);
       expect(result.warnings).toHaveLength(1);
@@ -491,7 +500,11 @@ describe('resolutionEditing utilities', () => {
       const editedResources = new Map([['resource1', { some: 'edit' }]]);
       const currentContext = { language: 'en' };
 
-      const result = checkEditConflicts(mockResourceManager, editedResources, currentContext);
+      const result = checkEditConflicts(
+        mockResourceManager as unknown as Runtime.IResourceManager,
+        editedResources,
+        currentContext
+      );
 
       expect(result.conflicts).toEqual([]);
       expect(result.warnings).toEqual([]);
@@ -511,7 +524,11 @@ describe('resolutionEditing utilities', () => {
       ]);
       const currentContext = { language: 'en' };
 
-      const result = checkEditConflicts(mockResourceManager, editedResources, currentContext);
+      const result = checkEditConflicts(
+        mockResourceManager as unknown as Runtime.IResourceManager,
+        editedResources,
+        currentContext
+      );
 
       expect(result.conflicts).toEqual([]);
       expect(result.warnings).toHaveLength(1);
@@ -522,7 +539,11 @@ describe('resolutionEditing utilities', () => {
       const editedResources = new Map();
       const currentContext = { language: 'en' };
 
-      const result = checkEditConflicts(mockResourceManager, editedResources, currentContext);
+      const result = checkEditConflicts(
+        mockResourceManager as unknown as Runtime.IResourceManager,
+        editedResources,
+        currentContext
+      );
 
       expect(result.conflicts).toEqual([]);
       expect(result.warnings).toEqual([]);
@@ -536,7 +557,11 @@ describe('resolutionEditing utilities', () => {
       const editedResources = new Map([['resource1', { some: 'edit' }]]);
       const currentContext = { language: 'en' };
 
-      const result = checkEditConflicts(mockResourceManager, editedResources, currentContext);
+      const result = checkEditConflicts(
+        mockResourceManager as unknown as Runtime.IResourceManager,
+        editedResources,
+        currentContext
+      );
 
       expect(result.conflicts).toEqual([]);
       expect(result.warnings).toEqual([]);

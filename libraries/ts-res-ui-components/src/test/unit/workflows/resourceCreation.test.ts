@@ -26,6 +26,7 @@ import { useResolutionState } from '../../../hooks/useResolutionState';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
 import { Runtime } from '@fgv/ts-res';
 import type { IProcessedResources } from '../../../types';
+import { ResolutionTools } from '../../../namespaces';
 
 function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
@@ -92,7 +93,7 @@ describe('Resource Creation Workflows', () => {
         const createResult = await result.current.actions.createPendingResource({
           id: 'platform.test.invalid',
           json: { message: 'test' }
-        } as any);
+        } as unknown as ResolutionTools.ICreatePendingResourceParams);
 
         expect(createResult).toFailWith(/resource type.*not found/i);
       });
@@ -414,7 +415,7 @@ describe('Resource Creation Workflows', () => {
         const missingTypeResult = await result.current.actions.createPendingResource({
           id: 'platform.test.noType',
           json: { message: 'Missing type' }
-        } as any);
+        } as unknown as ResolutionTools.ICreatePendingResourceParams);
 
         expect(missingTypeResult).toFailWith(/resource type.*not found/i);
       });

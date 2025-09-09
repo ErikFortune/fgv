@@ -31,6 +31,7 @@ import {
 } from '../../../utils/tsResIntegration';
 import { IImportedDirectory, IImportedFile } from '../../../types';
 import { loadTestConfiguration, loadTestResources } from '../../helpers/testDataLoader';
+import * as TsRes from '@fgv/ts-res';
 
 describe('tsResIntegration', () => {
   describe('getDefaultSystemConfiguration', () => {
@@ -136,8 +137,8 @@ describe('tsResIntegration', () => {
     });
 
     test('handles invalid configuration gracefully', () => {
-      const invalidConfig = {
-        qualifierTypes: [{ name: 'invalid', systemType: 'nonexistent' }] as unknown as any,
+      const invalidConfig: TsRes.Config.Model.ISystemConfiguration = {
+        qualifierTypes: [{ name: 'invalid', systemType: 'nonexistent' }],
         qualifiers: [],
         resourceTypes: []
       };
@@ -147,7 +148,7 @@ describe('tsResIntegration', () => {
     });
 
     test('handles null configuration gracefully', () => {
-      const result = createTsResSystemFromConfig(null as unknown as any);
+      const result = createTsResSystemFromConfig(null as unknown as TsRes.Config.Model.ISystemConfiguration);
       expect(result).toSucceed();
     });
 
@@ -159,9 +160,11 @@ describe('tsResIntegration', () => {
     test('validates required configuration fields', () => {
       const incompleteConfig = {
         qualifierTypes: []
-      } as unknown as any;
+      };
 
-      const result = createTsResSystemFromConfig(incompleteConfig);
+      const result = createTsResSystemFromConfig(
+        incompleteConfig as unknown as TsRes.Config.Model.ISystemConfiguration
+      );
       expect(result).toFail();
     });
   });
@@ -393,7 +396,9 @@ describe('tsResIntegration', () => {
       ];
 
       malformedConfigs.forEach((config) => {
-        const result = createTsResSystemFromConfig(config as unknown as any);
+        const result = createTsResSystemFromConfig(
+          config as unknown as TsRes.Config.Model.ISystemConfiguration
+        );
         if (result.isFailure()) {
           expect(result.message).toBeDefined();
         }
@@ -411,7 +416,9 @@ describe('tsResIntegration', () => {
       ];
 
       incompleteConfigs.forEach((config) => {
-        const result = createTsResSystemFromConfig(config as unknown as any);
+        const result = createTsResSystemFromConfig(
+          config as unknown as TsRes.Config.Model.ISystemConfiguration
+        );
         if (result.isFailure()) {
           expect(result.message).toBeDefined();
         }

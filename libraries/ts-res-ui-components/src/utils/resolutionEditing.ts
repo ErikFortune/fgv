@@ -283,13 +283,13 @@ export async function rebuildSystemWithEdits(
  */
 export function extractResolutionContext(
   resolver: Runtime.ResourceResolver,
-  contextValues: Record<string, string>
+  contextValues: Record<string, string | undefined>
 ): Record<string, string> {
   // Filter out empty/undefined context values
   const cleanContext: Record<string, string> = {};
 
   for (const [key, value] of Object.entries(contextValues)) {
-    if (value && value.trim() !== '') {
+    if (value) {
       cleanContext[key] = value.trim();
     }
   }
