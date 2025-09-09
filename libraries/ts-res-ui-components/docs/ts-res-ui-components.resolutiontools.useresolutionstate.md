@@ -13,7 +13,7 @@ Key features: - \*\*Context Management\*\*: Set and update resolution context (q
 **Signature:**
 
 ```typescript
-export declare function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
+export declare function useResolutionState(processedResources: IProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
 ```
 
 ## Parameters
@@ -41,7 +41,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md) \| null
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md) \| null
 
 
 </td><td>
@@ -73,7 +73,7 @@ onSystemUpdate
 
 </td><td>
 
-(updatedResources: [ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->) =&gt; void
+(updatedResources: [IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)<!-- -->) =&gt; void
 
 
 </td><td>
@@ -86,7 +86,7 @@ _(Optional)_ Optional callback when the resource system is updated with edits
 
 **Returns:**
 
-UseResolutionStateReturn
+IUseResolutionStateReturn
 
 Object containing resolution state, actions, and available qualifiers
 

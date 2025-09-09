@@ -11,7 +11,7 @@ ResolutionResults provides a flexible interface for presenting resource resoluti
 **Signature:**
 
 ```typescript
-ResolutionResults: React.FC<ResolutionResultsProps>
+ResolutionResults: React.FC<IResolutionResultsProps>
 ```
 
 ## Example 1

@@ -49,7 +49,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[PendingResource](./ts-res-ui-components.pickertools.pendingresource.md)
+[IPendingResource](./ts-res-ui-components.pickertools.ipendingresource.md)
 
 
 </td><td>
@@ -62,7 +62,7 @@ Pending resources are displayed alongside persisted resources in the picker, all
 </td></tr>
 <tr><td>
 
-[ResourceAnnotation](./ts-res-ui-components.pickertools.resourceannotation.md)
+[IResourceAnnotation](./ts-res-ui-components.pickertools.iresourceannotation.md)
 
 
 </td><td>
@@ -75,7 +75,7 @@ Supports multiple types of visual indicators that can be combined: - Badge: Smal
 </td></tr>
 <tr><td>
 
-[ResourceAnnotations](./ts-res-ui-components.pickertools.resourceannotations.md)
+[IResourceAnnotations](./ts-res-ui-components.pickertools.iresourceannotations.md)
 
 
 </td><td>
@@ -88,7 +88,7 @@ This allows the host application to provide visual indicators for resources, suc
 </td></tr>
 <tr><td>
 
-[ResourcePickerOptions](./ts-res-ui-components.pickertools.resourcepickeroptions.md)
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>
@@ -101,7 +101,7 @@ This interface groups all UI-related options that control how the ResourcePicker
 </td></tr>
 <tr><td>
 
-[ResourcePickerOptionsControlProps](./ts-res-ui-components.pickertools.resourcepickeroptionscontrolprops.md)
+[IResourcePickerOptionsControlProps](./ts-res-ui-components.pickertools.iresourcepickeroptionscontrolprops.md)
 
 
 </td><td>
@@ -112,7 +112,7 @@ Props for the ResourcePickerOptionsControl component.
 </td></tr>
 <tr><td>
 
-[ResourcePickerProps](./ts-res-ui-components.pickertools.resourcepickerprops.md)
+[IResourcePickerProps](./ts-res-ui-components.pickertools.iresourcepickerprops.md)
 
 
 </td><td>
@@ -125,7 +125,7 @@ The ResourcePicker is a comprehensive component for browsing and selecting resou
 </td></tr>
 <tr><td>
 
-[ResourceSelection](./ts-res-ui-components.pickertools.resourceselection.md)
+[IResourceSelection](./ts-res-ui-components.pickertools.iresourceselection.md)
 
 
 </td><td>

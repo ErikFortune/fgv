@@ -101,7 +101,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[FilterActions](./ts-res-ui-components.filtertools.filteractions.md)
+[IFilterActions](./ts-res-ui-components.filtertools.ifilteractions.md)
 
 
 </td><td>
@@ -112,7 +112,7 @@ Actions available for managing filter state. Provides methods for updating all a
 </td></tr>
 <tr><td>
 
-[FilteredResource](./ts-res-ui-components.filtertools.filteredresource.md)
+[IFilteredResource](./ts-res-ui-components.filtertools.ifilteredresource.md)
 
 
 </td><td>
@@ -125,7 +125,7 @@ FilteredResource provides detailed analytics about how filtering affected an ind
 </td></tr>
 <tr><td>
 
-[FilterOptions](./ts-res-ui-components.filtertools.filteroptions.md)
+[IFilterOptions](./ts-res-ui-components.filtertools.ifilteroptions.md)
 
 
 </td><td>
@@ -136,20 +136,20 @@ Options for configuring filtering behavior and output.
 </td></tr>
 <tr><td>
 
-[FilterResult](./ts-res-ui-components.filtertools.filterresult.md)
+[IFilterResult](./ts-res-ui-components.filtertools.ifilterresult.md)
 
 
 </td><td>
 
 Complete result of a filtering operation including processed data and analysis.
 
-FilterResult encapsulates the outcome of applying resource filtering, providing both the filtered resource system and detailed analytics about the filtering process. It includes success/failure status, processed resources, per-resource analysis, and any warnings or errors encountered during filtering.
+IFilterResult encapsulates the outcome of applying resource filtering, providing both the filtered resource system and detailed analytics about the filtering process. It includes success/failure status, processed resources, per-resource analysis, and any warnings or errors encountered during filtering.
 
 
 </td></tr>
 <tr><td>
 
-[FilterState](./ts-res-ui-components.filtertools.filterstate.md)
+[IFilterState](./ts-res-ui-components.filtertools.ifilterstate.md)
 
 
 </td><td>
@@ -160,7 +160,7 @@ Represents the current state of resource filtering. Tracks filter configuration,
 </td></tr>
 <tr><td>
 
-[FilterViewProps](./ts-res-ui-components.filtertools.filterviewprops.md)
+[IFilterViewProps](./ts-res-ui-components.filtertools.ifilterviewprops.md)
 
 
 </td><td>

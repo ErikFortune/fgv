@@ -13,7 +13,7 @@ Provides an interface for browsing source resources in their original form, view
 **Signature:**
 
 ```typescript
-SourceView: React.FC<SourceViewProps>
+SourceView: React.FC<ISourceViewProps>
 ```
 
 ## Example

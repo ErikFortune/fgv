@@ -11,7 +11,7 @@ SourceResourceDetail provides an in-depth view of a resource's properties, candi
 **Signature:**
 
 ```typescript
-SourceResourceDetail: React.FC<SourceResourceDetailProps>
+SourceResourceDetail: React.FC<ISourceResourceDetailProps>
 ```
 
 ## Example 1

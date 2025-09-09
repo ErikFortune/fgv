@@ -13,7 +13,7 @@ Provides a comprehensive interface for filtering resources based on qualifier va
 **Signature:**
 
 ```typescript
-FilterView: React.FC<FilterViewProps>
+FilterView: React.FC<IFilterViewProps>
 ```
 
 ## Example

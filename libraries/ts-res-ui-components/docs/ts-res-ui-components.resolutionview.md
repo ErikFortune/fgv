@@ -13,7 +13,7 @@ Provides a comprehensive interface for testing resource resolution with differen
 **Signature:**
 
 ```typescript
-ResolutionView: React.FC<ResolutionViewProps>
+ResolutionView: React.FC<IResolutionViewProps>
 ```
 
 ## Example

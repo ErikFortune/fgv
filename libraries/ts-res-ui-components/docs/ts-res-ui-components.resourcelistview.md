@@ -11,7 +11,7 @@ ResourceListView provides a simple, scrollable list interface for browsing throu
 **Signature:**
 
 ```typescript
-ResourceListView: React.FC<ResourceListViewProps>
+ResourceListView: React.FC<IResourceListViewProps>
 ```
 
 ## Example 1

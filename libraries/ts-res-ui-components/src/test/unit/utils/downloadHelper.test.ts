@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { DownloadUtils } from '../../../utils/downloadHelper';
+import * as DownloadUtils from '../../../utils/downloadHelper';
 
 describe('DownloadUtils', () => {
   // Mock DOM APIs

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { JsonValue } from '@fgv/ts-json-base';
+import { isJsonObject, JsonValue } from '@fgv/ts-json-base';
 import { IGridColumnDefinition, IResolutionActions, IResolutionState } from '../../../types';
 import { GridValidationState } from '../../../utils/cellValidation';
 import { StringCell, BooleanCell, TriStateCell, DropdownCell } from './cells';
@@ -97,14 +97,26 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
     // Use the same extractValueByPath logic as ResourceGrid
     const dataPath = column.dataPath;
     if (typeof dataPath === 'string') {
-      return (editedValue as any)?.[dataPath];
+      if (!isJsonObject(editedValue)) {
+        if (!resolutionActions?.saveEdit) {
+          onMessage?.('error', `${dataPath}: cannot extract property from non-object`);
+        }
+        return undefined;
+      }
+      return editedValue[dataPath];
     }
 
     if (Array.isArray(dataPath)) {
       let current = editedValue;
       for (const segment of dataPath) {
         if (current === null || current === undefined) return undefined;
-        current = (current as any)[segment];
+        if (!isJsonObject(current)) {
+          if (!resolutionActions?.saveEdit) {
+            onMessage?.('error', `${segment}: cannot extract property from non-object`);
+          }
+          return undefined;
+        }
+        current = current[segment];
       }
       return current;
     }

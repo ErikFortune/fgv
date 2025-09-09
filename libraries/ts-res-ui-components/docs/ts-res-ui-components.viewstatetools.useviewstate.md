@@ -11,11 +11,11 @@ This hook provides a centralized way to manage common view state concerns like u
 **Signature:**
 
 ```typescript
-export declare function useViewState(): UseViewStateReturn;
+export declare function useViewState(): IUseViewStateReturn;
 ```
 **Returns:**
 
-UseViewStateReturn
+IUseViewStateReturn
 
 Object containing view state and state management functions
 
@@ -27,23 +27,23 @@ function MyResourceView() {
   const {
     messages,
     selectedResourceId,
-    addMessage,
-    clearMessages,
+    addIMessage,
+    clearIMessages,
     selectResource
   } = useViewState();
 
   const handleOperation = async () => {
     try {
       await someAsyncOperation();
-      addMessage('success', 'Operation completed successfully');
+      addIMessage('success', 'Operation completed successfully');
     } catch (error) {
-      addMessage('error', `Operation failed: ${error.message}`);
+      addIMessage('error', `Operation failed: ${error.message}`);
     }
   };
 
   return (
     <div>
-      <MessageDisplay messages={messages} onClear={clearMessages} />
+      <IMessageDisplay messages={messages} onClear={clearIMessages} />
       <ResourcePicker
         selectedResourceId={selectedResourceId}
         onResourceSelect={(selection) => selectResource(selection.resourceId)}

@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ExtendedProcessedResources](./ts-res-ui-components.resourcetools.extendedprocessedresources.md)
+[IExtendedProcessedResources](./ts-res-ui-components.resourcetools.iextendedprocessedresources.md)
 
 
 </td><td>
@@ -58,7 +58,7 @@ Extended processed resources with additional metadata and context. Includes info
 </td></tr>
 <tr><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>
@@ -69,7 +69,7 @@ Represents a fully processed ts-res system ready for use. Contains both the runt
 </td></tr>
 <tr><td>
 
-[ResourceDetailData](./ts-res-ui-components.resourcetools.resourcedetaildata.md)
+[IResourceDetailData](./ts-res-ui-components.resourcetools.iresourcedetaildata.md)
 
 
 </td><td>
@@ -80,7 +80,7 @@ Detailed information about a resource for display in source views. Contains the 
 </td></tr>
 <tr><td>
 
-[ResourceEditorFactory](./ts-res-ui-components.resourcetools.resourceeditorfactory.md)
+[IResourceEditorFactory](./ts-res-ui-components.resourcetools.iresourceeditorfactory.md)
 
 
 </td><td>
@@ -91,7 +91,7 @@ Factory interface for creating type-specific resource editors. Allows Resolution
 </td></tr>
 <tr><td>
 
-[ResourceEditorProps](./ts-res-ui-components.resourcetools.resourceeditorprops.md)
+[IResourceEditorProps](./ts-res-ui-components.resourcetools.iresourceeditorprops.md)
 
 
 </td><td>
@@ -102,7 +102,7 @@ Props that will be passed to custom resource editors created by ResourceEditorFa
 </td></tr>
 <tr><td>
 
-[ResourceManagerState](./ts-res-ui-components.resourcetools.resourcemanagerstate.md)
+[IResourceManagerState](./ts-res-ui-components.resourcetools.iresourcemanagerstate.md)
 
 
 </td><td>

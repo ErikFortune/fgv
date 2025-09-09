@@ -13,7 +13,7 @@ Can be rendered in multiple presentation modes: - 'hidden': Not displayed (defau
 **Signature:**
 
 ```typescript
-ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsControlProps>
+ResolutionContextOptionsControl: React.FC<IResolutionContextOptionsControlProps>
 ```
 
 ## Example
@@ -23,7 +23,7 @@ ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsControlProps>
 import { ResolutionContextOptionsControl } from '@fgv/ts-res-ui-components';
 
 function ContextConfiguration() {
-  const [contextOptions, setContextOptions] = useState<ResolutionContextOptions>({});
+  const [contextOptions, setContextOptions] = useState<IResolutionContextOptions>({});
 
   return (
     <ResolutionContextOptionsControl

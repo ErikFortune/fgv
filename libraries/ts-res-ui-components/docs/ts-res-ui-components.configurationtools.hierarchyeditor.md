@@ -11,7 +11,7 @@ The HierarchyEditor allows users to define parent-child relationships between qu
 **Signature:**
 
 ```typescript
-HierarchyEditor: React.FC<HierarchyEditorProps>
+HierarchyEditor: React.FC<IHierarchyEditorProps>
 ```
 
 ## Example 1

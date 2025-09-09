@@ -9,7 +9,7 @@ Provider component that makes observability context available to all child compo
 **Signature:**
 
 ```typescript
-ObservabilityProvider: React.FC<ObservabilityProviderProps>
+ObservabilityProvider: React.FC<IObservabilityProviderProps>
 ```
 
 ## Example

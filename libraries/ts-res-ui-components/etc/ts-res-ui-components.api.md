@@ -56,6 +56,7 @@ declare namespace ConfigurationTools {
         IConfigurationViewProps
     }
 }
+export { ConfigurationTools }
 
 // @public
 export const ConfigurationView: React_2.FC<IConfigurationViewProps>;
@@ -90,6 +91,9 @@ function createResolverWithContext(processedResources: IProcessedResources, cont
 // @internal (undocumented)
 function createSimpleContext(qualifiers: Qualifiers.IReadOnlyQualifierCollector, values: Record<string, string | undefined>): Result<Runtime.ValidatingSimpleContextQualifierProvider>;
 
+// @public
+function createTimestamp(customFormat?: string): string;
+
 // @internal (undocumented)
 function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>): Result<{
     qualifierTypes: QualifierTypes.ReadOnlyQualifierTypeCollector;
@@ -113,22 +117,41 @@ function deriveFullId(rootPath: string, leafId: string): Result<string>;
 function deriveLeafId(fullResourceId: string): Result<string>;
 
 // @public
-export namespace DownloadUtils {
-    export function createTimestamp(customFormat?: string): string;
-    export function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void>;
-    export function downloadCompiledResources(data: unknown, resourceCount?: number): Result<void>;
-    export function downloadFile(data: unknown, type: string, options?: IDownloadOptions): Result<void>;
-    export function downloadResources(data: unknown, resourceCount?: number, collectionName?: string): Result<void>;
-    export function downloadSourceResources(data: unknown, resourceCount?: number): Result<void>;
-    export function downloadTsResJson(data: unknown, type: string): Result<void>;
-    export function generateFilename(baseFilename: string, type?: string, options?: IDownloadOptions): Result<string>;
-    export interface IDownloadOptions {
-        baseFilename?: string;
-        extension?: string;
-        filenameTransformer?: (baseFilename: string) => string;
-        includeTimestamp?: boolean;
-        mimeType?: string;
-        timestampFormat?: string;
+function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void>;
+
+// @public
+function downloadCompiledResources(data: unknown, resourceCount?: number): Result<void>;
+
+// @public
+function downloadFile(data: unknown, type: string, options?: IDownloadOptions): Result<void>;
+
+// @public
+function downloadResources(data: unknown, resourceCount?: number, collectionName?: string): Result<void>;
+
+// @public
+function downloadSourceResources(data: unknown, resourceCount?: number): Result<void>;
+
+declare namespace DownloadTools {
+    export {
+        DownloadUtils
+    }
+}
+export { DownloadTools }
+
+// @public
+function downloadTsResJson(data: unknown, type: string): Result<void>;
+
+declare namespace DownloadUtils {
+    export {
+        createTimestamp,
+        generateFilename,
+        downloadFile,
+        downloadTsResJson,
+        downloadBundle,
+        downloadResources,
+        downloadCompiledResources,
+        downloadSourceResources,
+        IDownloadOptions
     }
 }
 
@@ -146,10 +169,10 @@ const EditableGridCell: React_2.FC<IEditableGridCellProps>;
 const EditableJsonView: React_2.FC<IEditableJsonViewProps>;
 
 // @public
-function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): IConditionEvaluationResult[];
+function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: ResourceJson.Compiled.ICompiledResource, compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection): IConditionEvaluationResult[];
 
 // @internal (undocumented)
-function exportAsJson(data: any, filename: string): void;
+function exportAsJson(data: JsonValue, filename: string): void;
 
 // Warning: (ae-forgotten-export) The symbol "IConfigurationExportOptions" needs to be exported by the entry point index.d.ts
 //
@@ -157,7 +180,7 @@ function exportAsJson(data: any, filename: string): void;
 function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: IConfigurationExportOptions): Result<string>;
 
 // @internal (undocumented)
-function exportUsingFileSystemAPI(data: any, suggestedName: string, description?: string): Promise<boolean>;
+function exportUsingFileSystemAPI(data: JsonValue, suggestedName: string, description?: string): Promise<boolean>;
 
 // @internal (undocumented)
 function filesToDirectory(files: IImportedFile[]): IImportedDirectory;
@@ -178,9 +201,13 @@ declare namespace FilterTools {
         IFilteredResource
     }
 }
+export { FilterTools }
 
 // @public
 export const FilterView: React_2.FC<IFilterViewProps>;
+
+// @public
+function generateFilename(baseFilename: string, type?: string, options?: IDownloadOptions): Result<string>;
 
 // @public
 const getAllGridValidationErrors: () => Record<string, Record<string, string>>;
@@ -277,6 +304,7 @@ declare namespace GridTools {
         IGridCellEditorProps
     }
 }
+export { GridTools }
 
 // @public
 class GridValidationState {
@@ -367,6 +395,16 @@ interface ICustomResourceSelector {
     displayName?: string;
     id: string;
     select: (resources: IProcessedResources) => string[];
+}
+
+// @public
+interface IDownloadOptions {
+    baseFilename?: string;
+    extension?: string;
+    filenameTransformer?: (baseFilename: string) => string;
+    includeTimestamp?: boolean;
+    mimeType?: string;
+    timestampFormat?: string;
 }
 
 // @public
@@ -598,6 +636,7 @@ declare namespace ImportTools {
         IImportViewProps
     }
 }
+export { ImportTools }
 
 // @public
 export const ImportView: React_2.FC<IImportViewProps>;
@@ -1121,6 +1160,7 @@ declare namespace ObservabilityTools {
         TestObservabilityContext
     }
 }
+export { ObservabilityTools }
 
 declare namespace PickerTools {
     export {
@@ -1135,6 +1175,7 @@ declare namespace PickerTools {
         IResourcePickerOptionsControlProps
     }
 }
+export { PickerTools }
 
 // @internal (undocumented)
 function processImportedDirectory(directory: IImportedDirectory, systemConfig?: Config.Model.ISystemConfiguration, qualifierTypeFactory?: Config.IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierTypes.QualifierType>, resourceTypeFactory?: Config.IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceTypes.ResourceType>, o11y?: ObservabilityTools_2.IObservabilityContext): Result<IExtendedProcessedResources>;
@@ -1213,6 +1254,7 @@ declare namespace ResolutionTools {
         IResolutionContextOptionsControlProps
     }
 }
+export { ResolutionTools }
 
 // @public
 export const ResolutionView: React_2.FC<IResolutionViewProps>;
@@ -1271,6 +1313,7 @@ declare namespace ResourceTools {
         IResourceDetailData
     }
 }
+export { ResourceTools }
 
 // Warning: (ae-forgotten-export) The symbol "IResourceTreeViewProps" needs to be exported by the entry point index.d.ts
 //
@@ -1327,6 +1370,7 @@ declare namespace TsResTools {
         ICompiledViewProps
     }
 }
+export { TsResTools }
 
 // Warning: (ae-forgotten-export) The symbol "IUnifiedChangeControlsProps" needs to be exported by the entry point index.d.ts
 //
@@ -1395,6 +1439,7 @@ declare namespace ViewStateTools {
         IViewBaseProps
     }
 }
+export { ViewStateTools }
 
 declare namespace ZipTools {
     export {
@@ -1405,6 +1450,7 @@ declare namespace ZipTools {
         IImportViewProps
     }
 }
+export { ZipTools }
 
 // (No @packageDocumentation comment for this package)
 

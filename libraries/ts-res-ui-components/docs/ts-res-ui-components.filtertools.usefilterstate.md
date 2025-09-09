@@ -13,7 +13,7 @@ Key features: - \*\*Filter Management\*\*: Enable/disable filtering and manage f
 **Signature:**
 
 ```typescript
-export declare function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn;
+export declare function useFilterState(initialState?: Partial<IFilterState>): IUseFilterStateReturn;
 ```
 
 ## Parameters
@@ -41,7 +41,7 @@ initialState
 
 </td><td>
 
-Partial&lt;[FilterState](./ts-res-ui-components.filtertools.filterstate.md)<!-- -->&gt;
+Partial&lt;[IFilterState](./ts-res-ui-components.filtertools.ifilterstate.md)<!-- -->&gt;
 
 
 </td><td>
@@ -54,7 +54,7 @@ _(Optional)_ Optional initial filter state
 
 **Returns:**
 
-UseFilterStateReturn
+IUseFilterStateReturn
 
 Object containing filter state and actions
 

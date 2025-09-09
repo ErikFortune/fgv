@@ -13,7 +13,7 @@ Key features: - \*\*Multiple view modes\*\*: List view for simple browsing, tree
 **Signature:**
 
 ```typescript
-ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: ResourcePickerProps<T>) => React.JSX.Element
+ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: IResourcePickerProps<T>) => ReactElement
 ```
 
 ## Parameters
@@ -41,7 +41,7 @@ Description
 
 </td><td>
 
-[ResourcePickerProps](./ts-res-ui-components.pickertools.resourcepickerprops.md)<!-- -->&lt;T&gt;
+[IResourcePickerProps](./ts-res-ui-components.pickertools.iresourcepickerprops.md)<!-- -->&lt;T&gt;
 
 
 </td><td>
@@ -52,7 +52,7 @@ Description
 
 **Returns:**
 
-React.JSX.Element
+ReactElement
 
 ## Example
 

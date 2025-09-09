@@ -11,11 +11,11 @@ Result of attempting to create a resource editor for a specific resource. Used b
 ```typescript
 export type ResourceEditorResult = {
     success: true;
-    editor: React.ComponentType<ResourceEditorProps>;
+    editor: React.ComponentType<IResourceEditorProps>;
 } | {
     success: false;
     message?: string;
 };
 ```
-**References:** [ResourceEditorProps](./ts-res-ui-components.resourcetools.resourceeditorprops.md)
+**References:** [IResourceEditorProps](./ts-res-ui-components.resourcetools.iresourceeditorprops.md)
 

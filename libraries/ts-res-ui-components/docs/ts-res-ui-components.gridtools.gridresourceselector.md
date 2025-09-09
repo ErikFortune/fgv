@@ -28,8 +28,8 @@ export type GridResourceSelector = {
     type: 'all';
 } | {
     type: 'custom';
-    selector: CustomResourceSelector;
+    selector: ICustomResourceSelector;
 };
 ```
-**References:** [CustomResourceSelector](./ts-res-ui-components.gridtools.customresourceselector.md)
+**References:** [ICustomResourceSelector](./ts-res-ui-components.gridtools.icustomresourceselector.md)
 

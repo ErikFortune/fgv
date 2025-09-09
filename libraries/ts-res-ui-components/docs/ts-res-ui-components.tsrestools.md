@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[CompiledViewProps](./ts-res-ui-components.tsrestools.compiledviewprops.md)
+[ICompiledViewProps](./ts-res-ui-components.tsrestools.icompiledviewprops.md)
 
 
 </td><td>
@@ -30,7 +30,7 @@ Props for the CompiledView component. Displays the compiled resource collection 
 </td></tr>
 <tr><td>
 
-[SourceViewProps](./ts-res-ui-components.tsrestools.sourceviewprops.md)
+[ISourceViewProps](./ts-res-ui-components.tsrestools.isourceviewprops.md)
 
 
 </td><td>

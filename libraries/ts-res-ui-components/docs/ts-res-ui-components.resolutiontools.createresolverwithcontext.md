@@ -11,7 +11,7 @@ Creates a fully configured ResourceResolver with the specified context values an
 **Signature:**
 
 ```typescript
-export declare function createResolverWithContext(processedResources: ProcessedResources, contextValues: Record<string, string | undefined>, options?: ResolutionOptions): Result<Runtime.ResourceResolver>;
+export declare function createResolverWithContext(processedResources: IProcessedResources, contextValues: Record<string, string | undefined>, options?: IResolutionOptions): Result<Runtime.ResourceResolver>;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>
@@ -71,7 +71,7 @@ options
 
 </td><td>
 
-[ResolutionOptions](./ts-res-ui-components.resolutiontools.resolutionoptions.md)
+[IResolutionOptions](./ts-res-ui-components.resolutiontools.iresolutionoptions.md)
 
 
 </td><td>

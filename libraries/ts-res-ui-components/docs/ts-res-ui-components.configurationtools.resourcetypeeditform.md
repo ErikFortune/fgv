@@ -11,7 +11,7 @@ The ResourceTypeEditForm provides an interface for defining resource types that 
 **Signature:**
 
 ```typescript
-ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps>
+ResourceTypeEditForm: React.FC<IResourceTypeEditFormProps>
 ```
 
 ## Example 1

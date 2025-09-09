@@ -1,5 +1,5 @@
 import { Result, succeed, fail, MessageAggregator } from '@fgv/ts-utils';
-import { Runtime } from '@fgv/ts-res';
+import { ResourceJson, Resources, Runtime } from '@fgv/ts-res';
 import { IProcessedResources, IResolutionResult, ICandidateInfo, IConditionEvaluationResult } from '../types';
 
 /**
@@ -157,7 +157,7 @@ export function createResolverWithContext(
       }
 
       // Create resolver
-      const resolverParams: any = {
+      const resolverParams: Runtime.IResourceResolverCreateParams = {
         resourceManager: processedResources.system.resourceManager,
         qualifierTypes: processedResources.system.qualifierTypes,
         contextQualifierProvider: contextProvider
@@ -258,8 +258,8 @@ export function createResolverWithContext(
 export function evaluateConditionsForCandidate(
   resolver: Runtime.ResourceResolver,
   candidateIndex: number,
-  compiledResource: any,
-  compiledCollection: any
+  compiledResource: ResourceJson.Compiled.ICompiledResource,
+  compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection
 ): IConditionEvaluationResult[] {
   try {
     const decision = compiledCollection.decisions[compiledResource.decision];
@@ -283,7 +283,7 @@ export function evaluateConditionsForCandidate(
       if (!qualifier) continue;
 
       // Get the qualifier value from context
-      const qualifierValueResult = resolver.contextQualifierProvider.get(qualifier);
+      const qualifierValueResult = resolver.contextQualifierProvider.get(qualifier.name);
       const qualifierValue = qualifierValueResult.orDefault();
 
       // Get the cached condition result from resolver (if available)
@@ -473,7 +473,9 @@ export function resolveResourceDetailed(
 
   // Add matched candidates first
   matchedCandidates.forEach((matchedCandidate) => {
-    const index = resource.candidates.findIndex((candidate: any) => candidate === matchedCandidate);
+    const index = resource.candidates.findIndex(
+      (candidate: Resources.ResourceCandidate) => candidate === matchedCandidate
+    );
     if (index !== -1) {
       const conditionSetKey = `cs-${index}`;
       const conditionEvaluations = evaluateConditionsForCandidate(
@@ -501,7 +503,7 @@ export function resolveResourceDetailed(
   });
 
   // Add non-matching candidates
-  resource.candidates.forEach((candidate: any, index: number) => {
+  resource.candidates.forEach((candidate: Resources.ResourceCandidate, index: number) => {
     const isMatched = matchedCandidates.some((mc) => mc === candidate);
     if (!isMatched) {
       // Handle different candidate formats - IResourceCandidate doesn't have conditions
@@ -612,7 +614,9 @@ export function resolveResourceDetailed(
  */
 export function getAvailableQualifiers(processedResources: IProcessedResources): string[] {
   if (processedResources.compiledCollection.qualifiers) {
-    return processedResources.compiledCollection.qualifiers.map((q: any) => q.name);
+    return processedResources.compiledCollection.qualifiers.map(
+      (q: ResourceJson.Compiled.ICompiledQualifier) => q.name
+    );
   }
   return [];
 }

@@ -11,7 +11,7 @@ Provides a clean checkbox interface for true/false values with clear visual stat
 **Signature:**
 
 ```typescript
-BooleanCell: React.FC<BooleanCellProps>
+BooleanCell: React.FC<IBooleanCellProps>
 ```
 
 ## Example

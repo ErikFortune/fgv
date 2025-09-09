@@ -31,9 +31,6 @@ export { MultiGridView } from './components/views/GridView/MultiGridView';
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
 
-// Export utilities
-export { DownloadUtils } from './utils/downloadHelper';
-
 // Export contexts and hooks
 export { ObservabilityProvider, useObservability, type IObservabilityProviderProps } from './contexts';
 
@@ -65,6 +62,7 @@ export { ResolutionResults } from './components/common/ResolutionResults';
 
 // Export organized tool namespaces
 export {
+  DownloadTools,
   FilterTools,
   ResolutionTools,
   ConfigurationTools,

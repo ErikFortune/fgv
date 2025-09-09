@@ -13,7 +13,7 @@ Provides an interface for exploring the compiled resource collection structure, 
 **Signature:**
 
 ```typescript
-CompiledView: React.FC<CompiledViewProps>
+CompiledView: React.FC<ICompiledViewProps>
 ```
 
 ## Example

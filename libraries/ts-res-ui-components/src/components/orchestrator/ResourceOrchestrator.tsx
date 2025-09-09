@@ -16,7 +16,7 @@ import { useFilterState } from '../../hooks/useFilterState';
 import { useViewState } from '../../hooks/useViewState';
 import { useResolutionState } from '../../hooks/useResolutionState';
 import { createFilteredResourceManagerSimple, analyzeFilteredResources } from '../../utils/filterResources';
-import { DownloadUtils } from '../../utils/downloadHelper';
+import * as DownloadUtils from '../../utils/downloadHelper';
 
 /**
  * Props for the ResourceOrchestrator component.

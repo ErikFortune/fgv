@@ -13,20 +13,20 @@ Provides a comprehensive interface for displaying, filtering, and managing appli
 **Signature:**
 
 ```typescript
-MessagesWindow: React.FC<MessagesWindowProps>
+MessagesWindow: React.FC<IMessagesWindowProps>
 ```
 
 ## Example 1
 
 
 ```typescript
-import { MessagesWindow, Message } from '@fgv/ts-res-ui-components';
+import { MessagesWindow, IMessage } from '@fgv/ts-res-ui-components';
 
 function MyApplication() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<IMessage[]>([]);
 
-  const addMessage = (type: Message['type'], text: string) => {
-    const newMessage: Message = {
+  const addMessage = (type: IMessage['type'], text: string) => {
+    const newMessage: IMessage = {
       id: `msg-${Date.now()}-${Math.random()}`,
       type,
       message: text,
@@ -68,10 +68,10 @@ import { ViewStateTools } from '@fgv/ts-res-ui-components';
 
 function MyTool() {
   const [viewState, setViewState] = useState({
-    messages: [] as ViewStateTools.Message[]
+    messages: [] as ViewStateTools.IMessage[]
   });
 
-  const onMessage = (type: ViewStateTools.Message['type'], message: string) => {
+  const onMessage = (type: ViewStateTools.IMessage['type'], message: string) => {
     setViewState(prev => ({
       ...prev,
       messages: [...prev.messages, {

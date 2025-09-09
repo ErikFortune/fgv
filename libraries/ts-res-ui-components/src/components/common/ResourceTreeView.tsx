@@ -281,7 +281,9 @@ export const ResourceTreeView: React.FC<IResourceTreeViewProps> = ({
     // Check if any children match
     let hasMatchingChildren = false;
     if (!node.isLeaf && node.children && searchTerm) {
-      const checkChildren = (n: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>): boolean => {
+      const checkChildren = (
+        n: Runtime.ResourceTree.IReadOnlyResourceTreeNode<Resources.Resource | Runtime.IResource>
+      ): boolean => {
         if (n.id.toLowerCase().includes(searchLower)) return true;
         if (!n.isLeaf && n.children) {
           for (const child of n.children.values()) {

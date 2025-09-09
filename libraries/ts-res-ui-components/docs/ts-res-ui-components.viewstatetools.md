@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Message](./ts-res-ui-components.viewstatetools.message.md)
+[IMessage](./ts-res-ui-components.viewstatetools.imessage.md)
 
 
 </td><td>
@@ -60,7 +60,7 @@ Extends the basic message structure with additional properties for enhanced mess
 </td></tr>
 <tr><td>
 
-[MessagesWindowProps](./ts-res-ui-components.viewstatetools.messageswindowprops.md)
+[IMessagesWindowProps](./ts-res-ui-components.viewstatetools.imessageswindowprops.md)
 
 
 </td><td>
@@ -71,7 +71,7 @@ Props for the MessagesWindow component.
 </td></tr>
 <tr><td>
 
-[ViewBaseProps](./ts-res-ui-components.viewstatetools.viewbaseprops.md)
+[IViewBaseProps](./ts-res-ui-components.viewstatetools.iviewbaseprops.md)
 
 
 </td><td>

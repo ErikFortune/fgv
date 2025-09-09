@@ -1,4 +1,13 @@
-import { IImportedFile, IImportedDirectory } from '../types';
+import { IImportedFile, IImportedDirectory, JsonValue } from '../types';
+
+type WindowWithFileSystemAccess = Window & {
+  showSaveFilePicker: NonNullable<Window['showDirectoryPicker']>;
+};
+
+// Type guard to check if browser supports File System Access API
+function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
+  return 'showSaveFilePicker' in w;
+}
 
 /**
  * Read files from file input element
@@ -108,7 +117,7 @@ export function filesToDirectory(files: IImportedFile[]): IImportedDirectory {
  * Export data as JSON file
  */
 /** @internal */
-export function exportAsJson(data: any, filename: string): void {
+export function exportAsJson(data: JsonValue, filename: string): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -127,16 +136,16 @@ export function exportAsJson(data: any, filename: string): void {
  */
 /** @internal */
 export async function exportUsingFileSystemAPI(
-  data: any,
+  data: JsonValue,
   suggestedName: string,
   description: string = 'JSON files'
 ): Promise<boolean> {
-  if (!('showSaveFilePicker' in window)) {
+  if (!hasFileSystemAccess(window)) {
     return false;
   }
 
   try {
-    const fileHandle = await (window as any).showSaveFilePicker({
+    const fileHandle = await window.showSaveFilePicker({
       suggestedName,
       types: [
         {

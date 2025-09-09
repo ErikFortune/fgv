@@ -67,7 +67,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ImportViewProps](./ts-res-ui-components.ziptools.importviewprops.md)
+[IImportViewProps](./ts-res-ui-components.ziptools.iimportviewprops.md)
 
 
 </td><td>

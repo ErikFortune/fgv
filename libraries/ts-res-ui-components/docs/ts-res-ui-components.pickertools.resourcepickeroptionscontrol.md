@@ -13,5 +13,5 @@ Can be rendered in multiple presentation modes: - 'hidden': Not displayed (defau
 **Signature:**
 
 ```typescript
-ResourcePickerOptionsControl: React.FC<ResourcePickerOptionsControlProps>
+ResourcePickerOptionsControl: React.FC<IResourcePickerOptionsControlProps>
 ```

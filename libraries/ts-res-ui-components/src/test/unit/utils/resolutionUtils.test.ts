@@ -30,6 +30,7 @@ import {
   evaluateConditionsForCandidate
 } from '../../../utils/resolutionUtils';
 import { IProcessedResources, IResolutionResult } from '../../../types';
+import { ResourceJson } from '@fgv/ts-res';
 
 describe('resolutionUtils', () => {
   let mockProcessedResources: IProcessedResources;
@@ -237,7 +238,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         0,
-        invalidCompiled,
+        invalidCompiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -250,7 +251,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         999, // Out of range
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -263,7 +264,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         0,
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -291,8 +292,8 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         0,
-        compiled,
-        compiledCollectionWithoutConditionSets
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
+        compiledCollectionWithoutConditionSets as unknown as ResourceJson.Compiled.ICompiledResourceCollection
       );
 
       expect(result).toEqual([]);
@@ -312,7 +313,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         errorResolver,
         0,
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -329,7 +330,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         resolverWithoutCache,
         0,
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 

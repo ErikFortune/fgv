@@ -13,7 +13,7 @@ Provides a comprehensive interface for displaying multiple related grids that sh
 **Signature:**
 
 ```typescript
-MultiGridView: React.FC<MultiGridViewProps>
+MultiGridView: React.FC<IMultiGridViewProps>
 ```
 
 ## Example

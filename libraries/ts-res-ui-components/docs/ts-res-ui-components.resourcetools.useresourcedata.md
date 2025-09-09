@@ -11,7 +11,7 @@ Provides comprehensive functionality for: - Importing and processing resource fi
 **Signature:**
 
 ```typescript
-export declare function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn;
+export declare function useResourceData(params?: IUseResourceDataParams): IUseResourceDataReturn;
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ params
 
 </td><td>
 
-UseResourceDataParams
+IUseResourceDataParams
 
 
 </td><td>
@@ -52,7 +52,7 @@ _(Optional)_
 
 **Returns:**
 
-UseResourceDataReturn
+IUseResourceDataReturn
 
 Object containing current state and available actions
 

@@ -13,7 +13,7 @@ Provides a comprehensive interface for creating, editing, and managing ts-res sy
 **Signature:**
 
 ```typescript
-ConfigurationView: React.FC<ConfigurationViewProps>
+ConfigurationView: React.FC<IConfigurationViewProps>
 ```
 
 ## Example

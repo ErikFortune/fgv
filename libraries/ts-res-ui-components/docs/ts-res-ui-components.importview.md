@@ -13,7 +13,7 @@ Provides a drag-and-drop interface for importing various resource formats includ
 **Signature:**
 
 ```typescript
-ImportView: React.FC<ImportViewProps>
+ImportView: React.FC<IImportViewProps>
 ```
 
 ## Example

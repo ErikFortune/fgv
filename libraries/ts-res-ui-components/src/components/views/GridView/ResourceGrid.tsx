@@ -9,7 +9,7 @@ import {
   IResourceTypeColumnMapping,
   IGridCellProps
 } from '../../../types';
-import { JsonValue } from '@fgv/ts-json-base';
+import { isJsonObject, JsonValue } from '@fgv/ts-json-base';
 import { EditableGridCell } from './EditableGridCell';
 
 /**
@@ -34,15 +34,21 @@ interface IResourceGridProps {
  * Utility function to extract a value from an object using a path.
  * Supports both string paths (simple property) and array paths (nested properties).
  */
-function extractValueByPath(obj: any, path: string | string[]): JsonValue | undefined {
+function extractValueByPath(obj: JsonValue | undefined, path: string | string[]): JsonValue | undefined {
   if (typeof path === 'string') {
-    return obj?.[path];
+    if (!isJsonObject(obj)) {
+      return undefined;
+    }
+    return obj[path];
   }
 
   if (Array.isArray(path)) {
     let current = obj;
     for (const segment of path) {
       if (current === null || current === undefined) return undefined;
+      if (!isJsonObject(current)) {
+        return undefined;
+      }
       current = current[segment];
     }
     return current;

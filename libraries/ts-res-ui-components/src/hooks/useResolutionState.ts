@@ -1018,9 +1018,12 @@ export function useResolutionState(
 
         // Create template using new API with context conditions and resolver
         // For pre-seeded IDs, use the validated one; for temporary IDs, convert to ResourceId
-        const templateResourceId = Validate.isValidResourceId(resourceId)
-          ? resourceId // Type guard ensures this is ResourceId
-          : Validate.toResourceId(resourceId).orDefault(resourceId as any); // Fallback for temporary IDs
+        if (!Validate.isValidResourceId(resourceId)) {
+          return fail(
+            `Invalid resource ID '${resourceId}'. Resource IDs must be dot-separated identifiers and cannot be empty.`
+          );
+        }
+        const templateResourceId = resourceId;
 
         const templateResult = targetType.createTemplate(
           templateResourceId,
@@ -1150,10 +1153,12 @@ export function useResolutionState(
         const existingConditions = existingCandidate?.conditions;
 
         // Create template with new API, preserving existing content and conditions
-        // Validate the resource ID or use as-is for temporary IDs
-        const templateResourceId = Validate.isValidResourceId(newResourceDraft.resourceId)
-          ? newResourceDraft.resourceId // Type guard ensures this is ResourceId
-          : Validate.toResourceId(newResourceDraft.resourceId).orDefault(newResourceDraft.resourceId as any);
+        if (!Validate.isValidResourceId(newResourceDraft.resourceId)) {
+          return fail(
+            `${newResourceDraft.resourceId}: Invalid resource ID. Resource IDs must be dot-separated identifiers and cannot be empty.`
+          );
+        }
+        const templateResourceId = newResourceDraft.resourceId;
 
         const templateResult = type.createTemplate(
           templateResourceId,

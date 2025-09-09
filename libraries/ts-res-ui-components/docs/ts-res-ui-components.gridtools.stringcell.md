@@ -11,7 +11,7 @@ Provides text input with configurable validation, visual error highlighting, and
 **Signature:**
 
 ```typescript
-StringCell: React.FC<StringCellProps>
+StringCell: React.FC<IStringCellProps>
 ```
 
 ## Example
