@@ -63,6 +63,7 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
 
   const [errors, setErrors] = useState<IValidationErrors>({});
   const [isJsonValid, setIsJsonValid] = useState(true);
+  const [isFormValid, setIsFormValid] = useState(false);
 
   // Validate JSON configuration on every change
   useEffect(() => {
@@ -130,6 +131,10 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
     setErrors(newErrors);
 
     const hasErrors = Object.keys(newErrors).length > 0;
+    const isValid = !hasErrors;
+
+    setIsFormValid(isValid);
+
     if (hasErrors) {
       const qualifierTypeName = formData.name.trim() ?? 'unknown-qualifier-type';
       const errorList = Object.entries(newErrors)
@@ -138,8 +143,13 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
       o11y.diag.warn(`${qualifierTypeName}: Qualifier type validation failed - ${errorList}`);
     }
 
-    return !hasErrors;
+    return isValid;
   }, [formData, qualifierType, existingNames, isJsonValid, o11y]);
+
+  // Trigger validation when form data changes
+  useEffect(() => {
+    validateForm();
+  }, [formData, validateForm]);
 
   const handleSave = useCallback(() => {
     const qualifierTypeName = formData.name.trim() || 'qualifier-type';
@@ -340,7 +350,7 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
           </button>
           <button
             onClick={handleSave}
-            disabled={!isJsonValid || Object.keys(errors).length > 0}
+            disabled={!isFormValid}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {qualifierType ? 'Update' : 'Create'} Qualifier Type
