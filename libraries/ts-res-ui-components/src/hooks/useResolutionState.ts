@@ -334,7 +334,7 @@ export function useResolutionState(
           [validatedQualifierName as string]: value
         }));
 
-        o11y.diag.info(`${validatedQualifierName}: Updated context value to ${value ?? 'undefined'}`);
+        o11y.user.info(`${validatedQualifierName}: Updated context value to ${value ?? 'undefined'}`);
         return succeed(undefined);
       } catch (error) {
         const errorMessage = `${validatedQualifierName ?? qualifierName}: Failed to update context value - ${
@@ -430,7 +430,11 @@ export function useResolutionState(
             }
           }
 
-          o11y.user.success('context-apply: Context applied successfully');
+          const appliedValuesCount = Object.keys(pendingUserValues).length;
+          const appliedValuesList = Object.entries(pendingUserValues)
+            .map(([key, value]) => `${key}=${value ?? 'undefined'}`)
+            .join(', ');
+          o11y.user.success(`Context applied: ${appliedValuesCount} value(s) (${appliedValuesList})`);
           return succeed(undefined);
         }
       } catch (error) {
@@ -526,7 +530,7 @@ export function useResolutionState(
         return resolveResourceDetailed(currentResolver, validatedResourceId, processedResources)
           .onSuccess((resolvedResult) => {
             setResolutionResult(resolvedResult);
-            o11y.diag.info(`Selected resource: ${resourceId}`);
+            o11y.user.info(`Selected resource: ${resourceId}`);
             return succeed(undefined);
           })
           .onFailure((resolutionError) => {
@@ -696,7 +700,7 @@ export function useResolutionState(
             setResolutionResult(mockResult);
           }
 
-          o11y.diag.info(`Edit saved for pending resource: ${resourceId}`);
+          o11y.user.success(`Edit saved for pending resource: ${resourceId}`);
           return succeed(undefined);
         }
 
@@ -733,9 +737,9 @@ export function useResolutionState(
           const deltaSize = JSON.stringify(delta).length;
           const fullSize = JSON.stringify(editedValue).length;
           const reduction = Math.round((1 - deltaSize / fullSize) * 100);
-          o11y.diag.info(`Edit saved for ${resourceId} (delta: ${reduction}% smaller)`);
+          o11y.user.success(`Edit saved for ${resourceId} (delta: ${reduction}% smaller)`);
         } else {
-          o11y.diag.info(`Edit saved for resource ${resourceId}`);
+          o11y.user.success(`Edit saved for resource ${resourceId}`);
         }
 
         return succeed(undefined);

@@ -127,20 +127,37 @@ export class ViewStateUserLogger extends Logging.LoggerBase implements IUserLogg
   }
 
   /**
-   * Simple message formatting helper
+   * Message formatting helper with better object serialization
    */
   private _formatLogMessage(message?: unknown, ...parameters: unknown[]): string {
     if (message === undefined) {
       return '';
     }
 
-    const baseMessage = String(message);
+    const baseMessage = this._formatValue(message);
     if (parameters.length === 0) {
       return baseMessage;
     }
 
-    // Simple string interpolation
-    return `${baseMessage} ${parameters.map((p) => String(p)).join(' ')}`;
+    // Format each parameter with proper object handling
+    return `${baseMessage} ${parameters.map((p) => this._formatValue(p)).join(' ')}`;
+  }
+
+  /**
+   * Format a single value with better object serialization
+   */
+  private _formatValue(value: unknown): string {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+
+    // For objects, try JSON.stringify with fallback
+    try {
+      return JSON.stringify(value, null, 0);
+    } catch {
+      return String(value);
+    }
   }
 
   /**

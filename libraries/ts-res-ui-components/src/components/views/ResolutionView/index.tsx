@@ -541,7 +541,10 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
                   {effectiveContextOptions?.showContextActions !== false && (
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={resolutionActions?.resetCache}
+                        onClick={() => {
+                          resolutionActions?.resetCache();
+                          o11y.user.success('Resolution cache cleared');
+                        }}
                         className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
                         title="Clear resolution cache"
                       >
