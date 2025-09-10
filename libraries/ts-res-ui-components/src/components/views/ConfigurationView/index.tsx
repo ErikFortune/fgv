@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   CogIcon,
   DocumentTextIcon,
@@ -425,6 +425,25 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           // Only notify if we weren't already told there are unsaved changes
         }
   );
+
+  // Create instantiated qualifier types from configurations for validation
+  const qualifierTypeInstances = useMemo(() => {
+    const instances = new Map<string, QualifierTypes.QualifierType>();
+
+    if (state.currentConfiguration.qualifierTypes) {
+      state.currentConfiguration.qualifierTypes.forEach((typeConfig) => {
+        // Only instantiate system qualifier types for now
+        if (QualifierTypes.Config.isSystemQualifierTypeConfig(typeConfig)) {
+          const result = QualifierTypes.createQualifierTypeFromSystemConfig(typeConfig);
+          if (result.isSuccess()) {
+            instances.set(typeConfig.name, result.value);
+          }
+        }
+      });
+    }
+
+    return instances;
+  }, [state.currentConfiguration.qualifierTypes]);
 
   // Handle file import
   const handleFileImport = useCallback(
@@ -898,6 +917,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
             QualifierTypes.Config.isSystemQualifierTypeConfig
           )}
+          qualifierTypeInstances={qualifierTypeInstances}
           onSave={(qualifier) => {
             actions.addQualifier(qualifier);
             setShowAddQualifier(false);
@@ -916,6 +936,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
             QualifierTypes.Config.isSystemQualifierTypeConfig
           )}
+          qualifierTypeInstances={qualifierTypeInstances}
           onSave={(qualifier) => {
             actions.updateQualifier(editingQualifier.index, qualifier);
             setEditingQualifier(null);

@@ -20,6 +20,8 @@ export interface IQualifierEditFormProps {
   qualifier?: Qualifiers.IQualifierDecl;
   /** Available qualifier types for selection */
   qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
+  /** Optional instantiated qualifier types for validation */
+  qualifierTypeInstances?: Map<string, QualifierTypes.QualifierType>;
   /** Callback fired when qualifier is saved */
   onSave: (qualifier: Qualifiers.IQualifierDecl) => void;
   /** Callback fired when editing is cancelled */
@@ -127,6 +129,7 @@ interface IFormData {
 export const QualifierEditForm: React.FC<IQualifierEditFormProps> = ({
   qualifier,
   qualifierTypes,
+  qualifierTypeInstances,
   onSave,
   onCancel,
   existingNames = []
@@ -193,6 +196,17 @@ export const QualifierEditForm: React.FC<IQualifierEditFormProps> = ({
       newErrors.token = `${formData.token}: invalid qualifier token`;
     }
 
+    // Validate default value using instantiated qualifier type if available
+    if (formData.defaultValue && formData.typeName && qualifierTypeInstances) {
+      const qualifierTypeInstance = qualifierTypeInstances.get(formData.typeName);
+      if (qualifierTypeInstance) {
+        const validationResult = qualifierTypeInstance.validateCondition(formData.defaultValue);
+        if (validationResult.isFailure()) {
+          newErrors.defaultValue = `${formData.defaultValue}: ${validationResult.message}`;
+        }
+      }
+    }
+
     setErrors(newErrors);
 
     const hasErrors = Object.keys(newErrors).length > 0;
@@ -209,7 +223,7 @@ export const QualifierEditForm: React.FC<IQualifierEditFormProps> = ({
     }
 
     return isValid;
-  }, [formData, existingNames, qualifier?.name, o11y]);
+  }, [formData, existingNames, qualifier?.name, qualifierTypeInstances, o11y]);
 
   const handleSave = useCallback(() => {
     const qualifierName = formData.name.trim() ?? 'unknown-qualifier';
@@ -463,9 +477,12 @@ export const QualifierEditForm: React.FC<IQualifierEditFormProps> = ({
               type="text"
               value={formData.defaultValue}
               onChange={(e) => updateField('defaultValue', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                errors.defaultValue ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholder={getDefaultValuePlaceholder()}
             />
+            {errors.defaultValue && <p className="mt-1 text-sm text-red-600">{errors.defaultValue}</p>}
             <div className="mt-1 text-xs text-gray-500">
               {selectedQualifierType && (
                 <div>
