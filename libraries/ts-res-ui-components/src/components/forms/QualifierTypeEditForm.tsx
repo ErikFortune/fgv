@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { QualifierTypes } from '@fgv/ts-res';
+import { QualifierTypes, Validate } from '@fgv/ts-res';
 import { HierarchyEditor } from './HierarchyEditor';
+import { useObservability } from '../../contexts';
 
 /**
  * Props for the QualifierTypeEditForm component.
@@ -141,29 +142,47 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
   onCancel,
   existingNames = []
 }) => {
+  const o11y = useObservability();
   const [formData, setFormData] = useState<IFormData>(() => {
     if (qualifierType) {
-      const config = qualifierType.configuration || {};
-      // Ensure hierarchy is a plain object with string values
-      const hierarchy: Record<string, string> = {};
-      const rawHierarchy = (config as Record<string, unknown>)?.hierarchy;
-      if (rawHierarchy && typeof rawHierarchy === 'object' && !Array.isArray(rawHierarchy)) {
-        for (const [key, value] of Object.entries(rawHierarchy)) {
-          if (typeof value === 'string') {
-            hierarchy[key] = value;
-          }
+      // Instantiate the qualifier type to get strongly-typed configuration
+      const qualifierTypeInstance = QualifierTypes.createQualifierTypeFromSystemConfig(qualifierType);
+      let allowContextList = false;
+      let caseSensitive = true;
+      let enumeratedValues: string[] = [];
+      let acceptLowercase = false;
+      let allowedTerritories: string[] = [];
+      let hierarchy: Record<string, string> = {};
+
+      if (qualifierTypeInstance.isSuccess()) {
+        const configResult = qualifierTypeInstance.value.getConfigurationJson();
+        if (configResult.isSuccess()) {
+          const config = configResult.value;
+          allowContextList = config.allowContextList === true;
+          caseSensitive = config.caseSensitive !== false; // Default to true
+          enumeratedValues = Array.isArray(config.enumeratedValues)
+            ? (config.enumeratedValues as string[])
+            : [];
+          acceptLowercase = config.acceptLowercase === true;
+          allowedTerritories = Array.isArray(config.allowedTerritories)
+            ? (config.allowedTerritories as string[])
+            : [];
+          hierarchy =
+            typeof config.hierarchy === 'object' && config.hierarchy !== null
+              ? (config.hierarchy as Record<string, string>)
+              : {};
         }
       }
 
       return {
         name: qualifierType.name,
         systemType: qualifierType.systemType as 'language' | 'territory' | 'literal',
-        allowContextList: ((config as Record<string, unknown>)?.allowContextList as boolean) ?? false,
-        caseSensitive: ((config as Record<string, unknown>)?.caseSensitive as boolean) ?? true,
-        enumeratedValues: ((config as Record<string, unknown>)?.enumeratedValues as string[]) || [],
-        acceptLowercase: ((config as Record<string, unknown>)?.acceptLowercase as boolean) ?? false,
-        allowedTerritories: ((config as Record<string, unknown>)?.allowedTerritories as string[]) || [],
-        hierarchy: hierarchy
+        allowContextList,
+        caseSensitive,
+        enumeratedValues,
+        acceptLowercase,
+        allowedTerritories,
+        hierarchy
       };
     }
     return {
@@ -179,6 +198,7 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isFormValid, setIsFormValid] = useState<boolean>(false);
   const [enumeratedValuesText, setEnumeratedValuesText] = useState(formData.enumeratedValues.join(', '));
   const [allowedTerritoriesText, setAllowedTerritoriesText] = useState(
     formData.allowedTerritories.join(', ')
@@ -187,41 +207,94 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
   // Validation
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
+    const qualifierTypeName = formData.name.trim() || 'unnamed-qualifier-type';
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     } else if (existingNames.includes(formData.name) && formData.name !== qualifierType?.name) {
       newErrors.name = 'Name must be unique';
+    } else if (!Validate.isValidQualifierTypeName(formData.name)) {
+      newErrors.name = `${formData.name}: Invalid qualifier type name`;
     }
 
-    if (formData.systemType === 'literal' && formData.enumeratedValues.length === 0) {
-      newErrors.enumeratedValues = 'Literal types should have enumerated values';
+    if (formData.systemType === 'territory' && formData.allowedTerritories.length > 0) {
+      const territoryErrors = formData.allowedTerritories
+        .filter(
+          (territory) => !QualifierTypes.TerritoryQualifierType.isValidTerritoryConditionValue(territory)
+        )
+        .map((territory) => `${territory}: Invalid territory`);
+      if (territoryErrors.length > 0) {
+        newErrors.allowedTerritories = territoryErrors.join('; ');
+      }
     }
+
+    const isValid = Object.keys(newErrors).length === 0;
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, existingNames, qualifierType?.name]);
+    setIsFormValid(isValid);
+
+    if (isValid) {
+      o11y.diag.info(`${qualifierTypeName}: Qualifier type validation successful`);
+    } else {
+      const errorList = Object.entries(newErrors)
+        .map(([field, error]) => `${field}: ${error}`)
+        .join(', ');
+      o11y.diag.info(`${qualifierTypeName}: Qualifier type validation failed - ${errorList}`);
+    }
+
+    return isValid;
+  }, [formData, existingNames, qualifierType?.name, o11y]);
+
+  // Trigger validation when form data changes
+  useEffect(() => {
+    validateForm();
+  }, [formData, validateForm]);
 
   // Update enumerated values when text changes
   useEffect(() => {
+    const qualifierTypeName = formData.name.trim() || 'unnamed-qualifier-type';
     const values = enumeratedValuesText
       .split(',')
       .map((v) => v.trim())
       .filter((v) => v.length > 0);
+
+    const previousLength = formData.enumeratedValues.length;
     setFormData((prev) => ({ ...prev, enumeratedValues: values }));
-  }, [enumeratedValuesText]);
+
+    if (values.length !== previousLength) {
+      o11y.diag.info(
+        `${qualifierTypeName}: Enumerated values updated - ${values.length} values: [${values.join(', ')}]`
+      );
+    }
+  }, [enumeratedValuesText, formData.name, o11y]);
 
   // Update allowed territories when text changes
   useEffect(() => {
+    const qualifierTypeName = formData.name.trim() || 'unnamed-qualifier-type';
     const territories = allowedTerritoriesText
       .split(',')
       .map((v) => v.trim().toUpperCase())
       .filter((v) => v.length > 0);
+
+    const previousLength = formData.allowedTerritories.length;
     setFormData((prev) => ({ ...prev, allowedTerritories: territories }));
-  }, [allowedTerritoriesText]);
+
+    if (territories.length !== previousLength) {
+      o11y.diag.info(
+        `${qualifierTypeName}: Allowed territories updated - ${
+          territories.length
+        } territories: [${territories.join(', ')}]`
+      );
+    }
+  }, [allowedTerritoriesText, formData.name, o11y]);
 
   const handleSave = useCallback(() => {
-    if (!validateForm()) return;
+    const qualifierTypeName = formData.name.trim() || 'unnamed-qualifier-type';
+
+    if (!validateForm()) {
+      o11y.user.warn(`${qualifierTypeName}: Cannot save - validation errors present`);
+      return;
+    }
 
     let configuration: Record<string, unknown> = {
       allowContextList: formData.allowContextList
@@ -237,6 +310,9 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
         // Add hierarchy if it has entries
         if (Object.keys(formData.hierarchy).length > 0) {
           configuration.hierarchy = formData.hierarchy;
+          o11y.diag.info(
+            `${qualifierTypeName}: Including hierarchy with ${Object.keys(formData.hierarchy).length} entries`
+          );
         }
         break;
       case 'territory':
@@ -248,10 +324,14 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
         // Add hierarchy if it has entries
         if (Object.keys(formData.hierarchy).length > 0) {
           configuration.hierarchy = formData.hierarchy;
+          o11y.diag.info(
+            `${qualifierTypeName}: Including hierarchy with ${Object.keys(formData.hierarchy).length} entries`
+          );
         }
         break;
       case 'language':
         // Language types only have allowContextList
+        o11y.diag.info(`${qualifierTypeName}: Language type - minimal configuration`);
         break;
     }
 
@@ -261,18 +341,58 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
       configuration: Object.keys(configuration).length > 1 ? configuration : undefined
     };
 
+    o11y.diag.info(`${qualifierTypeName}: Saving qualifier type - ${JSON.stringify(result)}`);
     onSave(result);
-  }, [formData, validateForm, onSave]);
+    o11y.user.success(
+      `${qualifierTypeName}: Qualifier type ${qualifierType ? 'updated' : 'created'} successfully`
+    );
+  }, [formData, validateForm, onSave, qualifierType, o11y]);
 
   const updateField = useCallback(
     (field: keyof IFormData, value: IFormData[keyof IFormData]) => {
+      const qualifierTypeName = formData.name.trim() || 'unnamed-qualifier-type';
+
       setFormData((prev) => ({ ...prev, [field]: value }));
+
+      // Clear validation error for the field
       if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: '' }));
+        o11y.diag.info(`${qualifierTypeName}: Validation error cleared for field '${field}'`);
+      }
+
+      // Log significant field changes
+      if (field === 'systemType') {
+        o11y.user.info(`${qualifierTypeName}: System type changed to '${value}'`);
+        o11y.diag.info(
+          `${qualifierTypeName}: System type changed to '${value}' - form configuration will adjust`
+        );
+      } else if (field === 'name' && value !== formData.name) {
+        o11y.diag.info(`${qualifierTypeName}: Name changing from '${formData.name}' to '${value}'`);
+      } else if (field === 'hierarchy') {
+        const hierarchyObj = value as Record<string, string>;
+        const entryCount = Object.keys(hierarchyObj).length;
+        const prevEntryCount = Object.keys(formData.hierarchy).length;
+
+        if (entryCount !== prevEntryCount) {
+          o11y.diag.info(
+            `${qualifierTypeName}: Hierarchy updated - ${entryCount} entries (was ${prevEntryCount})`
+          );
+          if (entryCount > 0) {
+            const entries = Object.entries(hierarchyObj).map(([child, parent]) => `${child} -> ${parent}`);
+            o11y.diag.info(`${qualifierTypeName}: Hierarchy relationships: [${entries.join(', ')}]`);
+          }
+        }
       }
     },
-    [errors]
+    [errors, formData.name, formData.hierarchy, o11y]
   );
+
+  const handleCancel = useCallback(() => {
+    const qualifierTypeName = formData.name.trim() || 'unnamed-qualifier-type';
+    o11y.diag.info(`${qualifierTypeName}: Qualifier type edit cancelled`);
+    o11y.user.info(`${qualifierTypeName}: Edit cancelled`);
+    onCancel();
+  }, [formData.name, o11y, onCancel]);
 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -282,7 +402,7 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
           <h3 className="text-lg font-medium text-gray-900">
             {qualifierType ? 'Edit Qualifier Type' : 'Add Qualifier Type'}
           </h3>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+          <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
@@ -312,12 +432,15 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
                 onChange={(e) =>
                   updateField('systemType', e.target.value as 'language' | 'territory' | 'literal')
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                  errors.systemType ? 'border-red-300' : 'border-gray-300'
+                }`}
               >
                 <option value="literal">Literal</option>
                 <option value="language">Language</option>
                 <option value="territory">Territory</option>
               </select>
+              {errors.systemType && <p className="mt-1 text-sm text-red-600">{errors.systemType}</p>}
             </div>
           </div>
 
@@ -401,10 +524,15 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
                 <textarea
                   value={allowedTerritoriesText}
                   onChange={(e) => setAllowedTerritoriesText(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    errors.allowedTerritories ? 'border-red-300' : 'border-gray-300'
+                  }`}
                   rows={3}
                   placeholder="Enter territory codes separated by commas (e.g., US, CA, GB)"
                 />
+                {errors.allowedTerritories && (
+                  <p className="mt-1 text-sm text-red-600">{errors.allowedTerritories}</p>
+                )}
                 <p className="mt-1 text-xs text-gray-500">
                   Separate multiple territory codes with commas. Will be automatically converted to uppercase.
                 </p>
@@ -440,14 +568,15 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
         {/* Fixed Footer */}
         <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50 flex-shrink-0">
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            disabled={!isFormValid}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {qualifierType ? 'Save Changes' : 'Add Qualifier Type'}
           </button>

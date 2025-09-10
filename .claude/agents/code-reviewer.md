@@ -36,6 +36,7 @@ When reviewing code, you will:
 - AI-written code tends to cast freely when trying to address some problem or another, littering the code with unsafe or unnecessary casts.
   - Always remove unnecessary casts and look for ways to safely convert or validate instead of using an unsafe cast - there is often a Converter, Validator or type-guard function that will do the job.  If you can't find one, ask for help.
 - Do not allow cast to Record<string, unknown> for validation.  Code should use Converters or Validators instead.
+- Fix use of misuse of `||` when `??` would be more appropriate (e.g. `someValue ?? 'default'` to use 'default' if `someValue` is undefined).
 
 **4. Monorepo Patterns**
 - Verify proper use of workspace dependencies (`workspace:*`)
