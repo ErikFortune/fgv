@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { QualifierTypes } from '@fgv/ts-res';
+import { QualifierTypes, Validate } from '@fgv/ts-res';
 import { JsonObject } from '@fgv/ts-json-base';
 import { useObservability } from '../../contexts';
 
@@ -111,11 +111,15 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
       (!qualifierType || qualifierType.name !== formData.name.trim())
     ) {
       newErrors.name = 'Name already exists';
+    } else if (!Validate.isValidQualifierTypeName(formData.name)) {
+      newErrors.name = `${formData.name}: Invalid qualifier type name`;
     }
 
     // Validate system type
     if (!formData.systemType.trim()) {
       newErrors.systemType = 'System type is required';
+    } else if (!Validate.isValidQualifierTypeName(formData.systemType)) {
+      newErrors.systemType = `${formData.systemType}: Invalid system type`;
     }
 
     // Validate JSON
