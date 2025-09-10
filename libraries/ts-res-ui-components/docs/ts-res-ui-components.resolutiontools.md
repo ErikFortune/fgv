@@ -150,7 +150,7 @@ Performs complete resource resolution including best candidate selection, all ca
 </td></tr>
 <tr><td>
 
-[useResolutionState(processedResources, onMessage, onSystemUpdate)](./ts-res-ui-components.resolutiontools.useresolutionstate.md)
+[useResolutionState(processedResources, onSystemUpdate)](./ts-res-ui-components.resolutiontools.useresolutionstate.md)
 
 
 </td><td>

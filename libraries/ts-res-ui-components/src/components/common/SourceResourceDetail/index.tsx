@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { IResourceDetailData, IProcessedResources } from '../../../types';
 import { Conditions, ResourceJson, Resources } from '@fgv/ts-res';
+import { useObservability } from '../../../contexts';
 
 /**
  * Props for the SourceResourceDetail component.
@@ -12,8 +13,6 @@ export interface ISourceResourceDetailProps {
   resourceId: string;
   /** Processed resources containing the resource data */
   processedResources: IProcessedResources;
-  /** Optional callback for handling component messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
   /** Optional CSS classes to apply to the container */
   className?: string;
   /** Optional title for the detail panel */
@@ -53,7 +52,6 @@ export interface ISourceResourceDetailProps {
  *       resourceId={selectedResourceId}
  *       processedResources={processedResources}
  *       title="Resource Inspector"
- *       onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
  *       className="border rounded-lg p-4"
  *     />
  *   );
@@ -116,7 +114,6 @@ export interface ISourceResourceDetailProps {
  *         filterContext={state.filterState.appliedValues}
  *         showComparison={!!state.filterResult}
  *         title="Resource Details"
- *         onMessage={actions.addMessage}
  *         className="detail-content"
  *       />
  *     </div>
@@ -129,7 +126,6 @@ export interface ISourceResourceDetailProps {
 export const SourceResourceDetail: React.FC<ISourceResourceDetailProps> = ({
   resourceId,
   processedResources,
-  onMessage,
   className = '',
   title = 'Resource Details',
   originalProcessedResources,
@@ -138,6 +134,7 @@ export const SourceResourceDetail: React.FC<ISourceResourceDetailProps> = ({
   primaryLabel = 'Current',
   secondaryLabel = 'Original'
 }) => {
+  const o11y = useObservability();
   const [resourceDetail, setResourceDetail] = useState<IResourceDetailData | null>(null);
   const [originalResourceDetail, setOriginalResourceDetail] = useState<IResourceDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -244,8 +241,9 @@ export const SourceResourceDetail: React.FC<ISourceResourceDetailProps> = ({
         if (currentDetail) {
           setResourceDetail(currentDetail);
         } else {
-          setError(`Failed to load resource details for: ${resourceId}`);
-          onMessage?.('error', `Failed to load resource details for: ${resourceId}`);
+          const errorMessage = `${resourceId}: Failed to load resource details`;
+          setError(errorMessage);
+          o11y.user.error(errorMessage);
           return;
         }
 
@@ -259,20 +257,20 @@ export const SourceResourceDetail: React.FC<ISourceResourceDetailProps> = ({
           setOriginalResourceDetail(null);
         }
 
-        onMessage?.('info', `Loaded details for resource: ${resourceId}`);
+        o11y.user.info(`${resourceId}: Resource details loaded successfully`);
       } catch (err) {
-        const errorMsg = `Error loading resource details: ${
+        const errorMsg = `${resourceId}: Error loading resource details - ${
           err instanceof Error ? err.message : String(err)
         }`;
         setError(errorMsg);
-        onMessage?.('error', errorMsg);
+        o11y.user.error(errorMsg);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadResourceDetail();
-  }, [resourceId, processedResources, originalProcessedResources, showComparison, onMessage]);
+  }, [resourceId, processedResources, originalProcessedResources, showComparison, o11y]);
 
   if (isLoading) {
     return (

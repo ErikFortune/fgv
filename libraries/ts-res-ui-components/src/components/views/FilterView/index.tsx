@@ -576,7 +576,6 @@ export const FilterView: React.FC<IFilterViewProps> = ({
                   showComparison={isFilteringActive}
                   primaryLabel="Filtered"
                   secondaryLabel="Original"
-                  onMessage={onMessage}
                 />
               )}
             </div>

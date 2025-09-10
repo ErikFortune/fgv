@@ -13,7 +13,7 @@ Key features: - \*\*Context Management\*\*: Set and update resolution context (q
 **Signature:**
 
 ```typescript
-export declare function useResolutionState(processedResources: IProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
+export declare function useResolutionState(processedResources: IProcessedResources | null, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
 ```
 
 ## Parameters
@@ -52,22 +52,6 @@ The processed resources to work with
 </td></tr>
 <tr><td>
 
-onMessage
-
-
-</td><td>
-
-(type: 'info' \| 'warning' \| 'error' \| 'success', message: string) =&gt; void
-
-
-</td><td>
-
-_(Optional)_ Optional callback for displaying messages to the user
-
-
-</td></tr>
-<tr><td>
-
 onSystemUpdate
 
 
@@ -97,7 +81,6 @@ Object containing resolution state, actions, and available qualifiers
 function ResourceResolutionView({ processedResources }: { processedResources: ProcessedResources }) {
   const { state, actions, availableQualifiers } = useResolutionState(
     processedResources,
-    (type, message) => console.log(`${type}: ${message}`),
     (updatedResources) => {
       // Handle system updates when edits are applied
       setProcessedResources(updatedResources);

@@ -18,7 +18,7 @@ ResolutionResults: React.FC<IResolutionResultsProps>
 
 
 ```tsx
-import { ResolutionResults } from '@fgv/ts-res-ui-components';
+import { ResolutionResults, ObservabilityProvider } from '@fgv/ts-res-ui-components';
 
 function BasicResolutionDisplay() {
   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
@@ -26,20 +26,21 @@ function BasicResolutionDisplay() {
   const context = { language: 'en-US', platform: 'web' };
 
   return (
-    <div>
-      <div className="view-controls">
-        <button onClick={() => setViewMode('composed')}>Composed</button>
-        <button onClick={() => setViewMode('best')}>Best</button>
-        <button onClick={() => setViewMode('all')}>All</button>
-        <button onClick={() => setViewMode('raw')}>Raw</button>
+    <ObservabilityProvider>
+      <div>
+        <div className="view-controls">
+          <button onClick={() => setViewMode('composed')}>Composed</button>
+          <button onClick={() => setViewMode('best')}>Best</button>
+          <button onClick={() => setViewMode('all')}>All</button>
+          <button onClick={() => setViewMode('raw')}>Raw</button>
+        </div>
+        <ResolutionResults
+          result={resolutionResult}
+          viewMode={viewMode}
+          contextValues={context}
+        />
       </div>
-      <ResolutionResults
-        result={resolutionResult}
-        viewMode={viewMode}
-        contextValues={context}
-        onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
-      />
-    </div>
+    </ObservabilityProvider>
   );
 }
 ```
@@ -49,7 +50,7 @@ function BasicResolutionDisplay() {
 
 ```tsx
 // Using with resolution state and editing capabilities
-import { ResolutionTools } from '@fgv/ts-res-ui-components';
+import { ResolutionTools, ObservabilityProvider } from '@fgv/ts-res-ui-components';
 
 function InteractiveResolutionResults() {
   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
@@ -62,17 +63,16 @@ function InteractiveResolutionResults() {
   };
 
   return (
-    <ResolutionResults
-      result={resolutionState.currentResult}
-      viewMode={resolutionState.viewMode}
-      contextValues={resolutionState.context}
-      resolutionActions={resolutionActions}
-      resolutionState={resolutionState}
-      resourceEditorFactory={customEditorFactory}
-      onMessage={(type, message) => {
-        resolutionActions.addMessage(type, message);
-      }}
-    />
+    <ObservabilityProvider>
+      <ResolutionResults
+        result={resolutionState.currentResult}
+        viewMode={resolutionState.viewMode}
+        contextValues={resolutionState.context}
+        resolutionActions={resolutionActions}
+        resolutionState={resolutionState}
+        resourceEditorFactory={customEditorFactory}
+      />
+    </ObservabilityProvider>
   );
 }
 ```
@@ -115,7 +115,6 @@ function OrchestratorResolutionDisplay() {
           saveEdit: actions.saveResourceEdit
         }}
         resolutionState={state.resolutionState}
-        onMessage={actions.addMessage}
       />
     </div>
   );

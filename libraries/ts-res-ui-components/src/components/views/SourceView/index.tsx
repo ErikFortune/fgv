@@ -265,11 +265,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
           {/* Right side: Resource Details */}
           <div className="lg:w-1/2 flex flex-col">
             {selectedResourceId ? (
-              <SourceResourceDetail
-                resourceId={selectedResourceId}
-                processedResources={resources}
-                onMessage={onMessage}
-              />
+              <SourceResourceDetail resourceId={selectedResourceId} processedResources={resources} />
             ) : (
               <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
                 <div className="text-center">

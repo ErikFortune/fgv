@@ -29,7 +29,6 @@ function ResourceInspector() {
       resourceId={selectedResourceId}
       processedResources={processedResources}
       title="Resource Inspector"
-      onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
       className="border rounded-lg p-4"
     />
   );
@@ -96,7 +95,6 @@ function OrchestratorResourceDetail() {
         filterContext={state.filterState.appliedValues}
         showComparison={!!state.filterResult}
         title="Resource Details"
-        onMessage={actions.addMessage}
         className="detail-content"
       />
     </div>
