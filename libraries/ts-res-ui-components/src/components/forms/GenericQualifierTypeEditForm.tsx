@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, InformationCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { QualifierTypes } from '@fgv/ts-res';
 import { JsonObject } from '@fgv/ts-json-base';
+import { useObservability } from '../../contexts';
 
 /**
  * Props for the GenericQualifierTypeEditForm component.
@@ -44,6 +45,7 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
   onCancel,
   existingNames = []
 }) => {
+  const o11y = useObservability();
   const [formData, setFormData] = useState<IFormData>(() => {
     if (qualifierType) {
       return {
@@ -72,18 +74,31 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
       if (formData.name && formData.systemType) {
         // For now, we'll just check basic structure
         // In the future, this could call validateConfigurationJson if we had a qualifier type instance
-        setErrors((prev) => ({ ...prev, configuration: undefined }));
+        setErrors((prev) => {
+          const updated = { ...prev };
+          delete updated.configuration;
+          return updated;
+        });
       } else {
-        setErrors((prev) => ({ ...prev, configuration: undefined }));
+        setErrors((prev) => {
+          const updated = { ...prev };
+          delete updated.configuration;
+          return updated;
+        });
       }
     } catch (error) {
+      const qualifierTypeName = formData.name.trim() ?? 'unknown-qualifier-type';
+      const errorMessage = error instanceof Error ? error.message : 'Invalid JSON';
+
       setIsJsonValid(false);
       setErrors((prev) => ({
         ...prev,
-        configuration: error instanceof Error ? `JSON Error: ${error.message}` : 'Invalid JSON'
+        configuration: `JSON Error: ${errorMessage}`
       }));
+
+      o11y.diag.warn(`${qualifierTypeName}: JSON configuration parsing failed - ${errorMessage}`);
     }
-  }, [formData.configuration, formData.name, formData.systemType]);
+  }, [formData.configuration, formData.name, formData.systemType, o11y]);
 
   const validateForm = useCallback((): boolean => {
     const newErrors: IValidationErrors = {};
@@ -109,11 +124,24 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, qualifierType, existingNames, isJsonValid]);
+
+    const hasErrors = Object.keys(newErrors).length > 0;
+    if (hasErrors) {
+      const qualifierTypeName = formData.name.trim() ?? 'unknown-qualifier-type';
+      const errorList = Object.entries(newErrors)
+        .map(([field, error]) => `${field}: ${error}`)
+        .join(', ');
+      o11y.diag.warn(`${qualifierTypeName}: Qualifier type validation failed - ${errorList}`);
+    }
+
+    return !hasErrors;
+  }, [formData, qualifierType, existingNames, isJsonValid, o11y]);
 
   const handleSave = useCallback(() => {
+    const qualifierTypeName = formData.name.trim() || 'qualifier-type';
+
     if (!validateForm()) {
+      o11y.user.warn(`${qualifierTypeName}: Cannot save - validation errors present`);
       return;
     }
 
@@ -126,34 +154,53 @@ export const GenericQualifierTypeEditForm: React.FC<IGenericQualifierTypeEditFor
       };
 
       onSave(newQualifierType);
+      o11y.user.success(
+        `${qualifierTypeName}: Qualifier type ${qualifierType ? 'updated' : 'created'} successfully`
+      );
     } catch (error) {
+      const errorMessage = 'Failed to parse JSON configuration';
       setErrors((prev) => ({
         ...prev,
-        configuration: 'Failed to parse JSON configuration'
+        configuration: errorMessage
       }));
+      o11y.user.error(
+        `${qualifierTypeName}: Save failed - ${error instanceof Error ? error.message : String(error)}`
+      );
+      o11y.diag.error(
+        `${qualifierTypeName}: Save failed - ${error instanceof Error ? error.message : String(error)}`
+      );
     }
-  }, [formData, validateForm, onSave]);
+  }, [formData, validateForm, onSave, qualifierType, o11y]);
 
   const handleInputChange = useCallback(
     (field: keyof IFormData, value: string) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       // Clear error when user starts typing
       if (errors[field as keyof IValidationErrors]) {
-        setErrors((prev) => ({ ...prev, [field]: undefined }));
+        setErrors((prev) => {
+          const updated = { ...prev };
+          delete updated[field as keyof IValidationErrors];
+          return updated;
+        });
       }
     },
     [errors]
   );
 
   const formatJson = useCallback(() => {
+    const qualifierTypeName = formData.name.trim() || 'qualifier-type';
+
     try {
       const parsed = JSON.parse(formData.configuration);
       const formatted = JSON.stringify(parsed, null, 2);
       setFormData((prev) => ({ ...prev, configuration: formatted }));
+      o11y.user.info(`${qualifierTypeName}: JSON configuration formatted`);
     } catch (error) {
       // If JSON is invalid, don't format
+      o11y.diag.warn(`${qualifierTypeName}: JSON formatting skipped - invalid JSON`);
+      o11y.user.warn(`${qualifierTypeName}: JSON formatting skipped - invalid JSON`);
     }
-  }, [formData.configuration]);
+  }, [formData.configuration, formData.name, o11y]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
