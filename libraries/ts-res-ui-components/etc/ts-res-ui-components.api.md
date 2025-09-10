@@ -104,6 +104,11 @@ function createTsResSystemFromConfig(systemConfig?: Config.Model.ISystemConfigur
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
 }>;
 
+// Warning: (ae-forgotten-export) The symbol "IMessage" needs to be exported by the entry point index.d.ts
+//
+// @public
+function createViewStateObservabilityContext(addMessage: (type: IMessage['type'], message: string) => void, diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
+
 // @public
 const DefaultObservabilityContext: IObservabilityContext;
 
@@ -670,8 +675,6 @@ export interface IObservabilityProviderProps {
 
 // @public
 export interface IOrchestratorActions {
-    // Warning: (ae-forgotten-export) The symbol "IMessage" needs to be exported by the entry point index.d.ts
-    //
     // (undocumented)
     addMessage: (type: IMessage['type'], message: string) => void;
     // (undocumented)
@@ -1153,9 +1156,11 @@ declare namespace ObservabilityTools {
         IObservabilityContext,
         ConsoleUserLogger,
         NoOpUserLogger,
+        ViewStateUserLogger,
         ObservabilityContext,
         createConsoleObservabilityContext,
         createNoOpObservabilityContext,
+        createViewStateObservabilityContext,
         DefaultObservabilityContext,
         TestObservabilityContext
     }
@@ -1444,6 +1449,16 @@ declare namespace ViewStateTools {
     }
 }
 export { ViewStateTools }
+
+// @public
+class ViewStateUserLogger extends Logging.LoggerBase implements IUserLogger {
+    constructor(addMessage: (type: IMessage['type'], message: string) => void, logLevel?: Logging.ReporterLogLevel);
+    protected _log(message: string, level: MessageLogLevel): Success<string | undefined>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+}
 
 declare namespace ZipTools {
     export {

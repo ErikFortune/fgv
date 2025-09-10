@@ -22,7 +22,13 @@
 
 import { Logging } from '@fgv/ts-utils';
 import type { IObservabilityContext } from './interfaces';
-import { ObservabilityContext, ConsoleUserLogger, NoOpUserLogger } from './implementations';
+import type { IMessage } from '../../types';
+import {
+  ObservabilityContext,
+  ConsoleUserLogger,
+  NoOpUserLogger,
+  ViewStateUserLogger
+} from './implementations';
 
 /**
  * Creates a console-based observability context for development and debugging.
@@ -70,3 +76,23 @@ export const DefaultObservabilityContext: IObservabilityContext = createConsoleO
  * @public
  */
 export const TestObservabilityContext: IObservabilityContext = createNoOpObservabilityContext();
+
+/**
+ * Creates an observability context that forwards user messages to viewState.addMessage().
+ * This bridges the observability system with React component state management.
+ *
+ * @param addMessage - Function to add messages to viewState (typically viewState.addMessage)
+ * @param diagLogLevel - Log level for diagnostic messages (defaults to 'info')
+ * @param userLogLevel - Log level for user messages (defaults to 'info')
+ * @returns A new observability context with ViewState-connected user logger
+ * @public
+ */
+export function createViewStateObservabilityContext(
+  addMessage: (type: IMessage['type'], message: string) => void,
+  diagLogLevel: Logging.ReporterLogLevel = 'info',
+  userLogLevel: Logging.ReporterLogLevel = 'info'
+): IObservabilityContext {
+  const diag = new Logging.ConsoleLogger(diagLogLevel);
+  const user = new ViewStateUserLogger(addMessage, userLogLevel);
+  return new ObservabilityContext(diag, user);
+}

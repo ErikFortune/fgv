@@ -50,6 +50,17 @@ Observability context that provides both diagnostic and user logging capabilitie
 
 
 </td></tr>
+<tr><td>
+
+[ViewStateUserLogger](./ts-res-ui-components.observabilitytools.viewstateuserlogger.md)
+
+
+</td><td>
+
+ViewState-connected user logger that forwards messages to viewState.addMessage(). This logger bridges the observability system with React component state management.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -84,6 +95,17 @@ Creates a console-based observability context for development and debugging.
 </td><td>
 
 Creates a no-op observability context that suppresses all logging.
+
+
+</td></tr>
+<tr><td>
+
+[createViewStateObservabilityContext(addMessage, diagLogLevel, userLogLevel)](./ts-res-ui-components.observabilitytools.createviewstateobservabilitycontext.md)
+
+
+</td><td>
+
+Creates an observability context that forwards user messages to viewState.addMessage(). This bridges the observability system with React component state management.
 
 
 </td></tr>

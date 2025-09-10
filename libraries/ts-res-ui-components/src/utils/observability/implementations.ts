@@ -22,6 +22,7 @@
 
 import { Logging, MessageLogLevel, Success, succeed } from '@fgv/ts-utils';
 import type { IUserLogger, IObservabilityContext } from './interfaces';
+import type { IMessage } from '../../types';
 
 /**
  * Console-based user logger that extends diagnostic logging with success method.
@@ -90,6 +91,67 @@ export class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
    */
   protected _log(message: string, __level: MessageLogLevel): Success<string | undefined> {
     // no-op
+    return succeed(message);
+  }
+}
+
+/**
+ * ViewState-connected user logger that forwards messages to viewState.addMessage().
+ * This logger bridges the observability system with React component state management.
+ * @public
+ */
+export class ViewStateUserLogger extends Logging.LoggerBase implements IUserLogger {
+  private readonly _addMessage: (type: IMessage['type'], message: string) => void;
+
+  /**
+   * Creates a new ViewState user logger.
+   * @param addMessage - Function to add messages to viewState (typically viewState.addMessage)
+   * @param logLevel - The level of logging to be used.
+   */
+  public constructor(
+    addMessage: (type: IMessage['type'], message: string) => void,
+    logLevel?: Logging.ReporterLogLevel
+  ) {
+    super(logLevel);
+    this._addMessage = addMessage;
+  }
+
+  /**
+   * {@inheritDoc ObservabilityTools.IUserLogger.success}
+   */
+  public success(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
+    // Format message manually since we want different behavior than the base class
+    const formattedMessage = this._formatLogMessage(message, ...parameters);
+    this._addMessage('success', formattedMessage);
+    return succeed(formattedMessage);
+  }
+
+  /**
+   * Simple message formatting helper
+   */
+  private _formatLogMessage(message?: unknown, ...parameters: unknown[]): string {
+    if (message === undefined) {
+      return '';
+    }
+
+    const baseMessage = String(message);
+    if (parameters.length === 0) {
+      return baseMessage;
+    }
+
+    // Simple string interpolation
+    return `${baseMessage} ${parameters.map((p) => String(p)).join(' ')}`;
+  }
+
+  /**
+   * Implements base class _log method by forwarding to viewState.addMessage.
+   */
+  protected _log(message: string, level: MessageLogLevel): Success<string | undefined> {
+    // Map MessageLogLevel to IMessage['type']
+    const messageType: IMessage['type'] =
+      level === 'warning' ? 'warning' : level === 'error' ? 'error' : 'info';
+
+    this._addMessage(messageType, message);
     return succeed(message);
   }
 }

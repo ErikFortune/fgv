@@ -26,9 +26,11 @@ export type { IUserLogger, IObservabilityContext } from '../utils/observability'
 export {
   ConsoleUserLogger,
   NoOpUserLogger,
+  ViewStateUserLogger,
   ObservabilityContext,
   createConsoleObservabilityContext,
   createNoOpObservabilityContext,
+  createViewStateObservabilityContext,
   DefaultObservabilityContext,
   TestObservabilityContext
 } from '../utils/observability';

@@ -24,12 +24,18 @@
 export type { IUserLogger, IObservabilityContext } from './interfaces';
 
 // Export implementations
-export { ConsoleUserLogger, NoOpUserLogger, ObservabilityContext } from './implementations';
+export {
+  ConsoleUserLogger,
+  NoOpUserLogger,
+  ViewStateUserLogger,
+  ObservabilityContext
+} from './implementations';
 
 // Export factories
 export {
   createConsoleObservabilityContext,
   createNoOpObservabilityContext,
+  createViewStateObservabilityContext,
   DefaultObservabilityContext,
   TestObservabilityContext
 } from './factories';
