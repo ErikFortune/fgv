@@ -198,3 +198,45 @@ export class ObservabilityContext implements IObservabilityContext {
     this.user = user;
   }
 }
+
+/**
+ * Context type classification for observability contexts.
+ * @public
+ */
+export type ObservabilityContextType = 'viewstate' | 'console' | 'custom';
+
+/**
+ * Detects the type of observability context based on the user logger implementation.
+ * @param context - The observability context to analyze
+ * @returns The detected context type
+ * @public
+ */
+export function detectObservabilityContextType(context: IObservabilityContext): ObservabilityContextType {
+  if (context.user instanceof ViewStateUserLogger) {
+    return 'viewstate';
+  }
+  if (context.user instanceof ConsoleUserLogger || context.user instanceof NoOpUserLogger) {
+    return 'console';
+  }
+  return 'custom';
+}
+
+/**
+ * Checks if an observability context is connected to ViewState for UI message display.
+ * @param context - The observability context to check
+ * @returns True if the context sends user messages to ViewState
+ * @public
+ */
+export function isViewStateConnected(context: IObservabilityContext): boolean {
+  return context.user instanceof ViewStateUserLogger;
+}
+
+/**
+ * Checks if an observability context only outputs to console (not UI messages).
+ * @param context - The observability context to check
+ * @returns True if the context only outputs to console
+ * @public
+ */
+export function isConsoleOnlyContext(context: IObservabilityContext): boolean {
+  return context.user instanceof ConsoleUserLogger || context.user instanceof NoOpUserLogger;
+}

@@ -14,7 +14,7 @@ import {
 } from '../../pickers/ResourcePicker/types';
 import { IFilteredResource } from '../../../types';
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
-import { useObservability } from '../../../contexts';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 // IIFilteredResource interface removed - unused
 
@@ -79,7 +79,7 @@ export const FilterView: React.FC<IFilterViewProps> = ({
   className = ''
 }) => {
   // Get observability context
-  const o11y = useObservability();
+  const o11y = useSmartObservability();
 
   // Local UI state
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);

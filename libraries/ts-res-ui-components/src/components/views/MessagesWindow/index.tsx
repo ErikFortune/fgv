@@ -11,7 +11,7 @@ import {
   MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import { CheckIcon } from '@heroicons/react/24/solid';
-import { useObservability } from '../../../contexts';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * Message type definition for the MessagesWindow component.
@@ -145,7 +145,7 @@ export const MessagesWindow: React.FC<IMessagesWindowProps> = ({
   className = ''
 }) => {
   // Get observability context
-  const o11y = useObservability();
+  const o11y = useSmartObservability();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [filter, setFilter] = useState<IMessage['type'] | 'all'>('all');

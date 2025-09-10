@@ -9,7 +9,7 @@ import {
 import { IImportViewProps, IImportedFile, IImportedDirectory } from '../../../types';
 import { Bundle, ZipArchive } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
-import { useObservability } from '../../../contexts';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * ImportView component for importing resource files, directories, and bundles.
@@ -68,7 +68,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
   importError
 }) => {
   // Get observability context
-  const o11y = useObservability();
+  const o11y = useSmartObservability();
 
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState<{

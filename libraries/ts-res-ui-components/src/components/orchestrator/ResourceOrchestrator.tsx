@@ -48,12 +48,17 @@ export interface IResourceOrchestratorProps {
 /**
  * Internal orchestrator component that has access to observability context via hook.
  */
-const ResourceOrchestratorInternal: React.FC<Omit<IResourceOrchestratorProps, 'observabilityContext'>> = ({
+const ResourceOrchestratorInternal: React.FC<
+  Omit<IResourceOrchestratorProps, 'observabilityContext'> & {
+    viewState: ReturnType<typeof useViewState>;
+  }
+> = ({
   children,
   initialConfiguration,
   qualifierTypeFactory,
   resourceTypeFactory,
-  onStateChange
+  onStateChange,
+  viewState
 }) => {
   // Get observability context from provider
   const o11y = useObservability();
@@ -65,7 +70,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<IResourceOrchestratorProps, 'o
     o11y
   });
   const filterState = useFilterState();
-  const viewState = useViewState();
+  // Use the ViewState passed down from ResourceOrchestrator instead of creating a new one
   // System update handler for resolution editing
   const handleSystemUpdate = useCallback(
     (updatedResources: IProcessedResources) => {
@@ -539,7 +544,7 @@ export const ResourceOrchestrator: React.FC<IResourceOrchestratorProps> = ({
 
   return (
     <ObservabilityProvider observabilityContext={effectiveObservabilityContext}>
-      <ResourceOrchestratorInternal {...props} />
+      <ResourceOrchestratorInternal {...props} viewState={viewState} />
     </ObservabilityProvider>
   );
 };

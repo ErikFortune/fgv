@@ -18,7 +18,7 @@ import {
   getAvailableQualifiers,
   hasPendingContextChanges
 } from '../utils/resolutionUtils';
-import { useObservability } from '../contexts';
+import { useSmartObservability } from './useSmartObservability';
 import {
   validateEditedResource,
   computeResourceDelta,
@@ -186,8 +186,8 @@ export function useResolutionState(
   processedResources: IProcessedResources | null,
   onSystemUpdate?: (updatedResources: IProcessedResources) => void
 ): IUseResolutionStateReturn {
-  // Get observability context
-  const o11y = useObservability();
+  // Get smart observability context (auto-detects and upgrades as needed)
+  const o11y = useSmartObservability();
   // Get available qualifiers
   const availableQualifiers = useMemo(() => {
     if (!processedResources) return [];
@@ -430,11 +430,15 @@ export function useResolutionState(
             }
           }
 
-          const appliedValuesCount = Object.keys(pendingUserValues).length;
-          const appliedValuesList = Object.entries(pendingUserValues)
-            .map(([key, value]) => `${key}=${value ?? 'undefined'}`)
-            .join(', ');
-          o11y.user.success(`Context applied: ${appliedValuesCount} value(s) (${appliedValuesList})`);
+          const numAppliedValues = Object.keys(pendingUserValues).length;
+          const filteredAppliedValues = Object.entries(pendingUserValues).filter(
+            ([key, value]) => value !== undefined
+          );
+          const numFilteredAppliedValues = filteredAppliedValues.length;
+          const appliedValuesList = filteredAppliedValues.map(([key, value]) => `${key}=${value}`).join(', ');
+          o11y.user.success(
+            `Context applied: ${numFilteredAppliedValues}/${numAppliedValues} value(s) (${appliedValuesList})`
+          );
           return succeed(undefined);
         }
       } catch (error) {

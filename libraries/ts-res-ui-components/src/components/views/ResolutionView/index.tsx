@@ -14,7 +14,7 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
 import { NewResourceModal } from './NewResourceModal';
-import { useObservability } from '../../../contexts';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * ResolutionView component for resource resolution testing and editing.
@@ -86,8 +86,8 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
   showPendingResourcesInList = true,
   className = ''
 }) => {
-  // Get observability context
-  const o11y = useObservability();
+  // Get smart observability context (auto-detects and upgrades as needed)
+  const o11y = useSmartObservability();
   // State for picker options control
   const [currentPickerOptions, setCurrentPickerOptions] = useState<IResourcePickerOptions>(
     (pickerOptions ?? {}) as IResourcePickerOptions

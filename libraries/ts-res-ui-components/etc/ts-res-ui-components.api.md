@@ -122,6 +122,9 @@ function deriveFullId(rootPath: string, leafId: string): Result<string>;
 function deriveLeafId(fullResourceId: string): Result<string>;
 
 // @public
+function detectObservabilityContextType(context: IObservabilityContext): ObservabilityContextType;
+
+// @public
 function downloadBundle(data: unknown, resourceCount?: number, configName?: string): Result<void>;
 
 // @public
@@ -1090,6 +1093,9 @@ interface IResourceTypeColumnMapping {
 }
 
 // @public
+function isConsoleOnlyContext(context: IObservabilityContext): boolean;
+
+// @public
 interface ISourceViewProps extends IViewBaseProps {
     onExport?: (data: unknown, type: 'json') => void;
     onResourceSelect?: (resourceId: string) => void;
@@ -1100,6 +1106,9 @@ interface ISourceViewProps extends IViewBaseProps {
 
 // @public
 function isPendingAddition(resourceId: string, pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>): boolean;
+
+// @public
+function isViewStateConnected(context: IObservabilityContext): boolean;
 
 // @public
 function isZipFile(filename: string): boolean;
@@ -1148,12 +1157,16 @@ class ObservabilityContext implements IObservabilityContext {
 }
 
 // @public
+type ObservabilityContextType = 'viewstate' | 'console' | 'custom';
+
+// @public
 export const ObservabilityProvider: React_2.FC<IObservabilityProviderProps>;
 
 declare namespace ObservabilityTools {
     export {
         IUserLogger,
         IObservabilityContext,
+        ObservabilityContextType,
         ConsoleUserLogger,
         NoOpUserLogger,
         ViewStateUserLogger,
@@ -1162,7 +1175,10 @@ declare namespace ObservabilityTools {
         createNoOpObservabilityContext,
         createViewStateObservabilityContext,
         DefaultObservabilityContext,
-        TestObservabilityContext
+        TestObservabilityContext,
+        detectObservabilityContextType,
+        isViewStateConnected,
+        isConsoleOnlyContext
     }
 }
 export { ObservabilityTools }
