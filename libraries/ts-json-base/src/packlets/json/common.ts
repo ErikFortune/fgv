@@ -60,6 +60,31 @@ export interface JsonArray extends Array<JsonValue> {}
 export type JsonValueType = 'primitive' | 'object' | 'array';
 
 /**
+ * A constrained type that is compatible with JSON serialization.
+ * @param T - The type to be constrained
+ * @returns A constrained type that is compatible with JSON serialization.
+ * @public
+ */
+export type JsonCompatible<T> = T extends JsonPrimitive
+  ? T
+  : T extends Array<unknown>
+  ? JsonCompatibleArray<T[number]>
+  : // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  T extends Function
+  ? ['Error: Function is not JSON-compatible']
+  : T extends object
+  ? { [K in keyof T]: JsonCompatible<T[K]> }
+  : ['Error: Non-JSON type'];
+
+/**
+ * A type that represents an array of JSON-compatible values.
+ * @param T - The type to be constrained
+ * @returns A constrained type that is compatible with JSON serialization.
+ * @public
+ */
+export type JsonCompatibleArray<T> = Array<JsonCompatible<T>>;
+
+/**
  * Test if an `unknown` is a {@link JsonValue | JsonValue}.
  * @param from - The `unknown` to be tested
  * @returns `true` if the supplied parameter is a valid {@link JsonPrimitive | JsonPrimitive},
@@ -73,8 +98,8 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive {
 /**
  * Test if an `unknown` is potentially a {@link JsonObject | JsonObject}.
  * @param from - The `unknown` to be tested.
- * @returns `true` if the supplied parameter is a non-array, non-special object,
- * `false` otherwise.
+ * @returns `true` if the supplied parameter is a non-array, non-special object
+ * with no symbol keys, `false` otherwise.
  * @public
  */
 export function isJsonObject(from: unknown): from is JsonObject {
@@ -83,7 +108,11 @@ export function isJsonObject(from: unknown): from is JsonObject {
     from !== null &&
     !Array.isArray(from) &&
     !(from instanceof RegExp) &&
-    !(from instanceof Date)
+    !(from instanceof Date) &&
+    !(from instanceof Map) &&
+    !(from instanceof Set) &&
+    !(from instanceof Error) &&
+    Object.getOwnPropertySymbols(from).length === 0
   );
 }
 
