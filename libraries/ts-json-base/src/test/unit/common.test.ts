@@ -29,7 +29,8 @@ import {
   pickJsonObject,
   pickJsonValue,
   sanitizeJsonObject,
-  JsonCompatible
+  JsonCompatible,
+  JsonValue
 } from '../../packlets/json';
 import { Brand } from '@fgv/ts-utils';
 
@@ -1540,5 +1541,61 @@ describe('json/common module', () => {
         expect(domainCache).toBeDefined();
       });
     });
+  });
+
+  test('Collection behavior with JsonCompatible', () => {
+    type JsonMap<T, TV extends JsonCompatible<T> = JsonCompatible<T>> = Map<string, TV>;
+    interface IJsonThing {
+      a: string;
+      b: number;
+    }
+
+    interface INonJsonThing {
+      a: string;
+      b: number;
+      c: () => void;
+    }
+
+    const jsonMap: JsonMap<IJsonThing> = new Map();
+    const map: Map<string, IJsonThing> = new Map();
+    const thing1: IJsonThing = { a: 'test', b: 1 };
+    const thing2: INonJsonThing = { a: 'test', b: 1, c: () => {} };
+
+    jsonMap.set('test', thing1);
+    expect(jsonMap.get('test')).toEqual({ a: 'test', b: 1 });
+    const jv1: JsonValue | undefined = jsonMap.get('test');
+    expect(jv1).toEqual(thing1);
+
+    const tv1: IJsonThing | undefined = jsonMap.get('test');
+    expect(tv1).toEqual(thing1);
+
+    map.set('test', { a: 'test', b: 1 });
+    expect(map.get('test')).toEqual({ a: 'test', b: 1 });
+
+    // @ts-expect-error - INonJsonThing is not compatible with JsonValue
+    const jv2: JsonValue | undefined = map.get('test');
+    expect(jv2).toEqual({ a: 'test', b: 1 });
+
+    const tv2: IJsonThing | undefined = map.get('test');
+    expect(tv2).toEqual({ a: 'test', b: 1 });
+
+    const nonJsonMap: JsonMap<INonJsonThing> = new Map();
+    // @ts-expect-error - INonJsonThing is not JsonCompatible
+    nonJsonMap.set('test', thing2);
+    const jv3: JsonValue | undefined = nonJsonMap.get('test');
+    expect(jv3).toEqual(thing2);
+
+    // @ts-expect-error - INonJsonThing is not JsonCompatible
+    const tv3: INonJsonThing | undefined = nonJsonMap.get('test');
+    expect(tv3).toEqual(thing2);
+
+    const nonJsonMap2: Map<string, INonJsonThing> = new Map();
+    nonJsonMap2.set('test', thing2);
+    // @ts-expect-error - INonJsonThing is not JsonCompatible
+    const jv4: JsonValue | undefined = nonJsonMap2.get('test');
+    expect(jv4).toEqual(thing2);
+
+    const tv4: INonJsonThing | undefined = nonJsonMap2.get('test');
+    expect(tv4).toEqual(thing2);
   });
 });
