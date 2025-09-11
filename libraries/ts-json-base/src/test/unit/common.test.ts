@@ -28,7 +28,8 @@ import {
   isJsonPrimitive,
   pickJsonObject,
   pickJsonValue,
-  sanitizeJsonObject
+  sanitizeJsonObject,
+  JsonCompatible
 } from '../../packlets/json';
 
 describe('json/common module', () => {
@@ -172,6 +173,55 @@ describe('json/common module', () => {
       expect(sanitizeJsonObject<ITestThing>({ a: 'hello', b: undefined })).toSucceedWith({
         a: 'hello'
       });
+    });
+  });
+
+  describe('JsonCompatible type', () => {
+    interface IIsCompatible {
+      a: string;
+      b?: number;
+      c: {
+        nested: boolean;
+      };
+    }
+    // Example of an interface that is NOT JSON-compatible
+    interface IIsNotCompatible {
+      a: () => string;
+    }
+
+    test('Map with JSON-compatible constraint', () => {
+      // A Map type that only accepts validated JSON-compatible values
+      class JsonCompatibleMap<T, TV extends JsonCompatible<T> = JsonCompatible<T>> extends Map<string, TV> {
+        public constructor() {
+          super();
+        }
+
+        public override set(key: string, value: TV): this {
+          return super.set(key, value);
+        }
+
+        // Helper method that validates before setting
+        public setValidated(key: string, value: TV): this {
+          return this.set(key, value);
+        }
+      }
+
+      const map = new JsonCompatibleMap<IIsCompatible>();
+      map.setValidated('test', {
+        a: 'hello',
+        c: { nested: false }
+      });
+
+      expect(map.get('test')).toEqual({
+        a: 'hello',
+        c: { nested: false }
+      });
+
+      // This will fail at compile time when trying to validate:
+      const badValue: IIsNotCompatible = { a: () => 'test' };
+      const badMap = new JsonCompatibleMap<IIsNotCompatible>();
+      // @ts-expect-error - IIsNotCompatible should not satisfy JsonCompatible
+      badMap.setValidated('test', badValue);
     });
   });
 });

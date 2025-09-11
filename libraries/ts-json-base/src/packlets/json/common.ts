@@ -60,6 +60,31 @@ export interface JsonArray extends Array<JsonValue> {}
 export type JsonValueType = 'primitive' | 'object' | 'array';
 
 /**
+ * A constrained type that is compatible with JSON serialization.
+ * @param T - The type to be constrained
+ * @returns A constrained type that is compatible with JSON serialization.
+ * @public
+ */
+export type JsonCompatible<T> = T extends JsonPrimitive
+  ? T
+  : T extends Array<unknown>
+  ? JsonCompatibleArray<T[number]>
+  : // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  T extends Function
+  ? ['Error: Function is not JSON-compatible']
+  : T extends object
+  ? { [K in keyof T]: JsonCompatible<T[K]> }
+  : ['Error: Non-JSON type'];
+
+/**
+ * A type that represents an array of JSON-compatible values.
+ * @param T - The type to be constrained
+ * @returns A constrained type that is compatible with JSON serialization.
+ * @public
+ */
+export type JsonCompatibleArray<T> = Array<JsonCompatible<T>>;
+
+/**
  * Test if an `unknown` is a {@link JsonValue | JsonValue}.
  * @param from - The `unknown` to be tested
  * @returns `true` if the supplied parameter is a valid {@link JsonPrimitive | JsonPrimitive},

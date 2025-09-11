@@ -122,6 +122,16 @@ const jsonArray: Converter<JsonArray, IJsonConverterContext>;
 // @public
 const jsonArray_2: Validator<JsonArray, IJsonValidatorContext>;
 
+// @public
+export type JsonCompatible<T> = T extends JsonPrimitive ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
+    [K in keyof T]: JsonCompatible<T[K]>;
+} : [
+'Error: Non-JSON type'
+];
+
+// @public
+export type JsonCompatibleArray<T> = Array<JsonCompatible<T>>;
+
 declare namespace JsonFile {
     export {
         readJsonFileSync,
