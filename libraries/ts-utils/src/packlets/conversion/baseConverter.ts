@@ -162,7 +162,6 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
         return mapConverter.convert(innerResult.value, this._context(context));
       }
       return fail(innerResult.message);
-      // eslint-disable-next-line no-return-assign
     })._with(this._traits());
   }
 

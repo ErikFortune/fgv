@@ -13,7 +13,7 @@ Provides a drag-and-drop interface for importing various resource formats includ
 **Signature:**
 
 ```typescript
-ImportView: React.FC<ImportViewProps>
+ImportView: React.FC<IImportViewProps>
 ```
 
 ## Example
@@ -41,7 +41,6 @@ function MyImportTool() {
       onBundleImport={handleBundleImport}
       onZipImport={handleZipImport}
       acceptedFileTypes={['.json', '.zip']}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

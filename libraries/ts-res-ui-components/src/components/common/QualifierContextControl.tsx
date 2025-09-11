@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ProcessedResources, QualifierControlOptions } from '../../types';
+import { IProcessedResources, IQualifierControlOptions } from '../../types';
 import { useObservability } from '../../contexts';
 
 /**
@@ -7,7 +7,7 @@ import { useObservability } from '../../contexts';
  *
  * @public
  */
-export interface QualifierContextControlProps {
+export interface IQualifierContextControlProps {
   /** Name of the qualifier being controlled */
   qualifierName: string;
   /** Current value of the qualifier */
@@ -19,11 +19,11 @@ export interface QualifierContextControlProps {
   /** Placeholder text for empty value */
   placeholder?: string;
   /** Optional processed resources for auto-suggesting values */
-  resources?: ProcessedResources | null;
+  resources?: IProcessedResources | null;
   /** Optional CSS classes to apply to the control */
   className?: string;
   /** Extended options for controlling the qualifier behavior */
-  options?: QualifierControlOptions;
+  options?: IQualifierControlOptions;
 }
 
 /**
@@ -146,7 +146,7 @@ export interface QualifierContextControlProps {
  *
  * @public
  */
-export const QualifierContextControl: React.FC<QualifierContextControlProps> = ({
+export const QualifierContextControl: React.FC<IQualifierContextControlProps> = ({
   qualifierName,
   value,
   onChange,
@@ -223,14 +223,14 @@ export const QualifierContextControl: React.FC<QualifierContextControlProps> = (
   // Determine placeholder text
   const effectivePlaceholder = customPlaceholder || placeholder || `Enter ${qualifierName} value`;
 
-  const handleChange = (newValue: string) => {
+  const handleChange = (newValue: string): void => {
     // Only allow changes if not host-managed and editable
     if (!isHostManaged && isEditable) {
       onChange(qualifierName, newValue || undefined);
     }
   };
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     // Only allow clearing if not host-managed and editable
     if (!isHostManaged && isEditable) {
       onChange(qualifierName, undefined);

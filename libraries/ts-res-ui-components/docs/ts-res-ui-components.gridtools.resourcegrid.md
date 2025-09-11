@@ -9,7 +9,7 @@ Main ResourceGrid component for displaying resources in a table format.
 **Signature:**
 
 ```typescript
-ResourceGrid: React.FC<ResourceGridProps>
+ResourceGrid: React.FC<IResourceGridProps>
 ```
 
 ## Example

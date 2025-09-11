@@ -30,7 +30,7 @@ import { Validator, ValidatorOptions } from './validator';
  * Parameters used to construct a {@link Validation.Classes.TypeGuardValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface TypeGuardValidatorConstructorParams<T, TC = unknown>
   extends ValidatorBaseConstructorParams<T, TC> {
   guard: TypeGuardWithContext<T, TC>;

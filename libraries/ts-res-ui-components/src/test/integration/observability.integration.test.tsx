@@ -32,11 +32,29 @@ describe('Observability Integration', () => {
   });
 
   test('should work with default observability context', () => {
-    // Test that components work with default context (no provider)
-    const { getByTestId } = render(<TestComponent />);
+    // Mock console methods to verify they're called instead of letting them spew
+    const consoleSpy = {
+      info: jest.spyOn(console, 'info').mockImplementation(() => {}),
+      warn: jest.spyOn(console, 'warn').mockImplementation(() => {}),
+      error: jest.spyOn(console, 'error').mockImplementation(() => {})
+    };
 
-    // Should render without errors even with default context
-    expect(getByTestId('test-component')).toBeInTheDocument();
+    try {
+      // Test that components work with default context (no provider)
+      const { getByTestId } = render(<TestComponent />);
+
+      // Should render without errors even with default context
+      expect(getByTestId('test-component')).toBeInTheDocument();
+
+      // Verify console methods were called (proves default context is working)
+      expect(consoleSpy.info).toHaveBeenCalledWith(expect.stringContaining('Test component rendered'));
+      expect(consoleSpy.warn).toHaveBeenCalledWith(expect.stringContaining('Test warning message'));
+      // User success messages use console.info, not console.log
+      expect(consoleSpy.info).toHaveBeenCalledWith(expect.stringContaining('Test user message'));
+    } finally {
+      // Restore console methods
+      Object.values(consoleSpy).forEach((spy) => spy.mockRestore());
+    }
   });
 
   test('should create console observability context', () => {

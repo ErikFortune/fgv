@@ -4,13 +4,13 @@ import * as os from 'os';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { ZipArchive } from '@fgv/ts-res';
 
-export interface ZipArchiveOptions {
+export interface IZipArchiveOptions {
   input?: string;
   config?: string;
   outputDir?: string;
 }
 
-export interface ZipArchiveResult {
+export interface IZipArchiveResult {
   zipPath: string;
   manifest: ZipArchive.IZipArchiveManifest;
 }
@@ -19,7 +19,7 @@ export class ZipArchiver {
   /**
    * Create a ZIP archive containing the specified input and config files/directories
    */
-  async createArchive(options: ZipArchiveOptions): Promise<Result<ZipArchiveResult>> {
+  public async createArchive(options: IZipArchiveOptions): Promise<Result<IZipArchiveResult>> {
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const outputDir = options.outputDir || path.join(os.homedir(), 'Downloads');
@@ -59,10 +59,10 @@ export class ZipArchiver {
   /**
    * Get the default downloads directory path
    */
-  getDefaultDownloadsDir(): string {
+  public getDefaultDownloadsDir(): string {
     return path.join(os.homedir(), 'Downloads');
   }
 }
 
 // Export singleton instance
-export const zipArchiver = new ZipArchiver();
+export const zipArchiver: ZipArchiver = new ZipArchiver();

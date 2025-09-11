@@ -22,8 +22,6 @@
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
-/* eslint-disable no-use-before-define */
-
 /**
  * Primitive (terminal) values allowed in by JSON.
  * @public
@@ -52,7 +50,7 @@ export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
  * A {@link JsonArray | JsonArray} is an array containing only valid {@link JsonValue | JsonValues}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/naming-convention
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface JsonArray extends Array<JsonValue> {}
 
 /**

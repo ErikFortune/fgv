@@ -27,65 +27,90 @@ import {
   resolveResourceDetailed,
   getAvailableQualifiers,
   hasPendingContextChanges,
-  evaluateConditionsForCandidate,
-  type ResolutionOptions
+  evaluateConditionsForCandidate
 } from '../../../utils/resolutionUtils';
-import { ProcessedResources, ResolutionResult } from '../../../types';
+import { ICandidateInfo, IProcessedResources, IResolutionResult } from '../../../types';
+import {
+  DecisionIndex,
+  Import,
+  Qualifiers,
+  QualifierName,
+  QualifierTypes,
+  ResourceId,
+  ResourceJson,
+  Resources,
+  ResourceTypeIndex,
+  ResourceTypes,
+  Runtime,
+  QualifierTypeIndex,
+  ConditionPriority,
+  QualifierIndex,
+  ConditionIndex,
+  ConditionSetIndex
+} from '@fgv/ts-res';
 
 describe('resolutionUtils', () => {
-  let mockProcessedResources: ProcessedResources;
-  let mockResolver: any;
+  let mockProcessedResources: IProcessedResources;
+  let mockResolver: Runtime.ResourceResolver;
 
   beforeEach(() => {
     mockProcessedResources = {
       system: {
         resourceManager: {
           getBuiltResource: jest.fn()
-        } as any,
+        } as unknown as Resources.ResourceManagerBuilder,
         qualifiers: {
           validating: {
             get: jest.fn()
           }
-        } as any,
-        qualifierTypes: {} as any,
-        resourceTypes: {} as any,
-        importManager: {} as any,
-        contextQualifierProvider: {} as any
+        } as unknown as Qualifiers.IReadOnlyQualifierCollector,
+        qualifierTypes: {} as unknown as QualifierTypes.ReadOnlyQualifierTypeCollector,
+        resourceTypes: {} as unknown as ResourceTypes.ReadOnlyResourceTypeCollector,
+        importManager: {} as unknown as Import.ImportManager,
+        contextQualifierProvider: {} as unknown as Runtime.ValidatingSimpleContextQualifierProvider
       },
       compiledCollection: {
         resources: [
           {
-            id: 'resource1' as unknown as any,
-            decision: 0 as unknown as any,
-            type: {} as any,
+            id: 'resource1' as ResourceId,
+            decision: 0 as DecisionIndex,
+            type: -1 as ResourceTypeIndex,
             candidates: []
           },
           {
-            id: 'resource2' as unknown as any,
-            decision: 1 as unknown as any,
-            type: {} as any,
+            id: 'resource2' as ResourceId,
+            decision: 1 as DecisionIndex,
+            type: -1 as ResourceTypeIndex,
             candidates: []
           }
         ],
         qualifiers: [
-          { name: 'language' as unknown as any, type: {} as any, defaultPriority: 100 as unknown as any },
-          { name: 'territory' as unknown as any, type: {} as any, defaultPriority: 90 as unknown as any }
+          {
+            name: 'language' as QualifierName,
+            type: -1 as QualifierTypeIndex,
+            defaultPriority: 100 as ConditionPriority
+          },
+          {
+            name: 'territory' as QualifierName,
+            type: -1 as QualifierTypeIndex,
+            defaultPriority: 90 as ConditionPriority
+          }
         ],
         qualifierTypes: [],
         resourceTypes: [],
         conditions: [
           {
-            qualifierIndex: 0 as unknown as any,
+            qualifierIndex: 0 as QualifierIndex,
             value: 'en',
             operator: 'matches',
-            priority: 100 as unknown as any
+            priority: 100 as ConditionPriority
           }
         ],
-        conditionSets: [{ conditions: [0 as unknown as any] }],
-        decisions: [{ conditionSets: [0 as unknown as any] }],
+        conditionSets: [{ conditions: [0 as ConditionIndex] }],
+        decisions: [{ conditionSets: [0 as ConditionSetIndex] }],
         candidateValues: []
       },
-      resolver: {} as any,
+      resolver: {} as unknown as Runtime.ResourceResolver,
       resourceCount: 2,
       summary: {
         totalResources: 2,
@@ -103,10 +128,8 @@ describe('resolutionUtils', () => {
       resolveAllResourceCandidates: jest.fn(),
       resolveComposedResourceValue: jest.fn(),
       resolveDecision: jest.fn(),
-      conditionCache: {
-        0: { score: 1.0, matchType: 'match' }
-      }
-    };
+      conditionCache: [{ score: 1.0, matchType: 'match' }]
+    } as unknown as Runtime.ResourceResolver;
   });
 
   describe('getAvailableQualifiers', () => {
@@ -121,7 +144,7 @@ describe('resolutionUtils', () => {
         ...mockProcessedResources,
         compiledCollection: {
           ...mockProcessedResources.compiledCollection,
-          qualifiers: undefined as any
+          qualifiers: undefined as unknown as ResourceJson.Compiled.ICompiledQualifier[]
         }
       };
 
@@ -151,22 +174,22 @@ describe('resolutionUtils', () => {
           ...mockProcessedResources.compiledCollection,
           qualifiers: [
             {
-              name: 'language' as unknown as any,
-              type: {} as any,
+              name: 'language' as QualifierName,
+              type: -1 as QualifierTypeIndex,
               typeName: 'language',
-              defaultPriority: 100 as unknown as any
+              defaultPriority: 100 as ConditionPriority
             },
             {
-              name: 'territory' as unknown as any,
-              type: {} as any,
+              name: 'territory' as QualifierName,
+              type: -1 as QualifierTypeIndex,
               typeName: 'territory',
-              defaultPriority: 90 as unknown as any
+              defaultPriority: 90 as ConditionPriority
             },
             {
-              name: 'platform' as unknown as any,
-              type: {} as any,
+              name: 'platform' as QualifierName,
+              type: -1 as QualifierTypeIndex,
               typeName: 'literal',
-              defaultPriority: 80 as unknown as any
+              defaultPriority: 80 as ConditionPriority
             }
           ]
         }
@@ -238,7 +261,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         0,
-        invalidCompiled,
+        invalidCompiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -251,7 +274,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         999, // Out of range
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -264,7 +287,7 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         0,
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -292,8 +315,8 @@ describe('resolutionUtils', () => {
       const result = evaluateConditionsForCandidate(
         mockResolver,
         0,
-        compiled,
-        compiledCollectionWithoutConditionSets
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
+        compiledCollectionWithoutConditionSets as unknown as ResourceJson.Compiled.ICompiledResourceCollection
       );
 
       expect(result).toEqual([]);
@@ -307,13 +330,13 @@ describe('resolutionUtils', () => {
             throw new Error('Context error');
           })
         }
-      };
+      } as unknown as Runtime.ResourceResolver;
       const compiled = { decision: 0 };
 
       const result = evaluateConditionsForCandidate(
         errorResolver,
         0,
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -324,13 +347,13 @@ describe('resolutionUtils', () => {
       const resolverWithoutCache = {
         ...mockResolver,
         conditionCache: {}
-      };
+      } as unknown as Runtime.ResourceResolver;
       const compiled = { decision: 0 };
 
       const result = evaluateConditionsForCandidate(
         resolverWithoutCache,
         0,
-        compiled,
+        compiled as unknown as ResourceJson.Compiled.ICompiledResource,
         mockProcessedResources.compiledCollection
       );
 
@@ -372,7 +395,7 @@ describe('resolutionUtils', () => {
     test('resolves resource successfully', () => {
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(true);
         expect(resolution.resourceId).toBe('resource1');
         expect(resolution.resource).toBeDefined();
@@ -391,7 +414,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'nonexistent', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(false);
         expect(resolution.resourceId).toBe('nonexistent');
         expect(resolution.error).toBe('Failed to get resource: Resource not found');
@@ -409,7 +432,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'resource1', resourcesWithoutCompiledResource);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(false);
         expect(resolution.resourceId).toBe('resource1');
         expect(resolution.error).toBe('Failed to find compiled resource');
@@ -421,7 +444,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(false);
         expect(resolution.resourceId).toBe('resource1');
         expect(resolution.error).toBe('Failed to resolve decision: Decision failed');
@@ -445,19 +468,19 @@ describe('resolutionUtils', () => {
     test('builds candidate details with match information', () => {
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.candidateDetails).toBeDefined();
         if (resolution.candidateDetails) {
           expect(resolution.candidateDetails).toHaveLength(2);
 
           // First candidate should be matched
-          const matchedCandidate = resolution.candidateDetails.find((c) => c.matched);
+          const matchedCandidate = resolution.candidateDetails.find((c: ICandidateInfo) => c.matched);
           expect(matchedCandidate).toBeDefined();
           expect(matchedCandidate!.matchType).toBe('match');
           expect(matchedCandidate!.isDefaultMatch).toBe(false);
 
           // Second candidate should be non-matched
-          const nonMatchedCandidate = resolution.candidateDetails.find((c) => !c.matched);
+          const nonMatchedCandidate = resolution.candidateDetails.find((c: ICandidateInfo) => !c.matched);
           expect(nonMatchedCandidate).toBeDefined();
           expect(nonMatchedCandidate!.matchType).toBe('noMatch');
           expect(nonMatchedCandidate!.isDefaultMatch).toBe(false);
@@ -470,7 +493,7 @@ describe('resolutionUtils', () => {
 
       const result = resolveResourceDetailed(mockResolver, 'resource1', mockProcessedResources);
 
-      expect(result).toSucceedAndSatisfy((resolution: ResolutionResult) => {
+      expect(result).toSucceedAndSatisfy((resolution: IResolutionResult) => {
         expect(resolution.success).toBe(true); // Still succeeds but with error info
         expect(resolution.error).toBe('Resolution failed');
         expect(resolution.bestCandidate).toBeUndefined();

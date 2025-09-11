@@ -13,7 +13,7 @@ Provides a comprehensive interface for filtering resources based on qualifier va
 **Signature:**
 
 ```typescript
-FilterView: React.FC<FilterViewProps>
+FilterView: React.FC<IFilterViewProps>
 ```
 
 ## Example
@@ -43,7 +43,6 @@ function MyFilterTool() {
         updateReduceQualifiers: (reduce) => setFilterState(prev => ({...prev, reduceQualifiers: reduce}))
       }}
       onFilterResult={(result) => console.log('Filter result:', result)}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

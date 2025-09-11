@@ -46,7 +46,7 @@ export function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<u
     const fullPath = path.resolve(srcPath);
     const body = fs.readFileSync(fullPath, 'utf8').toString();
     options = options ?? {};
-    // eslint-disable-next-line
+
     return parse(body, {
       transform: (s: string) => s.trim(),
       header: false,

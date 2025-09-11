@@ -28,15 +28,14 @@ import * as ObservabilityTools from '../utils/observability';
  * Provides access to diagnostic and user loggers throughout the component tree.
  * @public
  */
-export const ObservabilityContext = createContext<ObservabilityTools.IObservabilityContext>(
-  ObservabilityTools.DefaultObservabilityContext
-);
+export const ObservabilityContext: React.Context<ObservabilityTools.IObservabilityContext> =
+  createContext<ObservabilityTools.IObservabilityContext>(ObservabilityTools.DefaultObservabilityContext);
 
 /**
  * Props for the ObservabilityProvider component.
  * @public
  */
-export interface ObservabilityProviderProps {
+export interface IObservabilityProviderProps {
   /** Child components that will have access to the observability context */
   children: ReactNode;
   /** Optional observability context to provide (defaults to console-based context) */
@@ -73,7 +72,7 @@ export interface ObservabilityProviderProps {
  * @returns JSX provider element
  * @public
  */
-export const ObservabilityProvider: React.FC<ObservabilityProviderProps> = ({
+export const ObservabilityProvider: React.FC<IObservabilityProviderProps> = ({
   children,
   observabilityContext = ObservabilityTools.DefaultObservabilityContext
 }) => <ObservabilityContext.Provider value={observabilityContext}>{children}</ObservabilityContext.Provider>;

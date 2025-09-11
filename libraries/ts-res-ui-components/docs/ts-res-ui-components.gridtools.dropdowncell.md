@@ -11,7 +11,7 @@ Supports both dropdown (restricted to options) and combobox (allows custom value
 **Signature:**
 
 ```typescript
-DropdownCell: React.FC<DropdownCellProps>
+DropdownCell: React.FC<IDropdownCellProps>
 ```
 
 ## Example

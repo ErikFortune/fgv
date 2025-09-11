@@ -69,7 +69,7 @@ Parses configuration data from JSON or YAML format and performs validation to en
 </td></tr>
 <tr><td>
 
-[useConfigurationState(initialConfiguration, onConfigurationChange, onUnsavedChanges)](./ts-res-ui-components.configurationtools.useconfigurationstate.md)
+[useIConfigurationState(initialConfiguration, onConfigurationChange, onUnsavedChanges)](./ts-res-ui-components.configurationtools.useiconfigurationstate.md)
 
 
 </td><td>
@@ -110,7 +110,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ConfigurationViewProps](./ts-res-ui-components.configurationtools.configurationviewprops.md)
+[IConfigurationViewProps](./ts-res-ui-components.configurationtools.iconfigurationviewprops.md)
 
 
 </td><td>

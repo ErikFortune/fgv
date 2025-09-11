@@ -11,7 +11,7 @@ The ResourceTypeEditForm provides an interface for defining resource types that 
 **Signature:**
 
 ```typescript
-ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps>
+ResourceTypeEditForm: React.FC<IResourceTypeEditFormProps>
 ```
 
 ## Example 1
@@ -102,7 +102,7 @@ const templateType = {
   resourceType={templateType}
   onSave={(updatedType) => {
     // Handle custom type processing
-    console.log('Custom type saved:', updatedType.typeName);
+    o11y.user.success(`${updatedType.name}: Custom type '${updatedType.typeName}' saved successfully`);
     saveToConfiguration(updatedType);
   }}
   onCancel={cancelEdit}

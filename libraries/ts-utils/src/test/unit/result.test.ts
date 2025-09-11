@@ -375,6 +375,21 @@ describe('Result module', () => {
 
         expect(result).toBe(success);
       });
+
+      test('ignores message formatter option and does not call it', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const formatter = jest.fn((msg: string) => `formatted: ${msg}`);
+        const success = succeed('test value');
+
+        success.report(reporter, { success: 'info', message: formatter });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 'test value');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+        expect(formatter).not.toHaveBeenCalled();
+      });
     });
   });
 
@@ -585,6 +600,21 @@ describe('Result module', () => {
         const result = failure.report(undefined, { failure: 'warning' });
 
         expect(result).toBe(failure);
+      });
+
+      test('applies message formatter to failure message', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const formatter = jest.fn((msg: string) => `formatted: ${msg}`);
+        const failure = fail('test error');
+
+        failure.report(reporter, { message: formatter });
+
+        expect(formatter).toHaveBeenCalledWith('test error');
+        expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'formatted: test error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
       });
     });
 
@@ -828,6 +858,21 @@ describe('Result module', () => {
 
         expect(result).toBe(detailedSuccess);
       });
+
+      test('ignores message formatter option and does not call it', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const formatter = jest.fn((msg: string) => `formatted: ${msg}`);
+        const detailedSuccess = succeedWithDetail('test', 'detail');
+
+        detailedSuccess.report(reporter, { success: 'detail', message: formatter });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 'test', 'detail');
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+        expect(formatter).not.toHaveBeenCalled();
+      });
     });
 
     describe('asResult getter', () => {
@@ -1014,6 +1059,25 @@ describe('Result module', () => {
         const result = detailedFailure.report(undefined, { failure: 'warning' });
 
         expect(result).toBe(detailedFailure);
+      });
+
+      test('applies message formatter including detail to failure message', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const formatter = jest.fn((msg: string, detail?: string) => `${detail}: ${msg}!`);
+        const detailedFailure = failWithDetail('test error', 'error detail');
+
+        detailedFailure.report(reporter, { message: formatter });
+
+        expect(formatter).toHaveBeenCalledWith('test error', 'error detail');
+        expect(reporter.reportFailure).toHaveBeenCalledWith(
+          'error',
+          'error detail: test error!',
+          'error detail'
+        );
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
       });
     });
 

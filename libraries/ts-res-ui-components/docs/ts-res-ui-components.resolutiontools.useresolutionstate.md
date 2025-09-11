@@ -13,7 +13,7 @@ Key features: - \*\*Context Management\*\*: Set and update resolution context (q
 **Signature:**
 
 ```typescript
-export declare function useResolutionState(processedResources: ProcessedResources | null, onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void, onSystemUpdate?: (updatedResources: ProcessedResources) => void): UseResolutionStateReturn;
+export declare function useResolutionState(processedResources: IProcessedResources | null, onSystemUpdate?: (updatedResources: IProcessedResources) => void): IUseResolutionStateReturn;
 ```
 
 ## Parameters
@@ -41,7 +41,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md) \| null
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md) \| null
 
 
 </td><td>
@@ -52,28 +52,12 @@ The processed resources to work with
 </td></tr>
 <tr><td>
 
-onMessage
-
-
-</td><td>
-
-(type: 'info' \| 'warning' \| 'error' \| 'success', message: string) =&gt; void
-
-
-</td><td>
-
-_(Optional)_ Optional callback for displaying messages to the user
-
-
-</td></tr>
-<tr><td>
-
 onSystemUpdate
 
 
 </td><td>
 
-(updatedResources: [ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->) =&gt; void
+(updatedResources: [IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)<!-- -->) =&gt; void
 
 
 </td><td>
@@ -86,7 +70,7 @@ _(Optional)_ Optional callback when the resource system is updated with edits
 
 **Returns:**
 
-UseResolutionStateReturn
+IUseResolutionStateReturn
 
 Object containing resolution state, actions, and available qualifiers
 
@@ -97,7 +81,6 @@ Object containing resolution state, actions, and available qualifiers
 function ResourceResolutionView({ processedResources }: { processedResources: ProcessedResources }) {
   const { state, actions, availableQualifiers } = useResolutionState(
     processedResources,
-    (type, message) => console.log(`${type}: ${message}`),
     (updatedResources) => {
       // Handle system updates when edits are applied
       setProcessedResources(updatedResources);

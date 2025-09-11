@@ -1,23 +1,14 @@
 import { useState, useCallback } from 'react';
 import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
 import {
-  ResourceManagerState,
-  ProcessedResources,
-  ExtendedProcessedResources,
-  ImportedDirectory,
-  ImportedFile,
+  IResourceManagerState,
+  IProcessedResources,
+  IExtendedProcessedResources,
+  IImportedDirectory,
+  IImportedFile,
   JsonValue
 } from '../types';
-import {
-  Config,
-  Bundle,
-  Runtime,
-  Resources,
-  Import,
-  QualifierTypes,
-  Qualifiers,
-  ResourceTypes
-} from '@fgv/ts-res';
+import { Config, Bundle, Runtime, Resources, Import, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
 import { processImportedFiles, processImportedDirectory } from '../utils/tsResIntegration';
 import { createResolverWithContext, resolveResourceDetailed } from '../utils/resolutionUtils';
 import * as ObservabilityTools from '../utils/observability';
@@ -28,7 +19,7 @@ import * as ObservabilityTools from '../utils/observability';
  *
  * @public
  */
-export interface UseResourceDataParams {
+export interface IUseResourceDataParams {
   /** Optional qualifier type factory for creating custom qualifier types */
   qualifierTypeFactory?: Config.IConfigInitFactory<
     QualifierTypes.Config.IAnyQualifierTypeConfig,
@@ -49,20 +40,20 @@ export interface UseResourceDataParams {
  *
  * @public
  */
-export interface UseResourceDataReturn {
+export interface IUseResourceDataReturn {
   /** Current state of the resource management system */
-  state: ResourceManagerState;
+  state: IResourceManagerState;
   /** Available actions for processing and managing resources */
   actions: {
     /** Process an imported directory structure into a resource system */
-    processDirectory: (directory: ImportedDirectory) => Promise<Result<void>>;
+    processDirectory: (directory: IImportedDirectory) => Promise<Result<void>>;
     /** Process a directory with an explicit configuration */
     processDirectoryWithConfig: (
-      directory: ImportedDirectory,
+      directory: IImportedDirectory,
       config: Config.Model.ISystemConfiguration
     ) => Promise<Result<void>>;
     /** Process an array of imported files into a resource system */
-    processFiles: (files: ImportedFile[]) => Promise<Result<void>>;
+    processFiles: (files: IImportedFile[]) => Promise<Result<void>>;
     /** Process a pre-compiled bundle file */
     processBundleFile: (bundle: Bundle.IBundle) => Promise<void>;
     /** Clear any current error state */
@@ -74,11 +65,11 @@ export interface UseResourceDataReturn {
     /** Apply a new configuration to the current system */
     applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
     /** Update the processed resources state directly */
-    updateProcessedResources: (processedResources: ProcessedResources) => void;
+    updateProcessedResources: (processedResources: IProcessedResources) => void;
   };
 }
 
-const initialState: ResourceManagerState = {
+const initialState: IResourceManagerState = {
   isProcessing: false,
   processedResources: null,
   error: null,
@@ -125,22 +116,22 @@ const initialState: ResourceManagerState = {
  *
  * @public
  */
-export function useResourceData(params?: UseResourceDataParams): UseResourceDataReturn {
-  const [state, setState] = useState<ResourceManagerState>(initialState);
+export function useResourceData(params?: IUseResourceDataParams): IUseResourceDataReturn {
+  const [state, setState] = useState<IResourceManagerState>(initialState);
   const o11y = params?.o11y ?? ObservabilityTools.DefaultObservabilityContext;
 
   const processDirectory = useCallback(
-    async (directory: ImportedDirectory): Promise<Result<void>> => {
+    async (directory: IImportedDirectory): Promise<Result<void>> => {
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        return processImportedDirectory(
+        return processImportedDirectory({
           directory,
-          state.activeConfiguration || undefined,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
+          systemConfig: state.activeConfiguration || undefined,
+          qualifierTypeFactory: params?.qualifierTypeFactory,
+          resourceTypeFactory: params?.resourceTypeFactory,
           o11y
-        )
+        })
           .onSuccess((value) => {
             o11y.diag.info(
               `[useResourceData] Directory processing succeeded, resources found: ${
@@ -193,19 +184,19 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
 
   const processDirectoryWithConfig = useCallback(
     async (
-      directory: ImportedDirectory,
+      directory: IImportedDirectory,
       config: Config.Model.ISystemConfiguration
     ): Promise<Result<void>> => {
       setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
 
       try {
-        return processImportedDirectory(
+        return processImportedDirectory({
           directory,
-          config,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
+          systemConfig: config,
+          qualifierTypeFactory: params?.qualifierTypeFactory,
+          resourceTypeFactory: params?.resourceTypeFactory,
           o11y
-        )
+        })
           .onSuccess((value) => {
             setState((prev) => ({
               ...prev,
@@ -242,17 +233,17 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
   );
 
   const processFiles = useCallback(
-    async (files: ImportedFile[]): Promise<Result<void>> => {
+    async (files: IImportedFile[]): Promise<Result<void>> => {
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        return processImportedFiles(
+        return processImportedFiles({
           files,
-          state.activeConfiguration || undefined,
-          params?.qualifierTypeFactory,
-          params?.resourceTypeFactory,
+          systemConfig: state.activeConfiguration || undefined,
+          qualifierTypeFactory: params?.qualifierTypeFactory,
+          resourceTypeFactory: params?.resourceTypeFactory,
           o11y
-        )
+        })
           .onSuccess((value) => {
             setState((prev) => ({
               ...prev,
@@ -394,7 +385,6 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
             o11y.diag.info('[Bundle Processing] Extracting resource type:', rt);
             // ResourceTypes in bundles might not have a name property
             // Default to 'json' for JsonResourceType
-            const typeName = rt.systemTypeName;
             return {
               name: rt.key,
               typeName: rt.systemTypeName
@@ -431,7 +421,7 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
         // We'll derive the compiled collection from ResourceManagerBuilder when needed
 
         // Create the processed resources structure with bundle data
-        const processedResources: ProcessedResources = {
+        const processedResources: IProcessedResources = {
           system: {
             qualifierTypes: system.qualifierTypes,
             qualifiers: system.qualifiers,
@@ -525,8 +515,8 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
                   }
                 : null,
               bestCandidate: resolutionResult.bestCandidate?.json,
-              allCandidates: resolutionResult.allCandidates?.map((c: any) => c.json),
-              candidateDetails: resolutionResult.candidateDetails?.map((cd: any) => ({
+              allCandidates: resolutionResult.allCandidates?.map((c) => c.json),
+              candidateDetails: resolutionResult.candidateDetails?.map((cd) => ({
                 candidateIndex: cd.candidateIndex,
                 matched: cd.matched,
                 matchType: cd.matchType,
@@ -551,13 +541,13 @@ export function useResourceData(params?: UseResourceDataParams): UseResourceData
     setState((prev) => ({ ...prev, activeConfiguration: config }));
   }, []);
 
-  const updateProcessedResources = useCallback((processedResources: ProcessedResources) => {
+  const updateProcessedResources = useCallback((processedResources: IProcessedResources) => {
     setState((prev) => {
-      const incomingExtended = processedResources as ExtendedProcessedResources;
+      const incomingExtended = processedResources as IExtendedProcessedResources;
       const existingExtended = prev.processedResources;
 
       // Build the extended properties object, only including defined values
-      const extendedProps: Partial<ExtendedProcessedResources> = {};
+      const extendedProps: Partial<IExtendedProcessedResources> = {};
 
       // Handle activeConfiguration - prefer incoming, then existing, then leave undefined
       const activeConfig = incomingExtended.activeConfiguration ?? existingExtended?.activeConfiguration;

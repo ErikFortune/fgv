@@ -15,7 +15,6 @@
  *   onImport={handleFileImport}
  *   onBundleImport={handleBundleImport}
  *   onZipImport={handleZipImport}
- *   onMessage={onMessage}
  * />
  *
  * // Or use zip-archive packlet directly with processing helpers
@@ -46,4 +45,4 @@ export { isZipFile } from '../utils/zipLoader/zipUtils';
 export { processZipResources, processZipLoadResult } from '../utils/zipLoader/zipProcessingHelpers';
 
 // Export view component props
-export type { ImportViewProps } from '../types';
+export type { IImportViewProps } from '../types';

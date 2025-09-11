@@ -1,5 +1,5 @@
 import React from 'react';
-import { ProcessedResources, ExtendedProcessedResources, ViewBaseProps } from '../../../types';
+import { IProcessedResources, IExtendedProcessedResources, IViewBaseProps } from '../../../types';
 
 /**
  * Resource selection data returned by the onResourceSelect callback.
@@ -9,7 +9,7 @@ import { ProcessedResources, ExtendedProcessedResources, ViewBaseProps } from '.
  *
  * @example
  * ```tsx
- * const handleResourceSelect = (selection: ResourceSelection<MyResourceType>) => {
+ * const handleResourceSelect = (selection: IResourceSelection<MyResourceType>) => {
  *   if (selection.resourceId) {
  *     console.log('Selected:', selection.resourceId);
  *     if (selection.resourceData) {
@@ -24,7 +24,7 @@ import { ProcessedResources, ExtendedProcessedResources, ViewBaseProps } from '.
  *
  * @public
  */
-export interface ResourceSelection<T = unknown> {
+export interface IResourceSelection<T = unknown> {
   /** The ID of the selected resource, or null if no selection */
   resourceId: string | null;
   /** The actual resource data if available and typed */
@@ -43,7 +43,7 @@ export interface ResourceSelection<T = unknown> {
  *
  * @example
  * ```tsx
- * const pickerOptions: ResourcePickerOptions = {
+ * const pickerOptions: IResourcePickerOptions = {
  *   defaultView: 'tree',
  *   enableSearch: true,
  *   searchPlaceholder: 'Find resources...',
@@ -55,7 +55,7 @@ export interface ResourceSelection<T = unknown> {
  *
  * @public
  */
-export interface ResourcePickerOptions {
+export interface IResourcePickerOptions {
   /** View and navigation options */
   /** Default view mode to use on initial render */
   defaultView?: 'list' | 'tree';
@@ -117,24 +117,24 @@ export interface ResourcePickerOptions {
  *
  * @public
  */
-export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
+export interface IResourcePickerProps<T = unknown> extends IViewBaseProps {
   /** Core functionality */
   /** Processed resources to display in the picker */
-  resources: ProcessedResources | ExtendedProcessedResources | null;
+  resources: IProcessedResources | IExtendedProcessedResources | null;
   /** Currently selected resource ID */
   selectedResourceId: string | null;
   /** Callback fired when a resource is selected, providing comprehensive selection data */
-  onResourceSelect: (selection: ResourceSelection<T>) => void;
+  onResourceSelect: (selection: IResourceSelection<T>) => void;
 
   /** Functional data */
   /** Annotations to display next to resource names (badges, indicators, etc.) */
-  resourceAnnotations?: ResourceAnnotations;
+  resourceAnnotations?: IResourceAnnotations;
   /** Pending (unsaved) resources to display alongside persisted resources */
-  pendingResources?: PendingResource<T>[];
+  pendingResources?: IPendingResource<T>[];
 
   /** UI behavior configuration */
   /** Options controlling picker appearance and behavior */
-  options?: ResourcePickerOptions;
+  options?: IResourcePickerOptions;
 }
 
 /**
@@ -145,7 +145,7 @@ export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
  *
  * @example
  * ```tsx
- * const annotations: ResourceAnnotations = {
+ * const annotations: IResourceAnnotations = {
  *   'user.welcome': {
  *     badge: { text: '3', variant: 'info' },
  *     suffix: '(3 candidates)'
@@ -159,9 +159,9 @@ export interface ResourcePickerProps<T = unknown> extends ViewBaseProps {
  *
  * @public
  */
-export interface ResourceAnnotations {
+export interface IResourceAnnotations {
   /** Map of resource IDs to their annotation configurations */
-  [resourceId: string]: ResourceAnnotation;
+  [resourceId: string]: IResourceAnnotation;
 }
 
 /**
@@ -174,7 +174,7 @@ export interface ResourceAnnotations {
  *
  * @example
  * ```tsx
- * const annotation: ResourceAnnotation = {
+ * const annotation: IResourceAnnotation = {
  *   badge: { text: 'NEW', variant: 'new' },
  *   indicator: {
  *     type: 'icon',
@@ -188,7 +188,7 @@ export interface ResourceAnnotations {
  *
  * @public
  */
-export interface ResourceAnnotation {
+export interface IResourceAnnotation {
   /** Small colored badge displayed next to the resource name */
   badge?: {
     /** Text content of the badge */
@@ -220,7 +220,7 @@ export interface ResourceAnnotation {
  *
  * @example
  * ```tsx
- * const pendingResources: PendingResource<MyResourceType>[] = [
+ * const pendingResources: IPendingResource<MyResourceType>[] = [
  *   {
  *     id: 'user.new-welcome',
  *     type: 'new',
@@ -239,7 +239,7 @@ export interface ResourceAnnotation {
  *
  * @public
  */
-export interface PendingResource<T = unknown> {
+export interface IPendingResource<T = unknown> {
   /** Unique identifier for the pending resource */
   id: string;
   /** Type of pending operation */
@@ -255,13 +255,13 @@ export interface PendingResource<T = unknown> {
 /**
  * Props for individual resource items
  */
-export interface ResourceItemProps<T = unknown> {
+export interface IResourceItemProps<T = unknown> {
   resourceId: string;
   displayName?: string;
   isSelected: boolean;
   isPending?: boolean;
-  annotation?: ResourceAnnotation;
-  onClick: (selection: ResourceSelection<T>) => void;
+  annotation?: IResourceAnnotation;
+  onClick: (selection: IResourceSelection<T>) => void;
   searchTerm?: string;
   className?: string;
   resourceData?: T; // The actual resource data if available
@@ -271,12 +271,12 @@ export interface ResourceItemProps<T = unknown> {
 /**
  * Props for the list view component
  */
-export interface ResourcePickerListProps<T = unknown> {
+export interface IResourcePickerListProps<T = unknown> {
   resourceIds: string[];
-  pendingResources?: PendingResource<T>[];
+  pendingResources?: IPendingResource<T>[];
   selectedResourceId: string | null;
-  onResourceSelect: (selection: ResourceSelection<T>) => void;
-  resourceAnnotations?: ResourceAnnotations;
+  onResourceSelect: (selection: IResourceSelection<T>) => void;
+  resourceAnnotations?: IResourceAnnotations;
   searchTerm?: string;
   rootPath?: string;
   hideRootNode?: boolean;
@@ -287,12 +287,12 @@ export interface ResourcePickerListProps<T = unknown> {
 /**
  * Props for the tree view component
  */
-export interface ResourcePickerTreeProps<T = unknown> {
-  resources: ProcessedResources | ExtendedProcessedResources;
-  pendingResources?: PendingResource<T>[];
+export interface IResourcePickerTreeProps<T = unknown> {
+  resources: IProcessedResources | IExtendedProcessedResources;
+  pendingResources?: IPendingResource<T>[];
   selectedResourceId: string | null;
-  onResourceSelect: (selection: ResourceSelection<T>) => void;
-  resourceAnnotations?: ResourceAnnotations;
+  onResourceSelect: (selection: IResourceSelection<T>) => void;
+  resourceAnnotations?: IResourceAnnotations;
   searchTerm?: string;
   rootPath?: string;
   hideRootNode?: boolean;

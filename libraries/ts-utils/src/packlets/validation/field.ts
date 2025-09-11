@@ -28,7 +28,7 @@ import { ValidatorBase } from './validatorBase';
  * Parameters used to construct a {@link Validation.FieldValidator | FieldValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface FieldValidatorOptions<TC> extends ValidatorOptions<TC> {
   optional?: boolean;
 }

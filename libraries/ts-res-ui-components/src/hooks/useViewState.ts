@@ -1,18 +1,18 @@
 import { useState, useCallback } from 'react';
-import { Message } from '../types';
+import { IMessage } from '../types';
 
 /**
  * Return type for the useViewState hook.
  *
  * @public
  */
-export interface UseViewStateReturn {
+export interface IUseViewStateReturn {
   /** Array of current messages (info, warning, error, success) */
-  messages: Message[];
+  messages: IMessage[];
   /** Currently selected resource ID */
   selectedResourceId: string | null;
   /** Add a new message to the message list */
-  addMessage: (type: Message['type'], message: string) => void;
+  addMessage: (type: IMessage['type'], message: string) => void;
   /** Clear all messages */
   clearMessages: () => void;
   /** Select a resource by ID */
@@ -33,23 +33,23 @@ export interface UseViewStateReturn {
  *   const {
  *     messages,
  *     selectedResourceId,
- *     addMessage,
- *     clearMessages,
+ *     addIMessage,
+ *     clearIMessages,
  *     selectResource
  *   } = useViewState();
  *
  *   const handleOperation = async () => {
  *     try {
  *       await someAsyncOperation();
- *       addMessage('success', 'Operation completed successfully');
+ *       addIMessage('success', 'Operation completed successfully');
  *     } catch (error) {
- *       addMessage('error', `Operation failed: ${error.message}`);
+ *       addIMessage('error', `Operation failed: ${error.message}`);
  *     }
  *   };
  *
  *   return (
  *     <div>
- *       <MessageDisplay messages={messages} onClear={clearMessages} />
+ *       <IMessageDisplay messages={messages} onClear={clearIMessages} />
  *       <ResourcePicker
  *         selectedResourceId={selectedResourceId}
  *         onResourceSelect={(selection) => selectResource(selection.resourceId)}
@@ -62,25 +62,25 @@ export interface UseViewStateReturn {
  * @returns Object containing view state and state management functions
  * @public
  */
-export function useViewState(): UseViewStateReturn {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function useViewState(): IUseViewStateReturn {
+  const [messages, setIMessages] = useState<IMessage[]>([]);
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
 
-  const addMessage = useCallback((type: Message['type'], message: string) => {
-    const newMessage: Message = {
+  const addMessage = useCallback((type: IMessage['type'], message: string) => {
+    const newMessage: IMessage = {
       id: `msg-${Date.now()}-${Math.random()}`,
       type,
       message,
       timestamp: new Date()
     };
 
-    setMessages((prev) => [...prev, newMessage]);
+    setIMessages((prev) => [...prev, newMessage]);
 
     // No auto-clearing - let users manage messages with filters
   }, []);
 
   const clearMessages = useCallback(() => {
-    setMessages([]);
+    setIMessages([]);
   }, []);
 
   const selectResource = useCallback((resourceId: string | null) => {

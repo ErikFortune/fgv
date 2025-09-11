@@ -1,26 +1,26 @@
 import React, { useCallback, useMemo } from 'react';
 import {
-  ProcessedResources,
-  ResolutionActions,
-  ResolutionState,
-  ResolutionContextOptions
+  IProcessedResources,
+  IResolutionActions,
+  IResolutionState,
+  IResolutionContextOptions
 } from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 
 /**
  * Props for the SharedContextControls component.
  */
-export interface SharedContextControlsProps {
+export interface ISharedContextControlsProps {
   /** Available qualifiers for context building */
   availableQualifiers: string[];
   /** Current resolution state */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Resolution actions for context management */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Context configuration options */
-  contextOptions?: ResolutionContextOptions;
+  contextOptions?: IResolutionContextOptions;
   /** The resource system for qualifier value suggestions */
-  resources?: ProcessedResources | null;
+  resources?: IProcessedResources | null;
   /** Additional CSS classes */
   className?: string;
 }
@@ -50,7 +50,7 @@ export interface SharedContextControlsProps {
  * ```
  * @public
  */
-export const SharedContextControls: React.FC<SharedContextControlsProps> = ({
+export const SharedContextControls: React.FC<ISharedContextControlsProps> = ({
   availableQualifiers,
   resolutionState,
   resolutionActions,

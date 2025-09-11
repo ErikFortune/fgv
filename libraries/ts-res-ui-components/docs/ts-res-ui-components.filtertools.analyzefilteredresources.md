@@ -11,7 +11,7 @@ Compares original and filtered resources to provide detailed analysis of how fil
 **Signature:**
 
 ```typescript
-export declare function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: ProcessedResources, originalProcessedResources: ProcessedResources): FilterResult;
+export declare function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: IProcessedResources, originalProcessedResources: IProcessedResources): IFilterResult;
 ```
 
 ## Parameters
@@ -55,7 +55,7 @@ filteredProcessedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>
@@ -71,7 +71,7 @@ originalProcessedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>
@@ -84,7 +84,7 @@ The original resource system for comparison
 
 **Returns:**
 
-[FilterResult](./ts-res-ui-components.filtertools.filterresult.md)
+[IFilterResult](./ts-res-ui-components.filtertools.ifilterresult.md)
 
 Analysis result with per-resource filtering impact and warnings
 

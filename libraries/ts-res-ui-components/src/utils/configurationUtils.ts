@@ -1,11 +1,11 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { Config, QualifierTypes, Qualifiers, ResourceTypes } from '@fgv/ts-res';
+import { Config } from '@fgv/ts-res';
 
 /**
  * Configuration change tracking
  * @internal
  */
-export interface ConfigurationChanges {
+export interface IConfigurationChanges {
   hasChanges: boolean;
   changedSections: string[];
   timestamp: Date;
@@ -15,7 +15,7 @@ export interface ConfigurationChanges {
  * Configuration validation result
  * @internal
  */
-export interface ConfigurationValidationResult {
+export interface IConfigurationValidationResult {
   isValid: boolean;
   errors: string[];
   warnings: string[];
@@ -25,7 +25,7 @@ export interface ConfigurationValidationResult {
  * Configuration export options
  * @internal
  */
-export interface ConfigurationExportOptions {
+export interface IConfigurationExportOptions {
   format: 'json' | 'yaml';
   pretty: boolean;
   includeComments?: boolean;
@@ -36,7 +36,7 @@ export interface ConfigurationExportOptions {
  * Configuration template using predefined configurations from ts-res
  * @internal
  */
-export interface ConfigurationTemplate {
+export interface IConfigurationTemplate {
   id: Config.PredefinedSystemConfiguration;
   name: string;
   description: string;
@@ -85,7 +85,7 @@ export function getDefaultConfiguration(): Config.Model.ISystemConfiguration {
  */
 export function validateConfiguration(
   config: Config.Model.ISystemConfiguration
-): ConfigurationValidationResult {
+): IConfigurationValidationResult {
   const validate = Config.Convert.validateSystemConfiguration(config);
   if (validate.isSuccess()) {
     return {
@@ -150,10 +150,10 @@ export function compareConfigurations(
  * Track changes between configurations
  */
 /** @internal */
-export function trackConfigurationChanges(
+export function trackIConfigurationChanges(
   original: Config.Model.ISystemConfiguration,
   current: Config.Model.ISystemConfiguration
-): ConfigurationChanges {
+): IConfigurationChanges {
   const changedSections: string[] = [];
 
   // Check qualifierTypes
@@ -226,7 +226,7 @@ export function trackConfigurationChanges(
  */
 export function exportConfiguration(
   config: Config.Model.ISystemConfiguration,
-  options: ConfigurationExportOptions = { format: 'json', pretty: true }
+  options: IConfigurationExportOptions = { format: 'json', pretty: true }
 ): Result<string> {
   try {
     if (options.format === 'json') {
@@ -304,7 +304,7 @@ export function importConfiguration(data: string): Result<Config.Model.ISystemCo
  * Get predefined configuration templates from ts-res
  */
 /** @internal */
-export function getConfigurationTemplates(): ConfigurationTemplate[] {
+export function getIConfigurationTemplates(): IConfigurationTemplate[] {
   return Config.allPredefinedSystemConfigurations.map((configId) => {
     const config = Config.getPredefinedDeclaration(configId).orThrow();
 

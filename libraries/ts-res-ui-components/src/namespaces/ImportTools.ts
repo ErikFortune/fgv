@@ -15,7 +15,6 @@
  *   onImport={handleFileImport}
  *   onBundleImport={handleBundleImport}
  *   onZipImport={handleZipImport}
- *   onMessage={onMessage}
  * />
  *
  * // Or use utility functions for file processing
@@ -39,4 +38,4 @@ export {
 } from '../utils/fileProcessing';
 
 // Export types related to file handling and processing
-export type { ImportedFile, ImportedDirectory, ImportViewProps } from '../types';
+export type { IImportedFile, IImportedDirectory, IImportViewProps } from '../types';

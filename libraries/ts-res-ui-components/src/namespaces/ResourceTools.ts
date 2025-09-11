@@ -96,11 +96,11 @@ export { useResourceData } from '../hooks/useResourceData';
 
 // Export types related to resource management and processing
 export type {
-  ProcessedResources,
-  ExtendedProcessedResources,
-  ResourceManagerState,
-  ResourceEditorFactory,
+  IProcessedResources,
+  IExtendedProcessedResources,
+  IResourceManagerState,
+  IResourceEditorFactory,
   ResourceEditorResult,
-  ResourceEditorProps,
-  ResourceDetailData
+  IResourceEditorProps,
+  IResourceDetailData
 } from '../types';

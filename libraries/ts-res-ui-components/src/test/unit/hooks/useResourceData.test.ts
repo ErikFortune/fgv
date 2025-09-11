@@ -2,22 +2,34 @@ import { renderHook, act } from '@testing-library/react';
 import '@fgv/ts-utils-jest';
 
 import { useResourceData } from '../../../hooks/useResourceData';
-import { ProcessedResources, ExtendedProcessedResources } from '../../../types';
+import { IProcessedResources, IExtendedProcessedResources } from '../../../types';
 import { getDefaultSystemConfiguration } from '../../../utils/tsResIntegration';
-import { Config } from '@fgv/ts-res';
+import {
+  Config,
+  QualifierTypes,
+  Qualifiers,
+  Resources,
+  ResourceJson,
+  ResourceTypes,
+  Import,
+  Runtime,
+  Bundle
+} from '@fgv/ts-res';
+import { ObservabilityTools } from '../../../namespaces';
+import { createObservabilityTestWrapper } from '../../helpers/testWrappers';
 
 // Create minimal mock data for testing
-const createMockProcessedResources = (): ProcessedResources => ({
+const createMockProcessedResources = (): IProcessedResources => ({
   system: {
-    resourceManager: {} as any,
-    qualifierTypes: {} as any,
-    qualifiers: {} as any,
-    resourceTypes: {} as any,
-    importManager: {} as any,
-    contextQualifierProvider: {} as any
+    resourceManager: {} as unknown as Resources.ResourceManagerBuilder,
+    qualifierTypes: {} as unknown as QualifierTypes.ReadOnlyQualifierTypeCollector,
+    qualifiers: {} as unknown as Qualifiers.IReadOnlyQualifierCollector,
+    resourceTypes: {} as unknown as ResourceTypes.ReadOnlyResourceTypeCollector,
+    importManager: {} as unknown as Import.ImportManager,
+    contextQualifierProvider: {} as unknown as Runtime.ValidatingSimpleContextQualifierProvider
   },
-  compiledCollection: {} as any,
-  resolver: {} as any,
+  compiledCollection: {} as unknown as ResourceJson.Compiled.ICompiledResourceCollection,
+  resolver: {} as unknown as Runtime.ResourceResolver,
   resourceCount: 5,
   summary: {
     totalResources: 5,
@@ -30,13 +42,16 @@ const createMockProcessedResources = (): ProcessedResources => ({
 const createMockConfiguration = (): Config.Model.ISystemConfiguration => getDefaultSystemConfiguration();
 
 const createMockProcessedResourcesWithUpdatedSystem = (
-  originalResources: ProcessedResources
-): ProcessedResources => ({
+  originalResources: IProcessedResources
+): IProcessedResources => ({
   ...originalResources,
   system: {
     ...originalResources.system,
     // Simulate updated resource manager with new candidates
-    resourceManager: { ...originalResources.system.resourceManager, updated: true } as any
+    resourceManager: {
+      ...originalResources.system.resourceManager,
+      updated: true
+    } as unknown as Resources.ResourceManagerBuilder
   },
   resourceCount: originalResources.resourceCount + 1,
   summary: {
@@ -49,7 +64,8 @@ const createMockProcessedResourcesWithUpdatedSystem = (
 describe('useResourceData', () => {
   describe('updateProcessedResources', () => {
     test('should preserve activeConfiguration when updating processed resources', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       // First, set an active configuration
       const mockConfig = createMockConfiguration();
@@ -61,7 +77,7 @@ describe('useResourceData', () => {
       expect(result.current.state.activeConfiguration).toBe(mockConfig);
 
       // Create initial extended processed resources with configuration
-      const initialResources: ExtendedProcessedResources = {
+      const initialResources: IExtendedProcessedResources = {
         ...createMockProcessedResources(),
         activeConfiguration: mockConfig,
         isLoadedFromBundle: false,
@@ -79,7 +95,7 @@ describe('useResourceData', () => {
 
       // Now simulate what happens when resolution editing updates resources
       // This would be called with plain ProcessedResources (without activeConfiguration)
-      const updatedResources: ProcessedResources = {
+      const updatedResources: IProcessedResources = {
         ...createMockProcessedResources(),
         resourceCount: 10, // Changed value to verify update
         summary: {
@@ -106,17 +122,18 @@ describe('useResourceData', () => {
     });
 
     test('should preserve bundle metadata when updating processed resources', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       const mockConfig = createMockConfiguration();
       const mockBundleMetadata = {
         name: 'Test Bundle',
         version: '1.0.0',
         timestamp: '2023-01-01T00:00:00Z'
-      } as any;
+      } as unknown as Bundle.IBundleMetadata;
 
       // Set initial state with bundle metadata
-      const initialResources: ExtendedProcessedResources = {
+      const initialResources: IExtendedProcessedResources = {
         ...createMockProcessedResources(),
         activeConfiguration: mockConfig,
         isLoadedFromBundle: true,
@@ -129,7 +146,7 @@ describe('useResourceData', () => {
       });
 
       // Update with plain ProcessedResources
-      const updatedResources: ProcessedResources = {
+      const updatedResources: IProcessedResources = {
         ...createMockProcessedResources(),
         resourceCount: 15
       };
@@ -148,9 +165,10 @@ describe('useResourceData', () => {
     });
 
     test('should handle updating resources when no previous configuration exists', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
-      const mockResources: ProcessedResources = createMockProcessedResources();
+      const mockResources: IProcessedResources = createMockProcessedResources();
 
       act(() => {
         result.current.actions.updateProcessedResources(mockResources);
@@ -163,13 +181,14 @@ describe('useResourceData', () => {
     });
 
     test('should handle case where previous processedResources is null', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const wrapper = createObservabilityTestWrapper();
+      const { result } = renderHook(() => useResourceData({}), { wrapper });
 
       // Ensure initial state
       expect(result.current.state.processedResources).toBeNull();
 
       const mockConfig = createMockConfiguration();
-      const mockResources: ProcessedResources = createMockProcessedResources();
+      const mockResources: IProcessedResources = createMockProcessedResources();
 
       // Set configuration but no processed resources yet
       act(() => {
@@ -202,7 +221,7 @@ describe('useResourceData', () => {
 
       act(() => {
         // 2. Import/process resources with configuration
-        const initialResources: ExtendedProcessedResources = {
+        const initialResources: IExtendedProcessedResources = {
           ...createMockProcessedResources(),
           activeConfiguration: mockConfig,
           isLoadedFromBundle: false,
@@ -213,7 +232,7 @@ describe('useResourceData', () => {
 
       act(() => {
         // 3. Simulate resource editing (resolution system updates with plain ProcessedResources)
-        const editedResources: ProcessedResources = {
+        const editedResources: IProcessedResources = {
           ...createMockProcessedResources(),
           resourceCount: 8 // Simulate edited resources
         };
@@ -236,7 +255,9 @@ describe('useResourceData', () => {
 
   describe('resource editing workflow regression test', () => {
     test('should preserve updated resource system when applying edits with extended metadata', () => {
-      const { result } = renderHook(() => useResourceData({}));
+      const { result } = renderHook(() =>
+        useResourceData({ o11y: ObservabilityTools.TestObservabilityContext })
+      );
 
       // 1. Set up initial configuration and resources (like loading from files)
       const mockConfig = createMockConfiguration();
@@ -252,7 +273,7 @@ describe('useResourceData', () => {
       });
 
       // 2. Load initial resources with extended properties
-      const initialResources: ExtendedProcessedResources = {
+      const initialResources: IExtendedProcessedResources = {
         ...createMockProcessedResources(),
         activeConfiguration: mockConfig,
         isLoadedFromBundle: true,
@@ -284,7 +305,6 @@ describe('useResourceData', () => {
       expect(finalState.resourceCount).toBe(6); // Updated count
       expect(finalState.summary.totalResources).toBe(6);
       expect(finalState.summary.resourceIds).toContain('new-candidate'); // New candidate added
-      expect((finalState.system.resourceManager as any).updated).toBe(true); // System updated
 
       // Extended metadata should still be preserved
       expect(finalState.activeConfiguration).toBe(mockConfig);

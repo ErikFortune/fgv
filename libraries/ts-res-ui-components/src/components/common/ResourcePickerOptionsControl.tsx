@@ -1,16 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { CogIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ResourcePickerOptions } from '../pickers/ResourcePicker/types';
+import { IResourcePickerOptions } from '../pickers/ResourcePicker/types';
 
 /**
  * Props for the ResourcePickerOptionsControl component.
  * @public
  */
-export interface ResourcePickerOptionsControlProps {
+export interface IResourcePickerOptionsControlProps {
   /** Current picker options */
-  options: ResourcePickerOptions;
+  options: IResourcePickerOptions;
   /** Callback when options change */
-  onOptionsChange: (options: ResourcePickerOptions) => void;
+  onOptionsChange: (options: IResourcePickerOptions) => void;
   /** How to present the options control (default: 'hidden' for production use) */
   presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
   /** Custom class name */
@@ -41,7 +41,7 @@ export interface ResourcePickerOptionsControlProps {
  *
  * @public
  */
-export const ResourcePickerOptionsControl: React.FC<ResourcePickerOptionsControlProps> = ({
+export const ResourcePickerOptionsControl: React.FC<IResourcePickerOptionsControlProps> = ({
   options,
   onOptionsChange,
   presentation = 'hidden',
@@ -59,7 +59,7 @@ export const ResourcePickerOptionsControl: React.FC<ResourcePickerOptionsControl
   const [showPopover, setShowPopover] = useState(false);
 
   const handleOptionChange = useCallback(
-    <K extends keyof ResourcePickerOptions>(key: K, value: ResourcePickerOptions[K]) => {
+    <K extends keyof IResourcePickerOptions>(key: K, value: IResourcePickerOptions[K]) => {
       onOptionsChange({
         ...options,
         [key]: value
@@ -80,7 +80,7 @@ export const ResourcePickerOptionsControl: React.FC<ResourcePickerOptionsControl
     handleOptionChange('hideRootNode', false);
   }, [handleOptionChange]);
 
-  const renderControls = () => (
+  const renderControls = (): React.ReactElement => (
     <div className="space-y-4">
       {/* Basic Settings */}
       <div className="space-y-3">

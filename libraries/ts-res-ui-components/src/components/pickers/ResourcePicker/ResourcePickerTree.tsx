@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, ReactElement } from 'react';
 import {
   ChevronRightIcon,
   ChevronDownIcon,
@@ -6,39 +6,39 @@ import {
   FolderOpenIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
-import { ResourcePickerTreeProps, PendingResource } from './types';
+import { IResourcePickerTreeProps, IPendingResource, IResourceAnnotation } from './types';
 import { Runtime } from '@fgv/ts-res';
 import { useObservability } from '../../../contexts';
 
 /**
  * Virtual tree node that can represent both real and pending resources
  */
-interface VirtualTreeNode<T = unknown> {
+interface IVirtualTreeNode<T = unknown> {
   id: string;
   name: string;
   isLeaf: boolean;
   isPending: boolean;
-  pendingResource?: PendingResource<T>;
-  realNode?: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>;
-  children: Map<string, VirtualTreeNode<T>>;
+  pendingResource?: IPendingResource<T>;
+  realNode?: Runtime.ResourceTree.IReadOnlyResourceTreeNode<Runtime.IResource>;
+  children: Map<string, IVirtualTreeNode<T>>;
 }
 
 /**
  * Creates a virtual tree by merging real resource tree with pending resources
  */
 function createVirtualTree<T = unknown>(
-  realTree: Runtime.ResourceTree.IReadOnlyResourceTreeRoot<any> | null,
-  pendingResources: PendingResource<T>[] = []
-): VirtualTreeNode<T> | null {
+  realTree: Runtime.ResourceTree.IReadOnlyResourceTreeRoot<Runtime.IResource> | null,
+  pendingResources: IPendingResource<T>[] = []
+): IVirtualTreeNode<T> | null {
   if (!realTree) {
     return null;
   }
 
   // Helper to convert real node to virtual node
   const convertRealNode = (
-    realNode: Runtime.ResourceTree.IReadOnlyResourceTreeNode<any>
-  ): VirtualTreeNode<T> => {
-    const virtualNode: VirtualTreeNode<T> = {
+    realNode: Runtime.ResourceTree.IReadOnlyResourceTreeNode<Runtime.IResource>
+  ): IVirtualTreeNode<T> => {
+    const virtualNode: IVirtualTreeNode<T> = {
       id: realNode.id,
       name: realNode.name,
       isLeaf: realNode.isLeaf,
@@ -59,7 +59,7 @@ function createVirtualTree<T = unknown>(
   };
 
   // Start with the real tree structure
-  const rootNode: VirtualTreeNode<T> = {
+  const rootNode: IVirtualTreeNode<T> = {
     id: '',
     name: 'root',
     isLeaf: false,
@@ -87,7 +87,7 @@ function createVirtualTree<T = unknown>(
 
       if (!currentNode.children.has(partialPath)) {
         // Create virtual parent node
-        const parentNode: VirtualTreeNode<T> = {
+        const parentNode: IVirtualTreeNode<T> = {
           id: partialPath,
           name: pathParts[i],
           isLeaf: false,
@@ -102,7 +102,7 @@ function createVirtualTree<T = unknown>(
     }
 
     // Create the pending resource node
-    const pendingNode: VirtualTreeNode<T> = {
+    const pendingNode: IVirtualTreeNode<T> = {
       id: pendingResource.id,
       name: displayName,
       isLeaf: true,
@@ -132,7 +132,7 @@ export const ResourcePickerTree = <T = unknown,>({
   hideRootNode,
   className = '',
   emptyMessage = 'No resources available'
-}: ResourcePickerTreeProps<T>) => {
+}: IResourcePickerTreeProps<T>): ReactElement => {
   // Get observability context
   const o11y = useObservability();
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -179,7 +179,7 @@ export const ResourcePickerTree = <T = unknown,>({
     }
 
     // Find the target node in the virtual tree
-    const findVirtualNodeById = (node: VirtualTreeNode<T>, targetId: string): VirtualTreeNode<T> | null => {
+    const findVirtualNodeById = (node: IVirtualTreeNode<T>, targetId: string): IVirtualTreeNode<T> | null => {
       if (node.id === targetId) {
         return node;
       }
@@ -195,7 +195,7 @@ export const ResourcePickerTree = <T = unknown,>({
     };
 
     // Search through all top-level children to find the target
-    let targetNode: VirtualTreeNode<T> | null = null;
+    let targetNode: IVirtualTreeNode<T> | null = null;
     for (const child of virtualTree.children.values()) {
       targetNode = findVirtualNodeById(child, rootPath);
       if (targetNode) break;
@@ -214,15 +214,6 @@ export const ResourcePickerTree = <T = unknown,>({
     }
   }, [virtualTree, rootPath, hideRootNode]);
 
-  // Create a map of pending resource IDs for quick lookup
-  const pendingResourceMap = useMemo(() => {
-    const map = new Map<string, PendingResource<T>>();
-    pendingResources?.forEach((pr) => {
-      map.set(pr.id, pr);
-    });
-    return map;
-  }, [pendingResources]);
-
   const toggleNode = useCallback((nodeId: string) => {
     setExpandedNodes((prev) => {
       const newSet = new Set(prev);
@@ -235,7 +226,80 @@ export const ResourcePickerTree = <T = unknown,>({
     });
   }, []);
 
-  const renderTreeNode = (node: VirtualTreeNode<T>, level: number = 0): React.ReactElement | null => {
+  // Helper function to render annotations
+  const renderAnnotation = (annotation: IResourceAnnotation): React.ReactNode => {
+    const elements: React.ReactNode[] = [];
+
+    if (annotation.indicator) {
+      elements.push(
+        <span key="indicator" className="text-xs" title={annotation.indicator.tooltip}>
+          {annotation.indicator.type === 'dot' ? (
+            <span className="text-orange-500">●</span>
+          ) : (
+            annotation.indicator.value
+          )}
+        </span>
+      );
+    }
+
+    if (annotation.badge) {
+      const getBadgeClasses = (variant: string): string => {
+        const baseClasses = 'px-1.5 py-0.5 text-xs font-medium rounded';
+        const variantClasses: Record<string, string> = {
+          info: 'bg-blue-100 text-blue-800',
+          warning: 'bg-yellow-100 text-yellow-800',
+          success: 'bg-green-100 text-green-800',
+          error: 'bg-red-100 text-red-800',
+          edited: 'bg-purple-100 text-purple-800',
+          new: 'bg-emerald-100 text-emerald-800'
+        };
+        return `${baseClasses} ${variantClasses[variant] || variantClasses.info}`;
+      };
+
+      elements.push(
+        <span key="badge" className={getBadgeClasses(annotation.badge.variant)}>
+          {annotation.badge.text}
+        </span>
+      );
+    }
+
+    if (annotation.suffix) {
+      elements.push(
+        <span key="suffix" className="text-xs text-gray-500">
+          {annotation.suffix}
+        </span>
+      );
+    }
+
+    return elements;
+  };
+
+  // Component to highlight search terms in text
+  const HighlightedText: React.FC<{ text: string; searchTerm: string }> = ({ text, searchTerm }) => {
+    if (!searchTerm) {
+      return <span>{text}</span>;
+    }
+
+    // eslint-disable-next-line @rushstack/security/no-unsafe-regexp
+    const regex = new RegExp(`(${searchTerm})`, 'gi');
+    const parts = text.split(regex);
+
+    return (
+      <span>
+        {parts.map((part, index) =>
+          regex.test(part) ? (
+            <mark key={index} className="bg-yellow-200">
+              {part}
+            </mark>
+          ) : (
+            <span key={index}>{part}</span>
+          )
+        )}
+      </span>
+    );
+  };
+
+  const renderTreeNode = (node: IVirtualTreeNode<T>, level: number = 0): React.ReactElement | null => {
     const isExpanded = expandedNodes.has(node.id);
     const isSelected = selectedResourceId === node.id;
     const nodeIdLower = node.id.toLowerCase();
@@ -254,7 +318,7 @@ export const ResourcePickerTree = <T = unknown,>({
     // Check if any children match
     let hasMatchingChildren = false;
     if (!node.isLeaf && node.children && searchTerm) {
-      const checkChildren = (n: VirtualTreeNode): boolean => {
+      const checkChildren = (n: IVirtualTreeNode): boolean => {
         if (n.id.toLowerCase().includes(searchLower)) return true;
         if (!n.isLeaf && n.children) {
           for (const child of n.children.values()) {
@@ -369,7 +433,7 @@ export const ResourcePickerTree = <T = unknown,>({
         {!node.isLeaf && node.children && isExpanded && (
           <div>
             {Array.from(node.children.values())
-              .sort((a: VirtualTreeNode<T>, b: VirtualTreeNode<T>) => {
+              .sort((a: IVirtualTreeNode<T>, b: IVirtualTreeNode<T>) => {
                 // Sort folders first, then by name
                 if (a.isLeaf !== b.isLeaf) {
                   return a.isLeaf ? 1 : -1;
@@ -383,53 +447,6 @@ export const ResourcePickerTree = <T = unknown,>({
     );
   };
 
-  const renderAnnotation = (annotation: any) => {
-    const elements: React.ReactNode[] = [];
-
-    if (annotation.indicator) {
-      elements.push(
-        <span key="indicator" className="text-xs" title={annotation.indicator.tooltip}>
-          {annotation.indicator.type === 'dot' ? (
-            <span className="text-orange-500">●</span>
-          ) : (
-            annotation.indicator.value
-          )}
-        </span>
-      );
-    }
-
-    if (annotation.badge) {
-      const getBadgeClasses = (variant: string) => {
-        const baseClasses = 'px-1.5 py-0.5 text-xs font-medium rounded';
-        const variantClasses: Record<string, string> = {
-          info: 'bg-blue-100 text-blue-800',
-          warning: 'bg-yellow-100 text-yellow-800',
-          success: 'bg-green-100 text-green-800',
-          error: 'bg-red-100 text-red-800',
-          edited: 'bg-purple-100 text-purple-800',
-          new: 'bg-emerald-100 text-emerald-800'
-        };
-        return `${baseClasses} ${variantClasses[variant] || variantClasses.info}`;
-      };
-
-      elements.push(
-        <span key="badge" className={getBadgeClasses(annotation.badge.variant)}>
-          {annotation.badge.text}
-        </span>
-      );
-    }
-
-    if (annotation.suffix) {
-      elements.push(
-        <span key="suffix" className="text-xs text-gray-500">
-          {annotation.suffix}
-        </span>
-      );
-    }
-
-    return elements;
-  };
-
   if (!virtualTree || effectiveRootNodes.length === 0) {
     return (
       <div className={`${className} p-4 text-center text-gray-500`}>
@@ -441,7 +458,7 @@ export const ResourcePickerTree = <T = unknown,>({
   return (
     <div className={`${className} overflow-y-auto !relative !z-auto !min-h-[200px]`}>
       {effectiveRootNodes
-        .sort((a: VirtualTreeNode, b: VirtualTreeNode) => {
+        .sort((a: IVirtualTreeNode, b: IVirtualTreeNode) => {
           // Sort folders first, then by name
           if (a.isLeaf !== b.isLeaf) {
             return a.isLeaf ? 1 : -1;
@@ -452,32 +469,6 @@ export const ResourcePickerTree = <T = unknown,>({
           return renderTreeNode(child);
         })}
     </div>
-  );
-};
-
-/**
- * Component to highlight search terms in text
- */
-const HighlightedText: React.FC<{ text: string; searchTerm: string }> = ({ text, searchTerm }) => {
-  if (!searchTerm) {
-    return <span>{text}</span>;
-  }
-
-  const regex = new RegExp(`(${searchTerm})`, 'gi');
-  const parts = text.split(regex);
-
-  return (
-    <span>
-      {parts.map((part, index) =>
-        regex.test(part) ? (
-          <mark key={index} className="bg-yellow-200">
-            {part}
-          </mark>
-        ) : (
-          <span key={index}>{part}</span>
-        )
-      )}
-    </span>
   );
 };
 

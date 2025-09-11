@@ -50,6 +50,17 @@ Observability context that provides both diagnostic and user logging capabilitie
 
 
 </td></tr>
+<tr><td>
+
+[ViewStateUserLogger](./ts-res-ui-components.observabilitytools.viewstateuserlogger.md)
+
+
+</td><td>
+
+ViewState-connected user logger that forwards messages to viewState.addMessage(). This logger bridges the observability system with React component state management.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -84,6 +95,50 @@ Creates a console-based observability context for development and debugging.
 </td><td>
 
 Creates a no-op observability context that suppresses all logging.
+
+
+</td></tr>
+<tr><td>
+
+[createViewStateObservabilityContext(addMessage, diagLogLevel, userLogLevel)](./ts-res-ui-components.observabilitytools.createviewstateobservabilitycontext.md)
+
+
+</td><td>
+
+Creates an observability context that forwards user messages to viewState.addMessage(). This bridges the observability system with React component state management.
+
+
+</td></tr>
+<tr><td>
+
+[detectObservabilityContextType(context)](./ts-res-ui-components.observabilitytools.detectobservabilitycontexttype.md)
+
+
+</td><td>
+
+Detects the type of observability context based on the user logger implementation.
+
+
+</td></tr>
+<tr><td>
+
+[isConsoleOnlyContext(context)](./ts-res-ui-components.observabilitytools.isconsoleonlycontext.md)
+
+
+</td><td>
+
+Checks if an observability context only outputs to console (not UI messages).
+
+
+</td></tr>
+<tr><td>
+
+[isViewStateConnected(context)](./ts-res-ui-components.observabilitytools.isviewstateconnected.md)
+
+
+</td><td>
+
+Checks if an observability context is connected to ViewState for UI message display.
 
 
 </td></tr>
@@ -158,6 +213,32 @@ Default console-only observability context for general use.
 </td><td>
 
 Test observability context with no-op loggers.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ObservabilityContextType](./ts-res-ui-components.observabilitytools.observabilitycontexttype.md)
+
+
+</td><td>
+
+Context type classification for observability contexts.
 
 
 </td></tr>

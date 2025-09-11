@@ -137,3 +137,15 @@ export interface IBrowseCommandOptions {
   dev?: boolean;
   serve?: boolean;
 }
+
+/**
+ * Command-line options for the config command
+ */
+export interface IConfigCommandOptions {
+  name?: string;
+  output?: string;
+  validate?: string;
+  normalize?: string;
+  qualifierDefaults?: string;
+  list?: boolean;
+}

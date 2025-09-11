@@ -1,28 +1,34 @@
 import React, { useCallback } from 'react';
-import { CubeIcon } from '@heroicons/react/24/outline';
-import { CandidateInfo, ResolutionActions, ResolutionState, ResourceEditorFactory } from '../../../types';
+import { JsonValue } from '@fgv/ts-json-base';
+import { Result } from '@fgv/ts-utils';
+import {
+  ICandidateInfo,
+  IResolutionActions,
+  IResolutionState,
+  IResourceEditorFactory,
+  IResolutionResult
+} from '../../../types';
 import { EditableJsonView } from '../../views/ResolutionView/EditableJsonView';
+import { useObservability } from '../../../contexts';
 
 /**
  * Props for the ResolutionResults component.
  *
  * @public
  */
-export interface ResolutionResultsProps {
+export interface IResolutionResultsProps {
   /** The resolution result data to display */
-  result: any;
+  result: IResolutionResult;
   /** View mode determining how resolution results are presented */
   viewMode: 'composed' | 'best' | 'all' | 'raw';
   /** Current context values used for resolution */
   contextValues: Record<string, string | undefined>;
   /** Optional resolution actions for interactive features */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Optional resolution state for editing features */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Optional factory for creating custom resource editors */
-  resourceEditorFactory?: ResourceEditorFactory;
-  /** Optional callback for handling component messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
+  resourceEditorFactory?: IResourceEditorFactory;
 }
 
 /**
@@ -35,7 +41,7 @@ export interface ResolutionResultsProps {
  *
  * @example
  * ```tsx
- * import { ResolutionResults } from '@fgv/ts-res-ui-components';
+ * import { ResolutionResults, ObservabilityProvider } from '@fgv/ts-res-ui-components';
  *
  * function BasicResolutionDisplay() {
  *   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
@@ -43,20 +49,21 @@ export interface ResolutionResultsProps {
  *   const context = { language: 'en-US', platform: 'web' };
  *
  *   return (
- *     <div>
- *       <div className="view-controls">
- *         <button onClick={() => setViewMode('composed')}>Composed</button>
- *         <button onClick={() => setViewMode('best')}>Best</button>
- *         <button onClick={() => setViewMode('all')}>All</button>
- *         <button onClick={() => setViewMode('raw')}>Raw</button>
+ *     <ObservabilityProvider>
+ *       <div>
+ *         <div className="view-controls">
+ *           <button onClick={() => setViewMode('composed')}>Composed</button>
+ *           <button onClick={() => setViewMode('best')}>Best</button>
+ *           <button onClick={() => setViewMode('all')}>All</button>
+ *           <button onClick={() => setViewMode('raw')}>Raw</button>
+ *         </div>
+ *         <ResolutionResults
+ *           result={resolutionResult}
+ *           viewMode={viewMode}
+ *           contextValues={context}
+ *         />
  *       </div>
- *       <ResolutionResults
- *         result={resolutionResult}
- *         viewMode={viewMode}
- *         contextValues={context}
- *         onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
- *       />
- *     </div>
+ *     </ObservabilityProvider>
  *   );
  * }
  * ```
@@ -64,30 +71,29 @@ export interface ResolutionResultsProps {
  * @example
  * ```tsx
  * // Using with resolution state and editing capabilities
- * import { ResolutionTools } from '@fgv/ts-res-ui-components';
+ * import { ResolutionTools, ObservabilityProvider } from '@fgv/ts-res-ui-components';
  *
  * function InteractiveResolutionResults() {
  *   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
  *
  *   const customEditorFactory = {
- *     createEditor: (resourceId: string, value: any) => ({
+ *     createEditor: (resourceId: string, value: JsonValue) => ({
  *       success: true,
  *       editor: MyCustomEditor
  *     })
  *   };
  *
  *   return (
- *     <ResolutionResults
- *       result={resolutionState.currentResult}
- *       viewMode={resolutionState.viewMode}
- *       contextValues={resolutionState.context}
- *       resolutionActions={resolutionActions}
- *       resolutionState={resolutionState}
- *       resourceEditorFactory={customEditorFactory}
- *       onMessage={(type, message) => {
- *         resolutionActions.addMessage(type, message);
- *       }}
- *     />
+ *     <ObservabilityProvider>
+ *       <ResolutionResults
+ *         result={resolutionState.currentResult}
+ *         viewMode={resolutionState.viewMode}
+ *         contextValues={resolutionState.context}
+ *         resolutionActions={resolutionActions}
+ *         resolutionState={resolutionState}
+ *         resourceEditorFactory={customEditorFactory}
+ *       />
+ *     </ObservabilityProvider>
  *   );
  * }
  * ```
@@ -128,7 +134,6 @@ export interface ResolutionResultsProps {
  *           saveEdit: actions.saveResourceEdit
  *         }}
  *         resolutionState={state.resolutionState}
- *         onMessage={actions.addMessage}
  *       />
  *     </div>
  *   );
@@ -137,58 +142,30 @@ export interface ResolutionResultsProps {
  *
  * @public
  */
-export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
+export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
   result,
   viewMode,
   contextValues,
   resolutionActions,
   resolutionState,
-  resourceEditorFactory,
-  onMessage
+  resourceEditorFactory
 }) => {
-  // Use a ref to store messages and useCallback to send them
-  const pendingMessagesRef = React.useRef<
-    Array<{ type: 'info' | 'warning' | 'error' | 'success'; message: string }>
-  >([]);
-
-  // Function to queue a message for later sending
-  const queueMessage = React.useCallback(
-    (type: 'info' | 'warning' | 'error' | 'success', message: string) => {
-      pendingMessagesRef.current.push({ type, message });
-    },
-    []
-  );
-
-  // Function to flush queued messages
-  const flushMessages = React.useCallback(() => {
-    if (pendingMessagesRef.current.length > 0 && onMessage) {
-      pendingMessagesRef.current.forEach(({ type, message }) => {
-        onMessage(type, message);
-      });
-      pendingMessagesRef.current = [];
-    }
-  }, [onMessage]);
-
-  // Flush messages after render is complete
-  React.useEffect(() => {
-    flushMessages();
-  });
+  const o11y = useObservability();
 
   // Helper function to create the appropriate resource editor
   const createResourceEditor = useCallback(
     (
-      value: any,
+      value: JsonValue,
       resourceId: string,
       isEdited: boolean,
-      editedValue: any,
-      onSave?: (resourceId: string, editedValue: any, originalValue: any) => void,
+      editedValue: JsonValue | undefined,
+      onSave?: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>,
       onCancel?: (resourceId: string) => void,
       disabled?: boolean,
       className?: string
     ) => {
       // Try to get resource type from the result
-      const resourceType =
-        result?.resource?.resourceType?.key || result?.resource?.resourceType?.name || 'unknown';
+      const resourceType = result?.resource?.resourceType?.key ?? 'unknown';
 
       // Try the factory first if provided
       if (resourceEditorFactory) {
@@ -209,17 +186,18 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
               />
             );
           } else {
-            // Factory couldn't create editor, queue message and fall back to JSON editor
+            // Factory couldn't create editor, log and fall back to JSON editor
             if (factoryResult.message) {
-              queueMessage('info', `Using default JSON editor: ${factoryResult.message}`);
+              o11y.diag.info(`default-editor: Using default JSON editor - ${factoryResult.message}`);
             }
             // Continue to fallback JSON editor below
           }
         } catch (error) {
-          // Factory threw an error, queue message and fall back to JSON editor
-          queueMessage(
-            'warning',
-            `Resource editor factory failed: ${error instanceof Error ? error.message : String(error)}`
+          // Factory threw an error, log and fall back to JSON editor
+          o11y.diag.warn(
+            `editor-factory: Failed to create editor - ${
+              error instanceof Error ? error.message : String(error)
+            }`
           );
           // Continue to fallback JSON editor below
         }
@@ -239,7 +217,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         />
       );
     },
-    [resourceEditorFactory, result, queueMessage]
+    [resourceEditorFactory, result, o11y]
   );
 
   if (!result.success) {
@@ -267,7 +245,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
                     }
                   : null,
                 bestCandidate: result.bestCandidate?.json,
-                allCandidates: result.allCandidates?.map((c: any) => c.json),
+                allCandidates: result.allCandidates?.map((c) => c.json),
                 composedValue: result.composedValue,
                 error: result.error
               },
@@ -347,12 +325,12 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
 
   // 'all' view mode
   const regularMatchingCandidates =
-    result.candidateDetails?.filter((c: CandidateInfo) => c.matched && !c.isDefaultMatch) || [];
+    result.candidateDetails?.filter((c: ICandidateInfo) => c.matched && !c.isDefaultMatch) || [];
   const defaultMatchingCandidates =
-    result.candidateDetails?.filter((c: CandidateInfo) => c.matched && c.isDefaultMatch) || [];
-  const nonMatchingCandidates = result.candidateDetails?.filter((c: CandidateInfo) => !c.matched) || [];
+    result.candidateDetails?.filter((c: ICandidateInfo) => c.matched && c.isDefaultMatch) || [];
+  const nonMatchingCandidates = result.candidateDetails?.filter((c: ICandidateInfo) => !c.matched) || [];
 
-  const getMatchTypeColor = (type: string) => {
+  const getMatchTypeColor = (type: string): string => {
     switch (type) {
       case 'match':
         return 'bg-green-100 text-green-800';
@@ -365,7 +343,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
     }
   };
 
-  const getMatchTypeIcon = (type: string) => {
+  const getMatchTypeIcon = (type: string): string => {
     switch (type) {
       case 'match':
         return '✓';
@@ -385,7 +363,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         <div>
           <h4 className="font-medium text-gray-800 mb-2">Regular Matches</h4>
           <div className="space-y-2">
-            {regularMatchingCandidates.map((candidateInfo: CandidateInfo, index: number) => (
+            {regularMatchingCandidates.map((candidateInfo: ICandidateInfo, index: number) => (
               <div
                 key={`regular-${candidateInfo.candidateIndex}`}
                 className="bg-white p-3 rounded border border-green-200"
@@ -416,7 +394,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         <div>
           <h4 className="font-medium text-gray-800 mb-2">Default Matches</h4>
           <div className="space-y-2">
-            {defaultMatchingCandidates.map((candidateInfo: CandidateInfo) => (
+            {defaultMatchingCandidates.map((candidateInfo: ICandidateInfo) => (
               <div
                 key={`default-${candidateInfo.candidateIndex}`}
                 className="bg-white p-3 rounded border border-amber-200"
@@ -453,7 +431,7 @@ export const ResolutionResults: React.FC<ResolutionResultsProps> = ({
         <div>
           <h4 className="font-medium text-gray-500 mb-2">Non-matching Candidates</h4>
           <div className="space-y-2">
-            {nonMatchingCandidates.slice(0, 3).map((candidateInfo: CandidateInfo) => (
+            {nonMatchingCandidates.slice(0, 3).map((candidateInfo: ICandidateInfo) => (
               <div
                 key={`non-matching-${candidateInfo.candidateIndex}`}
                 className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"

@@ -13,7 +13,7 @@ Provides a comprehensive interface for testing resource resolution with differen
 **Signature:**
 
 ```typescript
-ResolutionView: React.FC<ResolutionViewProps>
+ResolutionView: React.FC<IResolutionViewProps>
 ```
 
 ## Example
@@ -43,7 +43,6 @@ function MyResolutionTool() {
       resolutionActions={resolutionActions}
       availableQualifiers={['language', 'territory', 'platform']}
       resourceEditorFactory={editorFactory}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

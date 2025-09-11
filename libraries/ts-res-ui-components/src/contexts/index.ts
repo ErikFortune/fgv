@@ -25,5 +25,5 @@ export {
   ObservabilityContext,
   ObservabilityProvider,
   useObservability,
-  type ObservabilityProviderProps
+  type IObservabilityProviderProps
 } from './ObservabilityContext';

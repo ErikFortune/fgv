@@ -11,7 +11,7 @@ This function takes an original resource system and applies partial context filt
 **Signature:**
 
 ```typescript
-createFilteredResourceManagerSimple: (originalSystem: ProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: FilterOptions) => Promise<Result<ProcessedResources>>
+createFilteredResourceManagerSimple: (originalSystem: IProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: IFilterOptions) => Promise<Result<IProcessedResources>>
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ originalSystem
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->\["system"\]
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)<!-- -->\["system"\]
 
 
 </td><td>
@@ -71,7 +71,7 @@ options
 
 </td><td>
 
-[FilterOptions](./ts-res-ui-components.filtertools.filteroptions.md)
+[IFilterOptions](./ts-res-ui-components.filtertools.ifilteroptions.md)
 
 
 </td><td>
@@ -84,7 +84,7 @@ _(Optional)_ Configuration options for filtering behavior
 
 **Returns:**
 
-Promise&lt;Result&lt;[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->&gt;&gt;
+Promise&lt;Result&lt;[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)<!-- -->&gt;&gt;
 
 Result containing the filtered ProcessedResources or error message
 

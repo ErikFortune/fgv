@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { succeed, fail } from '@fgv/ts-utils';
+import { fail } from '@fgv/ts-utils';
 import {
   getDefaultSystemConfiguration,
   createTsResSystemFromConfig,
@@ -29,8 +29,10 @@ import {
   processImportedDirectory,
   convertImportedDirectoryToFileTree
 } from '../../../utils/tsResIntegration';
-import { ImportedDirectory, ImportedFile } from '../../../types';
+import { IImportedDirectory, IImportedFile } from '../../../types';
 import { loadTestConfiguration, loadTestResources } from '../../helpers/testDataLoader';
+import * as TsRes from '@fgv/ts-res';
+import { ObservabilityTools } from '../../../namespaces';
 
 describe('tsResIntegration', () => {
   describe('getDefaultSystemConfiguration', () => {
@@ -99,7 +101,10 @@ describe('tsResIntegration', () => {
         });
       } else {
         // If test data is not available, skip this test
-        console.warn('Skipping test - test configuration not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test configuration not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -115,7 +120,10 @@ describe('tsResIntegration', () => {
           expect(Array.from(system.qualifiers.values()).length).toBeGreaterThan(0);
         });
       } else {
-        console.warn('Skipping test - custom config test data not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - custom config test data not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -130,14 +138,17 @@ describe('tsResIntegration', () => {
           expect(Array.from(system.qualifierTypes.values()).length).toBeGreaterThan(0);
         });
       } else {
-        console.warn('Skipping test - extended example test data not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - extended example test data not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
 
     test('handles invalid configuration gracefully', () => {
-      const invalidConfig = {
-        qualifierTypes: [{ name: 'invalid', systemType: 'nonexistent' }] as unknown as any,
+      const invalidConfig: TsRes.Config.Model.ISystemConfiguration = {
+        qualifierTypes: [{ name: 'invalid', systemType: 'nonexistent' }],
         qualifiers: [],
         resourceTypes: []
       };
@@ -147,7 +158,7 @@ describe('tsResIntegration', () => {
     });
 
     test('handles null configuration gracefully', () => {
-      const result = createTsResSystemFromConfig(null as unknown as any);
+      const result = createTsResSystemFromConfig(null as unknown as TsRes.Config.Model.ISystemConfiguration);
       expect(result).toSucceed();
     });
 
@@ -159,16 +170,18 @@ describe('tsResIntegration', () => {
     test('validates required configuration fields', () => {
       const incompleteConfig = {
         qualifierTypes: []
-      } as unknown as any;
+      };
 
-      const result = createTsResSystemFromConfig(incompleteConfig);
+      const result = createTsResSystemFromConfig(
+        incompleteConfig as unknown as TsRes.Config.Model.ISystemConfiguration
+      );
       expect(result).toFail();
     });
   });
 
   describe('convertImportedDirectoryToFileTree', () => {
     test('converts simple directory structure', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'test-resources',
         path: '/test/path',
         files: [
@@ -182,13 +195,16 @@ describe('tsResIntegration', () => {
         subdirectories: []
       };
 
-      const result = convertImportedDirectoryToFileTree(directory);
+      const result = convertImportedDirectoryToFileTree(
+        directory,
+        ObservabilityTools.TestObservabilityContext
+      );
 
       expect(result).toBeDefined();
     });
 
     test('converts directory with subdirectories', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'root',
         path: '/test',
         files: [
@@ -216,20 +232,26 @@ describe('tsResIntegration', () => {
         ]
       };
 
-      const result = convertImportedDirectoryToFileTree(directory);
+      const result = convertImportedDirectoryToFileTree(
+        directory,
+        ObservabilityTools.TestObservabilityContext
+      );
 
       expect(result).toBeDefined();
     });
 
     test('handles empty directory', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'empty',
         path: '/empty',
         files: [],
         subdirectories: []
       };
 
-      const result = convertImportedDirectoryToFileTree(directory);
+      const result = convertImportedDirectoryToFileTree(
+        directory,
+        ObservabilityTools.TestObservabilityContext
+      );
 
       expect(result).toBeDefined();
     });
@@ -237,7 +259,7 @@ describe('tsResIntegration', () => {
 
   describe('processImportedFiles', () => {
     test('handles empty file list', () => {
-      const result = processImportedFiles([]);
+      const result = processImportedFiles({ files: [], o11y: ObservabilityTools.TestObservabilityContext });
 
       expect(result).toFail();
       expect(result.message).toContain('No files provided');
@@ -246,7 +268,7 @@ describe('tsResIntegration', () => {
     test('processes real test resource files', () => {
       const resourcesResult = loadTestResources('default');
       if (resourcesResult.isSuccess()) {
-        const testFiles: ImportedFile[] = resourcesResult.value.map((file) => ({
+        const testFiles: IImportedFile[] = resourcesResult.value.map((file) => ({
           name: file.path.split('/').pop() || file.path,
           path: file.path,
           content: file.content,
@@ -254,28 +276,39 @@ describe('tsResIntegration', () => {
         }));
 
         if (testFiles.length > 0) {
-          const result = processImportedFiles(testFiles);
+          const result = processImportedFiles({
+            files: testFiles,
+            o11y: ObservabilityTools.TestObservabilityContext
+          });
 
           if (result.isSuccess()) {
             expect(result.value.system).toBeDefined();
             expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
             expect(result.value.summary).toBeDefined();
           } else {
-            console.warn('Processing failed but this may be expected:', result.message);
+            ObservabilityTools.TestObservabilityContext.diag.warn(
+              'Processing failed but this may be expected:',
+              result.message
+            );
             expect(result.message).toBeDefined();
           }
         } else {
-          console.warn('No test files available for processing test');
+          ObservabilityTools.TestObservabilityContext.diag.warn(
+            'No test files available for processing test'
+          );
           expect(true).toBe(true);
         }
       } else {
-        console.warn('Skipping test - test resources not available:', resourcesResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test resources not available:',
+          resourcesResult.message
+        );
         expect(true).toBe(true);
       }
     });
 
     test('handles invalid JSON files gracefully', () => {
-      const invalidFiles: ImportedFile[] = [
+      const invalidFiles: IImportedFile[] = [
         {
           name: 'invalid.json',
           path: '/invalid.json',
@@ -284,21 +317,27 @@ describe('tsResIntegration', () => {
         }
       ];
 
-      const result = processImportedFiles(invalidFiles);
+      const result = processImportedFiles({
+        files: invalidFiles,
+        o11y: ObservabilityTools.TestObservabilityContext
+      });
       expect(result).toFail();
     });
   });
 
   describe('processImportedDirectory', () => {
     test('handles empty directory', () => {
-      const directory: ImportedDirectory = {
+      const directory: IImportedDirectory = {
         name: 'empty-dir',
         path: '/empty',
         files: [],
         subdirectories: []
       };
 
-      const result = processImportedDirectory(directory);
+      const result = processImportedDirectory({
+        directory,
+        o11y: ObservabilityTools.TestObservabilityContext
+      });
 
       if (result.isSuccess()) {
         expect(result.value.system).toBeDefined();
@@ -311,7 +350,7 @@ describe('tsResIntegration', () => {
     test('processes directory with real test resources', () => {
       const resourcesResult = loadTestResources('default');
       if (resourcesResult.isSuccess() && resourcesResult.value.length > 0) {
-        const directory: ImportedDirectory = {
+        const directory: IImportedDirectory = {
           name: 'test-resources',
           path: '/test',
           files: resourcesResult.value.map((file) => ({
@@ -323,17 +362,25 @@ describe('tsResIntegration', () => {
           subdirectories: []
         };
 
-        const result = processImportedDirectory(directory);
+        const result = processImportedDirectory({
+          directory,
+          o11y: ObservabilityTools.TestObservabilityContext
+        });
 
         if (result.isSuccess()) {
           expect(result.value.system).toBeDefined();
           expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
         } else {
-          console.warn('Directory processing failed but this may be expected:', result.message);
+          ObservabilityTools.TestObservabilityContext.diag.warn(
+            'Directory processing failed but this may be expected:',
+            result.message
+          );
           expect(result.message).toBeDefined();
         }
       } else {
-        console.warn('Skipping test - test resources not available for directory test');
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test resources not available for directory test'
+        );
         expect(true).toBe(true);
       }
     });
@@ -360,7 +407,10 @@ describe('tsResIntegration', () => {
 
         expect(removedFunctionResult).toFail();
       } else {
-        console.warn('Skipping test - test configuration not available:', configResult.message);
+        ObservabilityTools.TestObservabilityContext.diag.warn(
+          'Skipping test - test configuration not available:',
+          configResult.message
+        );
         expect(true).toBe(true);
       }
     });
@@ -369,19 +419,7 @@ describe('tsResIntegration', () => {
       const systemResult = createTsResSystemFromConfig();
       expect(systemResult).toSucceed();
 
-      const system = systemResult.orThrow();
-
-      const invalidCompiledCollection = {
-        resources: null as unknown as any,
-        qualifiers: [],
-        qualifierTypes: [],
-        resourceTypes: [],
-        conditions: [],
-        conditionSets: [],
-        decisions: []
-      };
-
-      // Function removed in refactoring
+      // Function removed in refactoring - variables removed as they were unused
       const result = fail('createCompiledResourceCollectionManager was removed');
       /* createCompiledResourceCollectionManager(
         invalidCompiledCollection,
@@ -405,7 +443,9 @@ describe('tsResIntegration', () => {
       ];
 
       malformedConfigs.forEach((config) => {
-        const result = createTsResSystemFromConfig(config as unknown as any);
+        const result = createTsResSystemFromConfig(
+          config as unknown as TsRes.Config.Model.ISystemConfiguration
+        );
         if (result.isFailure()) {
           expect(result.message).toBeDefined();
         }
@@ -423,7 +463,9 @@ describe('tsResIntegration', () => {
       ];
 
       incompleteConfigs.forEach((config) => {
-        const result = createTsResSystemFromConfig(config as unknown as any);
+        const result = createTsResSystemFromConfig(
+          config as unknown as TsRes.Config.Model.ISystemConfiguration
+        );
         if (result.isFailure()) {
           expect(result.message).toBeDefined();
         }

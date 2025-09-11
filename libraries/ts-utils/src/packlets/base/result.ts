@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-/* eslint-disable no-use-before-define */
 /**
  * Represents the {@link IResult | result} of some operation or sequence of operations.
  * @remarks
@@ -79,7 +78,7 @@ export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
  * Options for reporting a result.
  * @public
  */
-export interface IResultReportOptions {
+export interface IResultReportOptions<TD = unknown> {
   /**
    * The level of reporting to be used for failure results.  Default is 'error'.
    */
@@ -89,6 +88,11 @@ export interface IResultReportOptions {
    * The level of reporting to be used for success results.  Default is 'quiet'.
    */
   success?: MessageLogLevel;
+
+  /**
+   * The error formatter to be used for reporting an error result.
+   */
+  message?: ErrorFormatter<TD>;
 }
 
 /**
@@ -627,7 +631,8 @@ export class Failure<T> implements IResult<T> {
    */
   public report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this {
     const level = options?.failure ?? 'error';
-    reporter?.reportFailure(level, this._message);
+    const message = options?.message?.(this._message) ?? this._message;
+    reporter?.reportFailure(level, message);
     return this;
   }
 
@@ -799,7 +804,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this {
+  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this {
     const level = options?.success ?? 'quiet';
     reporter?.reportSuccess(level, this._value, this._detail);
     return this;
@@ -896,9 +901,10 @@ export class DetailedFailure<T, TD> extends Failure<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions): this {
+  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this {
     const level = options?.failure ?? 'error';
-    reporter?.reportFailure(level, this._message, this._detail);
+    const message = options?.message?.(this._message, this._detail) ?? this._message;
+    reporter?.reportFailure(level, message, this._detail);
     return this;
   }
 

@@ -9,7 +9,7 @@ Unified change controls for ResolutionView.
 **Signature:**
 
 ```typescript
-UnifiedChangeControls: React.FC<UnifiedChangeControlsProps>
+UnifiedChangeControls: React.FC<IUnifiedChangeControlsProps>
 ```
 
 ## Example

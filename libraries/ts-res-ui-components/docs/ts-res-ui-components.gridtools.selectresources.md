@@ -9,7 +9,7 @@ Utility function to select resources using the default selector.
 **Signature:**
 
 ```typescript
-export declare function selectResources(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]>;
+export declare function selectResources(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ resources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>

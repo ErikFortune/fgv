@@ -28,9 +28,9 @@ import { Config } from '@fgv/ts-res';
 /**
  * Base path for test fixtures - using existing test data in monorepo
  */
-const PROJECT_ROOT = dirname(dirname(dirname(__dirname)));
-const FIXTURES_PATH = join(PROJECT_ROOT, '../../data/test/ts-res');
-const TEMP_PATH = join(PROJECT_ROOT, 'temp');
+const PROJECT_ROOT: string = dirname(dirname(dirname(__dirname)));
+const FIXTURES_PATH: string = join(PROJECT_ROOT, '../../data/test/ts-res');
+const TEMP_PATH: string = join(PROJECT_ROOT, 'temp');
 
 /**
  * Generate a unique temp folder name with timestamp and random suffix
@@ -91,7 +91,7 @@ export function loadTestResources(
 
     const files: Array<{ path: string; content: string }> = [];
 
-    function readDirectory(dir: string, basePath: string = '') {
+    function readDirectory(dir: string, basePath: string = ''): void {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
 
       for (const entry of entries) {
@@ -183,13 +183,18 @@ export function loadTestBundleFile(
 /**
  * Clean up temp directory (optional - temp folder is git-ignored)
  */
-export function cleanupTempPath(tempPath: string): void {
+export async function cleanupTempPath(tempPath: string): Promise<void> {
   try {
     const fs = require('fs');
     if (existsSync(tempPath)) {
       fs.rmSync(tempPath, { recursive: true, force: true });
     }
   } catch (error) {
-    console.warn(`Warning: Failed to cleanup temp path ${tempPath}:`, error);
+    // Use test observability context to avoid console spew
+    const { ObservabilityTools } = await import('../../namespaces');
+    ObservabilityTools.TestObservabilityContext.diag.warn(
+      `Warning: Failed to cleanup temp path ${tempPath}:`,
+      error
+    );
   }
 }

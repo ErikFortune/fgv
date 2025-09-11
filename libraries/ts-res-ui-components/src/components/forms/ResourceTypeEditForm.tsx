@@ -1,13 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { XMarkIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
-import { ResourceTypes } from '@fgv/ts-res';
+import { ResourceTypes, Validate } from '@fgv/ts-res';
+import { useObservability } from '../../contexts';
 
 /**
  * Props for the ResourceTypeEditForm component.
  *
  * @public
  */
-export interface ResourceTypeEditFormProps {
+export interface IResourceTypeEditFormProps {
   /** Existing resource type to edit (undefined for creating new type) */
   resourceType?: ResourceTypes.Config.IResourceTypeConfig;
   /** Callback fired when resource type is saved */
@@ -18,25 +19,12 @@ export interface ResourceTypeEditFormProps {
   existingNames?: string[];
 }
 
-interface FormData {
+interface IFormData {
   name: string;
   typeName: string;
 }
 
-const COMMON_TYPE_NAMES = [
-  'string',
-  'object',
-  'array',
-  'number',
-  'boolean',
-  'localizedString',
-  'config',
-  'settings',
-  'permissions',
-  'template',
-  'content',
-  'metadata'
-];
+const COMMON_TYPE_NAMES: string[] = ['json'];
 
 /**
  * Modal form component for creating and editing resource types in a ts-res system configuration.
@@ -126,7 +114,7 @@ const COMMON_TYPE_NAMES = [
  *   resourceType={templateType}
  *   onSave={(updatedType) => {
  *     // Handle custom type processing
- *     console.log('Custom type saved:', updatedType.typeName);
+ *     o11y.user.success(`${updatedType.name}: Custom type '${updatedType.typeName}' saved successfully`);
  *     saveToConfiguration(updatedType);
  *   }}
  *   onCancel={cancelEdit}
@@ -135,13 +123,14 @@ const COMMON_TYPE_NAMES = [
  *
  * @public
  */
-export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
+export const ResourceTypeEditForm: React.FC<IResourceTypeEditFormProps> = ({
   resourceType,
   onSave,
   onCancel,
   existingNames = []
 }) => {
-  const [formData, setFormData] = useState<FormData>(() => {
+  const o11y = useObservability();
+  const [formData, setFormData] = useState<IFormData>(() => {
     if (resourceType) {
       return {
         name: resourceType.name,
@@ -155,6 +144,7 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isFormValid, setIsFormValid] = useState<boolean>(false);
   const [useCustomTypeName, setUseCustomTypeName] = useState(() => {
     if (resourceType) {
       return !COMMON_TYPE_NAMES.includes(resourceType.typeName);
@@ -166,38 +156,89 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Validate name using standard validators
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     } else if (existingNames.includes(formData.name) && formData.name !== resourceType?.name) {
       newErrors.name = 'Name must be unique';
-    } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(formData.name)) {
-      newErrors.name = 'Name must start with a letter and contain only letters, numbers, and underscores';
+    } else if (!Validate.isValidResourceTypeName(formData.name)) {
+      newErrors.name = `${formData.name}: Invalid resource type name`;
     }
 
+    // Validate type name using standard validators
     if (!formData.typeName.trim()) {
       newErrors.typeName = 'Type name is required';
-    } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(formData.typeName)) {
-      newErrors.typeName =
-        'Type name must start with a letter and contain only letters, numbers, and underscores';
+    } else if (!Validate.isValidResourceTypeName(formData.typeName)) {
+      newErrors.typeName = `${formData.typeName}: Invalid type name`;
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [formData, existingNames, resourceType?.name]);
+
+    const hasErrors = Object.keys(newErrors).length > 0;
+    const isValid = !hasErrors;
+
+    setIsFormValid(isValid);
+
+    if (hasErrors) {
+      const resourceTypeName = formData.name.trim() || 'unknown-resource-type';
+      const errorList = Object.entries(newErrors)
+        .map(([field, error]) => `${field}: ${error}`)
+        .join(', ');
+      o11y.diag.info(`${resourceTypeName}: Resource type validation failed - ${errorList}`);
+    } else {
+      const resourceTypeName = formData.name.trim() || 'unknown-resource-type';
+      o11y.diag.info(`${resourceTypeName}: Resource type validation passed`);
+    }
+
+    return isValid;
+  }, [formData, existingNames, resourceType?.name, o11y]);
+
+  // Log form initialization (run once on mount)
+  useEffect(() => {
+    const resourceTypeName = formData.name.trim() || 'new-resource-type';
+    if (resourceType) {
+      o11y.diag.info(
+        `${resourceTypeName}: Editing existing resource type - name: '${resourceType.name}', typeName: '${resourceType.typeName}'`
+      );
+    } else {
+      o11y.diag.info(`${resourceTypeName}: Creating new resource type`);
+    }
+
+    // Log type name mode
+    if (useCustomTypeName) {
+      o11y.diag.info(`${resourceTypeName}: Using custom type name mode`);
+    } else {
+      o11y.diag.info(`${resourceTypeName}: Using common type name mode`);
+    }
+  }, []); // Run only on component mount
+
+  // Trigger validation when form data changes
+  useEffect(() => {
+    validateForm();
+  }, [formData, validateForm]);
 
   const handleSave = useCallback(() => {
-    if (!validateForm()) return;
+    const resourceTypeName = formData.name.trim() || 'unknown-resource-type';
+
+    if (!validateForm()) {
+      o11y.user.warn(`${resourceTypeName}: Cannot save - validation errors present`);
+      return;
+    }
 
     const result: ResourceTypes.Config.IResourceTypeConfig = {
       name: formData.name,
       typeName: formData.typeName
     };
 
+    o11y.diag.info(`${resourceTypeName}: Saving resource type - ${JSON.stringify(result)}`);
     onSave(result);
-  }, [formData, validateForm, onSave]);
+    o11y.user.success(
+      `${resourceTypeName}: Resource type ${resourceType ? 'updated' : 'created'} successfully`
+    );
+  }, [formData, validateForm, onSave, resourceType, o11y]);
 
   const updateField = useCallback(
-    (field: keyof FormData, value: any) => {
+    (field: keyof IFormData, value: string) => {
       setFormData((prev) => {
         const updated = { ...prev, [field]: value };
 
@@ -209,8 +250,23 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
           );
           if (commonType) {
             updated.typeName = commonType;
+            o11y.user.info(`${value}: Type name auto-generated as '${commonType}'`);
           } else {
-            updated.typeName = cleanName || 'string';
+            const fallbackType = cleanName || 'string';
+            updated.typeName = fallbackType;
+            if (cleanName && cleanName !== 'string') {
+              o11y.user.info(`${value}: Type name auto-generated as custom type '${cleanName}'`);
+            }
+          }
+        }
+
+        // Log significant field changes
+        if (field === 'typeName' && value !== prev.typeName) {
+          const resourceTypeName = prev.name.trim() || 'unknown-resource-type';
+          if (COMMON_TYPE_NAMES.includes(value)) {
+            o11y.user.info(`${resourceTypeName}: Type name changed to common type '${value}'`);
+          } else {
+            o11y.user.info(`${resourceTypeName}: Type name changed to custom type '${value}'`);
           }
         }
 
@@ -221,46 +277,35 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
         setErrors((prev) => ({ ...prev, [field]: '' }));
       }
     },
-    [errors, resourceType, useCustomTypeName]
+    [errors, resourceType, useCustomTypeName, o11y]
   );
 
   const handleTypeNameModeChange = useCallback(
     (useCustom: boolean) => {
+      const resourceTypeName = formData.name.trim() || 'unknown-resource-type';
+
       setUseCustomTypeName(useCustom);
       if (!useCustom && !resourceType) {
         // Reset to a common type
-        updateField('typeName', 'string');
+        o11y.user.info(`${resourceTypeName}: Switching to common type names, reset to 'json'`);
+        updateField('typeName', 'json');
+      } else if (useCustom) {
+        o11y.user.info(`${resourceTypeName}: Switching to custom type name mode`);
       }
     },
-    [resourceType, updateField]
+    [resourceType, updateField, formData.name, o11y]
   );
+
+  const handleCancel = useCallback(() => {
+    const resourceTypeName = formData.name.trim() || 'unknown-resource-type';
+    o11y.user.info(`${resourceTypeName}: Resource type editing cancelled`);
+    onCancel();
+  }, [formData.name, onCancel, o11y]);
 
   const getTypeNameDescription = (typeName: string): string => {
     switch (typeName) {
-      case 'string':
-        return 'Simple text content (default)';
-      case 'object':
+      case 'json':
         return 'Complex structured data (JSON objects)';
-      case 'array':
-        return 'List of values or objects';
-      case 'number':
-        return 'Numeric values';
-      case 'boolean':
-        return 'True/false values';
-      case 'localizedString':
-        return 'Text content with localization support';
-      case 'config':
-        return 'Configuration settings and parameters';
-      case 'settings':
-        return 'User or application settings';
-      case 'permissions':
-        return 'Access control and permission data';
-      case 'template':
-        return 'Template content for rendering';
-      case 'content':
-        return 'Rich content (HTML, Markdown, etc.)';
-      case 'metadata':
-        return 'Descriptive information about resources';
       default:
         return 'Custom resource type';
     }
@@ -274,7 +319,7 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
           <h3 className="text-lg font-medium text-gray-900">
             {resourceType ? 'Edit Resource Type' : 'Add Resource Type'}
           </h3>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+          <button onClick={handleCancel} className="text-gray-400 hover:text-gray-600">
             <XMarkIcon className="w-6 h-6" />
           </button>
         </div>
@@ -419,14 +464,15 @@ export const ResourceTypeEditForm: React.FC<ResourceTypeEditFormProps> = ({
         {/* Fixed Footer */}
         <div className="flex justify-end space-x-3 px-6 py-4 border-t bg-gray-50 flex-shrink-0">
           <button
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            disabled={!isFormValid}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {resourceType ? 'Save Changes' : 'Add Resource Type'}
           </button>

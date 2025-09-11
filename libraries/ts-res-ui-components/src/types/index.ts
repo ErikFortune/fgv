@@ -11,6 +11,49 @@ import {
   Import
 } from '@fgv/ts-res';
 import { JsonValue } from '@fgv/ts-json-base';
+// IIResourcePickerOptions import removed - unused
+import type { IObservabilityContext } from '../utils/observability';
+
+/**
+ * Configuration options for ResourcePicker components.
+ * Controls behavior and appearance of resource selection controls.
+ *
+ * @public
+ */
+export interface IResourcePickerOptions {
+  /** How to present the picker options control */
+  presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+  /** Custom CSS classes for the picker */
+  className?: string;
+  /** Whether to allow multi-selection */
+  allowMultiSelect?: boolean;
+  /** Maximum number of selectable resources */
+  maxSelections?: number;
+}
+
+/**
+ * Configuration options for edit validation.
+ *
+ * @public
+ */
+export interface IEditValidationResult {
+  /** Whether the validation passed */
+  isValid: boolean;
+  /** Error message if validation failed */
+  error?: string;
+}
+
+/**
+ * Filter options for resource filtering.
+ *
+ * @public
+ */
+export interface IFilterOptions {
+  /** Whether to enable partial context matching */
+  partialContextMatch?: boolean;
+  /** Whether to enable debug logging */
+  enableDebugLogging?: boolean;
+}
 
 /**
  * Represents a user-facing message with type classification and timestamp.
@@ -18,7 +61,7 @@ import { JsonValue } from '@fgv/ts-json-base';
  *
  * @public
  */
-export interface Message {
+export interface IMessage {
   /** Unique identifier for the message */
   id: string;
   /** Classification of the message for UI styling and behavior */
@@ -35,7 +78,7 @@ export interface Message {
  *
  * @public
  */
-export interface FilterState {
+export interface IFilterState {
   /** Whether filtering is currently enabled */
   enabled: boolean;
   /** Current filter values being edited (not yet applied) */
@@ -54,7 +97,7 @@ export interface FilterState {
  *
  * @public
  */
-export interface FilterActions {
+export interface IFilterActions {
   /** Enable or disable filtering */
   updateFilterEnabled: (enabled: boolean) => void;
   /** Update filter values (does not apply them until applyFilterValues is called) */
@@ -74,7 +117,7 @@ export interface FilterActions {
  *
  * @public
  */
-export interface ProcessedResources {
+export interface IProcessedResources {
   /** Core ts-res system components */
   system: {
     /** Primary resource manager for building and managing resources */
@@ -115,7 +158,7 @@ export interface ProcessedResources {
  *
  * @public
  */
-export interface ExtendedProcessedResources extends ProcessedResources {
+export interface IExtendedProcessedResources extends IProcessedResources {
   /** The configuration used to create this resource system */
   activeConfiguration?: Config.Model.ISystemConfiguration | null;
   /** Whether this system was loaded from a bundle file */
@@ -130,11 +173,11 @@ export interface ExtendedProcessedResources extends ProcessedResources {
  *
  * @public
  */
-export interface ResourceManagerState {
+export interface IResourceManagerState {
   /** Whether the system is currently processing resources */
   isProcessing: boolean;
   /** The processed resource system, or null if not yet processed */
-  processedResources: ExtendedProcessedResources | null;
+  processedResources: IExtendedProcessedResources | null;
   /** Current error message, or null if no error */
   error: string | null;
   /** Whether any resource data has been successfully processed */
@@ -153,7 +196,7 @@ export interface ResourceManagerState {
  *
  * @public
  */
-export interface ImportedFile {
+export interface IImportedFile {
   /** Name of the file */
   name: string;
   /** Optional file path within the import structure */
@@ -170,15 +213,15 @@ export interface ImportedFile {
  *
  * @public
  */
-export interface ImportedDirectory {
+export interface IImportedDirectory {
   /** Name of the directory */
   name: string;
   /** Optional directory path within the import structure */
   path?: string;
   /** Files contained in this directory */
-  files: ImportedFile[];
+  files: IImportedFile[];
   /** Nested subdirectories */
-  subdirectories?: ImportedDirectory[];
+  subdirectories?: IImportedDirectory[];
 }
 
 /**
@@ -187,9 +230,7 @@ export interface ImportedDirectory {
  *
  * @public
  */
-export interface ViewBaseProps {
-  /** Callback for displaying messages to the user */
-  onMessage?: (type: Message['type'], message: string) => void;
+export interface IViewBaseProps {
   /** Additional CSS class names for styling */
   className?: string;
   /** How to present the ResourcePicker options control (default: 'hidden' for production use) */
@@ -202,14 +243,14 @@ export interface ViewBaseProps {
  *
  * @public
  */
-export interface ImportViewProps extends ViewBaseProps {
+export interface IImportViewProps extends IViewBaseProps {
   /** Callback when resource files/directories are imported */
-  onImport?: (data: ImportedDirectory | ImportedFile[]) => void;
+  onImport?: (data: IImportedDirectory | IImportedFile[]) => void;
   /** Callback when a bundle file is imported */
   onBundleImport?: (bundle: Bundle.IBundle) => void;
   /** Callback when a ZIP file is imported with optional configuration */
   onZipImport?: (
-    zipData: ImportedDirectory | ImportedFile[],
+    zipData: IImportedDirectory | IImportedFile[],
     config?: Config.Model.ISystemConfiguration
   ) => void;
   /** File types accepted for import */
@@ -224,9 +265,9 @@ export interface ImportViewProps extends ViewBaseProps {
  *
  * @public
  */
-export interface SourceViewProps extends ViewBaseProps {
+export interface ISourceViewProps extends IViewBaseProps {
   /** The processed resource system to display */
-  resources?: ExtendedProcessedResources | null;
+  resources?: IExtendedProcessedResources | null;
   /** Currently selected resource ID for detailed view */
   selectedResourceId?: string | null;
   /** Callback when a resource is selected */
@@ -234,7 +275,7 @@ export interface SourceViewProps extends ViewBaseProps {
   /** Callback when exporting resource collection data */
   onExport?: (data: unknown, type: 'json') => void;
   /** Optional configuration for the ResourcePicker behavior */
-  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
+  pickerOptions?: IResourcePickerOptions;
 }
 
 /**
@@ -243,21 +284,21 @@ export interface SourceViewProps extends ViewBaseProps {
  *
  * @public
  */
-export interface FilterViewProps extends ViewBaseProps {
+export interface IFilterViewProps extends IViewBaseProps {
   /** The resource system to filter */
-  resources?: ProcessedResources | null;
+  resources?: IProcessedResources | null;
   /** Current state of the filter configuration */
-  filterState: FilterState;
+  filterState: IFilterState;
   /** Actions for managing filter state */
-  filterActions: FilterActions;
+  filterActions: IFilterActions;
   /** Result of applying the filter */
-  filterResult?: FilterResult | null;
+  filterResult?: IFilterResult | null;
   /** Callback when filter results change */
-  onFilterResult?: (result: FilterResult | null) => void;
+  onFilterResult?: (result: IFilterResult | null) => void;
   /** Optional configuration for the ResourcePicker behavior */
-  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
+  pickerOptions?: IResourcePickerOptions;
   /** Optional configuration for context control behavior */
-  contextOptions?: ResolutionContextOptions;
+  contextOptions?: IResolutionContextOptions;
 }
 
 /**
@@ -266,13 +307,13 @@ export interface FilterViewProps extends ViewBaseProps {
  *
  * @public
  */
-export interface CompiledViewProps extends ViewBaseProps {
+export interface ICompiledViewProps extends IViewBaseProps {
   /** The resource system to display */
-  resources?: ExtendedProcessedResources | null;
+  resources?: IExtendedProcessedResources | null;
   /** Optional filter state for filtered views */
-  filterState?: FilterState;
+  filterState?: IFilterState;
   /** Result of filtering if applied */
-  filterResult?: FilterResult | null;
+  filterResult?: IFilterResult | null;
   /** Whether to use normalization in display */
   useNormalization?: boolean;
   /** Callback for exporting compiled data or bundles */
@@ -281,7 +322,7 @@ export interface CompiledViewProps extends ViewBaseProps {
     type: 'json' | 'bundle'
   ) => void;
   /** Optional configuration for the ResourcePicker behavior */
-  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
+  pickerOptions?: IResourcePickerOptions;
 }
 
 /**
@@ -295,7 +336,7 @@ export type ResourceEditorResult =
       /** Indicates whether the factory was able to create an editor for the resource */
       success: true;
       /** The React component to render for editing this resource */
-      editor: React.ComponentType<ResourceEditorProps>;
+      editor: React.ComponentType<IResourceEditorProps>;
     }
   | {
       /** Indicates the factory could not create an editor for this resource */
@@ -310,17 +351,17 @@ export type ResourceEditorResult =
  *
  * @public
  */
-export interface ResourceEditorProps {
+export interface IResourceEditorProps {
   /** The original JSON value to edit */
-  value: any;
+  value: JsonValue;
   /** The resource ID for tracking edits */
   resourceId: string;
   /** Whether this resource has been edited */
   isEdited?: boolean;
   /** The current edited value if any */
-  editedValue?: any;
+  editedValue?: JsonValue;
   /** Callback when the user saves an edit */
-  onSave?: (resourceId: string, editedValue: any, originalValue: any) => void;
+  onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
   /** Callback when the user cancels an edit */
   onCancel?: (resourceId: string) => void;
   /** Whether editing is currently disabled */
@@ -335,7 +376,7 @@ export interface ResourceEditorProps {
  *
  * @public
  */
-export interface ResourceEditorFactory {
+export interface IResourceEditorFactory {
   /**
    * Attempts to create a resource editor for the given resource.
    *
@@ -344,7 +385,7 @@ export interface ResourceEditorFactory {
    * @param value - The current value of the resource
    * @returns ResourceEditorResult indicating success/failure and the editor component or error message
    */
-  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult;
+  createEditor(resourceId: string, resourceType: string, value: JsonValue): ResourceEditorResult;
 }
 
 /**
@@ -353,25 +394,25 @@ export interface ResourceEditorFactory {
  *
  * @public
  */
-export interface ResolutionViewProps extends ViewBaseProps {
+export interface IResolutionViewProps extends IViewBaseProps {
   /** The resource system for resolution testing */
-  resources?: ProcessedResources | null;
+  resources?: IProcessedResources | null;
   /** Optional filter state */
-  filterState?: FilterState;
+  filterState?: IFilterState;
   /** Filter results if applied */
-  filterResult?: FilterResult | null;
+  filterResult?: IFilterResult | null;
   /** Current resolution testing state */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Actions for managing resolution state */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Available qualifiers for context building */
   availableQualifiers?: string[];
   /** Optional factory for creating type-specific resource editors */
-  resourceEditorFactory?: ResourceEditorFactory;
+  resourceEditorFactory?: IResourceEditorFactory;
   /** Optional configuration for the ResourcePicker behavior */
-  pickerOptions?: import('../components/pickers/ResourcePicker/types').ResourcePickerOptions;
+  pickerOptions?: IResourcePickerOptions;
   /** Optional configuration for the resolution context controls */
-  contextOptions?: ResolutionContextOptions;
+  contextOptions?: IResolutionContextOptions;
   /** Lock to a single view state and suppress the view state selector */
   lockedViewMode?: 'composed' | 'best' | 'all' | 'raw';
   /** Custom titles for the main sections */
@@ -399,7 +440,7 @@ export interface ResolutionViewProps extends ViewBaseProps {
  *
  * @public
  */
-export interface EditedResourceInfo {
+export interface IEditedResourceInfo {
   /** Unique identifier of the resource being edited */
   resourceId: string;
   originalValue: JsonValue;
@@ -414,7 +455,7 @@ export interface EditedResourceInfo {
  *
  * @public
  */
-export interface ResolutionState {
+export interface IResolutionState {
   /** Current context values applied for resolution */
   contextValues: Record<string, string | undefined>;
   /** Context values being edited but not yet applied */
@@ -424,7 +465,7 @@ export interface ResolutionState {
   /** The resolver instance being used for testing */
   currentResolver: Runtime.ResourceResolver | null;
   /** Result of the most recent resolution attempt */
-  resolutionResult: ResolutionResult | null;
+  resolutionResult: IResolutionResult | null;
   /** Current view mode for displaying resolution results */
   viewMode: 'composed' | 'best' | 'all' | 'raw';
   /** Whether there are pending context changes not yet applied */
@@ -457,7 +498,7 @@ export interface ResolutionState {
  *
  * @example
  * ```typescript
- * const params: CreatePendingResourceParams = {
+ * const params: ICreatePendingResourceParams = {
  *   id: 'platform.languages.az-AZ',
  *   resourceTypeName: 'json',
  *   json: { text: 'Welcome', locale: 'az-AZ' }
@@ -466,7 +507,7 @@ export interface ResolutionState {
  *
  * @public
  */
-export interface CreatePendingResourceParams {
+export interface ICreatePendingResourceParams {
   /** Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique */
   id: string;
   /** Name of the resource type to use for validation and template creation */
@@ -481,12 +522,12 @@ export interface CreatePendingResourceParams {
  * @example
  * ```typescript
  * // Basic start with just type
- * const basicParams: StartNewResourceParams = {
+ * const basicParams: IStartNewResourceParams = {
  *   defaultTypeName: 'json'
  * };
  *
  * // Pre-seeded start with full data
- * const preSeededParams: StartNewResourceParams = {
+ * const preSeededParams: IStartNewResourceParams = {
  *   id: 'user.welcome',
  *   resourceTypeName: 'json',
  *   json: { text: 'Welcome!' }
@@ -495,7 +536,7 @@ export interface CreatePendingResourceParams {
  *
  * @public
  */
-export interface StartNewResourceParams {
+export interface IStartNewResourceParams {
   /** Resource type to use (optional - will use first available if not provided) */
   defaultTypeName?: string;
   /** Pre-seed with specific ID (optional) */
@@ -512,7 +553,7 @@ export interface StartNewResourceParams {
  *
  * @public
  */
-export interface ResolutionActions {
+export interface IResolutionActions {
   /** Update a context value for resolution testing */
   updateContextValue: (qualifierName: string, value: string | undefined) => Result<void>;
   /** Apply pending context changes to the resolver (with optional host-managed values) */
@@ -536,23 +577,23 @@ export interface ResolutionActions {
 
   // Enhanced resource creation actions with Result pattern return values
   /** Create a pending resource atomically with validation */
-  createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
+  createPendingResource: (params: ICreatePendingResourceParams) => Result<void>;
   /** Start creating a new resource (enhanced with optional pre-seeding) */
   startNewResource: (
-    params?: StartNewResourceParams
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+    params?: IStartNewResourceParams
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Update the resource ID for the new resource being created */
   updateNewResourceId: (
     id: string
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Select a resource type for the new resource */
   selectResourceType: (
     type: string
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Update the JSON content for the new resource being created */
   updateNewResourceJson: (
     json: JsonValue
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   /** Add the new resource to pending resources (not applied yet) */
   saveNewResourceAsPending: () => Result<{
     pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
@@ -588,7 +629,7 @@ export interface ResolutionActions {
  * @example
  * ```tsx
  * // Make a qualifier readonly with external value
- * const languageOptions: QualifierControlOptions = {
+ * const languageOptions: IQualifierControlOptions = {
  *   visible: true,
  *   editable: false,
  *   hostValue: 'en-US',
@@ -599,7 +640,7 @@ export interface ResolutionActions {
  *
  * @public
  */
-export interface QualifierControlOptions {
+export interface IQualifierControlOptions {
   /** Whether this qualifier should be visible at all */
   visible?: boolean;
   /** Whether this qualifier is editable by the user */
@@ -647,7 +688,7 @@ export interface QualifierControlOptions {
  *
  * @public
  */
-export interface ResolutionContextOptions {
+export interface IResolutionContextOptions {
   /** Visibility options */
   /** Whether to show the context configuration panel at all */
   showContextControls?: boolean;
@@ -657,7 +698,7 @@ export interface ResolutionContextOptions {
   showContextActions?: boolean;
 
   /** Per-qualifier control options */
-  qualifierOptions?: Record<string, QualifierControlOptions>;
+  qualifierOptions?: Record<string, IQualifierControlOptions>;
 
   /** Global defaults for qualifiers not specifically configured */
   defaultQualifierEditable?: boolean;
@@ -681,7 +722,7 @@ export interface ResolutionContextOptions {
  *
  * @public
  */
-export interface ResolutionResult {
+export interface IResolutionResult {
   /** Whether the resolution was successful */
   success: boolean;
   /** ID of the resource that was resolved */
@@ -693,7 +734,7 @@ export interface ResolutionResult {
   /** All candidates that were considered during resolution */
   allCandidates?: readonly Runtime.IResourceCandidate[];
   /** Detailed information about each candidate's matching process */
-  candidateDetails?: CandidateInfo[];
+  candidateDetails?: ICandidateInfo[];
   /** The final composed/resolved value */
   composedValue?: JsonValue;
   /** Error message if resolution failed */
@@ -706,7 +747,7 @@ export interface ResolutionResult {
  *
  * @public
  */
-export interface CandidateInfo {
+export interface ICandidateInfo {
   /** The candidate that was evaluated */
   candidate: Runtime.IResourceCandidate;
   /** Key identifying the condition set used for evaluation */
@@ -720,7 +761,7 @@ export interface CandidateInfo {
   /** Whether this was a default match (fallback when no exact match) */
   isDefaultMatch: boolean;
   /** Detailed evaluation results for each condition */
-  conditionEvaluations?: ConditionEvaluationResult[];
+  conditionEvaluations?: IConditionEvaluationResult[];
 }
 
 /**
@@ -729,7 +770,7 @@ export interface CandidateInfo {
  *
  * @public
  */
-export interface ConditionEvaluationResult {
+export interface IConditionEvaluationResult {
   /** Name of the qualifier being evaluated */
   qualifierName: string;
   /** Value of the qualifier in the resolution context */
@@ -756,7 +797,7 @@ export interface ConditionEvaluationResult {
  *
  * @public
  */
-export interface ConfigurationViewProps extends ViewBaseProps {
+export interface IConfigurationViewProps extends IViewBaseProps {
   /** Current system configuration to display and edit */
   configuration?: Config.Model.ISystemConfiguration | null;
   /** Callback when configuration changes (during editing) */
@@ -774,7 +815,7 @@ export interface ConfigurationViewProps extends ViewBaseProps {
  *
  * @public
  */
-export interface ResourceDetailData {
+export interface IResourceDetailData {
   /** Unique identifier of the resource */
   id: string;
   /** Type classification of the resource */
@@ -782,27 +823,7 @@ export interface ResourceDetailData {
   /** Total number of candidates defined for this resource */
   candidateCount: number;
   /** Array of all candidates with their conditions and values */
-  candidates: Array<{
-    /** The JSON value for this candidate */
-    json: JsonValue;
-    /** Conditions that determine when this candidate is selected */
-    conditions: Array<{
-      /** Name of the qualifier this condition evaluates */
-      qualifier: string;
-      /** Comparison operator for the condition */
-      operator: string;
-      /** Value to compare against */
-      value: string;
-      /** Priority/precedence of this condition */
-      priority: number;
-      /** Score when used as a default match */
-      scoreAsDefault?: number;
-    }>;
-    /** Whether this candidate provides partial data that will be merged */
-    isPartial: boolean;
-    /** Method used to merge this candidate with others */
-    mergeMethod: string;
-  }>;
+  candidates: Array<ResourceJson.Normalized.IChildResourceCandidateDecl>;
 }
 
 /**
@@ -845,7 +866,7 @@ export interface ResourceDetailData {
  * @example
  * ```typescript
  * // Use FilteredResource data in UI components
- * function FilterResultsSummary({ filteredResources }: { filteredResources: FilteredResource[] }) {
+ * function FilterResultsSummary({ filteredResources }: { filteredResources: IFilteredResource[] }) {
  *   const totalOriginal = filteredResources.reduce((sum, r) => sum + r.originalCandidateCount, 0);
  *   const totalFiltered = filteredResources.reduce((sum, r) => sum + r.filteredCandidateCount, 0);
  *   const warningCount = filteredResources.filter(r => r.hasWarning).length;
@@ -881,7 +902,7 @@ export interface ResourceDetailData {
  * @example
  * ```typescript
  * // Filter resources by specific criteria
- * function analyzeFilteredResources(filteredResources: FilteredResource[]) {
+ * function analyzeFilteredResources(filteredResources: IFilteredResource[]) {
  *   // Find resources that were completely filtered out
  *   const completelyFiltered = filteredResources.filter(r =>
  *     r.filteredCandidateCount === 0 && r.originalCandidateCount > 0
@@ -912,7 +933,7 @@ export interface ResourceDetailData {
  *
  * @public
  */
-export interface FilteredResource {
+export interface IFilteredResource {
   /** The resource ID that was filtered */
   id: string;
   /** Number of candidates before filtering was applied */
@@ -926,7 +947,7 @@ export interface FilteredResource {
 /**
  * Complete result of a filtering operation including processed data and analysis.
  *
- * FilterResult encapsulates the outcome of applying resource filtering, providing
+ * IFilterResult encapsulates the outcome of applying resource filtering, providing
  * both the filtered resource system and detailed analytics about the filtering
  * process. It includes success/failure status, processed resources, per-resource
  * analysis, and any warnings or errors encountered during filtering.
@@ -937,7 +958,7 @@ export interface FilteredResource {
  *
  * // Apply filtering and handle results
  * async function applyResourceFilter(
- *   processedResources: ProcessedResources,
+ *   processedResources: IProcessedResources,
  *   context: Record<string, string>
  * ) {
  *   const result = await FilterTools.createFilteredResourceManagerSimple(
@@ -947,7 +968,7 @@ export interface FilteredResource {
  *   );
  *
  *   if (result.isSuccess()) {
- *     const filterResult: FilterResult = result.value;
+ *     const filterResult: IFilterResult = result.value;
  *
  *     if (filterResult.success) {
  *       console.log('Filter applied successfully!');
@@ -976,8 +997,8 @@ export interface FilteredResource {
  *
  * @example
  * ```typescript
- * // Use FilterResult in React component for filter management
- * function FilterResultsPanel({ filterResult }: { filterResult: FilterResult | null }) {
+ * // Use IFilterResult in React component for filter management
+ * function FilterResultsPanel({ filterResult }: { filterResult: IFilterResult | null }) {
  *   if (!filterResult) {
  *     return <div className="no-filter">No filter applied</div>;
  *   }
@@ -1046,7 +1067,7 @@ export interface FilteredResource {
  * @example
  * ```typescript
  * // Advanced filter result analysis and validation
- * function validateFilterResults(filterResult: FilterResult): {
+ * function validateFilterResults(filterResult: IFilterResult): {
  *   isValid: boolean;
  *   issues: string[];
  *   recommendations: string[];
@@ -1099,13 +1120,13 @@ export interface FilteredResource {
  *
  * @public
  */
-export interface FilterResult {
+export interface IFilterResult {
   /** Whether the filtering operation completed successfully */
   success: boolean;
   /** The filtered processed resources, available if filtering succeeded */
-  processedResources?: ProcessedResources;
+  processedResources?: IProcessedResources;
   /** Analysis of individual resources after filtering, showing per-resource impact */
-  filteredResources: FilteredResource[];
+  filteredResources: IFilteredResource[];
   /** Warning messages about potential filtering issues or edge cases */
   warnings: string[];
   /** Error message if the filtering operation failed */
@@ -1175,16 +1196,16 @@ export interface FilterResult {
  *
  * @public
  */
-export interface OrchestratorState {
-  resources: ExtendedProcessedResources | null;
+export interface IOrchestratorState {
+  resources: IExtendedProcessedResources | null;
   configuration: Config.Model.ISystemConfiguration | null;
-  filterState: FilterState;
-  filterResult: FilterResult | null;
-  resolutionState: ResolutionState;
+  filterState: IFilterState;
+  filterResult: IFilterResult | null;
+  resolutionState: IResolutionState;
   selectedResourceId: string | null;
   isProcessing: boolean;
   error: string | null;
-  messages: Message[];
+  messages: IMessage[];
 }
 
 /**
@@ -1292,14 +1313,14 @@ export interface OrchestratorState {
  *
  * @public
  */
-export interface OrchestratorActions {
+export interface IOrchestratorActions {
   // Resource management
-  importDirectory: (directory: ImportedDirectory) => Promise<void>;
+  importDirectory: (directory: IImportedDirectory) => Promise<void>;
   importDirectoryWithConfig: (
-    directory: ImportedDirectory,
+    directory: IImportedDirectory,
     config: Config.Model.ISystemConfiguration
   ) => Promise<void>;
-  importFiles: (files: ImportedFile[]) => Promise<void>;
+  importFiles: (files: IImportedFile[]) => Promise<void>;
   importBundle: (bundle: Bundle.IBundle) => Promise<void>;
   clearResources: () => void;
 
@@ -1308,8 +1329,8 @@ export interface OrchestratorActions {
   applyConfiguration: (config: Config.Model.ISystemConfiguration) => void;
 
   // Filter management
-  updateFilterState: (state: Partial<FilterState>) => void;
-  applyFilter: () => Promise<FilterResult | null>;
+  updateFilterState: (state: Partial<IFilterState>) => void;
+  applyFilter: () => Promise<IFilterResult | null>;
   resetFilter: () => void;
 
   // Resolution management
@@ -1328,19 +1349,19 @@ export interface OrchestratorActions {
   discardResourceEdits: () => void;
 
   // Resource creation actions (enhanced with atomic API and Result pattern return values)
-  createPendingResource: (params: CreatePendingResourceParams) => Result<void>;
+  createPendingResource: (params: ICreatePendingResourceParams) => Result<void>;
   startNewResource: (
-    params?: StartNewResourceParams
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+    params?: IStartNewResourceParams
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   updateNewResourceId: (
     id: string
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   selectResourceType: (
     type: string
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   updateNewResourceJson: (
     json: JsonValue
-  ) => Result<{ draft: ResolutionState['newResourceDraft']; diagnostics: string[] }>;
+  ) => Result<{ draft: IResolutionState['newResourceDraft']; diagnostics: string[] }>;
   saveNewResourceAsPending: () => Result<{
     pendingResources: Map<string, ResourceJson.Json.ILooseResourceDecl>;
     diagnostics: string[];
@@ -1368,11 +1389,11 @@ export interface OrchestratorActions {
 
   // UI state management
   selectResource: (resourceId: string | null) => void;
-  addMessage: (type: Message['type'], message: string) => void;
+  addMessage: (type: IMessage['type'], message: string) => void;
   clearMessages: () => void;
 
   // Observability context for diagnostic and user logging
-  o11y: import('../utils/observability').IObservabilityContext;
+  o11y: IObservabilityContext;
 
   // Resource resolution
   resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
@@ -1384,7 +1405,7 @@ export interface OrchestratorActions {
  *
  * @public
  */
-export interface GridDropdownOption {
+export interface IGridDropdownOption {
   /** The value to store when this option is selected */
   value: string;
   /** The label to display for this option */
@@ -1398,7 +1419,7 @@ export interface GridDropdownOption {
  *
  * @public
  */
-export interface GridCellValidation {
+export interface IGridCellValidation {
   /** Whether the field is required */
   required?: boolean;
   /** Regex pattern for validation */
@@ -1417,7 +1438,7 @@ export interface GridCellValidation {
  *
  * @public
  */
-export interface GridColumnDefinition {
+export interface IGridColumnDefinition {
   /** Unique identifier for this column */
   id: string;
   /** Display title for the column header */
@@ -1433,13 +1454,13 @@ export interface GridColumnDefinition {
   /** Type of cell editor to use */
   cellType?: 'string' | 'boolean' | 'tristate' | 'dropdown' | 'custom';
   /** Custom component for rendering cell content */
-  cellRenderer?: React.ComponentType<GridCellProps>;
+  cellRenderer?: React.ComponentType<IGridCellProps>;
   /** Custom component for editing cell content */
-  cellEditor?: React.ComponentType<GridCellEditorProps>;
+  cellEditor?: React.ComponentType<IGridCellEditorProps>;
   /** Validation configuration for this column */
-  validation?: GridCellValidation;
+  validation?: IGridCellValidation;
   /** Options for dropdown/combobox cells */
-  dropdownOptions?: GridDropdownOption[] | (() => Promise<GridDropdownOption[]>);
+  dropdownOptions?: IGridDropdownOption[] | (() => Promise<IGridDropdownOption[]>);
   /** Whether to allow custom values in dropdown (combobox behavior) */
   allowCustomValue?: boolean;
   /** Presentation mode for tristate cells */
@@ -1457,13 +1478,13 @@ export interface GridColumnDefinition {
  *
  * @public
  */
-export interface GridCellProps {
+export interface IGridCellProps {
   /** The extracted value for this cell */
   value: JsonValue;
   /** The resource ID for this row */
   resourceId: string;
   /** The column definition for this cell */
-  column: GridColumnDefinition;
+  column: IGridColumnDefinition;
   /** The complete resolved resource value */
   resolvedValue: JsonValue;
   /** Whether this cell has been edited */
@@ -1477,7 +1498,7 @@ export interface GridCellProps {
  *
  * @public
  */
-export interface GridCellEditorProps extends GridCellProps {
+export interface IGridCellEditorProps extends IGridCellProps {
   /** The current edited value if any */
   editedValue?: JsonValue;
   /** Callback when the user saves an edit */
@@ -1494,13 +1515,13 @@ export interface GridCellEditorProps extends GridCellProps {
  *
  * @public
  */
-export interface ResourceTypeColumnMapping {
+export interface IResourceTypeColumnMapping {
   /** The resource type this mapping applies to */
   resourceType: string;
   /** Column definitions for this resource type */
-  columns: GridColumnDefinition[];
+  columns: IGridColumnDefinition[];
   /** Optional default column for unmapped properties */
-  defaultColumn?: GridColumnDefinition;
+  defaultColumn?: IGridColumnDefinition;
 }
 
 /**
@@ -1509,11 +1530,11 @@ export interface ResourceTypeColumnMapping {
  *
  * @public
  */
-export interface CustomResourceSelector {
+export interface ICustomResourceSelector {
   /** Unique identifier for this selector */
   id: string;
   /** Function that returns resource IDs to include in the grid */
-  select: (resources: ProcessedResources) => string[];
+  select: (resources: IProcessedResources) => string[];
   /** Optional display name for debugging/logging */
   displayName?: string;
 }
@@ -1531,14 +1552,14 @@ export type GridResourceSelector =
   | { type: 'resourceTypes'; types: string[] }
   | { type: 'pattern'; pattern: string }
   | { type: 'all' }
-  | { type: 'custom'; selector: CustomResourceSelector };
+  | { type: 'custom'; selector: ICustomResourceSelector };
 
 /**
  * Presentation options for grid display.
  *
  * @public
  */
-export interface GridPresentationOptions {
+export interface IGridPresentationOptions {
   /** Enable sorting of grid rows */
   enableSorting?: boolean;
   /** Enable filtering of grid rows */
@@ -1559,7 +1580,7 @@ export interface GridPresentationOptions {
  *
  * @public
  */
-export interface GridViewInitParams {
+export interface IGridViewInitParams {
   /** Unique identifier for this grid */
   id: string;
   /** Display title for this grid */
@@ -1569,9 +1590,9 @@ export interface GridViewInitParams {
   /** How to select resources for this grid */
   resourceSelection: GridResourceSelector;
   /** Column mappings for resource types in this grid */
-  columnMapping: ResourceTypeColumnMapping[];
+  columnMapping: IResourceTypeColumnMapping[];
   /** Optional presentation overrides */
-  presentationOptions?: GridPresentationOptions;
+  presentationOptions?: IGridPresentationOptions;
 }
 
 /**
@@ -1580,23 +1601,23 @@ export interface GridViewInitParams {
  *
  * @public
  */
-export interface GridViewProps extends ViewBaseProps {
+export interface IGridViewProps extends IViewBaseProps {
   /** Grid configuration defining what and how to display */
-  gridConfig: GridViewInitParams;
+  gridConfig: IGridViewInitParams;
   /** The resource system for resolution */
-  resources?: ProcessedResources | null;
+  resources?: IProcessedResources | null;
   /** Current resolution state (shared with other views) */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Actions for managing resolution state (shared with other views) */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Available qualifiers for context building */
   availableQualifiers?: string[];
   /** Optional configuration for context controls */
-  contextOptions?: ResolutionContextOptions;
+  contextOptions?: IResolutionContextOptions;
   /** Optional filter state integration */
-  filterState?: FilterState;
+  filterState?: IFilterState;
   /** Filter results if applied */
-  filterResult?: FilterResult | null;
+  filterResult?: IFilterResult | null;
   /** Whether to show context controls (default: true) */
   showContextControls?: boolean;
   /** Whether to show change controls (default: true) */
@@ -1609,23 +1630,23 @@ export interface GridViewProps extends ViewBaseProps {
  *
  * @public
  */
-export interface MultiGridViewProps extends ViewBaseProps {
+export interface IMultiGridViewProps extends IViewBaseProps {
   /** Multiple grid configurations to display */
-  gridConfigurations: GridViewInitParams[];
+  gridConfigurations: IGridViewInitParams[];
   /** The resource system for all grids */
-  resources?: ProcessedResources | null;
+  resources?: IProcessedResources | null;
   /** Shared resolution state across all grids */
-  resolutionState?: ResolutionState;
+  resolutionState?: IResolutionState;
   /** Shared resolution actions across all grids */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Available qualifiers for context building */
   availableQualifiers?: string[];
   /** Shared context options for all grids */
-  contextOptions?: ResolutionContextOptions;
+  contextOptions?: IResolutionContextOptions;
   /** Optional filter state integration */
-  filterState?: FilterState;
+  filterState?: IFilterState;
   /** Filter results if applied */
-  filterResult?: FilterResult | null;
+  filterResult?: IFilterResult | null;
   /** How to present the grid selector */
   tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
   /** ID of the initially active grid */

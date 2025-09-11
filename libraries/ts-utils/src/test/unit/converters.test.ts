@@ -472,7 +472,7 @@ describe('Converters module', () => {
         p4: number;
         base1: number;
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       const BaseObjectFunc = function (this: IBaseObject): void {
         this.p1 = 's1';
         this.p2 = 's2';
@@ -481,7 +481,6 @@ describe('Converters module', () => {
       };
       BaseObjectFunc.prototype.base1 = 100;
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const BaseObject = BaseObjectFunc as unknown as { new (): IBaseObject };
 
       const srcObject = new BaseObject();
@@ -658,7 +657,7 @@ describe('Converters module', () => {
         p4: number;
         base1: number;
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       const BaseObjectFunc = function (this: IBaseObject): void {
         this.p1 = 's1';
         this.p2 = 's2';
@@ -667,7 +666,6 @@ describe('Converters module', () => {
       };
       BaseObjectFunc.prototype.base1 = 100;
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const BaseObject = BaseObjectFunc as unknown as { new (): IBaseObject };
 
       const srcObject = new BaseObject();

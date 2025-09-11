@@ -23,7 +23,7 @@
 import { Failure, Validation, Validator, fail } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
 
-/* eslint-disable no-use-before-define, @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 /**
  * Validation context for in-place JSON validators.

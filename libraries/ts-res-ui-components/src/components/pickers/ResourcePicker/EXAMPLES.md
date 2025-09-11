@@ -19,7 +19,7 @@ Basic read-only resource browsing application.
 
 ```typescript
 import React, { useState, useEffect } from 'react';
-import { ResourcePicker, ResourceAnnotations } from '@fgv/ts-res-ui-components';
+import { ResourcePicker, ResourceAnnotations, ObservabilityProvider, useObservabilityContext } from '@fgv/ts-res-ui-components';
 import { ProcessedResources } from '@fgv/ts-res';
 
 interface ResourceViewerProps {
@@ -97,36 +97,38 @@ export function ResourceViewer({ configPath }: ResourceViewerProps) {
   }
 
   return (
-    <div className="w-full h-full flex">
-      {/* Resource Picker */}
-      <div className="w-1/3 border-r border-gray-200">
-        <ResourcePicker
-          resources={resources}
-          selectedResourceId={selectedId}
-          onResourceSelect={handleResourceSelect}
-          resourceAnnotations={annotations}
-          options={{
-            defaultView: "tree",
-            height: "100%",
-            emptyMessage: "No resources found. Check your configuration."
-          }}
-        />
-      </div>
-      
-      {/* Resource Details */}
-      <div className="flex-1 p-6">
-        {selectedId ? (
-          <ResourceDetails 
-            resourceId={selectedId} 
-            resources={resources} 
+    <ObservabilityProvider>
+      <div className="w-full h-full flex">
+        {/* Resource Picker */}
+        <div className="w-1/3 border-r border-gray-200">
+          <ResourcePicker
+            resources={resources}
+            selectedResourceId={selectedId}
+            onResourceSelect={handleResourceSelect}
+            resourceAnnotations={annotations}
+            options={{
+              defaultView: "tree",
+              height: "100%",
+              emptyMessage: "No resources found. Check your configuration."
+            }}
           />
-        ) : (
-          <div className="text-gray-500 text-center mt-20">
-            Select a resource to view details
-          </div>
-        )}
+        </div>
+        
+        {/* Resource Details */}
+        <div className="flex-1 p-6">
+          {selectedId ? (
+            <ResourceDetails 
+              resourceId={selectedId} 
+              resources={resources} 
+            />
+          ) : (
+            <div className="text-gray-500 text-center mt-20">
+              Select a resource to view details
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ObservabilityProvider>
   );
 }
 
@@ -171,7 +173,7 @@ Resource editor that tracks unsaved changes and shows them in the picker.
 
 ```typescript
 import React, { useState, useCallback } from 'react';
-import { ResourcePicker, PendingResource, ResourceAnnotations } from '@fgv/ts-res-ui-components';
+import { ResourcePicker, PendingResource, ResourceAnnotations, ObservabilityProvider, useObservabilityContext } from '@fgv/ts-res-ui-components';
 
 interface ResourceEditorProps {
   resources: ProcessedResources;
@@ -269,66 +271,68 @@ export function ResourceEditor({ resources, onSave }: ResourceEditorProps) {
   }, [pendingChanges]);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Toolbar */}
-      <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Resource Editor</h1>
-        <div className="flex items-center space-x-2">
-          <span className="text-sm text-gray-500">
-            {pendingChanges.length} pending changes
-          </span>
-          <button
-            onClick={handleDiscard}
-            disabled={!isDirty}
-            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
-          >
-            Discard
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!isDirty}
-            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex">
-        {/* Resource Picker */}
-        <div className="w-1/3 border-r border-gray-200">
-          <ResourcePicker
-            resources={resources}
-            selectedResourceId={selectedId}
-            onResourceSelect={setSelectedId}
-            pendingResources={pendingChanges}
-            resourceAnnotations={annotations}
-            options={{
-              defaultView: "tree",
-              height: "100%"
-            }}
-          />
+    <ObservabilityProvider>
+      <div className="h-full flex flex-col">
+        {/* Toolbar */}
+        <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Resource Editor</h1>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">
+              {pendingChanges.length} pending changes
+            </span>
+            <button
+              onClick={handleDiscard}
+              disabled={!isDirty}
+              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
+            >
+              Discard
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!isDirty}
+              className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            >
+              Save Changes
+            </button>
+          </div>
         </div>
 
-        {/* Editor Panel */}
-        <div className="flex-1">
-          {selectedId ? (
-            <ResourceEditorPanel
-              resourceId={selectedId}
+        <div className="flex-1 flex">
+          {/* Resource Picker */}
+          <div className="w-1/3 border-r border-gray-200">
+            <ResourcePicker
               resources={resources}
-              pendingChanges={pendingChanges}
-              onCreateResource={createResource}
-              onModifyResource={modifyResource}
-              onDeleteResource={deleteResource}
+              selectedResourceId={selectedId}
+              onResourceSelect={setSelectedId}
+              pendingResources={pendingChanges}
+              resourceAnnotations={annotations}
+              options={{
+                defaultView: "tree",
+                height: "100%"
+              }}
             />
-          ) : (
-            <div className="p-6 text-gray-500 text-center">
-              Select a resource to edit
-            </div>
-          )}
+          </div>
+
+          {/* Editor Panel */}
+          <div className="flex-1">
+            {selectedId ? (
+              <ResourceEditorPanel
+                resourceId={selectedId}
+                resources={resources}
+                pendingChanges={pendingChanges}
+                onCreateResource={createResource}
+                onModifyResource={modifyResource}
+                onDeleteResource={deleteResource}
+              />
+            ) : (
+              <div className="p-6 text-gray-500 text-center">
+                Select a resource to edit
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </ObservabilityProvider>
   );
 }
 
@@ -1181,7 +1185,7 @@ Examples showing how the options control integrates with the main view component
 
 ```typescript
 import React, { useState } from 'react';
-import { SourceView, FilterView, CompiledView } from '@fgv/ts-res-ui-components';
+import { SourceView, FilterView, CompiledView, ObservabilityProvider } from '@fgv/ts-res-ui-components';
 
 function MultiViewDashboard({ 
   resources, 
@@ -1222,31 +1226,30 @@ function MultiViewDashboard({
       </div>
       
       {/* Views with conditional debug options */}
-      {currentView === 'source' && (
-        <SourceView
-          resources={resources}
-          pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
-          onMessage={(type, message) => console.log(`${type}: ${message}`)}
-        />
-      )}
-      
-      {currentView === 'filter' && (
-        <FilterView
-          resources={resources}
-          filterState={filterState}
-          filterActions={filterActions}
-          pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
-          onMessage={(type, message) => console.log(`${type}: ${message}`)}
-        />
-      )}
-      
-      {currentView === 'compiled' && (
-        <CompiledView
-          resources={resources}
-          pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
-          onMessage={(type, message) => console.log(`${type}: ${message}`)}
-        />
-      )}
+      <ObservabilityProvider>
+        {currentView === 'source' && (
+          <SourceView
+            resources={resources}
+            pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+          />
+        )}
+        
+        {currentView === 'filter' && (
+          <FilterView
+            resources={resources}
+            filterState={filterState}
+            filterActions={filterActions}
+            pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+          />
+        )}
+        
+        {currentView === 'compiled' && (
+          <CompiledView
+            resources={resources}
+            pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+          />
+        )}
+      </ObservabilityProvider>
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import React, { useCallback } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
-import { GridViewInitParams } from '../../../types';
+import { IGridViewInitParams } from '../../../types';
 
 /**
  * Props for the GridSelector component.
  */
-export interface GridSelectorProps {
+export interface IGridSelectorProps {
   /** Available grid configurations */
-  gridConfigurations: GridViewInitParams[];
+  gridConfigurations: IGridViewInitParams[];
   /** ID of the currently active grid */
   activeGridId: string;
   /** Callback when the active grid changes */
@@ -41,7 +41,7 @@ export interface GridSelectorProps {
  * ```
  * @public
  */
-export const GridSelector: React.FC<GridSelectorProps> = ({
+export const GridSelector: React.FC<IGridSelectorProps> = ({
   gridConfigurations,
   activeGridId,
   onGridChange,

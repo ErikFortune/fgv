@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ImportedDirectory](./ts-res-ui-components.importtools.importeddirectory.md)
+[IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md)
 
 
 </td><td>
@@ -30,7 +30,7 @@ Represents a directory structure imported into the system. Supports nested direc
 </td></tr>
 <tr><td>
 
-[ImportedFile](./ts-res-ui-components.importtools.importedfile.md)
+[IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)
 
 
 </td><td>
@@ -41,7 +41,7 @@ Represents a file imported into the system. Used for handling individual resourc
 </td></tr>
 <tr><td>
 
-[ImportViewProps](./ts-res-ui-components.importtools.importviewprops.md)
+[IImportViewProps](./ts-res-ui-components.importtools.iimportviewprops.md)
 
 
 </td><td>

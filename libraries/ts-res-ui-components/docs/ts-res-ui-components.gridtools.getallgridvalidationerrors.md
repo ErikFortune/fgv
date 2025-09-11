@@ -9,13 +9,9 @@ Utility function to get all current validation errors. Useful for displaying val
 **Signature:**
 
 ```typescript
-getAllGridValidationErrors: () => {
-    resourceId: string;
-    columnId: string;
-    error: string;
-}[]
+getAllGridValidationErrors: () => Record<string, Record<string, string>>
 ```
 **Returns:**
 
-{ resourceId: string; columnId: string; error: string; }\[\]
+Record&lt;string, Record&lt;string, string&gt;&gt;
 

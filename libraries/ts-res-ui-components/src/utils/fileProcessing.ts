@@ -1,11 +1,20 @@
-import { ImportedFile, ImportedDirectory } from '../types';
+import { IImportedFile, IImportedDirectory, JsonValue } from '../types';
+
+type WindowWithFileSystemAccess = Window & {
+  showSaveFilePicker: NonNullable<Window['showDirectoryPicker']>;
+};
+
+// Type guard to check if browser supports File System Access API
+function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
+  return 'showSaveFilePicker' in w;
+}
 
 /**
  * Read files from file input element
  */
 /** @internal */
-export async function readFilesFromInput(files: FileList): Promise<ImportedFile[]> {
-  const importedFiles: ImportedFile[] = [];
+export async function readFilesFromInput(files: FileList): Promise<IImportedFile[]> {
+  const importedFiles: IImportedFile[] = [];
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -41,9 +50,9 @@ function readFileContent(file: File): Promise<string> {
  * Convert flat file list to directory structure
  */
 /** @internal */
-export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
+export function filesToDirectory(files: IImportedFile[]): IImportedDirectory {
   // Group files by directory path
-  const filesByPath = new Map<string, ImportedFile[]>();
+  const filesByPath = new Map<string, IImportedFile[]>();
   const dirPaths = new Set<string>();
 
   files.forEach((file) => {
@@ -78,8 +87,8 @@ export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
   });
 
   // Build directory tree
-  const buildDirectory = (path: string, name: string): ImportedDirectory => {
-    const dir: ImportedDirectory = {
+  const buildDirectory = (path: string, name: string): IImportedDirectory => {
+    const dir: IImportedDirectory = {
       name,
       path,
       files: filesByPath.get(path) || [],
@@ -108,7 +117,7 @@ export function filesToDirectory(files: ImportedFile[]): ImportedDirectory {
  * Export data as JSON file
  */
 /** @internal */
-export function exportAsJson(data: any, filename: string): void {
+export function exportAsJson(data: JsonValue, filename: string): void {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -127,16 +136,16 @@ export function exportAsJson(data: any, filename: string): void {
  */
 /** @internal */
 export async function exportUsingFileSystemAPI(
-  data: any,
+  data: JsonValue,
   suggestedName: string,
   description: string = 'JSON files'
 ): Promise<boolean> {
-  if (!('showSaveFilePicker' in window)) {
+  if (!hasFileSystemAccess(window)) {
     return false;
   }
 
   try {
-    const fileHandle = await (window as any).showSaveFilePicker({
+    const fileHandle = await window.showSaveFilePicker({
       suggestedName,
       types: [
         {

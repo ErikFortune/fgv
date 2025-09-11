@@ -1,16 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { CogIcon, ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ResolutionContextOptions, QualifierControlOptions } from '../../types';
+import { IResolutionContextOptions, IQualifierControlOptions } from '../../types';
 
 /**
  * Props for the ResolutionContextOptionsControl component.
  * @public
  */
-export interface ResolutionContextOptionsControlProps {
+export interface IResolutionContextOptionsControlProps {
   /** Current context options */
-  options: ResolutionContextOptions;
+  options: IResolutionContextOptions;
   /** Callback when options change */
-  onOptionsChange: (options: ResolutionContextOptions) => void;
+  onOptionsChange: (options: IResolutionContextOptions) => void;
   /** Available qualifiers for configuration */
   availableQualifiers?: string[];
   /** How to present the options control (default: 'hidden' for production use) */
@@ -49,7 +49,7 @@ export interface ResolutionContextOptionsControlProps {
  * import { ResolutionContextOptionsControl } from '@fgv/ts-res-ui-components';
  *
  * function ContextConfiguration() {
- *   const [contextOptions, setContextOptions] = useState<ResolutionContextOptions>({});
+ *   const [contextOptions, setContextOptions] = useState<IResolutionContextOptions>({});
  *
  *   return (
  *     <ResolutionContextOptionsControl
@@ -65,7 +65,7 @@ export interface ResolutionContextOptionsControlProps {
  *
  * @public
  */
-export const ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsControlProps> = ({
+export const ResolutionContextOptionsControl: React.FC<IResolutionContextOptionsControlProps> = ({
   options,
   onOptionsChange,
   availableQualifiers = [],
@@ -86,7 +86,7 @@ export const ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsC
   const [showPopover, setShowPopover] = useState(false);
 
   const handleOptionChange = useCallback(
-    <K extends keyof ResolutionContextOptions>(key: K, value: ResolutionContextOptions[K]) => {
+    <K extends keyof IResolutionContextOptions>(key: K, value: IResolutionContextOptions[K]) => {
       onOptionsChange({
         ...options,
         [key]: value
@@ -96,7 +96,11 @@ export const ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsC
   );
 
   const handleQualifierOptionChange = useCallback(
-    (qualifierName: string, optionKey: keyof QualifierControlOptions, value: any) => {
+    (
+      qualifierName: string,
+      optionKey: keyof IQualifierControlOptions,
+      value: boolean | string | undefined
+    ) => {
       const currentQualifierOptions = options.qualifierOptions || {};
       const currentOptions = currentQualifierOptions[qualifierName] || {};
 
@@ -131,7 +135,7 @@ export const ResolutionContextOptionsControl: React.FC<ResolutionContextOptionsC
     [options.hostManagedValues, handleOptionChange]
   );
 
-  const renderControls = () => (
+  const renderControls = (): React.ReactElement => (
     <div className="space-y-4">
       {/* Visibility Settings */}
       <div className="space-y-3">

@@ -15,7 +15,6 @@
  *   onConfigurationChange={handleConfigChange}
  *   onSave={handleSave}
  *   hasUnsavedChanges={hasChanges}
- *   onMessage={onMessage}
  * />
  *
  * // Use form components for editing individual configuration elements
@@ -44,7 +43,7 @@ export { ResourceTypeEditForm } from '../components/forms/ResourceTypeEditForm';
 export { HierarchyEditor } from '../components/forms/HierarchyEditor';
 
 // Export domain-specific hook
-export { useConfigurationState } from '../hooks/useConfigurationState';
+export { useIConfigurationState } from '../hooks/useConfigurationState';
 
 // Export utility functions
 export {
@@ -56,4 +55,4 @@ export {
 } from '../utils/configurationUtils';
 
 // Export types related to configuration management
-export type { ConfigurationViewProps } from '../types';
+export type { IConfigurationViewProps } from '../types';

@@ -11,7 +11,7 @@ QualifierContextControl provides an interface for setting and modifying qualifie
 **Signature:**
 
 ```typescript
-QualifierContextControl: React.FC<QualifierContextControlProps>
+QualifierContextControl: React.FC<IQualifierContextControlProps>
 ```
 
 ## Example 1

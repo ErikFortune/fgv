@@ -11,7 +11,7 @@ Performs comprehensive validation of configuration structure, required fields, t
 **Signature:**
 
 ```typescript
-export declare function validateConfiguration(config: Config.Model.ISystemConfiguration): ConfigurationValidationResult;
+export declare function validateConfiguration(config: Config.Model.ISystemConfiguration): IConfigurationValidationResult;
 ```
 
 ## Parameters
@@ -52,7 +52,7 @@ The system configuration to validate
 
 **Returns:**
 
-ConfigurationValidationResult
+IConfigurationValidationResult
 
 Validation result with errors, warnings, and validity status
 

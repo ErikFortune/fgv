@@ -1,18 +1,18 @@
 import React, { useCallback, useMemo } from 'react';
-import { ChevronDownIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { JsonValue } from '@fgv/ts-json-base';
-import { GridColumnDefinition } from '../../../../types';
+import { IGridColumnDefinition } from '../../../../types';
 
 /**
  * Props for the TriStateCell component.
  */
-export interface TriStateCellProps {
+export interface ITriStateCellProps {
   /** Current value of the cell */
   value: JsonValue;
   /** Resource ID for this row */
   resourceId: string;
   /** Column configuration */
-  column: GridColumnDefinition;
+  column: IGridColumnDefinition;
   /** Whether the cell is in read-only mode */
   disabled?: boolean;
   /** Presentation mode: 'checkbox' for 3-state checkbox, 'dropdown' for select */
@@ -52,7 +52,7 @@ export interface TriStateCellProps {
  * ```
  * @public
  */
-export const TriStateCell: React.FC<TriStateCellProps> = ({
+export const TriStateCell: React.FC<ITriStateCellProps> = ({
   value,
   resourceId,
   column,
