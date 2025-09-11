@@ -31,6 +31,7 @@ import {
   sanitizeJsonObject,
   JsonCompatible
 } from '../../packlets/json';
+import { Brand } from '@fgv/ts-utils';
 
 describe('json/common module', () => {
   describe('isJsonObject function', () => {
@@ -1058,10 +1059,10 @@ describe('json/common module', () => {
 
     describe('branded types', () => {
       // Define some branded types
-      type UserId = string & { readonly __brand: 'UserId' };
-      type EmailAddress = string & { readonly __brand: 'EmailAddress' };
-      type PositiveNumber = number & { readonly __brand: 'PositiveNumber' };
-      type JsonString = string & { readonly __brand: 'JsonString' };
+      type UserId = Brand<string, 'UserId'>;
+      type EmailAddress = Brand<string, 'EmailAddress'>;
+      type PositiveNumber = Brand<number, 'PositiveNumber'>;
+      type JsonString = Brand<string, 'JsonString'>;
 
       // Helper functions to create branded values (would normally be in validators/converters)
       const createUserId = (id: string): UserId => id as UserId;
