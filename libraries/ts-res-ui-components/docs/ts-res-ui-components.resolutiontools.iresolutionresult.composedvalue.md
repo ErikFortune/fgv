@@ -9,5 +9,5 @@ The final composed/resolved value
 **Signature:**
 
 ```typescript
-composedValue?: JsonValue;
+composedValue?: TV;
 ```

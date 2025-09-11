@@ -9,7 +9,7 @@ Attempts to create a resource editor for the given resource.
 **Signature:**
 
 ```typescript
-createEditor(resourceId: string, resourceType: string, value: JsonValue): ResourceEditorResult;
+createEditor(resourceId: string, resourceType: string, value: TV): ResourceEditorResult<T, TV>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ value
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>
@@ -82,7 +82,7 @@ The current value of the resource
 
 **Returns:**
 
-[ResourceEditorResult](./ts-res-ui-components.resourcetools.resourceeditorresult.md)
+[ResourceEditorResult](./ts-res-ui-components.resourcetools.resourceeditorresult.md)<!-- -->&lt;T, TV&gt;
 
 ResourceEditorResult indicating success/failure and the editor component or error message
 

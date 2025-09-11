@@ -10,7 +10,7 @@ import {
   ResourceTypes,
   Import
 } from '@fgv/ts-res';
-import { JsonValue } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonValue } from '@fgv/ts-json-base';
 // IIResourcePickerOptions import removed - unused
 import type { IObservabilityContext } from '../utils/observability';
 
@@ -331,12 +331,12 @@ export interface ICompiledViewProps extends IViewBaseProps {
  *
  * @public
  */
-export type ResourceEditorResult =
+export type ResourceEditorResult<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> =
   | {
       /** Indicates whether the factory was able to create an editor for the resource */
       success: true;
       /** The React component to render for editing this resource */
-      editor: React.ComponentType<IResourceEditorProps>;
+      editor: React.ComponentType<IResourceEditorProps<T, TV>>;
     }
   | {
       /** Indicates the factory could not create an editor for this resource */
@@ -351,17 +351,17 @@ export type ResourceEditorResult =
  *
  * @public
  */
-export interface IResourceEditorProps {
+export interface IResourceEditorProps<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
   /** The original JSON value to edit */
-  value: JsonValue;
+  value: TV;
   /** The resource ID for tracking edits */
   resourceId: string;
   /** Whether this resource has been edited */
   isEdited?: boolean;
   /** The current edited value if any */
-  editedValue?: JsonValue;
+  editedValue?: TV;
   /** Callback when the user saves an edit */
-  onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
+  onSave?: (resourceId: string, editedValue: TV, originalValue: TV) => void;
   /** Callback when the user cancels an edit */
   onCancel?: (resourceId: string) => void;
   /** Whether editing is currently disabled */
@@ -376,7 +376,7 @@ export interface IResourceEditorProps {
  *
  * @public
  */
-export interface IResourceEditorFactory {
+export interface IResourceEditorFactory<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
   /**
    * Attempts to create a resource editor for the given resource.
    *
@@ -385,7 +385,7 @@ export interface IResourceEditorFactory {
    * @param value - The current value of the resource
    * @returns ResourceEditorResult indicating success/failure and the editor component or error message
    */
-  createEditor(resourceId: string, resourceType: string, value: JsonValue): ResourceEditorResult;
+  createEditor(resourceId: string, resourceType: string, value: TV): ResourceEditorResult<T, TV>;
 }
 
 /**
@@ -440,11 +440,11 @@ export interface IResolutionViewProps extends IViewBaseProps {
  *
  * @public
  */
-export interface IEditedResourceInfo {
+export interface IEditedResourceInfo<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
   /** Unique identifier of the resource being edited */
   resourceId: string;
-  originalValue: JsonValue;
-  editedValue: JsonValue;
+  originalValue: TV;
+  editedValue: TV;
   timestamp: Date;
 }
 
@@ -507,13 +507,16 @@ export interface IResolutionState {
  *
  * @public
  */
-export interface ICreatePendingResourceParams {
+export interface ICreatePendingResourceParams<
+  T = JsonValue,
+  TV extends JsonCompatible<T> = JsonCompatible<T>
+> {
   /** Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique */
   id: string;
   /** Name of the resource type to use for validation and template creation */
   resourceTypeName: string;
   /** JSON content for the resource candidate. If undefined, the resource type's base template will be used. */
-  json?: JsonValue;
+  json?: TV;
 }
 
 /**
@@ -536,7 +539,7 @@ export interface ICreatePendingResourceParams {
  *
  * @public
  */
-export interface IStartNewResourceParams {
+export interface IStartNewResourceParams<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
   /** Resource type to use (optional - will use first available if not provided) */
   defaultTypeName?: string;
   /** Pre-seed with specific ID (optional) */
@@ -544,7 +547,7 @@ export interface IStartNewResourceParams {
   /** Pre-seed with specific resource type name (optional) */
   resourceTypeName?: string;
   /** Pre-seed with specific JSON content (optional) */
-  json?: JsonValue;
+  json?: TV;
 }
 
 /**
@@ -722,7 +725,7 @@ export interface IResolutionContextOptions {
  *
  * @public
  */
-export interface IResolutionResult {
+export interface IResolutionResult<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
   /** Whether the resolution was successful */
   success: boolean;
   /** ID of the resource that was resolved */
@@ -736,7 +739,7 @@ export interface IResolutionResult {
   /** Detailed information about each candidate's matching process */
   candidateDetails?: ICandidateInfo[];
   /** The final composed/resolved value */
-  composedValue?: JsonValue;
+  composedValue?: TV;
   /** Error message if resolution failed */
   error?: string;
 }

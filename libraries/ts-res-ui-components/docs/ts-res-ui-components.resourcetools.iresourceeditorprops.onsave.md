@@ -9,5 +9,5 @@ Callback when the user saves an edit
 **Signature:**
 
 ```typescript
-onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
+onSave?: (resourceId: string, editedValue: TV, originalValue: TV) => void;
 ```

@@ -9,7 +9,7 @@ Props that will be passed to custom resource editors created by ResourceEditorFa
 **Signature:**
 
 ```typescript
-export interface IResourceEditorProps 
+export interface IResourceEditorProps<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> 
 ```
 
 ## Properties
@@ -83,7 +83,7 @@ _(Optional)_ Whether editing is currently disabled
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>
@@ -140,7 +140,7 @@ _(Optional)_ Callback when the user cancels an edit
 
 </td><td>
 
-(resourceId: string, editedValue: JsonValue, originalValue: JsonValue) =&gt; void
+(resourceId: string, editedValue: TV, originalValue: TV) =&gt; void
 
 
 </td><td>
@@ -178,7 +178,7 @@ The resource ID for tracking edits
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ResourceEditorProps } from '@fgv/ts-res-ui-components';
+import { ResourceTools } from '@fgv/ts-res-ui-components';
+import { Validators } from '@fgv/ts-utils';
 
 interface MarketInfo {
   marketName: string;
@@ -12,7 +13,17 @@ interface MarketInfo {
   selectedBy: string;
 }
 
-export const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
+const marketInfo = Validators.object<MarketInfo>({
+  marketName: Validators.string,
+  availablePaymentMethods: Validators.arrayOf(Validators.string),
+  supportedLanguages: Validators.arrayOf(Validators.string),
+  regulatoryCompliance: Validators.string,
+  marketingBudget: Validators.string,
+  customerSupportHours: Validators.string,
+  selectedBy: Validators.string
+});
+
+export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<MarketInfo>> = ({
   value,
   resourceId,
   isEdited = false,
@@ -35,18 +46,8 @@ export const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
   }, [value, editedValue, isEdited]);
 
   // Validate that the value is a proper MarketInfo object
-  const isValidMarketInfo = useCallback((data: any): data is MarketInfo => {
-    return (
-      data &&
-      typeof data === 'object' &&
-      typeof data.marketName === 'string' &&
-      Array.isArray(data.availablePaymentMethods) &&
-      Array.isArray(data.supportedLanguages) &&
-      typeof data.regulatoryCompliance === 'string' &&
-      typeof data.marketingBudget === 'string' &&
-      typeof data.customerSupportHours === 'string' &&
-      typeof data.selectedBy === 'string'
-    );
+  const isValidMarketInfo = useCallback((data: unknown): data is MarketInfo => {
+    return marketInfo.validate(data).isSuccess();
   }, []);
 
   // Handle starting an edit
