@@ -648,7 +648,10 @@ describe('json/common module', () => {
 
     describe('class instances', () => {
       class SimpleClass {
-        public constructor(public value: string) {}
+        public readonly value: string;
+        public constructor(value: string) {
+          this.value = value;
+        }
 
         public method(): string {
           return this.value.toUpperCase();
@@ -656,13 +659,21 @@ describe('json/common module', () => {
       }
 
       class DataClass {
-        public constructor(public id: string, public name: string) {}
+        public readonly id: string;
+        public readonly name: string;
+        public constructor(id: string, name: string) {
+          this.id = id;
+          this.name = name;
+        }
       }
 
       class ComplexClass {
         private _internal: number = 0;
+        public readonly data: string;
 
-        public constructor(public data: string) {}
+        public constructor(data: string) {
+          this.data = data;
+        }
 
         public get computed(): string {
           return `${this.data}-${this._internal}`;
@@ -809,7 +820,8 @@ describe('json/common module', () => {
 
         // At runtime, number keys become strings in JSON, but type-wise this works
         const value: IWithNumberKeys = {
-          numberKeys: { '1': 'one', '2': 'two' } as Record<number, string>
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          numberKeys: { 1: 'one', 2: 'two' } as Record<number, string>
         };
 
         map.set('keys', value);
@@ -905,12 +917,6 @@ describe('json/common module', () => {
         mixedArrayTuple: [string[], Array<() => void>];
       }
 
-      interface IWithOptionalTuples {
-        optionalElements: [string, number?];
-        restElements: [string, ...number[]];
-        mixedRest: [string, ...Array<string | (() => void)>];
-      }
-
       interface IWithDefinedTuples {
         definedElements: [string, number];
         restElements: [string, ...number[]];
@@ -998,7 +1004,7 @@ describe('json/common module', () => {
       test('demonstrates that explicit undefined in tuples is not JSON-compatible', () => {
         // JsonCompatible works great with optional object properties (property?: T)
         // but struggles with explicit undefined in tuple types [T, U?] because the ? creates T | undefined
-        const map = new MapOf<IWithOptionalTuples>();
+        // IWithOptionalTuples would not work with JsonCompatible due to explicit undefined in tuples
 
         // The issue is that [string, number?] becomes [string, (number | undefined)?]
         // and JsonCompatible treats explicit undefined as incompatible
@@ -1186,6 +1192,222 @@ describe('json/common module', () => {
 
         expect(user.id).toBe('preserved');
         expect(user.contact).toBe('preserved@example.com');
+      });
+    });
+
+    describe('discriminated unions with mixed compatibility', () => {
+      // Define a discriminated union where some variants are JSON-compatible and others aren't
+      interface IDataEvent {
+        type: 'data';
+        timestamp: string;
+        payload: { id: string; value: number };
+      }
+
+      interface ICallbackEvent {
+        type: 'callback';
+        timestamp: string;
+        handler: () => void;
+        context: string;
+      }
+
+      interface IFunctionEvent {
+        type: 'function';
+        timestamp: string;
+        execute: (input: string) => string;
+        metadata: { name: string; version: number };
+      }
+
+      interface IComplexCompatibleEvent {
+        type: 'complex';
+        timestamp: string;
+        data: {
+          users: string[];
+          settings: Record<string, boolean>;
+          nested: { values: number[] };
+        };
+      }
+
+      type AppEvent = IDataEvent | ICallbackEvent | IFunctionEvent | IComplexCompatibleEvent;
+
+      interface IEventStore<T extends AppEvent = AppEvent> {
+        events: T[];
+        lastProcessed?: T;
+      }
+
+      test('shows that mixed discriminated unions become unusable without filtering', () => {
+        const map = new MapOf<IEventStore>();
+        const value: IEventStore = {
+          events: [
+            { type: 'data', timestamp: '2024-01-01T00:00:00Z', payload: { id: 'test123', value: 42 } },
+            { type: 'callback', timestamp: '2024-01-01T00:01:00Z', handler: () => {}, context: 'test' }
+          ],
+          lastProcessed: {
+            type: 'data',
+            timestamp: '2024-01-01T00:00:00Z',
+            payload: { id: 'test123', value: 42 }
+          }
+        };
+
+        // @ts-expect-error - IEventStore should not satisfy JsonCompatible
+        map.set('mixed', value);
+      });
+
+      test('shows that filtered discriminated unions are usable', () => {
+        const map = new MapOf<IEventStore>();
+        const value: IEventStore<IDataEvent | IComplexCompatibleEvent> = {
+          events: [
+            { type: 'data', timestamp: '2024-01-01T00:00:00Z', payload: { id: 'test123', value: 42 } }
+          ],
+          lastProcessed: {
+            type: 'data',
+            timestamp: '2024-01-01T00:00:00Z',
+            payload: { id: 'test123', value: 42 }
+          }
+        };
+
+        map.set('mixed', value);
+      });
+
+      test('shows the correct approach - define compatible-only discriminated unions', () => {
+        // The key insight: you must define discriminated unions with ONLY compatible variants
+        // Using the mixed AppEvent type (even with compatible values) doesn't work
+
+        // Define a new discriminated union with only compatible variants
+        type PureCompatibleEvent = IDataEvent | IComplexCompatibleEvent;
+
+        interface IPureCompatibleEventStore {
+          events: PureCompatibleEvent[];
+          lastProcessed?: PureCompatibleEvent;
+        }
+
+        const map = new MapOf<IPureCompatibleEventStore>();
+
+        const dataEvent: IDataEvent = {
+          type: 'data',
+          timestamp: '2024-01-01T00:00:00Z',
+          payload: { id: 'test123', value: 42 }
+        };
+
+        const complexEvent: IComplexCompatibleEvent = {
+          type: 'complex',
+          timestamp: '2024-01-01T00:01:00Z',
+          data: {
+            users: ['user1', 'user2'],
+            settings: { darkMode: true, notifications: false },
+            nested: { values: [1, 2, 3, 4, 5] }
+          }
+        };
+
+        const store: IPureCompatibleEventStore = {
+          events: [dataEvent, complexEvent],
+          lastProcessed: dataEvent
+        };
+
+        map.set('pure', store);
+
+        const retrieved = map.get('pure');
+        expect(retrieved?.events).toHaveLength(2);
+
+        // This reveals an important limitation: JsonCompatible<T[]> where T is a discriminated union
+        // always includes error arrays in the transformed type, even if all variants are compatible
+        // This is because JsonCompatible processes the union type systematically
+
+        // The workaround is to test the individual event types separately
+        if (retrieved?.events[0] && 'type' in retrieved.events[0]) {
+          expect(retrieved.events[0].type).toBe('data');
+        }
+        if (retrieved?.events[1] && 'type' in retrieved.events[1]) {
+          expect(retrieved.events[1].type).toBe('complex');
+        }
+        if (retrieved?.lastProcessed && 'type' in retrieved.lastProcessed) {
+          expect(retrieved.lastProcessed.type).toBe('data');
+        }
+      });
+
+      test('shows how JsonCompatible transforms discriminated unions', () => {
+        // Let's examine what happens to each variant type
+        type CompatibleDataEvent = JsonCompatible<IDataEvent>;
+        type CompatibleCallbackEvent = JsonCompatible<ICallbackEvent>;
+        type CompatibleFunctionEvent = JsonCompatible<IFunctionEvent>;
+        type CompatibleComplexEvent = JsonCompatible<IComplexCompatibleEvent>;
+
+        // Data event should be unchanged (fully compatible)
+        const dataEvent: CompatibleDataEvent = {
+          type: 'data',
+          timestamp: '2024-01-01T00:00:00Z',
+          payload: { id: 'test', value: 1 }
+        };
+
+        // Complex event should be unchanged (fully compatible)
+        const complexEvent: CompatibleComplexEvent = {
+          type: 'complex',
+          timestamp: '2024-01-01T00:00:00Z',
+          data: {
+            users: ['user1'],
+            settings: { enabled: true },
+            nested: { values: [1, 2, 3] }
+          }
+        };
+
+        // Callback event has handler transformed to error array
+        const callbackEvent: CompatibleCallbackEvent = {
+          type: 'callback',
+          timestamp: '2024-01-01T00:00:00Z',
+          handler: ['Error: Function is not JSON-compatible'] as never, // This becomes unusable
+          context: 'test'
+        };
+
+        // Function event has execute transformed to error array
+        const functionEvent: CompatibleFunctionEvent = {
+          type: 'function',
+          timestamp: '2024-01-01T00:00:00Z',
+          execute: ['Error: Function is not JSON-compatible'] as never, // This becomes unusable
+          metadata: { name: 'test', version: 1 }
+        };
+
+        // Only the compatible variants can actually be used
+        expect(dataEvent.type).toBe('data');
+        expect(complexEvent.type).toBe('complex');
+        expect(callbackEvent.context).toBe('test'); // Non-function properties still work
+        expect(functionEvent.metadata.name).toBe('test'); // Non-function properties still work
+      });
+
+      test('shows type narrowing still works with JsonCompatible discriminated unions', () => {
+        type CompatibleEvent = JsonCompatible<IDataEvent | IComplexCompatibleEvent>;
+
+        const processEvent = (event: CompatibleEvent): string => {
+          switch (event.type) {
+            case 'data':
+              return `Data: ${event.payload.id} = ${event.payload.value}`;
+            case 'complex':
+              return `Complex: ${event.data.users.length} users, ${
+                Object.keys(event.data.settings).length
+              } settings`;
+            default:
+              // TypeScript knows this is never reached with only compatible variants
+              const _exhaustive: never = event;
+              return _exhaustive;
+          }
+        };
+
+        const dataEvent: JsonCompatible<IDataEvent> = {
+          type: 'data',
+          timestamp: '2024-01-01T00:00:00Z',
+          payload: { id: 'test', value: 42 }
+        };
+
+        const complexEvent: JsonCompatible<IComplexCompatibleEvent> = {
+          type: 'complex',
+          timestamp: '2024-01-01T00:00:00Z',
+          data: {
+            users: ['user1', 'user2'],
+            settings: { feature1: true, feature2: false },
+            nested: { values: [1, 2, 3] }
+          }
+        };
+
+        expect(processEvent(dataEvent)).toBe('Data: test = 42');
+        expect(processEvent(complexEvent)).toBe('Complex: 2 users, 2 settings');
       });
     });
 
