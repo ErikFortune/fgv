@@ -22,13 +22,19 @@
 
 // Re-export observability types and utilities
 export type { IUserLogger, IObservabilityContext } from '../utils/observability';
+export type { ObservabilityContextType } from '../utils/observability';
 
 export {
   ConsoleUserLogger,
   NoOpUserLogger,
+  ViewStateUserLogger,
   ObservabilityContext,
   createConsoleObservabilityContext,
   createNoOpObservabilityContext,
+  createViewStateObservabilityContext,
   DefaultObservabilityContext,
-  TestObservabilityContext
+  TestObservabilityContext,
+  detectObservabilityContextType,
+  isViewStateConnected,
+  isConsoleOnlyContext
 } from '../utils/observability';

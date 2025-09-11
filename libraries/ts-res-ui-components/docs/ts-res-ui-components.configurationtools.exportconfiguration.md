@@ -11,7 +11,7 @@ Converts the configuration object to a serialized format (JSON or YAML) with opt
 **Signature:**
 
 ```typescript
-export declare function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: ConfigurationExportOptions): Result<string>;
+export declare function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: IConfigurationExportOptions): Result<string>;
 ```
 
 ## Parameters
@@ -55,7 +55,7 @@ options
 
 </td><td>
 
-ConfigurationExportOptions
+IConfigurationExportOptions
 
 
 </td><td>

@@ -13,7 +13,7 @@ Features: - Resource processing (files, directories, bundles) - Filtering and co
 **Signature:**
 
 ```typescript
-ResourceOrchestrator: React.FC<ResourceOrchestratorProps>
+ResourceOrchestrator: React.FC<IResourceOrchestratorProps>
 ```
 
 ## Example

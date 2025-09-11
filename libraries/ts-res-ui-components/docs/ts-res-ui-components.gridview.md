@@ -13,7 +13,7 @@ Provides a grid-based interface for viewing and editing multiple resources simul
 **Signature:**
 
 ```typescript
-GridView: React.FC<GridViewProps>
+GridView: React.FC<IGridViewProps>
 ```
 
 ## Example

@@ -39,7 +39,7 @@ export type ValidatorFunc<T, TC> = (
  * Options that apply to any {@link Validation.Validator | Validator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ValidatorOptions<TC> {
   defaultContext?: TC;
 }
@@ -68,7 +68,7 @@ export type ValidationErrorFormatter<TC = unknown> = (val: unknown, message?: st
  * required characteristics (type, values, etc).
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface Validator<T, TC = unknown> {
   /**
    * {@link Validation.ValidatorTraits | Traits} describing this validation.

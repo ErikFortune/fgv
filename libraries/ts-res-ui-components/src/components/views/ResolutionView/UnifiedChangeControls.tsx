@@ -11,7 +11,7 @@ import { CheckIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline
  *
  * @public
  */
-interface UnifiedChangeControlsProps {
+interface IUnifiedChangeControlsProps {
   /** Number of pending edits to existing resources */
   editCount: number;
   /** Number of pending new resources to be added */
@@ -51,7 +51,7 @@ interface UnifiedChangeControlsProps {
  *
  * @public
  */
-export const UnifiedChangeControls: React.FC<UnifiedChangeControlsProps> = ({
+export const UnifiedChangeControls: React.FC<IUnifiedChangeControlsProps> = ({
   editCount,
   addCount,
   deleteCount,

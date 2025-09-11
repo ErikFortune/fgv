@@ -11,7 +11,7 @@ ResourceTreeView provides an interactive tree interface for browsing resource hi
 **Signature:**
 
 ```typescript
-ResourceTreeView: React.FC<ResourceTreeViewProps>
+ResourceTreeView: React.FC<IResourceTreeViewProps>
 ```
 
 ## Example 1

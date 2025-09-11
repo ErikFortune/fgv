@@ -150,7 +150,7 @@ Performs complete resource resolution including best candidate selection, all ca
 </td></tr>
 <tr><td>
 
-[useResolutionState(processedResources, onMessage, onSystemUpdate)](./ts-res-ui-components.resolutiontools.useresolutionstate.md)
+[useResolutionState(processedResources, onSystemUpdate)](./ts-res-ui-components.resolutiontools.useresolutionstate.md)
 
 
 </td><td>
@@ -191,7 +191,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[CandidateInfo](./ts-res-ui-components.resolutiontools.candidateinfo.md)
+[ICandidateInfo](./ts-res-ui-components.resolutiontools.icandidateinfo.md)
 
 
 </td><td>
@@ -202,7 +202,7 @@ Detailed information about how a resource candidate was evaluated during resolut
 </td></tr>
 <tr><td>
 
-[ConditionEvaluationResult](./ts-res-ui-components.resolutiontools.conditionevaluationresult.md)
+[IConditionEvaluationResult](./ts-res-ui-components.resolutiontools.iconditionevaluationresult.md)
 
 
 </td><td>
@@ -213,7 +213,7 @@ Result of evaluating a single condition during resource resolution. Shows how a 
 </td></tr>
 <tr><td>
 
-[CreatePendingResourceParams](./ts-res-ui-components.resolutiontools.creatependingresourceparams.md)
+[ICreatePendingResourceParams](./ts-res-ui-components.resolutiontools.icreatependingresourceparams.md)
 
 
 </td><td>
@@ -224,7 +224,7 @@ Parameters for creating a pending resource atomically.
 </td></tr>
 <tr><td>
 
-[EditableJsonViewProps](./ts-res-ui-components.resolutiontools.editablejsonviewprops.md)
+[IEditableJsonViewProps](./ts-res-ui-components.resolutiontools.ieditablejsonviewprops.md)
 
 
 </td><td>
@@ -235,7 +235,7 @@ Props for the EditableJsonView component.
 </td></tr>
 <tr><td>
 
-[EditedResourceInfo](./ts-res-ui-components.resolutiontools.editedresourceinfo.md)
+[IEditedResourceInfo](./ts-res-ui-components.resolutiontools.ieditedresourceinfo.md)
 
 
 </td><td>
@@ -246,7 +246,7 @@ Information about a resource being edited in the resolution view. Tracks changes
 </td></tr>
 <tr><td>
 
-[QualifierControlOptions](./ts-res-ui-components.resolutiontools.qualifiercontroloptions.md)
+[IQualifierControlOptions](./ts-res-ui-components.resolutiontools.iqualifiercontroloptions.md)
 
 
 </td><td>
@@ -259,7 +259,7 @@ Provides fine-grained control over the behavior, appearance, and editability of 
 </td></tr>
 <tr><td>
 
-[ResolutionActions](./ts-res-ui-components.resolutiontools.resolutionactions.md)
+[IResolutionActions](./ts-res-ui-components.resolutiontools.iresolutionactions.md)
 
 
 </td><td>
@@ -270,7 +270,7 @@ Actions available for managing resource resolution testing and editing. Provides
 </td></tr>
 <tr><td>
 
-[ResolutionContextOptions](./ts-res-ui-components.resolutiontools.resolutioncontextoptions.md)
+[IResolutionContextOptions](./ts-res-ui-components.resolutiontools.iresolutioncontextoptions.md)
 
 
 </td><td>
@@ -283,7 +283,7 @@ Controls the visibility and behavior of the context configuration panel, allowin
 </td></tr>
 <tr><td>
 
-[ResolutionContextOptionsControlProps](./ts-res-ui-components.resolutiontools.resolutioncontextoptionscontrolprops.md)
+[IResolutionContextOptionsControlProps](./ts-res-ui-components.resolutiontools.iresolutioncontextoptionscontrolprops.md)
 
 
 </td><td>
@@ -294,7 +294,7 @@ Props for the ResolutionContextOptionsControl component.
 </td></tr>
 <tr><td>
 
-[ResolutionOptions](./ts-res-ui-components.resolutiontools.resolutionoptions.md)
+[IResolutionOptions](./ts-res-ui-components.resolutiontools.iresolutionoptions.md)
 
 
 </td><td>
@@ -307,7 +307,7 @@ ResolutionOptions provides control over performance and debugging features durin
 </td></tr>
 <tr><td>
 
-[ResolutionResult](./ts-res-ui-components.resolutiontools.resolutionresult.md)
+[IResolutionResult](./ts-res-ui-components.resolutiontools.iresolutionresult.md)
 
 
 </td><td>
@@ -318,7 +318,7 @@ Result of attempting to resolve a specific resource with a given context. Contai
 </td></tr>
 <tr><td>
 
-[ResolutionState](./ts-res-ui-components.resolutiontools.resolutionstate.md)
+[IResolutionState](./ts-res-ui-components.resolutiontools.iresolutionstate.md)
 
 
 </td><td>
@@ -329,7 +329,7 @@ Current state of resource resolution testing and debugging. Tracks context value
 </td></tr>
 <tr><td>
 
-[ResolutionViewProps](./ts-res-ui-components.resolutiontools.resolutionviewprops.md)
+[IResolutionViewProps](./ts-res-ui-components.resolutiontools.iresolutionviewprops.md)
 
 
 </td><td>

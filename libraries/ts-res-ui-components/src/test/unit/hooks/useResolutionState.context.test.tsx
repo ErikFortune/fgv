@@ -2,8 +2,13 @@ import { renderHook, act } from '@testing-library/react';
 import { useResolutionState } from '../../../hooks/useResolutionState';
 import { Runtime } from '@fgv/ts-res';
 import { createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
+import { JsonValue } from '@fgv/ts-json-base';
+import type { IProcessedResources } from '../../../types';
+import { ObservabilityTools } from '../../../namespaces';
+import { ObservabilityProvider } from '../../../contexts';
+import React from 'react';
 
-function buildProcessedResources() {
+function buildProcessedResources(): IProcessedResources {
   const system = createTsResSystemFromConfig().orThrow();
   const compiledCollection = system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
@@ -19,16 +24,24 @@ function buildProcessedResources() {
     compiledCollection,
     resolver,
     summary: { totalResources: resourceIds.length, resourceIds, errorCount: 0, warnings: [] }
-  } as any;
+  } as unknown as IProcessedResources;
 }
+
+// Test wrapper with silent observability context
+const wrapper = ({ children }: { children: React.ReactNode }): React.ReactNode => (
+  <ObservabilityProvider observabilityContext={ObservabilityTools.TestObservabilityContext}>
+    {children}
+  </ObservabilityProvider>
+);
 
 describe('useResolutionState basic', () => {
   it('applies context and stamps conditions for new resources', async () => {
     const onSystemUpdate = jest.fn();
-    const onMessage = jest.fn();
 
     const processed = buildProcessedResources();
-    const { result } = renderHook(() => useResolutionState(processed, onMessage, onSystemUpdate));
+    const { result } = renderHook(() => useResolutionState(processed, onSystemUpdate), {
+      wrapper
+    });
 
     // set context pending value and apply so effectiveContext includes it
     act(() => {
@@ -60,11 +73,13 @@ describe('useResolutionState basic', () => {
 
     // Ensure a candidate exists and gets stamped by editing the pending resource
     act(() => {
-      result.current.actions.saveEdit('platform.test.testResource', {} as any);
+      result.current.actions.saveEdit('platform.test.testResource', {} as JsonValue);
     });
 
     // Verify pending resource has conditions stamped
-    const pending = Array.from(result.current.state.pendingResources.values())[0] as any;
+    const pending = Array.from(result.current.state.pendingResources.values())[0] as {
+      candidates?: Array<{ conditions?: Array<{ qualifierName?: string; value?: unknown }> }>;
+    };
     expect(pending?.candidates?.[0]?.conditions?.[0]?.qualifierName).toBe('language');
     expect(pending?.candidates?.[0]?.conditions?.[0]?.value).toBe('en');
   });

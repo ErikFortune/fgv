@@ -1,17 +1,17 @@
 import React, { useCallback } from 'react';
 import { JsonValue } from '@fgv/ts-json-base';
-import { GridColumnDefinition } from '../../../../types';
+import { IGridColumnDefinition } from '../../../../types';
 
 /**
  * Props for the BooleanCell component.
  */
-export interface BooleanCellProps {
+export interface IBooleanCellProps {
   /** Current value of the cell */
   value: JsonValue;
   /** Resource ID for this row */
   resourceId: string;
   /** Column configuration */
-  column: GridColumnDefinition;
+  column: IGridColumnDefinition;
   /** Whether the cell is in read-only mode */
   disabled?: boolean;
   /** Callback when the value changes */
@@ -41,7 +41,7 @@ export interface BooleanCellProps {
  * ```
  * @public
  */
-export const BooleanCell: React.FC<BooleanCellProps> = ({
+export const BooleanCell: React.FC<IBooleanCellProps> = ({
   value,
   resourceId,
   column,

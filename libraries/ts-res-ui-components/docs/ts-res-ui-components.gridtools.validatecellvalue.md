@@ -9,7 +9,7 @@ Validates a cell value according to the column's validation rules.
 **Signature:**
 
 ```typescript
-export declare function validateCellValue(value: JsonValue, validation?: GridCellValidation): Result<CellValidationResult>;
+export declare function validateCellValue(value: JsonValue, validation?: IGridCellValidation): Result<ICellValidationResult>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ validation
 
 </td><td>
 
-[GridCellValidation](./ts-res-ui-components.gridtools.gridcellvalidation.md)
+[IGridCellValidation](./ts-res-ui-components.gridtools.igridcellvalidation.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Validation configuration
 
 **Returns:**
 
-Result&lt;CellValidationResult&gt;
+Result&lt;ICellValidationResult&gt;
 
 Result containing validation outcome
 

@@ -1,11 +1,11 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
-import { GridCellValidation } from '../types';
+import { IGridCellValidation } from '../types';
 
 /**
  * Validation result for a grid cell value.
  */
-export interface CellValidationResult {
+export interface ICellValidationResult {
   /** Whether the value is valid */
   isValid: boolean;
   /** Error message if validation failed */
@@ -24,8 +24,8 @@ export interface CellValidationResult {
  */
 export function validateCellValue(
   value: JsonValue,
-  validation?: GridCellValidation
-): Result<CellValidationResult> {
+  validation?: IGridCellValidation
+): Result<ICellValidationResult> {
   if (!validation) {
     return succeed({ isValid: true, normalizedValue: value });
   }
@@ -115,7 +115,7 @@ export function validateCellValue(
  * Common validation patterns for reuse.
  * @public
  */
-export const ValidationPatterns = {
+export const ValidationPatterns: Record<string, RegExp> = {
   /** Email address validation */
   email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   /** URL validation (basic) */
@@ -136,7 +136,12 @@ export const ValidationPatterns = {
  * Common validation functions for reuse.
  * @public
  */
-export const ValidationFunctions = {
+export const ValidationFunctions: {
+  validJson: (value: JsonValue) => string | null;
+  numberRange: (min: number, max: number) => (value: JsonValue) => string | null;
+  oneOf: (allowedValues: JsonValue[]) => (value: JsonValue) => string | null;
+  excludeCharacters: (forbiddenChars: string) => (value: JsonValue) => string | null;
+} = {
   /** Validates that a string represents a valid JSON */
   validJson: (value: JsonValue): string | null => {
     if (typeof value !== 'string') return null;
@@ -192,7 +197,7 @@ export const ValidationFunctions = {
  * @public
  */
 export class GridValidationState {
-  private cellErrors = new Map<string, Map<string, string>>();
+  private _cellErrors: Map<string, Map<string, string>> = new Map<string, Map<string, string>>();
 
   /**
    * Set validation error for a specific cell.
@@ -201,12 +206,12 @@ export class GridValidationState {
    * @param columnId - Column ID for the cell
    * @param error - Error message, or null to clear error
    */
-  setCellError(resourceId: string, columnId: string, error: string | null): void {
-    if (!this.cellErrors.has(resourceId)) {
-      this.cellErrors.set(resourceId, new Map());
+  public setCellError(resourceId: string, columnId: string, error: string | null): void {
+    if (!this._cellErrors.has(resourceId)) {
+      this._cellErrors.set(resourceId, new Map());
     }
 
-    const resourceErrors = this.cellErrors.get(resourceId)!;
+    const resourceErrors = this._cellErrors.get(resourceId)!;
 
     if (error) {
       resourceErrors.set(columnId, error);
@@ -215,7 +220,7 @@ export class GridValidationState {
 
       // Clean up empty resource error maps
       if (resourceErrors.size === 0) {
-        this.cellErrors.delete(resourceId);
+        this._cellErrors.delete(resourceId);
       }
     }
   }
@@ -223,37 +228,37 @@ export class GridValidationState {
   /**
    * Get validation error for a specific cell.
    */
-  getCellError(resourceId: string, columnId: string): string | null {
-    return this.cellErrors.get(resourceId)?.get(columnId) || null;
+  public getCellError(resourceId: string, columnId: string): string | null {
+    return this._cellErrors.get(resourceId)?.get(columnId) || null;
   }
 
   /**
    * Check if a specific cell has validation errors.
    */
-  hasCellError(resourceId: string, columnId: string): boolean {
+  public hasCellError(resourceId: string, columnId: string): boolean {
     return !!this.getCellError(resourceId, columnId);
   }
 
   /**
    * Get all validation errors for a resource.
    */
-  getResourceErrors(resourceId: string): Map<string, string> {
-    return this.cellErrors.get(resourceId) || new Map();
+  public getResourceErrors(resourceId: string): Map<string, string> {
+    return this._cellErrors.get(resourceId) || new Map();
   }
 
   /**
    * Check if any cells have validation errors.
    */
-  get hasErrors(): boolean {
-    return this.cellErrors.size > 0;
+  public get hasErrors(): boolean {
+    return this._cellErrors.size > 0;
   }
 
   /**
    * Get total count of validation errors.
    */
-  get errorCount(): number {
+  public get errorCount(): number {
     let count = 0;
-    for (const resourceErrors of this.cellErrors.values()) {
+    for (const resourceErrors of this._cellErrors.values()) {
       count += resourceErrors.size;
     }
     return count;
@@ -262,10 +267,10 @@ export class GridValidationState {
   /**
    * Get all error messages as a flat array.
    */
-  getAllErrors(): Array<{ resourceId: string; columnId: string; error: string }> {
+  public getAllErrors(): Array<{ resourceId: string; columnId: string; error: string }> {
     const errors: Array<{ resourceId: string; columnId: string; error: string }> = [];
 
-    for (const [resourceId, resourceErrors] of this.cellErrors.entries()) {
+    for (const [resourceId, resourceErrors] of this._cellErrors.entries()) {
       for (const [columnId, error] of resourceErrors.entries()) {
         errors.push({ resourceId, columnId, error });
       }
@@ -277,21 +282,21 @@ export class GridValidationState {
   /**
    * Clear all validation errors.
    */
-  clearAll(): void {
-    this.cellErrors.clear();
+  public clearAll(): void {
+    this._cellErrors.clear();
   }
 
   /**
    * Clear validation errors for a specific resource.
    */
-  clearResource(resourceId: string): void {
-    this.cellErrors.delete(resourceId);
+  public clearResource(resourceId: string): void {
+    this._cellErrors.delete(resourceId);
   }
 
   /**
    * Clear validation error for a specific cell.
    */
-  clearCell(resourceId: string, columnId: string): void {
+  public clearCell(resourceId: string, columnId: string): void {
     this.setCellError(resourceId, columnId, null);
   }
 }

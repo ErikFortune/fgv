@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { TableCellsIcon } from '@heroicons/react/24/outline';
-import { MultiGridViewProps, GridViewInitParams, ProcessedResources } from '../../../types';
+import { IMultiGridViewProps } from '../../../types';
 import { selectResources } from '../../../utils/resourceSelector';
 import { SharedContextControls } from './SharedContextControls';
 import { GridSelector } from './GridSelector';
 import { GridView } from './index';
 import { UnifiedChangeControls } from '../ResolutionView/UnifiedChangeControls';
-import { hasGridValidationErrors } from './EditableGridCell';
+import { hasGridValidationErrors, clearAllGridValidationErrors } from './EditableGridCell';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * MultiGridView component for managing multiple grid instances with shared context.
@@ -88,7 +89,7 @@ import { hasGridValidationErrors } from './EditableGridCell';
  *
  * @public
  */
-export const MultiGridView: React.FC<MultiGridViewProps> = ({
+export const MultiGridView: React.FC<IMultiGridViewProps> = ({
   gridConfigurations,
   resources,
   resolutionState,
@@ -100,9 +101,9 @@ export const MultiGridView: React.FC<MultiGridViewProps> = ({
   tabsPresentation = 'tabs',
   defaultActiveGrid,
   allowGridReordering = false,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   // State for active grid
   const [activeGridId, setActiveGridId] = useState(() => {
     return defaultActiveGrid || gridConfigurations[0]?.id || '';
@@ -153,24 +154,19 @@ export const MultiGridView: React.FC<MultiGridViewProps> = ({
   const handleApplyPendingResources = useCallback(async () => {
     // Check for validation errors before applying
     if (hasGridValidationErrors()) {
-      onMessage?.(
-        'warning',
-        'Cannot apply changes: There are validation errors in the grid. Please fix them first.'
-      );
+      o11y.user.warn('Cannot apply changes: There are validation errors in the grid. Please fix them first.');
       return;
     }
 
     await resolutionActions?.applyPendingResources();
-  }, [resolutionActions, onMessage]);
+  }, [resolutionActions, o11y]);
 
   // Enhanced discard handler
   const handleDiscardAll = useCallback(() => {
     resolutionActions?.discardEdits?.();
     resolutionActions?.discardPendingResources?.();
     // Clear validation errors when discarding
-    import('./EditableGridCell').then((module) => {
-      module.clearAllGridValidationErrors();
-    });
+    clearAllGridValidationErrors();
   }, [resolutionActions]);
 
   if (!resources) {
@@ -273,7 +269,6 @@ export const MultiGridView: React.FC<MultiGridViewProps> = ({
             filterResult={filterResult}
             showContextControls={false} // Context is managed at the multi-grid level
             showChangeControls={false} // Change controls are managed at the multi-grid level
-            onMessage={onMessage}
           />
         </div>
       )}

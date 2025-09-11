@@ -11,7 +11,7 @@ The EditableJsonView component provides a rich JSON editing interface for modify
 **Signature:**
 
 ```typescript
-EditableJsonView: React.FC<EditableJsonViewProps>
+EditableJsonView: React.FC<IEditableJsonViewProps>
 ```
 
 ## Example 1

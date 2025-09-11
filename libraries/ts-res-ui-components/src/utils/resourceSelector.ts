@@ -1,10 +1,10 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
-import { ProcessedResources, GridResourceSelector, CustomResourceSelector } from '../types';
+import { IProcessedResources, GridResourceSelector } from '../types';
 
 /**
  * Handler function type for resource selector implementations.
  */
-type SelectorHandler = (selector: any, resources: ProcessedResources) => Result<string[]>;
+type SelectorHandler = (selector: GridResourceSelector, resources: IProcessedResources) => Result<string[]>;
 
 /**
  * Resource selector utility for filtering resources based on various criteria.
@@ -30,17 +30,17 @@ type SelectorHandler = (selector: any, resources: ProcessedResources) => Result<
  * @public
  */
 export class ResourceSelector {
-  private registry = new Map<string, SelectorHandler>();
+  private _registry: Map<string, SelectorHandler> = new Map<string, SelectorHandler>();
 
-  constructor() {
+  public constructor() {
     // Register built-in selectors
-    this.registry.set('ids', this.selectByIds);
-    this.registry.set('prefix', this.selectByPrefix);
-    this.registry.set('suffix', this.selectBySuffix);
-    this.registry.set('resourceTypes', this.selectByResourceTypes);
-    this.registry.set('pattern', this.selectByPattern);
-    this.registry.set('all', this.selectAll);
-    this.registry.set('custom', this.selectCustom);
+    this._registry.set('ids', this._selectByIds);
+    this._registry.set('prefix', this._selectByPrefix);
+    this._registry.set('suffix', this._selectBySuffix);
+    this._registry.set('resourceTypes', this._selectByResourceTypes);
+    this._registry.set('pattern', this._selectByPattern);
+    this._registry.set('all', this._selectAll);
+    this._registry.set('custom', this._selectCustom);
   }
 
   /**
@@ -49,15 +49,15 @@ export class ResourceSelector {
    * @param type - Unique identifier for the selector type
    * @param handler - Function that implements the selection logic
    */
-  registerSelector(type: string, handler: SelectorHandler): void {
-    this.registry.set(type, handler);
+  public registerSelector(type: string, handler: SelectorHandler): void {
+    this._registry.set(type, handler);
   }
 
   /**
    * Get all registered selector types (useful for debugging/tooling).
    */
-  getRegisteredTypes(): string[] {
-    return Array.from(this.registry.keys());
+  public getRegisteredTypes(): string[] {
+    return Array.from(this._registry.keys());
   }
 
   /**
@@ -67,8 +67,8 @@ export class ResourceSelector {
    * @param resources - Processed resources to select from
    * @returns Result containing array of selected resource IDs
    */
-  select(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]> {
-    const handler = this.registry.get(selector.type);
+  public select(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
+    const handler = this._registry.get(selector.type);
     if (!handler) {
       return fail(`Unknown selector type: ${selector.type}`);
     }
@@ -83,10 +83,11 @@ export class ResourceSelector {
   /**
    * Select resources by explicit resource IDs.
    */
-  private selectByIds = (
-    selector: { resourceIds: string[] },
-    resources: ProcessedResources
-  ): Result<string[]> => {
+  private _selectByIds(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
+    if (selector.type !== 'ids') {
+      return fail('Selector type is not "ids"');
+    }
+
     const availableIds = new Set(resources.summary.resourceIds);
     const selectedIds = selector.resourceIds.filter((id) => availableIds.has(id));
 
@@ -95,45 +96,51 @@ export class ResourceSelector {
     }
 
     return succeed(selectedIds);
-  };
+  }
 
   /**
    * Select resources with IDs starting with the specified prefix.
    */
-  private selectByPrefix = (
-    selector: { prefix: string },
-    resources: ProcessedResources
-  ): Result<string[]> => {
+  private _selectByPrefix(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
+    if (selector.type !== 'prefix') {
+      return fail('Selector type is not "prefix"');
+    }
+
     if (!selector.prefix) {
       return fail('Prefix cannot be empty');
     }
 
     const matchingIds = resources.summary.resourceIds.filter((id) => id.startsWith(selector.prefix));
     return succeed(matchingIds);
-  };
+  }
 
   /**
    * Select resources with IDs ending with the specified suffix.
    */
-  private selectBySuffix = (
-    selector: { suffix: string },
-    resources: ProcessedResources
-  ): Result<string[]> => {
+  private _selectBySuffix(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
+    if (selector.type !== 'suffix') {
+      return fail('Selector type is not "suffix"');
+    }
+
     if (!selector.suffix) {
       return fail('Suffix cannot be empty');
     }
 
     const matchingIds = resources.summary.resourceIds.filter((id) => id.endsWith(selector.suffix));
     return succeed(matchingIds);
-  };
+  }
 
   /**
    * Select resources by resource type names.
    */
-  private selectByResourceTypes = (
-    selector: { types: string[] },
-    resources: ProcessedResources
-  ): Result<string[]> => {
+  private _selectByResourceTypes(
+    selector: GridResourceSelector,
+    resources: IProcessedResources
+  ): Result<string[]> {
+    if (selector.type !== 'resourceTypes') {
+      return fail('Selector type is not "resourceTypes"');
+    }
+
     if (!selector.types || selector.types.length === 0) {
       return fail('Resource types array cannot be empty');
     }
@@ -158,16 +165,17 @@ export class ResourceSelector {
     });
 
     return succeed(matchingIds);
-  };
+  }
 
   /**
    * Select resources by simple glob pattern matching.
    * Supports * as wildcard character.
    */
-  private selectByPattern = (
-    selector: { pattern: string },
-    resources: ProcessedResources
-  ): Result<string[]> => {
+  private _selectByPattern(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
+    if (selector.type !== 'pattern') {
+      return fail('Selector type is not "pattern"');
+    }
+
     if (!selector.pattern) {
       return fail('Pattern cannot be empty');
     }
@@ -178,6 +186,7 @@ export class ResourceSelector {
         .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escape special regex chars
         .replace(/\*/g, '.*'); // Convert * to .*
 
+      // eslint-disable-next-line @rushstack/security/no-unsafe-regexp
       const regex = new RegExp(`^${regexPattern}$`);
       const matchingIds = resources.summary.resourceIds.filter((id) => regex.test(id));
 
@@ -185,23 +194,24 @@ export class ResourceSelector {
     } catch (error) {
       return fail(`Invalid pattern: ${error instanceof Error ? error.message : String(error)}`);
     }
-  };
+  }
 
   /**
    * Select all available resources.
    */
-  private selectAll = (_selector: {}, resources: ProcessedResources): Result<string[]> => {
+  private _selectAll(__selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
     return succeed([...resources.summary.resourceIds]);
-  };
+  }
 
   /**
    * Select resources using custom selector logic.
    */
-  private selectCustom = (
-    selector: { selector: CustomResourceSelector },
-    resources: ProcessedResources
-  ): Result<string[]> => {
-    if (!selector.selector) {
+  private _selectCustom(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]> {
+    if (selector.type !== 'custom') {
+      return fail('Selector type is not "custom"');
+    }
+
+    if (!selector.selector || !selector.selector.select) {
       return fail('Custom selector configuration is required');
     }
 
@@ -210,10 +220,10 @@ export class ResourceSelector {
 
       // Validate that all returned IDs exist in the resource collection
       const availableIds = new Set(resources.summary.resourceIds);
-      const validIds = selectedIds.filter((id) => availableIds.has(id));
+      const validIds = selectedIds.filter((id: string) => availableIds.has(id));
 
       if (validIds.length !== selectedIds.length) {
-        const invalidIds = selectedIds.filter((id) => !availableIds.has(id));
+        const invalidIds = selectedIds.filter((id: string) => !availableIds.has(id));
         console.warn(`Custom selector returned invalid resource IDs: ${invalidIds.join(', ')}`);
       }
 
@@ -221,14 +231,14 @@ export class ResourceSelector {
     } catch (error) {
       return fail(`Custom selector failed: ${error instanceof Error ? error.message : String(error)}`);
     }
-  };
+  }
 }
 
 /**
  * Default resource selector instance for use throughout the application.
  * @public
  */
-export const defaultResourceSelector = new ResourceSelector();
+export const defaultResourceSelector: ResourceSelector = new ResourceSelector();
 
 /**
  * Utility function to select resources using the default selector.
@@ -240,7 +250,7 @@ export const defaultResourceSelector = new ResourceSelector();
  */
 export function selectResources(
   selector: GridResourceSelector,
-  resources: ProcessedResources
+  resources: IProcessedResources
 ): Result<string[]> {
   return defaultResourceSelector.select(selector, resources);
 }

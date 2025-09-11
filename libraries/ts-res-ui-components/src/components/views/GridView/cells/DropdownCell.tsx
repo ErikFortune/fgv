@@ -1,20 +1,20 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { ChevronDownIcon, ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { JsonValue } from '@fgv/ts-json-base';
-import { GridColumnDefinition, GridDropdownOption } from '../../../../types';
+import { IGridColumnDefinition, IGridDropdownOption } from '../../../../types';
 import { validateCellValue } from '../../../../utils/cellValidation';
 import { useObservability } from '../../../../contexts';
 
 /**
  * Props for the DropdownCell component.
  */
-export interface DropdownCellProps {
+export interface IDropdownCellProps {
   /** Current value of the cell */
   value: JsonValue;
   /** Resource ID for this row */
   resourceId: string;
   /** Column configuration */
-  column: GridColumnDefinition;
+  column: IGridColumnDefinition;
   /** Whether this cell is currently being edited */
   isEditing: boolean;
   /** Whether the cell is in read-only mode */
@@ -58,7 +58,7 @@ export interface DropdownCellProps {
  * ```
  * @public
  */
-export const DropdownCell: React.FC<DropdownCellProps> = ({
+export const DropdownCell: React.FC<IDropdownCellProps> = ({
   value,
   resourceId,
   column,
@@ -74,7 +74,7 @@ export const DropdownCell: React.FC<DropdownCellProps> = ({
   const o11y = useObservability();
 
   const [editValue, setEditValue] = useState('');
-  const [options, setOptions] = useState<GridDropdownOption[]>([]);
+  const [options, setOptions] = useState<IGridDropdownOption[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 

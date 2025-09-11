@@ -150,16 +150,16 @@ export {
 
 // Export grid-related types
 export type {
-  GridViewProps,
-  MultiGridViewProps,
-  GridViewInitParams,
-  GridColumnDefinition,
-  GridDropdownOption,
-  GridCellValidation,
+  IGridViewProps,
+  IMultiGridViewProps,
+  IGridViewInitParams,
+  IGridColumnDefinition,
+  IGridDropdownOption,
+  IGridCellValidation,
   GridResourceSelector,
-  CustomResourceSelector,
-  GridPresentationOptions,
-  ResourceTypeColumnMapping,
-  GridCellProps,
-  GridCellEditorProps
+  ICustomResourceSelector,
+  IGridPresentationOptions,
+  IResourceTypeColumnMapping,
+  IGridCellProps,
+  IGridCellEditorProps
 } from '../types';

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
   CogIcon,
   DocumentTextIcon,
@@ -7,19 +7,343 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon,
   InformationCircleIcon,
   EyeIcon,
   PencilIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import { ConfigurationViewProps } from '../../../types';
-import { useConfigurationState } from '../../../hooks/useConfigurationState';
+import { IConfigurationViewProps } from '../../../types';
+import { useIConfigurationState } from '../../../hooks/useConfigurationState';
 import { Config, QualifierTypes, Qualifiers, ResourceTypes } from '@fgv/ts-res';
 import { QualifierTypeEditForm } from '../../forms/QualifierTypeEditForm';
 import { GenericQualifierTypeEditForm } from '../../forms/GenericQualifierTypeEditForm';
 import { QualifierEditForm } from '../../forms/QualifierEditForm';
 import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
+
+// Panel component definitions - moved before main component to avoid use-before-define
+
+// Comprehensive panel components with full editing capabilities
+interface IQualifierTypesPanelProps {
+  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
+  onUpdateItem: (index: number, qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => void;
+  onRemove: (index: number) => void;
+  onShowAdd: () => void;
+  onEdit: (item: QualifierTypes.Config.IAnyQualifierTypeConfig, index: number) => void;
+}
+
+const QualifierTypesPanel: React.FC<IQualifierTypesPanelProps> = ({
+  qualifierTypes,
+  onRemove,
+  onShowAdd,
+  onEdit
+}) => {
+  const getConfigurationSummary = (type: QualifierTypes.Config.IAnyQualifierTypeConfig): string => {
+    if (!type.configuration) return 'No configuration';
+
+    // Handle system qualifier types
+    if (QualifierTypes.Config.isSystemQualifierTypeConfig(type)) {
+      const config = type.configuration as Record<string, unknown>;
+      const details: string[] = [];
+
+      if (config?.allowContextList) details.push('Context List');
+      if (type.systemType === 'literal') {
+        if (config?.caseSensitive === false) details.push('Case Insensitive');
+        const enumValues = config?.enumeratedValues as string[] | undefined;
+        if (enumValues?.length) details.push(`${enumValues.length} values`);
+      }
+      if (type.systemType === 'territory') {
+        if (config?.acceptLowercase) details.push('Accept Lowercase');
+        const territories = config?.allowedTerritories as string[] | undefined;
+        if (territories?.length) details.push(`${territories.length} territories`);
+      }
+
+      return details.length > 0 ? details.join(', ') : 'Default settings';
+    }
+
+    // Handle custom qualifier types
+    const config = type.configuration;
+    if (typeof config === 'object' && config !== null) {
+      const keys = Object.keys(config);
+      return keys.length > 0 ? `${keys.length} properties` : 'Empty configuration';
+    }
+    return 'Custom configuration';
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Qualifier Types</h3>
+        <button
+          onClick={onShowAdd}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+        >
+          <PlusIcon className="w-4 h-4 mr-2" />
+          Add Type
+        </button>
+      </div>
+
+      {qualifierTypes.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <CogIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p>No qualifier types defined</p>
+          <p className="text-sm">Add a qualifier type to get started</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {qualifierTypes.map((type, index) => (
+            <div
+              key={index}
+              className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-medium text-gray-900">{type.name}</h4>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${
+                        QualifierTypes.Config.isSystemQualifierTypeConfig(type)
+                          ? type.systemType === 'language'
+                            ? 'bg-blue-100 text-blue-800'
+                            : type.systemType === 'territory'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-purple-100 text-purple-800'
+                          : 'bg-orange-100 text-orange-800 border border-orange-300'
+                      }`}
+                    >
+                      {QualifierTypes.Config.isSystemQualifierTypeConfig(type) ? type.systemType : 'custom'}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{getConfigurationSummary(type)}</p>
+                </div>
+                <div className="flex items-center space-x-2 ml-4">
+                  <button
+                    onClick={() => onEdit(type, index)}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                    title="Edit qualifier type"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onRemove(index)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                    title="Delete qualifier type"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface IQualifiersPanelProps {
+  qualifiers: Qualifiers.IQualifierDecl[];
+  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
+  onUpdateItem: (index: number, qualifier: Qualifiers.IQualifierDecl) => void;
+  onRemove: (index: number) => void;
+  onShowAdd: () => void;
+  onEdit: (item: Qualifiers.IQualifierDecl, index: number) => void;
+}
+
+const QualifiersPanel: React.FC<IQualifiersPanelProps> = ({
+  qualifiers,
+  qualifierTypes,
+  onRemove,
+  onShowAdd,
+  onEdit
+}) => {
+  // Sort qualifiers by priority (highest first)
+  const sortedQualifiers = [...qualifiers].sort((a, b) => b.defaultPriority - a.defaultPriority);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Qualifiers</h3>
+        <button
+          onClick={onShowAdd}
+          disabled={qualifierTypes.length === 0}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          title={qualifierTypes.length === 0 ? 'Add qualifier types first' : 'Add qualifier'}
+        >
+          <PlusIcon className="w-4 h-4 mr-2" />
+          Add Qualifier
+        </button>
+      </div>
+
+      {qualifierTypes.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <ExclamationTriangleIcon className="w-12 h-12 mx-auto mb-4 text-amber-400" />
+          <p>No qualifier types available</p>
+          <p className="text-sm">Create qualifier types first before adding qualifiers</p>
+        </div>
+      ) : qualifiers.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <CogIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p>No qualifiers defined</p>
+          <p className="text-sm">Add a qualifier to get started</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sortedQualifiers.map((qualifier, index) => {
+            const originalIndex = qualifiers.findIndex((q) => q === qualifier);
+            const qualifierType = qualifierTypes.find((qt) => qt.name === qualifier.typeName);
+
+            return (
+              <div
+                key={originalIndex}
+                className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    {/* Header line with name, type, and token */}
+                    <div className="flex items-center space-x-3 mb-2">
+                      <h4 className="font-medium text-gray-900">{qualifier.name}</h4>
+                      <span className="text-gray-600 text-sm">{qualifier.typeName}</span>
+                      {qualifier.token && (
+                        <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+                          token: {qualifier.token}
+                        </span>
+                      )}
+                      {!qualifierType && (
+                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                          Missing Type
+                        </span>
+                      )}
+                    </div>
+                    {/* Bottom line with type and priority */}
+                    <div className="flex items-center justify-between text-sm text-gray-600">
+                      <span>Type: {qualifier.typeName}</span>
+                      <span>Priority: {qualifier.defaultPriority}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2 ml-4">
+                    <button
+                      onClick={() => onEdit(qualifier, originalIndex)}
+                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                      title="Edit qualifier"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onRemove(originalIndex)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                      title="Delete qualifier"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface IResourceTypesPanelProps {
+  resourceTypes: ResourceTypes.Config.IResourceTypeConfig[];
+  onUpdateItem: (index: number, resourceType: ResourceTypes.Config.IResourceTypeConfig) => void;
+  onRemove: (index: number) => void;
+  onShowAdd: () => void;
+  onEdit: (item: ResourceTypes.Config.IResourceTypeConfig, index: number) => void;
+}
+
+const ResourceTypesPanel: React.FC<IResourceTypesPanelProps> = ({
+  resourceTypes,
+  onRemove,
+  onShowAdd,
+  onEdit
+}) => {
+  const getTypeNameBadgeColor = (typeName: string): string => {
+    switch (typeName) {
+      case 'string':
+        return 'bg-blue-100 text-blue-800';
+      case 'object':
+        return 'bg-green-100 text-green-800';
+      case 'array':
+        return 'bg-purple-100 text-purple-800';
+      case 'number':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'boolean':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Resource Types</h3>
+        <button
+          onClick={onShowAdd}
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+        >
+          <PlusIcon className="w-4 h-4 mr-2" />
+          Add Type
+        </button>
+      </div>
+
+      {resourceTypes.length === 0 ? (
+        <div className="text-center py-8 text-gray-500">
+          <CogIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+          <p>No resource types defined</p>
+          <p className="text-sm">Add a resource type to get started</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {resourceTypes.map((type, index) => (
+            <div
+              key={index}
+              className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-medium text-gray-900">{type.name}</h4>
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeNameBadgeColor(
+                        type.typeName
+                      )}`}
+                    >
+                      {type.typeName}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Defines how resources of this type are processed and validated
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 ml-4">
+                  <button
+                    onClick={() => onEdit(type, index)}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                    title="Edit resource type"
+                  >
+                    <PencilIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => onRemove(index)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                    title="Delete resource type"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 /**
  * ConfigurationView component for managing ts-res system configurations.
@@ -59,7 +383,6 @@ import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
  *       }}
  *       onSave={handleSave}
  *       hasUnsavedChanges={hasChanges}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -67,14 +390,14 @@ import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
  *
  * @public
  */
-export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
+export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
   configuration,
   onConfigurationChange,
   onSave,
   hasUnsavedChanges,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingQualifierType, setEditingQualifierType] = useState<{
     item: QualifierTypes.Config.IAnyQualifierTypeConfig;
@@ -93,15 +416,34 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   const [showAddQualifier, setShowAddQualifier] = useState(false);
   const [showAddResourceType, setShowAddResourceType] = useState(false);
 
-  const { state, actions, templates } = useConfigurationState(
+  const { state, actions, templates } = useIConfigurationState(
     configuration || undefined,
     onConfigurationChange,
     hasUnsavedChanges
       ? undefined
-      : (changes) => {
+      : (changes: unknown) => {
           // Only notify if we weren't already told there are unsaved changes
         }
   );
+
+  // Create instantiated qualifier types from configurations for validation
+  const qualifierTypeInstances = useMemo(() => {
+    const instances = new Map<string, QualifierTypes.QualifierType>();
+
+    if (state.currentConfiguration.qualifierTypes) {
+      state.currentConfiguration.qualifierTypes.forEach((typeConfig) => {
+        // Only instantiate system qualifier types for now
+        if (QualifierTypes.Config.isSystemQualifierTypeConfig(typeConfig)) {
+          const result = QualifierTypes.createQualifierTypeFromSystemConfig(typeConfig);
+          if (result.isSuccess()) {
+            instances.set(typeConfig.name, result.value);
+          }
+        }
+      });
+    }
+
+    return instances;
+  }, [state.currentConfiguration.qualifierTypes]);
 
   // Handle file import
   const handleFileImport = useCallback(
@@ -116,20 +458,20 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
         if (content) {
           const result = actions.importFromJson(content);
           if (result.isSuccess()) {
-            onMessage?.('success', `Configuration imported from ${file.name}`);
+            o11y.user.success(`Configuration imported from ${file.name}`);
           } else {
-            onMessage?.('error', `Import failed: ${result.message}`);
+            o11y.user.error(`Import failed: ${result.message}`);
           }
         }
       };
 
       reader.onerror = () => {
-        onMessage?.('error', `Failed to read file: ${file.name}`);
+        o11y.user.error(`Failed to read file: ${file.name}`);
       };
 
       reader.readAsText(file);
     },
-    [actions, onMessage]
+    [actions, o11y]
   );
 
   // Handle export
@@ -145,24 +487,24 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      onMessage?.('success', 'Configuration exported successfully');
+      o11y.user.success('Configuration exported successfully');
     } else {
-      onMessage?.('error', `Export failed: ${result.message}`);
+      o11y.user.error(`Export failed: ${result.message}`);
     }
-  }, [actions, onMessage]);
+  }, [actions, o11y]);
 
   // Handle template loading
   const handleLoadTemplate = useCallback(
     (templateId: string) => {
       const result = actions.loadTemplate(templateId);
       if (result.isSuccess()) {
-        const template = templates.find((t) => t.id === templateId);
-        onMessage?.('success', `Loaded template: ${template?.name}`);
+        const template = templates.find((t: { id: string; name?: string }) => t.id === templateId);
+        o11y.user.success(`Loaded template: ${template?.name}`);
       } else {
-        onMessage?.('error', `Failed to load template: ${result.message}`);
+        o11y.user.error(`Failed to load template: ${result.message}`);
       }
     },
-    [actions, templates, onMessage]
+    [actions, templates, o11y]
   );
 
   // Handle save
@@ -170,9 +512,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
     if (onSave) {
       onSave(state.currentConfiguration);
       actions.applyConfiguration();
-      onMessage?.('success', 'Configuration saved successfully');
+      o11y.user.success('Configuration saved successfully');
     }
-  }, [onSave, state.currentConfiguration, actions, onMessage]);
+  }, [onSave, state.currentConfiguration, actions, o11y]);
 
   if (!configuration && !state.currentConfiguration) {
     return (
@@ -221,7 +563,7 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Load Template...</option>
-            {templates.map((template) => (
+            {templates.map((template: { id: string; name: string }) => (
               <option key={template.id} value={template.id}>
                 {template.name}
               </option>
@@ -293,7 +635,7 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             <span className="font-medium">Configuration Issues</span>
           </div>
           <ul className="text-sm text-red-700 space-y-1">
-            {state.validation.errors.map((error, index) => (
+            {state.validation.errors.map((error: string, index: number) => (
               <li key={index}>• {error}</li>
             ))}
           </ul>
@@ -308,7 +650,7 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             <span className="font-medium">Configuration Warnings</span>
           </div>
           <ul className="text-sm text-yellow-700 space-y-1">
-            {state.validation.warnings.map((warning, index) => (
+            {state.validation.warnings.map((warning: string, index: number) => (
               <li key={index}>• {warning}</li>
             ))}
           </ul>
@@ -325,9 +667,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
                 onClick={() => {
                   const result = actions.applyJsonChanges();
                   if (result.isSuccess()) {
-                    onMessage?.('success', 'JSON changes applied');
+                    o11y.user.success('JSON changes applied');
                   } else {
-                    onMessage?.('error', `JSON error: ${result.message}`);
+                    o11y.user.error(`JSON error: ${result.message}`);
                   }
                 }}
                 disabled={!!state.jsonError}
@@ -504,13 +846,15 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             actions.addQualifierType(qualifierType);
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
-            onMessage?.('success', `Added system qualifier type: ${qualifierType.name}`);
+            o11y.user.success(`Added system qualifier type: ${qualifierType.name}`);
           }}
           onCancel={() => {
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
           }}
-          existingNames={(state.currentConfiguration.qualifierTypes || []).map((qt) => qt.name)}
+          existingNames={(state.currentConfiguration.qualifierTypes || []).map(
+            (qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name
+          )}
         />
       )}
 
@@ -521,13 +865,15 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             actions.addQualifierType(qualifierType);
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
-            onMessage?.('success', `Added custom qualifier type: ${qualifierType.name}`);
+            o11y.user.success(`Added custom qualifier type: ${qualifierType.name}`);
           }}
           onCancel={() => {
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
           }}
-          existingNames={(state.currentConfiguration.qualifierTypes || []).map((qt) => qt.name)}
+          existingNames={(state.currentConfiguration.qualifierTypes || []).map(
+            (qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name
+          )}
         />
       )}
 
@@ -538,12 +884,15 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             onSave={(qualifierType) => {
               actions.updateQualifierType(editingQualifierType.index, qualifierType);
               setEditingQualifierType(null);
-              onMessage?.('success', `Updated qualifier type: ${qualifierType.name}`);
+              o11y.user.success(`Updated qualifier type: ${qualifierType.name}`);
             }}
             onCancel={() => setEditingQualifierType(null)}
             existingNames={(state.currentConfiguration.qualifierTypes || [])
-              .filter((_, i) => i !== editingQualifierType.index)
-              .map((qt) => qt.name)}
+              .filter(
+                (__: QualifierTypes.Config.IAnyQualifierTypeConfig, i: number) =>
+                  i !== editingQualifierType.index
+              )
+              .map((qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name)}
           />
         ) : (
           <GenericQualifierTypeEditForm
@@ -551,12 +900,15 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
             onSave={(qualifierType) => {
               actions.updateQualifierType(editingQualifierType.index, qualifierType);
               setEditingQualifierType(null);
-              onMessage?.('success', `Updated custom qualifier type: ${qualifierType.name}`);
+              o11y.user.success(`Updated custom qualifier type: ${qualifierType.name}`);
             }}
             onCancel={() => setEditingQualifierType(null)}
             existingNames={(state.currentConfiguration.qualifierTypes || [])
-              .filter((_, i) => i !== editingQualifierType.index)
-              .map((qt) => qt.name)}
+              .filter(
+                (__: QualifierTypes.Config.IAnyQualifierTypeConfig, i: number) =>
+                  i !== editingQualifierType.index
+              )
+              .map((qt: QualifierTypes.Config.IAnyQualifierTypeConfig) => qt.name)}
           />
         ))}
 
@@ -565,13 +917,16 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
           qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
             QualifierTypes.Config.isSystemQualifierTypeConfig
           )}
+          qualifierTypeInstances={qualifierTypeInstances}
           onSave={(qualifier) => {
             actions.addQualifier(qualifier);
             setShowAddQualifier(false);
-            onMessage?.('success', `Added qualifier: ${qualifier.name}`);
+            o11y.user.success(`Added qualifier: ${qualifier.name}`);
           }}
           onCancel={() => setShowAddQualifier(false)}
-          existingNames={(state.currentConfiguration.qualifiers || []).map((q) => q.name)}
+          existingNames={(state.currentConfiguration.qualifiers || []).map(
+            (q: Qualifiers.IQualifierDecl) => q.name
+          )}
         />
       )}
 
@@ -581,15 +936,16 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
           qualifierTypes={(state.currentConfiguration.qualifierTypes || []).filter(
             QualifierTypes.Config.isSystemQualifierTypeConfig
           )}
+          qualifierTypeInstances={qualifierTypeInstances}
           onSave={(qualifier) => {
             actions.updateQualifier(editingQualifier.index, qualifier);
             setEditingQualifier(null);
-            onMessage?.('success', `Updated qualifier: ${qualifier.name}`);
+            o11y.user.success(`Updated qualifier: ${qualifier.name}`);
           }}
           onCancel={() => setEditingQualifier(null)}
           existingNames={(state.currentConfiguration.qualifiers || [])
-            .filter((_, i) => i !== editingQualifier.index)
-            .map((q) => q.name)}
+            .filter((__: Qualifiers.IQualifierDecl, i: number) => i !== editingQualifier.index)
+            .map((q: Qualifiers.IQualifierDecl) => q.name)}
         />
       )}
 
@@ -598,10 +954,12 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
           onSave={(resourceType) => {
             actions.addResourceType(resourceType);
             setShowAddResourceType(false);
-            onMessage?.('success', `Added resource type: ${resourceType.name}`);
+            o11y.user.success(`Added resource type: ${resourceType.name}`);
           }}
           onCancel={() => setShowAddResourceType(false)}
-          existingNames={(state.currentConfiguration.resourceTypes || []).map((rt) => rt.name)}
+          existingNames={(state.currentConfiguration.resourceTypes || []).map(
+            (rt: ResourceTypes.Config.IResourceTypeConfig) => rt.name
+          )}
         />
       )}
 
@@ -611,347 +969,15 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
           onSave={(resourceType) => {
             actions.updateResourceType(editingResourceType.index, resourceType);
             setEditingResourceType(null);
-            onMessage?.('success', `Updated resource type: ${resourceType.name}`);
+            o11y.user.success(`Updated resource type: ${resourceType.name}`);
           }}
           onCancel={() => setEditingResourceType(null)}
           existingNames={(state.currentConfiguration.resourceTypes || [])
-            .filter((_, i) => i !== editingResourceType.index)
-            .map((rt) => rt.name)}
+            .filter(
+              (__: ResourceTypes.Config.IResourceTypeConfig, i: number) => i !== editingResourceType.index
+            )
+            .map((rt: ResourceTypes.Config.IResourceTypeConfig) => rt.name)}
         />
-      )}
-    </div>
-  );
-};
-
-// Comprehensive panel components with full editing capabilities
-interface QualifierTypesPanelProps {
-  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
-  onUpdateItem: (index: number, qualifierType: QualifierTypes.Config.IAnyQualifierTypeConfig) => void;
-  onRemove: (index: number) => void;
-  onShowAdd: () => void;
-  onEdit: (item: QualifierTypes.Config.IAnyQualifierTypeConfig, index: number) => void;
-}
-
-const QualifierTypesPanel: React.FC<QualifierTypesPanelProps> = ({
-  qualifierTypes,
-  onRemove,
-  onShowAdd,
-  onEdit
-}) => {
-  const getConfigurationSummary = (type: QualifierTypes.Config.IAnyQualifierTypeConfig): string => {
-    if (!type.configuration) return 'No configuration';
-
-    // Handle system qualifier types
-    if (QualifierTypes.Config.isSystemQualifierTypeConfig(type)) {
-      const config = type.configuration as Record<string, unknown>;
-      const details: string[] = [];
-
-      if (config?.allowContextList) details.push('Context List');
-      if (type.systemType === 'literal') {
-        if (config?.caseSensitive === false) details.push('Case Insensitive');
-        const enumValues = config?.enumeratedValues as string[] | undefined;
-        if (enumValues?.length) details.push(`${enumValues.length} values`);
-      }
-      if (type.systemType === 'territory') {
-        if (config?.acceptLowercase) details.push('Accept Lowercase');
-        const territories = config?.allowedTerritories as string[] | undefined;
-        if (territories?.length) details.push(`${territories.length} territories`);
-      }
-
-      return details.length > 0 ? details.join(', ') : 'Default settings';
-    }
-
-    // Handle custom qualifier types
-    const config = type.configuration;
-    if (typeof config === 'object' && config !== null) {
-      const keys = Object.keys(config);
-      return keys.length > 0 ? `${keys.length} properties` : 'Empty configuration';
-    }
-    return 'Custom configuration';
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Qualifier Types</h3>
-        <button
-          onClick={onShowAdd}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-        >
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Type
-        </button>
-      </div>
-
-      {qualifierTypes.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <CogIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p>No qualifier types defined</p>
-          <p className="text-sm">Add a qualifier type to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {qualifierTypes.map((type, index) => (
-            <div
-              key={index}
-              className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h4 className="font-medium text-gray-900">{type.name}</h4>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        QualifierTypes.Config.isSystemQualifierTypeConfig(type)
-                          ? type.systemType === 'language'
-                            ? 'bg-blue-100 text-blue-800'
-                            : type.systemType === 'territory'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-purple-100 text-purple-800'
-                          : 'bg-orange-100 text-orange-800 border border-orange-300'
-                      }`}
-                    >
-                      {QualifierTypes.Config.isSystemQualifierTypeConfig(type) ? type.systemType : 'custom'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-2">{getConfigurationSummary(type)}</p>
-                </div>
-                <div className="flex items-center space-x-2 ml-4">
-                  <button
-                    onClick={() => onEdit(type, index)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                    title="Edit qualifier type"
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onRemove(index)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                    title="Delete qualifier type"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface QualifiersPanelProps {
-  qualifiers: Qualifiers.IQualifierDecl[];
-  qualifierTypes: QualifierTypes.Config.IAnyQualifierTypeConfig[];
-  onUpdateItem: (index: number, qualifier: Qualifiers.IQualifierDecl) => void;
-  onRemove: (index: number) => void;
-  onShowAdd: () => void;
-  onEdit: (item: Qualifiers.IQualifierDecl, index: number) => void;
-}
-
-const QualifiersPanel: React.FC<QualifiersPanelProps> = ({
-  qualifiers,
-  qualifierTypes,
-  onRemove,
-  onShowAdd,
-  onEdit
-}) => {
-  // Sort qualifiers by priority (highest first)
-  const sortedQualifiers = [...qualifiers].sort((a, b) => b.defaultPriority - a.defaultPriority);
-
-  const getQualifierSummary = (qualifier: Qualifiers.IQualifierDecl): string => {
-    const qualifierType = qualifierTypes.find((qt) => qt.name === qualifier.typeName);
-    const details: string[] = [];
-
-    if (qualifier.token) details.push(`Token: ${qualifier.token}`);
-    if (qualifier.defaultValue) details.push(`Default: ${qualifier.defaultValue}`);
-    if (qualifier.tokenIsOptional) details.push('Optional Token');
-    if (qualifierType) details.push(`System: ${qualifierType.systemType}`);
-
-    return details.join(' • ');
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Qualifiers</h3>
-        <button
-          onClick={onShowAdd}
-          disabled={qualifierTypes.length === 0}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          title={qualifierTypes.length === 0 ? 'Add qualifier types first' : 'Add qualifier'}
-        >
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Qualifier
-        </button>
-      </div>
-
-      {qualifierTypes.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <ExclamationTriangleIcon className="w-12 h-12 mx-auto mb-4 text-amber-400" />
-          <p>No qualifier types available</p>
-          <p className="text-sm">Create qualifier types first before adding qualifiers</p>
-        </div>
-      ) : qualifiers.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <CogIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p>No qualifiers defined</p>
-          <p className="text-sm">Add a qualifier to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {sortedQualifiers.map((qualifier, index) => {
-            const originalIndex = qualifiers.findIndex((q) => q === qualifier);
-            const qualifierType = qualifierTypes.find((qt) => qt.name === qualifier.typeName);
-
-            return (
-              <div
-                key={originalIndex}
-                className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    {/* Header line with name, type, and token */}
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h4 className="font-medium text-gray-900">{qualifier.name}</h4>
-                      <span className="text-gray-600 text-sm">{qualifier.typeName}</span>
-                      {qualifier.token && (
-                        <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded">
-                          token: {qualifier.token}
-                        </span>
-                      )}
-                      {!qualifierType && (
-                        <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                          Missing Type
-                        </span>
-                      )}
-                    </div>
-                    {/* Bottom line with type and priority */}
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>Type: {qualifier.typeName}</span>
-                      <span>Priority: {qualifier.defaultPriority}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={() => onEdit(qualifier, originalIndex)}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                      title="Edit qualifier"
-                    >
-                      <PencilIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => onRemove(originalIndex)}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                      title="Delete qualifier"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface ResourceTypesPanelProps {
-  resourceTypes: ResourceTypes.Config.IResourceTypeConfig[];
-  onUpdateItem: (index: number, resourceType: ResourceTypes.Config.IResourceTypeConfig) => void;
-  onRemove: (index: number) => void;
-  onShowAdd: () => void;
-  onEdit: (item: ResourceTypes.Config.IResourceTypeConfig, index: number) => void;
-}
-
-const ResourceTypesPanel: React.FC<ResourceTypesPanelProps> = ({
-  resourceTypes,
-  onRemove,
-  onShowAdd,
-  onEdit
-}) => {
-  const getTypeNameBadgeColor = (typeName: string): string => {
-    switch (typeName) {
-      case 'string':
-        return 'bg-blue-100 text-blue-800';
-      case 'object':
-        return 'bg-green-100 text-green-800';
-      case 'array':
-        return 'bg-purple-100 text-purple-800';
-      case 'number':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'boolean':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Resource Types</h3>
-        <button
-          onClick={onShowAdd}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-        >
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Type
-        </button>
-      </div>
-
-      {resourceTypes.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <CogIcon className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p>No resource types defined</p>
-          <p className="text-sm">Add a resource type to get started</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {resourceTypes.map((type, index) => (
-            <div
-              key={index}
-              className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h4 className="font-medium text-gray-900">{type.name}</h4>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeNameBadgeColor(
-                        type.typeName
-                      )}`}
-                    >
-                      {type.typeName}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Defines how resources of this type are processed and validated
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2 ml-4">
-                  <button
-                    onClick={() => onEdit(type, index)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
-                    title="Edit resource type"
-                  >
-                    <PencilIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => onRemove(index)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
-                    title="Delete resource type"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
       )}
     </div>
   );

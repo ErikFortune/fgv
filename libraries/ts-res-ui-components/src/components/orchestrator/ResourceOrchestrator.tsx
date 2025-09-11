@@ -2,13 +2,13 @@ import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { ObservabilityProvider, useObservability } from '../../contexts';
 import { Config, Bundle, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
 import {
-  OrchestratorState,
-  OrchestratorActions,
-  ImportedDirectory,
-  ImportedFile,
-  ProcessedResources,
-  FilterState,
-  FilterResult
+  IOrchestratorState,
+  IOrchestratorActions,
+  IImportedDirectory,
+  IImportedFile,
+  IProcessedResources,
+  IFilterState,
+  IFilterResult
 } from '../../types';
 import * as ObservabilityTools from '../../utils/observability';
 import { useResourceData } from '../../hooks/useResourceData';
@@ -16,8 +16,7 @@ import { useFilterState } from '../../hooks/useFilterState';
 import { useViewState } from '../../hooks/useViewState';
 import { useResolutionState } from '../../hooks/useResolutionState';
 import { createFilteredResourceManagerSimple, analyzeFilteredResources } from '../../utils/filterResources';
-import { DownloadUtils } from '../../utils/downloadHelper';
-import { Runtime } from '@fgv/ts-res';
+import * as DownloadUtils from '../../utils/downloadHelper';
 
 /**
  * Props for the ResourceOrchestrator component.
@@ -25,9 +24,9 @@ import { Runtime } from '@fgv/ts-res';
  *
  * @public
  */
-export interface ResourceOrchestratorProps {
+export interface IResourceOrchestratorProps {
   /** Render function that receives orchestrator state and actions */
-  children: (orchestrator: { state: OrchestratorState; actions: OrchestratorActions }) => ReactNode;
+  children: (orchestrator: { state: IOrchestratorState; actions: IOrchestratorActions }) => ReactNode;
   /** Optional initial configuration to apply on mount */
   initialConfiguration?: Config.Model.ISystemConfiguration;
   /** Optional qualifier type factory for creating custom qualifier types */
@@ -41,7 +40,7 @@ export interface ResourceOrchestratorProps {
     ResourceTypes.ResourceType
   >;
   /** Callback fired when orchestrator state changes */
-  onStateChange?: (state: Partial<OrchestratorState>) => void;
+  onStateChange?: (state: Partial<IOrchestratorState>) => void;
   /** Optional observability context for logging and user feedback */
   observabilityContext?: ObservabilityTools.IObservabilityContext;
 }
@@ -49,12 +48,17 @@ export interface ResourceOrchestratorProps {
 /**
  * Internal orchestrator component that has access to observability context via hook.
  */
-const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'observabilityContext'>> = ({
+const ResourceOrchestratorInternal: React.FC<
+  Omit<IResourceOrchestratorProps, 'observabilityContext'> & {
+    viewState: ReturnType<typeof useViewState>;
+  }
+> = ({
   children,
   initialConfiguration,
   qualifierTypeFactory,
   resourceTypeFactory,
-  onStateChange
+  onStateChange,
+  viewState
 }) => {
   // Get observability context from provider
   const o11y = useObservability();
@@ -66,24 +70,20 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
     o11y
   });
   const filterState = useFilterState();
-  const viewState = useViewState();
+  // Use the ViewState passed down from ResourceOrchestrator instead of creating a new one
   // System update handler for resolution editing
   const handleSystemUpdate = useCallback(
-    (updatedResources: ProcessedResources) => {
+    (updatedResources: IProcessedResources) => {
       resourceData.actions.updateProcessedResources(updatedResources);
-      viewState.addMessage('success', 'Resource system updated with edits');
+      o11y.user.success('Resource system updated with edits');
     },
-    [resourceData.actions, viewState]
+    [resourceData.actions, o11y.user]
   );
 
-  const resolutionData = useResolutionState(
-    resourceData.state.processedResources,
-    viewState.addMessage,
-    handleSystemUpdate
-  );
+  const resolutionData = useResolutionState(resourceData.state.processedResources, handleSystemUpdate);
 
   // Local state for filter results
-  const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
+  const [filterResult, setFilterResult] = useState<IFilterResult | null>(null);
 
   // Track if filtering is in progress to prevent concurrent operations
   const isFilteringInProgress = React.useRef(false);
@@ -120,7 +120,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
 
   // Internal filtering logic (used by both manual and automatic application)
   const performFiltering = useCallback(
-    async (filterValues: Record<string, string | undefined>): Promise<FilterResult | null> => {
+    async (filterValues: Record<string, string | undefined>): Promise<IFilterResult | null> => {
       // Prevent concurrent filtering operations
       if (isFilteringInProgress.current) {
         o11y.diag.info('Filtering already in progress, skipping...');
@@ -146,26 +146,26 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
       try {
         const { system } = resourceData.state.processedResources;
 
-        viewState.addMessage('info', 'Starting filtering process...');
+        o11y.user.info('Starting filtering process...');
         o11y.diag.info('Filtering with values:', filterValues);
         o11y.diag.info('Filter state:', filterState.state);
 
         // Try the simplified filtering approach using provided values
-        let filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
+        const filteredResult = await createFilteredResourceManagerSimple(system, filterValues, {
           partialContextMatch: true,
           enableDebugLogging: false, // Disable debug logging to reduce console output
           reduceQualifiers: filterState.state.reduceQualifiers
         });
 
         if (filteredResult.isFailure()) {
-          const result: FilterResult = {
+          const result: IFilterResult = {
             success: false,
             error: `Filtering failed: ${filteredResult.message}`,
             filteredResources: [],
             warnings: []
           };
           setFilterResult(result);
-          viewState.addMessage('error', `Filtering failed: ${filteredResult.message}`);
+          o11y.user.error(`Filtering failed: ${filteredResult.message}`);
           return result;
         }
 
@@ -197,7 +197,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
           }))
         );
 
-        const result: FilterResult = {
+        const result: IFilterResult = {
           success: true,
           processedResources: analysis.processedResources,
           filteredResources: analysis.filteredResources,
@@ -208,35 +208,33 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
         setFilterResult(result);
 
         if (analysis.warnings.length > 0) {
-          viewState.addMessage('warning', `Filtering completed with ${analysis.warnings.length} warning(s)`);
+          o11y.user.warn(`Filtering completed with ${analysis.warnings.length} warning(s)`);
         } else {
-          viewState.addMessage(
-            'success',
-            `Filtering completed: ${analysis.filteredResources.length} resources`
-          );
+          o11y.user.success(`Filtering completed: ${analysis.filteredResources.length} resources`);
         }
 
         return result;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const result: FilterResult = {
+        const result: IFilterResult = {
           success: false,
           error: errorMessage,
           filteredResources: [],
           warnings: []
         };
         setFilterResult(result);
-        viewState.addMessage('error', `Filtering error: ${errorMessage}`);
+        o11y.user.error(`Filtering error: ${errorMessage}`);
         return result;
       } finally {
+        // eslint-disable-next-line require-atomic-updates -- intentionally reset filtering flag regardless of concurrent operations
         isFilteringInProgress.current = false;
       }
     },
-    [resourceData.state.processedResources, filterState.state, viewState]
+    [resourceData.state.processedResources, filterState.state, o11y.user]
   );
 
   // Manual apply filter action (for the Apply button)
-  const applyFilter = useCallback(async (): Promise<FilterResult | null> => {
+  const applyFilter = useCallback(async (): Promise<IFilterResult | null> => {
     // Capture the current values before applying them
     const currentValues = { ...filterState.state.values };
 
@@ -253,8 +251,8 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   const resetFilter = useCallback(() => {
     setFilterResult(null);
     filterState.actions.resetFilterValues();
-    viewState.addMessage('info', 'Filter reset');
-  }, [filterState.actions, viewState]);
+    o11y.user.info('Filter reset');
+  }, [filterState.actions, o11y.user]);
 
   // Automatically apply filter when applied filter values change
   // TEMPORARILY DISABLED to fix responsiveness issue
@@ -280,7 +278,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   // ]);
 
   // Combined state
-  const state: OrchestratorState = useMemo(
+  const state: IOrchestratorState = useMemo(
     () => ({
       resources: resourceData.state.processedResources,
       configuration: resourceData.state.activeConfiguration,
@@ -303,62 +301,62 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
   );
 
   // Combined actions
-  const actions: OrchestratorActions = useMemo(
+  const actions: IOrchestratorActions = useMemo(
     () => ({
       // Resource management
-      importDirectory: async (directory: ImportedDirectory) => {
-        viewState.addMessage('info', 'Importing directory...');
+      importDirectory: async (directory: IImportedDirectory) => {
+        o11y.user.info('Importing directory...');
         const result = await resourceData.actions.processDirectory(directory);
         if (result.isSuccess()) {
-          viewState.addMessage('success', 'Directory imported successfully');
+          o11y.user.success('Directory imported successfully');
         } else {
-          viewState.addMessage('error', result.message);
+          o11y.user.error(result.message);
         }
       },
       importDirectoryWithConfig: async (
-        directory: ImportedDirectory,
+        directory: IImportedDirectory,
         config: Config.Model.ISystemConfiguration
       ) => {
-        viewState.addMessage('info', 'Importing directory with configuration...');
+        o11y.user.info('Importing directory with configuration...');
         await resourceData.actions.processDirectoryWithConfig(directory, config);
         if (!resourceData.state.error) {
-          viewState.addMessage('success', 'Directory imported successfully');
+          o11y.user.success('Directory imported successfully');
         } else {
-          viewState.addMessage('error', resourceData.state.error);
+          o11y.user.error(resourceData.state.error);
         }
       },
-      importFiles: async (files: ImportedFile[]) => {
-        viewState.addMessage('info', 'Importing files...');
+      importFiles: async (files: IImportedFile[]) => {
+        o11y.user.info('Importing files...');
         await resourceData.actions.processFiles(files);
         if (!resourceData.state.error) {
-          viewState.addMessage('success', 'Files imported successfully');
+          o11y.user.success('Files imported successfully');
         }
       },
       importBundle: async (bundle: Bundle.IBundle) => {
-        viewState.addMessage('info', 'Importing bundle...');
+        o11y.user.info('Importing bundle...');
         await resourceData.actions.processBundleFile(bundle);
         if (!resourceData.state.error) {
-          viewState.addMessage('success', 'Bundle imported successfully');
+          o11y.user.success('Bundle imported successfully');
         }
       },
       clearResources: () => {
         resourceData.actions.reset();
         setFilterResult(null);
-        viewState.addMessage('info', 'Resources cleared');
+        o11y.user.info('Resources cleared');
       },
 
       // Configuration management
       updateConfiguration: (config: Config.Model.ISystemConfiguration) => {
         resourceData.actions.applyConfiguration(config);
-        viewState.addMessage('info', 'Configuration updated');
+        o11y.user.info('Configuration updated');
       },
       applyConfiguration: (config: Config.Model.ISystemConfiguration) => {
         resourceData.actions.applyConfiguration(config);
-        viewState.addMessage('success', 'Configuration applied');
+        o11y.user.success('Configuration applied');
       },
 
       // Filter management
-      updateFilterState: (updates: Partial<FilterState>) => {
+      updateFilterState: (updates: Partial<IFilterState>) => {
         if (updates.enabled !== undefined) {
           filterState.actions.updateFilterEnabled(updates.enabled);
         }
@@ -406,10 +404,7 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
       exportBundle: () => {
         const resources = resourceData.state.processedResources;
         if (!resources || !resources.activeConfiguration) {
-          viewState.addMessage(
-            'error',
-            'Export bundle failed: No resource manager or configuration available'
-          );
+          o11y.user.error('Export bundle failed: No resource manager or configuration available');
           return;
         }
 
@@ -422,16 +417,16 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
 
         // Handle final result with side effects
         if (result.isSuccess()) {
-          viewState.addMessage('success', 'Bundle exported successfully');
+          o11y.user.success('Bundle exported successfully');
         } else {
-          viewState.addMessage('error', `Export bundle failed: ${result.message}`);
+          o11y.user.error(`Export bundle failed: ${result.message}`);
         }
       },
 
       exportSource: () => {
         const resources = resourceData.state.processedResources;
         if (!resources) {
-          viewState.addMessage('error', 'Export source failed: No processed resources available');
+          o11y.user.error('Export source failed: No processed resources available');
           return;
         }
 
@@ -440,16 +435,16 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
 
         // Handle result with side effects
         if (result.isSuccess()) {
-          viewState.addMessage('success', 'Source resources exported successfully');
+          o11y.user.success('Source resources exported successfully');
         } else {
-          viewState.addMessage('error', `Export source failed: ${result.message}`);
+          o11y.user.error(`Export source failed: ${result.message}`);
         }
       },
 
       exportCompiled: () => {
         const resources = resourceData.state.processedResources;
         if (!resources || !resources.compiledCollection) {
-          viewState.addMessage('error', 'Export compiled failed: No compiled resources available');
+          o11y.user.error('Export compiled failed: No compiled resources available');
           return;
         }
 
@@ -461,9 +456,9 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
 
         // Handle result with side effects
         if (result.isSuccess()) {
-          viewState.addMessage('success', 'Compiled resources exported successfully');
+          o11y.user.success('Compiled resources exported successfully');
         } else {
-          viewState.addMessage('error', `Export compiled failed: ${result.message}`);
+          o11y.user.error(`Export compiled failed: ${result.message}`);
         }
       },
 
@@ -478,7 +473,15 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
       // Resource resolution
       resolveResource: resourceData.actions.resolveResource
     }),
-    [resourceData.actions, filterState.actions, resolutionData.actions, viewState, applyFilter, resetFilter]
+    [
+      resourceData.actions,
+      filterState.actions,
+      resolutionData.actions,
+      viewState,
+      applyFilter,
+      resetFilter,
+      o11y
+    ]
   );
 
   return <>{children({ state, actions })}</>;
@@ -523,13 +526,27 @@ const ResourceOrchestratorInternal: React.FC<Omit<ResourceOrchestratorProps, 'ob
  *
  * @public
  */
-export const ResourceOrchestrator: React.FC<ResourceOrchestratorProps> = ({
-  observabilityContext = ObservabilityTools.DefaultObservabilityContext,
+export const ResourceOrchestrator: React.FC<IResourceOrchestratorProps> = ({
+  observabilityContext,
   ...props
-}) => (
-  <ObservabilityProvider observabilityContext={observabilityContext}>
-    <ResourceOrchestratorInternal {...props} />
-  </ObservabilityProvider>
-);
+}) => {
+  // Create viewState hook to get addMessage function for observability integration
+  const viewState = useViewState();
+
+  // Create observability context that connects user messages to viewState
+  // If a custom context is provided, use it; otherwise create one connected to viewState
+  const effectiveObservabilityContext = React.useMemo(() => {
+    if (observabilityContext) {
+      return observabilityContext;
+    }
+    return ObservabilityTools.createViewStateObservabilityContext(viewState.addMessage);
+  }, [observabilityContext, viewState.addMessage]);
+
+  return (
+    <ObservabilityProvider observabilityContext={effectiveObservabilityContext}>
+      <ResourceOrchestratorInternal {...props} viewState={viewState} />
+    </ObservabilityProvider>
+  );
+};
 
 export default ResourceOrchestrator;

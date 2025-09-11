@@ -38,14 +38,30 @@
  * @public
  */
 
-export * as FilterTools from './FilterTools';
-export * as ResolutionTools from './ResolutionTools';
-export * as ConfigurationTools from './ConfigurationTools';
-export * as ResourceTools from './ResourceTools';
-export * as ImportTools from './ImportTools';
-export * as TsResTools from './TsResTools';
-export * as ViewStateTools from './ViewStateTools';
-export * as ZipTools from './ZipTools';
-export * as PickerTools from './PickerTools';
-export * as GridTools from './GridTools';
-export * as ObservabilityTools from './ObservabilityTools';
+import * as DownloadTools from './DownloadTools';
+import * as FilterTools from './FilterTools';
+import * as ResolutionTools from './ResolutionTools';
+import * as ConfigurationTools from './ConfigurationTools';
+import * as ResourceTools from './ResourceTools';
+import * as ImportTools from './ImportTools';
+import * as TsResTools from './TsResTools';
+import * as ViewStateTools from './ViewStateTools';
+import * as ZipTools from './ZipTools';
+import * as PickerTools from './PickerTools';
+import * as GridTools from './GridTools';
+import * as ObservabilityTools from './ObservabilityTools';
+
+export {
+  DownloadTools,
+  FilterTools,
+  ResolutionTools,
+  ConfigurationTools,
+  ResourceTools,
+  ImportTools,
+  TsResTools,
+  ViewStateTools,
+  ZipTools,
+  PickerTools,
+  GridTools,
+  ObservabilityTools
+};

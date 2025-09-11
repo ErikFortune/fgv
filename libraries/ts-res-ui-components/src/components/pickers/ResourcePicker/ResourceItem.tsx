@@ -1,6 +1,6 @@
 import React from 'react';
 import { DocumentTextIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
-import { ResourceItemProps, ResourceSelection } from './types';
+import { IResourceItemProps } from './types';
 
 /**
  * Individual resource item with annotation support
@@ -16,7 +16,7 @@ export const ResourceItem = <T = unknown,>({
   className = '',
   resourceData,
   pendingType
-}: ResourceItemProps<T>) => {
+}: IResourceItemProps<T>): React.ReactElement => {
   const name = displayName || resourceId;
 
   // Highlight search term in the name
@@ -25,6 +25,7 @@ export const ResourceItem = <T = unknown,>({
       return <span>{name}</span>;
     }
 
+    // eslint-disable-next-line @rushstack/security/no-unsafe-regexp
     const regex = new RegExp(`(${searchTerm})`, 'gi');
     const parts = name.split(regex);
 
@@ -44,7 +45,7 @@ export const ResourceItem = <T = unknown,>({
   }, [name, searchTerm]);
 
   // Get badge styling based on variant
-  const getBadgeClasses = (variant: string) => {
+  const getBadgeClasses = (variant: string): string => {
     const baseClasses = 'px-1.5 py-0.5 text-xs font-medium rounded';
     const variantClasses = {
       info: 'bg-blue-100 text-blue-800',

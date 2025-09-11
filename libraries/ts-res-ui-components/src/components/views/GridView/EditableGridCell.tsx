@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { JsonValue } from '@fgv/ts-json-base';
-import { GridColumnDefinition, ResolutionActions, ResolutionState } from '../../../types';
+import { isJsonObject, JsonValue } from '@fgv/ts-json-base';
+import { IGridColumnDefinition, IResolutionActions, IResolutionState } from '../../../types';
 import { GridValidationState } from '../../../utils/cellValidation';
 import { StringCell, BooleanCell, TriStateCell, DropdownCell } from './cells';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * Prevent prototype pollution by disallowing dangerous keys.
@@ -14,23 +15,21 @@ function isSafeKey(key: string): boolean {
 /**
  * Props for the EditableGridCell component.
  */
-export interface EditableGridCellProps {
+export interface IEditableGridCellProps {
   /** The extracted value for this cell */
   value: JsonValue;
   /** The resource ID for this row */
   resourceId: string;
   /** The column definition for this cell */
-  column: GridColumnDefinition;
+  column: IGridColumnDefinition;
   /** The complete resolved resource value */
   resolvedValue: JsonValue;
   /** Whether this cell has been edited */
   isEdited: boolean;
   /** Resolution actions for editing integration */
-  resolutionActions?: ResolutionActions;
+  resolutionActions?: IResolutionActions;
   /** Resolution state for edit tracking */
-  resolutionState?: ResolutionState;
-  /** Callback for displaying messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
+  resolutionState?: IResolutionState;
   /** Additional CSS classes */
   className?: string;
 }
@@ -39,14 +38,14 @@ export interface EditableGridCellProps {
  * Global validation state for grid cells.
  * In a real implementation, this would be managed at the grid level.
  */
-const globalValidationState = new GridValidationState();
+const globalValidationState: GridValidationState = new GridValidationState();
 
 /**
  * EditableGridCell component that provides editing capabilities for grid cells.
  * @public
  *
  * Automatically selects the appropriate cell editor based on the column configuration
- * and integrates with the existing ResolutionActions for batch editing support.
+ * and integrates with the existing IResolutionActions for batch editing support.
  * Supports validation with visual feedback and prevents invalid changes from being saved.
  *
  * @example
@@ -66,7 +65,7 @@ const globalValidationState = new GridValidationState();
  * />
  * ```
  */
-export const EditableGridCell: React.FC<EditableGridCellProps> = ({
+export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
   value,
   resourceId,
   column,
@@ -74,9 +73,9 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
   isEdited,
   resolutionActions,
   resolutionState,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const [isEditing, setIsEditing] = useState(false);
   const [currentValidationError, setCurrentValidationError] = useState<string | null>(null);
 
@@ -97,14 +96,26 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
     // Use the same extractValueByPath logic as ResourceGrid
     const dataPath = column.dataPath;
     if (typeof dataPath === 'string') {
-      return (editedValue as any)?.[dataPath];
+      if (!isJsonObject(editedValue)) {
+        if (!resolutionActions?.saveEdit) {
+          o11y.user.error(`${dataPath}: cannot extract property from non-object`);
+        }
+        return undefined;
+      }
+      return editedValue[dataPath];
     }
 
     if (Array.isArray(dataPath)) {
       let current = editedValue;
       for (const segment of dataPath) {
-        if (current == null) return undefined;
-        current = (current as any)[segment];
+        if (current === null || current === undefined) return undefined;
+        if (!isJsonObject(current)) {
+          if (!resolutionActions?.saveEdit) {
+            o11y.user.error(`${segment}: cannot extract property from non-object`);
+          }
+          return undefined;
+        }
+        current = current[segment];
       }
       return current;
     }
@@ -134,13 +145,13 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
   const handleSave = useCallback(
     (newValue: JsonValue) => {
       if (!resolutionActions?.saveEdit) {
-        onMessage?.('error', 'Unable to save: no edit actions available');
+        o11y.user.error('Unable to save: no edit actions available');
         return;
       }
 
       // Check for validation errors before saving
       if (currentValidationError) {
-        onMessage?.('warning', `Cannot save: ${currentValidationError}`);
+        o11y.user.warn(`Cannot save: ${currentValidationError}`);
         return;
       }
 
@@ -158,7 +169,7 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
         if (isSafeKey(dataPath)) {
           updatedObject[dataPath] = newValue;
         } else {
-          onMessage?.('error', `Invalid field name: "${dataPath}"`);
+          o11y.user.error(`Invalid field name: "${dataPath}"`);
           return;
         }
       } else if (Array.isArray(dataPath) && dataPath.length > 0) {
@@ -167,10 +178,14 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
         for (let i = 0; i < dataPath.length - 1; i++) {
           const segment = dataPath[i];
           if (!isSafeKey(segment)) {
-            onMessage?.('error', `Invalid nested field name: "${segment}"`);
+            o11y.user.error(`Invalid nested field name: "${segment}"`);
             return;
           }
-          if (current[segment] == null || typeof current[segment] !== 'object') {
+          if (
+            current[segment] === null ||
+            current[segment] === undefined ||
+            typeof current[segment] !== 'object'
+          ) {
             current[segment] = {};
           }
           current = current[segment] as Record<string, JsonValue>;
@@ -179,7 +194,7 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
         if (isSafeKey(lastSegment)) {
           current[lastSegment] = newValue;
         } else {
-          onMessage?.('error', `Invalid nested field name: "${lastSegment}"`);
+          o11y.user.error(`Invalid nested field name: "${lastSegment}"`);
           return;
         }
       }
@@ -191,9 +206,9 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
         setIsEditing(false);
         setCurrentValidationError(null);
         globalValidationState.clearCell(resourceId, column.id);
-        onMessage?.('success', `Updated ${column.title} for ${resourceId}`);
+        o11y.user.success(`Updated ${column.title} for ${resourceId}`);
       } else {
-        onMessage?.('error', `Failed to save: ${saveResult.message}`);
+        o11y.user.error(`Failed to save: ${saveResult.message}`);
       }
     },
     [
@@ -204,7 +219,7 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
       column.id,
       column.title,
       currentValidationError,
-      onMessage
+      o11y
     ]
   );
 
@@ -224,7 +239,7 @@ export const EditableGridCell: React.FC<EditableGridCellProps> = ({
   );
 
   // Select appropriate cell editor based on column configuration
-  const renderCell = () => {
+  const renderCell = (): React.ReactElement => {
     // Use custom cell editor if provided
     if (column.cellEditor) {
       const CustomEditor = column.cellEditor;
@@ -366,8 +381,18 @@ export const hasGridValidationErrors = (): boolean => {
  * Useful for displaying validation summaries or debugging.
  * @public
  */
-export const getAllGridValidationErrors = () => {
-  return globalValidationState.getAllErrors();
+export const getAllGridValidationErrors = (): Record<string, Record<string, string>> => {
+  const errors = globalValidationState.getAllErrors();
+  const result: Record<string, Record<string, string>> = {};
+
+  errors.forEach(({ resourceId, columnId, error }) => {
+    if (!result[resourceId]) {
+      result[resourceId] = {};
+    }
+    result[resourceId][columnId] = error;
+  });
+
+  return result;
 };
 
 /**

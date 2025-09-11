@@ -11,7 +11,7 @@ Provides a unified context management interface that is shared across all grid i
 **Signature:**
 
 ```typescript
-SharedContextControls: React.FC<SharedContextControlsProps>
+SharedContextControls: React.FC<ISharedContextControlsProps>
 ```
 
 ## Example

@@ -20,8 +20,6 @@
  * SOFTWARE.
  */
 
-/* eslint-disable @rushstack/typedef-var */
-
 import { Validator, Validators, Converter, Converters } from '@fgv/ts-utils';
 import * as Json from './json';
 import { Model as ConfigModel, Convert as ConfigConvert } from '../config';

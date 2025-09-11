@@ -9,7 +9,7 @@ import {
   ResourceJson,
   Config
 } from '@fgv/ts-res';
-import { ImportedDirectory, ImportedFile, ExtendedProcessedResources } from '../types';
+import { IImportedDirectory, IImportedFile, IExtendedProcessedResources } from '../types';
 import * as ObservabilityTools from '../utils/observability';
 
 /**
@@ -78,12 +78,12 @@ export function createSimpleContext(
  */
 /** @internal */
 export function convertImportedDirectoryToFileTree(
-  directory: ImportedDirectory,
+  directory: IImportedDirectory,
   o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
 ): FileTree.FileTree {
   // Convert files to IInMemoryFile format and flatten the directory structure
   const flattenFiles = (
-    dir: ImportedDirectory,
+    dir: IImportedDirectory,
     parentPath: string = ''
   ): Array<{ path: string; contents: string }> => {
     const files: Array<{ path: string; contents: string }> = [];
@@ -189,27 +189,36 @@ export function createTsResSystemFromConfig(
  * Process imported files using the ts-res system
  */
 /** @internal */
-export function processImportedFiles(
-  files: ImportedFile[],
-  systemConfig?: Config.Model.ISystemConfiguration,
+export interface ICreateProcessImportedFilesParams {
+  files: IImportedFile[];
+  systemConfig?: Config.Model.ISystemConfiguration;
   qualifierTypeFactory?: Config.IConfigInitFactory<
     QualifierTypes.Config.IAnyQualifierTypeConfig,
     QualifierTypes.QualifierType
-  >,
+  >;
   resourceTypeFactory?: Config.IConfigInitFactory<
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
-  >,
-  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): Result<ExtendedProcessedResources> {
-  if (files.length === 0) {
+  >;
+  o11y?: ObservabilityTools.IObservabilityContext;
+}
+
+/** @internal */
+export function processImportedFiles(
+  params: ICreateProcessImportedFilesParams
+): Result<IExtendedProcessedResources> {
+  if (params.files.length === 0) {
     return fail('No files provided for processing');
   }
 
-  return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
-    .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
+  return createTsResSystemFromConfig(
+    params.systemConfig,
+    params.qualifierTypeFactory,
+    params.resourceTypeFactory
+  )
+    .onSuccess<IExtendedProcessedResources>((tsResSystem) => {
       // Convert ImportedFile[] to IInMemoryFile[] format
-      const inMemoryFiles = files.map((file) => ({
+      const inMemoryFiles = params.files.map((file) => ({
         path: file.path || file.name,
         contents: file.content
       }));
@@ -223,7 +232,7 @@ export function processImportedFiles(
         })
         .onSuccess((importManager) => {
           // Import each file using its filesystem path
-          for (const file of files) {
+          for (const file of params.files) {
             const importResult = importManager.importFromFileSystem(file.path || file.name);
             if (importResult.isFailure()) {
               return fail(`Failed to import file ${file.path || file.name}: ${importResult.message}`);
@@ -235,7 +244,7 @@ export function processImportedFiles(
             ...tsResSystem,
             importManager
           };
-          const configToUse = systemConfig ?? getDefaultSystemConfiguration();
+          const configToUse = params.systemConfig ?? getDefaultSystemConfiguration();
           return finalizeProcessing(updatedSystem, configToUse);
         });
     })
@@ -243,26 +252,40 @@ export function processImportedFiles(
 }
 
 /**
+ * Parameters for processImportedDirectory
+ */
+/** @internal */
+export interface ICreateProcessImportedDirectoryParams {
+  directory: IImportedDirectory;
+  systemConfig?: Config.Model.ISystemConfiguration;
+  qualifierTypeFactory?: Config.IConfigInitFactory<
+    QualifierTypes.Config.IAnyQualifierTypeConfig,
+    QualifierTypes.QualifierType
+  >;
+  resourceTypeFactory?: Config.IConfigInitFactory<
+    ResourceTypes.Config.IResourceTypeConfig,
+    ResourceTypes.ResourceType
+  >;
+  o11y?: ObservabilityTools.IObservabilityContext;
+}
+
+/**
  * Process imported directory using the ts-res system
  */
 /** @internal */
 export function processImportedDirectory(
-  directory: ImportedDirectory,
-  systemConfig?: Config.Model.ISystemConfiguration,
-  qualifierTypeFactory?: Config.IConfigInitFactory<
-    QualifierTypes.Config.IAnyQualifierTypeConfig,
-    QualifierTypes.QualifierType
-  >,
-  resourceTypeFactory?: Config.IConfigInitFactory<
-    ResourceTypes.Config.IResourceTypeConfig,
-    ResourceTypes.ResourceType
-  >,
-  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): Result<ExtendedProcessedResources> {
-  return createTsResSystemFromConfig(systemConfig, qualifierTypeFactory, resourceTypeFactory)
-    .onSuccess<ExtendedProcessedResources>((tsResSystem) => {
+  params: ICreateProcessImportedDirectoryParams
+): Result<IExtendedProcessedResources> {
+  const o11y = params.o11y ?? ObservabilityTools.DefaultObservabilityContext;
+
+  return createTsResSystemFromConfig(
+    params.systemConfig,
+    params.qualifierTypeFactory,
+    params.resourceTypeFactory
+  )
+    .onSuccess<IExtendedProcessedResources>((tsResSystem) => {
       // Convert directory to file tree
-      const fileTree = convertImportedDirectoryToFileTree(directory, o11y);
+      const fileTree = convertImportedDirectoryToFileTree(params.directory, o11y);
 
       return Import.ImportManager.create({
         fileTree,
@@ -337,7 +360,7 @@ export function processImportedDirectory(
 
             return fail(errorMessage);
           } else if (importedCount === 0) {
-            return fail(`No resource files found in ${directory.name}`);
+            return fail(`No resource files found in ${params.directory.name}`);
           }
         } else {
           o11y.diag.info('[tsResIntegration] Successfully imported resources from root');
@@ -348,7 +371,7 @@ export function processImportedDirectory(
           ...tsResSystem,
           importManager
         };
-        const configToUse = systemConfig ?? getDefaultSystemConfiguration();
+        const configToUse = params.systemConfig ?? getDefaultSystemConfiguration();
         return finalizeProcessing(updatedSystem, configToUse);
       });
     })
@@ -368,7 +391,7 @@ function finalizeProcessing(
     contextQualifierProvider: Runtime.ValidatingSimpleContextQualifierProvider;
   },
   systemConfig?: Config.Model.ISystemConfiguration
-): Result<ExtendedProcessedResources> {
+): Result<IExtendedProcessedResources> {
   return system.resourceManager
     .getCompiledResourceCollection({ includeMetadata: true })
     .onSuccess((compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection) => {

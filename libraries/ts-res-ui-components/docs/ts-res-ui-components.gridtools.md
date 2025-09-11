@@ -126,7 +126,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[CustomResourceSelector](./ts-res-ui-components.gridtools.customresourceselector.md)
+[ICustomResourceSelector](./ts-res-ui-components.gridtools.icustomresourceselector.md)
 
 
 </td><td>
@@ -137,7 +137,7 @@ Custom resource selector for advanced filtering logic. Allows hosts to define co
 </td></tr>
 <tr><td>
 
-[GridCellEditorProps](./ts-res-ui-components.gridtools.gridcelleditorprops.md)
+[IGridCellEditorProps](./ts-res-ui-components.gridtools.igridcelleditorprops.md)
 
 
 </td><td>
@@ -148,7 +148,7 @@ Props passed to custom grid cell editors.
 </td></tr>
 <tr><td>
 
-[GridCellProps](./ts-res-ui-components.gridtools.gridcellprops.md)
+[IGridCellProps](./ts-res-ui-components.gridtools.igridcellprops.md)
 
 
 </td><td>
@@ -159,7 +159,7 @@ Props passed to custom grid cell renderers.
 </td></tr>
 <tr><td>
 
-[GridCellValidation](./ts-res-ui-components.gridtools.gridcellvalidation.md)
+[IGridCellValidation](./ts-res-ui-components.gridtools.igridcellvalidation.md)
 
 
 </td><td>
@@ -170,7 +170,7 @@ Validation configuration for grid cells.
 </td></tr>
 <tr><td>
 
-[GridColumnDefinition](./ts-res-ui-components.gridtools.gridcolumndefinition.md)
+[IGridColumnDefinition](./ts-res-ui-components.gridtools.igridcolumndefinition.md)
 
 
 </td><td>
@@ -181,7 +181,7 @@ Configuration for a single column in a resource grid. Defines how to extract, di
 </td></tr>
 <tr><td>
 
-[GridDropdownOption](./ts-res-ui-components.gridtools.griddropdownoption.md)
+[IGridDropdownOption](./ts-res-ui-components.gridtools.igriddropdownoption.md)
 
 
 </td><td>
@@ -192,7 +192,7 @@ Dropdown option for cell editing.
 </td></tr>
 <tr><td>
 
-[GridPresentationOptions](./ts-res-ui-components.gridtools.gridpresentationoptions.md)
+[IGridPresentationOptions](./ts-res-ui-components.gridtools.igridpresentationoptions.md)
 
 
 </td><td>
@@ -203,7 +203,7 @@ Presentation options for grid display.
 </td></tr>
 <tr><td>
 
-[GridViewInitParams](./ts-res-ui-components.gridtools.gridviewinitparams.md)
+[IGridViewInitParams](./ts-res-ui-components.gridtools.igridviewinitparams.md)
 
 
 </td><td>
@@ -214,7 +214,7 @@ Configuration for a single grid instance. Defines resource selection, column map
 </td></tr>
 <tr><td>
 
-[GridViewProps](./ts-res-ui-components.gridtools.gridviewprops.md)
+[IGridViewProps](./ts-res-ui-components.gridtools.igridviewprops.md)
 
 
 </td><td>
@@ -225,7 +225,7 @@ Props for the GridView component. Displays a single grid instance with resource 
 </td></tr>
 <tr><td>
 
-[MultiGridViewProps](./ts-res-ui-components.gridtools.multigridviewprops.md)
+[IMultiGridViewProps](./ts-res-ui-components.gridtools.imultigridviewprops.md)
 
 
 </td><td>
@@ -236,7 +236,7 @@ Props for the MultiGridView component. Container for multiple grid instances wit
 </td></tr>
 <tr><td>
 
-[ResourceTypeColumnMapping](./ts-res-ui-components.gridtools.resourcetypecolumnmapping.md)
+[IResourceTypeColumnMapping](./ts-res-ui-components.gridtools.iresourcetypecolumnmapping.md)
 
 
 </td><td>
@@ -306,7 +306,7 @@ Supports both dropdown (restricted to options) and combobox (allows custom value
 
 EditableGridCell component that provides editing capabilities for grid cells.
 
-Automatically selects the appropriate cell editor based on the column configuration and integrates with the existing ResolutionActions for batch editing support. Supports validation with visual feedback and prevents invalid changes from being saved.
+Automatically selects the appropriate cell editor based on the column configuration and integrates with the existing IResolutionActions for batch editing support. Supports validation with visual feedback and prevents invalid changes from being saved.
 
 
 </td></tr>

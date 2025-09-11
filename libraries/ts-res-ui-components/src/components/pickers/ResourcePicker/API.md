@@ -42,6 +42,8 @@ interface ResourcePickerProps extends ViewBaseProps {
 }
 ```
 
+**Note**: Component messages are handled through the ObservabilityProvider context rather than callback props.
+
 #### Detailed Prop Documentation
 
 ##### Core Props
@@ -129,12 +131,27 @@ interface ResourcePickerProps extends ViewBaseProps {
 - Supports new, modified, and deleted states
 - See `PendingResource` interface below
 
-##### Events
+##### Observability
 
-**`onMessage`** *`(type: MessageType, message: string) => void`* *optional*
-- Callback for component messages and notifications
-- `type`: `'info' | 'warning' | 'error' | 'success'`
-- Used for selection feedback and error reporting
+Component messages and notifications are handled through the ObservabilityProvider context. Wrap your application with `<ObservabilityProvider>` to receive component messages:
+
+```typescript
+import { ObservabilityProvider, useObservabilityContext } from '@fgv/ts-res-ui-components';
+
+function App() {
+  return (
+    <ObservabilityProvider>
+      <YourComponents />
+    </ObservabilityProvider>
+  );
+}
+```
+
+Messages include:
+- `'info'` - General information (e.g., resource selection)
+- `'warning'` - Non-critical issues (e.g., empty results)
+- `'error'` - Error conditions (e.g., loading failures)
+- `'success'` - Successful operations
 
 ## Type Definitions
 

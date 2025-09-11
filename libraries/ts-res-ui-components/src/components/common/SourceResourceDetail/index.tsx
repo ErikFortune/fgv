@@ -1,25 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { ResourceDetailData } from '../../../types';
+import { IResourceDetailData, IProcessedResources } from '../../../types';
+import { Conditions, ResourceJson, Resources } from '@fgv/ts-res';
+import { useObservability } from '../../../contexts';
 
 /**
  * Props for the SourceResourceDetail component.
  *
  * @public
  */
-export interface SourceResourceDetailProps {
+export interface ISourceResourceDetailProps {
   /** The resource ID to display details for */
   resourceId: string;
   /** Processed resources containing the resource data */
-  processedResources: any;
-  /** Optional callback for handling component messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
+  processedResources: IProcessedResources;
   /** Optional CSS classes to apply to the container */
   className?: string;
   /** Optional title for the detail panel */
   title?: string;
   // Dual-resource comparison mode props
   /** Optional original resources for comparison mode */
-  originalProcessedResources?: any;
+  originalProcessedResources?: IProcessedResources;
   /** Optional filter context for comparison */
   filterContext?: Record<string, string | undefined>;
   /** Whether to show comparison view */
@@ -52,7 +52,6 @@ export interface SourceResourceDetailProps {
  *       resourceId={selectedResourceId}
  *       processedResources={processedResources}
  *       title="Resource Inspector"
- *       onMessage={(type, msg) => console.log(`${type}: ${msg}`)}
  *       className="border rounded-lg p-4"
  *     />
  *   );
@@ -115,7 +114,6 @@ export interface SourceResourceDetailProps {
  *         filterContext={state.filterState.appliedValues}
  *         showComparison={!!state.filterResult}
  *         title="Resource Details"
- *         onMessage={actions.addMessage}
  *         className="detail-content"
  *       />
  *     </div>
@@ -125,10 +123,9 @@ export interface SourceResourceDetailProps {
  *
  * @public
  */
-export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
+export const SourceResourceDetail: React.FC<ISourceResourceDetailProps> = ({
   resourceId,
   processedResources,
-  onMessage,
   className = '',
   title = 'Resource Details',
   originalProcessedResources,
@@ -137,20 +134,24 @@ export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
   primaryLabel = 'Current',
   secondaryLabel = 'Original'
 }) => {
-  const [resourceDetail, setResourceDetail] = useState<ResourceDetailData | null>(null);
-  const [originalResourceDetail, setOriginalResourceDetail] = useState<ResourceDetailData | null>(null);
+  const o11y = useObservability();
+  const [resourceDetail, setResourceDetail] = useState<IResourceDetailData | null>(null);
+  const [originalResourceDetail, setOriginalResourceDetail] = useState<IResourceDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showFilteredView, setShowFilteredView] = useState(true);
 
   useEffect(() => {
-    const loadResourceDetail = () => {
+    const loadResourceDetail = (): void => {
       setIsLoading(true);
       setError(null);
 
       try {
         // Helper function to extract resource detail from processed resources
-        const extractResourceDetail = (resources: any, isOriginal = false): ResourceDetailData | null => {
+        const extractResourceDetail = (
+          resources: IProcessedResources,
+          isOriginal = false
+        ): IResourceDetailData | null => {
           const resourceManager = resources.system.resourceManager;
           const resourceResult = resourceManager.getBuiltResource(resourceId);
 
@@ -159,71 +160,77 @@ export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
           }
 
           const resource = resourceResult.value;
-          let candidateDetails: any[] = [];
+          let candidateDetails: ResourceJson.Normalized.IChildResourceCandidateDecl[] = [];
 
           // Check if candidates have conditions property (ResourceManagerBuilder format)
           if (resource.candidates.length > 0 && 'conditions' in resource.candidates[0]) {
             // ResourceManagerBuilder format with full condition details
-            candidateDetails = resource.candidates.map((candidate: any) => ({
+            candidateDetails = resource.candidates.map((candidate: Resources.ResourceCandidate) => ({
               json: candidate.json,
               conditions:
-                candidate.conditions?.conditions?.map((condition: any) => ({
-                  qualifier: condition.qualifier.name,
-                  operator: condition.operator,
-                  value: condition.value,
-                  priority: condition.priority,
-                  scoreAsDefault: condition.scoreAsDefault
-                })) || [],
+                candidate.conditions?.conditions?.map(
+                  (condition: Conditions.Condition): ResourceJson.Json.ILooseConditionDecl => ({
+                    qualifierName: condition.qualifier.name,
+                    operator: condition.operator,
+                    value: condition.value,
+                    priority: condition.priority,
+                    scoreAsDefault: condition.scoreAsDefault
+                  })
+                ) || [],
               isPartial: candidate.isPartial,
               mergeMethod: candidate.mergeMethod
             }));
           } else {
             // IResourceManager format - extract conditions from compiled collection
             const compiledCollection = resources.compiledCollection;
-            const compiledResource = compiledCollection?.resources?.find((r: any) => r.id === resourceId);
+            const compiledResource = compiledCollection?.resources?.find(
+              (r: ResourceJson.Compiled.ICompiledResource) => r.id === resourceId
+            );
 
-            candidateDetails = resource.candidates.map((candidate: any, index: number) => {
-              // Try to get conditions from the compiled collection
-              let conditions: any[] = [];
+            candidateDetails = resource.candidates.map(
+              (candidate: Resources.ResourceCandidate, index: number) => {
+                // Try to get conditions from the compiled collection
+                let conditions: ResourceJson.Json.ILooseConditionDecl[] = [];
 
-              if (compiledResource && compiledCollection) {
-                const decision = compiledCollection.decisions?.[compiledResource.decision];
-                if (decision?.conditionSets && index < decision.conditionSets.length) {
-                  const conditionSetIndex = decision.conditionSets[index];
-                  const conditionSet = compiledCollection.conditionSets?.[conditionSetIndex];
+                if (compiledResource && compiledCollection) {
+                  const decision = compiledCollection.decisions?.[compiledResource.decision];
+                  if (decision?.conditionSets && index < decision.conditionSets.length) {
+                    const conditionSetIndex = decision.conditionSets[index];
+                    const conditionSet = compiledCollection.conditionSets?.[conditionSetIndex];
 
-                  if (conditionSet?.conditions) {
-                    conditions = conditionSet.conditions
-                      .map((condIndex: number) => {
-                        const condition = compiledCollection.conditions?.[condIndex];
-                        const qualifier = compiledCollection.qualifiers?.[condition?.qualifierIndex];
-                        return condition && qualifier
-                          ? {
-                              qualifier: qualifier.name,
-                              operator: condition.operator || 'eq',
-                              value: condition.value,
-                              priority: condition.priority || qualifier.defaultPriority || 500,
-                              scoreAsDefault: condition.scoreAsDefault
-                            }
-                          : null;
-                      })
-                      .filter(Boolean);
+                    if (conditionSet?.conditions) {
+                      conditions = conditionSet.conditions
+                        .map((condIndex: number): ResourceJson.Json.ILooseConditionDecl | null => {
+                          const condition = compiledCollection.conditions?.[condIndex];
+                          const qualifier = compiledCollection.qualifiers?.[condition?.qualifierIndex];
+                          return condition && qualifier
+                            ? {
+                                qualifierName: qualifier.name,
+                                operator: condition.operator,
+                                value: condition.value,
+                                priority: condition.priority || qualifier.defaultPriority || 500,
+                                scoreAsDefault: condition.scoreAsDefault
+                              }
+                            : null;
+                        })
+                        .filter((c): c is ResourceJson.Json.ILooseConditionDecl => c !== null);
+                    }
                   }
                 }
-              }
 
-              return {
-                json: candidate.json,
-                conditions: conditions,
-                isPartial: candidate.isPartial,
-                mergeMethod: candidate.mergeMethod
-              };
-            });
+                return {
+                  json: candidate.json,
+                  conditions: conditions,
+                  isPartial: candidate.isPartial,
+                  mergeMethod: candidate.mergeMethod
+                };
+              }
+            );
           }
 
           return {
             id: resource.id,
-            resourceType: resource.resourceType.key || resource.resourceType.name || 'unknown',
+            resourceType: resource.resourceType.key || 'unknown',
             candidateCount: resource.candidates.length,
             candidates: candidateDetails
           };
@@ -234,8 +241,9 @@ export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
         if (currentDetail) {
           setResourceDetail(currentDetail);
         } else {
-          setError(`Failed to load resource details for: ${resourceId}`);
-          onMessage?.('error', `Failed to load resource details for: ${resourceId}`);
+          const errorMessage = `${resourceId}: Failed to load resource details`;
+          setError(errorMessage);
+          o11y.user.error(errorMessage);
           return;
         }
 
@@ -249,20 +257,20 @@ export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
           setOriginalResourceDetail(null);
         }
 
-        onMessage?.('info', `Loaded details for resource: ${resourceId}`);
+        o11y.user.info(`${resourceId}: Resource details loaded successfully`);
       } catch (err) {
-        const errorMsg = `Error loading resource details: ${
+        const errorMsg = `${resourceId}: Error loading resource details - ${
           err instanceof Error ? err.message : String(err)
         }`;
         setError(errorMsg);
-        onMessage?.('error', errorMsg);
+        o11y.user.error(errorMsg);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadResourceDetail();
-  }, [resourceId, processedResources, originalProcessedResources, showComparison, onMessage]);
+  }, [resourceId, processedResources, originalProcessedResources, showComparison, o11y]);
 
   if (isLoading) {
     return (
@@ -429,16 +437,16 @@ export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
                     </div>
 
                     {/* Conditions */}
-                    {candidate.conditions.length > 0 && (
+                    {(candidate.conditions?.length ?? 0) > 0 && (
                       <div className="mb-3">
                         <h6 className="text-sm font-medium text-gray-600 mb-2">Conditions:</h6>
                         <div className="space-y-1">
-                          {candidate.conditions.map((condition, condIndex) => (
+                          {candidate.conditions?.map((condition, condIndex) => (
                             <div
                               key={condIndex}
                               className="flex items-center text-xs bg-blue-50 px-2 py-1 rounded"
                             >
-                              <span className="font-medium text-blue-800">{condition.qualifier}</span>
+                              <span className="font-medium text-blue-800">{condition.qualifierName}</span>
                               <span className="mx-1 text-blue-600">{condition.operator}</span>
                               <span className="text-blue-700">{condition.value}</span>
                               <div className="ml-auto flex items-center space-x-2">
@@ -455,7 +463,7 @@ export const SourceResourceDetail: React.FC<SourceResourceDetailProps> = ({
                       </div>
                     )}
 
-                    {candidate.conditions.length === 0 && (
+                    {(candidate.conditions?.length ?? 0) === 0 && (
                       <div className="mb-3">
                         <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           No conditions (default candidate)

@@ -1,19 +1,19 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { JsonValue } from '@fgv/ts-json-base';
-import { GridColumnDefinition } from '../../../../types';
+import { IGridColumnDefinition } from '../../../../types';
 import { validateCellValue } from '../../../../utils/cellValidation';
 
 /**
  * Props for the StringCell component.
  */
-export interface StringCellProps {
+export interface IStringCellProps {
   /** Current value of the cell */
   value: JsonValue;
   /** Resource ID for this row */
   resourceId: string;
   /** Column configuration */
-  column: GridColumnDefinition;
+  column: IGridColumnDefinition;
   /** Whether this cell is currently being edited */
   isEditing: boolean;
   /** Whether the cell is in read-only mode */
@@ -56,7 +56,7 @@ export interface StringCellProps {
  * ```
  * @public
  */
-export const StringCell: React.FC<StringCellProps> = ({
+export const StringCell: React.FC<IStringCellProps> = ({
   value,
   resourceId,
   column,

@@ -11,7 +11,7 @@ Analyzes how each condition in a candidate's condition set evaluates against the
 **Signature:**
 
 ```typescript
-export declare function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: any, compiledCollection: any): ConditionEvaluationResult[];
+export declare function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: ResourceJson.Compiled.ICompiledResource, compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection): IConditionEvaluationResult[];
 ```
 
 ## Parameters
@@ -71,7 +71,7 @@ compiledResource
 
 </td><td>
 
-any
+ResourceJson.Compiled.ICompiledResource
 
 
 </td><td>
@@ -87,7 +87,7 @@ compiledCollection
 
 </td><td>
 
-any
+ResourceJson.Compiled.ICompiledResourceCollection
 
 
 </td><td>
@@ -100,7 +100,7 @@ The compiled collection with condition and qualifier data
 
 **Returns:**
 
-[ConditionEvaluationResult](./ts-res-ui-components.resolutiontools.conditionevaluationresult.md)<!-- -->\[\]
+[IConditionEvaluationResult](./ts-res-ui-components.resolutiontools.iconditionevaluationresult.md)<!-- -->\[\]
 
 Array of condition evaluation results showing how each condition performed
 

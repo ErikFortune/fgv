@@ -11,7 +11,7 @@ Performs complete resource resolution including best candidate selection, all ca
 **Signature:**
 
 ```typescript
-export declare function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: ProcessedResources, options?: ResolutionOptions): Result<ResolutionResult>;
+export declare function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: IProcessedResources, options?: IResolutionOptions): Result<IResolutionResult>;
 ```
 
 ## Parameters
@@ -71,7 +71,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>
@@ -87,7 +87,7 @@ options
 
 </td><td>
 
-[ResolutionOptions](./ts-res-ui-components.resolutiontools.resolutionoptions.md)
+[IResolutionOptions](./ts-res-ui-components.resolutiontools.iresolutionoptions.md)
 
 
 </td><td>
@@ -100,7 +100,7 @@ _(Optional)_ Configuration options for resolution behavior
 
 **Returns:**
 
-Result&lt;[ResolutionResult](./ts-res-ui-components.resolutiontools.resolutionresult.md)<!-- -->&gt;
+Result&lt;[IResolutionResult](./ts-res-ui-components.resolutiontools.iresolutionresult.md)<!-- -->&gt;
 
 A Result containing detailed resolution information or an error
 

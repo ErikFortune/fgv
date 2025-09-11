@@ -27,16 +27,14 @@ import {
   validateConfiguration,
   cloneConfiguration,
   compareConfigurations,
-  trackConfigurationChanges,
+  trackIConfigurationChanges as trackIConfigurationChanges,
   exportConfiguration,
   importConfiguration,
-  getConfigurationTemplates,
+  getIConfigurationTemplates as getIConfigurationTemplates,
   generateConfigurationFilename,
-  type ConfigurationValidationResult,
-  type ConfigurationChanges,
-  type ConfigurationTemplate,
-  type ConfigurationExportOptions
+  IConfigurationTemplate
 } from '../../../utils/configurationUtils';
+import { JsonObject } from '@fgv/ts-json-base';
 
 describe('configurationUtils', () => {
   let defaultConfig: Config.Model.ISystemConfiguration;
@@ -114,9 +112,9 @@ describe('configurationUtils', () => {
     });
 
     test('reports error for undefined qualifierTypes', () => {
-      const config = { ...defaultConfig };
-      delete (config as any).qualifierTypes;
-      const result = validateConfiguration(config);
+      const config: Partial<Config.Model.ISystemConfiguration> = { ...defaultConfig };
+      delete config.qualifierTypes;
+      const result = validateConfiguration(config as Config.Model.ISystemConfiguration);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThan(0);
@@ -319,10 +317,10 @@ describe('configurationUtils', () => {
 
     test('handles nested object modifications', () => {
       const cloned = cloneConfiguration(defaultConfig);
-      (cloned.qualifiers[0] as any).customProperty = 'added';
+      (cloned.qualifiers[0] as unknown as JsonObject).customProperty = 'added';
 
-      expect((defaultConfig.qualifiers[0] as any).customProperty).toBeUndefined();
-      expect((cloned.qualifiers[0] as any).customProperty).toBe('added');
+      expect((defaultConfig.qualifiers[0] as unknown as JsonObject).customProperty).toBeUndefined();
+      expect((cloned.qualifiers[0] as unknown as JsonObject).customProperty).toBe('added');
     });
   });
 
@@ -347,26 +345,29 @@ describe('configurationUtils', () => {
     });
 
     test('returns false for different property order', () => {
-      const config1 = { a: 1, b: 2 } as any;
-      const config2 = { b: 2, a: 1 } as any;
+      const config1 = { a: 1, b: 2 } as unknown as Config.Model.ISystemConfiguration;
+      const config2 = { b: 2, a: 1 } as unknown as Config.Model.ISystemConfiguration;
 
       expect(compareConfigurations(config1, config2)).toBe(false);
     });
 
     test('handles null and undefined values', () => {
-      const config1 = { ...defaultConfig, description: null } as any;
-      const config2 = { ...defaultConfig, description: undefined } as any;
+      const config1 = { ...defaultConfig, description: null } as unknown as Config.Model.ISystemConfiguration;
+      const config2 = {
+        ...defaultConfig,
+        description: undefined
+      } as unknown as Config.Model.ISystemConfiguration;
 
       expect(compareConfigurations(config1, config2)).toBe(false);
     });
   });
 
-  describe('trackConfigurationChanges', () => {
+  describe('trackIConfigurationChanges', () => {
     test('reports no changes for identical configurations', () => {
       const original = getDefaultConfiguration();
       const current = getDefaultConfiguration();
 
-      const changes = trackConfigurationChanges(original, current);
+      const changes = trackIConfigurationChanges(original, current);
 
       expect(changes.hasChanges).toBe(false);
       expect(changes.changedSections).toEqual([]);
@@ -378,7 +379,7 @@ describe('configurationUtils', () => {
       const current = getDefaultConfiguration();
       current.qualifierTypes[0].name = 'modified';
 
-      const changes = trackConfigurationChanges(original, current);
+      const changes = trackIConfigurationChanges(original, current);
 
       expect(changes.hasChanges).toBe(true);
       expect(changes.changedSections).toContain('qualifierTypes');
@@ -390,7 +391,7 @@ describe('configurationUtils', () => {
       const current = getDefaultConfiguration();
       current.qualifiers[0].defaultPriority = 200;
 
-      const changes = trackConfigurationChanges(original, current);
+      const changes = trackIConfigurationChanges(original, current);
 
       expect(changes.hasChanges).toBe(true);
       expect(changes.changedSections).toContain('qualifiers');
@@ -402,7 +403,7 @@ describe('configurationUtils', () => {
       const current = getDefaultConfiguration();
       current.resourceTypes.push({ name: 'array', typeName: 'array' });
 
-      const changes = trackConfigurationChanges(original, current);
+      const changes = trackIConfigurationChanges(original, current);
 
       expect(changes.hasChanges).toBe(true);
       expect(changes.changedSections).toContain('resourceTypes');
@@ -415,7 +416,7 @@ describe('configurationUtils', () => {
       current.qualifierTypes[0].name = 'modified';
       current.qualifiers[0].defaultPriority = 200;
 
-      const changes = trackConfigurationChanges(original, current);
+      const changes = trackIConfigurationChanges(original, current);
 
       expect(changes.hasChanges).toBe(true);
       expect(changes.changedSections).toContain('qualifierTypes');
@@ -425,7 +426,7 @@ describe('configurationUtils', () => {
 
     test('timestamp is recent', () => {
       const before = new Date();
-      const changes = trackConfigurationChanges(defaultConfig, defaultConfig);
+      const changes = trackIConfigurationChanges(defaultConfig, defaultConfig);
       const after = new Date();
 
       expect(changes.timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime());
@@ -460,8 +461,8 @@ describe('configurationUtils', () => {
     });
 
     test('handles export errors gracefully', () => {
-      const circularConfig = defaultConfig as any;
-      circularConfig.self = circularConfig; // Create circular reference
+      const circularConfig = defaultConfig as unknown as Config.Model.ISystemConfiguration;
+      (circularConfig as unknown as JsonObject).self = circularConfig as unknown as JsonObject; // Create circular reference
 
       const result = exportConfiguration(circularConfig);
 
@@ -522,30 +523,30 @@ describe('configurationUtils', () => {
     });
   });
 
-  describe('getConfigurationTemplates', () => {
+  describe('getIConfigurationTemplates', () => {
     test('returns array of templates', () => {
-      const templates = getConfigurationTemplates();
+      const templates = getIConfigurationTemplates();
 
       expect(templates).toBeInstanceOf(Array);
       expect(templates.length).toBeGreaterThan(0);
     });
 
     test('includes all predefined configurations from ts-res', () => {
-      const templates = getConfigurationTemplates();
+      const templates = getIConfigurationTemplates();
       const expectedConfigs = ['default', 'language-priority', 'territory-priority', 'extended-example'];
 
       expect(templates).toHaveLength(expectedConfigs.length);
 
       expectedConfigs.forEach((configId) => {
-        const template = templates.find((t) => t.id === configId);
+        const template = templates.find((t: IConfigurationTemplate) => t.id === configId);
         expect(template).toBeDefined();
         expect(template!.configuration).toBeDefined();
       });
     });
 
     test('default template has correct properties', () => {
-      const templates = getConfigurationTemplates();
-      const defaultTemplate = templates.find((t) => t.id === 'default');
+      const templates = getIConfigurationTemplates();
+      const defaultTemplate = templates.find((t: IConfigurationTemplate) => t.id === 'default');
 
       expect(defaultTemplate).toBeDefined();
       expect(defaultTemplate!.category).toBe('basic');
@@ -553,8 +554,8 @@ describe('configurationUtils', () => {
     });
 
     test('extended-example template has advanced category', () => {
-      const templates = getConfigurationTemplates();
-      const extendedTemplate = templates.find((t) => t.id === 'extended-example');
+      const templates = getIConfigurationTemplates();
+      const extendedTemplate = templates.find((t: IConfigurationTemplate) => t.id === 'extended-example');
 
       expect(extendedTemplate).toBeDefined();
       expect(extendedTemplate!.category).toBe('advanced');
@@ -562,27 +563,31 @@ describe('configurationUtils', () => {
     });
 
     test('language-priority and territory-priority have intermediate category', () => {
-      const templates = getConfigurationTemplates();
-      const languagePriorityTemplate = templates.find((t) => t.id === 'language-priority');
-      const territoryPriorityTemplate = templates.find((t) => t.id === 'territory-priority');
+      const templates = getIConfigurationTemplates();
+      const languagePriorityTemplate = templates.find(
+        (t: IConfigurationTemplate) => t.id === 'language-priority'
+      );
+      const territoryPriorityTemplate = templates.find(
+        (t: IConfigurationTemplate) => t.id === 'territory-priority'
+      );
 
       expect(languagePriorityTemplate!.category).toBe('intermediate');
       expect(territoryPriorityTemplate!.category).toBe('intermediate');
     });
 
     test('all templates have valid configurations', () => {
-      const templates = getConfigurationTemplates();
+      const templates = getIConfigurationTemplates();
 
-      templates.forEach((template) => {
+      templates.forEach((template: IConfigurationTemplate) => {
         const validation = validateConfiguration(template.configuration);
         expect(validation.isValid).toBe(true);
       });
     });
 
     test('all templates have required properties', () => {
-      const templates = getConfigurationTemplates();
+      const templates = getIConfigurationTemplates();
 
-      templates.forEach((template) => {
+      templates.forEach((template: IConfigurationTemplate) => {
         expect(template.id).toBeTruthy();
         expect(template.name).toBeTruthy();
         expect(template.description).toBeTruthy();

@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, ReactElement } from 'react';
 import { MagnifyingGlassIcon, ListBulletIcon, FolderIcon } from '@heroicons/react/24/outline';
-import { ResourcePickerProps, ResourceSelection, ResourcePickerOptions } from './types';
+import { IResourcePickerProps, IResourceSelection } from './types';
 import { ResourcePickerList } from './ResourcePickerList';
 import { ResourcePickerTree } from './ResourcePickerTree';
 import { searchResources, filterTreeBranch } from './utils/treeNavigation';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * Comprehensive resource picker component with search, view modes, and annotation support.
@@ -68,9 +69,9 @@ export const ResourcePicker = <T = unknown,>({
   resourceAnnotations,
   pendingResources,
   options,
-  className = '',
-  onMessage
-}: ResourcePickerProps<T>) => {
+  className = ''
+}: IResourcePickerProps<T>): ReactElement => {
+  const o11y = useSmartObservability();
   // Extract options with defaults
   const {
     defaultView = 'list',
@@ -109,17 +110,17 @@ export const ResourcePicker = <T = unknown,>({
 
   // Handle resource selection
   const handleResourceSelect = useCallback(
-    (selection: ResourceSelection<T>) => {
+    (selection: IResourceSelection<T>) => {
       onResourceSelect(selection);
       if (selection.resourceId) {
-        onMessage?.('info', `Selected resource: ${selection.resourceId}`);
+        o11y.user.info(`Selected resource: ${selection.resourceId}`);
       }
     },
-    [onResourceSelect, onMessage]
+    [onResourceSelect, o11y]
   );
 
   // Calculate dynamic search placeholder
-  const getSearchPlaceholder = () => {
+  const getSearchPlaceholder = (): string => {
     if (searchPlaceholder) {
       return searchPlaceholder;
     }

@@ -5,7 +5,7 @@ import React, { useState } from 'react';
  *
  * @public
  */
-export interface HierarchyEditorProps {
+export interface IHierarchyEditorProps {
   /** Current hierarchy mapping of child to parent relationships */
   hierarchy: Record<string, string>;
   /** Callback fired when the hierarchy is modified */
@@ -16,6 +16,11 @@ export interface HierarchyEditorProps {
   className?: string;
 }
 
+interface IHierarchyTreeNode {
+  value: string;
+  level: number;
+  children: IHierarchyTreeNode[];
+}
 /**
  * Interactive editor for defining hierarchical relationships between qualifier values.
  *
@@ -88,7 +93,7 @@ export interface HierarchyEditorProps {
  *
  * @public
  */
-export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
+export const HierarchyEditor: React.FC<IHierarchyEditorProps> = ({
   hierarchy,
   onChange,
   availableValues,
@@ -112,7 +117,7 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
     return safe;
   }, [hierarchy]);
 
-  const handleAddRelationship = () => {
+  const handleAddRelationship = (): void => {
     if (newChild && newParent && newChild !== newParent) {
       const updatedHierarchy = { ...safeHierarchy, [newChild]: newParent };
       onChange(updatedHierarchy);
@@ -121,13 +126,13 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
     }
   };
 
-  const handleRemoveRelationship = (child: string) => {
+  const handleRemoveRelationship = (child: string): void => {
     const updatedHierarchy = { ...safeHierarchy };
     delete updatedHierarchy[child];
     onChange(updatedHierarchy);
   };
 
-  const getHierarchyTree = () => {
+  const getHierarchyTree = (): Array<IHierarchyTreeNode> => {
     const roots = new Set(availableValues);
     const children = new Set(Object.keys(safeHierarchy));
     const parents = new Set(Object.values(safeHierarchy));
@@ -142,7 +147,7 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
       }
     });
 
-    const buildTree = (value: string, level = 0): any => {
+    const buildTree = (value: string, level = 0): IHierarchyTreeNode => {
       const childrenOfValue = Object.entries(safeHierarchy).filter(([, parent]) => parent === value);
       return {
         value,
@@ -154,7 +159,7 @@ export const HierarchyEditor: React.FC<HierarchyEditorProps> = ({
     return Array.from(roots).map((root) => buildTree(root));
   };
 
-  const renderTree = (nodes: any[]): React.ReactNode => {
+  const renderTree = (nodes: IHierarchyTreeNode[]): React.ReactNode => {
     return nodes.map((node) => {
       const parentValue = safeHierarchy[node.value];
 

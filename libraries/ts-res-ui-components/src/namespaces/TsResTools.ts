@@ -13,7 +13,6 @@
  * <TsResTools.SourceView
  *   resources={processedResources}
  *   onExport={handleExport}
- *   onMessage={onMessage}
  * />
  *
  * // Use the CompiledView component for browsing compiled resources
@@ -21,7 +20,6 @@
  *   resources={processedResources}
  *   filterState={filterState}
  *   filterResult={filterResult}
- *   onMessage={onMessage}
  * />
  *
  * // Or use utility functions
@@ -46,4 +44,4 @@ export {
 } from '../utils/tsResIntegration';
 
 // Export view component props
-export type { SourceViewProps, CompiledViewProps } from '../types';
+export type { ISourceViewProps, ICompiledViewProps } from '../types';

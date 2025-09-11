@@ -11,7 +11,7 @@ Extracts all qualifier names from the compiled resource collection, providing a 
 **Signature:**
 
 ```typescript
-export declare function getAvailableQualifiers(processedResources: ProcessedResources): string[];
+export declare function getAvailableQualifiers(processedResources: IProcessedResources): string[];
 ```
 
 ## Parameters
@@ -39,7 +39,7 @@ processedResources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>
@@ -85,7 +85,7 @@ const contextControls = availableQualifiers.map(qualifierName => (
 // Validate context against available qualifiers
 function validateResolutionContext(
   context: Record<string, string>,
-  processedResources: ProcessedResources
+  processedResources: IProcessedResources
 ): string[] {
   const availableQualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
   const errors: string[] = [];
@@ -106,7 +106,7 @@ function validateResolutionContext(
 
 ```typescript
 // Build qualifier documentation
-function generateQualifierDocs(processedResources: ProcessedResources) {
+function generateQualifierDocs(processedResources: IProcessedResources) {
   const qualifiers = ResolutionTools.getAvailableQualifiers(processedResources);
 
   return qualifiers.map(name => {

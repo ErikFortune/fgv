@@ -323,6 +323,8 @@ For each component to migrate:
 - [ ] Update props structure
 - [ ] Convert manual filtering to branch isolation
 - [ ] Move custom annotations to ResourceAnnotations
+- [ ] Replace onMessage prop with ObservabilityProvider context
+- [ ] Wrap application/component tree with ObservabilityProvider
 - [ ] Test functionality parity
 - [ ] Update tests if needed
 
@@ -337,6 +339,72 @@ Start with simplest migrations (direct replacements) and work toward complex one
 - [ ] Visual appearance is acceptable
 - [ ] Accessibility is maintained
 - [ ] Tests pass
+
+## Migrating from onMessage to ObservabilityProvider
+
+The `onMessage` prop has been replaced with the ObservabilityProvider context pattern for better message handling across components.
+
+### Before (onMessage prop)
+
+```typescript
+function MyComponent({ resources }) {
+  const handleMessage = (type: string, message: string) => {
+    console.log(`${type}: ${message}`);
+    // Handle message display logic
+  };
+
+  return (
+    <ResourcePicker
+      resources={resources}
+      selectedResourceId={selectedId}
+      onResourceSelect={setSelectedId}
+      onMessage={handleMessage}
+    />
+  );
+}
+```
+
+### After (ObservabilityProvider)
+
+```typescript
+import { ObservabilityProvider, useObservabilityContext } from '@fgv/ts-res-ui-components';
+
+function App() {
+  return (
+    <ObservabilityProvider>
+      <MyComponent />
+    </ObservabilityProvider>
+  );
+}
+
+function MyComponent({ resources }) {
+  const { addMessage } = useObservabilityContext();
+  
+  const handleResourceSelect = (selection: ResourceSelection) => {
+    setSelectedId(selection.resourceId);
+    
+    // Add custom messages as needed
+    if (selection.resourceId) {
+      addMessage('info', `Selected resource: ${selection.resourceId}`);
+    }
+  };
+
+  return (
+    <ResourcePicker
+      resources={resources}
+      selectedResourceId={selectedId}
+      onResourceSelect={handleResourceSelect}
+    />
+  );
+}
+```
+
+### Migration Benefits
+
+- **Centralized message handling** - All component messages go through a single context
+- **Better composition** - Multiple components can share the same message system
+- **Flexible display** - Host applications can implement custom message display logic
+- **Reduced prop drilling** - No need to pass message handlers through component trees
 
 ## Common Migration Issues
 
@@ -523,18 +591,20 @@ If you're using the main view components (SourceView, FilterView, etc.), you can
 
 ```typescript
 // Before migration - no debug options
-<SourceView 
-  resources={processedResources}
-  onMessage={handleMessage}
-/>
+<ObservabilityProvider>
+  <SourceView 
+    resources={processedResources}
+  />
+</ObservabilityProvider>
 
 // After migration - with optional debug controls
-<SourceView 
-  resources={processedResources}
-  onMessage={handleMessage}
-  // Enable for development/debugging
-  pickerOptionsPresentation={process.env.NODE_ENV === 'development' ? 'collapsible' : 'hidden'}
-/>
+<ObservabilityProvider>
+  <SourceView 
+    resources={processedResources}
+    // Enable for development/debugging
+    pickerOptionsPresentation={process.env.NODE_ENV === 'development' ? 'collapsible' : 'hidden'}
+  />
+</ObservabilityProvider>
 ```
 
 ### Custom Component Integration

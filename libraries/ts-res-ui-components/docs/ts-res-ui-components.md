@@ -47,7 +47,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ObservabilityProviderProps](./ts-res-ui-components.observabilityproviderprops.md)
+[IObservabilityProviderProps](./ts-res-ui-components.iobservabilityproviderprops.md)
 
 
 </td><td>
@@ -58,7 +58,7 @@ Props for the ObservabilityProvider component.
 </td></tr>
 <tr><td>
 
-[OrchestratorActions](./ts-res-ui-components.orchestratoractions.md)
+[IOrchestratorActions](./ts-res-ui-components.iorchestratoractions.md)
 
 
 </td><td>
@@ -71,7 +71,7 @@ This interface provides all the methods needed to manage and manipulate the orch
 </td></tr>
 <tr><td>
 
-[OrchestratorState](./ts-res-ui-components.orchestratorstate.md)
+[IOrchestratorState](./ts-res-ui-components.iorchestratorstate.md)
 
 
 </td><td>
@@ -108,12 +108,10 @@ Description
 </td></tr>
 <tr><td>
 
-[DownloadUtils](./ts-res-ui-components.downloadutils.md)
+[DownloadTools](./ts-res-ui-components.downloadtools.md)
 
 
 </td><td>
-
-Download utilities namespace for file export functionality
 
 
 </td></tr>

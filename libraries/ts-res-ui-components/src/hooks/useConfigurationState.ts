@@ -6,29 +6,29 @@ import {
   validateConfiguration,
   cloneConfiguration,
   compareConfigurations,
-  trackConfigurationChanges,
+  trackIConfigurationChanges,
   exportConfiguration,
   importConfiguration,
-  getConfigurationTemplates,
-  ConfigurationChanges,
-  ConfigurationValidationResult,
-  ConfigurationExportOptions,
-  ConfigurationTemplate
+  getIConfigurationTemplates,
+  IConfigurationChanges,
+  IConfigurationValidationResult,
+  IConfigurationExportOptions,
+  IConfigurationTemplate
 } from '../utils/configurationUtils';
 
-export interface ConfigurationState {
+export interface IConfigurationState {
   currentConfiguration: Config.Model.ISystemConfiguration;
   originalConfiguration: Config.Model.ISystemConfiguration;
   hasUnsavedChanges: boolean;
-  changes: ConfigurationChanges;
-  validation: ConfigurationValidationResult;
+  changes: IConfigurationChanges;
+  validation: IConfigurationValidationResult;
   activeTab: 'qualifierTypes' | 'qualifiers' | 'resourceTypes' | 'json';
   isJsonView: boolean;
   jsonString: string;
   jsonError: string | null;
 }
 
-export interface ConfigurationActions {
+export interface IConfigurationActions {
   // Configuration management
   loadConfiguration: (config: Config.Model.ISystemConfiguration) => void;
   resetConfiguration: () => void;
@@ -53,24 +53,24 @@ export interface ConfigurationActions {
   removeResourceType: (index: number) => void;
 
   // View management
-  setActiveTab: (tab: ConfigurationState['activeTab']) => void;
+  setActiveTab: (tab: IConfigurationState['activeTab']) => void;
   toggleJsonView: () => void;
   updateJsonString: (json: string) => void;
   applyJsonChanges: () => Result<void>;
 
   // Import/Export
-  exportToJson: (options?: ConfigurationExportOptions) => Result<string>;
+  exportToJson: (options?: IConfigurationExportOptions) => Result<string>;
   importFromJson: (jsonData: string) => Result<void>;
   loadTemplate: (templateId: string) => Result<void>;
 
   // Validation
-  validateCurrent: () => ConfigurationValidationResult;
+  validateCurrent: () => IConfigurationValidationResult;
 }
 
-export interface UseConfigurationStateReturn {
-  state: ConfigurationState;
-  actions: ConfigurationActions;
-  templates: ConfigurationTemplate[];
+export interface IUseIConfigurationStateReturn {
+  state: IConfigurationState;
+  actions: IConfigurationActions;
+  templates: IConfigurationTemplate[];
 }
 
 /**
@@ -82,7 +82,7 @@ export interface UseConfigurationStateReturn {
  * @example
  * Basic usage:
  * ```typescript
- * const { state, actions } = useConfigurationState();
+ * const { state, actions } = useIConfigurationState();
  *
  * // Check for unsaved changes
  * if (state.hasUnsavedChanges) {
@@ -100,7 +100,7 @@ export interface UseConfigurationStateReturn {
  * @example
  * With change notifications:
  * ```typescript
- * const { state, actions } = useConfigurationState(
+ * const { state, actions } = useIConfigurationState(
  *   undefined,
  *   (config) => console.log('Configuration changed:', config),
  *   (hasChanges) => console.log('Has unsaved changes:', hasChanges)
@@ -110,7 +110,7 @@ export interface UseConfigurationStateReturn {
  * @example
  * JSON import/export:
  * ```typescript
- * const { actions } = useConfigurationState();
+ * const { actions } = useIConfigurationState();
  *
  * // Export to JSON
  * const exportResult = actions.exportToJson({ pretty: true });
@@ -136,11 +136,11 @@ export interface UseConfigurationStateReturn {
  *
  * @public
  */
-export function useConfigurationState(
+export function useIConfigurationState(
   initialConfiguration?: Config.Model.ISystemConfiguration,
   onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void,
   onUnsavedChanges?: (hasChanges: boolean) => void
-): UseConfigurationStateReturn {
+): IUseIConfigurationStateReturn {
   const defaultConfig = useMemo(
     () => initialConfiguration || getDefaultConfiguration(),
     [initialConfiguration]
@@ -151,7 +151,7 @@ export function useConfigurationState(
   const [currentConfiguration, setCurrentConfiguration] = useState<Config.Model.ISystemConfiguration>(
     cloneConfiguration(defaultConfig)
   );
-  const [activeTab, setActiveTab] = useState<ConfigurationState['activeTab']>('qualifiers');
+  const [activeTab, setActiveTab] = useState<IConfigurationState['activeTab']>('qualifiers');
   const [isJsonView, setIsJsonView] = useState(false);
   const [jsonString, setJsonString] = useState('');
   const [jsonError, setJsonError] = useState<string | null>(null);
@@ -162,7 +162,7 @@ export function useConfigurationState(
   }, [currentConfiguration]);
 
   const changes = useMemo(() => {
-    return trackConfigurationChanges(originalConfigRef.current, currentConfiguration);
+    return trackIConfigurationChanges(originalConfigRef.current, currentConfiguration);
   }, [currentConfiguration]);
 
   const validation = useMemo(() => {
@@ -251,7 +251,7 @@ export function useConfigurationState(
   const removeQualifierType = useCallback((index: number) => {
     setCurrentConfiguration((prev) => ({
       ...prev,
-      qualifierTypes: prev.qualifierTypes?.filter((_, i) => i !== index) || []
+      qualifierTypes: prev.qualifierTypes?.filter((__, i) => i !== index) || []
     }));
   }, []);
 
@@ -280,7 +280,7 @@ export function useConfigurationState(
   const removeQualifier = useCallback((index: number) => {
     setCurrentConfiguration((prev) => ({
       ...prev,
-      qualifiers: prev.qualifiers?.filter((_, i) => i !== index) || []
+      qualifiers: prev.qualifiers?.filter((__, i) => i !== index) || []
     }));
   }, []);
 
@@ -312,7 +312,7 @@ export function useConfigurationState(
   const removeResourceType = useCallback((index: number) => {
     setCurrentConfiguration((prev) => ({
       ...prev,
-      resourceTypes: prev.resourceTypes?.filter((_, i) => i !== index) || []
+      resourceTypes: prev.resourceTypes?.filter((__, i) => i !== index) || []
     }));
   }, []);
 
@@ -350,7 +350,7 @@ export function useConfigurationState(
 
   // Import/Export
   const exportToJson = useCallback(
-    (options?: ConfigurationExportOptions): Result<string> => {
+    (options?: IConfigurationExportOptions): Result<string> => {
       return exportConfiguration(currentConfiguration, options);
     },
     [currentConfiguration]
@@ -370,7 +370,7 @@ export function useConfigurationState(
 
   const loadTemplate = useCallback(
     (templateId: string): Result<void> => {
-      const templates = getConfigurationTemplates();
+      const templates = getIConfigurationTemplates();
       const template = templates.find((t) => t.id === templateId);
 
       if (!template) {
@@ -383,11 +383,11 @@ export function useConfigurationState(
     [loadConfiguration]
   );
 
-  const validateCurrent = useCallback((): ConfigurationValidationResult => {
+  const validateCurrent = useCallback((): IConfigurationValidationResult => {
     return validateConfiguration(currentConfiguration);
   }, [currentConfiguration]);
 
-  const state: ConfigurationState = {
+  const state: IConfigurationState = {
     currentConfiguration,
     originalConfiguration: originalConfigRef.current,
     hasUnsavedChanges,
@@ -399,7 +399,7 @@ export function useConfigurationState(
     jsonError
   };
 
-  const actions: ConfigurationActions = {
+  const actions: IConfigurationActions = {
     loadConfiguration,
     resetConfiguration,
     applyConfiguration,
@@ -428,6 +428,6 @@ export function useConfigurationState(
   return {
     state,
     actions,
-    templates: getConfigurationTemplates()
+    templates: getIConfigurationTemplates()
   };
 }

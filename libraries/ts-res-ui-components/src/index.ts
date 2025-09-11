@@ -1,5 +1,5 @@
 // Export orchestrator types (main entry point types)
-export type { OrchestratorState, OrchestratorActions } from './types';
+export type { IOrchestratorState, IOrchestratorActions } from './types';
 
 // Export utility types that are commonly used across namespaces
 export type { Result } from '@fgv/ts-utils';
@@ -31,11 +31,8 @@ export { MultiGridView } from './components/views/GridView/MultiGridView';
 // Export orchestrator
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
 
-// Export utilities
-export { DownloadUtils } from './utils/downloadHelper';
-
 // Export contexts and hooks
-export { ObservabilityProvider, useObservability, type ObservabilityProviderProps } from './contexts';
+export { ObservabilityProvider, useObservability, type IObservabilityProviderProps } from './contexts';
 
 // Export common components (likely to be used by consumers)
 export { ResourceTreeView } from './components/common/ResourceTreeView';
@@ -65,6 +62,7 @@ export { ResolutionResults } from './components/common/ResolutionResults';
 
 // Export organized tool namespaces
 export {
+  DownloadTools,
   FilterTools,
   ResolutionTools,
   ConfigurationTools,

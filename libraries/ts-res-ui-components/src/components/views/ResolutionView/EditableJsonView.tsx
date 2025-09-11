@@ -2,23 +2,24 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { JsonEditor } from 'json-edit-react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { validateEditedResource } from '../../../utils/resolutionEditing';
+import { JsonValue } from '@fgv/ts-json-base';
 
 /**
  * Props for the EditableJsonView component.
  *
  * @public
  */
-export interface EditableJsonViewProps {
+export interface IEditableJsonViewProps {
   /** The original JSON value */
-  value: any;
+  value: JsonValue;
   /** The resource ID for tracking edits */
   resourceId: string;
   /** Whether this resource has been edited */
   isEdited?: boolean;
   /** The current edited value if any */
-  editedValue?: any;
+  editedValue?: JsonValue;
   /** Callback when the user saves an edit */
-  onSave?: (resourceId: string, editedValue: any, originalValue: any) => void;
+  onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
   /** Callback when the user cancels an edit */
   onCancel?: (resourceId: string) => void;
   /** Whether editing is currently disabled */
@@ -194,7 +195,7 @@ export interface EditableJsonViewProps {
  *
  * @public
  */
-export const EditableJsonView: React.FC<EditableJsonViewProps> = ({
+export const EditableJsonView: React.FC<IEditableJsonViewProps> = ({
   value,
   resourceId,
   isEdited = false,
@@ -205,7 +206,7 @@ export const EditableJsonView: React.FC<EditableJsonViewProps> = ({
   className = ''
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [currentEditValue, setCurrentEditValue] = useState<any>(null);
+  const [currentEditValue, setCurrentEditValue] = useState<unknown>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   // The display value is either the edited value or the original value
@@ -237,14 +238,14 @@ export const EditableJsonView: React.FC<EditableJsonViewProps> = ({
     if (!onSave || currentEditValue === null) return;
 
     // Validate the edited value
-    const validation = validateEditedResource(currentEditValue);
+    const validation = validateEditedResource(currentEditValue as JsonValue);
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       return;
     }
 
     // Save the edit
-    onSave(resourceId, currentEditValue, value);
+    onSave(resourceId, currentEditValue as JsonValue, value);
     setIsEditing(false);
     setCurrentEditValue(null);
     setValidationErrors([]);
@@ -252,7 +253,7 @@ export const EditableJsonView: React.FC<EditableJsonViewProps> = ({
 
   // Handle changes in the JSON editor
   const handleJsonChange = useCallback(
-    (newValue: any) => {
+    (newValue: unknown) => {
       setCurrentEditValue(newValue);
 
       // Clear validation errors when user starts typing

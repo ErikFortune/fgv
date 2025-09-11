@@ -1,19 +1,19 @@
 import { useState, useCallback } from 'react';
-import { FilterState, FilterActions } from '../types';
+import { IFilterState, IFilterActions } from '../types';
 
 /**
  * Return type for the useFilterState hook.
  *
  * @public
  */
-export interface UseFilterStateReturn {
+export interface IUseFilterStateReturn {
   /** Current filter state including enabled status and filter values */
-  state: FilterState;
+  state: IFilterState;
   /** Available actions for managing filter state */
-  actions: FilterActions;
+  actions: IFilterActions;
 }
 
-const initialFilterState: FilterState = {
+const initialFilterState: IFilterState = {
   enabled: false,
   values: {},
   appliedValues: {},
@@ -78,8 +78,8 @@ const normalizeValues = (vals: Record<string, string | undefined>): Record<strin
  * @returns Object containing filter state and actions
  * @public
  */
-export function useFilterState(initialState?: Partial<FilterState>): UseFilterStateReturn {
-  const [state, setState] = useState<FilterState>({
+export function useFilterState(initialState?: Partial<IFilterState>): IUseFilterStateReturn {
+  const [state, setState] = useState<IFilterState>({
     ...initialFilterState,
     ...initialState
   });
@@ -138,7 +138,7 @@ export function useFilterState(initialState?: Partial<FilterState>): UseFilterSt
     }));
   }, []);
 
-  const actions: FilterActions = {
+  const actions: IFilterActions = {
     updateFilterEnabled,
     updateFilterValues,
     applyFilterValues,

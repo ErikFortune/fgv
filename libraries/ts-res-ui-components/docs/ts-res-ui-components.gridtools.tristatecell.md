@@ -11,7 +11,7 @@ Supports true, false, and null/undefined states with two presentation modes: - C
 **Signature:**
 
 ```typescript
-TriStateCell: React.FC<TriStateCellProps>
+TriStateCell: React.FC<ITriStateCellProps>
 ```
 
 ## Example

@@ -11,7 +11,7 @@ Provides different presentation modes for selecting which grid to display, suppo
 **Signature:**
 
 ```typescript
-GridSelector: React.FC<GridSelectorProps>
+GridSelector: React.FC<IGridSelectorProps>
 ```
 
 ## Example

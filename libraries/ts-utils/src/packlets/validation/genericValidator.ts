@@ -34,7 +34,7 @@ import {
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface GenericValidatorConstructorParams<T, TC> {
   options?: ValidatorOptions<TC>;
   traits?: Partial<ValidatorTraits>;

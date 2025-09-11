@@ -28,7 +28,6 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { PrefixedJsonMap } from '../../packlets/editor';
 
 /* test data necessarily has lots of non-conformant names */
-/* eslint-disable @typescript-eslint/naming-convention */
 
 describe('converters module', () => {
   describe('json converter', () => {

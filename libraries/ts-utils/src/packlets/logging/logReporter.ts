@@ -76,7 +76,7 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
     /* c8 ignore next 1 */
     params = params ?? {};
     this._logger = params.logger ?? new NoOpLogger();
-    this._valueFormatter = params.valueFormatter ?? ((message, __detail) => String(message));
+    this._valueFormatter = params.valueFormatter ?? LogReporter.tryFormatObject;
     this._messageFormatter = params.messageFormatter ?? ((message, __detail) => message);
   }
 
@@ -140,5 +140,23 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
   public reportFailure(level: MessageLogLevel, message: string, detail?: TD): void {
     const formatted = this._messageFormatter(message, detail);
     this.log(level, formatted);
+  }
+
+  /**
+   * Generic method to try to format an object for logging.
+   * @param value - The value to format.
+   * @param detail - The detail to format.
+   * @returns
+   */
+  public static tryFormatObject<T = unknown, TD = unknown>(value: T, detail?: TD): string {
+    const message = String(value);
+    if (message === '[object Object]') {
+      try {
+        return JSON.stringify(value);
+      } catch (error) {
+        return message;
+      }
+    }
+    return message;
   }
 }

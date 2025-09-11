@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { ResourceTypes } from '@fgv/ts-res';
 
-interface NewResourceModalProps {
+interface INewResourceModalProps {
   isOpen: boolean;
   onClose: () => void;
   resourceId: string;
@@ -19,7 +19,7 @@ interface NewResourceModalProps {
  * Modal dialog for creating new resources with type selection and ID input.
  * Supports host-controlled resource types that hide the type selector.
  */
-export const NewResourceModal: React.FC<NewResourceModalProps> = ({
+export const NewResourceModal: React.FC<INewResourceModalProps> = ({
   isOpen,
   onClose,
   resourceId,
@@ -39,13 +39,13 @@ export const NewResourceModal: React.FC<NewResourceModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleIdChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newId = e.target.value;
     setLocalResourceId(newId);
     onUpdateResourceId(newId);
   };
 
-  const handleSave = () => {
+  const handleSave = (): void => {
     if (isValid) {
       onSave();
       onClose();

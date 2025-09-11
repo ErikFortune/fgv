@@ -50,27 +50,23 @@
  *     messages: []
  *   });
  *
- *   const onMessage = (type: ViewStateTools.Message['type'], message: string) => {
- *     setState(prev => ({
- *       ...prev,
- *       messages: [...prev.messages, {
- *         id: `msg-${Date.now()}-${Math.random()}`,
- *         type,
- *         message,
- *         timestamp: new Date()
- *       }]
- *     }));
- *   };
+ *   // Use the built-in hook for simpler state management
+ *   const { viewState, addMessage } = ViewStateTools.useViewState();
  *
- *   // Component creates MessagesWindow at bottom of screen
+ *   // Set up observability context that connects to the view state
+ *   const observabilityContext = ObservabilityTools.createViewStateObservabilityContext(addMessage);
+ *
+ *   // Component creates MessagesWindow at bottom of screen with observability
  *   return React.createElement('div', { className: 'flex flex-col h-screen' },
- *     React.createElement('div', { className: 'flex-1' },
- *       React.createElement(SomeComponent, { onMessage })
- *     ),
- *     React.createElement(ViewStateTools.MessagesWindow, {
- *       messages: state.messages,
- *       onClearMessages: () => setState(prev => ({ ...prev, messages: [] }))
- *     })
+ *     React.createElement(ObservabilityProvider, { observabilityContext },
+ *       React.createElement('div', { className: 'flex-1' },
+ *         React.createElement(SomeComponent, {}) // Components automatically use observability
+ *       ),
+ *       React.createElement(ViewStateTools.MessagesWindow, {
+ *         messages: viewState.messages,
+ *         onClearMessages: viewState.clearMessages
+ *       })
+ *     )
  *   );
  * }
  * ```
@@ -85,7 +81,7 @@ export { MessagesWindow } from '../components/views/MessagesWindow';
 export { useViewState } from '../hooks/useViewState';
 
 // Export types for external consumption
-export type { Message, MessagesWindowProps } from '../components/views/MessagesWindow';
+export type { IMessage, IMessagesWindowProps } from '../components/views/MessagesWindow';
 
 // Export base view props (shared by all view components)
-export type { ViewBaseProps } from '../types';
+export type { IViewBaseProps } from '../types';

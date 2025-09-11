@@ -1,19 +1,17 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   DocumentTextIcon,
-  MagnifyingGlassIcon,
   DocumentArrowDownIcon,
   CodeBracketIcon,
   ChevronDownIcon,
   ChevronUpIcon
 } from '@heroicons/react/24/outline';
-import { Resources, ResourceJson } from '@fgv/ts-res';
-import { Result } from '@fgv/ts-utils';
-import { SourceViewProps } from '../../../types';
+import { ISourceViewProps } from '../../../types';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
-import { ResourceSelection, ResourcePickerOptions } from '../../pickers/ResourcePicker/types';
+import { IResourceSelection, IResourcePickerOptions } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * SourceView component for browsing and managing source resource collections.
@@ -43,7 +41,6 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
  *     <SourceView
  *       resources={processedResources}
  *       onExport={handleExport}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -51,20 +48,20 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
  *
  * @public
  */
-export const SourceView: React.FC<SourceViewProps> = ({
+export const SourceView: React.FC<ISourceViewProps> = ({
   resources,
   onExport,
-  onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);
 
   // State for picker options control
-  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
-    pickerOptions || {}
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<IResourcePickerOptions>(
+    (pickerOptions ?? {}) as IResourcePickerOptions
   );
 
   // Merge picker options with view-specific defaults
@@ -87,13 +84,13 @@ export const SourceView: React.FC<SourceViewProps> = ({
 
   // Handle resource selection with new enhanced callback
   const handleResourceSelect = useCallback(
-    (selection: ResourceSelection) => {
+    (selection: IResourceSelection) => {
       setSelectedResourceId(selection.resourceId);
       if (selection.resourceId) {
-        onMessage?.('info', `Selected resource: ${selection.resourceId}`);
+        o11y.user.info(`Selected resource: ${selection.resourceId}`);
       }
     },
-    [onMessage]
+    [o11y]
   );
 
   // Get full resource collection data using the new method
@@ -115,7 +112,7 @@ export const SourceView: React.FC<SourceViewProps> = ({
           }
         };
       } else {
-        onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
+        o11y.user.error(`Failed to get resource collection: ${collectionResult.message}`);
         return null;
       }
     } else if (resources.compiledCollection) {
@@ -129,29 +126,28 @@ export const SourceView: React.FC<SourceViewProps> = ({
         }
       };
     } else {
-      onMessage?.('error', 'Resource collection data not available');
+      o11y.user.error('Resource collection data not available');
       return null;
     }
-  }, [resources, onMessage]);
+  }, [resources, o11y]);
 
   // Export source data to JSON file
   const handleExportSourceData = useCallback(() => {
     try {
       const collectionData = getResourceCollectionData();
       if (!collectionData) {
-        onMessage?.('error', 'No source collection data available to export');
+        o11y.user.error('No source collection data available to export');
         return;
       }
 
       onExport?.(collectionData, 'json');
-      onMessage?.('success', 'Resource collection exported successfully');
+      o11y.user.success('Resource collection exported successfully');
     } catch (error) {
-      onMessage?.(
-        'error',
+      o11y.user.error(
         `Failed to export resource collection: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [getResourceCollectionData, onExport, onMessage]);
+  }, [getResourceCollectionData, onExport, o11y]);
 
   if (!resources) {
     return (
@@ -260,7 +256,6 @@ export const SourceView: React.FC<SourceViewProps> = ({
                 selectedResourceId={selectedResourceId}
                 onResourceSelect={handleResourceSelect}
                 options={effectivePickerOptions}
-                onMessage={onMessage}
               />
             </div>
           </div>
@@ -268,11 +263,7 @@ export const SourceView: React.FC<SourceViewProps> = ({
           {/* Right side: Resource Details */}
           <div className="lg:w-1/2 flex flex-col">
             {selectedResourceId ? (
-              <SourceResourceDetail
-                resourceId={selectedResourceId}
-                processedResources={resources}
-                onMessage={onMessage}
-              />
+              <SourceResourceDetail resourceId={selectedResourceId} processedResources={resources} />
             ) : (
               <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
                 <div className="text-center">

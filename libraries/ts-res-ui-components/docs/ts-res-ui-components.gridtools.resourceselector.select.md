@@ -9,7 +9,7 @@ Select resources based on the provided selector configuration.
 **Signature:**
 
 ```typescript
-select(selector: GridResourceSelector, resources: ProcessedResources): Result<string[]>;
+select(selector: GridResourceSelector, resources: IProcessedResources): Result<string[]>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ resources
 
 </td><td>
 
-[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)
+[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)
 
 
 </td><td>

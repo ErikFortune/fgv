@@ -9,7 +9,7 @@ Helper function to process resources from ZIP data using ts-res-ui-components in
 **Signature:**
 
 ```typescript
-export declare function processZipResources(files: ImportedFile[], directory: ImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools.IObservabilityContext): Promise<Result<ProcessedResources>>;
+export declare function processZipResources(files: IImportedFile[], directory: IImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools.IObservabilityContext): Promise<Result<IProcessedResources>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ files
 
 </td><td>
 
-[ImportedFile](./ts-res-ui-components.importtools.importedfile.md)<!-- -->\[\]
+[IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)<!-- -->\[\]
 
 
 </td><td>
@@ -51,7 +51,7 @@ directory
 
 </td><td>
 
-[ImportedDirectory](./ts-res-ui-components.importtools.importeddirectory.md) \| undefined
+[IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md) \| undefined
 
 
 </td><td>
@@ -94,5 +94,5 @@ _(Optional)_
 
 **Returns:**
 
-Promise&lt;Result&lt;[ProcessedResources](./ts-res-ui-components.resourcetools.processedresources.md)<!-- -->&gt;&gt;
+Promise&lt;Result&lt;[IProcessedResources](./ts-res-ui-components.resourcetools.iprocessedresources.md)<!-- -->&gt;&gt;
 

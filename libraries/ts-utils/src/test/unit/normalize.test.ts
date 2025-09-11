@@ -55,7 +55,6 @@ describe('Normalizer', () => {
     });
 
     test('BigInt', () => {
-      // eslint-disable-next-line no-undef
       const bi = BigInt('0x1ffffffffffffffffffffffffffffff');
       expect(normalizer.normalize(bi)).toSucceedWith(bi);
     });

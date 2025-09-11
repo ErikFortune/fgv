@@ -9,13 +9,5 @@ Common validation patterns for reuse.
 **Signature:**
 
 ```typescript
-ValidationPatterns: {
-    email: RegExp;
-    url: RegExp;
-    phone: RegExp;
-    alphanumeric: RegExp;
-    noWhitespace: RegExp;
-    positiveInteger: RegExp;
-    nonNegativeInteger: RegExp;
-}
+ValidationPatterns: Record<string, RegExp>
 ```

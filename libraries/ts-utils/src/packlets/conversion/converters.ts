@@ -351,7 +351,7 @@ export const numberArray: Converter<number[], unknown> = arrayOf(number);
  * helper functions.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface KeyedConverterOptions<T extends string = string, TC = unknown> {
   /**
    * if `onError` is `'fail'` (default), then the entire conversion fails if any key or element
@@ -904,7 +904,7 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
 export function transform<T, TC = unknown>(properties: FieldConverters<T, TC>): Converter<T, TC> {
   return new BaseConverter((from: unknown, __self, context?: TC) => {
     // eslint bug thinks key is used before defined
-    // eslint-disable-next-line no-use-before-define
+
     const converted = {} as { [key in keyof T]: T[key] };
     const errors: string[] = [];
 
@@ -950,7 +950,7 @@ export type FieldTransformers<TSRC, TDEST, TC = unknown> = {
  * Options for a {@link Converters.transformObject} call.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface TransformObjectOptions<TSRC> {
   /**
    * If `strict` is `true` then unused properties in the source object cause
@@ -996,7 +996,7 @@ export function transformObject<TSRC, TDEST, TC = unknown>(
 ): Converter<TDEST, TC> {
   return new BaseConverter((from: unknown, __self, context?: TC) => {
     // eslint bug thinks key is used before defined
-    // eslint-disable-next-line no-use-before-define
+
     const converted = {} as { [key in keyof TDEST]: TDEST[key] };
     const errors: string[] = [];
     const used: Set<keyof TSRC> = new Set(options?.ignore);

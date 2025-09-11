@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   DocumentArrowUpIcon,
   CheckCircleIcon,
@@ -6,16 +6,10 @@ import {
   ArchiveBoxIcon,
   FolderOpenIcon
 } from '@heroicons/react/24/outline';
-import { ImportViewProps, ImportedFile, ImportedDirectory, ExtendedProcessedResources } from '../../../types';
-import { Bundle, Config, ZipArchive } from '@fgv/ts-res';
+import { IImportViewProps, IImportedFile, IImportedDirectory } from '../../../types';
+import { Bundle, ZipArchive } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
-import { useObservability } from '../../../contexts';
-
-interface FileInputResult {
-  files: ImportedFile[];
-  directory?: ImportedDirectory;
-  bundleFile?: ImportedFile & { bundle?: Bundle.IBundle };
-}
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * ImportView component for importing resource files, directories, and bundles.
@@ -56,7 +50,6 @@ interface FileInputResult {
  *       onBundleImport={handleBundleImport}
  *       onZipImport={handleZipImport}
  *       acceptedFileTypes={['.json', '.zip']}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -64,17 +57,16 @@ interface FileInputResult {
  *
  * @public
  */
-export const ImportView: React.FC<ImportViewProps> = ({
+export const ImportView: React.FC<IImportViewProps> = ({
   onImport,
   onBundleImport,
   onZipImport,
   acceptedFileTypes = ['.json', '.zip'],
-  onMessage,
   className = '',
   importError
 }) => {
   // Get observability context
-  const o11y = useObservability();
+  const o11y = useSmartObservability();
 
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState<{
@@ -94,14 +86,22 @@ export const ImportView: React.FC<ImportViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dirInputRef = useRef<HTMLInputElement>(null);
 
-  // Check for File System Access API support
-  const isFileSystemAccessSupported = 'showDirectoryPicker' in window || 'showOpenFilePicker' in window;
+  // Type for browsers with guaranteed File System Access API support
+  type WindowWithFileSystemAccess = Window & {
+    showDirectoryPicker: NonNullable<Window['showDirectoryPicker']>;
+    showOpenFilePicker: NonNullable<Window['showOpenFilePicker']>;
+  };
+
+  // Type guard to check if browser supports File System Access API
+  function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
+    return 'showDirectoryPicker' in w && 'showOpenFilePicker' in w;
+  }
 
   // Helper function to process ZIP files using zip-archive packlet
   const processZipFile = useCallback(
     async (file: File) => {
       o11y.diag.info(`[ImportView] Processing ZIP file: ${file.name}`);
-      onMessage?.('info', `Processing ZIP file: ${file.name}`);
+      o11y.user.info(`Processing ZIP file: ${file.name}`);
 
       const loader = new ZipArchive.ZipArchiveLoader();
       const loadResult = await loader.loadFromFile(file, {
@@ -131,7 +131,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
 
       return zipData;
     },
-    [onZipImport, onMessage]
+    [onZipImport, o11y]
   );
 
   // Handle file selection
@@ -162,23 +162,25 @@ export const ImportView: React.FC<ImportViewProps> = ({
               isZip: true
             });
 
-            onMessage?.('success', `ZIP file processed: ${file.name} (${zipData.files.length} files)`);
+            o11y.user.success(`ZIP file processed: ${file.name} (${zipData.files.length} files)`);
             setIsLoading(false);
             return;
+          } else {
+            o11y.user.info(`${file.name}: Not a ZIP file.`);
           }
         }
 
         // Handle regular files (non-ZIP)
-        const importedFiles: ImportedFile[] = [];
-        let bundleFile: (ImportedFile & { bundle?: Bundle.IBundle }) | undefined;
+        const importedFiles: IImportedFile[] = [];
+        let bundleFile: (IImportedFile & { bundle?: Bundle.IBundle }) | undefined;
 
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const content = await readFileContent(file);
 
-          const importedFile: ImportedFile = {
+          const importedFile: IImportedFile = {
             name: file.name,
-            path: file.webkitRelativePath || file.name,
+            path: file.webkitRelativePath ?? file.name,
             content,
             type: file.type
           };
@@ -197,14 +199,17 @@ export const ImportView: React.FC<ImportViewProps> = ({
               isCurrentFileBundle = true;
             } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
               // File name suggests it's a bundle, but content doesn't match - log a warning
-              console.warn(
+              o11y.diag.warn(
                 `[ImportView] ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
               );
+              o11y.user.warn(`${file.name}: Malformed bundle file.`);
             } else {
               o11y.diag.info(`[ImportView] ❌ ${file.name} is not a bundle file`);
+              o11y.user.info(`${file.name}: Not a bundle file.`);
             }
           } catch (parseError) {
             o11y.diag.info(`[ImportView] ❌ ${file.name} failed JSON parsing:`, parseError);
+            o11y.user.error(`${file.name}: Failed JSON parsing: ${parseError}`);
             // Not valid JSON or not a bundle, treat as regular file
           }
 
@@ -225,7 +230,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
             isBundle: true,
             isZip: false
           });
-          onMessage?.('info', `Bundle file detected: ${bundleFile.name}`);
+          o11y.user.info(`Bundle file detected: ${bundleFile.name}`);
           if (onBundleImport && bundleFile.bundle) {
             o11y.diag.info(`[ImportView] Calling onBundleImport with bundle data`);
             onBundleImport(bundleFile.bundle);
@@ -240,13 +245,13 @@ export const ImportView: React.FC<ImportViewProps> = ({
             isBundle: false,
             isZip: false
           });
-          onMessage?.('success', `Imported ${importedFiles.length} file(s)`);
+          o11y.user.success(`Imported ${importedFiles.length} file(s)`);
           onImport?.(importedFiles);
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         setError(errorMsg);
-        onMessage?.('error', `Import failed: ${errorMsg}`);
+        o11y.user.error(`Import failed: ${errorMsg}`);
       } finally {
         setIsLoading(false);
         // Reset input
@@ -255,7 +260,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
         }
       }
     },
-    [onImport, onBundleImport, onMessage]
+    [onImport, onBundleImport, o11y]
   );
 
   // Handle directory selection (for browsers with webkitdirectory support)
@@ -268,7 +273,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
       setError(null);
 
       try {
-        const filesByPath = new Map<string, ImportedFile[]>();
+        const filesByPath = new Map<string, IImportedFile[]>();
         const dirPaths = new Set<string>();
 
         for (let i = 0; i < files.length; i++) {
@@ -295,7 +300,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
         }
 
         // Build directory structure
-        const rootDir: ImportedDirectory = {
+        const rootDir: IImportedDirectory = {
           name: 'imported',
           files: filesByPath.get('') || [],
           subdirectories: []
@@ -340,12 +345,12 @@ export const ImportView: React.FC<ImportViewProps> = ({
           isZip: false
         });
 
-        onMessage?.('success', `Imported directory with ${files.length} file(s)`);
+        o11y.user.success(`Imported directory with ${files.length} file(s)`);
         onImport?.(rootDir);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         setError(errorMsg);
-        onMessage?.('error', `Directory import failed: ${errorMsg}`);
+        o11y.user.error(`Directory import failed: ${errorMsg}`);
       } finally {
         setIsLoading(false);
         // Reset input
@@ -354,13 +359,13 @@ export const ImportView: React.FC<ImportViewProps> = ({
         }
       }
     },
-    [onImport, onMessage]
+    [onImport, o11y]
   );
 
   // Modern File System Access API handlers
   const handleModernDirectoryPick = useCallback(async () => {
-    if (!('showDirectoryPicker' in window)) {
-      onMessage?.('error', 'Directory picker not supported in this browser');
+    if (!hasFileSystemAccess(window)) {
+      o11y.user.error('Directory picker not supported in this browser');
       return;
     }
 
@@ -368,7 +373,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
     setError(null);
 
     try {
-      const dirHandle = await (window as any).showDirectoryPicker();
+      const dirHandle = await window.showDirectoryPicker();
       const rootDir = await processDirectoryHandle(dirHandle);
 
       const fileCount = countFiles(rootDir);
@@ -380,22 +385,22 @@ export const ImportView: React.FC<ImportViewProps> = ({
         isZip: false
       });
 
-      onMessage?.('success', `Imported directory "${rootDir.name}" with ${fileCount} file(s)`);
+      o11y.user.success(`Imported directory "${rootDir.name}" with ${fileCount} file(s)`);
       onImport?.(rootDir);
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
+    } catch (err: unknown) {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         setError(errorMsg);
-        onMessage?.('error', `Directory import failed: ${errorMsg}`);
+        o11y.user.error(`Directory import failed: ${errorMsg}`);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [onImport, onMessage]);
+  }, [onImport, o11y]);
 
   const handleModernFilePick = useCallback(async () => {
     if (!('showOpenFilePicker' in window)) {
-      onMessage?.('error', 'File picker not supported in this browser');
+      o11y.user.error('File picker not supported in this browser');
       return;
     }
 
@@ -403,7 +408,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
     setError(null);
 
     try {
-      const fileHandles = await (window as any).showOpenFilePicker({
+      const fileHandles = await window.showOpenFilePicker({
         multiple: true,
         types: [
           {
@@ -433,27 +438,27 @@ export const ImportView: React.FC<ImportViewProps> = ({
             isZip: true
           });
 
-          onMessage?.('success', `ZIP file processed: ${file.name} (${zipData.files.length} files)`);
+          o11y.user.success(`ZIP file processed: ${file.name} (${zipData.files.length} files)`);
           setIsLoading(false);
           return;
         }
       }
 
-      const importedFiles: ImportedFile[] = [];
-      let bundleFile: (ImportedFile & { bundle?: Bundle.IBundle }) | undefined;
+      const importedFiles: IImportedFile[] = [];
+      let bundleFile: (IImportedFile & { bundle?: Bundle.IBundle }) | undefined;
 
       for (const fileHandle of fileHandles) {
         const file = await fileHandle.getFile();
 
         // Skip ZIP files in multi-file selection
         if (isZipFile(file.name)) {
-          onMessage?.('warning', `Skipping ZIP file ${file.name} - select it individually to import`);
+          o11y.user.warn(`Skipping ZIP file ${file.name} - select it individually to import`);
           continue;
         }
 
         const content = await file.text();
 
-        const importedFile: ImportedFile = {
+        const importedFile: IImportedFile = {
           name: file.name,
           content,
           type: file.type
@@ -472,7 +477,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
             bundleFile = { ...importedFile, bundle: parsedData };
             isCurrentFileBundle = true;
           } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
-            console.warn(
+            o11y.diag.warn(
               `[ImportView] Modern API - ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
             );
           } else {
@@ -497,7 +502,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
           isBundle: true,
           isZip: false
         });
-        onMessage?.('info', `Bundle file detected: ${bundleFile.name}`);
+        o11y.user.info(`Bundle file detected: ${bundleFile.name}`);
         if (onBundleImport && bundleFile.bundle) {
           onBundleImport(bundleFile.bundle);
         }
@@ -509,19 +514,19 @@ export const ImportView: React.FC<ImportViewProps> = ({
           isBundle: false,
           isZip: false
         });
-        onMessage?.('success', `Imported ${importedFiles.length} file(s)`);
+        o11y.user.success(`Imported ${importedFiles.length} file(s)`);
         onImport?.(importedFiles);
       }
-    } catch (err: any) {
-      if (err.name !== 'AbortError') {
+    } catch (err: unknown) {
+      if (!(err instanceof Error && err.name === 'AbortError')) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         setError(errorMsg);
-        onMessage?.('error', `File import failed: ${errorMsg}`);
+        o11y.user.error(`File import failed: ${errorMsg}`);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [onImport, onBundleImport, onMessage, acceptedFileTypes]);
+  }, [onImport, onBundleImport, o11y, acceptedFileTypes]);
 
   const handleReset = useCallback(() => {
     setImportStatus({
@@ -532,8 +537,8 @@ export const ImportView: React.FC<ImportViewProps> = ({
       isZip: false
     });
     setError(null);
-    onMessage?.('info', 'Import cleared');
-  }, [onMessage]);
+    o11y.user.info('Import cleared');
+  }, [o11y]);
 
   return (
     <div className={`p-6 ${className}`}>
@@ -550,7 +555,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
           <div className="space-y-4">
             {/* API Support Status */}
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              {isFileSystemAccessSupported ? (
+              {hasFileSystemAccess(window) ? (
                 <>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Modern File System API available</span>
@@ -565,7 +570,7 @@ export const ImportView: React.FC<ImportViewProps> = ({
 
             {/* Import Buttons */}
             <div className="flex flex-col space-y-3">
-              {isFileSystemAccessSupported ? (
+              {hasFileSystemAccess(window) ? (
                 <>
                   <button
                     onClick={handleModernDirectoryPick}
@@ -750,12 +755,23 @@ async function readFileContent(file: File): Promise<string> {
   });
 }
 
-async function processDirectoryHandle(dirHandle: any, parentPath: string = ''): Promise<ImportedDirectory> {
-  const files: ImportedFile[] = [];
-  const subdirectories: ImportedDirectory[] = [];
+function isFileSystemDirectoryHandle(handle: FileSystemHandle): handle is FileSystemDirectoryHandle {
+  return handle.kind === 'directory';
+}
+
+function isFileSystemFileHandle(handle: FileSystemHandle): handle is FileSystemFileHandle {
+  return handle.kind === 'file';
+}
+
+async function processDirectoryHandle(
+  dirHandle: FileSystemDirectoryHandle,
+  parentPath: string = ''
+): Promise<IImportedDirectory> {
+  const files: IImportedFile[] = [];
+  const subdirectories: IImportedDirectory[] = [];
 
   for await (const entry of dirHandle.values()) {
-    if (entry.kind === 'file') {
+    if (isFileSystemFileHandle(entry)) {
       const file = await entry.getFile();
       const content = await file.text();
       files.push({
@@ -764,7 +780,7 @@ async function processDirectoryHandle(dirHandle: any, parentPath: string = ''): 
         content,
         type: file.type
       });
-    } else if (entry.kind === 'directory') {
+    } else if (isFileSystemDirectoryHandle(entry)) {
       const subdir = await processDirectoryHandle(
         entry,
         parentPath ? `${parentPath}/${entry.name}` : entry.name
@@ -781,7 +797,7 @@ async function processDirectoryHandle(dirHandle: any, parentPath: string = ''): 
   };
 }
 
-function countFiles(dir: ImportedDirectory): number {
+function countFiles(dir: IImportedDirectory): number {
   let count = dir.files?.length || 0;
   if (dir.subdirectories) {
     for (const subdir of dir.subdirectories) {

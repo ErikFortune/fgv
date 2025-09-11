@@ -1,11 +1,11 @@
 import React, { useMemo, useCallback, useEffect } from 'react';
 import { TableCellsIcon } from '@heroicons/react/24/outline';
-import { GridViewProps, ProcessedResources, ResolutionResult } from '../../../types';
+import { IGridViewProps, IResolutionResult } from '../../../types';
 import { selectResources } from '../../../utils/resourceSelector';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
-import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { UnifiedChangeControls } from '../ResolutionView/UnifiedChangeControls';
 import { ResourceGrid } from './ResourceGrid';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * GridView component for displaying multiple resources in a tabular format.
@@ -55,7 +55,7 @@ import { ResourceGrid } from './ResourceGrid';
  *
  * @public
  */
-export const GridView: React.FC<GridViewProps> = ({
+export const GridView: React.FC<IGridViewProps> = ({
   gridConfig,
   resources,
   resolutionState,
@@ -66,9 +66,9 @@ export const GridView: React.FC<GridViewProps> = ({
   filterResult,
   showContextControls = true,
   showChangeControls = true,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const baseProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
@@ -81,21 +81,20 @@ export const GridView: React.FC<GridViewProps> = ({
 
     const selectionResult = selectResources(gridConfig.resourceSelection, baseProcessedResources);
     if (selectionResult.isFailure()) {
-      onMessage?.('error', `Resource selection failed: ${selectionResult.message}`);
+      o11y.user.error(`Resource selection failed: ${selectionResult.message}`);
       return [];
     }
 
     return selectionResult.value;
-  }, [baseProcessedResources, gridConfig.resourceSelection, onMessage]);
+  }, [baseProcessedResources, gridConfig.resourceSelection, o11y]);
 
   // Resolve all selected resources with current context
   const resourceResolutions = useMemo(() => {
     if (!resolutionState?.currentResolver || !selectedResourceIds.length) {
-      return new Map<string, ResolutionResult>();
+      return new Map<string, IResolutionResult>();
     }
 
-    const resolutions = new Map<string, ResolutionResult>();
-    const context = resolutionState.contextValues;
+    const resolutions = new Map<string, IResolutionResult>();
 
     selectedResourceIds.forEach((resourceId) => {
       try {
@@ -303,7 +302,6 @@ export const GridView: React.FC<GridViewProps> = ({
           resourceResolutions={resourceResolutions}
           resolutionActions={resolutionActions}
           resolutionState={resolutionState}
-          onMessage={onMessage}
         />
 
         {/* Unified Change Controls */}

@@ -1,40 +1,20 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import {
-  MagnifyingGlassIcon,
-  DocumentTextIcon,
-  CubeIcon,
-  CheckIcon,
-  XMarkIcon,
-  PencilIcon,
-  TrashIcon,
-  ListBulletIcon,
-  FolderIcon,
-  PlusIcon
-} from '@heroicons/react/24/outline';
-import {
-  ResolutionViewProps,
-  CandidateInfo,
-  ResolutionActions,
-  ResolutionState,
-  ResourceEditorFactory,
-  ResourceEditorResult,
-  ResolutionContextOptions
-} from '../../../types';
-import { ResourceId } from '@fgv/ts-res';
+import { MagnifyingGlassIcon, CubeIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { IResolutionViewProps, ICandidateInfo, IResolutionContextOptions } from '../../../types';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { UnifiedChangeControls } from './UnifiedChangeControls';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
 import {
-  ResourceSelection,
-  ResourceAnnotations,
-  ResourcePickerOptions,
-  PendingResource
+  IResourceSelection,
+  IResourceAnnotations,
+  IResourcePickerOptions,
+  IPendingResource
 } from '../../pickers/ResourcePicker/types';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
 import { ResolutionContextOptionsControl } from '../../common/ResolutionContextOptionsControl';
 import { ResolutionResults } from '../../common/ResolutionResults';
 import { NewResourceModal } from './NewResourceModal';
-import { useObservability } from '../../../contexts';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * ResolutionView component for resource resolution testing and editing.
@@ -77,7 +57,6 @@ import { useObservability } from '../../../contexts';
  *       resolutionActions={resolutionActions}
  *       availableQualifiers={['language', 'territory', 'platform']}
  *       resourceEditorFactory={editorFactory}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -85,7 +64,7 @@ import { useObservability } from '../../../contexts';
  *
  * @public
  */
-export const ResolutionView: React.FC<ResolutionViewProps> = ({
+export const ResolutionView: React.FC<IResolutionViewProps> = ({
   resources,
   filterState,
   filterResult,
@@ -93,7 +72,6 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   resolutionActions,
   availableQualifiers = [],
   resourceEditorFactory,
-  onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   contextOptions,
@@ -106,15 +84,15 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   showPendingResourcesInList = true,
   className = ''
 }) => {
-  // Get observability context
-  const o11y = useObservability();
+  // Get smart observability context (auto-detects and upgrades as needed)
+  const o11y = useSmartObservability();
   // State for picker options control
-  const [currentPickerOptions, setCurrentPickerOptions] = useState<ResourcePickerOptions>(
-    pickerOptions || {}
+  const [currentPickerOptions, setCurrentPickerOptions] = useState<IResourcePickerOptions>(
+    (pickerOptions ?? {}) as IResourcePickerOptions
   );
 
   // State for context options control
-  const [currentContextOptions, setCurrentContextOptions] = useState<ResolutionContextOptions>(
+  const [currentContextOptions, setCurrentContextOptions] = useState<IResolutionContextOptions>(
     contextOptions || {}
   );
 
@@ -176,7 +154,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
 
   // Create resource annotations for resolution results and edit states
   const resourceAnnotations = useMemo(() => {
-    const annotations: ResourceAnnotations = {};
+    const annotations: IResourceAnnotations = {};
 
     // Get all resource IDs (existing + pending)
     const allResourceIds = new Set<string>();
@@ -187,7 +165,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
 
     // Add pending resource IDs
     if (resolutionState?.pendingResources) {
-      resolutionState.pendingResources.forEach((_, id) => allResourceIds.add(id));
+      resolutionState.pendingResources.forEach((__, id) => allResourceIds.add(id));
     }
 
     allResourceIds.forEach((resourceId) => {
@@ -234,7 +212,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
             variant: 'info'
           };
         } else if (result.candidateDetails) {
-          const matchingCount = result.candidateDetails.filter((c: CandidateInfo) => c.matched).length;
+          const matchingCount = result.candidateDetails.filter((c: ICandidateInfo) => c.matched).length;
           const totalCount = result.candidateDetails.length;
 
           if (matchingCount === 0) {
@@ -351,8 +329,8 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
   }, [resolutionState?.contextValues]);
 
   // Convert pending resources to PendingResource format for ResourcePicker
-  const pendingResourcesList = useMemo<PendingResource[]>(() => {
-    const pending: PendingResource[] = [];
+  const pendingResourcesList = useMemo<IPendingResource[]>(() => {
+    const pending: IPendingResource[] = [];
 
     // Add new pending resources
     if (resolutionState?.pendingResources) {
@@ -379,7 +357,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
 
     // Add edited resources
     if (resolutionState?.editedResources) {
-      resolutionState.editedResources.forEach((_, id) => {
+      resolutionState.editedResources.forEach((__, id) => {
         // Only add if not already in pending as new
         if (!resolutionState.pendingResources?.has(id)) {
           pending.push({
@@ -400,7 +378,7 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
 
   // Handle resource selection from ResourcePicker
   const handleResourceSelect = useCallback(
-    (selection: ResourceSelection) => {
+    (selection: IResourceSelection) => {
       if (selection.resourceId) {
         resolutionActions?.selectResource(selection.resourceId);
       }
@@ -561,7 +539,10 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                   {effectiveContextOptions?.showContextActions !== false && (
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={resolutionActions?.resetCache}
+                        onClick={() => {
+                          resolutionActions?.resetCache();
+                          o11y.user.success('Resolution cache cleared');
+                        }}
                         className="px-3 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
                         title="Clear resolution cache"
                       >
@@ -638,7 +619,6 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                 resourceAnnotations={resourceAnnotations}
                 pendingResources={showPendingResourcesInListInternal ? pendingResourcesList : undefined}
                 options={effectivePickerOptions}
-                onMessage={onMessage}
               />
             </div>
           </div>
@@ -724,7 +704,6 @@ export const ResolutionView: React.FC<ResolutionViewProps> = ({
                   resolutionActions={resolutionActions}
                   resolutionState={resolutionState}
                   resourceEditorFactory={resourceEditorFactory}
-                  onMessage={onMessage}
                 />
               )}
             </div>

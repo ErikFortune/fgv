@@ -21,7 +21,7 @@
  * Using a pre-compiled regex literal to satisfy ESLint security requirements.
  * We use the unicode escape sequence \\u001b instead of \\x1b to avoid control-regex warnings.
  */
-// eslint-disable-next-line @rushstack/security/no-unsafe-regexp, no-control-regex
+// eslint-disable-next-line no-control-regex
 const ANSI_COLOR_REGEX: RegExp = /\u001b\[[0-9;]*[a-zA-Z]/g;
 
 /**

@@ -11,7 +11,7 @@ The QualifierTypeEditForm provides a comprehensive interface for defining qualif
 **Signature:**
 
 ```typescript
-QualifierTypeEditForm: React.FC<QualifierTypeEditFormProps>
+QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps>
 ```
 
 ## Example 1
