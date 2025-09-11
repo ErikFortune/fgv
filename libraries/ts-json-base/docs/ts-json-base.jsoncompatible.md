@@ -11,9 +11,7 @@ A constrained type that is compatible with JSON serialization.
 ```typescript
 export type JsonCompatible<T> = T extends JsonPrimitive ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
     [K in keyof T]: JsonCompatible<T[K]>;
-} : [
-    'Error: Non-JSON type'
-];
+} : ['Error: Non-JSON type'];
 ```
 **References:** [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->, [JsonCompatibleArray](./ts-json-base.jsoncompatiblearray.md)<!-- -->, [JsonCompatible](./ts-json-base.jsoncompatible.md)
 

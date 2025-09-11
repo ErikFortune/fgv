@@ -98,8 +98,8 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive {
 /**
  * Test if an `unknown` is potentially a {@link JsonObject | JsonObject}.
  * @param from - The `unknown` to be tested.
- * @returns `true` if the supplied parameter is a non-array, non-special object,
- * `false` otherwise.
+ * @returns `true` if the supplied parameter is a non-array, non-special object
+ * with no symbol keys, `false` otherwise.
  * @public
  */
 export function isJsonObject(from: unknown): from is JsonObject {
@@ -108,7 +108,11 @@ export function isJsonObject(from: unknown): from is JsonObject {
     from !== null &&
     !Array.isArray(from) &&
     !(from instanceof RegExp) &&
-    !(from instanceof Date)
+    !(from instanceof Date) &&
+    !(from instanceof Map) &&
+    !(from instanceof Set) &&
+    !(from instanceof Error) &&
+    Object.getOwnPropertySymbols(from).length === 0
   );
 }
 

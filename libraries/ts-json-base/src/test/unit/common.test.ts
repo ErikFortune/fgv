@@ -52,6 +52,53 @@ describe('json/common module', () => {
         expect(isJsonObject(t)).toBe(false);
       });
     });
+
+    test('returns false for objects with symbol keys', () => {
+      const sym1 = Symbol('test');
+      const sym2 = Symbol('another');
+
+      // Object with only symbol keys
+      const symbolOnly = { [sym1]: 'value1' };
+      expect(isJsonObject(symbolOnly)).toBe(false);
+
+      // Object with mixed string and symbol keys
+      const mixed = {
+        stringKey: 'value',
+        [sym1]: 'symbolValue1',
+        [sym2]: 'symbolValue2'
+      };
+      expect(isJsonObject(mixed)).toBe(false);
+
+      // Object with well-known symbol
+      const withWellKnown = {
+        normal: 'value',
+        [Symbol.iterator]: function* () {
+          yield 1;
+        }
+      };
+      expect(isJsonObject(withWellKnown)).toBe(false);
+    });
+
+    test('returns true for objects with only string keys', () => {
+      const validObjects = [
+        {},
+        { a: 1 },
+        { stringKey: 'value', numberKey: 42, boolKey: true, nullKey: null },
+        { nested: { deep: { value: 'test' } } }
+      ];
+
+      validObjects.forEach((obj) => {
+        expect(isJsonObject(obj)).toBe(true);
+      });
+    });
+
+    test('returns false for special objects that are not JSON-compatible', () => {
+      const specialObjects = [new Date(), new RegExp('test'), new Map(), new Set(), new Error('test')];
+
+      specialObjects.forEach((obj) => {
+        expect(isJsonObject(obj)).toBe(false);
+      });
+    });
   });
 
   describe('isJsonPrimitive function', () => {
@@ -90,6 +137,23 @@ describe('json/common module', () => {
     test('fails for invalid JSON values', () => {
       [() => 'hello', undefined].forEach((t) => {
         expect(classifyJsonValue(t)).toFailWith(/invalid json/i);
+      });
+    });
+
+    test('fails for objects with symbol keys', () => {
+      const sym = Symbol('test');
+      const objectsWithSymbols = [
+        { [sym]: 'value' },
+        { normal: 'value', [sym]: 'symbolValue' },
+        {
+          [Symbol.iterator]: function* () {
+            yield 1;
+          }
+        }
+      ];
+
+      objectsWithSymbols.forEach((obj) => {
+        expect(classifyJsonValue(obj)).toFailWith(/invalid json/i);
       });
     });
   });
