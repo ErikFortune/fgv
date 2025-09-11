@@ -201,6 +201,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[JsonCompatible](./ts-json-base.jsoncompatible.md)
+
+
+</td><td>
+
+A constrained type that is compatible with JSON serialization.
+
+
+</td></tr>
+<tr><td>
+
+[JsonCompatibleArray](./ts-json-base.jsoncompatiblearray.md)
+
+
+</td><td>
+
+A type that represents an array of JSON-compatible values.
+
+
+</td></tr>
+<tr><td>
+
 [JsonPrimitive](./ts-json-base.jsonprimitive.md)
 
 
