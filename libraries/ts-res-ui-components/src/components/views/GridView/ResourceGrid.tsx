@@ -26,8 +26,6 @@ interface IResourceGridProps {
   resolutionActions?: IResolutionActions;
   /** Resolution state for edit tracking */
   resolutionState?: IResolutionState;
-  /** Callback for displaying messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
 }
 
 /**
@@ -132,8 +130,7 @@ export const ResourceGrid: React.FC<IResourceGridProps> = ({
   selectedResourceIds,
   resourceResolutions,
   resolutionActions,
-  resolutionState,
-  onMessage
+  resolutionState
 }) => {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -359,7 +356,6 @@ export const ResourceGrid: React.FC<IResourceGridProps> = ({
                         isEdited={isEdited}
                         resolutionActions={resolutionActions}
                         resolutionState={resolutionState}
-                        onMessage={onMessage}
                       />
                     </td>
                   );

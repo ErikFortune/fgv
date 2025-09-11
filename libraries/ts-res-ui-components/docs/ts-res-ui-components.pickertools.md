@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ResourcePicker({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage })](./ts-res-ui-components.pickertools.resourcepicker.md)
+[ResourcePicker({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className })](./ts-res-ui-components.pickertools.resourcepicker.md)
 
 
 </td><td>

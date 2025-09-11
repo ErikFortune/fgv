@@ -40,7 +40,6 @@ function MyConfigurationEditor() {
       }}
       onSave={handleSave}
       hasUnsavedChanges={hasChanges}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

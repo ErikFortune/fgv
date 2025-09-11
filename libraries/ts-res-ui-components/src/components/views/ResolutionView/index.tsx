@@ -57,7 +57,6 @@ import { useSmartObservability } from '../../../hooks/useSmartObservability';
  *       resolutionActions={resolutionActions}
  *       availableQualifiers={['language', 'territory', 'platform']}
  *       resourceEditorFactory={editorFactory}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -73,7 +72,6 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
   resolutionActions,
   availableQualifiers = [],
   resourceEditorFactory,
-  onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   contextOptions,
@@ -621,7 +619,6 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
                 resourceAnnotations={resourceAnnotations}
                 pendingResources={showPendingResourcesInListInternal ? pendingResourcesList : undefined}
                 options={effectivePickerOptions}
-                onMessage={onMessage}
               />
             </div>
           </div>

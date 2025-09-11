@@ -15,7 +15,6 @@
  *   onConfigurationChange={handleConfigChange}
  *   onSave={handleSave}
  *   hasUnsavedChanges={hasChanges}
- *   onMessage={onMessage}
  * />
  *
  * // Use form components for editing individual configuration elements

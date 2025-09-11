@@ -1121,7 +1121,6 @@ interface IUserLogger extends Logging.ILogger {
 // @public
 interface IViewBaseProps {
     className?: string;
-    onMessage?: (type: IMessage['type'], message: string) => void;
     pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
@@ -1312,7 +1311,7 @@ export const ResourceListView: React_2.FC<IResourceListViewProps>;
 export const ResourceOrchestrator: React_2.FC<IResourceOrchestratorProps>;
 
 // @public
-const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className, onMessage }: IResourcePickerProps<T>) => ReactElement;
+const ResourcePicker: <T = unknown>({ resources, selectedResourceId, onResourceSelect, resourceAnnotations, pendingResources, options, className }: IResourcePickerProps<T>) => ReactElement;
 
 // @public
 const ResourcePickerOptionsControl: React_2.FC<IResourcePickerOptionsControlProps>;

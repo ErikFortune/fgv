@@ -5,6 +5,7 @@ import { selectResources } from '../../../utils/resourceSelector';
 import { QualifierContextControl } from '../../common/QualifierContextControl';
 import { UnifiedChangeControls } from '../ResolutionView/UnifiedChangeControls';
 import { ResourceGrid } from './ResourceGrid';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * GridView component for displaying multiple resources in a tabular format.
@@ -65,9 +66,9 @@ export const GridView: React.FC<IGridViewProps> = ({
   filterResult,
   showContextControls = true,
   showChangeControls = true,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const baseProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
@@ -80,12 +81,12 @@ export const GridView: React.FC<IGridViewProps> = ({
 
     const selectionResult = selectResources(gridConfig.resourceSelection, baseProcessedResources);
     if (selectionResult.isFailure()) {
-      onMessage?.('error', `Resource selection failed: ${selectionResult.message}`);
+      o11y.user.error(`Resource selection failed: ${selectionResult.message}`);
       return [];
     }
 
     return selectionResult.value;
-  }, [baseProcessedResources, gridConfig.resourceSelection, onMessage]);
+  }, [baseProcessedResources, gridConfig.resourceSelection, o11y]);
 
   // Resolve all selected resources with current context
   const resourceResolutions = useMemo(() => {
@@ -301,7 +302,6 @@ export const GridView: React.FC<IGridViewProps> = ({
           resourceResolutions={resourceResolutions}
           resolutionActions={resolutionActions}
           resolutionState={resolutionState}
-          onMessage={onMessage}
         />
 
         {/* Unified Change Controls */}

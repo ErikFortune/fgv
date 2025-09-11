@@ -56,25 +56,6 @@ _(Optional)_ Additional CSS class names for styling
 </td></tr>
 <tr><td>
 
-[onMessage?](./ts-res-ui-components.viewstatetools.iviewbaseprops.onmessage.md)
-
-
-</td><td>
-
-
-</td><td>
-
-(type: IMessage\['type'\], message: string) =&gt; void
-
-
-</td><td>
-
-_(Optional)_ Callback for displaying messages to the user
-
-
-</td></tr>
-<tr><td>
-
 [pickerOptionsPresentation?](./ts-res-ui-components.viewstatetools.iviewbaseprops.pickeroptionspresentation.md)
 
 

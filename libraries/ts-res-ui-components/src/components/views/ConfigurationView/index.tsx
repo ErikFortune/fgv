@@ -19,6 +19,7 @@ import { QualifierTypeEditForm } from '../../forms/QualifierTypeEditForm';
 import { GenericQualifierTypeEditForm } from '../../forms/GenericQualifierTypeEditForm';
 import { QualifierEditForm } from '../../forms/QualifierEditForm';
 import { ResourceTypeEditForm } from '../../forms/ResourceTypeEditForm';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 // Panel component definitions - moved before main component to avoid use-before-define
 
@@ -382,7 +383,6 @@ const ResourceTypesPanel: React.FC<IResourceTypesPanelProps> = ({
  *       }}
  *       onSave={handleSave}
  *       hasUnsavedChanges={hasChanges}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -395,9 +395,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
   onConfigurationChange,
   onSave,
   hasUnsavedChanges,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [editingQualifierType, setEditingQualifierType] = useState<{
     item: QualifierTypes.Config.IAnyQualifierTypeConfig;
@@ -458,20 +458,20 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
         if (content) {
           const result = actions.importFromJson(content);
           if (result.isSuccess()) {
-            onMessage?.('success', `Configuration imported from ${file.name}`);
+            o11y.user.success(`Configuration imported from ${file.name}`);
           } else {
-            onMessage?.('error', `Import failed: ${result.message}`);
+            o11y.user.error(`Import failed: ${result.message}`);
           }
         }
       };
 
       reader.onerror = () => {
-        onMessage?.('error', `Failed to read file: ${file.name}`);
+        o11y.user.error(`Failed to read file: ${file.name}`);
       };
 
       reader.readAsText(file);
     },
-    [actions, onMessage]
+    [actions, o11y]
   );
 
   // Handle export
@@ -487,11 +487,11 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      onMessage?.('success', 'Configuration exported successfully');
+      o11y.user.success('Configuration exported successfully');
     } else {
-      onMessage?.('error', `Export failed: ${result.message}`);
+      o11y.user.error(`Export failed: ${result.message}`);
     }
-  }, [actions, onMessage]);
+  }, [actions, o11y]);
 
   // Handle template loading
   const handleLoadTemplate = useCallback(
@@ -499,12 +499,12 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
       const result = actions.loadTemplate(templateId);
       if (result.isSuccess()) {
         const template = templates.find((t: { id: string; name?: string }) => t.id === templateId);
-        onMessage?.('success', `Loaded template: ${template?.name}`);
+        o11y.user.success(`Loaded template: ${template?.name}`);
       } else {
-        onMessage?.('error', `Failed to load template: ${result.message}`);
+        o11y.user.error(`Failed to load template: ${result.message}`);
       }
     },
-    [actions, templates, onMessage]
+    [actions, templates, o11y]
   );
 
   // Handle save
@@ -512,9 +512,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
     if (onSave) {
       onSave(state.currentConfiguration);
       actions.applyConfiguration();
-      onMessage?.('success', 'Configuration saved successfully');
+      o11y.user.success('Configuration saved successfully');
     }
-  }, [onSave, state.currentConfiguration, actions, onMessage]);
+  }, [onSave, state.currentConfiguration, actions, o11y]);
 
   if (!configuration && !state.currentConfiguration) {
     return (
@@ -667,9 +667,9 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
                 onClick={() => {
                   const result = actions.applyJsonChanges();
                   if (result.isSuccess()) {
-                    onMessage?.('success', 'JSON changes applied');
+                    o11y.user.success('JSON changes applied');
                   } else {
-                    onMessage?.('error', `JSON error: ${result.message}`);
+                    o11y.user.error(`JSON error: ${result.message}`);
                   }
                 }}
                 disabled={!!state.jsonError}
@@ -846,7 +846,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             actions.addQualifierType(qualifierType);
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
-            onMessage?.('success', `Added system qualifier type: ${qualifierType.name}`);
+            o11y.user.success(`Added system qualifier type: ${qualifierType.name}`);
           }}
           onCancel={() => {
             setShowAddQualifierType(false);
@@ -865,7 +865,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             actions.addQualifierType(qualifierType);
             setShowAddQualifierType(false);
             setAddQualifierTypeMode(null);
-            onMessage?.('success', `Added custom qualifier type: ${qualifierType.name}`);
+            o11y.user.success(`Added custom qualifier type: ${qualifierType.name}`);
           }}
           onCancel={() => {
             setShowAddQualifierType(false);
@@ -884,7 +884,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             onSave={(qualifierType) => {
               actions.updateQualifierType(editingQualifierType.index, qualifierType);
               setEditingQualifierType(null);
-              onMessage?.('success', `Updated qualifier type: ${qualifierType.name}`);
+              o11y.user.success(`Updated qualifier type: ${qualifierType.name}`);
             }}
             onCancel={() => setEditingQualifierType(null)}
             existingNames={(state.currentConfiguration.qualifierTypes || [])
@@ -900,7 +900,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
             onSave={(qualifierType) => {
               actions.updateQualifierType(editingQualifierType.index, qualifierType);
               setEditingQualifierType(null);
-              onMessage?.('success', `Updated custom qualifier type: ${qualifierType.name}`);
+              o11y.user.success(`Updated custom qualifier type: ${qualifierType.name}`);
             }}
             onCancel={() => setEditingQualifierType(null)}
             existingNames={(state.currentConfiguration.qualifierTypes || [])
@@ -921,7 +921,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           onSave={(qualifier) => {
             actions.addQualifier(qualifier);
             setShowAddQualifier(false);
-            onMessage?.('success', `Added qualifier: ${qualifier.name}`);
+            o11y.user.success(`Added qualifier: ${qualifier.name}`);
           }}
           onCancel={() => setShowAddQualifier(false)}
           existingNames={(state.currentConfiguration.qualifiers || []).map(
@@ -940,7 +940,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           onSave={(qualifier) => {
             actions.updateQualifier(editingQualifier.index, qualifier);
             setEditingQualifier(null);
-            onMessage?.('success', `Updated qualifier: ${qualifier.name}`);
+            o11y.user.success(`Updated qualifier: ${qualifier.name}`);
           }}
           onCancel={() => setEditingQualifier(null)}
           existingNames={(state.currentConfiguration.qualifiers || [])
@@ -954,7 +954,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           onSave={(resourceType) => {
             actions.addResourceType(resourceType);
             setShowAddResourceType(false);
-            onMessage?.('success', `Added resource type: ${resourceType.name}`);
+            o11y.user.success(`Added resource type: ${resourceType.name}`);
           }}
           onCancel={() => setShowAddResourceType(false)}
           existingNames={(state.currentConfiguration.resourceTypes || []).map(
@@ -969,7 +969,7 @@ export const ConfigurationView: React.FC<IConfigurationViewProps> = ({
           onSave={(resourceType) => {
             actions.updateResourceType(editingResourceType.index, resourceType);
             setEditingResourceType(null);
-            onMessage?.('success', `Updated resource type: ${resourceType.name}`);
+            o11y.user.success(`Updated resource type: ${resourceType.name}`);
           }}
           onCancel={() => setEditingResourceType(null)}
           existingNames={(state.currentConfiguration.resourceTypes || [])

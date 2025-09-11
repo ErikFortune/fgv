@@ -13,7 +13,6 @@
  *   resources={processedResources}
  *   filterState={filterState}
  *   filterActions={filterActions}
- *   onMessage={onMessage}
  * />
  *
  * // Or use utility functions

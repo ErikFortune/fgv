@@ -58,7 +58,6 @@ import { useSmartObservability } from '../../../hooks/useSmartObservability';
  *         updateReduceQualifiers: (reduce) => setFilterState(prev => ({...prev, reduceQualifiers: reduce}))
  *       }}
  *       onFilterResult={(result) => console.log('Filter result:', result)}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -72,7 +71,6 @@ export const FilterView: React.FC<IFilterViewProps> = ({
   filterActions,
   filterResult,
   onFilterResult,
-  onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   contextOptions,
@@ -289,25 +287,25 @@ export const FilterView: React.FC<IFilterViewProps> = ({
     (enabled: boolean) => {
       filterActions.updateFilterEnabled(enabled);
       if (!enabled) {
-        onMessage?.('info', 'Filtering disabled - showing all resources');
+        o11y.user.info('Filtering disabled - showing all resources');
       } else {
-        onMessage?.('info', 'Filtering enabled - set qualifier values and click Apply to filter resources');
+        o11y.user.info('Filtering enabled - set qualifier values and click Apply to filter resources');
       }
     },
-    [filterActions, onMessage]
+    [filterActions, o11y]
   );
 
   // Handle apply filter values
   const handleApplyFilter = useCallback(() => {
     filterActions.applyFilterValues();
-    onMessage?.('info', 'Filter applied - processing resources...');
-  }, [filterActions, onMessage]);
+    o11y.user.info('Filter applied - processing resources...');
+  }, [filterActions, o11y]);
 
   // Handle reset filter values
   const handleResetFilter = useCallback(() => {
     filterActions.resetFilterValues();
-    onMessage?.('info', 'Filter values reset');
-  }, [filterActions, onMessage]);
+    o11y.user.info('Filter values reset');
+  }, [filterActions, o11y]);
 
   if (!resources) {
     return (
@@ -539,7 +537,6 @@ export const FilterView: React.FC<IFilterViewProps> = ({
                     ? 'No resources match the filter criteria'
                     : effectivePickerOptions.emptyMessage
                 }}
-                onMessage={onMessage}
               />
             </div>
           </div>

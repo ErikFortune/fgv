@@ -43,7 +43,6 @@ function MyResolutionTool() {
       resolutionActions={resolutionActions}
       availableQualifiers={['language', 'territory', 'platform']}
       resourceEditorFactory={editorFactory}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

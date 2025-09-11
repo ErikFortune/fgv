@@ -107,32 +107,20 @@ export interface IMessagesWindowProps {
  *
  * @example
  * ```typescript
- * // Integration with view state management
- * import { ViewStateTools } from '@fgv/ts-res-ui-components';
+ * // Basic usage with observability context
+ * import { ViewStateTools, ObservabilityProvider } from '@fgv/ts-res-ui-components';
  *
  * function MyTool() {
- *   const [viewState, setViewState] = useState({
- *     messages: [] as ViewStateTools.IMessage[]
- *   });
+ *   const { viewState } = ViewStateTools.useViewState();
  *
- *   const onMessage = (type: ViewStateTools.IMessage['type'], message: string) => {
- *     setViewState(prev => ({
- *       ...prev,
- *       messages: [...prev.messages, {
- *         id: `msg-${Date.now()}`,
- *         type,
- *         message,
- *         timestamp: new Date()
- *       }]
- *     }));
- *   };
- *
- *   return React.createElement('div', { className: 'flex flex-col h-screen' },
- *     React.createElement('div', { className: 'flex-1' }),
- *     React.createElement(ViewStateTools.MessagesWindow, {
- *       messages: viewState.messages,
- *       onClearMessages: () => setViewState(prev => ({ ...prev, messages: [] }))
- *     })
+ *   return (
+ *     <div>
+ *       <MyComponents />
+ *       <MessagesWindow
+ *         messages={viewState.messages}
+ *         onClearMessages={viewState.clearMessages}
+ *       />
+ *     </div>
  *   );
  * }
  * ```

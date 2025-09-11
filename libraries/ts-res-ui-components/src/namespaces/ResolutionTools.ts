@@ -15,7 +15,6 @@
  *   resolutionState={resolutionState}
  *   resolutionActions={resolutionActions}
  *   editorFactory={customEditorFactory}
- *   onMessage={onMessage}
  * />
  *
  * // Or use utility functions

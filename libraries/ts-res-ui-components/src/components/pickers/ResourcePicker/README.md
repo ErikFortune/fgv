@@ -15,7 +15,7 @@ A comprehensive resource selection component that provides search, list/tree vie
 ## Quick Start
 
 ```typescript
-import { ResourcePicker, ResourceSelection } from '@fgv/ts-res-ui-components';
+import { ResourcePicker, ResourceSelection, ObservabilityProvider } from '@fgv/ts-res-ui-components';
 
 function MyComponent() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -30,11 +30,13 @@ function MyComponent() {
   };
 
   return (
-    <ResourcePicker
-      resources={processedResources}
-      selectedResourceId={selectedId}
-      onResourceSelect={handleResourceSelect}
-    />
+    <ObservabilityProvider>
+      <ResourcePicker
+        resources={processedResources}
+        selectedResourceId={selectedId}
+        onResourceSelect={handleResourceSelect}
+      />
+    </ObservabilityProvider>
   );
 }
 ```
@@ -81,11 +83,39 @@ function MyComponent() {
 | `resourceAnnotations` | `ResourceAnnotations` | `{}` | Host-provided resource decorations |
 | `pendingResources` | `PendingResource[]` | `[]` | Resources with pending changes |
 
-### Events
+### Observability
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `onMessage` | `(type: 'info' \| 'warning' \| 'error' \| 'success', message: string) => void` | Optional message callback |
+For handling component messages and notifications, use the ObservabilityProvider to wrap your application:
+
+```typescript
+import { ObservabilityProvider, useObservabilityContext } from '@fgv/ts-res-ui-components';
+
+function App() {
+  return (
+    <ObservabilityProvider>
+      <MyResourceComponent />
+    </ObservabilityProvider>
+  );
+}
+
+function MyResourceComponent() {
+  const { addMessage } = useObservabilityContext();
+  
+  const handleResourceSelect = (selection: ResourceSelection) => {
+    if (selection.resourceId) {
+      addMessage('info', `Selected resource: ${selection.resourceId}`);
+    }
+  };
+
+  return (
+    <ResourcePicker
+      resources={processedResources}
+      selectedResourceId={selectedId}
+      onResourceSelect={handleResourceSelect}
+    />
+  );
+}
+```
 
 ## Enhanced Resource Selection
 
@@ -518,19 +548,22 @@ All view components support the `pickerOptionsPresentation` prop:
 
 ```typescript
 // Enable in SourceView for debugging
-<SourceView
-  resources={processedResources}
-  pickerOptionsPresentation="collapsible"
-  onMessage={(type, message) => console.log(`${type}: ${message}`)}
-/>
+<ObservabilityProvider>
+  <SourceView
+    resources={processedResources}
+    pickerOptionsPresentation="collapsible"
+  />
+</ObservabilityProvider>
 
 // Quick popup access in FilterView
-<FilterView
-  resources={processedResources}
-  filterState={filterState}
-  filterActions={filterActions}
-  pickerOptionsPresentation="popup"
-/>
+<ObservabilityProvider>
+  <FilterView
+    resources={processedResources}
+    filterState={filterState}
+    filterActions={filterActions}
+    pickerOptionsPresentation="popup"
+  />
+</ObservabilityProvider>
 ```
 
 ### Features
@@ -549,11 +582,12 @@ The options control provides interactive configuration for:
 // During development
 const isDevelopment = process.env.NODE_ENV === 'development';
 
-<SourceView
-  resources={resources}
-  pickerOptionsPresentation={isDevelopment ? 'collapsible' : 'hidden'}
-  onMessage={handleMessage}
-/>
+<ObservabilityProvider>
+  <SourceView
+    resources={resources}
+    pickerOptionsPresentation={isDevelopment ? 'collapsible' : 'hidden'}
+  />
+</ObservabilityProvider>
 ```
 
 ## Related Components

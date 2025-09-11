@@ -15,7 +15,6 @@
  *   onImport={handleFileImport}
  *   onBundleImport={handleBundleImport}
  *   onZipImport={handleZipImport}
- *   onMessage={onMessage}
  * />
  *
  * // Or use utility functions for file processing

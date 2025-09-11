@@ -3,6 +3,7 @@ import { isJsonObject, JsonValue } from '@fgv/ts-json-base';
 import { IGridColumnDefinition, IResolutionActions, IResolutionState } from '../../../types';
 import { GridValidationState } from '../../../utils/cellValidation';
 import { StringCell, BooleanCell, TriStateCell, DropdownCell } from './cells';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * Prevent prototype pollution by disallowing dangerous keys.
@@ -29,8 +30,6 @@ export interface IEditableGridCellProps {
   resolutionActions?: IResolutionActions;
   /** Resolution state for edit tracking */
   resolutionState?: IResolutionState;
-  /** Callback for displaying messages */
-  onMessage?: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -74,9 +73,9 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
   isEdited,
   resolutionActions,
   resolutionState,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const [isEditing, setIsEditing] = useState(false);
   const [currentValidationError, setCurrentValidationError] = useState<string | null>(null);
 
@@ -99,7 +98,7 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
     if (typeof dataPath === 'string') {
       if (!isJsonObject(editedValue)) {
         if (!resolutionActions?.saveEdit) {
-          onMessage?.('error', `${dataPath}: cannot extract property from non-object`);
+          o11y.user.error(`${dataPath}: cannot extract property from non-object`);
         }
         return undefined;
       }
@@ -112,7 +111,7 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
         if (current === null || current === undefined) return undefined;
         if (!isJsonObject(current)) {
           if (!resolutionActions?.saveEdit) {
-            onMessage?.('error', `${segment}: cannot extract property from non-object`);
+            o11y.user.error(`${segment}: cannot extract property from non-object`);
           }
           return undefined;
         }
@@ -146,13 +145,13 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
   const handleSave = useCallback(
     (newValue: JsonValue) => {
       if (!resolutionActions?.saveEdit) {
-        onMessage?.('error', 'Unable to save: no edit actions available');
+        o11y.user.error('Unable to save: no edit actions available');
         return;
       }
 
       // Check for validation errors before saving
       if (currentValidationError) {
-        onMessage?.('warning', `Cannot save: ${currentValidationError}`);
+        o11y.user.warn(`Cannot save: ${currentValidationError}`);
         return;
       }
 
@@ -170,7 +169,7 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
         if (isSafeKey(dataPath)) {
           updatedObject[dataPath] = newValue;
         } else {
-          onMessage?.('error', `Invalid field name: "${dataPath}"`);
+          o11y.user.error(`Invalid field name: "${dataPath}"`);
           return;
         }
       } else if (Array.isArray(dataPath) && dataPath.length > 0) {
@@ -179,7 +178,7 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
         for (let i = 0; i < dataPath.length - 1; i++) {
           const segment = dataPath[i];
           if (!isSafeKey(segment)) {
-            onMessage?.('error', `Invalid nested field name: "${segment}"`);
+            o11y.user.error(`Invalid nested field name: "${segment}"`);
             return;
           }
           if (
@@ -195,7 +194,7 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
         if (isSafeKey(lastSegment)) {
           current[lastSegment] = newValue;
         } else {
-          onMessage?.('error', `Invalid nested field name: "${lastSegment}"`);
+          o11y.user.error(`Invalid nested field name: "${lastSegment}"`);
           return;
         }
       }
@@ -207,9 +206,9 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
         setIsEditing(false);
         setCurrentValidationError(null);
         globalValidationState.clearCell(resourceId, column.id);
-        onMessage?.('success', `Updated ${column.title} for ${resourceId}`);
+        o11y.user.success(`Updated ${column.title} for ${resourceId}`);
       } else {
-        onMessage?.('error', `Failed to save: ${saveResult.message}`);
+        o11y.user.error(`Failed to save: ${saveResult.message}`);
       }
     },
     [
@@ -220,7 +219,7 @@ export const EditableGridCell: React.FC<IEditableGridCellProps> = ({
       column.id,
       column.title,
       currentValidationError,
-      onMessage
+      o11y
     ]
   );
 

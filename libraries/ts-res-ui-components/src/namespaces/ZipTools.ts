@@ -15,7 +15,6 @@
  *   onImport={handleFileImport}
  *   onBundleImport={handleBundleImport}
  *   onZipImport={handleZipImport}
- *   onMessage={onMessage}
  * />
  *
  * // Or use zip-archive packlet directly with processing helpers

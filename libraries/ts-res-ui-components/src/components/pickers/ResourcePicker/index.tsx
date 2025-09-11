@@ -4,6 +4,7 @@ import { IResourcePickerProps, IResourceSelection } from './types';
 import { ResourcePickerList } from './ResourcePickerList';
 import { ResourcePickerTree } from './ResourcePickerTree';
 import { searchResources, filterTreeBranch } from './utils/treeNavigation';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * Comprehensive resource picker component with search, view modes, and annotation support.
@@ -68,9 +69,9 @@ export const ResourcePicker = <T = unknown,>({
   resourceAnnotations,
   pendingResources,
   options,
-  className = '',
-  onMessage
+  className = ''
 }: IResourcePickerProps<T>): ReactElement => {
+  const o11y = useSmartObservability();
   // Extract options with defaults
   const {
     defaultView = 'list',
@@ -112,10 +113,10 @@ export const ResourcePicker = <T = unknown,>({
     (selection: IResourceSelection<T>) => {
       onResourceSelect(selection);
       if (selection.resourceId) {
-        onMessage?.('info', `Selected resource: ${selection.resourceId}`);
+        o11y.user.info(`Selected resource: ${selection.resourceId}`);
       }
     },
-    [onResourceSelect, onMessage]
+    [onResourceSelect, o11y]
   );
 
   // Calculate dynamic search placeholder

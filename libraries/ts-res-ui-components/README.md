@@ -50,11 +50,14 @@ This library requires the following peer dependencies:
 
 ```tsx
 import React from 'react';
-import { ResourceOrchestrator, ObservabilityProvider } from '@fgv/ts-res-ui-components';
+import { ResourceOrchestrator, ObservabilityProvider, ObservabilityTools } from '@fgv/ts-res-ui-components';
 
 function App() {
+  // Set up observability context for development
+  const observabilityContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
+  
   return (
-    <ObservabilityProvider>
+    <ObservabilityProvider observabilityContext={observabilityContext}>
       <ResourceOrchestrator />
     </ObservabilityProvider>
   );
@@ -85,12 +88,215 @@ The library is organized into specialized namespaces, each containing related co
 - **ObservabilityTools**: Logging and debugging infrastructure
 
 ### Built-in Observability
-All operations include comprehensive logging for debugging and user feedback:
+All operations include comprehensive logging for debugging and user feedback through the enhanced observability context system:
 
-- **Diagnostic Logging**: Developer-focused information for troubleshooting
-- **User Messaging**: User-friendly success/error notifications
-- **Configurable Loggers**: Console output for development, silent for production
-- **React Integration**: Observability context available throughout the component tree
+- **Smart Observability**: `useSmartObservability()` hook automatically detects and connects to observability contexts
+- **Unified Logging**: `o11y.user.*` for user-facing messages, `o11y.diag.*` for diagnostic information
+- **ViewState Integration**: Automatic connection to ViewState message system when available
+- **No Breaking Changes**: Components work with or without observability context
+- **Configurable Contexts**: Console output for development, silent for production, or custom loggers
+
+#### Quick Observability Reference
+
+**For Component Developers:**
+```tsx
+// Add observability to any component
+import { useSmartObservability } from '@fgv/ts-res-ui-components';
+
+function MyComponent() {
+  const o11y = useSmartObservability();
+  o11y.user.info('User message');     // Shows in UI
+  o11y.diag.info('Debug message');    // Shows in console/logs
+}
+```
+
+**For Host Applications:**
+```tsx
+// Provide observability context
+import { ObservabilityProvider, ObservabilityTools } from '@fgv/ts-res-ui-components';
+
+<ObservabilityProvider observabilityContext={myContext}>
+  <MyComponents />
+</ObservabilityProvider>
+```
+
+#### Quick Observability Setup
+
+```tsx
+import { ObservabilityProvider, ObservabilityTools } from '@fgv/ts-res-ui-components';
+
+// Development: Console logging
+const devContext = ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+
+// Production: Silent operation
+const prodContext = ObservabilityTools.createNoOpObservabilityContext();
+
+// With ViewState integration (recommended)
+function App() {
+  const { viewState } = useViewState();
+  const observabilityContext = ObservabilityTools.createViewStateObservabilityContext(
+    viewState.addMessage
+  );
+  
+  return (
+    <ObservabilityProvider observabilityContext={observabilityContext}>
+      <YourComponents />
+    </ObservabilityProvider>
+  );
+}
+
+// Simple development setup
+<ObservabilityProvider observabilityContext={devContext}>
+  <ResourceOrchestrator />
+</ObservabilityProvider>
+```
+
+#### Building Observability-Aware Components
+
+When creating new components, opt into observability with the `useSmartObservability()` hook:
+
+```tsx
+import { useSmartObservability } from '@fgv/ts-res-ui-components';
+
+function MyCustomComponent({ data }: { data: any[] }) {
+  const o11y = useSmartObservability();
+  
+  const handleOperation = async () => {
+    try {
+      o11y.user.info('Starting data processing...');
+      o11y.diag.info('Processing items:', data.length);
+      
+      const result = await processData(data);
+      
+      o11y.user.success(`Successfully processed ${result.length} items`);
+      o11y.diag.info('Processing result:', result);
+      return result;
+    } catch (error) {
+      o11y.user.error(`Processing failed: ${error.message}`);
+      o11y.diag.error('Full error details:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleOperation}>Process Data</button>
+      {/* Component automatically sends messages to observability context */}
+    </div>
+  );
+}
+```
+
+**Key Guidelines:**
+- Use `o11y.user.*` for messages users should see (success, error, warnings)
+- Use `o11y.diag.*` for developer/debugging information
+- Components work automatically whether observability context is provided or not
+
+#### Custom Observability Contexts
+
+Hosts can provide their own observability implementation for complete control over logging:
+
+```tsx
+import { IObservabilityContext, ObservabilityProvider } from '@fgv/ts-res-ui-components';
+
+// Create custom observability context
+const customObservabilityContext: IObservabilityContext = {
+  user: {
+    info: (message: string) => myNotificationSystem.showInfo(message),
+    success: (message: string) => myNotificationSystem.showSuccess(message),
+    warn: (message: string) => myNotificationSystem.showWarning(message),
+    error: (message: string) => myNotificationSystem.showError(message)
+  },
+  diag: {
+    info: (message: string, ...args: any[]) => myLogger.info(message, ...args),
+    warn: (message: string, ...args: any[]) => myLogger.warn(message, ...args),
+    error: (message: string, ...args: any[]) => myLogger.error(message, ...args)
+  }
+};
+
+// Use your custom context
+function App() {
+  return (
+    <ObservabilityProvider observabilityContext={customObservabilityContext}>
+      <MyComponents />
+    </ObservabilityProvider>
+  );
+}
+```
+
+**Built-in Context Factories:**
+```tsx
+// Console logging for development
+const devContext = ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+
+// Silent operation for production
+const prodContext = ObservabilityTools.createNoOpObservabilityContext();
+
+// Integration with external message system
+const customContext = ObservabilityTools.createViewStateObservabilityContext(
+  (type, message) => myMessageHandler(type, message)
+);
+```
+
+#### Advanced Observability Patterns
+
+**Conditional Observability in Libraries:**
+```tsx
+// For library components that may or may not have observability
+function MyLibraryComponent() {
+  const o11y = useSmartObservability();
+  
+  const handleCriticalOperation = () => {
+    // This will work whether observability context exists or not
+    o11y.user.info('Operation started');
+    
+    try {
+      const result = performOperation();
+      o11y.user.success('Operation completed');
+      return result;
+    } catch (error) {
+      // Always log errors, even without observability context
+      o11y.user.error('Operation failed');
+      o11y.diag.error('Details:', error);
+      throw error;
+    }
+  };
+}
+```
+
+**Multi-Level Observability (Host + ViewState):**
+```tsx
+function App() {
+  // Host-level notifications for critical errors
+  const hostObservability: IObservabilityContext = {
+    user: {
+      error: (msg) => showCriticalAlert(msg),
+      // Other messages go to ViewState
+      info: (msg) => viewState.addMessage('info', msg),
+      success: (msg) => viewState.addMessage('success', msg),
+      warn: (msg) => viewState.addMessage('warning', msg)
+    },
+    diag: {
+      error: (msg, ...args) => console.error(msg, ...args),
+      warn: (msg, ...args) => console.warn(msg, ...args),
+      info: (msg, ...args) => console.info(msg, ...args)
+    }
+  };
+
+  return (
+    <ObservabilityProvider observabilityContext={hostObservability}>
+      <MyApplication />
+    </ObservabilityProvider>
+  );
+}
+```
+
+**Environment-Specific Contexts:**
+```tsx
+const observabilityContext = process.env.NODE_ENV === 'production'
+  ? ObservabilityTools.createNoOpObservabilityContext()
+  : ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+```
 
 ## Architecture
 
@@ -159,13 +365,14 @@ Visual configuration management for ts-res system settings including qualifier t
 > 📚 **[See ConfigurationView documentation →](./docs/ts-res-ui-components.configurationview.md)**
 
 ```tsx
-<ConfigurationView
-  configuration={state.activeConfiguration}
-  onConfigurationChange={actions.applyConfiguration}
-  onSave={actions.saveConfiguration}
-  hasUnsavedChanges={state.hasConfigurationChanges}
-  onMessage={(type, message) => console.log(type, message)}
-/>
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <ConfigurationView
+    configuration={state.activeConfiguration}
+    onConfigurationChange={actions.applyConfiguration}
+    onSave={actions.saveConfiguration}
+    hasUnsavedChanges={state.hasConfigurationChanges}
+  />
+</ObservabilityProvider>
 ```
 
 **Key features:**
@@ -183,17 +390,18 @@ Handles importing resource files, directories, bundles, and ZIP files. Uses the 
 > 📚 **[See ImportView documentation →](./docs/ts-res-ui-components.importview.md)**
 
 ```tsx
-<ImportView
-  onImport={actions.importDirectory}
-  onBundleImport={actions.importBundle}
-  onZipImport={(zipData, config) => {
-    // zipData contains files and directory structure from ZIP
-    // config contains any configuration found in the ZIP
-    actions.importDirectory(zipData, config);
-  }}
-  acceptedFileTypes={['.json', '.ts', '.js']}
-  onMessage={(type, message) => console.log(type, message)}
-/>
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <ImportView
+    onImport={actions.importDirectory}
+    onBundleImport={actions.importBundle}
+    onZipImport={(zipData, config) => {
+      // zipData contains files and directory structure from ZIP
+      // config contains any configuration found in the ZIP
+      actions.importDirectory(zipData, config);
+    }}
+    acceptedFileTypes={['.json', '.ts', '.js']}
+  />
+</ObservabilityProvider>
 ```
 
 ### ResourcePicker
@@ -248,12 +456,13 @@ is a generic component used by all of the views, which can also be used to power
 A debugging/design tool for interactively configuring ResourcePicker behavior. Hidden by default for production use, but can be enabled in development:
 
 ```tsx
-// All view components support pickerOptionsPresentation
-<SourceView
-  resources={state.processedResources}
-  pickerOptionsPresentation="collapsible"  // Enable picker options UI
-  onMessage={(type, message) => console.log(`${type}: ${message}`)}
-/>
+// All view components support pickerOptionsPresentation  
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <SourceView
+    resources={state.processedResources}
+    pickerOptionsPresentation="collapsible"  // Enable picker options UI
+  />
+</ObservabilityProvider>
 
 // Direct usage in custom components
 <PickerTools.ResourcePickerOptionsControl
@@ -279,16 +488,17 @@ Displays the source resource collection with search and navigation capabilities 
 > 📚 **[See SourceView documentation →](./docs/ts-res-ui-components.sourceview.md)**
 
 ```tsx
-<SourceView
-  resources={state.processedResources}
-  onExport={actions.exportData}
-  onMessage={(type, message) => console.log(`${type}: ${message}`)}
-  pickerOptions={{
-    defaultView: "list",
-    enableSearch: true,
-    searchPlaceholder: "Search resources..."
-  }}
-/>
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <SourceView
+    resources={state.processedResources}
+    onExport={actions.exportData}
+    pickerOptions={{
+      defaultView: "list",
+      enableSearch: true,
+      searchPlaceholder: "Search resources..."
+    }}
+  />
+</ObservabilityProvider>
 ```
 
 ### FilterView
@@ -298,18 +508,19 @@ Provides filtering capabilities with context value specification and dual-resour
 > 📚 **[See FilterView documentation →](./docs/ts-res-ui-components.filterview.md)**
 
 ```tsx
-<FilterView
-  resources={state.processedResources}
-  filterState={filterState}
-  filterActions={filterActions}
-  filterResult={filterResult}
-  onFilterResult={setFilterResult}
-  onMessage={(type, message) => console.log(`${type}: ${message}`)}
-  pickerOptions={{
-    enableSearch: true,
-    searchPlaceholder: "Search resources..."
-  }}
-/>
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <FilterView
+    resources={state.processedResources}
+    filterState={filterState}
+    filterActions={filterActions}
+    filterResult={filterResult}
+    onFilterResult={setFilterResult}
+    pickerOptions={{
+      enableSearch: true,
+      searchPlaceholder: "Search resources..."
+    }}
+  />
+</ObservabilityProvider>
 ```
 
 ### CompiledView
@@ -319,17 +530,18 @@ Shows the compiled resource structure with detailed candidate information using 
 > 📚 **[See CompiledView documentation →](./docs/ts-res-ui-components.compiledview.md)**
 
 ```tsx
-<CompiledView
-  resources={state.processedResources}
-  filterResult={filterResult}
-  useNormalization={true}
-  onExport={(data, type) => exportData(data, type)}
-  onMessage={(type, message) => console.log(`${type}: ${message}`)}
-  pickerOptions={{
-    defaultView: "tree",
-    enableSearch: true
-  }}
-/>
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <CompiledView
+    resources={state.processedResources}
+    filterResult={filterResult}
+    useNormalization={true}
+    onExport={(data, type) => exportData(data, type)}
+    pickerOptions={{
+      defaultView: "tree",
+      enableSearch: true
+    }}
+  />
+</ObservabilityProvider>
 ```
 
 ### ResolutionView
@@ -339,35 +551,36 @@ Interactive resource resolution testing with context management and support for 
 > 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
 
 ```tsx
-<ResolutionView
-  resources={state.processedResources}
-  resolutionState={resolutionState}
-  resolutionActions={resolutionActions}
-  availableQualifiers={availableQualifiers}
-  resourceEditorFactory={myResourceEditorFactory}
-  onMessage={(type, message) => console.log(`${type}: ${message}`)}
-  pickerOptions={{
-    defaultView: "list",
-    enableSearch: true,
-    searchPlaceholder: "Search resources for resolution testing..."
-  }}
-  // Optional: Host-controlled resolution
-  contextOptions={{
-    hostManagedValues: {
-      language: 'en-US',
-      platform: 'web',
-      market: 'eastern-europe'
-    },
-    showContextControls: true  // Can hide controls for host-only resolution
-  }}
-  // Optional: Resource creation with pending/apply workflow
-  allowResourceCreation={true}
-  defaultResourceType="json"  // Optional: Host-controlled resource type
-  showPendingResourcesInList={true}  // Show pending resources in the picker (default: true)
-  onPendingResourcesApplied={(added, deleted) => {
-    console.log(`Applied ${added.length} new resources, ${deleted.length} deletions`);
-  }}
-/>
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <ResolutionView
+    resources={state.processedResources}
+    resolutionState={resolutionState}
+    resolutionActions={resolutionActions}
+    availableQualifiers={availableQualifiers}
+    resourceEditorFactory={myResourceEditorFactory}
+    pickerOptions={{
+      defaultView: "list",
+      enableSearch: true,
+      searchPlaceholder: "Search resources for resolution testing..."
+    }}
+    // Optional: Host-controlled resolution
+    contextOptions={{
+      hostManagedValues: {
+        language: 'en-US',
+        platform: 'web',
+        market: 'eastern-europe'
+      },
+      showContextControls: true  // Can hide controls for host-only resolution
+    }}
+    // Optional: Resource creation with pending/apply workflow
+    allowResourceCreation={true}
+    defaultResourceType="json"  // Optional: Host-controlled resource type
+    showPendingResourcesInList={true}  // Show pending resources in the picker (default: true)
+    onPendingResourcesApplied={(added, deleted) => {
+      console.log(`Applied ${added.length} new resources, ${deleted.length} deletions`);
+    }}
+  />
+</ObservabilityProvider>
 ```
 
 #### Host-Controlled Resolution
@@ -831,7 +1044,6 @@ function MyFilterTool() {
         updateReduceQualifiers: (reduce) => actions.updateFilterState({ reduceQualifiers: reduce })
       }}
       filterResult={state.filterResult}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }
@@ -1071,9 +1283,11 @@ function MyResourceTool() {
   return (
     <div className="flex flex-col h-screen">
       <div className="flex-1">
-        <ImportView onImport={handleFileImport} onMessage={addMessage} />
-        <FilterView onFilter={handleResourceFilter} onMessage={addMessage} />
-        {/* Other components that use onMessage callback */}
+        <ObservabilityProvider observabilityContext={observabilityContext}>
+          <ImportView onImport={handleFileImport} />
+          <FilterView onFilter={handleResourceFilter} />
+          {/* Components automatically use observability context */}
+        </ObservabilityProvider>
       </div>
       
       <ViewTools.MessagesWindow 
@@ -1091,8 +1305,8 @@ function MyResourceTool() {
 - **warning**: Non-critical issues, fallback behaviors, deprecated features used
 - **error**: Operation failures, validation errors, unexpected conditions
 
-**Message callback integration:**
-Most components in this library accept an `onMessage` callback prop that you can connect to your message system. This provides consistent feedback across all operations.
+**Observability Integration:**
+All components in this library automatically use the observability context when available. This provides consistent feedback across all operations through the unified `o11y.user.*` and `o11y.diag.*` patterns.
 
 ## Hooks API
 
@@ -1406,7 +1620,6 @@ export default function App() {
           allowResourceCreation
           defaultResourceType="json"
           showPendingResourcesInList
-          onMessage={actions.addMessage}
         />
       )}
     </ResourceOrchestrator>
@@ -1672,11 +1885,10 @@ import {
 // Type-safe component with enhanced resource selection
 interface MyResourceViewProps<T = unknown> {
   resources: ProcessedResources;
-  onMessage: (type: Message['type'], message: string) => void;
   onResourceSelect: (selection: ResourceSelection<T>) => void;
 }
 
-const MyResourceView = <T = unknown>({ resources, onMessage, onResourceSelect }: MyResourceViewProps<T>) => {
+const MyResourceView = <T = unknown>({ resources, onResourceSelect }: MyResourceViewProps<T>) => {
   return (
     <ResourcePicker<T>
       resources={resources}

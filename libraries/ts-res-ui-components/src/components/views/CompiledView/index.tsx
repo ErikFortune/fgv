@@ -11,7 +11,7 @@ import {
   ChevronUpIcon,
   ArchiveBoxIcon
 } from '@heroicons/react/24/outline';
-import { ICompiledViewProps, IMessage, JsonValue } from '../../../types';
+import { ICompiledViewProps, JsonValue } from '../../../types';
 import { ResourceJson, Config, Bundle, Resources } from '@fgv/ts-res';
 import { Hash } from '@fgv/ts-utils';
 import { ResourcePicker } from '../../pickers/ResourcePicker';
@@ -21,6 +21,7 @@ import {
   IResourcePickerOptions
 } from '../../pickers/ResourcePicker/types';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 // Helper function to find node by ID - using function declaration for hoisting
 function findNodeById(tree: ITreeNode, id: string): ITreeNode | null {
@@ -333,7 +334,6 @@ interface ITreeNode {
  *       filterResult={filterResult}
  *       useNormalization={true}
  *       onExport={handleExport}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -347,11 +347,11 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
   filterResult,
   useNormalization: useNormalizationProp = false,
   onExport,
-  onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [selectedMetadataSection, setSelectedMetadataSection] = useState<string | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set(['metadata']));
@@ -468,14 +468,14 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
         data: { type: 'candidate-values', items: activeCompiledCollection.candidateValues }
       });
     } catch (error) {
-      onMessage?.(
+      o11y.user.info(
         'error',
         `Error building metadata tree: ${error instanceof Error ? error.message : String(error)}`
       );
     }
 
     return tree;
-  }, [activeCompiledCollection, onMessage]);
+  }, [activeCompiledCollection, o11y]);
 
   // Create resource annotations for compiled collection metadata
   const resourceAnnotations = useMemo(() => {
@@ -516,7 +516,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
 
   const handleExportCompiledData = useCallback(async () => {
     if (!activeProcessedResources?.compiledCollection) {
-      onMessage?.('error', 'No compiled data available to export');
+      o11y.user.error('No compiled data available to export');
       return;
     }
 
@@ -539,15 +539,21 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
             if (normalizedCompiledResult.isSuccess()) {
               compiledCollection = normalizedCompiledResult.value;
             } else {
-              console.warn('Failed to get normalized compiled collection:', normalizedCompiledResult.message);
+              o11y.diag.warn(
+                'Failed to get normalized compiled collection:',
+                normalizedCompiledResult.message
+              );
             }
           } else {
-            console.warn('Failed to normalize bundle:', resourceManagerResult.message);
+            o11y.diag.warn('Failed to normalize bundle:', resourceManagerResult.message);
           }
         }
         // For IResourceManager from bundles, the compiled collection is already normalized
       } else {
-        console.warn('Failed to create system configuration for normalization:', systemConfigResult.message);
+        o11y.diag.warn(
+          'Failed to create system configuration for normalization:',
+          systemConfigResult.message
+        );
       }
     }
 
@@ -565,7 +571,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
     onExport?.(compiledData, 'json');
   }, [
     activeProcessedResources,
-    onMessage,
+    o11y,
     isFilteringActive,
     filterState?.appliedValues,
     useNormalization,
@@ -575,13 +581,13 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
 
   const handleExportBundle = useCallback(async () => {
     if (!activeProcessedResources?.system?.resourceManager || !resources?.activeConfiguration) {
-      onMessage?.('error', 'No resource manager or configuration available to create bundle');
+      o11y.user.error('No resource manager or configuration available to create bundle');
       return;
     }
 
     const systemConfigResult = Config.SystemConfiguration.create(resources.activeConfiguration);
     if (systemConfigResult.isFailure()) {
-      onMessage?.('error', `Failed to create system configuration: ${systemConfigResult.message}`);
+      o11y.user.error(`Failed to create system configuration: ${systemConfigResult.message}`);
       return;
     }
 
@@ -597,7 +603,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
 
     // Check if we have a ResourceManagerBuilder (which supports bundle creation)
     if (!('getCompiledResourceCollection' in activeProcessedResources.system.resourceManager)) {
-      onMessage?.('error', 'Bundle export is not supported for resources loaded from bundles');
+      o11y.user.error('Bundle export is not supported for resources loaded from bundles');
       return;
     }
 
@@ -608,7 +614,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
     );
 
     if (bundleResult.isFailure()) {
-      onMessage?.('error', `Failed to create bundle: ${bundleResult.message}`);
+      o11y.user.error(`Failed to create bundle: ${bundleResult.message}`);
       return;
     }
 
@@ -628,7 +634,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
   }, [
     activeProcessedResources?.system?.resourceManager,
     resources?.activeConfiguration,
-    onMessage,
+    o11y,
     isFilteringActive,
     filterState?.appliedValues,
     onExport
@@ -641,10 +647,10 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
       setSelectedMetadataSection(null); // Clear metadata selection when resource is selected
       setActiveTab('resources');
       if (selection.resourceId) {
-        onMessage?.('info', `Selected compiled resource: ${selection.resourceId}`);
+        o11y.user.info(`Selected compiled resource: ${selection.resourceId}`);
       }
     },
-    [onMessage]
+    [o11y]
   );
 
   // Handle metadata node selection
@@ -652,7 +658,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
     setSelectedMetadataSection(node.id);
     setSelectedResourceId(null); // Clear resource selection when metadata is selected
     setActiveTab('metadata');
-    onMessage?.('info', `Selected metadata: ${node.name}`);
+    o11y.user.info(`Selected metadata: ${node.name}`);
 
     if (node.type === 'folder' || (node.type === 'section' && node.children)) {
       setExpandedNodes((prev) => {
@@ -901,7 +907,6 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
                     onResourceSelect={handleResourceSelect}
                     resourceAnnotations={resourceAnnotations}
                     options={effectivePickerOptions}
-                    onMessage={onMessage}
                   />
                 </div>
               </>
@@ -922,7 +927,6 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
                 resourceId={selectedResourceId}
                 compiledResource={selectedCompiledResource}
                 activeCompiledCollection={activeCompiledCollection}
-                onMessage={onMessage}
               />
             ) : activeTab === 'metadata' && selectedMetadataNode ? (
               <NodeDetail node={selectedMetadataNode} activeCompiledCollection={activeCompiledCollection} />
@@ -1294,14 +1298,12 @@ interface ICompiledResourceDetailProps {
   resourceId: string;
   compiledResource?: ResourceJson.Compiled.ICompiledResource | null;
   activeCompiledCollection: ResourceJson.Compiled.ICompiledResourceCollection | null | undefined;
-  onMessage?: (type: IMessage['type'], message: string) => void;
 }
 
 function CompiledResourceDetail({
   resourceId,
   compiledResource,
-  activeCompiledCollection,
-  onMessage
+  activeCompiledCollection
 }: ICompiledResourceDetailProps): React.ReactElement {
   const [showRawJson, setShowRawJson] = useState(false);
 

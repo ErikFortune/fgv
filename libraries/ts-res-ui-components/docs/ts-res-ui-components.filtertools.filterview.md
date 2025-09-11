@@ -43,7 +43,6 @@ function MyFilterTool() {
         updateReduceQualifiers: (reduce) => setFilterState(prev => ({...prev, reduceQualifiers: reduce}))
       }}
       onFilterResult={(result) => console.log('Filter result:', result)}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

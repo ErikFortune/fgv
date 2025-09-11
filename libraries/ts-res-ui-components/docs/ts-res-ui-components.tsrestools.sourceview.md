@@ -32,7 +32,6 @@ function MySourceBrowser() {
     <SourceView
       resources={processedResources}
       onExport={handleExport}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

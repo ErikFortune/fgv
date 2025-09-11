@@ -7,6 +7,7 @@ import { GridSelector } from './GridSelector';
 import { GridView } from './index';
 import { UnifiedChangeControls } from '../ResolutionView/UnifiedChangeControls';
 import { hasGridValidationErrors, clearAllGridValidationErrors } from './EditableGridCell';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * MultiGridView component for managing multiple grid instances with shared context.
@@ -100,9 +101,9 @@ export const MultiGridView: React.FC<IMultiGridViewProps> = ({
   tabsPresentation = 'tabs',
   defaultActiveGrid,
   allowGridReordering = false,
-  onMessage,
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   // State for active grid
   const [activeGridId, setActiveGridId] = useState(() => {
     return defaultActiveGrid || gridConfigurations[0]?.id || '';
@@ -153,15 +154,12 @@ export const MultiGridView: React.FC<IMultiGridViewProps> = ({
   const handleApplyPendingResources = useCallback(async () => {
     // Check for validation errors before applying
     if (hasGridValidationErrors()) {
-      onMessage?.(
-        'warning',
-        'Cannot apply changes: There are validation errors in the grid. Please fix them first.'
-      );
+      o11y.user.warn('Cannot apply changes: There are validation errors in the grid. Please fix them first.');
       return;
     }
 
     await resolutionActions?.applyPendingResources();
-  }, [resolutionActions, onMessage]);
+  }, [resolutionActions, o11y]);
 
   // Enhanced discard handler
   const handleDiscardAll = useCallback(() => {
@@ -271,7 +269,6 @@ export const MultiGridView: React.FC<IMultiGridViewProps> = ({
             filterResult={filterResult}
             showContextControls={false} // Context is managed at the multi-grid level
             showChangeControls={false} // Change controls are managed at the multi-grid level
-            onMessage={onMessage}
           />
         </div>
       )}

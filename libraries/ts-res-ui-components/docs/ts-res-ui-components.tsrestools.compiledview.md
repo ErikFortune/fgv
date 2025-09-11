@@ -34,7 +34,6 @@ function MyCompiledBrowser() {
       filterResult={filterResult}
       useNormalization={true}
       onExport={handleExport}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

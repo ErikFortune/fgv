@@ -231,8 +231,6 @@ export interface IImportedDirectory {
  * @public
  */
 export interface IViewBaseProps {
-  /** Callback for displaying messages to the user */
-  onMessage?: (type: IMessage['type'], message: string) => void;
   /** Additional CSS class names for styling */
   className?: string;
   /** How to present the ResourcePicker options control (default: 'hidden' for production use) */

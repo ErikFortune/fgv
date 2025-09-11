@@ -41,7 +41,6 @@ function MyImportTool() {
       onBundleImport={handleBundleImport}
       onZipImport={handleZipImport}
       acceptedFileTypes={['.json', '.zip']}
-      onMessage={(type, message) => console.log(`${type}: ${message}`)}
     />
   );
 }

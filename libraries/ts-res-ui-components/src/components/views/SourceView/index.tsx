@@ -11,6 +11,7 @@ import { ResourcePicker } from '../../pickers/ResourcePicker';
 import { IResourceSelection, IResourcePickerOptions } from '../../pickers/ResourcePicker/types';
 import { SourceResourceDetail } from '../../common/SourceResourceDetail';
 import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptionsControl';
+import { useSmartObservability } from '../../../hooks/useSmartObservability';
 
 /**
  * SourceView component for browsing and managing source resource collections.
@@ -40,7 +41,6 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
  *     <SourceView
  *       resources={processedResources}
  *       onExport={handleExport}
- *       onMessage={(type, message) => console.log(`${type}: ${message}`)}
  *     />
  *   );
  * }
@@ -51,11 +51,11 @@ import { ResourcePickerOptionsControl } from '../../common/ResourcePickerOptions
 export const SourceView: React.FC<ISourceViewProps> = ({
   resources,
   onExport,
-  onMessage,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
   className = ''
 }) => {
+  const o11y = useSmartObservability();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);
 
@@ -87,10 +87,10 @@ export const SourceView: React.FC<ISourceViewProps> = ({
     (selection: IResourceSelection) => {
       setSelectedResourceId(selection.resourceId);
       if (selection.resourceId) {
-        onMessage?.('info', `Selected resource: ${selection.resourceId}`);
+        o11y.user.info(`Selected resource: ${selection.resourceId}`);
       }
     },
-    [onMessage]
+    [o11y]
   );
 
   // Get full resource collection data using the new method
@@ -112,7 +112,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
           }
         };
       } else {
-        onMessage?.('error', `Failed to get resource collection: ${collectionResult.message}`);
+        o11y.user.error(`Failed to get resource collection: ${collectionResult.message}`);
         return null;
       }
     } else if (resources.compiledCollection) {
@@ -126,29 +126,28 @@ export const SourceView: React.FC<ISourceViewProps> = ({
         }
       };
     } else {
-      onMessage?.('error', 'Resource collection data not available');
+      o11y.user.error('Resource collection data not available');
       return null;
     }
-  }, [resources, onMessage]);
+  }, [resources, o11y]);
 
   // Export source data to JSON file
   const handleExportSourceData = useCallback(() => {
     try {
       const collectionData = getResourceCollectionData();
       if (!collectionData) {
-        onMessage?.('error', 'No source collection data available to export');
+        o11y.user.error('No source collection data available to export');
         return;
       }
 
       onExport?.(collectionData, 'json');
-      onMessage?.('success', 'Resource collection exported successfully');
+      o11y.user.success('Resource collection exported successfully');
     } catch (error) {
-      onMessage?.(
-        'error',
+      o11y.user.error(
         `Failed to export resource collection: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-  }, [getResourceCollectionData, onExport, onMessage]);
+  }, [getResourceCollectionData, onExport, o11y]);
 
   if (!resources) {
     return (
@@ -257,7 +256,6 @@ export const SourceView: React.FC<ISourceViewProps> = ({
                 selectedResourceId={selectedResourceId}
                 onResourceSelect={handleResourceSelect}
                 options={effectivePickerOptions}
-                onMessage={onMessage}
               />
             </div>
           </div>
