@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ResourceTools } from '@fgv/ts-res-ui-components';
 import { Validators } from '@fgv/ts-utils';
+import { useSmartObservability } from '@fgv/ts-res-ui-components';
 
 interface MarketInfo {
   marketName: string;
@@ -36,6 +37,8 @@ export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<Marke
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<MarketInfo | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const o11y = useSmartObservability();
 
   // The display value is either the edited value or the original value
   const displayValue = useMemo(() => {
@@ -111,6 +114,7 @@ export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<Marke
     setIsEditing(false);
     onSave?.(resourceId, formData, displayValue);
     setFormData(null);
+    o11y.user.success(`Market info saved for ${resourceId}`);
   }, [formData, validateFormData, onSave, resourceId, displayValue]);
 
   // Handle form field changes
