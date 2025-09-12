@@ -3361,7 +3361,7 @@ const LanguagePrioritySystemConfiguration: ISystemConfiguration;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class LanguageQualifierType extends QualifierType {
+class LanguageQualifierType extends QualifierType<JsonCompatible<Config_2.ILanguageQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3404,7 +3404,7 @@ const languageQualifierTypeConfig: ObjectConverter<Model_2.ILanguageQualifierTyp
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class LiteralQualifierType extends QualifierType {
+class LiteralQualifierType extends QualifierType<JsonCompatible<Config_2.ILiteralQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index }: ILiteralQualifierTypeCreateParams);
     readonly caseSensitive: boolean;
@@ -4886,7 +4886,7 @@ const TerritoryPriorityQualifiers: ReadonlyArray<Qualifiers.IQualifierDecl>;
 const TerritoryPrioritySystemConfiguration: ISystemConfiguration;
 
 // @public
-class TerritoryQualifierType extends QualifierType {
+class TerritoryQualifierType extends QualifierType<JsonCompatible<Config_2.ITerritoryQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ acceptLowercase, allowedTerritories, allowContextList, name, index, hierarchy }: ITerritoryQualifierTypeCreateParams);
     readonly acceptLowercase: boolean;

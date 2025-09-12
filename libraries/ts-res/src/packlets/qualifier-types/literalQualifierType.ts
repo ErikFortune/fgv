@@ -83,7 +83,7 @@ export interface ILiteralQualifierTypeCreateParams {
  * optionally case-sensitive or matching against an ordered list of values at runtime.
  * @public
  */
-export class LiteralQualifierType extends QualifierType {
+export class LiteralQualifierType extends QualifierType<JsonCompatible<Config.ILiteralQualifierTypeConfig>> {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
    */

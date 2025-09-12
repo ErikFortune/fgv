@@ -12,7 +12,7 @@ import {
   Validate
 } from '@fgv/ts-res';
 import { QualifierType } from '@fgv/ts-res';
-import { JsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonObject } from '@fgv/ts-json-base';
 
 /**
  * Configuration interface for the ContrastQualifierType.
@@ -128,10 +128,12 @@ export class ContrastQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonObject> {
+  public getConfigurationJson(): Result<
+    JsonCompatible<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>
+  > {
     return succeed({
       name: this.name,
-      systemType: 'contrast',
+      systemType: 'contrast' as const,
       configuration: {
         allowContextList: this.allowContextList,
         highContrastValues: [...this.highContrastValues],
@@ -143,8 +145,21 @@ export class ContrastQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
-  public validateConfigurationJson(from: unknown): Result<JsonObject> {
-    return contrastQualifierTypeConfig.convert(from);
+  public validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>> {
+    return systemContrastQualifierTypeConfig.convert(from);
+  }
+
+  /**
+   * Gets the {@link QualifierTypes.Config.IQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
+   */
+  public getConfiguration(): Result<
+    QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>
+  > {
+    return this.getConfigurationJson().onSuccess((json) => systemContrastQualifierTypeConfig.convert(json));
   }
 
   /**

@@ -60,7 +60,9 @@ export interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTy
  * Accepts a list of language tags in the context by default.
  * @public
  */
-export class LanguageQualifierType extends QualifierType {
+export class LanguageQualifierType extends QualifierType<
+  JsonCompatible<Config.ILanguageQualifierTypeConfig>
+> {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
    */

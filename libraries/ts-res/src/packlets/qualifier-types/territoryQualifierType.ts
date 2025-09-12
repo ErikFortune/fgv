@@ -81,7 +81,9 @@ export interface ITerritoryQualifierTypeCreateParams {
  * implementation handles incorrect casing.
  * @public
  */
-export class TerritoryQualifierType extends QualifierType {
+export class TerritoryQualifierType extends QualifierType<
+  JsonCompatible<Config.ITerritoryQualifierTypeConfig>
+> {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
    */
