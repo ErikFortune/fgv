@@ -54,7 +54,7 @@ const allTestPlatforms: TestPlatform[] = [
   'mobile',
   'web'
 ];
-const defaultHierarchy: TsRes.QualifierTypes.Config.LiteralValueHierarchyDecl<TestPlatform> = {
+const defaultHierarchy: Partial<TsRes.QualifierTypes.Config.LiteralValueHierarchyDecl<TestPlatform>> = {
   some_stb: 'stb',
   // eslint-disable-next-line @typescript-eslint/naming-convention
   some_stb_variant: 'some_stb',
@@ -71,7 +71,7 @@ const defaultHierarchy: TsRes.QualifierTypes.Config.LiteralValueHierarchyDecl<Te
 
 describe('LiteralValueHierarchy', () => {
   let values: TestPlatform[];
-  let hierarchy: TsRes.QualifierTypes.Config.LiteralValueHierarchyDecl<TestPlatform>;
+  let hierarchy: Partial<TsRes.QualifierTypes.Config.LiteralValueHierarchyDecl<TestPlatform>>;
   beforeEach(() => {
     values = Array.from(allTestPlatforms);
     hierarchy = { ...defaultHierarchy };

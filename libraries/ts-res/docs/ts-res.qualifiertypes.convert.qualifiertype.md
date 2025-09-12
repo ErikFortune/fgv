@@ -9,5 +9,5 @@ Converter for [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) objects,
 **Signature:**
 
 ```typescript
-qualifierType: Converter<QualifierType, IQualifierTypeConvertContext>
+qualifierType: Converter<QualifierType<import("@fgv/ts-json-base").JsonObject>, IQualifierTypeConvertContext>
 ```

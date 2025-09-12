@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-LiteralValueHierarchyDecl&lt;T&gt;
+Partial&lt;LiteralValueHierarchyDecl&lt;T&gt;&gt;
 
 
 </td><td>

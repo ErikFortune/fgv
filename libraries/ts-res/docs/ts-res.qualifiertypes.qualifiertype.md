@@ -9,9 +9,9 @@ Abstract base class for qualifier types. Provides default implementations for th
 **Signature:**
 
 ```typescript
-export declare abstract class QualifierType implements IQualifierType 
+export declare abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject> implements IQualifierType<TCFGJSON> 
 ```
-**Implements:** [IQualifierType](./ts-res.qualifiertypes.iqualifiertype.md)
+**Implements:** [IQualifierType](./ts-res.qualifiertypes.iqualifiertype.md)<!-- -->&lt;TCFGJSON&gt;
 
 ## Constructors
 

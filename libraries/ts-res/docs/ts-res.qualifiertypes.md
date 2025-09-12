@@ -131,7 +131,7 @@ Creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a confi
 
 </td><td>
 
-Creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a system configuration object. This factory function determines the appropriate qualifier type based on the systemType and delegates to the appropriate type-specific createFromConfig method.
+Creates a [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) from a system configuration object. This factory function determines the appropriate qualifier type based on the systemType and delegates to the appropriate type-specific createFromConfig method.
 
 
 </td></tr>
@@ -294,6 +294,17 @@ Description
 </td><td>
 
 Interface exposing non-mutating members of a [QualifierTypeCollector](./ts-res.qualifiertypes.qualifiertypecollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md)
+
+
+</td><td>
+
+A discriminated union of all system qualifier types. This allows TypeScript to properly discriminate between specific qualifier type implementations and access their specific methods like getConfiguration().
 
 
 </td></tr>

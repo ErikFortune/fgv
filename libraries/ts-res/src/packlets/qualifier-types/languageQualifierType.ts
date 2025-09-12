@@ -34,7 +34,7 @@ import {
 } from '../common';
 import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
 import * as Config from './config';
-import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -139,10 +139,10 @@ export class LanguageQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonObject> {
+  public getConfigurationJson(): Result<JsonCompatible<Config.ISystemLanguageQualifierTypeConfig>> {
     return succeed({
       name: this.name,
-      systemType: 'language',
+      systemType: 'language' as const,
       configuration: {
         allowContextList: this.allowContextList
       }
@@ -152,10 +152,10 @@ export class LanguageQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
-  public validateConfigurationJson(from: unknown): Result<JsonObject> {
-    return Config.Convert.systemLanguageQualifierTypeConfig
-      .convert(from)
-      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  public validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<Config.ISystemLanguageQualifierTypeConfig>> {
+    return Config.Convert.systemLanguageQualifierTypeConfig.convert(from);
   }
 
   /**
@@ -165,9 +165,7 @@ export class LanguageQualifierType extends QualifierType {
    * @returns `Success` with the validated configuration if successful, `Failure` with an error message otherwise.
    */
   public validateConfiguration(from: unknown): Result<Config.ISystemLanguageQualifierTypeConfig> {
-    return this.validateConfigurationJson(from).onSuccess((json) =>
-      Config.Convert.systemLanguageQualifierTypeConfig.convert(json)
-    );
+    return Config.Convert.systemLanguageQualifierTypeConfig.convert(from);
   }
 
   /**

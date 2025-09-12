@@ -9,7 +9,7 @@ Validates configuration JSON data for this qualifier type.
 **Signature:**
 
 ```typescript
-validateConfigurationJson(from: unknown): Result<JsonObject>;
+validateConfigurationJson(from: unknown): Result<JsonCompatible<Config.ISystemLiteralQualifierTypeConfig>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The unknown data to validate as configuration JSON.
 
 **Returns:**
 
-Result&lt;JsonObject&gt;
+Result&lt;JsonCompatible&lt;Config.ISystemLiteralQualifierTypeConfig&gt;&gt;
 
 `Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.
 

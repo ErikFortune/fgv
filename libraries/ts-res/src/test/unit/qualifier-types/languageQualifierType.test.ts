@@ -507,7 +507,7 @@ describe('LanguageQualifierType', () => {
     test('succeeds with valid configuration with allowContextList true', () => {
       const validConfig = {
         name: 'language-with-context',
-        systemType: 'language',
+        systemType: 'language' as const,
         configuration: {
           allowContextList: true
         }

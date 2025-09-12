@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-hierarchy?: LiteralValueHierarchyDecl<T>;
+hierarchy?: Partial<LiteralValueHierarchyDecl<T>>;
 ```

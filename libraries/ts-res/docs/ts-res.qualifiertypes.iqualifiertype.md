@@ -9,7 +9,7 @@ Interface for a qualifier type. A qualifier type implements the build and runtim
 **Signature:**
 
 ```typescript
-export interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> 
+export interface IQualifierType<TCFGJSON extends JsonObject = JsonObject> extends ICollectible<QualifierTypeName, QualifierTypeIndex> 
 ```
 **Extends:** ICollectible&lt;[QualifierTypeName](./ts-res.qualifiertypename.md)<!-- -->, [QualifierTypeIndex](./ts-res.qualifiertypeindex.md)<!-- -->&gt;
 

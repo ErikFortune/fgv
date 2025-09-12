@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { PickerTools } from '@fgv/ts-res-ui-components';
+import { PickerTools, useSmartObservability } from '@fgv/ts-res-ui-components';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 // Quick Branch Selector Component
@@ -87,15 +87,12 @@ const QuickBranchSelector: React.FC<QuickBranchSelectorProps> = ({
 
 interface ResourcePickerToolProps {
   resources: any; // Using the orchestrator state.resources
-  onMessage: (type: 'info' | 'warning' | 'error' | 'success', message: string) => void;
   presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
-const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
-  resources,
-  onMessage,
-  presentation = 'inline'
-}) => {
+const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({ resources, presentation = 'inline' }) => {
+  // Use smart observability - automatically connects to ViewState or provides fallback
+  const observability = useSmartObservability();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [useAnnotations, setUseAnnotations] = useState(true);
   const [usePendingResources, setUsePendingResources] = useState(false);
@@ -127,17 +124,17 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
         selection.resourceData ? `Has data: Yes` : 'Has data: No'
       ].join(', ');
 
-      onMessage('info', `Selected resource - ${messageDetails}`);
+      observability.user.info(`Selected resource - ${messageDetails}`);
 
       // Log the full selection object for debugging
-      console.log('Resource selected:', selection);
+      observability.diag.info('Resource selected:', selection);
     },
-    [onMessage]
+    [observability]
   );
 
   const handleAddResource = useCallback(() => {
     if (!newResourceForm.id.trim()) {
-      onMessage('error', 'Resource ID is required');
+      observability.user.error('Resource ID is required');
       return;
     }
 
@@ -151,12 +148,12 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
 
     // Check if resource already exists (either as real resource or pending)
     if (resources?.summary?.resourceIds?.includes(finalResourceId)) {
-      onMessage('warning', `Resource "${finalResourceId}" already exists`);
+      observability.user.warn(`Resource "${finalResourceId}" already exists`);
       return;
     }
 
     if (customPendingResources.some((pr) => pr.id === finalResourceId)) {
-      onMessage('warning', `Pending resource "${finalResourceId}" already exists`);
+      observability.user.warn(`Pending resource "${finalResourceId}" already exists`);
       return;
     }
 
@@ -191,7 +188,9 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
     };
 
     if (checkBranchConflict()) {
-      onMessage('error', `Cannot add resource "${finalResourceId}" - a branch with this ID already exists`);
+      observability.user.error(
+        `Cannot add resource "${finalResourceId}" - a branch with this ID already exists`
+      );
       return;
     }
 
@@ -214,21 +213,21 @@ const ResourcePickerTool: React.FC<ResourcePickerToolProps> = ({
     setCustomPendingResources((prev) => [...prev, newResource]);
     setShowAddResourceModal(false);
     setNewResourceForm({ id: '', isAbsolute: false });
-    onMessage('success', `Added new resource: ${finalResourceId}`);
-  }, [newResourceForm, pickerOptions.rootPath, resources, customPendingResources, onMessage]);
+    observability.user.success(`Added new resource: ${finalResourceId}`);
+  }, [newResourceForm, pickerOptions.rootPath, resources, customPendingResources, observability]);
 
   const handleRemovePendingResource = useCallback(
     (resourceId: string) => {
       setCustomPendingResources((prev) => prev.filter((pr) => pr.id !== resourceId));
-      onMessage('info', `Removed pending resource: ${resourceId}`);
+      observability.user.info(`Removed pending resource: ${resourceId}`);
     },
-    [onMessage]
+    [observability]
   );
 
   const handleClearAllPendingResources = useCallback(() => {
     setCustomPendingResources([]);
-    onMessage('info', 'Cleared all pending resources');
-  }, [onMessage]);
+    observability.user.info('Cleared all pending resources');
+  }, [observability]);
 
   // Sample annotations for demo
   const resourceAnnotations: PickerTools.IResourceAnnotations = useAnnotations

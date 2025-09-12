@@ -22,7 +22,7 @@
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import * as TsRes from '../../../index';
-import { JsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonObject } from '@fgv/ts-json-base';
 export interface ITestQualifierTypeConstructorParams {
   name?: string;
   allowContextList?: string;
@@ -57,15 +57,19 @@ export class TestQualifierType extends TsRes.QualifierTypes.QualifierType {
     return this.isValidConditionValue(value) ? succeed(value) : fail(`Invalid condition value: ${value}`);
   }
 
-  public getConfigurationJson(): Result<JsonObject> {
+  public getConfigurationJson(): Result<
+    JsonCompatible<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>
+  > {
     return succeed({
       name: this.name,
-      systemType: 'test',
+      systemType: 'test' as const,
       configuration: {}
     });
   }
 
-  public validateConfigurationJson(from: unknown): Result<JsonObject> {
+  public validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>> {
     // Simple validation for test class
     if (typeof from !== 'object' || from === null) {
       return fail('Expected object');
@@ -77,7 +81,7 @@ export class TestQualifierType extends TsRes.QualifierTypes.QualifierType {
     if (obj.systemType !== 'test') {
       return fail('systemType must be test');
     }
-    return succeed(from as JsonObject);
+    return succeed(from as JsonCompatible<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>);
   }
 
   protected _matchOne(

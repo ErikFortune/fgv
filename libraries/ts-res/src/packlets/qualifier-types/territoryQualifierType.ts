@@ -35,7 +35,7 @@ import {
 import { QualifierType } from './qualifierType';
 import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
-import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Parameters used to create a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
@@ -197,7 +197,9 @@ export class TerritoryQualifierType extends QualifierType {
   }
 
   /**
-   * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
+   * Gets the {@link QualifierTypes.Config.ISystemTerritoryQualifierTypeConfig | strongly typed configuration}
+   * for this qualifier type.
+   * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
    */
   public getConfiguration(): Result<Config.ISystemTerritoryQualifierTypeConfig> {
     return this.getConfigurationJson().onSuccess((json) =>
@@ -208,14 +210,14 @@ export class TerritoryQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonObject> {
+  public getConfigurationJson(): Result<JsonCompatible<Config.ISystemTerritoryQualifierTypeConfig>> {
     const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
     const allowedTerritories: JsonObject = this.allowedTerritories
       ? { allowedTerritories: [...this.allowedTerritories] }
       : {};
     return succeed({
       name: this.name,
-      systemType: 'territory',
+      systemType: 'territory' as const,
       configuration: {
         allowContextList: this.allowContextList,
         acceptLowercase: this.acceptLowercase,
@@ -228,10 +230,10 @@ export class TerritoryQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
-  public validateConfigurationJson(from: unknown): Result<JsonObject> {
-    return Config.Convert.systemTerritoryQualifierTypeConfig
-      .convert(from)
-      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  public validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<Config.ISystemTerritoryQualifierTypeConfig>> {
+    return Config.Convert.systemTerritoryQualifierTypeConfig.convert(from);
   }
 
   /**

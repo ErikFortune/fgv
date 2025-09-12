@@ -8,7 +8,7 @@ interface AppLayoutProps {
   children: React.ReactNode;
   selectedTool: Tool;
   onToolSelect: (tool: Tool) => void;
-  messages: ViewStateTools.Message[];
+  messages: ViewStateTools.IMessage[];
   onClearMessages: () => void;
 }
 

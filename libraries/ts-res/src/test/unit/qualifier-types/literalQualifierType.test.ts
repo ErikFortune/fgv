@@ -1441,7 +1441,7 @@ describe('LiteralQualifierType', () => {
     test('succeeds with partial literal configuration', () => {
       const validConfig = {
         name: 'literal-partial',
-        systemType: 'literal',
+        systemType: 'literal' as const,
         configuration: {
           allowContextList: true,
           caseSensitive: false

@@ -1543,6 +1543,128 @@ describe('json/common module', () => {
     });
   });
 
+  describe('Partial<Record<string, string>> limitation', () => {
+    // This test documents a specific limitation of JsonCompatible with Partial<Record<string, string>>
+    // The issue is that Partial<Record<string, string>> includes undefined in the value type,
+    // and JsonCompatible transforms undefined to ["Error: Non-JSON type"], making the types incompatible
+
+    test('shows the difference between Record and Partial<Record> with string keys', () => {
+      // Regular Record<string, string> works fine
+      type RegularRecord = Record<string, string>;
+      type CompatibleRecord = JsonCompatible<RegularRecord>;
+
+      const regularRecord: RegularRecord = { key1: 'value1', key2: 'value2' };
+      const compatibleRecord: CompatibleRecord = regularRecord; // This works
+
+      expect(compatibleRecord).toEqual(regularRecord);
+
+      // Partial<Record<string, string>> has issues due to undefined values
+      type PartialRecord = Partial<Record<string, string>>;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      type CompatiblePartialRecord = JsonCompatible<PartialRecord>;
+
+      // PartialRecord = { [x: string]?: string | undefined }
+      // JsonCompatible transforms this to: { [x: string]: string | ["Error: Non-JSON type"] }
+      // The optional properties become required, and undefined becomes an error array
+
+      const partialRecord: PartialRecord = { key1: 'value1' }; // key2 can be omitted
+
+      // This assignment would fail at compile time due to type incompatibility:
+      // const compatiblePartialRecord: CompatiblePartialRecord = partialRecord;
+      // Error: Type 'PartialRecord' is not assignable to type 'CompatiblePartialRecord'
+
+      expect(partialRecord).toEqual({ key1: 'value1' });
+    });
+
+    test('demonstrates the specific issue with enumerated vs unbounded string keys', () => {
+      // With enumerated keys, Partial makes keys optional (which is useful)
+      type LiteralKeys = 'a' | 'b' | 'c';
+      type EnumeratedRecord = Record<LiteralKeys, string>;
+      type PartialEnumeratedRecord = Partial<Record<LiteralKeys, string>>;
+
+      // Without Partial: ALL keys are required
+      const fullRecord: EnumeratedRecord = { a: '1', b: '2', c: '3' };
+      // With Partial: keys can be omitted (this is the desired behavior)
+      const partialEnumRecord: PartialEnumeratedRecord = { a: '1' }; // b and c can be omitted
+
+      // With unbounded string keys, Record already allows any subset of keys
+      type UnboundedRecord = Record<string, string>;
+      type PartialUnboundedRecord = Partial<Record<string, string>>;
+
+      const unboundedRecord: UnboundedRecord = { someKey: 'someValue' }; // Any keys allowed
+      const partialUnboundedRecord: PartialUnboundedRecord = { someKey: 'someValue' }; // Same, but values can be undefined
+
+      // The key insight: for unbounded strings, Partial only adds undefined to values
+      // This breaks JsonCompatible, so for unbounded string keys, prefer Record over Partial<Record>
+
+      expect(fullRecord).toEqual({ a: '1', b: '2', c: '3' });
+      expect(partialEnumRecord).toEqual({ a: '1' });
+      expect(unboundedRecord).toEqual({ someKey: 'someValue' });
+      expect(partialUnboundedRecord).toEqual({ someKey: 'someValue' });
+    });
+
+    test('shows the workaround for consumers who need partial behavior', () => {
+      // For JsonCompatible APIs, define the base type without Partial
+      type HierarchyDecl<T extends string> = Record<T, T>;
+
+      // Consumers can add Partial when they need it
+      type LiteralKeys = 'parent' | 'child' | 'grandchild';
+
+      // API signature uses the base type for JSON compatibility
+      const processHierarchy = (hierarchy: JsonCompatible<HierarchyDecl<LiteralKeys>>): string[] => {
+        return Object.keys(hierarchy);
+      };
+
+      // Consumer can provide partial data by using Partial locally
+      const partialHierarchy: Partial<HierarchyDecl<LiteralKeys>> = {
+        child: 'parent'
+        // grandchild and other keys can be omitted
+      };
+
+      // For JSON-compatible usage, provide the full structure or cast appropriately
+      const fullHierarchy: HierarchyDecl<LiteralKeys> = {
+        parent: 'parent', // root node
+        child: 'parent',
+        grandchild: 'child'
+      };
+
+      const result = processHierarchy(fullHierarchy);
+      expect(result).toContain('parent');
+      expect(result).toContain('child');
+      expect(result).toContain('grandchild');
+
+      // Partial hierarchy is still useful for construction/validation
+      expect(Object.keys(partialHierarchy)).toEqual(['child']);
+    });
+
+    test('demonstrates why JsonCompatible struggles with undefined in unions', () => {
+      // This is the core issue: JsonCompatible doesn't handle undefined well
+      type ValueWithUndefined = string | undefined;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      type CompatibleValueWithUndefined = JsonCompatible<ValueWithUndefined>;
+      // This becomes: string | ["Error: Non-JSON type"]
+
+      interface IWithUndefinedValue {
+        prop: string | undefined;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      type CompatibleWithUndefinedValue = JsonCompatible<IWithUndefinedValue>;
+      // This becomes: { prop: string | ["Error: Non-JSON type"] }
+
+      // The original interface allows undefined
+      const originalValue: IWithUndefinedValue = { prop: undefined };
+
+      // But the JsonCompatible version doesn't accept the original
+      // const compatibleValue: CompatibleWithUndefinedValue = originalValue; // Type error!
+
+      // This is why Partial<Record<string, string>> doesn't work:
+      // Partial<Record<string, string>> = { [x: string]?: string | undefined }
+      // JsonCompatible<Partial<Record<string, string>>> = { [x: string]: string | ["Error: Non-JSON type"] }
+
+      expect(originalValue.prop).toBeUndefined();
+    });
+  });
+
   test('Collection behavior with JsonCompatible', () => {
     type JsonMap<T, TV extends JsonCompatible<T> = JsonCompatible<T>> = Map<string, TV>;
     interface IJsonThing {

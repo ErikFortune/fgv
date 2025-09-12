@@ -4,7 +4,7 @@
 
 ## QualifierTypes.TerritoryQualifierType.getConfiguration() method
 
-Gets the configuration for this qualifier type.
+Gets the [strongly typed configuration](./ts-res.qualifiertypes.config.isystemterritoryqualifiertypeconfig.md) for this qualifier type.
 
 **Signature:**
 

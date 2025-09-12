@@ -316,6 +316,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               cancelNewResource: actions.cancelNewResource,
               removePendingResource: actions.removePendingResource,
               markResourceForDeletion: actions.markResourceForDeletion,
+              createPendingResource: actions.createPendingResource,
+              updateNewResourceJson: actions.updateNewResourceJson,
               applyPendingResources: actions.applyPendingResources,
               discardPendingResources: actions.discardPendingResources
             }}

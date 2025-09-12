@@ -234,7 +234,7 @@ Creates a new [TerritoryQualifierType](./ts-res.qualifiertypes.territoryqualifie
 
 </td><td>
 
-Gets the configuration for this qualifier type.
+Gets the [strongly typed configuration](./ts-res.qualifiertypes.config.isystemterritoryqualifiertypeconfig.md) for this qualifier type.
 
 
 </td></tr>
