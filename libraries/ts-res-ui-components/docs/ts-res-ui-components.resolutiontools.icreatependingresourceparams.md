@@ -9,7 +9,7 @@ Parameters for creating a pending resource atomically.
 **Signature:**
 
 ```typescript
-export interface ICreatePendingResourceParams 
+export interface ICreatePendingResourceParams<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> 
 ```
 
 ## Example
@@ -75,7 +75,7 @@ Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>

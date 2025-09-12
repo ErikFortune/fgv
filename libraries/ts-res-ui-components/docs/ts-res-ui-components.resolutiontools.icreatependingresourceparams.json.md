@@ -9,5 +9,5 @@ JSON content for the resource candidate. If undefined, the resource type's base 
 **Signature:**
 
 ```typescript
-json?: JsonValue;
+json?: TV;
 ```

@@ -9,5 +9,5 @@ The current edited value if any
 **Signature:**
 
 ```typescript
-editedValue?: JsonValue;
+editedValue?: TV;
 ```

@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ResourceEditorProps } from '@fgv/ts-res-ui-components';
+import { ResourceTools } from '@fgv/ts-res-ui-components';
+import { Validators } from '@fgv/ts-utils';
+import { useSmartObservability } from '@fgv/ts-res-ui-components';
 
 interface MarketInfo {
   marketName: string;
@@ -12,7 +14,17 @@ interface MarketInfo {
   selectedBy: string;
 }
 
-export const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
+const marketInfo = Validators.object<MarketInfo>({
+  marketName: Validators.string,
+  availablePaymentMethods: Validators.arrayOf(Validators.string),
+  supportedLanguages: Validators.arrayOf(Validators.string),
+  regulatoryCompliance: Validators.string,
+  marketingBudget: Validators.string,
+  customerSupportHours: Validators.string,
+  selectedBy: Validators.string
+});
+
+export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<MarketInfo>> = ({
   value,
   resourceId,
   isEdited = false,
@@ -26,6 +38,8 @@ export const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
   const [formData, setFormData] = useState<MarketInfo | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  const o11y = useSmartObservability();
+
   // The display value is either the edited value or the original value
   const displayValue = useMemo(() => {
     if (isEdited && editedValue !== undefined) {
@@ -35,18 +49,8 @@ export const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
   }, [value, editedValue, isEdited]);
 
   // Validate that the value is a proper MarketInfo object
-  const isValidMarketInfo = useCallback((data: any): data is MarketInfo => {
-    return (
-      data &&
-      typeof data === 'object' &&
-      typeof data.marketName === 'string' &&
-      Array.isArray(data.availablePaymentMethods) &&
-      Array.isArray(data.supportedLanguages) &&
-      typeof data.regulatoryCompliance === 'string' &&
-      typeof data.marketingBudget === 'string' &&
-      typeof data.customerSupportHours === 'string' &&
-      typeof data.selectedBy === 'string'
-    );
+  const isValidMarketInfo = useCallback((data: unknown): data is MarketInfo => {
+    return marketInfo.validate(data).isSuccess();
   }, []);
 
   // Handle starting an edit
@@ -110,6 +114,7 @@ export const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
     setIsEditing(false);
     onSave?.(resourceId, formData, displayValue);
     setFormData(null);
+    o11y.user.success(`Market info saved for ${resourceId}`);
   }, [formData, validateFormData, onSave, resourceId, displayValue]);
 
   // Handle form field changes

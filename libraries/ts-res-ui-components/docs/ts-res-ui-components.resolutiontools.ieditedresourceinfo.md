@@ -9,7 +9,7 @@ Information about a resource being edited in the resolution view. Tracks changes
 **Signature:**
 
 ```typescript
-export interface IEditedResourceInfo 
+export interface IEditedResourceInfo<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> 
 ```
 
 ## Properties
@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>
@@ -62,7 +62,7 @@ JsonValue
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>

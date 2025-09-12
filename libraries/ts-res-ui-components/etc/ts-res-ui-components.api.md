@@ -8,6 +8,7 @@ import { Bundle } from '@fgv/ts-res';
 import { Config } from '@fgv/ts-res';
 import { FileTree } from '@fgv/ts-utils';
 import { Import } from '@fgv/ts-res';
+import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
 import { MessageLogLevel } from '@fgv/ts-utils';
@@ -392,9 +393,9 @@ interface IConfigurationViewProps extends IViewBaseProps {
 }
 
 // @public
-interface ICreatePendingResourceParams {
+interface ICreatePendingResourceParams<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
     id: string;
-    json?: JsonValue;
+    json?: TV;
     resourceTypeName: string;
 }
 
@@ -428,11 +429,11 @@ interface IEditableJsonViewProps {
 }
 
 // @public
-interface IEditedResourceInfo {
+interface IEditedResourceInfo<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
     // (undocumented)
-    editedValue: JsonValue;
+    editedValue: TV;
     // (undocumented)
-    originalValue: JsonValue;
+    originalValue: TV;
     resourceId: string;
     // (undocumented)
     timestamp: Date;
@@ -929,11 +930,11 @@ interface IResolutionOptions {
 }
 
 // @public
-interface IResolutionResult {
+interface IResolutionResult<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
     allCandidates?: readonly Runtime.IResourceCandidate[];
     bestCandidate?: Runtime.IResourceCandidate;
     candidateDetails?: ICandidateInfo[];
-    composedValue?: JsonValue;
+    composedValue?: TV;
     error?: string;
     resource?: Runtime.IResource;
     resourceId: string;
@@ -1016,20 +1017,20 @@ interface IResourceDetailData {
 }
 
 // @public
-interface IResourceEditorFactory {
-    createEditor(resourceId: string, resourceType: string, value: JsonValue): ResourceEditorResult;
+interface IResourceEditorFactory<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+    createEditor(resourceId: string, resourceType: string, value: TV): ResourceEditorResult<T, TV>;
 }
 
 // @public
-interface IResourceEditorProps {
+interface IResourceEditorProps<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> {
     className?: string;
     disabled?: boolean;
-    editedValue?: JsonValue;
+    editedValue?: TV;
     isEdited?: boolean;
     onCancel?: (resourceId: string) => void;
-    onSave?: (resourceId: string, editedValue: JsonValue, originalValue: JsonValue) => void;
+    onSave?: (resourceId: string, editedValue: TV, originalValue: TV) => void;
     resourceId: string;
-    value: JsonValue;
+    value: TV;
 }
 
 // @public
@@ -1287,9 +1288,9 @@ export const ResolutionView: React_2.FC<IResolutionViewProps>;
 function resolveResourceDetailed(resolver: Runtime.ResourceResolver, resourceId: string, processedResources: IProcessedResources, options?: IResolutionOptions): Result<IResolutionResult>;
 
 // @public
-type ResourceEditorResult = {
+type ResourceEditorResult<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> = {
     success: true;
-    editor: React.ComponentType<IResourceEditorProps>;
+    editor: React.ComponentType<IResourceEditorProps<T, TV>>;
 } | {
     success: false;
     message?: string;
