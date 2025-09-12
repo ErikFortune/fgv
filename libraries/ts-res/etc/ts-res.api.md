@@ -55,6 +55,17 @@ class AbstractDecisionCollector extends ValidatingCollector<AbstractDecision> {
     static readonly EmptyDecisionIndex: DecisionIndex;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class AdaptingBuiltInQualifierTypeFactory<T extends QualifierType> implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<T>;
+}
+
 // @public
 class AggregateCacheMetrics implements ICacheMetrics {
     constructor();
@@ -819,6 +830,8 @@ declare namespace Config {
         IConfigInitFactory,
         ChainedConfigInitFactory,
         BuiltInQualifierTypeFactory,
+        AdaptingBuiltInQualifierTypeFactory,
+        GenericQualifierTypeFactory,
         QualifierTypeFactory,
         BuiltInResourceTypeFactory,
         ResourceTypeFactory,
@@ -1343,6 +1356,15 @@ type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
 
 // @public
 function generateZipArchiveFilename(customName?: string): string;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class GenericQualifierTypeFactory<T extends QualifierType = QualifierType> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[], builtInFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>);
+}
 
 // @public
 function getDirectoryName(path: string): string;
@@ -3954,7 +3976,7 @@ function qualifierTypeConfig<T, TD = unknown>(config: Converter<T, TD>): Convert
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class QualifierTypeFactory extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType> {
+class QualifierTypeFactory extends GenericQualifierTypeFactory<QualifierType> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

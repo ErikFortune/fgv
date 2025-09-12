@@ -86,14 +86,57 @@ export class BuiltInQualifierTypeFactory
 }
 
 /**
+ * An adapter factory that bridges {@link QualifierTypes.SystemQualifierType | SystemQualifierType}
+ * to any discriminated union type that extends {@link QualifierTypes.QualifierType | QualifierType}.
+ * This allows external consumers to create their own discriminated unions that include both
+ * built-in system types and custom qualifier types.
+ * @public
+ */
+export class AdaptingBuiltInQualifierTypeFactory<T extends QualifierType>
+  implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>
+{
+  /** {@inheritDoc Config.IConfigInitFactory.create} */
+  public create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<T> {
+    if (QualifierTypes.Config.isSystemQualifierTypeConfig(config)) {
+      return QualifierTypes.createQualifierTypeFromSystemConfig(config) as unknown as Result<T>;
+    }
+    return fail(`${config.name}: unknown built-in qualifier type (${config.systemType})`);
+  }
+}
+
+/**
+ * A generic factory that creates qualifier types of type T from configuration objects.
+ * This allows external consumers to define their own discriminated union types that extend
+ * the base {@link QualifierTypes.QualifierType | QualifierType} while maintaining type safety
+ * and discrimination capabilities.
+ *
+ * @param T - The discriminated union type that extends QualifierType
+ * @public
+ */
+export class GenericQualifierTypeFactory<
+  T extends QualifierType = QualifierType
+> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
+  /**
+   * Constructor for a generic qualifier type factory.
+   * @param factories - The {@link Config.IConfigInitFactory | factories} to chain for custom types.
+   * @param builtInFactory - Optional custom built-in factory. Defaults to {@link Config.AdaptingBuiltInQualifierTypeFactory}.
+   * @remarks The built-in factory is always added to the end of the chain to handle system qualifier types.
+   */
+  public constructor(
+    factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[],
+    builtInFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>
+  ) {
+    const defaultBuiltIn = builtInFactory ?? new AdaptingBuiltInQualifierTypeFactory<T>();
+    super([...factories, defaultBuiltIn]);
+  }
+}
+
+/**
  * A factory that creates a {@link QualifierTypes.QualifierType | QualifierType} from a {@link QualifierTypes.Config.IAnyQualifierTypeConfig | system qualifier type configuration}
  * by chaining a supplied factory with a {@link Config.BuiltInQualifierTypeFactory | built-in factory} that handles built-in qualifier types.
  * @public
  */
-export class QualifierTypeFactory extends ChainedConfigInitFactory<
-  QualifierTypes.Config.IAnyQualifierTypeConfig,
-  QualifierType
-> {
+export class QualifierTypeFactory extends GenericQualifierTypeFactory<QualifierType> {
   /**
    * Constructor for a {@link Config.QualifierTypeFactory | qualifier type factory}.
    * @param factories - The {@link Config.IConfigInitFactory | factories} to chain.
@@ -102,7 +145,13 @@ export class QualifierTypeFactory extends ChainedConfigInitFactory<
   public constructor(
     factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>[]
   ) {
-    super([...factories, new BuiltInQualifierTypeFactory()]);
+    super(
+      factories,
+      new BuiltInQualifierTypeFactory() as IConfigInitFactory<
+        QualifierTypes.Config.IAnyQualifierTypeConfig,
+        QualifierType
+      >
+    );
   }
 }
 

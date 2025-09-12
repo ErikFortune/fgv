@@ -35,8 +35,17 @@ import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
+import { ContrastQualifierType } from './factories/ContrastQualifierType';
 import { allGridConfigurations, multiGridConfigurations } from './utils/gridConfigurations';
 import { createObservableContrastFactory } from './factories';
+
+/**
+ * Discriminated union type that combines built-in system qualifier types
+ * with custom playground qualifier types. This allows the playground to use
+ * type discrimination for both built-in types (language, territory, literal)
+ * and custom types (contrast) in a type-safe manner.
+ */
+type PlaygroundQualifierType = TsRes.QualifierTypes.SystemQualifierType | ContrastQualifierType;
 import {
   createPlaygroundObservabilityContext,
   logImportStage,
@@ -951,9 +960,14 @@ const App: React.FC = () => {
   // Note: This is only used for the factory chain, not for UI messages
   const appO11yContext = createPlaygroundObservabilityContext();
 
-  // Create observable custom factory and wrap in QualifierTypeFactory for proper chaining
+  // Create observable custom factory and wrap in GenericQualifierTypeFactory for proper chaining
   const observableContrastFactory = createObservableContrastFactory(appO11yContext);
-  const qualifierTypeFactory = new TsRes.Config.QualifierTypeFactory([observableContrastFactory]);
+  const qualifierTypeFactory = new TsRes.Config.GenericQualifierTypeFactory<PlaygroundQualifierType>([
+    observableContrastFactory as TsRes.Config.IConfigInitFactory<
+      TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig,
+      PlaygroundQualifierType
+    >
+  ]);
   const demoResourceTypeFactory = undefined;
 
   // Log initialization
