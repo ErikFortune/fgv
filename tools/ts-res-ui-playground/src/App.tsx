@@ -961,12 +961,9 @@ const App: React.FC = () => {
   const appO11yContext = createPlaygroundObservabilityContext();
 
   // Create observable custom factory and wrap in GenericQualifierTypeFactory for proper chaining
-  const observableContrastFactory = createObservableContrastFactory(appO11yContext);
+  const observableContrastFactory = createObservableContrastFactory<PlaygroundQualifierType>(appO11yContext);
   const qualifierTypeFactory = new TsRes.Config.GenericQualifierTypeFactory<PlaygroundQualifierType>([
-    observableContrastFactory as TsRes.Config.IConfigInitFactory<
-      TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig,
-      PlaygroundQualifierType
-    >
+    observableContrastFactory
   ]);
   const demoResourceTypeFactory = undefined;
 

@@ -31,9 +31,14 @@ const systemContrastQualifierTypeConfig = Converters.strictObject<{
  * Observable factory for creating ContrastQualifierType instances with detailed diagnostic logging.
  * This enhanced version provides visibility into the factory chain resolution process.
  *
+ * @template T - The target discriminated union type that includes ContrastQualifierType
  * @public
  */
-export class ObservableContrastQualifierTypeFactory implements QualifierTypes.IConfigInitFactory {
+export class ObservableContrastQualifierTypeFactory<
+  T extends QualifierTypes.QualifierType = QualifierTypes.QualifierType
+> implements
+    QualifierTypes.Config.IConfigInitFactory<QualifierTypes.Config.IQualifierTypeConfig<JsonObject>, T>
+{
   /**
    * The system type name this factory handles.
    */
@@ -63,9 +68,7 @@ export class ObservableContrastQualifierTypeFactory implements QualifierTypes.IC
    * @param config - The configuration object containing name, systemType, and optional configuration
    * @returns Success with the created qualifier type, or Failure with an error message
    */
-  public create(
-    config: QualifierTypes.Config.IQualifierTypeConfig<JsonObject>
-  ): Result<QualifierTypes.IQualifierType> {
+  public create(config: QualifierTypes.Config.IQualifierTypeConfig<JsonObject>): Result<T> {
     // Log the factory attempt
     logFactoryAttempt(this.o11y, this.factoryName, config);
 
@@ -102,7 +105,7 @@ export class ObservableContrastQualifierTypeFactory implements QualifierTypes.IC
           .onSuccess((qualifierType) => {
             logFactorySuccess(this.o11y, this.factoryName, validatedConfig.name, 'contrast');
             this.o11y.user.info(`Created custom contrast qualifier type: ${validatedConfig.name}`);
-            return succeed(qualifierType);
+            return succeed(qualifierType as unknown as T);
           })
           .onFailure((error) => {
             this.o11y.diag.error(`[${this.factoryName}] Failed to create ContrastQualifierType:`, error);
@@ -119,12 +122,13 @@ export class ObservableContrastQualifierTypeFactory implements QualifierTypes.IC
 
 /**
  * Creates an observable contrast qualifier type factory with the given observability context.
+ * @template T - The target discriminated union type that includes ContrastQualifierType
  * @param o11y - Observability context for logging
  * @returns A new observable factory instance
  * @public
  */
-export function createObservableContrastFactory(
-  o11y?: ObservabilityTools.IObservabilityContext
-): ObservableContrastQualifierTypeFactory {
-  return new ObservableContrastQualifierTypeFactory(o11y);
+export function createObservableContrastFactory<
+  T extends QualifierTypes.QualifierType = QualifierTypes.QualifierType
+>(o11y?: ObservabilityTools.IObservabilityContext): ObservableContrastQualifierTypeFactory<T> {
+  return new ObservableContrastQualifierTypeFactory<T>(o11y);
 }
