@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { PencilIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { ResourceTools } from '@fgv/ts-res-ui-components';
+import { ResourceTools, useSmartObservability } from '@fgv/ts-res-ui-components';
 import { Validators } from '@fgv/ts-utils';
-import { useSmartObservability } from '@fgv/ts-res-ui-components';
 
 interface MarketInfo {
   marketName: string;
@@ -38,7 +37,15 @@ export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<Marke
   const [formData, setFormData] = useState<MarketInfo | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
+  // Use observability hook - we need to call it unconditionally
+  // The hook internally handles context creation/detection
   const o11y = useSmartObservability();
+
+  // Store a stable reference to prevent re-render issues
+  const o11yRef = React.useRef(o11y);
+  React.useEffect(() => {
+    o11yRef.current = o11y;
+  }, [o11y]);
 
   // The display value is either the edited value or the original value
   const displayValue = useMemo(() => {
@@ -114,7 +121,8 @@ export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<Marke
     setIsEditing(false);
     onSave?.(resourceId, formData, displayValue);
     setFormData(null);
-    o11y.user.success(`Market info saved for ${resourceId}`);
+    // Use observability from ref to avoid closure issues
+    o11yRef.current?.user?.success?.(`Market info saved for ${resourceId}`);
   }, [formData, validateFormData, onSave, resourceId, displayValue]);
 
   // Handle form field changes
@@ -130,7 +138,6 @@ export const MarketInfoEditor: React.FC<ResourceTools.IResourceEditorProps<Marke
   const handleArrayFieldChange = useCallback(
     (field: 'availablePaymentMethods' | 'supportedLanguages', value: string) => {
       if (!formData) return;
-      const currentArray = formData[field];
       const newArray = value
         .split(',')
         .map((item) => item.trim())

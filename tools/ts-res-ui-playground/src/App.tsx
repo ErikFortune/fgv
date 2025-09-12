@@ -131,6 +131,50 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
   const [selectedGridConfig, setSelectedGridConfig] = useState<string>('app-config');
   const [selectedMultiGridTabs, setSelectedMultiGridTabs] = useState<'tabs' | 'cards'>('tabs');
 
+  // Memoize resolution actions to prevent re-renders in GridView
+  const resolutionActions = React.useMemo(
+    () => ({
+      updateContextValue: actions.updateResolutionContext,
+      applyContext: actions.applyResolutionContext,
+      selectResource: actions.selectResourceForResolution,
+      setViewMode: actions.setResolutionViewMode,
+      resetCache: actions.resetResolutionCache,
+      // Edit actions
+      saveEdit: actions.saveResourceEdit,
+      getEditedValue: actions.getEditedValue,
+      hasEdit: actions.hasResourceEdit,
+      clearEdits: actions.clearResourceEdits,
+      discardEdits: actions.discardResourceEdits,
+      // Resource creation actions
+      startNewResource: actions.startNewResource,
+      updateNewResourceId: actions.updateNewResourceId,
+      selectResourceType: actions.selectResourceType,
+      saveNewResourceAsPending: actions.saveNewResourceAsPending,
+      cancelNewResource: actions.cancelNewResource,
+      removePendingResource: actions.removePendingResource,
+      markResourceForDeletion: actions.markResourceForDeletion,
+      applyPendingResources: actions.applyPendingResources,
+      discardPendingResources: actions.discardPendingResources
+    }),
+    [actions]
+  );
+
+  // Memoize available qualifiers to prevent re-renders
+  const availableQualifiers = React.useMemo(
+    () =>
+      state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
+      state.configuration?.qualifiers?.map((q) => q.name) ||
+      [],
+    [state.resources, state.configuration]
+  );
+
+  // Memoize selected grid configuration to prevent re-renders
+  const selectedGridConfiguration = React.useMemo(
+    () =>
+      allGridConfigurations.find((config) => config.id === selectedGridConfig) || allGridConfigurations[0],
+    [selectedGridConfig]
+  );
+
   // Note: Custom factories are now configured at the ResourceOrchestrator level
 
   // Ref to track if we've already initialized from URL parameters
@@ -288,7 +332,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     }
   }, [navigationWarning]);
 
-  const renderTool = () => {
+  const renderTool = useCallback(() => {
     switch (selectedTool) {
       case 'import':
         return (
@@ -687,34 +731,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                     filterState={state.filterState}
                     filterResult={state.filterResult}
                     resolutionState={state.resolutionState}
-                    resolutionActions={{
-                      updateContextValue: actions.updateResolutionContext,
-                      applyContext: actions.applyResolutionContext,
-                      selectResource: actions.selectResourceForResolution,
-                      setViewMode: actions.setResolutionViewMode,
-                      resetCache: actions.resetResolutionCache,
-                      // Edit actions
-                      saveEdit: actions.saveResourceEdit,
-                      getEditedValue: actions.getEditedValue,
-                      hasEdit: actions.hasResourceEdit,
-                      clearEdits: actions.clearResourceEdits,
-                      discardEdits: actions.discardResourceEdits,
-                      // Resource creation actions
-                      startNewResource: actions.startNewResource,
-                      updateNewResourceId: actions.updateNewResourceId,
-                      selectResourceType: actions.selectResourceType,
-                      saveNewResourceAsPending: actions.saveNewResourceAsPending,
-                      cancelNewResource: actions.cancelNewResource,
-                      removePendingResource: actions.removePendingResource,
-                      markResourceForDeletion: actions.markResourceForDeletion,
-                      applyPendingResources: actions.applyPendingResources,
-                      discardPendingResources: actions.discardPendingResources
-                    }}
-                    availableQualifiers={
-                      state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
-                      state.configuration?.qualifiers?.map((q) => q.name) ||
-                      []
-                    }
+                    resolutionActions={resolutionActions}
+                    availableQualifiers={availableQualifiers}
                     pickerOptionsPresentation={pickerPresentation.resolution}
                     lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
                     sectionTitles={customSectionTitles}
@@ -777,9 +795,25 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         );
 
       case 'grid':
-        const selectedConfig =
-          allGridConfigurations.find((config) => config.id === selectedGridConfig) ||
-          allGridConfigurations[0];
+        // Only render GridView when we have the necessary data to prevent re-render loops
+        if (!state.resources || !state.resolutionState) {
+          return (
+            <div className="p-6">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center space-x-3 mb-6">
+                  <TableCellsIcon className="h-8 w-8 text-emerald-600" />
+                  <h2 className="text-2xl font-bold text-gray-900">Grid View</h2>
+                </div>
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                  <div className="text-gray-500">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Grid View...</h3>
+                    <p className="text-sm">Please load resources first to use the Grid View.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div>
@@ -815,46 +849,20 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             </div>
 
             {/* Configuration description */}
-            {selectedConfig.description && (
+            {selectedGridConfiguration.description && (
               <div className="px-6 pb-4">
-                <p className="text-sm text-gray-600">{selectedConfig.description}</p>
+                <p className="text-sm text-gray-600">{selectedGridConfiguration.description}</p>
               </div>
             )}
 
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
               <GridTools.GridView
-                gridConfig={selectedConfig}
+                gridConfig={selectedGridConfiguration}
                 resources={state.resources}
                 resolutionState={state.resolutionState}
-                resolutionActions={{
-                  updateContextValue: actions.updateResolutionContext,
-                  applyContext: actions.applyResolutionContext,
-                  selectResource: actions.selectResourceForResolution,
-                  setViewMode: actions.setResolutionViewMode,
-                  resetCache: actions.resetResolutionCache,
-                  // Edit actions
-                  saveEdit: actions.saveResourceEdit,
-                  getEditedValue: actions.getEditedValue,
-                  hasEdit: actions.hasResourceEdit,
-                  clearEdits: actions.clearResourceEdits,
-                  discardEdits: actions.discardResourceEdits,
-                  // Resource creation actions
-                  startNewResource: actions.startNewResource,
-                  updateNewResourceId: actions.updateNewResourceId,
-                  selectResourceType: actions.selectResourceType,
-                  saveNewResourceAsPending: actions.saveNewResourceAsPending,
-                  cancelNewResource: actions.cancelNewResource,
-                  removePendingResource: actions.removePendingResource,
-                  markResourceForDeletion: actions.markResourceForDeletion,
-                  applyPendingResources: actions.applyPendingResources,
-                  discardPendingResources: actions.discardPendingResources
-                }}
-                availableQualifiers={
-                  state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
-                  state.configuration?.qualifiers?.map((q) => q.name) ||
-                  []
-                }
+                resolutionActions={resolutionActions}
+                availableQualifiers={availableQualifiers}
                 pickerOptionsPresentation={pickerPresentation.grid}
                 onMessage={actions.addMessage}
               />
@@ -904,34 +912,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 gridConfigurations={multiGridConfigurations}
                 resources={state.resources}
                 resolutionState={state.resolutionState}
-                resolutionActions={{
-                  updateContextValue: actions.updateResolutionContext,
-                  applyContext: actions.applyResolutionContext,
-                  selectResource: actions.selectResourceForResolution,
-                  setViewMode: actions.setResolutionViewMode,
-                  resetCache: actions.resetResolutionCache,
-                  // Edit actions
-                  saveEdit: actions.saveResourceEdit,
-                  getEditedValue: actions.getEditedValue,
-                  hasEdit: actions.hasResourceEdit,
-                  clearEdits: actions.clearResourceEdits,
-                  discardEdits: actions.discardResourceEdits,
-                  // Resource creation actions
-                  startNewResource: actions.startNewResource,
-                  updateNewResourceId: actions.updateNewResourceId,
-                  selectResourceType: actions.selectResourceType,
-                  saveNewResourceAsPending: actions.saveNewResourceAsPending,
-                  cancelNewResource: actions.cancelNewResource,
-                  removePendingResource: actions.removePendingResource,
-                  markResourceForDeletion: actions.markResourceForDeletion,
-                  applyPendingResources: actions.applyPendingResources,
-                  discardPendingResources: actions.discardPendingResources
-                }}
-                availableQualifiers={
-                  state.resources?.compiledCollection.qualifiers?.map((q: any) => q.name) ||
-                  state.configuration?.qualifiers?.map((q) => q.name) ||
-                  []
-                }
+                resolutionActions={resolutionActions}
+                availableQualifiers={availableQualifiers}
                 tabsPresentation={selectedMultiGridTabs}
                 pickerOptionsPresentation={pickerPresentation.multiGrid}
                 onMessage={actions.addMessage}
@@ -968,7 +950,22 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           />
         );
     }
-  };
+  }, [
+    selectedTool,
+    state,
+    actions,
+    o11y,
+    pickerPresentation,
+    resolutionActions,
+    availableQualifiers,
+    selectedGridConfiguration,
+    resolutionLockedMode,
+    customSectionTitles,
+    hostControlledQualifiers,
+    filterContextOptions,
+    navigationWarning,
+    selectedMultiGridTabs
+  ]);
 
   return (
     <>

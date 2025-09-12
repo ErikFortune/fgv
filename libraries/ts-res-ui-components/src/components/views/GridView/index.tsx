@@ -69,6 +69,13 @@ export const GridView: React.FC<IGridViewProps> = ({
   className = ''
 }) => {
   const o11y = useSmartObservability();
+
+  // Store o11y in a ref to avoid re-render issues
+  const o11yRef = React.useRef(o11y);
+  React.useEffect(() => {
+    o11yRef.current = o11y;
+  }, [o11y]);
+
   // Use filtered resources when filtering is active and successful
   const isFilteringActive = filterState?.enabled && filterResult?.success === true;
   const baseProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
@@ -81,12 +88,13 @@ export const GridView: React.FC<IGridViewProps> = ({
 
     const selectionResult = selectResources(gridConfig.resourceSelection, baseProcessedResources);
     if (selectionResult.isFailure()) {
-      o11y.user.error(`Resource selection failed: ${selectionResult.message}`);
+      // Use ref to avoid dependency on o11y
+      o11yRef.current.user.error(`Resource selection failed: ${selectionResult.message}`);
       return [];
     }
 
     return selectionResult.value;
-  }, [baseProcessedResources, gridConfig.resourceSelection, o11y]);
+  }, [baseProcessedResources, gridConfig.resourceSelection]); // Removed o11y from dependencies
 
   // Resolve all selected resources with current context
   const resourceResolutions = useMemo(() => {
