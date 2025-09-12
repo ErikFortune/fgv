@@ -389,6 +389,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               <SourceView
                 onMessage={actions.addMessage}
                 resources={state.resources}
+                filterState={state.filterState}
+                filterResult={state.filterResult}
                 pickerOptionsPresentation={pickerPresentation.source}
                 onExport={(data, type) => {
                   switch (type) {
