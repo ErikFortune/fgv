@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-originalValue: JsonValue;
+originalValue: TV;
 ```

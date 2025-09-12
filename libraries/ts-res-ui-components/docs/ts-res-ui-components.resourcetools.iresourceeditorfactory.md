@@ -9,7 +9,7 @@ Factory interface for creating type-specific resource editors. Allows Resolution
 **Signature:**
 
 ```typescript
-export interface IResourceEditorFactory 
+export interface IResourceEditorFactory<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> 
 ```
 
 ## Methods

@@ -9,7 +9,7 @@ Result of attempting to resolve a specific resource with a given context. Contai
 **Signature:**
 
 ```typescript
-export interface IResolutionResult 
+export interface IResolutionResult<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> 
 ```
 
 ## Properties
@@ -102,7 +102,7 @@ _(Optional)_ Detailed information about each candidate's matching process
 
 </td><td>
 
-JsonValue
+TV
 
 
 </td><td>

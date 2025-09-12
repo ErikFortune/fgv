@@ -9,9 +9,9 @@ Result of attempting to create a resource editor for a specific resource. Used b
 **Signature:**
 
 ```typescript
-export type ResourceEditorResult = {
+export type ResourceEditorResult<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> = {
     success: true;
-    editor: React.ComponentType<IResourceEditorProps>;
+    editor: React.ComponentType<IResourceEditorProps<T, TV>>;
 } | {
     success: false;
     message?: string;

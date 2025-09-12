@@ -9,5 +9,5 @@ The original JSON value to edit
 **Signature:**
 
 ```typescript
-value: JsonValue;
+value: TV;
 ```
