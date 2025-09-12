@@ -221,7 +221,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+(hostManagedValues?: Record&lt;string, string \| undefined&gt;) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -272,7 +272,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;{ clearedCount: number; }&gt;
 
 
 </td><td>
@@ -340,7 +340,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;{ discardedCount: number; }&gt;
 
 
 </td><td>
@@ -544,7 +544,7 @@ Description
 
 </td><td>
 
-(resourceId: string) =&gt; void
+(resourceId: string) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -578,7 +578,7 @@ Description
 
 </td><td>
 
-() =&gt; void
+() =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -629,7 +629,7 @@ Description
 
 </td><td>
 
-(resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) =&gt; void
+(resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -663,7 +663,7 @@ Description
 
 </td><td>
 
-(resourceId: string) =&gt; void
+(resourceId: string) =&gt; Result&lt;void&gt;
 
 
 </td><td>
@@ -799,7 +799,7 @@ Description
 
 </td><td>
 
-(qualifierName: string, value: string \| undefined) =&gt; void
+(qualifierName: string, value: string \| undefined) =&gt; Result&lt;void&gt;
 
 
 </td><td>

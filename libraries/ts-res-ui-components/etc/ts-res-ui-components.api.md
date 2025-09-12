@@ -694,13 +694,15 @@ export interface IOrchestratorActions {
         deletionCount: number;
     }>>;
     // (undocumented)
-    applyResolutionContext: () => void;
+    applyResolutionContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
     // (undocumented)
     cancelNewResource: () => void;
     // (undocumented)
     clearMessages: () => void;
     // (undocumented)
-    clearResourceEdits: () => void;
+    clearResourceEdits: () => Result<{
+        clearedCount: number;
+    }>;
     // (undocumented)
     clearResources: () => void;
     // (undocumented)
@@ -708,7 +710,9 @@ export interface IOrchestratorActions {
     // (undocumented)
     discardPendingResources: () => void;
     // (undocumented)
-    discardResourceEdits: () => void;
+    discardResourceEdits: () => Result<{
+        discardedCount: number;
+    }>;
     // (undocumented)
     exportBundle: () => void;
     // (undocumented)
@@ -732,11 +736,11 @@ export interface IOrchestratorActions {
     // (undocumented)
     o11y: IObservabilityContext;
     // (undocumented)
-    removePendingResource: (resourceId: string) => void;
+    removePendingResource: (resourceId: string) => Result<void>;
     // (undocumented)
     resetFilter: () => void;
     // (undocumented)
-    resetResolutionCache: () => void;
+    resetResolutionCache: () => Result<void>;
     // (undocumented)
     resolveResource: (resourceId: string, context?: Record<string, string>) => Result<JsonValue>;
     // (undocumented)
@@ -745,11 +749,11 @@ export interface IOrchestratorActions {
         diagnostics: string[];
     }>;
     // (undocumented)
-    saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+    saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
     // (undocumented)
     selectResource: (resourceId: string | null) => void;
     // (undocumented)
-    selectResourceForResolution: (resourceId: string) => void;
+    selectResourceForResolution: (resourceId: string) => Result<void>;
     // (undocumented)
     selectResourceType: (type: string) => Result<{
         draft: IResolutionState['newResourceDraft'];
@@ -779,7 +783,7 @@ export interface IOrchestratorActions {
         diagnostics: string[];
     }>;
     // (undocumented)
-    updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
+    updateResolutionContext: (qualifierName: string, value: string | undefined) => Result<void>;
 }
 
 // @public

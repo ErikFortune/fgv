@@ -9,8 +9,8 @@ interface ViewWithPresentationSelectorProps {
 
 // Export the gear icon component that views can use
 export const PresentationGearIcon: React.FC<{
-  currentPresentation: 'hidden' | 'inline' | 'collapsible';
-  onPresentationChange: (mode: 'hidden' | 'inline' | 'collapsible') => void;
+  currentPresentation: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+  onPresentationChange: (mode: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover') => void;
 }> = ({ currentPresentation, onPresentationChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -30,7 +30,9 @@ export const PresentationGearIcon: React.FC<{
   const presentationOptions = [
     { value: 'hidden', label: 'Hidden' },
     { value: 'inline', label: 'Inline' },
-    { value: 'collapsible', label: 'Collapsible' }
+    { value: 'collapsible', label: 'Collapsible' },
+    { value: 'popup', label: 'Popup' },
+    { value: 'popover', label: 'Popover' }
   ] as const;
 
   return (

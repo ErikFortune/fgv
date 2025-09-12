@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-removePendingResource: (resourceId: string) => void;
+removePendingResource: (resourceId: string) => Result<void>;
 ```

@@ -17,8 +17,8 @@ import {
   ResolutionView,
   ConfigurationView,
   ResourceOrchestrator,
-  OrchestratorState,
-  OrchestratorActions,
+  IOrchestratorState,
+  IOrchestratorActions,
   GridTools,
   ObservabilityTools
 } from '@fgv/ts-res-ui-components';
@@ -35,24 +35,17 @@ import { useUrlParams } from './hooks/useUrlParams';
 import { parseContextFilter } from './utils/urlParams';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
-import {
-  sampleGridConfigurations,
-  flexibleGridConfigurations,
-  allGridConfigurations,
-  multiGridConfigurations,
-  demonstrationGridConfig
-} from './utils/gridConfigurations';
+import { allGridConfigurations, multiGridConfigurations } from './utils/gridConfigurations';
 import { createObservableContrastFactory } from './factories';
 import {
   createPlaygroundObservabilityContext,
   logImportStage,
-  logConfigurationProcessing,
-  logDiagnosticSummary
+  logConfigurationProcessing
 } from './utils/observability';
 
 // Separate component to handle initialization logic
 interface AppContentProps {
-  orchestrator: { state: OrchestratorState; actions: OrchestratorActions };
+  orchestrator: { state: IOrchestratorState; actions: IOrchestratorActions };
 }
 
 const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
@@ -155,7 +148,10 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       removePendingResource: actions.removePendingResource,
       markResourceForDeletion: actions.markResourceForDeletion,
       applyPendingResources: actions.applyPendingResources,
-      discardPendingResources: actions.discardPendingResources
+      discardPendingResources: actions.discardPendingResources,
+      // Missing actions that are required by IResolutionActions
+      createPendingResource: actions.createPendingResource,
+      updateNewResourceJson: actions.updateNewResourceJson
     }),
     [actions]
   );
@@ -338,7 +334,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'import':
         return (
           <ImportView
-            onMessage={actions.addMessage}
             importError={state.error}
             onImport={async (data) => {
               logImportStage(o11y, 'start');
@@ -358,39 +353,18 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               }
             }}
             onBundleImport={actions.importBundle}
-            onZipImport={async (zipFile, config) => {
-              // Use ts-res zip-archive packlet for unified ZIP handling
-              const { ZipArchive } = await import('@fgv/ts-res');
-
-              const loader = new ZipArchive.ZipArchiveLoader();
-              const loadResult = await loader.loadFromFile(zipFile, {
-                strictManifestValidation: false // Be lenient with manifests
-              });
-
-              if (loadResult.isFailure()) {
-                actions.addMessage('error', `Failed to load ZIP: ${loadResult.message}`);
-                return;
-              }
-
-              const zipData = loadResult.value;
-
-              // Check for manifest (now provided by zip-archive packlet)
-              if (zipData.manifest) {
-                const manifestData = zipData.manifest;
-                actions.addMessage(
-                  'info',
-                  `Manifest found: created ${new Date(manifestData.timestamp).toLocaleString()}`
-                );
-              }
+            onZipImport={async (zipData, config) => {
+              // The ImportView has already processed the ZIP file and extracted the data
+              // zipData is either IImportedDirectory or IImportedFile[]
 
               // Load configuration FIRST, before processing resources
-              if (zipData.config) {
+              if (config) {
                 logImportStage(o11y, 'config-load', { source: 'ZIP archive' });
-                logConfigurationProcessing(o11y, zipData.config);
+                logConfigurationProcessing(o11y, config);
 
                 // Apply configuration immediately before processing resources
                 logImportStage(o11y, 'config-apply');
-                await actions.applyConfiguration(zipData.config);
+                await actions.applyConfiguration(config);
                 actions.addMessage('success', 'Configuration loaded and applied from ZIP');
                 o11y.diag.info('[ZIP_IMPORT] Configuration applied successfully');
 
@@ -401,15 +375,15 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
               }
 
-              // Process the ZIP data directly (no need for FileTreeConverter anymore)
-              if (zipData.directory) {
-                actions.importDirectory(zipData.directory);
-                actions.addMessage('success', 'ZIP directory structure imported successfully');
-              } else if (zipData.files.length > 0) {
-                actions.importFiles(zipData.files);
-                actions.addMessage('success', `${zipData.files.length} files imported from ZIP`);
+              // Process the ZIP data (already extracted by ImportView)
+              if (Array.isArray(zipData)) {
+                // It's an array of IImportedFile[]
+                actions.importFiles(zipData);
+                actions.addMessage('success', `${zipData.length} files imported from ZIP`);
               } else {
-                actions.addMessage('error', 'No files or directory structure found in ZIP');
+                // It's an IImportedDirectory
+                actions.importDirectory(zipData);
+                actions.addMessage('success', 'ZIP directory structure imported successfully');
               }
             }}
           />
@@ -432,20 +406,13 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
               <SourceView
-                onMessage={actions.addMessage}
                 resources={state.resources}
                 filterState={state.filterState}
                 filterResult={state.filterResult}
                 pickerOptionsPresentation={pickerPresentation.source}
                 onExport={(data, type) => {
                   switch (type) {
-                    case 'bundle':
-                      actions.exportBundle();
-                      break;
-                    case 'compiled':
-                      actions.exportCompiled();
-                      break;
-                    case 'source':
+                    case 'json':
                       actions.exportSource();
                       break;
                     default:
@@ -535,7 +502,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
               <FilterView
-                onMessage={actions.addMessage}
                 resources={state.resources}
                 filterState={state.filterState}
                 filterActions={{
@@ -591,7 +557,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             {/* View content - hide original title */}
             <div className="[&>div]:pt-0 [&>div>div:first-child]:hidden">
               <CompiledView
-                onMessage={actions.addMessage}
                 resources={state.resources}
                 filterState={state.filterState}
                 filterResult={state.filterResult}
@@ -602,18 +567,15 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                     case 'bundle':
                       actions.exportBundle();
                       break;
-                    case 'compiled':
+                    case 'json':
                       actions.exportCompiled();
-                      break;
-                    case 'source':
-                      actions.exportSource();
                       break;
                     default:
                       actions.addMessage(
                         'warning',
-                        `Unknown export type: ${type}. Using source export as fallback.`
+                        `Unknown export type: ${type}. Using compiled export as fallback.`
                       );
-                      actions.exportSource();
+                      actions.exportCompiled();
                   }
                 }}
               />
@@ -729,7 +691,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 const showPendingInList = mode === 'create';
                 return (
                   <ResolutionView
-                    onMessage={actions.addMessage}
                     resources={state.resources}
                     filterState={state.filterState}
                     filterResult={state.filterResult}
@@ -762,7 +723,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'configuration':
         return (
           <ConfigurationView
-            onMessage={actions.addMessage}
             configuration={state.configuration}
             onConfigurationChange={actions.updateConfiguration}
             onSave={(config) => {
@@ -789,11 +749,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             </div>
             {/* View content */}
             <div className="[&>div]:pt-0">
-              <ResourcePickerTool
-                resources={state.resources}
-                onMessage={actions.addMessage}
-                presentation={pickerPresentation.picker}
-              />
+              <ResourcePickerTool resources={state.resources} presentation={pickerPresentation.picker} />
             </div>
           </div>
         );
@@ -868,7 +824,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resolutionActions={resolutionActions}
                 availableQualifiers={availableQualifiers}
                 pickerOptionsPresentation={pickerPresentation.grid}
-                onMessage={actions.addMessage}
               />
             </div>
           </div>
@@ -920,7 +875,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 availableQualifiers={availableQualifiers}
                 tabsPresentation={selectedMultiGridTabs}
                 pickerOptionsPresentation={pickerPresentation.multiGrid}
-                onMessage={actions.addMessage}
               />
             </div>
           </div>
@@ -931,7 +885,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       default:
         return (
           <ImportView
-            onMessage={actions.addMessage}
             importError={state.error}
             onImport={async (data) => {
               logImportStage(o11y, 'start');
@@ -994,7 +947,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
 };
 
 const App: React.FC = () => {
-  // Create enhanced observability context with diagnostic logging
+  // Create enhanced observability context with diagnostic logging for factories
+  // Note: This is only used for the factory chain, not for UI messages
   const appO11yContext = createPlaygroundObservabilityContext();
 
   // Create observable custom factory and wrap in QualifierTypeFactory for proper chaining
@@ -1010,7 +964,8 @@ const App: React.FC = () => {
       qualifierTypeFactory={qualifierTypeFactory}
       resourceTypeFactory={demoResourceTypeFactory}
       resourceEditorFactory={playgroundResourceEditorFactory}
-      observabilityContext={appO11yContext}
+      // DO NOT pass observabilityContext - let ResourceOrchestrator create the default
+      // ViewState-connected context so messages appear in the UI
     >
       {(orchestrator) => {
         // Log when orchestrator is ready
