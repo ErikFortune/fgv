@@ -38,6 +38,44 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[filterResult?](./ts-res-ui-components.tsrestools.isourceviewprops.filterresult.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IFilterResult](./ts-res-ui-components.filtertools.ifilterresult.md) \| null
+
+
+</td><td>
+
+_(Optional)_ Result of filtering if applied
+
+
+</td></tr>
+<tr><td>
+
+[filterState?](./ts-res-ui-components.tsrestools.isourceviewprops.filterstate.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IFilterState](./ts-res-ui-components.filtertools.ifilterstate.md)
+
+
+</td><td>
+
+_(Optional)_ Optional filter state for filtered views
+
+
+</td></tr>
+<tr><td>
+
 [onExport?](./ts-res-ui-components.tsrestools.isourceviewprops.onexport.md)
 
 

@@ -217,6 +217,25 @@ IMessage\[\]
 </td></tr>
 <tr><td>
 
+[resourceEditorFactory?](./ts-res-ui-components.iorchestratorstate.resourceeditorfactory.md)
+
+
+</td><td>
+
+
+</td><td>
+
+[IResourceEditorFactory](./ts-res-ui-components.resourcetools.iresourceeditorfactory.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [resources](./ts-res-ui-components.iorchestratorstate.resources.md)
 
 

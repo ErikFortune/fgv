@@ -30,6 +30,19 @@ Provides access to both diagnostic logging (for developers/debugging) and user l
 
 
 </td></tr>
+<tr><td>
+
+[useSmartObservability()](./ts-res-ui-components.usesmartobservability.md)
+
+
+</td><td>
+
+Smart observability hook that automatically provides the best available observability context.
+
+This hook detects the current observability context type and: - Uses ViewState-connected context when available (best experience) - Auto-creates ViewState connection when only console context is available - Preserves custom contexts provided by consumers - Provides helpful warnings for suboptimal configurations
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

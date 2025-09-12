@@ -799,6 +799,8 @@ export interface IOrchestratorState {
     // (undocumented)
     resolutionState: IResolutionState;
     // (undocumented)
+    resourceEditorFactory?: IResourceEditorFactory;
+    // (undocumented)
     resources: IExtendedProcessedResources | null;
     // (undocumented)
     selectedResourceId: string | null;
@@ -1427,6 +1429,9 @@ function useResolutionState(processedResources: IProcessedResources | null, onSy
 //
 // @public
 function useResourceData(params?: IUseResourceDataParams): IUseResourceDataReturn;
+
+// @public
+export function useSmartObservability(): IObservabilityContext;
 
 // Warning: (ae-forgotten-export) The symbol "IUseViewStateReturn" needs to be exported by the entry point index.d.ts
 //
