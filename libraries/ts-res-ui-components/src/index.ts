@@ -32,13 +32,18 @@ export { MultiGridView } from './components/views/GridView/MultiGridView';
 export { ResourceOrchestrator } from './components/orchestrator/ResourceOrchestrator';
 
 // Export contexts and hooks
-export { ObservabilityProvider, useObservability, type IObservabilityProviderProps } from './contexts';
+import { ObservabilityProvider, useObservability, type IObservabilityProviderProps } from './contexts';
+import { useSmartObservability } from './hooks/useSmartObservability';
+
+export { useSmartObservability, ObservabilityProvider, useObservability, type IObservabilityProviderProps };
 
 // Export common components (likely to be used by consumers)
-export { ResourceTreeView } from './components/common/ResourceTreeView';
-export { ResourceListView } from './components/common/ResourceListView';
-export { SourceResourceDetail } from './components/common/SourceResourceDetail';
-export { ResolutionResults } from './components/common/ResolutionResults';
+import { ResourceTreeView } from './components/common/ResourceTreeView';
+import { ResourceListView } from './components/common/ResourceListView';
+import { SourceResourceDetail } from './components/common/SourceResourceDetail';
+import { ResolutionResults } from './components/common/ResolutionResults';
+
+export { ResourceTreeView, ResourceListView, SourceResourceDetail, ResolutionResults };
 
 // Form components are now available through ConfigurationTools namespace:
 // - ConfigurationTools.QualifierTypeEditForm

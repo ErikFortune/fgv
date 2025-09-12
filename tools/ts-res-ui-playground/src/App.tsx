@@ -24,6 +24,7 @@ import {
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
+import { playgroundResourceEditorFactory } from './utils/resourceEditorFactory';
 // Unified tool: HostControlledResolution and ResourceCreationTest functionality
 // will be merged into the main Resolution Viewer via mode and panels
 import ViewWithPresentationSelector, {
@@ -175,7 +176,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
     [selectedGridConfig]
   );
 
-  // Note: Custom factories are now configured at the ResourceOrchestrator level
+  // Note: Resource editor factory is configured at the ResourceOrchestrator level and passed to ResolutionView via orchestrator state
 
   // Ref to track if we've already initialized from URL parameters
   const initializedFromUrlRef = React.useRef(false);
@@ -735,6 +736,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                     resolutionState={state.resolutionState}
                     resolutionActions={resolutionActions}
                     availableQualifiers={availableQualifiers}
+                    resourceEditorFactory={state.resourceEditorFactory}
                     pickerOptionsPresentation={pickerPresentation.resolution}
                     lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
                     sectionTitles={customSectionTitles}
@@ -1007,6 +1009,7 @@ const App: React.FC = () => {
     <ResourceOrchestrator
       qualifierTypeFactory={qualifierTypeFactory}
       resourceTypeFactory={demoResourceTypeFactory}
+      resourceEditorFactory={playgroundResourceEditorFactory}
       observabilityContext={appO11yContext}
     >
       {(orchestrator) => {

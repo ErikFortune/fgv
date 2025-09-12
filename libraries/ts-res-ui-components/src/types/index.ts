@@ -1213,6 +1213,7 @@ export interface IOrchestratorState {
   isProcessing: boolean;
   error: string | null;
   messages: IMessage[];
+  resourceEditorFactory?: IResourceEditorFactory;
 }
 
 /**

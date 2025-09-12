@@ -8,7 +8,8 @@ import {
   IImportedFile,
   IProcessedResources,
   IFilterState,
-  IFilterResult
+  IFilterResult,
+  IResourceEditorFactory
 } from '../../types';
 import * as ObservabilityTools from '../../utils/observability';
 import { useResourceData } from '../../hooks/useResourceData';
@@ -39,6 +40,12 @@ export interface IResourceOrchestratorProps {
     ResourceTypes.Config.IResourceTypeConfig,
     ResourceTypes.ResourceType
   >;
+  /**
+   * Optional factory for creating type-specific resource editors.
+   * When provided, ResolutionView will use custom editors for supported resource types
+   * instead of the default JSON editor.
+   */
+  resourceEditorFactory?: IResourceEditorFactory;
   /** Callback fired when orchestrator state changes */
   onStateChange?: (state: Partial<IOrchestratorState>) => void;
   /** Optional observability context for logging and user feedback */
@@ -57,6 +64,7 @@ const ResourceOrchestratorInternal: React.FC<
   initialConfiguration,
   qualifierTypeFactory,
   resourceTypeFactory,
+  resourceEditorFactory,
   onStateChange,
   viewState
 }) => {
@@ -296,7 +304,8 @@ const ResourceOrchestratorInternal: React.FC<
       selectedResourceId: viewState.selectedResourceId,
       isProcessing: resourceData.state.isProcessing,
       error: resourceData.state.error,
-      messages: viewState.messages
+      messages: viewState.messages,
+      resourceEditorFactory
     }),
     [
       resourceData.state,
@@ -304,7 +313,8 @@ const ResourceOrchestratorInternal: React.FC<
       filterResult,
       resolutionData.state,
       viewState.selectedResourceId,
-      viewState.messages
+      viewState.messages,
+      resourceEditorFactory
     ]
   );
 

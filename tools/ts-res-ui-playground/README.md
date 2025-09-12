@@ -104,7 +104,6 @@ src/
 │   │   ├── ResourceCreationTest.tsx # Resource creation testing
 │   │   └── HostControlledResolution.tsx # Host-controlled resolution demo
 │   ├── editors/         # Resource editors
-│   │   ├── PlaygroundResourceEditorFactory.tsx # Editor factory
 │   │   └── MarketInfoEditor.tsx     # Custom market info editor
 │   └── common/          # Shared components
 ├── hooks/               # Custom React hooks
@@ -115,6 +114,7 @@ src/
 │   ├── zip/                         # Browser-specific ZIP utilities
 │   ├── fileImport.ts                # File system integration
 │   ├── fileTreeConverter.ts         # FileTree integration
+│   ├── resourceEditorFactory.ts     # Resource editor factory
 │   └── urlParams.ts                 # URL parameter utilities
 ├── types/               # TypeScript type definitions
 ├── App.tsx              # Main application component  
@@ -128,7 +128,7 @@ src/
 - **Tailwind CSS** for styling
 - **Heroicons** for iconography  
 - **@fgv/ts-res** for resource management and ZIP archive processing
-- **@fgv/ts-res-ui-components** for UI components and orchestration
+- **@fgv/ts-res-ui-components** for UI components, orchestration, and observability hooks
 - **@fgv/ts-utils** for Result pattern and FileTree abstraction
 
 ## Architecture
