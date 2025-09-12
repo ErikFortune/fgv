@@ -50,6 +50,8 @@ import { useSmartObservability } from '../../../hooks/useSmartObservability';
  */
 export const SourceView: React.FC<ISourceViewProps> = ({
   resources,
+  filterState,
+  filterResult,
   onExport,
   pickerOptions,
   pickerOptionsPresentation = 'hidden',
@@ -58,6 +60,10 @@ export const SourceView: React.FC<ISourceViewProps> = ({
   const o11y = useSmartObservability();
   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
   const [showJsonView, setShowJsonView] = useState(false);
+
+  // Use filtered resources when filtering is active and successful
+  const isFilteringActive = filterState?.enabled && filterResult?.success === true;
+  const activeProcessedResources = isFilteringActive ? filterResult?.processedResources : resources;
 
   // State for picker options control
   const [currentPickerOptions, setCurrentPickerOptions] = useState<IResourcePickerOptions>(
@@ -95,41 +101,43 @@ export const SourceView: React.FC<ISourceViewProps> = ({
 
   // Get full resource collection data using the new method
   const getResourceCollectionData = useCallback(() => {
-    if (!resources?.system.resourceManager) {
+    if (!activeProcessedResources?.system.resourceManager) {
       return null;
     }
 
     // Check if this is a ResourceManagerBuilder (has getResourceCollectionDecl method)
-    if ('getResourceCollectionDecl' in resources.system.resourceManager) {
-      const collectionResult = resources.system.resourceManager.getResourceCollectionDecl();
+    if ('getResourceCollectionDecl' in activeProcessedResources.system.resourceManager) {
+      const collectionResult = activeProcessedResources.system.resourceManager.getResourceCollectionDecl();
       if (collectionResult.isSuccess()) {
         return {
           ...collectionResult.value,
           metadata: {
             exportedAt: new Date().toISOString(),
-            totalResources: resources.summary.totalResources,
-            type: 'ts-res-resource-collection'
+            totalResources: activeProcessedResources.summary.totalResources,
+            type: isFilteringActive ? 'ts-res-filtered-resource-collection' : 'ts-res-resource-collection',
+            ...(isFilteringActive && { filterContext: filterState?.appliedValues })
           }
         };
       } else {
         o11y.user.error(`Failed to get resource collection: ${collectionResult.message}`);
         return null;
       }
-    } else if (resources.compiledCollection) {
+    } else if (activeProcessedResources.compiledCollection) {
       // For IResourceManager from bundles, use the compiled collection directly
       return {
-        resources: resources.compiledCollection.resources || [],
+        resources: activeProcessedResources.compiledCollection.resources || [],
         metadata: {
           exportedAt: new Date().toISOString(),
-          totalResources: resources.summary.totalResources,
-          type: 'ts-res-resource-collection'
+          totalResources: activeProcessedResources.summary.totalResources,
+          type: isFilteringActive ? 'ts-res-filtered-resource-collection' : 'ts-res-resource-collection',
+          ...(isFilteringActive && { filterContext: filterState?.appliedValues })
         }
       };
     } else {
       o11y.user.error('Resource collection data not available');
       return null;
     }
-  }, [resources, o11y]);
+  }, [activeProcessedResources, isFilteringActive, filterState?.appliedValues, o11y]);
 
   // Export source data to JSON file
   const handleExportSourceData = useCallback(() => {
@@ -149,7 +157,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
     }
   }, [getResourceCollectionData, onExport, o11y]);
 
-  if (!resources) {
+  if (!activeProcessedResources) {
     return (
       <div className={`p-6 ${className}`}>
         <div className="flex items-center space-x-3 mb-6">
@@ -179,8 +187,13 @@ export const SourceView: React.FC<ISourceViewProps> = ({
         <div className="flex items-center space-x-3">
           <DocumentTextIcon className="h-8 w-8 text-blue-600" />
           <h2 className="text-2xl font-bold text-gray-900">Source Browser</h2>
+          {isFilteringActive && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              Filtered
+            </span>
+          )}
         </div>
-        {resources && (
+        {activeProcessedResources && (
           <div className="flex items-center space-x-2">
             <button
               onClick={handleExportSourceData}
@@ -203,7 +216,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
       />
 
       {/* JSON View Toggle */}
-      {resources && (
+      {activeProcessedResources && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
           <button
             onClick={() => setShowJsonView(!showJsonView)}
@@ -252,7 +265,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
             {/* Enhanced Resource Picker */}
             <div className="flex-1 min-h-0">
               <ResourcePicker
-                resources={resources}
+                resources={activeProcessedResources}
                 selectedResourceId={selectedResourceId}
                 onResourceSelect={handleResourceSelect}
                 options={effectivePickerOptions}
@@ -263,7 +276,10 @@ export const SourceView: React.FC<ISourceViewProps> = ({
           {/* Right side: Resource Details */}
           <div className="lg:w-1/2 flex flex-col">
             {selectedResourceId ? (
-              <SourceResourceDetail resourceId={selectedResourceId} processedResources={resources} />
+              <SourceResourceDetail
+                resourceId={selectedResourceId}
+                processedResources={activeProcessedResources}
+              />
             ) : (
               <div className="flex-1 flex items-center justify-center border border-gray-200 rounded-lg bg-gray-50">
                 <div className="text-center">
