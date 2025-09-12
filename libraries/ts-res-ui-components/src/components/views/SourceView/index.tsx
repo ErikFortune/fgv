@@ -125,7 +125,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
     } else if (activeProcessedResources.compiledCollection) {
       // For IResourceManager from bundles, use the compiled collection directly
       return {
-        resources: activeProcessedResources.compiledCollection.resources || [],
+        resources: activeProcessedResources.compiledCollection.resources ?? [],
         metadata: {
           exportedAt: new Date().toISOString(),
           totalResources: activeProcessedResources.summary.totalResources,
