@@ -1,9 +1,11 @@
 {
   "cSpell.words": [
+    "autoinstaller",
     "autoinstallers",
     "aval",
     "bval",
     "dflt",
+    "editability",
     "hashable",
     "lcov",
     "luxon",
@@ -19,6 +21,7 @@
     "TCONV",
     "TDEST",
     "TELEM",
+    "topstring",
     "tsdoc",
     "TSRC",
     "TTOELEM",

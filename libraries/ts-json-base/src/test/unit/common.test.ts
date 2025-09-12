@@ -117,7 +117,7 @@ describe('json/common module', () => {
   });
 
   describe('classifyJsonValue function', () => {
-    test('returns "primitive" for avalid JsonPrimitive', () => {
+    test('returns "primitive" for a valid JsonPrimitive', () => {
       ['string', 10, true, null].forEach((t) => {
         expect(classifyJsonValue(t)).toSucceedWith('primitive');
       });
