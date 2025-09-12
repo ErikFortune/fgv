@@ -1098,6 +1098,8 @@ function isConsoleOnlyContext(context: IObservabilityContext): boolean;
 
 // @public
 interface ISourceViewProps extends IViewBaseProps {
+    filterResult?: IFilterResult | null;
+    filterState?: IFilterState;
     onExport?: (data: unknown, type: 'json') => void;
     onResourceSelect?: (resourceId: string) => void;
     pickerOptions?: IResourcePickerOptions;

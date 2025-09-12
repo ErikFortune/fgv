@@ -246,6 +246,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
           <SourceView
             onMessage={actions.addMessage}
             resources={state.resources}
+            filterState={state.filterState}
+            filterResult={state.filterResult}
             selectedResourceId={state.selectedResourceId}
             onResourceSelect={actions.selectResource}
             onExport={(data, type) => {

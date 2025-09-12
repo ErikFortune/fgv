@@ -80,10 +80,18 @@ const ResourceOrchestratorInternal: React.FC<
     [resourceData.actions, o11y.user]
   );
 
-  const resolutionData = useResolutionState(resourceData.state.processedResources, handleSystemUpdate);
-
   // Local state for filter results
   const [filterResult, setFilterResult] = useState<IFilterResult | null>(null);
+
+  // Use filtered resources for resolution when filtering is active and successful
+  const resolutionProcessedResources = useMemo(() => {
+    const isFilteringActive = filterState.state.enabled && filterResult?.success === true;
+    return isFilteringActive
+      ? filterResult?.processedResources ?? null
+      : resourceData.state.processedResources;
+  }, [filterState.state.enabled, filterResult, resourceData.state.processedResources]);
+
+  const resolutionData = useResolutionState(resolutionProcessedResources, handleSystemUpdate);
 
   // Track if filtering is in progress to prevent concurrent operations
   const isFilteringInProgress = React.useRef(false);

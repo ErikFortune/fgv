@@ -221,7 +221,7 @@ export const ResourcePicker = <T = unknown,>({
           />
         ) : (
           <ResourcePickerList<T>
-            resourceIds={resources.summary.resourceIds || []}
+            resourceIds={resourceIds}
             pendingResources={pendingResources}
             selectedResourceId={selectedResourceId}
             onResourceSelect={handleResourceSelect}

@@ -268,6 +268,10 @@ export interface IImportViewProps extends IViewBaseProps {
 export interface ISourceViewProps extends IViewBaseProps {
   /** The processed resource system to display */
   resources?: IExtendedProcessedResources | null;
+  /** Optional filter state for filtered views */
+  filterState?: IFilterState;
+  /** Result of filtering if applied */
+  filterResult?: IFilterResult | null;
   /** Currently selected resource ID for detailed view */
   selectedResourceId?: string | null;
   /** Callback when a resource is selected */
