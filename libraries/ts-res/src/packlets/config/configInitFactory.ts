@@ -21,7 +21,7 @@
  */
 
 import { Result, fail } from '@fgv/ts-utils';
-import { QualifierType } from '../qualifier-types';
+import { QualifierType, SystemQualifierType } from '../qualifier-types';
 import * as QualifierTypes from '../qualifier-types';
 import * as ResourceTypes from '../resource-types';
 import { ResourceType } from '../resource-types';
@@ -70,14 +70,17 @@ export class ChainedConfigInitFactory<TConfig, T> implements IConfigInitFactory<
 }
 
 /**
- * A factory that creates a {@link QualifierTypes.QualifierType | QualifierType} from a {@link QualifierTypes.Config.ISystemQualifierTypeConfig | system qualifier type configuration}.
+ * A factory that creates a {@link QualifierTypes.SystemQualifierType | SystemQualifierType} from
+ * {@link QualifierTypes.Config.IAnyQualifierTypeConfig | any qualifier type configuration}.
+ * @returns `Success` with the new {@link QualifierTypes.SystemQualifierType | SystemQualifierType}
+ * if successful, `Failure` with an error message otherwise.
  * @public
  */
 export class BuiltInQualifierTypeFactory
-  implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>
+  implements IConfigInitFactory<QualifierTypes.Config.ISystemQualifierTypeConfig, SystemQualifierType>
 {
   /** {@inheritDoc Config.IConfigInitFactory.create} */
-  public create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<QualifierType> {
+  public create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<SystemQualifierType> {
     if (QualifierTypes.Config.isSystemQualifierTypeConfig(config)) {
       return QualifierTypes.createQualifierTypeFromSystemConfig(config);
     }
@@ -86,72 +89,57 @@ export class BuiltInQualifierTypeFactory
 }
 
 /**
- * An adapter factory that bridges {@link QualifierTypes.SystemQualifierType | SystemQualifierType}
- * to any discriminated union type that extends {@link QualifierTypes.QualifierType | QualifierType}.
- * This allows external consumers to create their own discriminated unions that include both
- * built-in system types and custom qualifier types.
- * @public
- */
-export class AdaptingBuiltInQualifierTypeFactory<T extends QualifierType>
-  implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>
-{
-  /** {@inheritDoc Config.IConfigInitFactory.create} */
-  public create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<T> {
-    if (QualifierTypes.Config.isSystemQualifierTypeConfig(config)) {
-      return QualifierTypes.createQualifierTypeFromSystemConfig(config) as unknown as Result<T>;
-    }
-    return fail(`${config.name}: unknown built-in qualifier type (${config.systemType})`);
-  }
-}
-
-/**
- * A generic factory that creates qualifier types of type T from configuration objects.
- * This allows external consumers to define their own discriminated union types that extend
- * the base {@link QualifierTypes.QualifierType | QualifierType} while maintaining type safety
- * and discrimination capabilities.
+ * A factory that creates {@link QualifierTypes.QualifierType | QualifierType} instances from configuration,
+ * supporting both built-in system types and custom external types.
  *
- * @param T - The discriminated union type that extends QualifierType
+ * This factory allows external consumers to extend the qualifier type system with their own custom types
+ * while maintaining support for all built-in types (Language, Territory, Literal).
+ *
+ * @typeParam T - The custom qualifier type(s) to support. Defaults to {@link QualifierTypes.SystemQualifierType | SystemQualifierType}.
+ *
+ * @example Creating a factory with custom qualifier types
+ * ```typescript
+ * // Define a custom qualifier type
+ * class CustomQualifierType extends QualifierType {
+ *   // ... implementation
+ * }
+ *
+ * // Define a discriminated union of all types
+ * type AppQualifierType = SystemQualifierType | CustomQualifierType;
+ *
+ * // Create a factory that handles custom types
+ * const customFactory: IConfigInitFactory<IAnyQualifierTypeConfig, CustomQualifierType> = {
+ *   create(config) {
+ *     // ... handle custom type creation
+ *   }
+ * };
+ *
+ * // Create the combined factory
+ * const qualifierTypeFactory = new QualifierTypeFactory<AppQualifierType>([customFactory]);
+ *
+ * // The factory returns T | SystemQualifierType, supporting all types
+ * const result = qualifierTypeFactory.create(config); // Result<AppQualifierType | SystemQualifierType>
+ * ```
+ *
+ * @remarks
+ * - The factory chains custom factories with the built-in factory
+ * - Custom factories are tried first, falling back to built-in types
+ * - The return type is a union of custom types (T) and system types
+ *
  * @public
  */
-export class GenericQualifierTypeFactory<
-  T extends QualifierType = QualifierType
-> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
-  /**
-   * Constructor for a generic qualifier type factory.
-   * @param factories - The {@link Config.IConfigInitFactory | factories} to chain for custom types.
-   * @param builtInFactory - Optional custom built-in factory. Defaults to {@link Config.AdaptingBuiltInQualifierTypeFactory}.
-   * @remarks The built-in factory is always added to the end of the chain to handle system qualifier types.
-   */
-  public constructor(
-    factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[],
-    builtInFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>
-  ) {
-    const defaultBuiltIn = builtInFactory ?? new AdaptingBuiltInQualifierTypeFactory<T>();
-    super([...factories, defaultBuiltIn]);
-  }
-}
-
-/**
- * A factory that creates a {@link QualifierTypes.QualifierType | QualifierType} from a {@link QualifierTypes.Config.IAnyQualifierTypeConfig | system qualifier type configuration}
- * by chaining a supplied factory with a {@link Config.BuiltInQualifierTypeFactory | built-in factory} that handles built-in qualifier types.
- * @public
- */
-export class QualifierTypeFactory extends GenericQualifierTypeFactory<QualifierType> {
+export class QualifierTypeFactory<
+  T extends QualifierType = SystemQualifierType
+> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T | SystemQualifierType> {
   /**
    * Constructor for a {@link Config.QualifierTypeFactory | qualifier type factory}.
-   * @param factories - The {@link Config.IConfigInitFactory | factories} to chain.
-   * @remarks The {@link Config.BuiltInQualifierTypeFactory | built-in factory} is always added to the end of the chain.
+   * @param factories - Array of {@link Config.IConfigInitFactory | factories} for custom qualifier types.
+   *                    These are tried in order before falling back to built-in types.
+   * @remarks The {@link Config.BuiltInQualifierTypeFactory | built-in factory} is always appended to handle
+   *          system qualifier types (Language, Territory, Literal).
    */
-  public constructor(
-    factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>[]
-  ) {
-    super(
-      factories,
-      new BuiltInQualifierTypeFactory() as IConfigInitFactory<
-        QualifierTypes.Config.IAnyQualifierTypeConfig,
-        QualifierType
-      >
-    );
+  public constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[]) {
+    super([...factories, new BuiltInQualifierTypeFactory()]);
   }
 }
 

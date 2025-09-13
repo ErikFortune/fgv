@@ -19,23 +19,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[AdaptingBuiltInQualifierTypeFactory](./ts-res.config.adaptingbuiltinqualifiertypefactory.md)
-
-
-</td><td>
-
-An adapter factory that bridges [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) to any discriminated union type that extends [QualifierType](./ts-res.qualifiertypes.qualifiertype.md)<!-- -->. This allows external consumers to create their own discriminated unions that include both built-in system types and custom qualifier types.
-
-
-</td></tr>
-<tr><td>
-
 [BuiltInQualifierTypeFactory](./ts-res.config.builtinqualifiertypefactory.md)
 
 
 </td><td>
 
-A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.isystemqualifiertypeconfig.md)<!-- -->.
+A factory that creates a [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) from [any qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md)<!-- -->.
 
 
 </td></tr>
@@ -58,17 +47,6 @@ A factory that creates a [ResourceType](./ts-res.resourcetypes.resourcetype.md) 
 </td><td>
 
 A factory that chains multiple factories together.
-
-
-</td></tr>
-<tr><td>
-
-[GenericQualifierTypeFactory](./ts-res.config.genericqualifiertypefactory.md)
-
-
-</td><td>
-
-A generic factory that creates qualifier types of type T from configuration objects. This allows external consumers to define their own discriminated union types that extend the base [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) while maintaining type safety and discrimination capabilities.
 
 
 </td></tr>

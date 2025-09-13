@@ -9,7 +9,7 @@ Constructor for a [qualifier type factory](./ts-res.config.qualifiertypefactory.
 **Signature:**
 
 ```typescript
-constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>[]);
+constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[]);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ factories
 
 </td><td>
 
-[IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, [QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;\[\]
+[IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, T&gt;\[\]
 
 
 </td><td>

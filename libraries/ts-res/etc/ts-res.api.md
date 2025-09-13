@@ -55,17 +55,6 @@ class AbstractDecisionCollector extends ValidatingCollector<AbstractDecision> {
     static readonly EmptyDecisionIndex: DecisionIndex;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class AdaptingBuiltInQualifierTypeFactory<T extends QualifierType> implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<T>;
-}
-
 // @public
 class AggregateCacheMetrics implements ICacheMetrics {
     constructor();
@@ -143,13 +132,14 @@ function buildQualifierDefaultValueToken({ qualifier, value }: IQualifierDefault
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class BuiltInQualifierTypeFactory implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType> {
+class BuiltInQualifierTypeFactory implements IConfigInitFactory<QualifierTypes.Config.ISystemQualifierTypeConfig, SystemQualifierType> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<QualifierType>;
+    create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<SystemQualifierType>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -830,8 +820,6 @@ declare namespace Config {
         IConfigInitFactory,
         ChainedConfigInitFactory,
         BuiltInQualifierTypeFactory,
-        AdaptingBuiltInQualifierTypeFactory,
-        GenericQualifierTypeFactory,
         QualifierTypeFactory,
         BuiltInResourceTypeFactory,
         ResourceTypeFactory,
@@ -1356,15 +1344,6 @@ type FsItemResultDetail = 'failed' | 'skipped' | 'succeeded';
 
 // @public
 function generateZipArchiveFilename(customName?: string): string;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-class GenericQualifierTypeFactory<T extends QualifierType = QualifierType> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[], builtInFactory?: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>);
-}
 
 // @public
 function getDirectoryName(path: string): string;
@@ -2927,11 +2906,11 @@ interface IResourceType<T = unknown> extends ICollectible<ResourceTypeName, Reso
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-interface IResourceTypeConfig {
+interface IResourceTypeConfig<T extends JsonObject = JsonObject> {
     // (undocumented)
     name: string;
     // (undocumented)
-    template?: JsonObject;
+    template?: T;
     // (undocumented)
     typeName: string;
 }
@@ -3973,14 +3952,13 @@ function qualifierTypeConfig<T, TD = unknown>(config: Converter<T, TD>): Convert
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class QualifierTypeFactory extends GenericQualifierTypeFactory<QualifierType> {
+class QualifierTypeFactory<T extends QualifierType = SystemQualifierType> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T | SystemQualifierType> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType>[]);
+    constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[]);
 }
 
 // @public
@@ -4717,7 +4695,7 @@ class ResourceTypeCollector extends ValidatingCollector<ResourceType> {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const resourceTypeConfig: ObjectConverter<IResourceTypeConfig, unknown>;
+const resourceTypeConfig: ObjectConverter<IResourceTypeConfig<JsonObject>, unknown>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

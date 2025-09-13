@@ -9,5 +9,5 @@ A `Converter` for [ResourceTypeConfig](./ts-res.resourcetypes.config.iresourcety
 **Signature:**
 
 ```typescript
-resourceTypeConfig: import("@fgv/ts-utils").ObjectConverter<IResourceTypeConfig, unknown>
+resourceTypeConfig: import("@fgv/ts-utils").ObjectConverter<IResourceTypeConfig<import("@fgv/ts-json-base").JsonObject>, unknown>
 ```

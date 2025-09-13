@@ -4,14 +4,14 @@
 
 ## Config.BuiltInQualifierTypeFactory class
 
-A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.isystemqualifiertypeconfig.md)<!-- -->.
+A factory that creates a [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) from [any qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare class BuiltInQualifierTypeFactory implements IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType> 
+export declare class BuiltInQualifierTypeFactory implements IConfigInitFactory<QualifierTypes.Config.ISystemQualifierTypeConfig, SystemQualifierType> 
 ```
-**Implements:** [IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, [QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
+**Implements:** [IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.ISystemQualifierTypeConfig, [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md)<!-- -->&gt;
 
 ## Methods
 

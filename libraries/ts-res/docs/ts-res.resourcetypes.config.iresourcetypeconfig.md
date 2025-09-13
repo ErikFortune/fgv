@@ -9,7 +9,7 @@ Configuration for a [resource type](./ts-res.resourcetypes.resourcetype.md)<!-- 
 **Signature:**
 
 ```typescript
-export interface IResourceTypeConfig 
+export interface IResourceTypeConfig<T extends JsonObject = JsonObject> 
 ```
 
 ## Properties
@@ -62,7 +62,7 @@ string
 
 </td><td>
 
-JsonObject
+T
 
 
 </td><td>
