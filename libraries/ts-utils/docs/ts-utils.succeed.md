@@ -47,7 +47,12 @@ The successful result value to be returned
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Success](./ts-utils.success.md)<!-- -->&lt;T&gt;
+
+## Remarks
+
+A `succeeds` alias was added in release 5.0 for naming consistency with [fails](./ts-utils.fails.md)<!-- -->, which was added to avoid conflicts with test frameworks and libraries.
 

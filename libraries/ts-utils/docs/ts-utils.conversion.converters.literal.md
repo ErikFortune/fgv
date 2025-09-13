@@ -47,6 +47,7 @@ The value to be compared.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;

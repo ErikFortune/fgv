@@ -9,7 +9,7 @@ Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a sup
 **Signature:**
 
 ```typescript
-export declare function failWithDetail<T, TD>(message: string, detail: TD): DetailedFailure<T, TD>;
+export declare function failWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
 ```
 
 ## Parameters
@@ -58,14 +58,19 @@ TD
 
 </td><td>
 
-The event detail to be returned.
+_(Optional)_ The event detail to be returned.
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedFailure](./ts-utils.detailedfailure.md)<!-- -->&lt;T, TD&gt;
 
 An [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with the supplied error message and detail.
+
+## Remarks
+
+The `failsWithDetail` alias was added in release 5.0 for naming consistency with [fails](./ts-utils.fails.md)<!-- -->, which was added to avoid conflicts with test frameworks and libraries.
 

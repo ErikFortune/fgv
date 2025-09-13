@@ -47,6 +47,7 @@ The function to be captured.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;T&gt;

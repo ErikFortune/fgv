@@ -94,6 +94,17 @@ Picks a nested field from a supplied [JsonObject](./ts-json-base.jsonobject.md)<
 
 
 </td></tr>
+<tr><td>
+
+[sanitizeJsonObject(from)](./ts-json-base.sanitizejsonobject.md)
+
+
+</td><td>
+
+Sanitizes some value using JSON stringification and parsing, returning an returning a matching strongly-typed value.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -190,6 +201,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[JsonCompatible](./ts-json-base.jsoncompatible.md)
+
+
+</td><td>
+
+A constrained type that is compatible with JSON serialization.
+
+
+</td></tr>
+<tr><td>
+
+[JsonCompatibleArray](./ts-json-base.jsoncompatiblearray.md)
+
+
+</td><td>
+
+A type that represents an array of JSON-compatible values.
+
+
+</td></tr>
+<tr><td>
+
 [JsonPrimitive](./ts-json-base.jsonprimitive.md)
 
 
@@ -222,3 +255,4 @@ Classes of [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->.
 
 </td></tr>
 </tbody></table>
+

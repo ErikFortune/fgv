@@ -63,6 +63,7 @@ _(Optional)_ Optional [options](./ts-json.ireferencemapkeypolicyvalidateoptions.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;\[string, T\]\[\]&gt;

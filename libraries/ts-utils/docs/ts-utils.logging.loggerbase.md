@@ -4,12 +4,14 @@
 
 ## Logging.LoggerBase class
 
+Abstract base class which implements [ILogger](./ts-utils.logging.ilogger.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare abstract class LoggerBase 
+export declare abstract class LoggerBase implements ILogger 
 ```
+**Implements:** [ILogger](./ts-utils.logging.ilogger.md)
 
 ## Constructors
 
@@ -35,6 +37,8 @@ Description
 
 
 </td><td>
+
+`protected`
 
 
 </td><td>
@@ -78,10 +82,12 @@ Description
 
 </td><td>
 
-[LogLevel](./ts-utils.logging.loglevel.md)
+[ReporterLogLevel](./ts-utils.logging.reporterloglevel.md)
 
 
 </td><td>
+
+The level of logging to be used.
 
 
 </td></tr>
@@ -117,11 +123,13 @@ Description
 
 </td><td>
 
+Formats a message and parameters into a string.
+
 
 </td></tr>
 <tr><td>
 
-[\_innerLog(message)](./ts-utils.logging.loggerbase._innerlog.md)
+[\_log(message, level)](./ts-utils.logging.loggerbase._log.md)
 
 
 </td><td>
@@ -133,11 +141,13 @@ Description
 
 </td><td>
 
+Inner method called for logged messages. Should be implemented by derived classes.
+
 
 </td></tr>
 <tr><td>
 
-[\_innerSilent(\_\_message)](./ts-utils.logging.loggerbase._innersilent.md)
+[\_suppressLog(\_\_level, \_\_message, \_\_parameters)](./ts-utils.logging.loggerbase._suppresslog.md)
 
 
 </td><td>
@@ -146,6 +156,8 @@ Description
 
 
 </td><td>
+
+Inner method called for suppressed log messages.
 
 
 </td></tr>
@@ -159,6 +171,8 @@ Description
 
 </td><td>
 
+Logs a detail message.
+
 
 </td></tr>
 <tr><td>
@@ -170,6 +184,8 @@ Description
 
 
 </td><td>
+
+Logs an error message.
 
 
 </td></tr>
@@ -183,17 +199,21 @@ Description
 
 </td><td>
 
+Logs an info message.
+
 
 </td></tr>
 <tr><td>
 
-[log(message, parameters)](./ts-utils.logging.loggerbase.log.md)
+[log(level, message, parameters)](./ts-utils.logging.loggerbase.log.md)
 
 
 </td><td>
 
 
 </td><td>
+
+Logs a message at the given level.
 
 
 </td></tr>
@@ -207,18 +227,9 @@ Description
 
 </td><td>
 
-
-</td></tr>
-<tr><td>
-
-[warnAndFail(message, parameters)](./ts-utils.logging.loggerbase.warnandfail.md)
-
-
-</td><td>
-
-
-</td><td>
+Logs a warning message.
 
 
 </td></tr>
 </tbody></table>
+

@@ -26,7 +26,7 @@
  * additional constraint implementation.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface FunctionConstraintTrait {
   type: 'function';
 }
@@ -41,7 +41,7 @@ export type ConstraintTrait = FunctionConstraintTrait;
  * Interface describing the supported validator traits.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ValidatorTraitValues {
   /**
    * Indicates whether the validator accepts `undefined` as

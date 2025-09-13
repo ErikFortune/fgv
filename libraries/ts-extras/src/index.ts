@@ -24,7 +24,8 @@ import * as Csv from './packlets/csv';
 import * as Experimental from './packlets/experimental';
 import * as Hash from './packlets/hash';
 import * as RecordJar from './packlets/record-jar';
+import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-export { Converters, Csv, Experimental, Hash, RecordJar };
+export { Converters, Csv, Experimental, Hash, RecordJar, ZipFileTree };

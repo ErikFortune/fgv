@@ -47,3 +47,4 @@ An optional set of parameters to configure the map.
 
 </td></tr>
 </tbody></table>
+

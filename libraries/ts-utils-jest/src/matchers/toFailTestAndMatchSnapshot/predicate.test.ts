@@ -15,7 +15,6 @@ expect.extend({
 
 describe('toFailTestAndMatchSnapshot', () => {
   test('returns failure for a callback that succeeds', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(predicate(() => {})).toFail();
   });
 

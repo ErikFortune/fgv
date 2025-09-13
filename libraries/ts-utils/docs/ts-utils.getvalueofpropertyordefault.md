@@ -79,6 +79,7 @@ _(Optional)_ An optional default value to be returned if the property is not pre
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 unknown \| undefined

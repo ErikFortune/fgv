@@ -72,7 +72,6 @@ describe('Puzzles.Killer class', () => {
           'SG7'
         ]);
         expect(puzzle.cages.map((c) => c.id)).toEqual([
-          /* eslint-disable prettier/prettier */
           'RA',
           'RB',
           'RC',
@@ -129,7 +128,6 @@ describe('Puzzles.Killer class', () => {
           'Ka',
           'Kb',
           'Kc'
-          /* enlist-enable prettier/prettier */
         ]);
         expect(puzzle.cells.map((c) => c.toString()).join('')).toEqual(
           [
@@ -156,7 +154,6 @@ describe('Puzzles.Killer class', () => {
       // cSpell: enable
       expect(Puzzles.Killer.create(def)).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.cages.map((c) => c.id)).toEqual([
-          /* eslint-disable prettier/prettier */
           'RA',
           'RB',
           'RC',
@@ -211,7 +208,6 @@ describe('Puzzles.Killer class', () => {
           'KY',
           'KZ',
           'Kc'
-          /* enlist-enable prettier/prettier */
         ]);
         expect(puzzle.cells.map((c) => c.toString()).join('')).toEqual(
           [

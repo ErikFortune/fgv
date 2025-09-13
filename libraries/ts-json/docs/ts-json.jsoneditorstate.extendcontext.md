@@ -66,6 +66,7 @@ The [variable values](./ts-json.variablevalue.md) and/or [JSON entity references
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;

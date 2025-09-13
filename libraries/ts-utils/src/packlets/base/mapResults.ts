@@ -78,7 +78,7 @@ export function mapDetailedResults<T, TD>(
   for (const result of results) {
     if (result.isSuccess()) {
       elements.push(result.value);
-    } else if (!ignore.includes(result.detail)) {
+    } else if (result.detail && !ignore.includes(result.detail)) {
       errors.push(result.message);
     }
   }
@@ -192,7 +192,7 @@ export type FieldInitializers<T> = { [key in keyof T]: (state: Partial<T>) => Re
  * Options for the {@link (populateObject:1)} function.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface PopulateObjectOptions<T> {
   /**
    * If present, specifies the order in which property values should

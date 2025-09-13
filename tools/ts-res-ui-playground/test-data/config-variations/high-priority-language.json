@@ -1,0 +1,65 @@
+{
+  "name": "High Priority Language Configuration",
+  "description": "Configuration that prioritizes language over territory, useful for internationalization-focused applications",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory"
+    },
+    {
+      "name": "role",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["admin", "user", "guest"]
+      }
+    },
+    {
+      "name": "platform",
+      "systemType": "literal",
+      "configuration": {
+        "enumeratedValues": ["web", "mobile", "desktop"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 900
+    },
+    {
+      "name": "homeTerritory",
+      "typeName": "territory",
+      "defaultPriority": 600,
+      "token": "home",
+      "tokenIsOptional": true
+    },
+    {
+      "name": "currentTerritory",
+      "typeName": "territory",
+      "defaultPriority": 500
+    },
+    {
+      "name": "role",
+      "typeName": "role",
+      "defaultPriority": 400
+    },
+    {
+      "name": "platform",
+      "typeName": "platform",
+      "defaultPriority": 300
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

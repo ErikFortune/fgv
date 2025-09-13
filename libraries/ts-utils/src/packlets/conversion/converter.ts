@@ -31,7 +31,7 @@ export type OnError = 'failOnError' | 'ignoreErrors';
  * Converter traits.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ConverterTraits {
   readonly isOptional: boolean;
   readonly brand?: string;
@@ -51,7 +51,7 @@ export type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: st
  * Options for {@link Converter.withConstraint}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ConstraintOptions {
   /**
    * Optional description for error messages when constraint
@@ -66,7 +66,7 @@ export interface ConstraintOptions {
  * of optional templated type `<TC>` (default `undefined`).
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface Converter<T, TC = unknown> extends ConverterTraits {
   /**
    * Indicates whether this element is explicitly optional.
@@ -243,7 +243,7 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
 /**
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD, TC> {
   /**
    * Default value to use if the conversion fails.

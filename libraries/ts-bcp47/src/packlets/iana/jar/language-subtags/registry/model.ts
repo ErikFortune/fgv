@@ -82,7 +82,6 @@ export type YearMonthDaySpec = Brand<string, 'YearMonthDaySpec'>;
  * @internal
  */
 interface IRegistryEntryBase<TTYPE extends RegistryEntryType = RegistryEntryType> {
-  /* eslint-disable @typescript-eslint/naming-convention */
   Type: TTYPE;
   Description: string[];
   Added: YearMonthDaySpec;
@@ -93,7 +92,6 @@ interface IRegistryEntryBase<TTYPE extends RegistryEntryType = RegistryEntryType
   Prefix?: string[];
   Scope?: RegistryEntryScope;
   Comments?: string[];
-  /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 /**
@@ -103,7 +101,6 @@ export interface IRegistrySubtagEntry<
   TTYPE extends RegistryEntryType = RegistryEntryType,
   TSUBTAG extends string = string
 > extends IRegistryEntryBase<TTYPE> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   Subtag: TSUBTAG | TSUBTAG[];
 }
 
@@ -114,7 +111,6 @@ export interface IRegistryTagEntry<
   TTYPE extends RegistryEntryType = RegistryEntryType,
   TTAG extends string = string
 > extends IRegistryEntryBase<TTYPE> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   Tag: TTAG | TTAG[];
 }
 

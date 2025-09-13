@@ -32,7 +32,6 @@ import { IFileDateEntry } from './jarModel';
  * @public
  */
 export const fileDateEntry = Converters.strictObject<IFileDateEntry>({
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   'File-Date': CommonConverters.yearMonthDaySpec
 });
 

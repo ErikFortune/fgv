@@ -8,7 +8,6 @@ expect.extend({
 
 describe('.toFailTestWith', () => {
   test('fails for a callback that succeeds', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(() => {}).not.toFailTestWith('whatever');
   });
 
@@ -44,7 +43,6 @@ describe('.toFailTestWith', () => {
 
   test('logs failure correctly when callback succeeds', () => {
     expect(() => {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(() => {}).toFailTestWith('whatever');
     }).toFailTestAndMatchSnapshot();
   });

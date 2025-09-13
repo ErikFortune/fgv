@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser-cli",
+      "comment": "initial checkin",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser-cli"
+}

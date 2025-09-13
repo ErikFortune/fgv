@@ -65,6 +65,7 @@ _(Optional)_ (optional) The [options](./ts-bcp47.bcp47.ilanguagetaginitoptions.m
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[LanguageTag](./ts-bcp47.bcp47.languagetag.md)<!-- -->&gt;

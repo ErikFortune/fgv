@@ -47,6 +47,7 @@ Overloaded parameter is either `CollectibleKey<TITEM>` or a [factory callback](.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 itemOrCb is [CollectibleFactoryCallback](./ts-utils.collections.collectiblefactorycallback.md)<!-- -->&lt;TITEM&gt;

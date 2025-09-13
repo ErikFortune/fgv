@@ -4,6 +4,7 @@
 
 ## Logging.InMemoryLogger class
 
+An in-memory logger that stores logged and suppressed messages.
 
 **Signature:**
 
@@ -40,7 +41,7 @@ Description
 
 </td><td>
 
-Constructs a new instance of the `InMemoryLogger` class
+Creates a new in-memory logger.
 
 
 </td></tr>
@@ -71,45 +72,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_messages](./ts-utils.logging.inmemorylogger._messages.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-string\[\]
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_silent](./ts-utils.logging.inmemorylogger._silent.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-string\[\]
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[messages](./ts-utils.logging.inmemorylogger.messages.md)
+[logged](./ts-utils.logging.inmemorylogger.logged.md)
 
 
 </td><td>
@@ -124,11 +87,13 @@ string\[\]
 
 </td><td>
 
+The messages that have been logged.
+
 
 </td></tr>
 <tr><td>
 
-[silent](./ts-utils.logging.inmemorylogger.silent.md)
+[suppressed](./ts-utils.logging.inmemorylogger.suppressed.md)
 
 
 </td><td>
@@ -142,6 +107,8 @@ string\[\]
 
 
 </td><td>
+
+The messages that have been suppressed.
 
 
 </td></tr>
@@ -167,34 +134,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_innerLog(message)](./ts-utils.logging.inmemorylogger._innerlog.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[\_innerSilent(message)](./ts-utils.logging.inmemorylogger._innersilent.md)
-
-
-</td><td>
-
-`protected`
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [clear()](./ts-utils.logging.inmemorylogger.clear.md)
 
 
@@ -203,6 +142,9 @@ Description
 
 </td><td>
 
+Clears the logged and suppressed messages.
+
 
 </td></tr>
 </tbody></table>
+

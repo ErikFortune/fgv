@@ -47,6 +47,7 @@ _(Optional)_ Optional [reference maps](./ts-json.ijsonreferencemap.md) to be add
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[IJsonReferenceMap](./ts-json.ijsonreferencemap.md) \| undefined&gt;
