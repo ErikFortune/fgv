@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-ui-playground",
-  "version": "5.0.0",
+  "version": "5.0.0-16",
   "description": "Development playground for ts-res UI components",
   "private": true,
   "main": "lib/index.js",
