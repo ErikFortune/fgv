@@ -1363,7 +1363,7 @@ describe('TerritoryQualifierType', () => {
     test('succeeds with configuration containing only required allowContextList', () => {
       const validConfig = {
         name: 'simple-territory',
-        systemType: 'territory',
+        systemType: 'territory' as const,
         configuration: {
           allowContextList: false
         }

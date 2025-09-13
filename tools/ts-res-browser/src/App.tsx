@@ -8,8 +8,8 @@ import {
   ResolutionView,
   ConfigurationView,
   ResourceOrchestrator,
-  OrchestratorState,
-  OrchestratorActions
+  IOrchestratorState,
+  IOrchestratorActions
 } from '@fgv/ts-res-ui-components';
 import NavigationWarningModal from './components/common/NavigationWarningModal';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
@@ -20,7 +20,7 @@ import * as TsRes from '@fgv/ts-res';
 
 // Separate component to handle initialization logic
 interface AppContentProps {
-  orchestrator: { state: OrchestratorState; actions: OrchestratorActions };
+  orchestrator: { state: IOrchestratorState; actions: IOrchestratorActions };
 }
 
 const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
@@ -180,7 +180,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'import':
         return (
           <ImportView
-            onMessage={actions.addMessage}
             importError={state.error}
             onImport={(data) => {
               if (Array.isArray(data)) {
@@ -190,35 +189,14 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               }
             }}
             onBundleImport={actions.importBundle}
-            onZipImport={async (zipFile, config) => {
-              // Use ts-res zip-archive packlet for unified ZIP handling
-              const { ZipArchive } = await import('@fgv/ts-res');
-
-              const loader = new ZipArchive.ZipArchiveLoader();
-              const loadResult = await loader.loadFromFile(zipFile, {
-                strictManifestValidation: false // Be lenient with manifests
-              });
-
-              if (loadResult.isFailure()) {
-                actions.addMessage('error', `Failed to load ZIP: ${loadResult.message}`);
-                return;
-              }
-
-              const zipData = loadResult.value;
-
-              // Check for manifest (now provided by zip-archive packlet)
-              if (zipData.manifest) {
-                const manifestData = zipData.manifest;
-                actions.addMessage(
-                  'info',
-                  `Manifest found: created ${new Date(manifestData.timestamp).toLocaleString()}`
-                );
-              }
+            onZipImport={async (zipData, config) => {
+              // The ImportView has already processed the ZIP file and extracted the data
+              // zipData is either IImportedDirectory or IImportedFile[]
 
               // Load configuration FIRST, before processing resources
-              if (zipData.config) {
+              if (config) {
                 // Apply configuration immediately before processing resources
-                await actions.applyConfiguration(zipData.config);
+                await actions.applyConfiguration(config);
                 actions.addMessage('success', 'Configuration loaded and applied from ZIP');
 
                 // Add a small delay to ensure configuration is applied
@@ -227,15 +205,15 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
               }
 
-              // Process the ZIP data directly (no need for FileTreeConverter anymore)
-              if (zipData.directory) {
-                actions.importDirectory(zipData.directory);
-                actions.addMessage('success', 'ZIP directory structure imported successfully');
-              } else if (zipData.files.length > 0) {
-                actions.importFiles(zipData.files);
-                actions.addMessage('success', `${zipData.files.length} files imported from ZIP`);
+              // Process the ZIP data (already extracted by ImportView)
+              if (Array.isArray(zipData)) {
+                // It's an array of IImportedFile[]
+                actions.importFiles(zipData);
+                actions.addMessage('success', `${zipData.length} files imported from ZIP`);
               } else {
-                actions.addMessage('error', 'No files or directory structure found in ZIP');
+                // It's an IImportedDirectory
+                actions.importDirectory(zipData);
+                actions.addMessage('success', 'ZIP directory structure imported successfully');
               }
             }}
           />
@@ -244,7 +222,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'source':
         return (
           <SourceView
-            onMessage={actions.addMessage}
             resources={state.resources}
             filterState={state.filterState}
             filterResult={state.filterResult}
@@ -252,15 +229,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
             onResourceSelect={actions.selectResource}
             onExport={(data, type) => {
               switch (type) {
-                case 'bundle':
-                  actions.exportBundle();
-                  break;
-                case 'compiled':
-                  actions.exportCompiled();
-                  break;
-                case 'source':
+                case 'json':
                   actions.exportSource();
-                  break;
                 default:
                   // For any other type, fall back to the generic export
                   actions.addMessage(
@@ -276,7 +246,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'filter':
         return (
           <FilterView
-            onMessage={actions.addMessage}
             resources={state.resources}
             filterState={state.filterState}
             filterActions={{
@@ -296,7 +265,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'compiled':
         return (
           <CompiledView
-            onMessage={actions.addMessage}
             resources={state.resources}
             filterState={state.filterState}
             filterResult={state.filterResult}
@@ -306,11 +274,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 case 'bundle':
                   actions.exportBundle();
                   break;
-                case 'compiled':
+                case 'json':
                   actions.exportCompiled();
-                  break;
-                case 'source':
-                  actions.exportSource();
                   break;
                 default:
                   // For any other type, fall back to the generic export
@@ -327,7 +292,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'resolution':
         return (
           <ResolutionView
-            onMessage={actions.addMessage}
             resources={state.resources}
             filterState={state.filterState}
             filterResult={state.filterResult}
@@ -352,6 +316,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
               cancelNewResource: actions.cancelNewResource,
               removePendingResource: actions.removePendingResource,
               markResourceForDeletion: actions.markResourceForDeletion,
+              createPendingResource: actions.createPendingResource,
+              updateNewResourceJson: actions.updateNewResourceJson,
               applyPendingResources: actions.applyPendingResources,
               discardPendingResources: actions.discardPendingResources
             }}
@@ -370,7 +336,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       case 'configuration':
         return (
           <ConfigurationView
-            onMessage={actions.addMessage}
             configuration={state.configuration}
             onConfigurationChange={actions.updateConfiguration}
             onSave={(config) => {
@@ -384,7 +349,6 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
       default:
         return (
           <ImportView
-            onMessage={actions.addMessage}
             importError={state.error}
             onImport={(data) => {
               if (Array.isArray(data)) {

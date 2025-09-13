@@ -9,9 +9,9 @@ A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.m
 **Signature:**
 
 ```typescript
-export declare class QualifierTypeFactory extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, QualifierType> 
+export declare class QualifierTypeFactory<T extends QualifierType = SystemQualifierType> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T | SystemQualifierType> 
 ```
-**Extends:** [ChainedConfigInitFactory](./ts-res.config.chainedconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, [QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
+**Extends:** [ChainedConfigInitFactory](./ts-res.config.chainedconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, T \| [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md)<!-- -->&gt;
 
 ## Constructors
 

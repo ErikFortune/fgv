@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-applyResolutionContext: () => void;
+applyResolutionContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
 ```

@@ -33,7 +33,8 @@ import {
   QualifierTypeName,
   Validate
 } from '../common';
-import { JsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonObject } from '@fgv/ts-json-base';
+import * as Config from './config';
 
 /**
  * Interface for a qualifier type. A qualifier type implements the build and
@@ -41,7 +42,8 @@ import { JsonObject } from '@fgv/ts-json-base';
  * territories, etc).
  * @public
  */
-export interface IQualifierType extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
+export interface IQualifierType<TCFGJSON extends JsonObject = JsonObject>
+  extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
   /**
    * The name of the qualifier type.
    */
@@ -131,14 +133,14 @@ export interface IQualifierType extends ICollectible<QualifierTypeName, Qualifie
    * Gets the configuration for this qualifier type.
    * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
    */
-  getConfigurationJson(): Result<JsonObject>;
+  getConfigurationJson(): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
    * Validates configuration JSON data for this qualifier type.
    * @param from - The unknown data to validate as configuration JSON.
    * @returns `Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.
    */
-  validateConfigurationJson(from: unknown): Result<JsonObject>;
+  validateConfigurationJson(from: unknown): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
 }
 
 /**
@@ -168,7 +170,9 @@ export interface IQualifierTypeCreateParams {
  * the {@link QualifierTypes.IQualifierType | IQualifierType} interface.
  * @public
  */
-export abstract class QualifierType implements IQualifierType {
+export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
+  implements IQualifierType<TCFGJSON>
+{
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.name}
    */
@@ -290,12 +294,14 @@ export abstract class QualifierType implements IQualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public abstract getConfigurationJson(): Result<JsonObject>;
+  public abstract getConfigurationJson(): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
-  public abstract validateConfigurationJson(from: unknown): Result<JsonObject>;
+  public abstract validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.setIndex}

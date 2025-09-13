@@ -26,8 +26,8 @@ import { JsonObject } from '@fgv/ts-json-base';
  * Configuration for a {@link ResourceTypes.ResourceType | resource type}.
  * @public
  */
-export interface IResourceTypeConfig {
+export interface IResourceTypeConfig<T extends JsonObject = JsonObject> {
   name: string;
   typeName: string;
-  template?: JsonObject;
+  template?: T;
 }

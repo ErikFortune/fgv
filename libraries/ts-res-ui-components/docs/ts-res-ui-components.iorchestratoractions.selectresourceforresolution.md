@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-selectResourceForResolution: (resourceId: string) => void;
+selectResourceForResolution: (resourceId: string) => Result<void>;
 ```

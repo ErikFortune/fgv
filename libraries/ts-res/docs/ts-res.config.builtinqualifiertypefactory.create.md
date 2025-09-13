@@ -9,7 +9,7 @@ Creates a new instance of a configuration object.
 **Signature:**
 
 ```typescript
-create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<QualifierType>;
+create(config: QualifierTypes.Config.IAnyQualifierTypeConfig): Result<SystemQualifierType>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The configuration object to create.
 
 **Returns:**
 
-Result&lt;[QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
+Result&lt;[SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md)<!-- -->&gt;
 
 A result containing the new instance of the configuration object.
 

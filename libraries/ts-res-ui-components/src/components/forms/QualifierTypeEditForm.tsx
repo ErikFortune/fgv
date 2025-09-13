@@ -155,22 +155,23 @@ export const QualifierTypeEditForm: React.FC<IQualifierTypeEditFormProps> = ({
       let hierarchy: Record<string, string> = {};
 
       if (qualifierTypeInstance.isSuccess()) {
-        const configResult = qualifierTypeInstance.value.getConfigurationJson();
+        const configResult = qualifierTypeInstance.value.getConfiguration();
         if (configResult.isSuccess()) {
           const config = configResult.value;
-          allowContextList = config.allowContextList === true;
-          caseSensitive = config.caseSensitive !== false; // Default to true
-          enumeratedValues = Array.isArray(config.enumeratedValues)
-            ? (config.enumeratedValues as string[])
-            : [];
-          acceptLowercase = config.acceptLowercase === true;
-          allowedTerritories = Array.isArray(config.allowedTerritories)
-            ? (config.allowedTerritories as string[])
-            : [];
-          hierarchy =
-            typeof config.hierarchy === 'object' && config.hierarchy !== null
-              ? (config.hierarchy as Record<string, string>)
-              : {};
+          allowContextList = config.configuration?.allowContextList === true;
+
+          // Type-specific property access based on systemType
+          if (config.systemType === 'literal') {
+            const literalConfig = config.configuration;
+            caseSensitive = literalConfig?.caseSensitive !== false; // Default to true
+            enumeratedValues = literalConfig?.enumeratedValues ?? [];
+            hierarchy = literalConfig?.hierarchy ?? {};
+          } else if (config.systemType === 'territory') {
+            const territoryConfig = config.configuration;
+            acceptLowercase = territoryConfig?.acceptLowercase === true;
+            allowedTerritories = territoryConfig?.allowedTerritories ?? [];
+            hierarchy = territoryConfig?.hierarchy ?? {};
+          }
         }
       }
 

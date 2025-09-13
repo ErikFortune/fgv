@@ -7,5 +7,7 @@
 **Signature:**
 
 ```typescript
-discardResourceEdits: () => void;
+discardResourceEdits: () => Result<{
+        discardedCount: number;
+    }>;
 ```

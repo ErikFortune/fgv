@@ -4,12 +4,12 @@
 
 ## QualifierTypes.createQualifierTypeFromSystemConfig() function
 
-Creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a system configuration object. This factory function determines the appropriate qualifier type based on the systemType and delegates to the appropriate type-specific createFromConfig method.
+Creates a [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) from a system configuration object. This factory function determines the appropriate qualifier type based on the systemType and delegates to the appropriate type-specific createFromConfig method.
 
 **Signature:**
 
 ```typescript
-export declare function createQualifierTypeFromSystemConfig(typeConfig: Config.ISystemQualifierTypeConfig): Result<QualifierType>;
+export declare function createQualifierTypeFromSystemConfig(typeConfig: Config.ISystemQualifierTypeConfig): Result<SystemQualifierType>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [configuration object](./ts-res.qualifiertypes.config.isystemqualifiertypeco
 
 **Returns:**
 
-Result&lt;[QualifierType](./ts-res.qualifiertype.md)<!-- -->&gt;
+Result&lt;[SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md)<!-- -->&gt;
 
-`Success` with the new [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) if successful, `Failure` with an error message otherwise.
+`Success` with the new [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) if successful, `Failure` with an error message otherwise.
 

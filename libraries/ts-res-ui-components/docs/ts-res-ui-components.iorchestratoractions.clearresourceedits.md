@@ -7,5 +7,7 @@
 **Signature:**
 
 ```typescript
-clearResourceEdits: () => void;
+clearResourceEdits: () => Result<{
+        clearedCount: number;
+    }>;
 ```
