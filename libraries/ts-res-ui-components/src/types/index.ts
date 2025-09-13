@@ -1342,19 +1342,19 @@ export interface IOrchestratorActions {
   resetFilter: () => void;
 
   // Resolution management
-  updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
-  applyResolutionContext: () => void;
-  selectResourceForResolution: (resourceId: string) => void;
+  updateResolutionContext: (qualifierName: string, value: string | undefined) => Result<void>;
+  applyResolutionContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
+  selectResourceForResolution: (resourceId: string) => Result<void>;
   setResolutionViewMode: (mode: 'composed' | 'best' | 'all' | 'raw') => void;
-  resetResolutionCache: () => void;
+  resetResolutionCache: () => Result<void>;
 
   // Resolution editing
-  saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => void;
+  saveResourceEdit: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>;
   getEditedValue: (resourceId: string) => JsonValue | undefined;
   hasResourceEdit: (resourceId: string) => boolean;
-  clearResourceEdits: () => void;
+  clearResourceEdits: () => Result<{ clearedCount: number }>;
   // Removed: unified apply via applyPendingResources
-  discardResourceEdits: () => void;
+  discardResourceEdits: () => Result<{ discardedCount: number }>;
 
   // Resource creation actions (enhanced with atomic API and Result pattern return values)
   createPendingResource: (params: ICreatePendingResourceParams) => Result<void>;
@@ -1375,7 +1375,7 @@ export interface IOrchestratorActions {
     diagnostics: string[];
   }>;
   cancelNewResource: () => void;
-  removePendingResource: (resourceId: string) => void;
+  removePendingResource: (resourceId: string) => Result<void>;
   markResourceForDeletion: (resourceId: string) => void;
   applyPendingResources: () => Promise<
     Result<{

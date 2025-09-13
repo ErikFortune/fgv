@@ -49,7 +49,7 @@ export interface ILanguageQualifierTypeConfig {
  * determine the relationship between values when matching conditions and contexts.
  * @public
  */
-export type LiteralValueHierarchyDecl<T extends string> = Partial<Record<T, T>>;
+export type LiteralValueHierarchyDecl<T extends string> = Record<T, T>;
 
 /**
  * Configuration for {@link QualifierTypes.TerritoryQualifierType | territory qualifier type} configuration.

@@ -35,7 +35,7 @@ import {
 import { QualifierType } from './qualifierType';
 import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
-import { JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -83,7 +83,7 @@ export interface ILiteralQualifierTypeCreateParams {
  * optionally case-sensitive or matching against an ordered list of values at runtime.
  * @public
  */
-export class LiteralQualifierType extends QualifierType {
+export class LiteralQualifierType extends QualifierType<JsonCompatible<Config.ILiteralQualifierTypeConfig>> {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
    */
@@ -187,14 +187,14 @@ export class LiteralQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonObject> {
+  public getConfigurationJson(): Result<JsonCompatible<Config.ISystemLiteralQualifierTypeConfig>> {
     const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
     const enumeratedValues: JsonObject = this.enumeratedValues
       ? { enumeratedValues: [...this.enumeratedValues] }
       : {};
     return succeed({
       name: this.name,
-      systemType: 'literal',
+      systemType: 'literal' as const,
       configuration: {
         allowContextList: this.allowContextList,
         caseSensitive: this.caseSensitive,
@@ -207,10 +207,10 @@ export class LiteralQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
-  public validateConfigurationJson(from: unknown): Result<JsonObject> {
-    return Config.Convert.systemLiteralQualifierTypeConfig
-      .convert(from)
-      .onSuccess((config) => succeed(config as unknown as JsonObject));
+  public validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<Config.ISystemLiteralQualifierTypeConfig>> {
+    return Config.Convert.systemLiteralQualifierTypeConfig.convert(from);
   }
 
   /**
@@ -220,9 +220,7 @@ export class LiteralQualifierType extends QualifierType {
    * @returns `Success` with the validated configuration if successful, `Failure` with an error message otherwise.
    */
   public validateConfiguration(from: unknown): Result<Config.ISystemLiteralQualifierTypeConfig> {
-    return this.validateConfigurationJson(from).onSuccess((json) =>
-      Config.Convert.systemLiteralQualifierTypeConfig.convert(json)
-    );
+    return Config.Convert.systemLiteralQualifierTypeConfig.convert(from);
   }
 
   /**

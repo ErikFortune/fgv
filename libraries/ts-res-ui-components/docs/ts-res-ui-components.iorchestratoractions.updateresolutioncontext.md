@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-updateResolutionContext: (qualifierName: string, value: string | undefined) => void;
+updateResolutionContext: (qualifierName: string, value: string | undefined) => Result<void>;
 ```

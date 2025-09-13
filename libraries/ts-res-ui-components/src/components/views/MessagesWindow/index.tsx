@@ -171,9 +171,11 @@ export const MessagesWindow: React.FC<IMessagesWindowProps> = ({
       });
   };
 
-  if (messages.length === 0) {
-    return null;
-  }
+  // Always show the messages window, even when empty
+  // This ensures consistent UI layout and visibility
+  // if (messages.length === 0) {
+  //   return null;
+  // }
 
   const getMessageIcon = (type: IMessage['type']): React.ReactElement => {
     switch (type) {

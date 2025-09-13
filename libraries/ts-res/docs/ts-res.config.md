@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.isystemqualifiertypeconfig.md)<!-- -->.
+A factory that creates a [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md) from [any qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md)<!-- -->.
 
 
 </td></tr>

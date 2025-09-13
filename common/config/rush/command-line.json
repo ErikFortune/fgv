@@ -30,6 +30,18 @@
       "ignoreMissingScript": true,
       "allowWarningsInSuccessfulBuild": false,
       "incremental": false
+    },
+    {
+      "name": "lint",
+      "commandKind": "bulk",
+      "summary": "Run linting for all projects in the monorepo",
+      "description": "Runs the 'lint' npm script for each project in the monorepo according to dependency order. Projects without a lint script will be skipped.",
+      "safeForSimultaneousRushProcesses": false,
+      "enableParallelism": true,
+      "ignoreDependencyOrder": false,
+      "ignoreMissingScript": true,
+      "allowWarningsInSuccessfulBuild": false,
+      "incremental": false
     }
     // {
     //   /**

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-resetResolutionCache: () => void;
+resetResolutionCache: () => Result<void>;
 ```

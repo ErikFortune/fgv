@@ -1,4 +1,4 @@
-import { Result, succeed, fail, captureResult } from '@fgv/ts-utils';
+import { Result, succeed, fail, captureResult, Validators, Converters } from '@fgv/ts-utils';
 import {
   ConditionOperator,
   Convert,
@@ -8,10 +8,11 @@ import {
   QualifierContextValue,
   QualifierMatchScore,
   QualifierTypeName,
+  QualifierTypes,
   Validate
 } from '@fgv/ts-res';
 import { QualifierType } from '@fgv/ts-res';
-import { JsonObject } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonObject } from '@fgv/ts-json-base';
 
 /**
  * Configuration interface for the ContrastQualifierType.
@@ -25,6 +26,15 @@ export interface IContrastQualifierTypeConfig {
   /** Default contrast value (defaults to "standard") */
   defaultValue?: string;
 }
+
+const contrastQualifierTypeConfig = Converters.strictObject<IContrastQualifierTypeConfig>({
+  allowContextList: Validators.boolean.optional(),
+  highContrastValues: Validators.arrayOf(Validators.string).optional(),
+  defaultValue: Validators.string.optional()
+});
+
+const systemContrastQualifierTypeConfig =
+  QualifierTypes.Config.Convert.qualifierTypeConfig(contrastQualifierTypeConfig);
 
 /**
  * Parameters for creating a ContrastQualifierType instance.
@@ -118,10 +128,12 @@ export class ContrastQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonObject> {
+  public getConfigurationJson(): Result<
+    JsonCompatible<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>
+  > {
     return succeed({
       name: this.name,
-      systemType: 'contrast',
+      systemType: 'contrast' as const,
       configuration: {
         allowContextList: this.allowContextList,
         highContrastValues: [...this.highContrastValues],
@@ -133,49 +145,21 @@ export class ContrastQualifierType extends QualifierType {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
-  public validateConfigurationJson(from: unknown): Result<JsonObject> {
-    // Basic validation - in a real implementation this could be much more sophisticated
-    if (typeof from !== 'object' || from === null) {
-      return fail('Configuration must be an object');
-    }
+  public validateConfigurationJson(
+    from: unknown
+  ): Result<JsonCompatible<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>> {
+    return systemContrastQualifierTypeConfig.convert(from);
+  }
 
-    const config = from as Record<string, unknown>;
-
-    // Validate required fields
-    if (!config.name || typeof config.name !== 'string') {
-      return fail('Configuration must have a string "name" property');
-    }
-
-    if (!config.systemType || config.systemType !== 'contrast') {
-      return fail('Configuration must have systemType "contrast"');
-    }
-
-    // Validate optional configuration
-    if (config.configuration && typeof config.configuration === 'object' && config.configuration !== null) {
-      const innerConfig = config.configuration as Record<string, unknown>;
-
-      if (innerConfig.allowContextList !== undefined && typeof innerConfig.allowContextList !== 'boolean') {
-        return fail('Configuration.allowContextList must be a boolean if provided');
-      }
-
-      if (innerConfig.highContrastValues !== undefined) {
-        if (!Array.isArray(innerConfig.highContrastValues)) {
-          return fail('Configuration.highContrastValues must be an array if provided');
-        }
-
-        for (const value of innerConfig.highContrastValues) {
-          if (typeof value !== 'string') {
-            return fail('All highContrastValues must be strings');
-          }
-        }
-      }
-
-      if (innerConfig.defaultValue !== undefined && typeof innerConfig.defaultValue !== 'string') {
-        return fail('Configuration.defaultValue must be a string if provided');
-      }
-    }
-
-    return succeed(from as JsonObject);
+  /**
+   * Gets the {@link QualifierTypes.Config.IQualifierTypeConfig | strongly typed configuration object}
+   * for this qualifier type.
+   * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
+   */
+  public getConfiguration(): Result<
+    QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>
+  > {
+    return this.getConfigurationJson().onSuccess((json) => systemContrastQualifierTypeConfig.convert(json));
   }
 
   /**
@@ -183,20 +167,10 @@ export class ContrastQualifierType extends QualifierType {
    * @param from - The unknown data to validate
    * @returns Success with validated configuration, or Failure with error message
    */
-  public validateConfiguration(from: unknown): Result<{
-    name: string;
-    systemType: 'contrast';
-    configuration?: IContrastQualifierTypeConfig;
-  }> {
-    return this.validateConfigurationJson(from).onSuccess((json) => {
-      return succeed(
-        json as {
-          name: string;
-          systemType: 'contrast';
-          configuration?: IContrastQualifierTypeConfig;
-        }
-      );
-    });
+  public validateConfiguration(
+    from: unknown
+  ): Result<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>> {
+    return systemContrastQualifierTypeConfig.convert(from);
   }
 
   /**
@@ -224,7 +198,7 @@ export class ContrastQualifierType extends QualifierType {
       normalizedCondition === 'high' &&
       this.highContrastValues.map((v) => v.toLowerCase()).includes(normalizedContext)
     ) {
-      return 0.8; // High score but not perfect
+      return 0.8 as QualifierMatchScore; // High score but not perfect
     }
 
     // Special rule: any high contrast value matches "high"
@@ -232,7 +206,7 @@ export class ContrastQualifierType extends QualifierType {
       normalizedContext === 'high' &&
       this.highContrastValues.map((v) => v.toLowerCase()).includes(normalizedCondition)
     ) {
-      return 0.8;
+      return 0.8 as QualifierMatchScore;
     }
 
     return NoMatch;

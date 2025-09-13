@@ -28,6 +28,14 @@ import { TerritoryQualifierType } from './territoryQualifierType';
 import { LiteralQualifierType } from './literalQualifierType';
 
 /**
+ * A discriminated union of all system qualifier types.
+ * This allows TypeScript to properly discriminate between specific qualifier type implementations
+ * and access their specific methods like getConfiguration().
+ * @public
+ */
+export type SystemQualifierType = LanguageQualifierType | TerritoryQualifierType | LiteralQualifierType;
+
+/**
  * Creates a {@link QualifierTypes.QualifierType | QualifierType} from a configuration object.
  * This factory function determines the appropriate qualifier type based on the systemType
  * and delegates to the appropriate type-specific createFromConfig method.
@@ -67,18 +75,18 @@ export function createQualifierTypeFromConfig(
 }
 
 /**
- * Creates a {@link QualifierTypes.QualifierType | QualifierType} from a system configuration object.
+ * Creates a {@link QualifierTypes.SystemQualifierType | SystemQualifierType} from a system configuration object.
  * This factory function determines the appropriate qualifier type based on the systemType
  * and delegates to the appropriate type-specific createFromConfig method.
  * @param typeConfig - The {@link QualifierTypes.Config.ISystemQualifierTypeConfig | configuration object}
  * containing the name, systemType, and optional type-specific configuration.
- * @returns `Success` with the new {@link QualifierTypes.QualifierType | QualifierType}
+ * @returns `Success` with the new {@link QualifierTypes.SystemQualifierType | SystemQualifierType}
  * if successful, `Failure` with an error message otherwise.
  * @public
  */
 export function createQualifierTypeFromSystemConfig(
   typeConfig: Config.ISystemQualifierTypeConfig
-): Result<QualifierType> {
+): Result<SystemQualifierType> {
   const { systemType } = typeConfig;
   switch (systemType) {
     case 'language':
