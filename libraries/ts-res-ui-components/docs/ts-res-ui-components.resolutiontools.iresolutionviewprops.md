@@ -217,7 +217,7 @@ _(Optional)_ Optional configuration for the ResourcePicker behavior
 
 </td><td>
 
-[IResolutionActions](./ts-res-ui-components.resolutiontools.iresolutionactions.md)
+[IResolutionActions](./ts-res-ui-components.iresolutionactions.md)
 
 
 </td><td>

@@ -20,11 +20,29 @@
  * SOFTWARE.
  */
 
-import { Result, fail } from '@fgv/ts-utils';
+import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { JsonObject } from '@fgv/ts-json-base';
 import { QualifierType, SystemQualifierType } from '../qualifier-types';
 import * as QualifierTypes from '../qualifier-types';
 import * as ResourceTypes from '../resource-types';
 import { ResourceType } from '../resource-types';
+
+/**
+ * Function signature for creating a qualifier type from configuration.
+ * @public
+ */
+export type QualifierTypeFactoryFunction<T extends QualifierType = QualifierType> = (
+  config: QualifierTypes.Config.IAnyQualifierTypeConfig
+) => Result<T>;
+
+/**
+ * Function signature for creating a resource type from configuration.
+ * @public
+ */
+export type ResourceTypeFactoryFunction = (
+  config: ResourceTypes.Config.IResourceTypeConfig
+) => Result<ResourceType>;
+
 /**
  * Interface for a factory that creates a new instance of a configuration object.
  * @public
@@ -36,6 +54,34 @@ export interface IConfigInitFactory<TConfig, T> {
    * @returns A result containing the new instance of the configuration object.
    */
   create(config: TConfig): Result<T>;
+}
+
+/**
+ * Creates a {@link Config.IConfigInitFactory | IConfigInitFactory} from a factory function.
+ * @param fn - The factory function to wrap.
+ * @returns An `IConfigInitFactory` instance that delegates to the function.
+ * @public
+ */
+export function createQualifierTypeFactory<T extends QualifierType = QualifierType>(
+  fn: QualifierTypeFactoryFunction<T>
+): IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> {
+  return {
+    create: fn
+  };
+}
+
+/**
+ * Creates a {@link Config.IConfigInitFactory | IConfigInitFactory} from a resource type factory function.
+ * @param fn - The factory function to wrap.
+ * @returns An `IConfigInitFactory` instance that delegates to the function.
+ * @public
+ */
+export function createResourceTypeFactory(
+  fn: ResourceTypeFactoryFunction
+): IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> {
+  return {
+    create: fn
+  };
 }
 
 /**
@@ -133,13 +179,112 @@ export class QualifierTypeFactory<
 > extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T | SystemQualifierType> {
   /**
    * Constructor for a {@link Config.QualifierTypeFactory | qualifier type factory}.
-   * @param factories - Array of {@link Config.IConfigInitFactory | factories} for custom qualifier types.
+   * @param factories - Array of factories for custom qualifier types. Can be:
+   *                    - {@link Config.IConfigInitFactory | IConfigInitFactory} instances
+   *                    - {@link Config.QualifierTypeFactoryFunction | Factory functions}
+   *                    - A mix of both
    *                    These are tried in order before falling back to built-in types.
    * @remarks The {@link Config.BuiltInQualifierTypeFactory | built-in factory} is always appended to handle
    *          system qualifier types (Language, Territory, Literal).
    */
-  public constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[]) {
-    super([...factories, new BuiltInQualifierTypeFactory()]);
+  public constructor(
+    factories: Array<
+      IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> | QualifierTypeFactoryFunction<T>
+    >
+  ) {
+    const normalizedFactories = factories.map((f) =>
+      typeof f === 'function' ? createQualifierTypeFactory(f) : f
+    );
+    super([...normalizedFactories, new BuiltInQualifierTypeFactory()]);
+  }
+}
+
+/**
+ * A factory that validates and creates {@link QualifierTypes.QualifierType | QualifierType} instances
+ * from weakly-typed configuration objects. This factory accepts configurations with unvalidated
+ * string properties and validates them before delegating to the underlying factory chain.
+ *
+ * This pattern is useful at package boundaries where type identity issues may occur with
+ * branded types across different package instances.
+ *
+ * @example
+ * ```typescript
+ * // Accept weakly-typed config from external source
+ * const validatingFactory = new ValidatingQualifierTypeFactory([customFactory]);
+ *
+ * // Config can have plain string types instead of branded types
+ * const config = {
+ *   name: 'my-qualifier',  // plain string, not QualifierTypeName
+ *   systemType: 'custom',   // plain string
+ *   configuration: { ... }
+ * };
+ *
+ * const result = validatingFactory.create(config); // Validates and converts internally
+ * ```
+ *
+ * @public
+ */
+export class ValidatingQualifierTypeFactory<T extends QualifierType = SystemQualifierType>
+  implements IConfigInitFactory<unknown, T | SystemQualifierType>
+{
+  private readonly _innerFactory: QualifierTypeFactory<T>;
+  private readonly _configConverter: Converter<unknown, QualifierTypes.Config.IAnyQualifierTypeConfig>;
+
+  /**
+   * Constructor for a validating qualifier type factory.
+   * @param factories - Array of factories for custom qualifier types. Can be:
+   *                    - {@link Config.IConfigInitFactory | IConfigInitFactory} instances
+   *                    - {@link Config.QualifierTypeFactoryFunction | Factory functions}
+   *                    - A mix of both
+   */
+  public constructor(
+    factories: Array<
+      IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> | QualifierTypeFactoryFunction<T>
+    >
+  ) {
+    this._innerFactory = new QualifierTypeFactory(factories);
+
+    // Create a converter that validates the config structure from unknown input
+    this._configConverter = Converters.generic<unknown, QualifierTypes.Config.IAnyQualifierTypeConfig>(
+      (from: unknown) => {
+        if (typeof from !== 'object' || from === null) {
+          return fail('Configuration must be an object');
+        }
+
+        const obj = from as Record<string, unknown>;
+
+        if (typeof obj.name !== 'string') {
+          return fail('Configuration field name not found or not a string');
+        }
+        if (typeof obj.systemType !== 'string') {
+          return fail('Configuration field systemType not found or not a string');
+        }
+
+        // Build validated config
+        const config: QualifierTypes.Config.IAnyQualifierTypeConfig = {
+          name: obj.name,
+          systemType: obj.systemType
+        };
+
+        if (obj.configuration !== undefined && obj.configuration !== null) {
+          // Cast to JsonObject - the actual validation happens in the factory
+          config.configuration = obj.configuration as Record<string, unknown> as JsonObject;
+        }
+
+        return succeed(config);
+      }
+    );
+  }
+
+  /**
+   * Creates a qualifier type from a weakly-typed configuration object.
+   * @param config - The configuration object to validate and use for creation.
+   * @returns A result containing the new qualifier type if successful.
+   */
+  public create(config: unknown): Result<T | SystemQualifierType> {
+    return this._configConverter.convert(config).onSuccess((validatedConfig) => {
+      return this._innerFactory.create(validatedConfig as QualifierTypes.Config.IAnyQualifierTypeConfig);
+    });
   }
 }
 
@@ -167,13 +312,88 @@ export class ResourceTypeFactory extends ChainedConfigInitFactory<
 > {
   /**
    * Constructor for a resource type factory.
-   * @param factories - The {@link Config.IConfigInitFactory | factories}  to chain.
+   * @param factories - Array of factories for resource types. Can be:
+   *                    - {@link Config.IConfigInitFactory | IConfigInitFactory} instances
+   *                    - {@link Config.ResourceTypeFactoryFunction | Factory functions}
+   *                    - A mix of both
    * @remarks The {@link Config.BuiltInResourceTypeFactory | built-in factory} is always added to the end of the chain.
    */
   public constructor(
-    factories: IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>[]
+    factories: Array<
+      IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> | ResourceTypeFactoryFunction
+    >
   ) {
     factories = factories ?? [];
-    super([...factories, new BuiltInResourceTypeFactory()]);
+    const normalizedFactories = factories.map((f) =>
+      typeof f === 'function' ? createResourceTypeFactory(f) : f
+    );
+    super([...normalizedFactories, new BuiltInResourceTypeFactory()]);
+  }
+}
+
+/**
+ * A factory that validates and creates {@link ResourceTypes.ResourceType | ResourceType} instances
+ * from weakly-typed configuration objects. This factory accepts configurations with unvalidated
+ * string properties and validates them before delegating to the underlying factory chain.
+ *
+ * This pattern is useful at package boundaries where type identity issues may occur with
+ * branded types across different package instances.
+ *
+ * @public
+ */
+export class ValidatingResourceTypeFactory implements IConfigInitFactory<unknown, ResourceType> {
+  private readonly _innerFactory: ResourceTypeFactory;
+  private readonly _configConverter: Converter<unknown, ResourceTypes.Config.IResourceTypeConfig>;
+
+  /**
+   * Constructor for a validating resource type factory.
+   * @param factories - Array of factories for resource types. Can be:
+   *                    - {@link Config.IConfigInitFactory | IConfigInitFactory} instances
+   *                    - {@link Config.ResourceTypeFactoryFunction | Factory functions}
+   *                    - A mix of both
+   */
+  public constructor(
+    factories: Array<
+      IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> | ResourceTypeFactoryFunction
+    >
+  ) {
+    this._innerFactory = new ResourceTypeFactory(factories);
+
+    // Create a converter that validates the config structure from unknown input
+    this._configConverter = Converters.generic<unknown, ResourceTypes.Config.IResourceTypeConfig>(
+      (from: unknown) => {
+        if (typeof from !== 'object' || from === null) {
+          return fail('Configuration must be an object');
+        }
+
+        const obj = from as Record<string, unknown>;
+
+        if (typeof obj.name !== 'string') {
+          return fail('Configuration field name not found or not a string');
+        }
+        if (typeof obj.typeName !== 'string') {
+          return fail('Configuration field typeName not found or not a string');
+        }
+
+        // Build validated config
+        const config: ResourceTypes.Config.IResourceTypeConfig = {
+          name: obj.name,
+          typeName: obj.typeName
+        };
+
+        return succeed(config);
+      }
+    );
+  }
+
+  /**
+   * Creates a resource type from a weakly-typed configuration object.
+   * @param config - The configuration object to validate and use for creation.
+   * @returns A result containing the new resource type if successful.
+   */
+  public create(config: unknown): Result<ResourceType> {
+    return this._configConverter.convert(config).onSuccess((validatedConfig) => {
+      return this._innerFactory.create(validatedConfig as ResourceTypes.Config.IResourceTypeConfig);
+    });
   }
 }

@@ -57,7 +57,9 @@ A factory that chains multiple factories together.
 
 </td><td>
 
-A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md) by chaining a supplied factory with a [built-in factory](./ts-res.config.builtinqualifiertypefactory.md) that handles built-in qualifier types.
+A factory that creates [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) instances from configuration, supporting both built-in system types and custom external types.
+
+This factory allows external consumers to extend the qualifier type system with their own custom types while maintaining support for all built-in types (Language, Territory, Literal).
 
 
 </td></tr>
@@ -83,6 +85,32 @@ A system configuration for both runtime or build.
 
 
 </td></tr>
+<tr><td>
+
+[ValidatingQualifierTypeFactory](./ts-res.config.validatingqualifiertypefactory.md)
+
+
+</td><td>
+
+A factory that validates and creates [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) instances from weakly-typed configuration objects. This factory accepts configurations with unvalidated string properties and validates them before delegating to the underlying factory chain.
+
+This pattern is useful at package boundaries where type identity issues may occur with branded types across different package instances.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingResourceTypeFactory](./ts-res.config.validatingresourcetypefactory.md)
+
+
+</td><td>
+
+A factory that validates and creates [ResourceType](./ts-res.resourcetypes.resourcetype.md) instances from weakly-typed configuration objects. This factory accepts configurations with unvalidated string properties and validates them before delegating to the underlying factory chain.
+
+This pattern is useful at package boundaries where type identity issues may occur with branded types across different package instances.
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -99,6 +127,28 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[createQualifierTypeFactory(fn)](./ts-res.config.createqualifiertypefactory.md)
+
+
+</td><td>
+
+Creates a [IConfigInitFactory](./ts-res.config.iconfiginitfactory.md) from a factory function.
+
+
+</td></tr>
+<tr><td>
+
+[createResourceTypeFactory(fn)](./ts-res.config.createresourcetypefactory.md)
+
+
+</td><td>
+
+Creates a [IConfigInitFactory](./ts-res.config.iconfiginitfactory.md) from a resource type factory function.
+
+
+</td></tr>
+<tr><td>
 
 [getPredefinedDeclaration(name, initParams)](./ts-res.config.getpredefineddeclaration.md)
 
@@ -268,6 +318,28 @@ Description
 </td><td>
 
 A `string` literal type representing a well-known predefined system configuration.
+
+
+</td></tr>
+<tr><td>
+
+[QualifierTypeFactoryFunction](./ts-res.config.qualifiertypefactoryfunction.md)
+
+
+</td><td>
+
+Function signature for creating a qualifier type from configuration.
+
+
+</td></tr>
+<tr><td>
+
+[ResourceTypeFactoryFunction](./ts-res.config.resourcetypefactoryfunction.md)
+
+
+</td><td>
+
+Function signature for creating a resource type from configuration.
 
 
 </td></tr>

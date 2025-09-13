@@ -60,12 +60,19 @@ export interface JsonArray extends Array<JsonValue> {}
 export type JsonValueType = 'primitive' | 'object' | 'array';
 
 /**
+ * Helper type to detect if T is exactly unknown.
+ */
+type IsUnknown<T> = unknown extends T ? ([T] extends [unknown] ? true : false) : false;
+
+/**
  * A constrained type that is compatible with JSON serialization.
  * @param T - The type to be constrained
  * @returns A constrained type that is compatible with JSON serialization.
  * @public
  */
-export type JsonCompatible<T> = T extends JsonPrimitive
+export type JsonCompatible<T> = IsUnknown<T> extends true
+  ? JsonValue
+  : T extends JsonPrimitive
   ? T
   : T extends Array<unknown>
   ? JsonCompatibleArray<T[number]>

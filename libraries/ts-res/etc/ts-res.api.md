@@ -817,12 +817,18 @@ declare namespace Config {
     export {
         Model,
         Convert_9 as Convert,
+        createQualifierTypeFactory,
+        createResourceTypeFactory,
+        QualifierTypeFactoryFunction,
+        ResourceTypeFactoryFunction,
         IConfigInitFactory,
         ChainedConfigInitFactory,
         BuiltInQualifierTypeFactory,
         QualifierTypeFactory,
+        ValidatingQualifierTypeFactory,
         BuiltInResourceTypeFactory,
         ResourceTypeFactory,
+        ValidatingResourceTypeFactory,
         updateSystemConfigurationQualifierDefaultValues,
         ISystemConfigurationInitParams,
         SystemConfiguration,
@@ -1144,6 +1150,11 @@ declare namespace Convert_9 {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createQualifierTypeFactory<T extends QualifierType = QualifierType>(fn: QualifierTypeFactoryFunction<T>): IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1156,6 +1167,11 @@ function createQualifierTypeFromConfig(typeConfig: Config_2.IAnyQualifierTypeCon
 //
 // @public
 function createQualifierTypeFromSystemConfig(typeConfig: Config_2.ISystemQualifierTypeConfig): Result<SystemQualifierType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function createResourceTypeFactory(fn: ResourceTypeFactoryFunction): IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3958,8 +3974,12 @@ class QualifierTypeFactory<T extends QualifierType = SystemQualifierType> extend
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[]);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: Array<IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> | QualifierTypeFactoryFunction<T>>);
 }
+
+// @public
+type QualifierTypeFactoryFunction<T extends QualifierType = QualifierType> = (config: QualifierTypes.Config.IAnyQualifierTypeConfig) => Result<T>;
 
 // @public
 export type QualifierTypeIndex = Brand<number, 'QualifierTypeIndex'>;
@@ -4705,8 +4725,12 @@ const resourceTypeConfig: ObjectConverter<IResourceTypeConfig<JsonObject>, unkno
 class ResourceTypeFactory extends ChainedConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(factories: IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType>[]);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: Array<IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> | ResourceTypeFactoryFunction>);
 }
+
+// @public
+type ResourceTypeFactoryFunction = (config: ResourceTypes.Config.IResourceTypeConfig) => Result<ResourceType>;
 
 // @public
 export type ResourceTypeIndex = Brand<number, 'ResourceTypeIndex'>;
@@ -5130,6 +5154,26 @@ function validateSystemConfiguration(config: unknown): Result<ISystemConfigurati
 
 // @public
 function validateZipArchiveManifest(manifest: unknown): Result<Json_2.IZipArchiveManifest>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ValidatingQualifierTypeFactory<T extends QualifierType = SystemQualifierType> implements IConfigInitFactory<unknown, T | SystemQualifierType> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: Array<IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> | QualifierTypeFactoryFunction<T>>);
+    create(config: unknown): Result<T | SystemQualifierType>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ValidatingResourceTypeFactory implements IConfigInitFactory<unknown, ResourceType> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(factories: Array<IConfigInitFactory<ResourceTypes.Config.IResourceTypeConfig, ResourceType> | ResourceTypeFactoryFunction>);
+    create(config: unknown): Result<ResourceType>;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

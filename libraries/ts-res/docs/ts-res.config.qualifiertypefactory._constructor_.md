@@ -9,7 +9,7 @@ Constructor for a [qualifier type factory](./ts-res.config.qualifiertypefactory.
 **Signature:**
 
 ```typescript
-constructor(factories: IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T>[]);
+constructor(factories: Array<IConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T> | QualifierTypeFactoryFunction<T>>);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ factories
 
 </td><td>
 
-[IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, T&gt;\[\]
+Array&lt;[IConfigInitFactory](./ts-res.config.iconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, T&gt; \| [QualifierTypeFactoryFunction](./ts-res.config.qualifiertypefactoryfunction.md)<!-- -->&lt;T&gt;&gt;
 
 
 </td><td>
 
-The [factories](./ts-res.config.iconfiginitfactory.md) to chain.
+Array of factories for custom qualifier types. Can be: - [IConfigInitFactory](./ts-res.config.iconfiginitfactory.md) instances - [Factory functions](./ts-res.config.qualifiertypefactoryfunction.md) - A mix of both These are tried in order before falling back to built-in types.
 
 
 </td></tr>
@@ -50,5 +50,5 @@ The [factories](./ts-res.config.iconfiginitfactory.md) to chain.
 
 ## Remarks
 
-The [built-in factory](./ts-res.config.builtinqualifiertypefactory.md) is always added to the end of the chain.
+The [built-in factory](./ts-res.config.builtinqualifiertypefactory.md) is always appended to handle system qualifier types (Language, Territory, Literal).
 

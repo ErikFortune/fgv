@@ -1,5 +1,5 @@
 // Export orchestrator types (main entry point types)
-export type { IOrchestratorState, IOrchestratorActions } from './types';
+export type { IOrchestratorState, IOrchestratorActions, IResolutionActions } from './types';
 
 // Export utility types that are commonly used across namespaces
 export type { Result } from '@fgv/ts-utils';
