@@ -9,7 +9,7 @@ Parameters for creating a pending resource atomically.
 **Signature:**
 
 ```typescript
-export interface ICreatePendingResourceParams<T = JsonValue, TV extends JsonCompatible<T> = JsonCompatible<T>> 
+export interface ICreatePendingResourceParams<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> 
 ```
 
 ## Example
