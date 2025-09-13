@@ -95,6 +95,17 @@ This interface represents the central state management for ts-res resources, enc
 
 
 </td></tr>
+<tr><td>
+
+[IResolutionActions](./ts-res-ui-components.iresolutionactions.md)
+
+
+</td><td>
+
+Actions available for managing resource resolution testing and editing. Provides methods for context management, resource selection, and value editing.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces

@@ -851,7 +851,7 @@ interface IQualifierControlOptions {
 }
 
 // @public
-interface IResolutionActions {
+export interface IResolutionActions {
     applyContext: (hostManagedValues?: Record<string, string | undefined>) => Result<void>;
     applyPendingResources: () => Promise<Result<{
         appliedCount: number;

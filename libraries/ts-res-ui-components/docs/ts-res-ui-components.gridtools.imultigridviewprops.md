@@ -179,7 +179,7 @@ Multiple grid configurations to display
 
 </td><td>
 
-[IResolutionActions](./ts-res-ui-components.resolutiontools.iresolutionactions.md)
+[IResolutionActions](./ts-res-ui-components.iresolutionactions.md)
 
 
 </td><td>
