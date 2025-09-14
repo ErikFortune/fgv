@@ -294,6 +294,53 @@ return fail(`Invalid configuration: ${param} must be between 1 and 100`);
 return fail(`Failed to process ${resource.id}: ${underlyingError.message}`);
 ```
 
+## Critical Code Quality Enforcement
+
+### 🚨 Type-Safe Validation Patterns (MUST BE ENFORCED)
+
+These patterns are **mandatory** and block PR approval if found:
+
+#### CRITICAL ANTI-PATTERNS - Never Allow These:
+
+1. **Manual Type Checking with Unsafe Casts** (highest priority):
+```typescript
+// ❌ NEVER ALLOW: Manual checking in Converters.generic
+Converters.generic<unknown, MyType>((from: unknown) => {
+  if (typeof from !== 'object' || from === null) return fail('...');
+  const obj = from as Record<string, unknown>;
+  if (typeof obj.field !== 'string') return fail('...');
+  return succeed(obj as MyType); // Unsafe cast - BLOCK THE PR
+});
+
+// ❌ NEVER ALLOW: Double casting
+value as Record<string, unknown> as TargetType; // BLOCK THE PR
+```
+
+2. **Required Replacement Patterns**:
+```typescript
+// ✅ ALWAYS REQUIRE: Use Converters.object
+const converter = Converters.object<MyType>({
+  field: Converters.string,
+  optional: Converters.optionalField(Converters.number)
+});
+
+// ✅ ALWAYS REQUIRE: Use Validators for complex objects
+const validator = Validators.object<ComplexType>({
+  instance: Validators.isA((v): v is MyClass => v instanceof MyClass)
+});
+```
+
+#### Quick Detection for Code Reviews:
+- Search for: `Converters.generic` + `typeof` + `as`
+- Look for: Double casting patterns `as X as Y`
+- Flag: Manual property checks followed by casts
+
+#### Enforcement Rules:
+- **No exceptions** - even if code "works"
+- **Fix existing patterns** - don't grandfather legacy code
+- **Block PR until fixed** - this is non-negotiable
+- **Reference .agents/code-reviewer.md** for detailed guidelines
+
 ## Best Practices
 
 ### Performance
@@ -302,7 +349,7 @@ return fail(`Failed to process ${resource.id}: ${underlyingError.message}`);
 - Consider memory usage in long-running processes
 
 ### Security
-- Validate all inputs
+- Validate all inputs using proper Converters/Validators
 - Use type-safe APIs
 - Avoid exposing internal implementation details
 
