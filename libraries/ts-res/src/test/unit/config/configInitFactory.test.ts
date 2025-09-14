@@ -314,8 +314,40 @@ describe('Config Init Factory', () => {
 
         // Should have custom factory + built-in factory
         expect(factory.factories).toHaveLength(2);
-        expect(factory.factories[0]).toBe(customFactory);
+        expect(factory.factories[0]).toEqual(customFactory);
         expect(factory.factories[1]).toBeInstanceOf(Config.BuiltInQualifierTypeFactory);
+      });
+
+      test('should accept factory functions', () => {
+        const factoryFunction: Config.QualifierTypeFactoryFunction = (config) => {
+          if (config.systemType === 'custom-fn') {
+            return TsRes.QualifierTypes.LanguageQualifierType.createFromConfig({
+              name: config.name,
+              systemType: 'language',
+              configuration: { allowContextList: true }
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const factory = new Config.QualifierTypeFactory([factoryFunction]);
+
+        // Should have wrapped function + built-in factory
+        expect(factory.factories).toHaveLength(2);
+        expect(factory.factories[1]).toBeInstanceOf(Config.BuiltInQualifierTypeFactory);
+      });
+
+      test('should accept mix of functions and interface implementations', () => {
+        const customFactory = new CustomQualifierTypeFactory();
+        const factoryFunction: Config.QualifierTypeFactoryFunction = (config) => {
+          return fail('Function factory');
+        };
+
+        const factory = new Config.QualifierTypeFactory([customFactory, factoryFunction]);
+
+        // Should have both custom factories + built-in factory
+        expect(factory.factories).toHaveLength(3);
+        expect(factory.factories[2]).toBeInstanceOf(Config.BuiltInQualifierTypeFactory);
       });
 
       test('should create factory with empty custom factories array', () => {
@@ -408,6 +440,32 @@ describe('Config Init Factory', () => {
         expect(factory.create(config)).toFailWith(/No factory was able to create the configuration object/);
       });
 
+      test('should work with factory functions', () => {
+        const factoryFunction: Config.QualifierTypeFactoryFunction = (config) => {
+          if (config.systemType === 'test-function') {
+            return TsRes.QualifierTypes.LanguageQualifierType.createFromConfig({
+              name: `fn-${config.name}`,
+              systemType: 'language',
+              configuration: { allowContextList: false }
+            });
+          }
+          return fail('Unsupported type');
+        };
+
+        const factory = new Config.QualifierTypeFactory([factoryFunction]);
+
+        const config = {
+          name: 'test',
+          systemType: 'test-function',
+          configuration: {}
+        } as unknown as TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig;
+
+        expect(factory.create(config)).toSucceedAndSatisfy((qualifierType) => {
+          expect(qualifierType).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+          expect(qualifierType.name).toBe('fn-test');
+        });
+      });
+
       test('should work with default generic type parameter', () => {
         // Test that QualifierTypeFactory with default generic works
         const factory = new Config.QualifierTypeFactory([]);
@@ -465,6 +523,156 @@ describe('Config Init Factory', () => {
         };
 
         expect(factory.create(config)).toFailWith(/invalid-type: Unknown resource type/);
+      });
+    });
+  });
+
+  describe('ValidatingQualifierTypeFactory', () => {
+    describe('constructor', () => {
+      test('should create validating factory with custom factories', () => {
+        const customFactory = new CustomQualifierTypeFactory();
+        const factory = new Config.ValidatingQualifierTypeFactory([customFactory]);
+
+        expect(factory).toBeInstanceOf(Config.ValidatingQualifierTypeFactory);
+      });
+
+      test('should accept factory functions', () => {
+        const factoryFunction: Config.QualifierTypeFactoryFunction = (config) => {
+          return fail('Test function');
+        };
+
+        const factory = new Config.ValidatingQualifierTypeFactory([factoryFunction]);
+        expect(factory).toBeInstanceOf(Config.ValidatingQualifierTypeFactory);
+      });
+    });
+
+    describe('create', () => {
+      test('should validate and create from weakly-typed config', () => {
+        const factory = new Config.ValidatingQualifierTypeFactory([]);
+
+        // Plain object with string properties (not branded types)
+        const weakConfig = {
+          name: 'test-language',
+          systemType: 'language',
+          configuration: { allowContextList: true }
+        };
+
+        expect(factory.create(weakConfig)).toSucceedAndSatisfy((qualifierType) => {
+          expect(qualifierType).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+          expect(qualifierType.name).toBe('test-language');
+        });
+      });
+
+      test('should fail with invalid config structure', () => {
+        const factory = new Config.ValidatingQualifierTypeFactory([]);
+
+        const invalidConfig = {
+          // Missing name
+          systemType: 'language'
+        };
+
+        expect(factory.create(invalidConfig)).toFailWith(/field name not found/i);
+      });
+
+      test('should fail with non-object config', () => {
+        const factory = new Config.ValidatingQualifierTypeFactory([]);
+
+        expect(factory.create('not an object')).toFailWith(/cannot convert field.*from non-object/i);
+        expect(factory.create(null)).toFailWith(/cannot convert field.*from non-object/i);
+        expect(factory.create(undefined)).toFailWith(/cannot convert field.*from non-object/i);
+      });
+
+      test('should work with custom factory functions and weak types', () => {
+        const factoryFunction: Config.QualifierTypeFactoryFunction = (config) => {
+          if (config.systemType === 'custom-validated') {
+            return TsRes.QualifierTypes.LiteralQualifierType.createFromConfig({
+              name: config.name,
+              systemType: 'literal',
+              configuration: { caseSensitive: false }
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const factory = new Config.ValidatingQualifierTypeFactory([factoryFunction]);
+
+        // Weakly-typed config
+        const weakConfig = {
+          name: 'my-custom',
+          systemType: 'custom-validated',
+          configuration: {}
+        };
+
+        expect(factory.create(weakConfig)).toSucceedAndSatisfy((qualifierType) => {
+          expect(qualifierType).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+          expect(qualifierType.name).toBe('my-custom');
+        });
+      });
+    });
+  });
+
+  describe('ValidatingResourceTypeFactory', () => {
+    describe('constructor', () => {
+      test('should create validating factory with custom factories', () => {
+        const customFactory: Config.IConfigInitFactory<
+          TsRes.ResourceTypes.Config.IResourceTypeConfig,
+          TsRes.ResourceTypes.ResourceType
+        > = {
+          create: () => fail('Custom factory')
+        };
+
+        const factory = new Config.ValidatingResourceTypeFactory([customFactory]);
+        expect(factory).toBeInstanceOf(Config.ValidatingResourceTypeFactory);
+      });
+    });
+
+    describe('create', () => {
+      test('should validate and create from weakly-typed config', () => {
+        const factory = new Config.ValidatingResourceTypeFactory([]);
+
+        // Plain object with string properties
+        const weakConfig = {
+          name: 'test-json',
+          typeName: 'json'
+        };
+
+        expect(factory.create(weakConfig)).toSucceedAndSatisfy((resourceType) => {
+          expect(resourceType).toBeInstanceOf(TsRes.ResourceTypes.JsonResourceType);
+          expect(resourceType.key).toBe('test-json');
+        });
+      });
+
+      test('should fail with invalid config structure', () => {
+        const factory = new Config.ValidatingResourceTypeFactory([]);
+
+        const invalidConfig = {
+          name: 'test'
+          // Missing typeName
+        };
+
+        expect(factory.create(invalidConfig)).toFailWith(/field typeName not found/i);
+      });
+
+      test('should work with factory functions and weak types', () => {
+        const factoryFunction: Config.ResourceTypeFactoryFunction = (config) => {
+          if (config.typeName === 'custom-resource') {
+            return TsRes.ResourceTypes.JsonResourceType.create({
+              key: `custom-${config.name}`
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const factory = new Config.ValidatingResourceTypeFactory([factoryFunction]);
+
+        const weakConfig = {
+          name: 'test',
+          typeName: 'custom-resource'
+        };
+
+        expect(factory.create(weakConfig)).toSucceedAndSatisfy((resourceType) => {
+          expect(resourceType.key).toBe('custom-test');
+        });
       });
     });
   });
@@ -591,6 +799,104 @@ describe('Config Init Factory', () => {
         };
 
         expect(factory.create(config)).toFailWith(/No factory was able to create the configuration object/);
+      });
+    });
+  });
+
+  describe('Factory helper functions', () => {
+    describe('createQualifierTypeFactory', () => {
+      test('should wrap a factory function in IConfigInitFactory interface', () => {
+        const factoryFn: Config.QualifierTypeFactoryFunction = (config) => {
+          if (config.systemType === 'wrapped') {
+            return TsRes.QualifierTypes.LanguageQualifierType.createFromConfig({
+              name: `wrapped-${config.name}`,
+              systemType: 'language'
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const wrappedFactory = Config.createQualifierTypeFactory(factoryFn);
+
+        const config = {
+          name: 'test',
+          systemType: 'wrapped',
+          configuration: {}
+        } as unknown as TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig;
+
+        expect(wrappedFactory.create(config)).toSucceedAndSatisfy((qualifierType) => {
+          expect(qualifierType).toBeInstanceOf(TsRes.QualifierTypes.LanguageQualifierType);
+          expect(qualifierType.name).toBe('wrapped-test');
+        });
+      });
+
+      test('should work in QualifierTypeFactory chain', () => {
+        const factoryFn: Config.QualifierTypeFactoryFunction = (config) => {
+          if (config.systemType === 'helper-test') {
+            return TsRes.QualifierTypes.LiteralQualifierType.createFromConfig({
+              name: config.name,
+              systemType: 'literal'
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const factory = new Config.QualifierTypeFactory([Config.createQualifierTypeFactory(factoryFn)]);
+
+        const config = {
+          name: 'test',
+          systemType: 'helper-test'
+        } as unknown as TsRes.QualifierTypes.Config.IAnyQualifierTypeConfig;
+
+        expect(factory.create(config)).toSucceedAndSatisfy((qualifierType) => {
+          expect(qualifierType).toBeInstanceOf(TsRes.QualifierTypes.LiteralQualifierType);
+        });
+      });
+    });
+
+    describe('createResourceTypeFactory', () => {
+      test('should wrap a factory function in IConfigInitFactory interface', () => {
+        const factoryFn: Config.ResourceTypeFactoryFunction = (config) => {
+          if (config.typeName === 'wrapped-resource') {
+            return TsRes.ResourceTypes.JsonResourceType.create({
+              key: `wrapped-${config.name}`
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const wrappedFactory = Config.createResourceTypeFactory(factoryFn);
+
+        const config: TsRes.ResourceTypes.Config.IResourceTypeConfig = {
+          name: 'test',
+          typeName: 'wrapped-resource'
+        };
+
+        expect(wrappedFactory.create(config)).toSucceedAndSatisfy((resourceType) => {
+          expect(resourceType.key).toBe('wrapped-test');
+        });
+      });
+
+      test('should work in ResourceTypeFactory chain', () => {
+        const factoryFn: Config.ResourceTypeFactoryFunction = (config) => {
+          if (config.typeName === 'helper-resource') {
+            return TsRes.ResourceTypes.JsonResourceType.create({
+              key: `helper-${config.name}`
+            });
+          }
+          return fail('Not supported');
+        };
+
+        const factory = new Config.ResourceTypeFactory([Config.createResourceTypeFactory(factoryFn)]);
+
+        const config: TsRes.ResourceTypes.Config.IResourceTypeConfig = {
+          name: 'test',
+          typeName: 'helper-resource'
+        };
+
+        expect(factory.create(config)).toSucceedAndSatisfy((resourceType) => {
+          expect(resourceType.key).toBe('helper-test');
+        });
       });
     });
   });

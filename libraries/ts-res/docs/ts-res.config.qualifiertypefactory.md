@@ -4,7 +4,9 @@
 
 ## Config.QualifierTypeFactory class
 
-A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) from a [system qualifier type configuration](./ts-res.qualifiertypes.config.ianyqualifiertypeconfig.md) by chaining a supplied factory with a [built-in factory](./ts-res.config.builtinqualifiertypefactory.md) that handles built-in qualifier types.
+A factory that creates [QualifierType](./ts-res.qualifiertypes.qualifiertype.md) instances from configuration, supporting both built-in system types and custom external types.
+
+This factory allows external consumers to extend the qualifier type system with their own custom types while maintaining support for all built-in types (Language, Territory, Literal).
 
 **Signature:**
 
@@ -12,6 +14,37 @@ A factory that creates a [QualifierType](./ts-res.qualifiertypes.qualifiertype.m
 export declare class QualifierTypeFactory<T extends QualifierType = SystemQualifierType> extends ChainedConfigInitFactory<QualifierTypes.Config.IAnyQualifierTypeConfig, T | SystemQualifierType> 
 ```
 **Extends:** [ChainedConfigInitFactory](./ts-res.config.chainedconfiginitfactory.md)<!-- -->&lt;QualifierTypes.Config.IAnyQualifierTypeConfig, T \| [SystemQualifierType](./ts-res.qualifiertypes.systemqualifiertype.md)<!-- -->&gt;
+
+## Remarks
+
+- The factory chains custom factories with the built-in factory - Custom factories are tried first, falling back to built-in types - The return type is a union of custom types (T) and system types
+
+## Example
+
+Creating a factory with custom qualifier types
+
+```typescript
+// Define a custom qualifier type
+class CustomQualifierType extends QualifierType {
+  // ... implementation
+}
+
+// Define a discriminated union of all types
+type AppQualifierType = SystemQualifierType | CustomQualifierType;
+
+// Create a factory that handles custom types
+const customFactory: IConfigInitFactory<IAnyQualifierTypeConfig, CustomQualifierType> = {
+  create(config) {
+    // ... handle custom type creation
+  }
+};
+
+// Create the combined factory
+const qualifierTypeFactory = new QualifierTypeFactory<AppQualifierType>([customFactory]);
+
+// The factory returns T | SystemQualifierType, supporting all types
+const result = qualifierTypeFactory.create(config); // Result<AppQualifierType | SystemQualifierType>
+```
 
 ## Constructors
 
