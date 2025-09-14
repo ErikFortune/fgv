@@ -20,8 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
-import { JsonObject } from '@fgv/ts-json-base';
+import { Result, fail } from '@fgv/ts-utils';
 import { QualifierType, SystemQualifierType } from '../qualifier-types';
 import * as QualifierTypes from '../qualifier-types';
 import * as ResourceTypes from '../resource-types';
@@ -228,7 +227,6 @@ export class ValidatingQualifierTypeFactory<T extends QualifierType = SystemQual
   implements IConfigInitFactory<unknown, T | SystemQualifierType>
 {
   private readonly _innerFactory: QualifierTypeFactory<T>;
-  private readonly _configConverter: Converter<unknown, QualifierTypes.Config.IAnyQualifierTypeConfig>;
 
   /**
    * Constructor for a validating qualifier type factory.
@@ -243,37 +241,6 @@ export class ValidatingQualifierTypeFactory<T extends QualifierType = SystemQual
     >
   ) {
     this._innerFactory = new QualifierTypeFactory(factories);
-
-    // Create a converter that validates the config structure from unknown input
-    this._configConverter = Converters.generic<unknown, QualifierTypes.Config.IAnyQualifierTypeConfig>(
-      (from: unknown) => {
-        if (typeof from !== 'object' || from === null) {
-          return fail('Configuration must be an object');
-        }
-
-        const obj = from as Record<string, unknown>;
-
-        if (typeof obj.name !== 'string') {
-          return fail('Configuration field name not found or not a string');
-        }
-        if (typeof obj.systemType !== 'string') {
-          return fail('Configuration field systemType not found or not a string');
-        }
-
-        // Build validated config
-        const config: QualifierTypes.Config.IAnyQualifierTypeConfig = {
-          name: obj.name,
-          systemType: obj.systemType
-        };
-
-        if (obj.configuration !== undefined && obj.configuration !== null) {
-          // Cast to JsonObject - the actual validation happens in the factory
-          config.configuration = obj.configuration as Record<string, unknown> as JsonObject;
-        }
-
-        return succeed(config);
-      }
-    );
   }
 
   /**
@@ -282,9 +249,11 @@ export class ValidatingQualifierTypeFactory<T extends QualifierType = SystemQual
    * @returns A result containing the new qualifier type if successful.
    */
   public create(config: unknown): Result<T | SystemQualifierType> {
-    return this._configConverter.convert(config).onSuccess((validatedConfig) => {
-      return this._innerFactory.create(validatedConfig as QualifierTypes.Config.IAnyQualifierTypeConfig);
-    });
+    return QualifierTypes.Config.Convert.anyQualifierTypeConfig
+      .convert(config)
+      .onSuccess((validatedConfig) => {
+        return this._innerFactory.create(validatedConfig);
+      });
   }
 }
 
@@ -343,7 +312,6 @@ export class ResourceTypeFactory extends ChainedConfigInitFactory<
  */
 export class ValidatingResourceTypeFactory implements IConfigInitFactory<unknown, ResourceType> {
   private readonly _innerFactory: ResourceTypeFactory;
-  private readonly _configConverter: Converter<unknown, ResourceTypes.Config.IResourceTypeConfig>;
 
   /**
    * Constructor for a validating resource type factory.
@@ -358,32 +326,6 @@ export class ValidatingResourceTypeFactory implements IConfigInitFactory<unknown
     >
   ) {
     this._innerFactory = new ResourceTypeFactory(factories);
-
-    // Create a converter that validates the config structure from unknown input
-    this._configConverter = Converters.generic<unknown, ResourceTypes.Config.IResourceTypeConfig>(
-      (from: unknown) => {
-        if (typeof from !== 'object' || from === null) {
-          return fail('Configuration must be an object');
-        }
-
-        const obj = from as Record<string, unknown>;
-
-        if (typeof obj.name !== 'string') {
-          return fail('Configuration field name not found or not a string');
-        }
-        if (typeof obj.typeName !== 'string') {
-          return fail('Configuration field typeName not found or not a string');
-        }
-
-        // Build validated config
-        const config: ResourceTypes.Config.IResourceTypeConfig = {
-          name: obj.name,
-          typeName: obj.typeName
-        };
-
-        return succeed(config);
-      }
-    );
   }
 
   /**
@@ -392,8 +334,8 @@ export class ValidatingResourceTypeFactory implements IConfigInitFactory<unknown
    * @returns A result containing the new resource type if successful.
    */
   public create(config: unknown): Result<ResourceType> {
-    return this._configConverter.convert(config).onSuccess((validatedConfig) => {
-      return this._innerFactory.create(validatedConfig as ResourceTypes.Config.IResourceTypeConfig);
+    return ResourceTypes.Config.Convert.resourceTypeConfig.convert(config).onSuccess((validatedConfig) => {
+      return this._innerFactory.create(validatedConfig);
     });
   }
 }

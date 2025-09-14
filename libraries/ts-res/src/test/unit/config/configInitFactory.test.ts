@@ -577,9 +577,9 @@ describe('Config Init Factory', () => {
       test('should fail with non-object config', () => {
         const factory = new Config.ValidatingQualifierTypeFactory([]);
 
-        expect(factory.create('not an object')).toFailWith(/must be an object/i);
-        expect(factory.create(null)).toFailWith(/must be an object/i);
-        expect(factory.create(undefined)).toFailWith(/must be an object/i);
+        expect(factory.create('not an object')).toFailWith(/cannot convert field.*from non-object/i);
+        expect(factory.create(null)).toFailWith(/cannot convert field.*from non-object/i);
+        expect(factory.create(undefined)).toFailWith(/cannot convert field.*from non-object/i);
       });
 
       test('should work with custom factory functions and weak types', () => {

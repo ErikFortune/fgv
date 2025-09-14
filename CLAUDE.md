@@ -117,13 +117,35 @@ Projects use `workspace:*` dependency ranges to reference other projects in the 
 
 ## Type-Safe Validation Guidelines
 
+### 🚨 CRITICAL ANTI-PATTERN: Manual Type Checking with Unsafe Casts
+
+**This is a MUST-FIX issue in all code reviews. Manual type checking defeats TypeScript's type safety and MUST be replaced with proper Converters or Validators.**
+
 ### Converters vs Validators
 - **Converters**: Transform and construct new objects from input data (use for simple types, primitives, plain objects)
 - **Validators**: Validate existing objects in-place without construction (use for complex objects with non-default constructors, class instances)
 
-### Avoid Manual Type Checking and Unsafe Casts
+### ❌ CRITICAL ANTI-PATTERNS - Must Be Fixed Immediately
+
 ```typescript
-// ❌ Bad - Manual property checking with unsafe cast
+// ❌ ANTI-PATTERN 1: Manual type checking in Converters.generic
+// Found in: configInitFactory.ts:248-275 and similar locations
+this._configConverter = Converters.generic<unknown, QualifierTypes.Config.IAnyQualifierTypeConfig>(
+  (from: unknown) => {
+    if (typeof from !== 'object' || from === null) {
+      return fail('Configuration must be an object');
+    }
+    const obj = from as Record<string, unknown>;
+    if (typeof obj.name !== 'string') {
+      return fail('Configuration field name not found or not a string');
+    }
+    // ... more manual checks
+    config.configuration = obj.configuration as Record<string, unknown> as JsonObject; // DOUBLE CAST!
+    return succeed(config);
+  }
+);
+
+// ❌ ANTI-PATTERN 2: Manual property checking with unsafe cast
 if (
   typeof from === 'object' &&
   from !== null &&
@@ -135,7 +157,21 @@ if (
   return succeed(from as IResource); // Unsafe - properties could have wrong types
 }
 
-// ✅ Good - Use dedicated validator for objects with complex constructors
+// ❌ ANTI-PATTERN 3: Double casting
+const value = someValue as Record<string, unknown> as TargetType; // NEVER do this!
+```
+
+### ✅ REQUIRED PATTERNS - Use These Instead
+
+```typescript
+// ✅ CORRECT: Use Converters.object for data structures
+this._configConverter = Converters.object<QualifierTypes.Config.IAnyQualifierTypeConfig>({
+  name: Converters.string,
+  systemType: Converters.string,
+  configuration: Converters.optionalField(Converters.jsonObject)
+});
+
+// ✅ CORRECT: Use dedicated validator for objects with complex constructors
 const validator = Validators.object<IResource>({
   id: Convert.resourceId, // Converter for simple branded type
   resourceType: Validators.isA((v): v is ResourceType => v instanceof ResourceType),
@@ -144,7 +180,7 @@ const validator = Validators.object<IResource>({
 });
 return validator.validate(from);
 
-// ✅ Alternative - Use converter for plain objects/data structures
+// ✅ CORRECT: Use converter for plain objects/data structures
 const converter = Converters.object<IResourceData>({
   id: Convert.resourceId,
   name: Converters.string,
@@ -156,13 +192,14 @@ return converter.convert(from);
 ### When to Use Each Pattern
 - **Validators**: Objects with class instances, non-default constructors, existing object validation
 - **Converters**: Plain data transformation, building new objects from primitives/JSON
-- **Both**: Any situation where you would use manual type checking + casting
+- **NEVER**: Manual type checking followed by unsafe casts
 
-### Benefits
+### Benefits of Proper Validation
 - Type safety: Each property is validated according to its expected type
 - Better error messages: Specific validation failures instead of generic messages
 - Maintainability: Changes to type definitions automatically update validation
 - Consistency: Same validation patterns used throughout the codebase
+- Security: Prevents runtime type confusion attacks
 
 ## Testing Standards
 
