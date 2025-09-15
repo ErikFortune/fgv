@@ -544,14 +544,14 @@ function MyComponent() {
 
 ### Integration with Views
 
-All view components support the `pickerOptionsPresentation` prop:
+All view components support the `pickerOptionsPanelPresentation` prop:
 
 ```typescript
 // Enable in SourceView for debugging
 <ObservabilityProvider>
   <SourceView
     resources={processedResources}
-    pickerOptionsPresentation="collapsible"
+    pickerOptionsPanelPresentation="collapsible"
   />
 </ObservabilityProvider>
 
@@ -561,7 +561,7 @@ All view components support the `pickerOptionsPresentation` prop:
     resources={processedResources}
     filterState={filterState}
     filterActions={filterActions}
-    pickerOptionsPresentation="popup"
+    pickerOptionsPanelPresentation="popup"
   />
 </ObservabilityProvider>
 ```
@@ -585,7 +585,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 <ObservabilityProvider>
   <SourceView
     resources={resources}
-    pickerOptionsPresentation={isDevelopment ? 'collapsible' : 'hidden'}
+    pickerOptionsPanelPresentation={isDevelopment ? 'collapsible' : 'hidden'}
   />
 </ObservabilityProvider>
 ```

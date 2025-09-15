@@ -56,7 +56,7 @@ _(Optional)_ Additional CSS class names for styling
 </td></tr>
 <tr><td>
 
-[pickerOptionsPresentation?](./ts-res-ui-components.viewstatetools.iviewbaseprops.pickeroptionspresentation.md)
+[pickerOptionsPanelPresentation?](./ts-res-ui-components.viewstatetools.iviewbaseprops.pickeroptionspanelpresentation.md)
 
 
 </td><td>
@@ -69,7 +69,7 @@ _(Optional)_ Additional CSS class names for styling
 
 </td><td>
 
-_(Optional)_ How to present the ResourcePicker options control (default: 'hidden' for production use)
+_(Optional)_ How to present the ResourcePicker options control panel (default: 'hidden' for production use)
 
 
 </td></tr>

@@ -103,7 +103,7 @@ _(Optional)_ Callback for exporting compiled data or bundles
 
 </td><td>
 
-IResourcePickerOptions
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>

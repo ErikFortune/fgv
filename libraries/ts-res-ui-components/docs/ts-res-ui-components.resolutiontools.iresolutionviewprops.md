@@ -198,7 +198,7 @@ _(Optional)_ Callback when pending resources are applied
 
 </td><td>
 
-IResourcePickerOptions
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>

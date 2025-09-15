@@ -418,7 +418,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resources={state.resources}
                 filterState={state.filterState}
                 filterResult={state.filterResult}
-                pickerOptionsPresentation={pickerPresentation.source}
+                pickerOptionsPanelPresentation={pickerPresentation.source}
                 onExport={(data, type) => {
                   switch (type) {
                     case 'json':
@@ -522,7 +522,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                     actions.updateFilterState({ reduceQualifiers })
                 }}
                 filterResult={state.filterResult}
-                pickerOptionsPresentation={pickerPresentation.filter}
+                pickerOptionsPanelPresentation={pickerPresentation.filter}
                 contextOptions={
                   filterContextOptions.showDemo
                     ? {
@@ -570,7 +570,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 filterState={state.filterState}
                 filterResult={state.filterResult}
                 useNormalization={true}
-                pickerOptionsPresentation={pickerPresentation.compiled}
+                pickerOptionsPanelPresentation={pickerPresentation.compiled}
                 onExport={(data, type) => {
                   switch (type) {
                     case 'bundle':
@@ -707,7 +707,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                     resolutionActions={resolutionActions}
                     availableQualifiers={availableQualifiers}
                     resourceEditorFactory={state.resourceEditorFactory}
-                    pickerOptionsPresentation={pickerPresentation.resolution}
+                    pickerOptionsPanelPresentation={pickerPresentation.resolution}
                     lockedViewMode={resolutionLockedMode === 'none' ? undefined : resolutionLockedMode}
                     sectionTitles={customSectionTitles}
                     contextOptions={
@@ -832,7 +832,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resolutionState={state.resolutionState}
                 resolutionActions={resolutionActions}
                 availableQualifiers={availableQualifiers}
-                pickerOptionsPresentation={pickerPresentation.grid}
+                pickerOptionsPanelPresentation={pickerPresentation.grid}
               />
             </div>
           </div>
@@ -883,7 +883,7 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 resolutionActions={resolutionActions}
                 availableQualifiers={availableQualifiers}
                 tabsPresentation={selectedMultiGridTabs}
-                pickerOptionsPresentation={pickerPresentation.multiGrid}
+                pickerOptionsPanelPresentation={pickerPresentation.multiGrid}
               />
             </div>
           </div>

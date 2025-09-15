@@ -73,7 +73,7 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
   availableQualifiers = [],
   resourceEditorFactory,
   pickerOptions,
-  pickerOptionsPresentation = 'hidden',
+  pickerOptionsPanelPresentation = 'hidden',
   contextOptions,
   lockedViewMode,
   sectionTitles,
@@ -466,7 +466,7 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
       <ResourcePickerOptionsControl
         options={currentPickerOptions}
         onOptionsChange={setCurrentPickerOptions}
-        presentation={pickerOptionsPresentation}
+        presentation={pickerOptionsPanelPresentation}
         title="Resolution Viewer Picker Options"
         className="mb-6"
       />
@@ -476,7 +476,7 @@ export const ResolutionView: React.FC<IResolutionViewProps> = ({
         options={currentContextOptions}
         onOptionsChange={setCurrentContextOptions}
         availableQualifiers={availableQualifiers}
-        presentation={pickerOptionsPresentation}
+        presentation={pickerOptionsPanelPresentation}
         title="Resolution Context Options"
         className="mb-6"
         allowResourceCreation={allowResourceCreationInternal}
