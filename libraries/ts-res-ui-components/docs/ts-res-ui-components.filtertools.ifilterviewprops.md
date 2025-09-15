@@ -141,7 +141,7 @@ _(Optional)_ Callback when filter results change
 
 </td><td>
 
-IResourcePickerOptions
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>

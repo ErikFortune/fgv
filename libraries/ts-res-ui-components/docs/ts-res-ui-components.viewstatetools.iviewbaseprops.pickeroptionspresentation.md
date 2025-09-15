@@ -4,7 +4,7 @@
 
 ## ViewStateTools.IViewBaseProps.pickerOptionsPresentation property
 
-How to present the ResourcePicker options control (default: 'hidden' for production use)
+How to present the ResourcePicker options control panel (default: 'hidden' for production use)
 
 **Signature:**
 

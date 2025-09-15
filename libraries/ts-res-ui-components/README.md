@@ -451,12 +451,45 @@ is a generic component used by all of the views, which can also be used to power
 - **Type safety**: Full TypeScript support with generic resource types
 - **Debug controls**: Optional ResourcePickerOptionsControl for development and debugging
 
+#### ResourcePicker Configuration
+
+The ResourcePicker supports two distinct configuration mechanisms:
+
+1. **`pickerOptions`** - Controls actual picker behavior (defaultView, rootPath, search settings, etc.)
+2. **`pickerOptionsPresentation`** - Controls whether/how the debug options control panel is displayed
+
+```tsx
+// Example: Configure picker behavior programmatically
+<SourceView
+  resources={state.processedResources}
+  pickerOptions={{
+    defaultView: 'tree',
+    rootPath: 'user.messages',  // Focus on specific branch
+    hideRootNode: true,         // Hide the root node itself
+    enableSearch: true,
+    searchPlaceholder: 'Search user messages...',
+    height: '500px'
+  }}
+  pickerOptionsPresentation="hidden"  // Hide debug controls in production
+/>
+
+// Example: Enable debug controls during development
+<SourceView
+  resources={state.processedResources}
+  pickerOptions={{
+    defaultView: 'list',
+    enableSearch: true
+  }}
+  pickerOptionsPresentation={isDevelopment ? 'collapsible' : 'hidden'}
+/>
+```
+
 #### ResourcePickerOptionsControl
 
 A debugging/design tool for interactively configuring ResourcePicker behavior. Hidden by default for production use, but can be enabled in development:
 
 ```tsx
-// All view components support pickerOptionsPresentation  
+// All view components support pickerOptionsPresentation
 <ObservabilityProvider observabilityContext={myObservabilityContext}>
   <SourceView
     resources={state.processedResources}

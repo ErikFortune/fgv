@@ -13,22 +13,17 @@ import {
 import { JsonCompatible, JsonValue } from '@fgv/ts-json-base';
 // IIResourcePickerOptions import removed - unused
 import type { IObservabilityContext } from '../utils/observability';
+import type { IResourcePickerOptions } from '../components/pickers/ResourcePicker/types';
 
 /**
- * Configuration options for ResourcePicker components.
- * Controls behavior and appearance of resource selection controls.
+ * Configuration for how the ResourcePicker options control panel is presented.
+ * This controls the UI for adjusting picker settings, not the picker behavior itself.
  *
  * @public
  */
-export interface IResourcePickerOptions {
-  /** How to present the picker options control */
+export interface IPickerOptionsPanelPresentation {
+  /** How to present the picker options control panel */
   presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
-  /** Custom CSS classes for the picker */
-  className?: string;
-  /** Whether to allow multi-selection */
-  allowMultiSelect?: boolean;
-  /** Maximum number of selectable resources */
-  maxSelections?: number;
 }
 
 /**
@@ -233,7 +228,7 @@ export interface IImportedDirectory {
 export interface IViewBaseProps {
   /** Additional CSS class names for styling */
   className?: string;
-  /** How to present the ResourcePicker options control (default: 'hidden' for production use) */
+  /** How to present the ResourcePicker options control panel (default: 'hidden' for production use) */
   pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 

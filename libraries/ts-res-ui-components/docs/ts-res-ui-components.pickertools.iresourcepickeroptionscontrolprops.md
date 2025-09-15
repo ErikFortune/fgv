@@ -64,7 +64,7 @@ _(Optional)_ Custom class name
 
 </td><td>
 
-(options: IResourcePickerOptions) =&gt; void
+(options: [IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)<!-- -->) =&gt; void
 
 
 </td><td>
@@ -83,7 +83,7 @@ Callback when options change
 
 </td><td>
 
-IResourcePickerOptions
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>

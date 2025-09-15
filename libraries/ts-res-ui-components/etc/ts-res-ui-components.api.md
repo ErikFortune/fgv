@@ -495,7 +495,6 @@ interface IFilterViewProps extends IViewBaseProps {
     filterResult?: IFilterResult | null;
     filterState: IFilterState;
     onFilterResult?: (result: IFilterResult | null) => void;
-    // Warning: (ae-forgotten-export) The symbol "IResourcePickerOptions" needs to be exported by the entry point index.d.ts
     pickerOptions?: IResourcePickerOptions;
     resources?: IProcessedResources | null;
 }
@@ -1051,7 +1050,7 @@ interface IResourceManagerState {
 }
 
 // @public
-interface IResourcePickerOptions_2 {
+interface IResourcePickerOptions {
     defaultView?: 'list' | 'tree';
     emptyMessage?: string;
     enableSearch?: boolean;
@@ -1066,8 +1065,8 @@ interface IResourcePickerOptions_2 {
 // @public
 interface IResourcePickerOptionsControlProps {
     className?: string;
-    onOptionsChange: (options: IResourcePickerOptions_2) => void;
-    options: IResourcePickerOptions_2;
+    onOptionsChange: (options: IResourcePickerOptions) => void;
+    options: IResourcePickerOptions;
     presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
     quickBranchPaths?: string[];
     showAdvanced?: boolean;
@@ -1077,7 +1076,7 @@ interface IResourcePickerOptionsControlProps {
 // @public
 interface IResourcePickerProps<T = unknown> extends IViewBaseProps {
     onResourceSelect: (selection: IResourceSelection<T>) => void;
-    options?: IResourcePickerOptions_2;
+    options?: IResourcePickerOptions;
     pendingResources?: IPendingResource<T>[];
     resourceAnnotations?: IResourceAnnotations;
     resources: IProcessedResources | IExtendedProcessedResources | null;
@@ -1196,7 +1195,7 @@ declare namespace PickerTools {
         ResourcePicker,
         ResourcePickerOptionsControl,
         IResourcePickerProps,
-        IResourcePickerOptions_2 as IResourcePickerOptions,
+        IResourcePickerOptions,
         IResourceSelection,
         IResourceAnnotations,
         IResourceAnnotation,
