@@ -348,7 +348,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
   useNormalization: useNormalizationProp = false,
   onExport,
   pickerOptions,
-  pickerOptionsPresentation = 'hidden',
+  pickerOptionsPanelPresentation = 'hidden',
   className = ''
 }) => {
   const o11y = useSmartObservability();
@@ -789,7 +789,7 @@ export const CompiledView: React.FC<ICompiledViewProps> = ({
       <ResourcePickerOptionsControl
         options={currentPickerOptions}
         onOptionsChange={setCurrentPickerOptions}
-        presentation={pickerOptionsPresentation}
+        presentation={pickerOptionsPanelPresentation}
         title="Compiled View Picker Options"
         className="mb-6"
       />

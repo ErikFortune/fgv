@@ -1129,7 +1129,7 @@ interface IUserLogger extends Logging.ILogger {
 // @public
 interface IViewBaseProps {
     className?: string;
-    pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+    pickerOptionsPanelPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
 export { JsonValue }

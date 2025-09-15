@@ -56,7 +56,7 @@ _(Optional)_ Additional CSS class names for styling
 </td></tr>
 <tr><td>
 
-[pickerOptionsPresentation?](./ts-res-ui-components.viewstatetools.iviewbaseprops.pickeroptionspresentation.md)
+[pickerOptionsPanelPresentation?](./ts-res-ui-components.viewstatetools.iviewbaseprops.pickeroptionspanelpresentation.md)
 
 
 </td><td>

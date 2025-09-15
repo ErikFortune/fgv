@@ -587,7 +587,7 @@ As part of the migration to ResourcePicker, you may want to integrate the Resour
 
 ### Adding Debug Options to Existing Views
 
-If you're using the main view components (SourceView, FilterView, etc.), you can enable picker options debugging by adding the `pickerOptionsPresentation` prop:
+If you're using the main view components (SourceView, FilterView, etc.), you can enable picker options debugging by adding the `pickerOptionsPanelPresentation` prop:
 
 ```typescript
 // Before migration - no debug options
@@ -602,7 +602,7 @@ If you're using the main view components (SourceView, FilterView, etc.), you can
   <SourceView 
     resources={processedResources}
     // Enable for development/debugging
-    pickerOptionsPresentation={process.env.NODE_ENV === 'development' ? 'collapsible' : 'hidden'}
+    pickerOptionsPanelPresentation={process.env.NODE_ENV === 'development' ? 'collapsible' : 'hidden'}
   />
 </ObservabilityProvider>
 ```

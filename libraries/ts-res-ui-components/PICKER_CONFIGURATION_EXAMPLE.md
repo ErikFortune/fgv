@@ -7,7 +7,7 @@ This document demonstrates how to properly configure the ResourcePicker after th
 There are now two distinct configuration mechanisms:
 
 1. **`pickerOptions`** - Controls the actual behavior of the ResourcePicker (rootPath, defaultView, etc.)
-2. **`pickerOptionsPresentation`** - Controls whether/how the picker options control panel UI is displayed
+2. **`pickerOptionsPanelPresentation`** - Controls whether/how the picker options control panel UI is displayed
 
 ## Example Usage
 
@@ -38,7 +38,7 @@ function MyResourceManager() {
       pickerOptions={pickerOptions}
 
       // Hide the options control panel in production
-      pickerOptionsPresentation="hidden"
+      pickerOptionsPanelPresentation="hidden"
     />
   );
 }
@@ -65,7 +65,7 @@ function MyApp() {
       }}
 
       // Show options control panel only in development
-      pickerOptionsPresentation={isDevelopment ? 'collapsible' : 'hidden'}
+      pickerOptionsPanelPresentation={isDevelopment ? 'collapsible' : 'hidden'}
     />
   );
 }
@@ -85,7 +85,7 @@ function MultiViewApp() {
           enableSearch: true,
           height: '400px'
         }}
-        pickerOptionsPresentation="hidden"
+        pickerOptionsPanelPresentation="hidden"
       />
 
       {/* Resolution view - focus on user resources in tree */}
@@ -99,7 +99,7 @@ function MultiViewApp() {
           hideRootNode: true,
           height: '500px'
         }}
-        pickerOptionsPresentation="hidden"
+        pickerOptionsPanelPresentation="hidden"
       />
 
       {/* Filter view - show app resources */}
@@ -112,14 +112,14 @@ function MultiViewApp() {
           rootPath: 'app',
           hideRootNode: false
         }}
-        pickerOptionsPresentation="hidden"
+        pickerOptionsPanelPresentation="hidden"
       />
     </div>
   );
 }
 ```
 
-## pickerOptionsPresentation Values
+## pickerOptionsPanelPresentation Values
 
 - **`'hidden'`** - (Default) No options control panel shown
 - **`'inline'`** - Always expanded control panel
@@ -174,6 +174,6 @@ If you were using the old structure where `IResourcePickerOptions` in `types/ind
     rootPath: 'user.messages'
     // ... other picker behavior options
   }}
-  pickerOptionsPresentation="collapsible"
+  pickerOptionsPanelPresentation="collapsible"
 />
 ```

@@ -1230,7 +1230,7 @@ function MultiViewDashboard({
         {currentView === 'source' && (
           <SourceView
             resources={resources}
-            pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+            pickerOptionsPanelPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
           />
         )}
         
@@ -1239,14 +1239,14 @@ function MultiViewDashboard({
             resources={resources}
             filterState={filterState}
             filterActions={filterActions}
-            pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+            pickerOptionsPanelPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
           />
         )}
         
         {currentView === 'compiled' && (
           <CompiledView
             resources={resources}
-            pickerOptionsPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
+            pickerOptionsPanelPresentation={enableDebugOptions ? 'collapsible' : 'hidden'}
           />
         )}
       </ObservabilityProvider>

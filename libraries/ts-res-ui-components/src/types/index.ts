@@ -16,17 +16,6 @@ import type { IObservabilityContext } from '../utils/observability';
 import type { IResourcePickerOptions } from '../components/pickers/ResourcePicker/types';
 
 /**
- * Configuration for how the ResourcePicker options control panel is presented.
- * This controls the UI for adjusting picker settings, not the picker behavior itself.
- *
- * @public
- */
-export interface IPickerOptionsPanelPresentation {
-  /** How to present the picker options control panel */
-  presentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
-}
-
-/**
  * Configuration options for edit validation.
  *
  * @public
@@ -229,7 +218,7 @@ export interface IViewBaseProps {
   /** Additional CSS class names for styling */
   className?: string;
   /** How to present the ResourcePicker options control panel (default: 'hidden' for production use) */
-  pickerOptionsPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
+  pickerOptionsPanelPresentation?: 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover';
 }
 
 /**

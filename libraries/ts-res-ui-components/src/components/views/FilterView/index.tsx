@@ -72,7 +72,7 @@ export const FilterView: React.FC<IFilterViewProps> = ({
   filterResult,
   onFilterResult,
   pickerOptions,
-  pickerOptionsPresentation = 'hidden',
+  pickerOptionsPanelPresentation = 'hidden',
   contextOptions,
   className = ''
 }) => {
@@ -344,7 +344,7 @@ export const FilterView: React.FC<IFilterViewProps> = ({
       <ResourcePickerOptionsControl
         options={currentPickerOptions}
         onOptionsChange={setCurrentPickerOptions}
-        presentation={pickerOptionsPresentation}
+        presentation={pickerOptionsPanelPresentation}
         title="Filter Tool Picker Options"
         className="mb-6"
       />
@@ -354,7 +354,7 @@ export const FilterView: React.FC<IFilterViewProps> = ({
         options={currentContextOptions}
         onOptionsChange={setCurrentContextOptions}
         availableQualifiers={availableQualifiers}
-        presentation={pickerOptionsPresentation}
+        presentation={pickerOptionsPanelPresentation}
         title="Filter Context Options"
         className="mb-6"
       />
