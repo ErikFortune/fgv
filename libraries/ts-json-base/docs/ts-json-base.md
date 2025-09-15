@@ -208,6 +208,10 @@ Description
 
 A constrained type that is compatible with JSON serialization.
 
+This type transforms input types to ensure they can be safely serialized to JSON: - JSON primitives (string, number, boolean, null) are preserved as-is - `undefined` is allowed for TypeScript compatibility with optional properties - Objects are recursively transformed with all properties made JSON-compatible - Arrays are transformed to contain only JSON-compatible elements - Functions are transformed to error types - Other non-JSON types are transformed to error types
+
+Note: While `undefined` is technically not JSON-serializable, it's allowed here to support TypeScript's optional property patterns. Use `sanitizeJsonObject` to remove undefined properties before actual JSON serialization.
+
 
 </td></tr>
 <tr><td>
