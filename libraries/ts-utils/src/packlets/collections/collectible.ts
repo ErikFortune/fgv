@@ -164,7 +164,7 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
         this._index = this._indexConverter.convert(params.index).orThrow();
       }
     } else {
-      /* c8 ignore next 3 - coverage is having a bad day */
+    /* c8 ignore next 3 - coverage is having a bad day */
       this._index = params.index;
     }
   }
