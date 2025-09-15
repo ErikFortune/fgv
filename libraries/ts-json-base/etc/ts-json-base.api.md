@@ -125,7 +125,7 @@ const jsonArray_2: Validator<JsonArray, IJsonValidatorContext>;
 // Warning: (ae-forgotten-export) The symbol "IsUnknown" needs to be exported by the entry point index.d.ts
 //
 // @public
-export type JsonCompatible<T> = IsUnknown<T> extends true ? JsonValue : T extends JsonPrimitive ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
+export type JsonCompatible<T> = IsUnknown<T> extends true ? JsonValue : T extends JsonPrimitive | undefined ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
     [K in keyof T]: JsonCompatible<T[K]>;
 } : ['Error: Non-JSON type'];
 
