@@ -79,6 +79,7 @@ _(Optional)_ Optional [ISimpleJsonMapOptions](./ts-json.isimplejsonmapoptions.md
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[SimpleJsonMap](./ts-json.simplejsonmap.md)<!-- -->&gt;

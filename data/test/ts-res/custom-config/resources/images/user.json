@@ -1,0 +1,14 @@
+{
+  "candidates": [
+    {
+      "id": "user",
+      "resourceTypeName": "json",
+      "json": {
+        "path": "/assets/icons/user.svg",
+        "alt": "User icon",
+        "width": 24,
+        "height": 24
+      }
+    }
+  ]
+}

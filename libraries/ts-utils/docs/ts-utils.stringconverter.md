@@ -122,3 +122,4 @@ Returns a [StringConverter](./ts-utils.conversion.stringconverter.md) which cons
 
 </td></tr>
 </tbody></table>
+

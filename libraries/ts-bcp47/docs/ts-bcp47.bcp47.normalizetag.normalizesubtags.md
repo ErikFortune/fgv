@@ -79,6 +79,7 @@ _(Optional)_ (optional) The current [normalization level](./ts-bcp47.bcp47.tagno
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ISubtags](./ts-bcp47.bcp47.isubtags.md)<!-- -->&gt;

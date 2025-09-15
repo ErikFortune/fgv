@@ -14,13 +14,11 @@ describe('.toFailTest', () => {
   });
 
   test('fails for a callback that succeeds', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(() => {}).not.toFailTest();
   });
 
   test('logs details correctly for a failed result', () => {
     expect(() => {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       expect(() => {}).toFailTest();
     }).toFailTestAndMatchSnapshot();
   });

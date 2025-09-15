@@ -47,6 +47,7 @@ converter
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;Record&lt;TK, T&gt;, TC&gt;

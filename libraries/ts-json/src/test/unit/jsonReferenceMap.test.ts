@@ -27,7 +27,6 @@ import { CompositeJsonMap } from '../../packlets/context';
 import { JsonEditor, PrefixedJsonMap, ReferenceMapKeyPolicy, SimpleJsonMap } from '../../packlets/editor';
 
 /* test data necessarily has lots of non-conformant names */
-/* eslint-disable @typescript-eslint/naming-convention */
 
 describe('JsonReferenceMap module', () => {
   describe('SimpleJsonMap class', () => {

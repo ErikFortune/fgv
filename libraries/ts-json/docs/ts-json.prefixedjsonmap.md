@@ -100,3 +100,4 @@ Creates a new [PrefixedJsonMap](./ts-json.prefixedjsonmap.md) from the supplied 
 
 </td></tr>
 </tbody></table>
+

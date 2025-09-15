@@ -47,6 +47,7 @@ _(Optional)_ Optional partial [editor options](./ts-json.ijsoneditoroptions.md) 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[IJsonEditorRule](./ts-json.ijsoneditorrule.md)<!-- -->\[\]&gt;

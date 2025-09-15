@@ -22,7 +22,7 @@
 
 import '../../helpers/jest';
 import { Collectible } from '../../../packlets/collections';
-import { Converters } from '../../../packlets/conversion';
+import { ConverterFunc, Converters } from '../../../packlets/conversion';
 import { fail, succeed } from '../../../packlets/base';
 
 describe('Collectible', () => {
@@ -34,6 +34,18 @@ describe('Collectible', () => {
 
   test('can be constructed with key only', () => {
     const item = new Collectible({ key: 'key', indexConverter: Converters.number });
+    expect(item.key).toBe('key');
+    expect(item.index).toBeUndefined();
+  });
+
+  test('can be constructed with key and converter function', () => {
+    const convertFunc: ConverterFunc<number, undefined> = (i: unknown) => {
+      if (typeof i !== 'number') {
+        return fail<number>('not a number');
+      }
+      return succeed(i);
+    };
+    const item = new Collectible({ key: 'key', indexConverter: convertFunc });
     expect(item.key).toBe('key');
     expect(item.index).toBeUndefined();
   });
@@ -82,7 +94,7 @@ describe('Collectible', () => {
     expect(item.index).toBe(1);
   });
 
-  test('setItem fails if index fails to convert', () => {
+  test('setIndex fails if index fails to convert', () => {
     const indexConverter = jest.fn((i: unknown) => {
       if (typeof i !== 'number') {
         return fail<number>('not a number');

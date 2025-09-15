@@ -130,3 +130,4 @@ Constructs a new [RichJsonConverter](./ts-json.richjsonconverter.md) with suppli
 
 </td></tr>
 </tbody></table>
+

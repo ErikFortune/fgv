@@ -1,21 +1,51 @@
-# Exclude build and temp files
+# Agent-specific files
+CLAUDE.md
+.agents/
+.claude/
+
+# IDE and system files
+.vscode/
+.DS_Store
+
+# Test and coverage files  
+coverage/
+*.test.ts
+*.test.js
+*.test.d.ts
+*.test.*.map
+src/test/
+lib/test/
+lib/**/*.test.*
+lib-commonjs/test/
+lib-commonjs/**/*.test.*
+
+# Development files
+*.log
+.eslintrc*
+jest.config.*
+tsconfig.json
+*.js.map
+*.d.ts.map
+config/
+
+# Source files (if publishing only built output)
+# Uncomment if you only want to publish dist/lib
+src/
+
+# Rush/Heft temporary files
 .heft/
 .rush/
+rush-logs/
 temp/
-*.log
 
-# Exclude source and test
-src/
-test/
-*/**/*.test.{d.ts,d.ts.map,js,js.map}
-lib/test
-
-# Exclude built docs & api docs
-docs/
+# API Extractor files (development artifacts)
 etc/
 
-# Exclude configs
-config/
-.eslintrc.js
-tsconfig.json
-.vscode/
+# Build artifacts that shouldn't be published
+lib-commonjs/
+
+# Documentation source
+docs/
+*.md
+!README.md
+!LICENSE.md

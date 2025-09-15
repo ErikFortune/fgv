@@ -28,7 +28,7 @@ import { ValidatorBase, ValidatorBaseConstructorParams } from './validatorBase';
  * Parameters used to construct a {@link Validation.Classes.OneOfValidator | OneOfValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface OneOfValidatorConstructorParams<T, TC = unknown>
   extends ValidatorBaseConstructorParams<T, TC> {
   validators: Validator<T, TC>[];
@@ -64,10 +64,11 @@ export class OneOfValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
    * of the configured validators.
    * @param from - The `unknown` value to be tested.
    * @param context - Optional validation context will be propagated to element validator.
+   * @param self - Optional self-reference for recursive validation.
    * @returns Returns `true` if `from` is an `array` of valid elements, or
    * {@link Failure} with an error message if not.
    */
-  protected _validate<T>(from: unknown, context?: TC): boolean | Failure<T> {
+  protected _validate<T>(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {
     const found = this._validators.some((v) => v.validate(from).success);
     if (found) {
       return true;

@@ -311,4 +311,19 @@ Returns an iterator over the map values.
 
 
 </td></tr>
+<tr><td>
+
+[valuesByIndex()](./ts-utils.collector.valuesbyindex.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all items in the collection, ordered by index.
+
+
+</td></tr>
 </tbody></table>
+

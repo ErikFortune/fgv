@@ -47,7 +47,12 @@ Error message to be returned.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;
+
+## Remarks
+
+A `fails` alias was added in release 5.0 due to issues with the name `fail` being used test frameworks and libraries.
 

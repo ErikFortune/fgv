@@ -47,3 +47,4 @@ _(Optional)_ Optional [configuration options](./ts-json.ijsoneditoroptions.md) f
 
 </td></tr>
 </tbody></table>
+

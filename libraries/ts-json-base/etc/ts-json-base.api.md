@@ -122,6 +122,16 @@ const jsonArray: Converter<JsonArray, IJsonConverterContext>;
 // @public
 const jsonArray_2: Validator<JsonArray, IJsonValidatorContext>;
 
+// Warning: (ae-forgotten-export) The symbol "IsUnknown" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type JsonCompatible<T> = IsUnknown<T> extends true ? JsonValue : T extends JsonPrimitive | undefined ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
+    [K in keyof T]: JsonCompatible<T[K]>;
+} : ['Error: Non-JSON type'];
+
+// @public
+export type JsonCompatibleArray<T> = Array<JsonCompatible<T>>;
+
 declare namespace JsonFile {
     export {
         readJsonFileSync,
@@ -237,6 +247,9 @@ function readJsonFileSync(srcPath: string): Result<JsonValue>;
 
 // @public
 export function sanitizeJson(from: unknown): Result<JsonValue>;
+
+// @public
+export function sanitizeJsonObject<T>(from: T): Result<T>;
 
 declare namespace Validators {
     export {

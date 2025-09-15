@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "- FileTree abstraction for limited processing of files and directories|- Collections improvements - collector, validating collector|- Conversion/Validation improvements|- Logging improvements (breaking)",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

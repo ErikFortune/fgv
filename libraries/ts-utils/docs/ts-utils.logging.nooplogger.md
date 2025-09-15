@@ -4,6 +4,7 @@
 
 ## Logging.NoOpLogger class
 
+A no-op [LoggerBase](./ts-utils.logging.loggerbase.md) that does not log anything.
 
 **Signature:**
 
@@ -12,11 +13,11 @@ export declare class NoOpLogger extends LoggerBase
 ```
 **Extends:** [LoggerBase](./ts-utils.logging.loggerbase.md)
 
-## Methods
+## Constructors
 
 <table><thead><tr><th>
 
-Method
+Constructor
 
 
 </th><th>
@@ -32,16 +33,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[\_innerLog(message)](./ts-utils.logging.nooplogger._innerlog.md)
+[(constructor)(logLevel)](./ts-utils.logging.nooplogger._constructor_.md)
 
 
 </td><td>
 
-`protected`
-
 
 </td><td>
+
+Creates a new no-op logger.
 
 
 </td></tr>
 </tbody></table>
+

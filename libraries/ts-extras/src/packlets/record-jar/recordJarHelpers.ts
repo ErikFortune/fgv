@@ -59,7 +59,6 @@ class RecordParser {
   protected _name: string | undefined = undefined;
   protected _body: IRecordBody | undefined = undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor(options?: JarRecordParserOptions) {
     this.options = options ?? {};
   }

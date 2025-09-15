@@ -47,6 +47,7 @@ The entries to be normalized.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Entry&lt;T&gt;\[\]

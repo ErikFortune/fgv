@@ -47,6 +47,7 @@ The individual [subtags](./ts-bcp47.bcp47.subtags.md) to be normalized.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ISubtags](./ts-bcp47.bcp47.isubtags.md)<!-- -->&gt;

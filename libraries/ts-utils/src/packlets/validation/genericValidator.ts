@@ -22,20 +22,19 @@
 
 import { Brand, Failure, Result, fail, succeed } from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
-import { Constraint, ValidationErrorFormatter, Validator, ValidatorOptions } from './validator';
-
-import { ValidatorFunc } from './common';
-
-/**
- * @deprecated Use {@link Validation.Common.ValidatorFunc | Validation.Common.ValidatorFunc} instead.
- */
-export { ValidatorFunc };
+import {
+  Constraint,
+  ValidationErrorFormatter,
+  Validator,
+  ValidatorFunc,
+  ValidatorOptions
+} from './validator';
 
 /**
  * Options used to initialize a {@link Validation.Base.GenericValidator | GenericValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface GenericValidatorConstructorParams<T, TC> {
   options?: ValidatorOptions<TC>;
   traits?: Partial<ValidatorTraits>;
@@ -93,7 +92,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    * {@inheritdoc Validation.Validator.validate}
    */
   public validate(from: unknown, context?: TC): Result<T> {
-    const result = this._validator(from, this._context(context));
+    const result = this._validator(from, this._context(context), this);
     if (typeof result === 'boolean') {
       return result ? succeed(from as T) : fail<T>('Invalid value');
     }
@@ -104,7 +103,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    * {@inheritdoc Validation.Validator.convert}
    */
   public convert(from: unknown, context?: TC): Result<T> {
-    const result = this._validator(from, this._context(context));
+    const result = this._validator(from, this._context(context), this);
     if (typeof result === 'boolean') {
       return result ? succeed(from as T) : fail<T>('Invalid value');
     }
@@ -122,7 +121,7 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    * {@inheritdoc Validation.Validator.guard}
    */
   public guard(from: unknown, context?: TC): from is T {
-    return this._validator(from, this._context(context)) === true;
+    return this._validator(from, this._context(context), this) === true;
   }
 
   /**
@@ -130,8 +129,8 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    */
   public optional(): Validator<T | undefined, TC> {
     return new GenericValidator({
-      validator: (from: unknown, context?: TC) => {
-        return from === undefined || this._validator(from, this._context(context));
+      validator: (from: unknown, context?: TC, self?: Validator<T | undefined, TC>) => {
+        return from === undefined || this._validator(from, this._context(context), this);
       },
       traits: { isOptional: true }
     });
@@ -143,8 +142,8 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   public withConstraint(constraint: Constraint<T>, trait?: ConstraintTrait): Validator<T, TC> {
     trait = trait ?? { type: 'function' };
     return new GenericValidator({
-      validator: (from: unknown, context?: TC): boolean | Failure<T> => {
-        const result = this._validator(from, this._context(context));
+      validator: (from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> => {
+        const result = this._validator(from, this._context(context), this);
         if (result === true) {
           const constraintResult = constraint(from as T);
           if (typeof constraintResult === 'boolean') {
@@ -169,8 +168,8 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
     }
 
     return new GenericValidator<Brand<T, B>, TC>({
-      validator: (from: unknown, context?: TC) => {
-        return this._validator(from, this._context(context)) as boolean | Failure<Brand<T, B>>;
+      validator: (from: unknown, context?: TC, self?: Validator<Brand<T, B>, TC>) => {
+        return this._validator(from, this._context(context), this) as boolean | Failure<Brand<T, B>>;
       },
       traits: { brand }
     });
@@ -181,8 +180,8 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
    */
   public withFormattedError(formatter: ValidationErrorFormatter<TC>): Validator<T, TC> {
     return new GenericValidator<T, TC>({
-      validator: (from: unknown, context?: TC) => {
-        const result = this._validator(from, this._context(context));
+      validator: (from: unknown, context?: TC, self?: Validator<T, TC>) => {
+        const result = this._validator(from, this._context(context), this);
         if (result === true) {
           return true;
         }

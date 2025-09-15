@@ -1,25 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`.toFailWith reports details correctly on a failure due to a success result: toFailTestAndMatchSnapshot 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).[22mtoFailWith[2m([22m[32mexpected[39m[2m)[22m
+"expect(received).toFailWith(expected)
 Expected:
-  Failure with [32m\\"hello\\"[39m
+  Failure with \\"hello\\"
 Received:
-  Success with [31m\\"hello\\"[39m"
+  Success with \\"hello\\""
 `;
 
 exports[`.toFailWith reports details correctly on a failure due to non-matching failure value: toFailTestAndMatchSnapshot 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).[22mtoFailWith[2m([22m[32mexpected[39m[2m)[22m
+"expect(received).toFailWith(expected)
 Expected:
-  Failure with [32m\\"error\\"[39m
+  Failure with \\"error\\"
 Received:
   Failure with \\"oops\\""
 `;
 
 exports[`.toFailWith reports details correctly on a failure with a .not: toFailTestAndMatchSnapshot 1`] = `
-"[2mexpect([22m[31mreceived[39m[2m).not.toFailWith([22m[32mexpected[39m[2m)[22m
+"expect(received).not.toFailWith(expected)
 Expected:
-  Not failure with [32m\\"oops\\"[39m
+  Not failure with \\"oops\\"
 Received:
   Failure with \\"oops\\""
 `;

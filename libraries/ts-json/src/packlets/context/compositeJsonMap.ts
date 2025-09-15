@@ -102,7 +102,7 @@ export class CompositeJsonMap implements IJsonReferenceMap {
    * if no such object exists, or failure with detail `'error'` if the object was found but
    * could not be formatted.
    */
-  // eslint-disable-next-line no-use-before-define
+
   public getJsonValue(
     key: string,
     context?: IJsonContext

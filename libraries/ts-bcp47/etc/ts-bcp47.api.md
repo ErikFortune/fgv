@@ -1298,7 +1298,7 @@ type RegionSubtagRegistryEntry = IRegistrySubtagEntry<'region', RegionSubtag>;
 type RegionTier = 'global' | IntermediateRegionTier;
 
 // @internal (undocumented)
-const regionTier: Converter<RegionTier, RegionTier[]>;
+const regionTier: Converter<RegionTier, readonly RegionTier[]>;
 
 // @internal (undocumented)
 const registeredExtLang: Converter<Items.IRegisteredExtLang, unknown>;
@@ -1377,7 +1377,7 @@ type RegistryEntryScope = 'collection' | 'macrolanguage' | 'private-use' | 'spec
 type RegistryEntryType = 'extlang' | 'grandfathered' | 'language' | 'redundant' | 'region' | 'script' | 'variant';
 
 // @internal (undocumented)
-const registryEntryType: Converter<Model.RegistryEntryType, Model.RegistryEntryType[]>;
+const registryEntryType: Converter<Model.RegistryEntryType, readonly Model.RegistryEntryType[]>;
 
 // @internal (undocumented)
 type RegistryFile = IDatedRegistry<RegistryEntry>;
@@ -1392,7 +1392,7 @@ type RegistryFile_2 = IDatedRegistry<RegisteredItem>;
 const registryFile_2: Converter<IDatedRegistry<Items.RegisteredItem>, unknown>;
 
 // @internal (undocumented)
-const registryScopeType: Converter<Model.RegistryEntryScope, Model.RegistryEntryScope[]>;
+const registryScopeType: Converter<Model.RegistryEntryScope, readonly Model.RegistryEntryScope[]>;
 
 // @public
 type ScriptSubtag = Brand<string, 'ScriptSubtag'>;

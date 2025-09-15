@@ -32,7 +32,6 @@ describe('IANA registry converters', () => {
     test('fails for a prefix with an invalid tag', () => {
       expect(
         Iana.LanguageSubtags.JarConverters.registeredExtLang.convert({
-          /* eslint-disable @typescript-eslint/naming-convention */
           Type: 'extlang',
           Subtag: 'aao',
           Description: ['Algerian Saharan Arabic'],
@@ -40,7 +39,6 @@ describe('IANA registry converters', () => {
           'Preferred-Value': 'aao',
           Prefix: ['not a language tag'],
           Macrolanguage: 'ar'
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ).toFailWith(/invalid language subtag/i);
     });
@@ -48,7 +46,6 @@ describe('IANA registry converters', () => {
     test('fails for a prefix with more than one tag', () => {
       expect(
         Iana.LanguageSubtags.JarConverters.registeredExtLang.convert({
-          /* eslint-disable @typescript-eslint/naming-convention */
           Type: 'extlang',
           Subtag: 'aao',
           Description: ['Algerian Saharan Arabic'],
@@ -56,7 +53,6 @@ describe('IANA registry converters', () => {
           'Preferred-Value': 'aao',
           Prefix: ['ar', 'abv'],
           Macrolanguage: 'ar'
-          /* eslint-enable @typescript-eslint/naming-convention */
         })
       ).toFailWith(/malformed extlang prefix/i);
     });
