@@ -122,7 +122,7 @@ _(Optional)_ Callback when a resource is selected
 
 </td><td>
 
-IResourcePickerOptions
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>

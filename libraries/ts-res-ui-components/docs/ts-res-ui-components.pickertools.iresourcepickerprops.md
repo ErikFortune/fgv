@@ -93,7 +93,7 @@ Callback fired when a resource is selected, providing comprehensive selection da
 
 </td><td>
 
-IResourcePickerOptions
+[IResourcePickerOptions](./ts-res-ui-components.pickertools.iresourcepickeroptions.md)
 
 
 </td><td>

@@ -54,7 +54,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
   filterResult,
   onExport,
   pickerOptions,
-  pickerOptionsPresentation = 'hidden',
+  pickerOptionsPanelPresentation = 'hidden',
   className = ''
 }) => {
   const o11y = useSmartObservability();
@@ -210,7 +210,7 @@ export const SourceView: React.FC<ISourceViewProps> = ({
       <ResourcePickerOptionsControl
         options={currentPickerOptions}
         onOptionsChange={setCurrentPickerOptions}
-        presentation={pickerOptionsPresentation}
+        presentation={pickerOptionsPanelPresentation}
         title="Source Browser Picker Options"
         className="mb-6"
       />
