@@ -21,3 +21,4 @@
  */
 
 export * from './inMemoryTree';
+export * from './treeBuilder';

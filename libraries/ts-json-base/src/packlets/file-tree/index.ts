@@ -20,8 +20,6 @@
  * SOFTWARE.
  */
 
-import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
-
 // Export core interfaces and classes
 export * from './fileTreeAccessors';
 export * from './fileTree';
@@ -32,7 +30,7 @@ export * from './fileItem';
 export * from './fileTreeHelpers';
 
 // Export in-memory implementations for web compatibility
-export { IInMemoryFile, InMemoryTreeAccessors };
+export * from './in-memory';
 
 // Note: FsFileTreeAccessors is now only imported by fileTreeHelpers.ts
 // Web apps that don't use forFilesystem() won't bundle fs/path dependencies

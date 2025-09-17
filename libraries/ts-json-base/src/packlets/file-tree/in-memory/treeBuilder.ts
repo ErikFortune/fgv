@@ -154,6 +154,12 @@ export class TreeBuilder {
     if (!this.prefix.startsWith('/')) {
       throw new Error(`${prefix}: not an absolute path`);
     }
+
+    // Normalize the prefix to remove trailing slashes (except for root)
+    if (this.prefix !== '/' && this.prefix.endsWith('/')) {
+      this.prefix = this.prefix.slice(0, -1);
+    }
+
     this.root = new InMemoryDirectory(this.prefix);
     this.byAbsolutePath = new Map<string, InMemoryDirectory | InMemoryFile>();
     this.byAbsolutePath.set(this.prefix, this.root);

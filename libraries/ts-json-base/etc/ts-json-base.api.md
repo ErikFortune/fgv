@@ -121,8 +121,6 @@ class FileItem implements IFileTreeFileItem {
 
 declare namespace FileTree {
     export {
-        IInMemoryFile,
-        InMemoryTreeAccessors,
         FileTreeItemType,
         IFileTreeFileItem,
         IFileTreeDirectoryItem,
@@ -133,6 +131,11 @@ declare namespace FileTree {
         FileItem,
         forFilesystem,
         inMemory,
+        IInMemoryFile,
+        InMemoryTreeAccessors,
+        InMemoryFile,
+        InMemoryDirectory,
+        TreeBuilder,
         FsFileTreeAccessors
     }
 }
@@ -314,6 +317,33 @@ interface IJsonValidatorContext {
 //
 // @public
 function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
+
+// @public
+class InMemoryDirectory {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "InMemoryDirectory"
+    constructor(absolutePath: string);
+    readonly absolutePath: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    addFile(name: string, contents: unknown): Result<InMemoryFile>;
+    get children(): ReadonlyMap<string, InMemoryDirectory | InMemoryFile>;
+    // (undocumented)
+    protected _children: Map<string, InMemoryDirectory | InMemoryFile>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getChildPath(name: string): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getOrAddDirectory(name: string): Result<InMemoryDirectory>;
+}
+
+// @public
+class InMemoryFile {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "InMemoryFile"
+    constructor(absolutePath: string, contents: unknown);
+    readonly absolutePath: string;
+    readonly contents: unknown;
+}
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -527,6 +557,22 @@ export function sanitizeJson(from: unknown): Result<JsonValue>;
 
 // @public
 export function sanitizeJsonObject<T>(from: T): Result<T>;
+
+// @public
+class TreeBuilder {
+    protected constructor(prefix?: string);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    addFile(absolutePath: string, contents: unknown): Result<InMemoryFile>;
+    readonly byAbsolutePath: Map<string, InMemoryDirectory | InMemoryFile>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "TreeBuilder"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "TreeBuilder"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    static create(prefix?: string): Result<TreeBuilder>;
+    readonly prefix: string;
+    readonly root: InMemoryDirectory;
+}
 
 declare namespace Validators {
     export {
