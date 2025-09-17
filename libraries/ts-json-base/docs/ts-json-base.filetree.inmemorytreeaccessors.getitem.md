@@ -4,6 +4,7 @@
 
 ## FileTree.InMemoryTreeAccessors.getItem() method
 
+Gets an item from the file tree.
 
 **Signature:**
 
@@ -48,4 +49,6 @@ string
 **Returns:**
 
 Result&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;
+
+The item if it exists.
 

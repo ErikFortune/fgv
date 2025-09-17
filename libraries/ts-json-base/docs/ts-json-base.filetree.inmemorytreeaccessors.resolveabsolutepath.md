@@ -4,6 +4,7 @@
 
 ## FileTree.InMemoryTreeAccessors.resolveAbsolutePath() method
 
+Resolves paths to an absolute path.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ string\[\]
 
 </td><td>
 
+Paths to resolve.
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ string\[\]
 **Returns:**
 
 string
+
+The resolved absolute path.
 

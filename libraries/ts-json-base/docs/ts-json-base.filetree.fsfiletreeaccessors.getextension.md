@@ -4,6 +4,7 @@
 
 ## FileTree.FsFileTreeAccessors.getExtension() method
 
+Gets the extension of a path.
 
 **Signature:**
 
@@ -48,4 +49,6 @@ string
 **Returns:**
 
 string
+
+The extension of the path.
 

@@ -4,6 +4,7 @@
 
 ## FileTree.FsFileTreeAccessors.getFileContents() method
 
+Gets the contents of a file in the file tree.
 
 **Signature:**
 
@@ -48,4 +49,6 @@ string
 **Returns:**
 
 Result&lt;string&gt;
+
+The contents of the file.
 

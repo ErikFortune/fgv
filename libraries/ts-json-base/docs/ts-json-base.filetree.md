@@ -57,29 +57,7 @@ Represents a file tree.
 
 </td><td>
 
-Implementation of  that uses the file system to access files and directories.
-
-
-</td></tr>
-<tr><td>
-
-[InMemoryDirectory](./ts-json-base.filetree.inmemorydirectory.md)
-
-
-</td><td>
-
-Represents a directory in an in-memory file tree.
-
-
-</td></tr>
-<tr><td>
-
-[InMemoryFile](./ts-json-base.filetree.inmemoryfile.md)
-
-
-</td><td>
-
-Represents a file in an in-memory file tree.
+Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses the file system to access files and directories.
 
 
 </td></tr>
@@ -90,18 +68,7 @@ Represents a file in an in-memory file tree.
 
 </td><td>
 
-Implementation of  that uses an in-memory tree to access files and directories.
-
-
-</td></tr>
-<tr><td>
-
-[TreeBuilder](./ts-json-base.filetree.treebuilder.md)
-
-
-</td><td>
-
-Helper class to build an in-memory file tree.
+Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses an in-memory tree to access files and directories.
 
 
 </td></tr>
@@ -127,7 +94,7 @@ Description
 
 </td><td>
 
-Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance with accessors for the filesystem.
+Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for the filesystem.
 
 
 </td></tr>
@@ -138,7 +105,7 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance 
 
 </td><td>
 
-Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance with accessors for an in-memory file tree.
+Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for an in-memory file tree.
 
 
 </td></tr>

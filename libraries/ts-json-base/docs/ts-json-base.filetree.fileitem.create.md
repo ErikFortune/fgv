@@ -4,7 +4,7 @@
 
 ## FileTree.FileItem.create() method
 
-Creates a new  instance.
+Creates a new [FileTree.FileItem](./ts-json-base.filetree.fileitem.md) instance.
 
 **Signature:**
 
@@ -58,7 +58,7 @@ hal
 
 </td><td>
 
-The  to use for file system operations.
+The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
 
 
 </td></tr>

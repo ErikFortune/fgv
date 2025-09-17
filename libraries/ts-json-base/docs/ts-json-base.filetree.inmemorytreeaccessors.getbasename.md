@@ -4,6 +4,7 @@
 
 ## FileTree.InMemoryTreeAccessors.getBaseName() method
 
+Gets the base name of a path.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ string
 
 </td><td>
 
+Path to get the base name of.
+
 
 </td></tr>
 <tr><td>
@@ -55,7 +58,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Optional suffix to remove from the base name.
 
 
 </td></tr>
@@ -64,4 +67,6 @@ _(Optional)_
 **Returns:**
 
 string
+
+The base name of the path.
 

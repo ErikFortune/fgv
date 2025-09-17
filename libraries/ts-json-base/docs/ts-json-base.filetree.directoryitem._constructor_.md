@@ -58,7 +58,7 @@ hal
 
 </td><td>
 
-The  to use for file system operations.
+The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
 
 
 </td></tr>

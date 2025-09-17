@@ -4,7 +4,7 @@
 
 ## FileTree.FsFileTreeAccessors class
 
-Implementation of  that uses the file system to access files and directories.
+Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses the file system to access files and directories.
 
 **Signature:**
 
@@ -119,6 +119,7 @@ Description
 
 </td><td>
 
+Gets the base name of a path.
 
 
 </td></tr>
@@ -132,6 +133,7 @@ Description
 
 </td><td>
 
+Gets the children of a directory in the file tree.
 
 
 </td></tr>
@@ -145,6 +147,7 @@ Description
 
 </td><td>
 
+Gets the extension of a path.
 
 
 </td></tr>
@@ -158,6 +161,7 @@ Description
 
 </td><td>
 
+Gets the contents of a file in the file tree.
 
 
 </td></tr>
@@ -171,6 +175,7 @@ Description
 
 </td><td>
 
+Gets an item from the file tree.
 
 
 </td></tr>
@@ -184,6 +189,7 @@ Description
 
 </td><td>
 
+Joins paths together.
 
 
 </td></tr>
@@ -197,6 +203,7 @@ Description
 
 </td><td>
 
+Resolves paths to an absolute path.
 
 
 </td></tr>

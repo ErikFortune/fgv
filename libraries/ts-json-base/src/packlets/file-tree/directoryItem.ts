@@ -29,24 +29,24 @@ import { FileTreeItem, IFileTreeAccessors, IFileTreeDirectoryItem } from './file
  */
 export class DirectoryItem implements IFileTreeDirectoryItem {
   /**
-   * {@inheritdoc IFileTreeDirectoryItem."type"}
+   * {@inheritdoc FileTree.IFileTreeDirectoryItem."type"}
    */
   public readonly type: 'directory' = 'directory';
 
   /**
-   * {@inheritdoc IFileTreeDirectoryItem.absolutePath}
+   * {@inheritdoc FileTree.IFileTreeDirectoryItem.absolutePath}
    */
   public readonly absolutePath: string;
 
   /**
-   * {@inheritdoc IFileTreeDirectoryItem.name}
+   * {@inheritdoc FileTree.IFileTreeDirectoryItem.name}
    */
   public get name(): string {
     return this._hal.getBaseName(this.absolutePath);
   }
 
   /**
-   * The {@link IFileTreeAccessors | accessors} to use for file system operations.
+   * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
   protected readonly _hal: IFileTreeAccessors;
@@ -54,7 +54,7 @@ export class DirectoryItem implements IFileTreeDirectoryItem {
   /**
    * Protected constructor for derived classes.
    * @param path - Relative path of the directory.
-   * @param hal - The {@link IFileTreeAccessors | accessors} to use for
+   * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
    * file system operations.
    * @public
    */
@@ -66,17 +66,17 @@ export class DirectoryItem implements IFileTreeDirectoryItem {
   /**
    * Creates a new DirectoryItem instance.
    * @param path - Relative path of the directory.
-   * @param hal - The {@link IFileTreeAccessors | accessors} to use for
+   * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
    * file system operations.
-   * @returns A {@link Result} containing the new DirectoryItem instance if successful,
-   * or a failure if an error occurs.
+   * @returns `Success` with the new {@link FileTree.DirectoryItem | DirectoryItem} instance if successful,
+   * or `Failure` with an error message otherwise.
    */
   public static create(path: string, hal: IFileTreeAccessors): Result<DirectoryItem> {
     return captureResult(() => new DirectoryItem(path, hal));
   }
 
   /**
-   * {@inheritdoc IFileTreeDirectoryItem.getChildren}
+   * {@inheritdoc FileTree.IFileTreeDirectoryItem.getChildren}
    */
   public getChildren(): Result<ReadonlyArray<FileTreeItem>> {
     return this._hal.getChildren(this.absolutePath);

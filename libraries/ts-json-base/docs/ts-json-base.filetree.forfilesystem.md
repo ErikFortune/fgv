@@ -4,7 +4,7 @@
 
 ## FileTree.forFilesystem() function
 
-Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance with accessors for the filesystem.
+Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for the filesystem.
 
 **Signature:**
 
@@ -52,5 +52,5 @@ _(Optional)_ An optional prefix to prepended to supplied relative paths.
 
 Result&lt;FileTree&gt;
 
-`Success` with the new [FileTree](./ts-json-base.filetree.md) instance if successful, or `Failure` with an error message otherwise.
+`Success` with the new [FileTree](./ts-json-base.filetree.filetree.md) instance if successful, or `Failure` with an error message otherwise.
 

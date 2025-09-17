@@ -21,7 +21,12 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { InMemoryFile, InMemoryDirectory, TreeBuilder } from '../../../packlets/file-tree';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import {
+  InMemoryFile,
+  InMemoryDirectory,
+  TreeBuilder
+} from '../../../packlets/file-tree/in-memory/treeBuilder';
 
 describe('InMemoryFile', () => {
   test('creates file with path and contents', () => {

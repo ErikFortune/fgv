@@ -4,6 +4,7 @@
 
 ## FileTree.FileItem.getContents() method
 
+Gets the contents of the file as parsed JSON, converted to a specific type.
 
 **Signature:**
 
@@ -41,6 +42,8 @@ Validator&lt;T&gt; \| Converter&lt;T&gt;
 
 </td><td>
 
+A `Validator` or `Converter` to convert the parsed JSON contents to the desired type.
+
 
 </td></tr>
 </tbody></table>
@@ -48,4 +51,6 @@ Validator&lt;T&gt; \| Converter&lt;T&gt;
 **Returns:**
 
 Result&lt;T&gt;
+
+`Success` with the converted contents if successful, or `Failure` with an error message otherwise.
 

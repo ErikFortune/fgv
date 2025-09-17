@@ -58,7 +58,7 @@ hal
 
 </td><td>
 
-The  to use for file system operations.
+The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
 
 
 </td></tr>
@@ -68,5 +68,5 @@ The  to use for file system operations.
 
 Result&lt;[DirectoryItem](./ts-json-base.filetree.directoryitem.md)<!-- -->&gt;
 
-A  containing the new DirectoryItem instance if successful, or a failure if an error occurs.
+`Success` with the new [DirectoryItem](./ts-json-base.filetree.directoryitem.md) instance if successful, or `Failure` with an error message otherwise.
 

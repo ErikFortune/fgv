@@ -4,6 +4,7 @@
 
 ## FileTree.DirectoryItem.name property
 
+The name of the directory
 
 **Signature:**
 

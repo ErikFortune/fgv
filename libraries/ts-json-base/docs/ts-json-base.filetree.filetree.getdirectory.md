@@ -52,5 +52,5 @@ The path to the directory.
 
 Result&lt;[IFileTreeDirectoryItem](./ts-json-base.filetree.ifiletreedirectoryitem.md)<!-- -->&gt;
 
-`Success` with the  if successful, or `Failure` with an error message otherwise.
+`Success` with the [directory item](./ts-json-base.filetree.ifiletreedirectoryitem.md) if successful, or `Failure` with an error message otherwise.
 

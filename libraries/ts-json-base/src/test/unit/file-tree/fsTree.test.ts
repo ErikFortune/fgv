@@ -190,7 +190,7 @@ describe('FsFileTreeAccessors', () => {
       });
 
       test('reads JSON file in subdirectory', () => {
-        expect(accessors.getFileContents('data/items.json')).toSucceedWith('[1, 2, 3]');
+        expect(accessors.getFileContents('data/items.json')).toSucceedWith('[1, 2, 3]\n');
       });
 
       test('reads deeply nested JSON file', () => {
@@ -198,7 +198,7 @@ describe('FsFileTreeAccessors', () => {
       });
 
       test('reads array JSON file contents', () => {
-        expect(accessors.getFileContents('data/items.json')).toSucceedWith('[1, 2, 3]');
+        expect(accessors.getFileContents('data/items.json')).toSucceedWith('[1, 2, 3]\n');
       });
 
       test('fails for non-existent files', () => {

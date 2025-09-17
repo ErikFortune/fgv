@@ -31,38 +31,38 @@ import { IFileTreeAccessors, IFileTreeFileItem } from './fileTreeAccessors';
  */
 export class FileItem implements IFileTreeFileItem {
   /**
-   * {@inheritdoc IFileTreeFileItem."type"}
+   * {@inheritdoc FileTree.IFileTreeFileItem."type"}
    */
   public readonly type: 'file' = 'file';
 
   /**
-   * {@inheritdoc IFileTreeFileItem.absolutePath}
+   * {@inheritdoc FileTree.IFileTreeFileItem.absolutePath}
    */
   public readonly absolutePath: string;
 
   /**
-   * {@inheritdoc IFileTreeFileItem.name}
+   * {@inheritdoc FileTree.IFileTreeFileItem.name}
    */
   public get name(): string {
     return this._hal.getBaseName(this.absolutePath);
   }
 
   /**
-   * {@inheritdoc IFileTreeFileItem.baseName}
+   * {@inheritdoc FileTree.IFileTreeFileItem.baseName}
    */
   public get baseName(): string {
     return this._hal.getBaseName(this.absolutePath, this.extension);
   }
 
   /**
-   * {@inheritdoc IFileTreeFileItem.extension}
+   * {@inheritdoc FileTree.IFileTreeFileItem.extension}
    */
   public get extension(): string {
     return this._hal.getExtension(this.absolutePath);
   }
 
   /**
-   * The {@link IFileTreeAccessors | accessors} to use for file system operations.
+   * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
   protected readonly _hal: IFileTreeAccessors;
@@ -70,7 +70,7 @@ export class FileItem implements IFileTreeFileItem {
   /**
    * Protected constructor for derived classes.
    * @param path - Relative path of the file.
-   * @param hal - The {@link IFileTreeAccessors | accessors} to use for
+   * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
    * file system operations.
    * @public
    */
@@ -80,9 +80,9 @@ export class FileItem implements IFileTreeFileItem {
   }
 
   /**
-   * Creates a new {@link FileItem} instance.
+   * Creates a new {@link FileTree.FileItem} instance.
    * @param path - Relative path of the file.
-   * @param hal - The {@link IFileTreeAccessors | accessors} to use for
+   * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
    * file system operations.
    * @public
    */
@@ -91,11 +91,11 @@ export class FileItem implements IFileTreeFileItem {
   }
 
   /**
-   * {@inheritdoc IFileTreeFileItem.(getContents:1)}
+   * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:1)}
    */
   public getContents(): Result<JsonValue>;
   /**
-   * {@inheritdoc IFileTreeFileItem.(getContents:2)}
+   * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:2)}
    */
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
   public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | JsonValue> {
@@ -111,7 +111,7 @@ export class FileItem implements IFileTreeFileItem {
   }
 
   /**
-   * {@inheritdoc IFileTreeFileItem.getRawContents}
+   * {@inheritdoc FileTree.IFileTreeFileItem.getRawContents}
    */
   public getRawContents(): Result<string> {
     return this._hal.getFileContents(this.absolutePath);

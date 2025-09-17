@@ -4,6 +4,7 @@
 
 ## FileTree.DirectoryItem.absolutePath property
 
+The absolute path of the directory.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## FileTree.inMemory() function
 
-Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance with accessors for an in-memory file tree.
+Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for an in-memory file tree.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ files
 
 </td><td>
 
-An array of  to include in the tree.
+An array of File \|[in-memory files](./ts-json-base.filetree.iinmemoryfile.md) to include in the tree.
 
 
 </td></tr>
@@ -68,5 +68,5 @@ _(Optional)_ An optional prefix to add to the paths of all files in the tree.
 
 Result&lt;FileTree&gt;
 
-`Success` with the new [FileTree](./ts-json-base.filetree.md) instance if successful, or `Failure` with an error message otherwise.
+`Success` with the new [FileTree](./ts-json-base.filetree.filetree.md) instance if successful, or `Failure` with an error message otherwise.
 

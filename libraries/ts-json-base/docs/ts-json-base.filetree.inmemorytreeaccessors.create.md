@@ -4,7 +4,7 @@
 
 ## FileTree.InMemoryTreeAccessors.create() method
 
-Creates a new  instance with the supplied in-memory files.
+Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccessors.md) instance with the supplied in-memory files.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ files
 
 </td><td>
 
-An array of  to include in the tree.
+An array of [in-memory files](./ts-json-base.filetree.iinmemoryfile.md) to include in the tree.
 
 
 </td></tr>

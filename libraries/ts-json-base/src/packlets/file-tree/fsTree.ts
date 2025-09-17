@@ -28,7 +28,7 @@ import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
 
 /**
- * Implementation of {@link IFileTreeAccessors} that uses the
+ * Implementation of {@link FileTree.IFileTreeAccessors} that uses the
  * file system to access files and directories.
  * @public
  */
@@ -45,7 +45,7 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.resolveAbsolutePath}
+   * {@inheritdoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
    */
   public resolveAbsolutePath(...paths: string[]): string {
     if (this.prefix && !path.isAbsolute(paths[0])) {
@@ -55,28 +55,28 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.getExtension}
+   * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
    */
   public getExtension(itemPath: string): string {
     return path.extname(itemPath);
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.getBaseName}
+   * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
    */
   public getBaseName(itemPath: string, suffix?: string): string {
     return path.basename(itemPath, suffix);
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.joinPaths}
+   * {@inheritdoc FileTree.IFileTreeAccessors.joinPaths}
    */
   public joinPaths(...paths: string[]): string {
     return path.join(...paths);
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.getItem}
+   * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
    */
   public getItem(itemPath: string): Result<FileTreeItem> {
     return captureResult(() => {
@@ -92,14 +92,14 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.getFileContents}
+   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContents}
    */
   public getFileContents(filePath: string): Result<string> {
     return captureResult(() => fs.readFileSync(this.resolveAbsolutePath(filePath), 'utf8'));
   }
 
   /**
-   * {@inheritDoc IFileTreeAccessors.getChildren}
+   * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
    */
   public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>> {
     return captureResult(() => {

@@ -91,7 +91,7 @@ Description
 
 </td><td>
 
-The  to use for file system operations.
+The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
 
 
 </td></tr>
@@ -112,6 +112,7 @@ string
 
 </td><td>
 
+The absolute path of the directory.
 
 
 </td></tr>
@@ -132,6 +133,7 @@ string
 
 </td><td>
 
+The name of the directory
 
 
 </td></tr>
@@ -152,6 +154,7 @@ string
 
 </td><td>
 
+Indicates that this [file tree item](./ts-json-base.filetree.filetreeitem.md) is a directory
 
 
 </td></tr>
@@ -201,6 +204,7 @@ Creates a new DirectoryItem instance.
 
 </td><td>
 
+Gets the children of the directory.
 
 
 </td></tr>

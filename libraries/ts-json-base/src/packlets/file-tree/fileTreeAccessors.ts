@@ -36,7 +36,7 @@ export type FileTreeItemType = 'directory' | 'file';
  */
 export interface IFileTreeFileItem {
   /**
-   * Indicates that this {@link FileTreeItem | file tree item} is a file.
+   * Indicates that this {@link FileTree.FileTreeItem | file tree item} is a file.
    */
   readonly type: 'file';
 
@@ -90,7 +90,7 @@ export interface IFileTreeFileItem {
  */
 export interface IFileTreeDirectoryItem {
   /**
-   * Indicates that this {@link FileTreeItem | file tree item} is a directory
+   * Indicates that this {@link FileTree.FileTreeItem | file tree item} is a directory
    */
   readonly type: 'directory';
 

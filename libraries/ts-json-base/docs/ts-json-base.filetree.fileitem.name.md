@@ -4,6 +4,7 @@
 
 ## FileTree.FileItem.name property
 
+The name of the file
 
 **Signature:**
 

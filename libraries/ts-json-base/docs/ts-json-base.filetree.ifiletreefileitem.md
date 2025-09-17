@@ -136,7 +136,7 @@ The name of the file
 
 </td><td>
 
-Indicates that this  is a file.
+Indicates that this [file tree item](./ts-json-base.filetree.filetreeitem.md) is a file.
 
 
 </td></tr>

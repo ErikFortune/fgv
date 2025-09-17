@@ -4,7 +4,7 @@
 
 ## FileTree.DirectoryItem.\_hal property
 
-The  to use for file system operations.
+The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
 
 **Signature:**
 
