@@ -44,10 +44,10 @@ export class LanguageRegistries {
   }
 
   public static loadDefault(): Result<LanguageRegistries> {
-    return captureResult(() => {
-      const subtags = LanguageSubtagRegistry.loadDefault().orThrow();
-      const extensions = LanguageTagExtensionRegistry.loadDefault().orThrow();
-      return new LanguageRegistries(subtags, extensions);
+    return LanguageSubtagRegistry.loadDefault().onSuccess((subtags) => {
+      return LanguageTagExtensionRegistry.loadDefault().onSuccess((extensions) => {
+        return LanguageRegistries.create(subtags, extensions);
+      });
     });
   }
 }
