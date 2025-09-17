@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Converter, Result, Validator, mapResults, succeed, captureResult } from '@fgv/ts-utils';
+import { Converter, Result, Validator, mapResults, succeed } from '@fgv/ts-utils';
 import * as FileTree from '../file-tree';
 import { JsonValue } from '../json';
 import { DefaultJsonLike, IJsonLike } from './jsonLike';

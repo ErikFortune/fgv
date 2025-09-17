@@ -5,22 +5,10 @@
 ```ts
 
 import { FileTree } from '@fgv/ts-json-base';
-import { Hash } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
-export class BrowserHashingNormalizer extends Hash.HashingNormalizer {
-    constructor(algorithm?: string);
-    get algorithm(): string;
-    hashAsync(parts: string[]): Promise<Result<string>>;
-    normalizeAsync<T>(from: T): Promise<Result<string>>;
-}
-
-// @public
 export class BrowserHashProvider {
-    static createSha1Normalizer(): BrowserHashingNormalizer;
-    static createSha256Normalizer(): BrowserHashingNormalizer;
-    static createSha512Normalizer(): BrowserHashingNormalizer;
     static hashParts(parts: string[], algorithm?: string, separator?: string): Promise<Result<string>>;
     static hashString(data: string, algorithm?: string): Promise<Result<string>>;
 }

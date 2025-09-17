@@ -167,7 +167,9 @@ export class FileApiTreeAccessors {
   }
 
   private static _normalizePath(prefix: string, path: string): string {
-    const combined = prefix ? `${prefix}/${path}` : path;
+    // Remove leading slash from prefix if it exists to avoid double slashes
+    const cleanPrefix = prefix ? prefix.replace(/^\/+/, '') : '';
+    const combined = cleanPrefix ? `${cleanPrefix}/${path}` : path;
     // Normalize multiple slashes and ensure it starts with / for FileTree compatibility
     const normalized = combined.replace(/\/+/g, '/').replace(/\/$/, '');
     return normalized.startsWith('/') ? normalized : `/${normalized}`;

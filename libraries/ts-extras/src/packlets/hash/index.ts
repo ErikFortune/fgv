@@ -21,4 +21,3 @@
  */
 
 export * from './md5Normalizer';
-export * from './browserHashNormalizer';

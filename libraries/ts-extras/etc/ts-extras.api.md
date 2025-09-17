@@ -12,14 +12,6 @@ import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
-// @public
-class BrowserHashNormalizer extends Hash_2.HashingNormalizer {
-    constructor();
-    static getBrowserRecommendation(): string;
-    static get isBrowserEnvironment(): boolean;
-    static sha256Hash(parts: string[]): string;
-}
-
 declare namespace Converters {
     export {
         templateString,
@@ -135,8 +127,7 @@ type FormattersByTarget<T> = FormattersByExtendedTarget<FormatTargets, T>;
 
 declare namespace Hash {
     export {
-        Md5Normalizer,
-        BrowserHashNormalizer
+        Md5Normalizer
     }
 }
 export { Hash }
