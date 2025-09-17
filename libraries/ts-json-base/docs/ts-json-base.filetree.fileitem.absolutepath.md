@@ -4,7 +4,6 @@
 
 ## FileTree.FileItem.absolutePath property
 
-The absolute path of the file.
 
 **Signature:**
 

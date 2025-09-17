@@ -4,7 +4,6 @@
 
 ## FileTree.FileItem.getContents() method
 
-Gets the contents of the file as parsed JSON.
 
 **Signature:**
 
@@ -14,6 +13,4 @@ getContents(): Result<JsonValue>;
 **Returns:**
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;
-
- with the parsed JSON-compatible contents if successful, or  with an error message otherwise.
 

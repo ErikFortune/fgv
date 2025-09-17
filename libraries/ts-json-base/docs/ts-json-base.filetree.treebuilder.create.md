@@ -52,5 +52,5 @@ _(Optional)_ The prefix for all paths in the tree.
 
 Result&lt;[TreeBuilder](./ts-json-base.filetree.treebuilder.md)<!-- -->&gt;
 
- with the new  instance if successful, or  with an error message otherwise.
+`Success` with the new  instance if successful, or `Failure` with an error message otherwise.
 

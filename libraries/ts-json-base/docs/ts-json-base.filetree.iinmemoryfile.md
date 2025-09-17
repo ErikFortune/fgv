@@ -4,7 +4,7 @@
 
 ## FileTree.IInMemoryFile interface
 
-Represents a single file in an in-memory [file tree](./ts-json-base.filetree.filetree.md)<!-- -->.
+Represents a single file in an in-memory [file tree](./ts-json-base.filetree.md)<!-- -->.
 
 **Signature:**
 

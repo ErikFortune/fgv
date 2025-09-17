@@ -36,7 +36,7 @@ export type FileTreeItemType = 'directory' | 'file';
  */
 export interface IFileTreeFileItem {
   /**
-   * Indicates that this {@link FileTree.FileTreeItem | file tree item} is a file.
+   * Indicates that this {@link FileTreeItem | file tree item} is a file.
    */
   readonly type: 'file';
 
@@ -62,24 +62,24 @@ export interface IFileTreeFileItem {
 
   /**
    * Gets the contents of the file as parsed JSON.
-   * @returns {@link Success | Success} with the parsed JSON-compatible contents if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the parsed JSON-compatible contents if successful, or
+   * `Failure` with an error message otherwise.
    */
   getContents(): Result<JsonValue>;
 
   /**
    * Gets the contents of the file as parsed JSON, converted to a specific type.
-   * @param converter - A {@link Validation.Validator | Validator} or {@link Conversion.Converter | Converter}
+   * @param converter - A `Validator` or `Converter`
    * to convert the parsed JSON contents to the desired type.
-   * @returns {@link Success | Success} with the converted contents if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the converted contents if successful, or
+   * `Failure` with an error message otherwise.
    */
   getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
 
   /**
    * Gets the raw contents of the file as a string.
-   * @returns {@link Success | Success} with the raw contents if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the raw contents if successful, or
+   * `Failure` with an error message otherwise.
    */
   getRawContents(): Result<string>;
 }
@@ -90,7 +90,7 @@ export interface IFileTreeFileItem {
  */
 export interface IFileTreeDirectoryItem {
   /**
-   * Indicates that this {@link FileTree.FileTreeItem | file tree item} is a directory
+   * Indicates that this {@link FileTreeItem | file tree item} is a directory
    */
   readonly type: 'directory';
 
@@ -106,8 +106,8 @@ export interface IFileTreeDirectoryItem {
 
   /**
    * Gets the children of the directory.
-   * @returns {@link Success | Success} with the children of the directory if successful,
-   * or {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the children of the directory if successful,
+   * or `Failure` with an error message otherwise.
    */
   getChildren(): Result<ReadonlyArray<FileTreeItem>>;
 }

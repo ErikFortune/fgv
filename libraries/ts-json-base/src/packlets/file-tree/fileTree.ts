@@ -34,14 +34,14 @@ import {
  */
 export class FileTree {
   /**
-   * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
+   * The {@link IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
   public hal: IFileTreeAccessors;
 
   /**
    * Protected constructor for derived classes.
-   * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
+   * @param hal - The {@link IFileTreeAccessors | accessors} to use for
    * file system operations.
    * @public
    */
@@ -50,9 +50,9 @@ export class FileTree {
   }
 
   /**
-   * Creates a new {@link FileTree.FileTree | FileTree} instance with the supplied
+   * Creates a new {@link FileTree} instance with the supplied
    * accessors.
-   * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
+   * @param hal - The {@link IFileTreeAccessors | accessors} to use for
    * file system operations.
    */
   public static create(hal: IFileTreeAccessors): Result<FileTree> {
@@ -62,8 +62,8 @@ export class FileTree {
   /**
    * Gets an item from the tree.
    * @param itemPath - The path to the item.
-   * @returns {@link Success | Success} with the item if successful,
-   * or {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the item if successful,
+   * or `Failure` with an error message otherwise.
    */
   public getItem(itemPath: string): Result<FileTreeItem> {
     const absolutePath = this.hal.resolveAbsolutePath(itemPath);
@@ -73,8 +73,8 @@ export class FileTree {
   /**
    * Gets a file item from the tree.
    * @param filePath - The path to the file.
-   * @returns {@link Success | Success} with the {@link FileTree.IFileTreeFileItem | file item}
-   * if successful, or {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the {@link IFileTreeFileItem | file item}
+   * if successful, or `Failure` with an error message otherwise.
    */
   public getFile(filePath: string): Result<IFileTreeFileItem> {
     return this.getItem(filePath).onSuccess((item) => {
@@ -88,8 +88,8 @@ export class FileTree {
   /**
    * Gets a directory item from the tree.
    * @param directoryPath - The path to the directory.
-   * @returns {@link Success | Success} with the {@link FileTree.IFileTreeDirectoryItem | directory item}
-   * if successful, or {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the {@link IFileTreeDirectoryItem | directory item}
+   * if successful, or `Failure` with an error message otherwise.
    */
   public getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem> {
     return this.getItem(directoryPath).onSuccess((item) => {

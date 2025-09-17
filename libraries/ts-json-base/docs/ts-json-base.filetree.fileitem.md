@@ -91,7 +91,7 @@ Description
 
 </td><td>
 
-The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
+The  to use for file system operations.
 
 
 </td></tr>
@@ -112,7 +112,6 @@ string
 
 </td><td>
 
-The absolute path of the file.
 
 
 </td></tr>
@@ -133,7 +132,6 @@ string
 
 </td><td>
 
-The base name of the file (without extension)
 
 
 </td></tr>
@@ -154,7 +152,6 @@ string
 
 </td><td>
 
-The extension of the file
 
 
 </td></tr>
@@ -175,7 +172,6 @@ string
 
 </td><td>
 
-The name of the file
 
 
 </td></tr>
@@ -196,7 +192,6 @@ The name of the file
 
 </td><td>
 
-Indicates that this [file tree item](./ts-json-base.filetree.filetreeitem.md) is a file.
 
 
 </td></tr>
@@ -232,7 +227,7 @@ Description
 
 </td><td>
 
-Creates a new [FileItem](./ts-json-base.filetree.fileitem.md) instance.
+Creates a new  instance.
 
 
 </td></tr>
@@ -246,7 +241,6 @@ Creates a new [FileItem](./ts-json-base.filetree.fileitem.md) instance.
 
 </td><td>
 
-Gets the contents of the file as parsed JSON.
 
 
 </td></tr>
@@ -260,7 +254,6 @@ Gets the contents of the file as parsed JSON.
 
 </td><td>
 
-Gets the contents of the file as parsed JSON, converted to a specific type.
 
 
 </td></tr>
@@ -274,7 +267,6 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 
 </td><td>
 
-Gets the raw contents of the file as a string.
 
 
 </td></tr>

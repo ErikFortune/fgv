@@ -42,7 +42,7 @@ Validator&lt;T&gt; \| Converter&lt;T&gt;
 
 </td><td>
 
-A  or  to convert the parsed JSON contents to the desired type.
+A `Validator` or `Converter` to convert the parsed JSON contents to the desired type.
 
 
 </td></tr>
@@ -52,5 +52,5 @@ A  or  to convert the parsed JSON contents to the desired type.
 
 Result&lt;T&gt;
 
- with the converted contents if successful, or  with an error message otherwise.
+`Success` with the converted contents if successful, or `Failure` with an error message otherwise.
 

@@ -4,7 +4,6 @@
 
 ## FileTree.InMemoryTreeAccessors.getExtension() method
 
-Gets the extension of a path.
 
 **Signature:**
 
@@ -42,8 +41,6 @@ string
 
 </td><td>
 
-Path to get the extension of.
-
 
 </td></tr>
 </tbody></table>
@@ -51,6 +48,4 @@ Path to get the extension of.
 **Returns:**
 
 string
-
-The extension of the path.
 

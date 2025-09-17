@@ -42,7 +42,7 @@ files
 
 </td><td>
 
-An array of [in-memory files](./ts-json-base.filetree.iinmemoryfile.md) to include in the tree.
+An array of  to include in the tree.
 
 
 </td></tr>

@@ -26,11 +26,11 @@ import { FsFileTreeAccessors } from './fsTree';
 import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
 
 /**
- * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
+ * Helper function to create a new {@link FileTree} instance
  * with accessors for the filesystem.
  * @param prefix - An optional prefix to prepended to supplied relative paths.
- * @returns {@link Success | Success} with the new {@link FileTree.FileTree | FileTree} instance
- * if successful, or {@link Failure | Failure} with an error message otherwise.
+ * @returns `Success` with the new {@link FileTree} instance
+ * if successful, or `Failure` with an error message otherwise.
  * @public
  */
 export function forFilesystem(prefix?: string): Result<FileTree> {
@@ -38,12 +38,12 @@ export function forFilesystem(prefix?: string): Result<FileTree> {
 }
 
 /**
- * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
+ * Helper function to create a new {@link FileTree} instance
  * with accessors for an in-memory file tree.
- * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+ * @param files - An array of {@link IInMemoryFile | in-memory files} to include in the tree.
  * @param prefix - An optional prefix to add to the paths of all files in the tree.
- * @returns {@link Success | Success} with the new {@link FileTree.FileTree | FileTree} instance
- * if successful, or {@link Failure | Failure} with an error message otherwise.
+ * @returns `Success` with the new {@link FileTree} instance
+ * if successful, or `Failure` with an error message otherwise.
  * @public
  */
 export function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree> {

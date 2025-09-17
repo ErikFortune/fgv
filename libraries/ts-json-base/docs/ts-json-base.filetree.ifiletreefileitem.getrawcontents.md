@@ -15,5 +15,5 @@ getRawContents(): Result<string>;
 
 Result&lt;string&gt;
 
- with the raw contents if successful, or  with an error message otherwise.
+`Success` with the raw contents if successful, or `Failure` with an error message otherwise.
 

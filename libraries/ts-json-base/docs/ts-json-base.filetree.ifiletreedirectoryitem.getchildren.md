@@ -15,5 +15,5 @@ getChildren(): Result<ReadonlyArray<FileTreeItem>>;
 
 Result&lt;ReadonlyArray&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;&gt;
 
- with the children of the directory if successful, or  with an error message otherwise.
+`Success` with the children of the directory if successful, or `Failure` with an error message otherwise.
 

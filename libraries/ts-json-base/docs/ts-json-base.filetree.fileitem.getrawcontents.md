@@ -4,7 +4,6 @@
 
 ## FileTree.FileItem.getRawContents() method
 
-Gets the raw contents of the file as a string.
 
 **Signature:**
 
@@ -14,6 +13,4 @@ getRawContents(): Result<string>;
 **Returns:**
 
 Result&lt;string&gt;
-
- with the raw contents if successful, or  with an error message otherwise.
 

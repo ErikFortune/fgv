@@ -4,7 +4,6 @@
 
 ## FileTree.FsFileTreeAccessors.joinPaths() method
 
-Joins paths together.
 
 **Signature:**
 
@@ -42,8 +41,6 @@ string\[\]
 
 </td><td>
 
-Paths to join.
-
 
 </td></tr>
 </tbody></table>
@@ -51,6 +48,4 @@ Paths to join.
 **Returns:**
 
 string
-
-The joined paths.
 

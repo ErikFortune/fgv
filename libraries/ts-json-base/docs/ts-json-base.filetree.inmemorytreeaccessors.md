@@ -4,7 +4,7 @@
 
 ## FileTree.InMemoryTreeAccessors class
 
-Implementation of [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses an in-memory tree to access files and directories.
+Implementation of  that uses an in-memory tree to access files and directories.
 
 **Signature:**
 
@@ -79,7 +79,7 @@ Description
 
 </td><td>
 
-Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccessors.md) instance with the supplied in-memory files.
+Creates a new  instance with the supplied in-memory files.
 
 
 </td></tr>
@@ -93,7 +93,6 @@ Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccess
 
 </td><td>
 
-Gets the base name of a path.
 
 
 </td></tr>
@@ -107,7 +106,6 @@ Gets the base name of a path.
 
 </td><td>
 
-Gets the children of a directory in the file tree.
 
 
 </td></tr>
@@ -121,7 +119,6 @@ Gets the children of a directory in the file tree.
 
 </td><td>
 
-Gets the extension of a path.
 
 
 </td></tr>
@@ -135,7 +132,6 @@ Gets the extension of a path.
 
 </td><td>
 
-Gets the contents of a file in the file tree.
 
 
 </td></tr>
@@ -149,7 +145,6 @@ Gets the contents of a file in the file tree.
 
 </td><td>
 
-Gets an item from the file tree.
 
 
 </td></tr>
@@ -163,7 +158,6 @@ Gets an item from the file tree.
 
 </td><td>
 
-Joins paths together.
 
 
 </td></tr>
@@ -177,7 +171,6 @@ Joins paths together.
 
 </td><td>
 
-Resolves paths to an absolute path.
 
 
 </td></tr>

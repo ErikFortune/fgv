@@ -4,7 +4,6 @@
 
 ## FileTree.FsFileTreeAccessors.getBaseName() method
 
-Gets the base name of a path.
 
 **Signature:**
 
@@ -56,7 +55,7 @@ string
 
 </td><td>
 
-_(Optional)_ Optional suffix to remove from the base name.
+_(Optional)_
 
 
 </td></tr>
@@ -65,6 +64,4 @@ _(Optional)_ Optional suffix to remove from the base name.
 **Returns:**
 
 string
-
-The base name of the path.
 

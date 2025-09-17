@@ -4,7 +4,6 @@
 
 ## FileTree.InMemoryTreeAccessors.getChildren() method
 
-Gets the children of a directory in the file tree.
 
 **Signature:**
 
@@ -42,8 +41,6 @@ string
 
 </td><td>
 
-Path of the directory.
-
 
 </td></tr>
 </tbody></table>
@@ -51,6 +48,4 @@ Path of the directory.
 **Returns:**
 
 Result&lt;ReadonlyArray&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;&gt;
-
-The children of the directory.
 

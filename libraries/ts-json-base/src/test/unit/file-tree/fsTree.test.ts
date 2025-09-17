@@ -184,7 +184,9 @@ describe('FsFileTreeAccessors', () => {
 
     describe('getFileContents method', () => {
       test('reads JSON file contents', () => {
-        expect(accessors.getFileContents('config.json')).toSucceedWith('{"name": "test", "enabled": true}');
+        expect(accessors.getFileContents('config.json')).toSucceedWith(
+          '{ "name": "test", "enabled": true }\n'
+        );
       });
 
       test('reads JSON file in subdirectory', () => {
@@ -192,7 +194,7 @@ describe('FsFileTreeAccessors', () => {
       });
 
       test('reads deeply nested JSON file', () => {
-        expect(accessors.getFileContents('docs/api/reference.json')).toSucceedWith('{"endpoints": []}');
+        expect(accessors.getFileContents('docs/api/reference.json')).toSucceedWith('{ "endpoints": [] }\n');
       });
 
       test('reads array JSON file contents', () => {
@@ -314,13 +316,13 @@ describe('FsFileTreeAccessors', () => {
       const accessors = new FsFileTreeAccessors();
       const fullPath = path.join(FIXTURES_PATH, 'config.json');
 
-      expect(accessors.getFileContents(fullPath)).toSucceedWith('{"name": "test", "enabled": true}');
+      expect(accessors.getFileContents(fullPath)).toSucceedWith('{ "name": "test", "enabled": true }\n');
     });
 
     test('works with prefix for relative paths', () => {
       const accessors = new FsFileTreeAccessors(FIXTURES_PATH);
 
-      expect(accessors.getFileContents('config.json')).toSucceedWith('{"name": "test", "enabled": true}');
+      expect(accessors.getFileContents('config.json')).toSucceedWith('{ "name": "test", "enabled": true }\n');
       expect(accessors.getItem('data')).toSucceedAndSatisfy((item) => {
         expect(item.type).toBe('directory');
       });
@@ -330,7 +332,7 @@ describe('FsFileTreeAccessors', () => {
       const accessors = new FsFileTreeAccessors('/some/other/prefix');
       const fullPath = path.join(FIXTURES_PATH, 'config.json');
 
-      expect(accessors.getFileContents(fullPath)).toSucceedWith('{"name": "test", "enabled": true}');
+      expect(accessors.getFileContents(fullPath)).toSucceedWith('{ "name": "test", "enabled": true }\n');
     });
   });
 
@@ -350,7 +352,7 @@ describe('FsFileTreeAccessors', () => {
         if (item.type === 'file') {
           expect(item.extension).toBe('.json');
           expect(item.baseName).toBe('config');
-          expect(item.getRawContents()).toSucceedWith('{"name": "test", "enabled": true}');
+          expect(item.getRawContents()).toSucceedWith('{ "name": "test", "enabled": true }\n');
           expect(item.getContents()).toSucceedWith({ name: 'test', enabled: true });
         }
       });
@@ -379,7 +381,7 @@ describe('FsFileTreeAccessors', () => {
         expect(item.absolutePath).toBe(accessors.resolveAbsolutePath(itemPath));
 
         if (item.type === 'file') {
-          expect(item.getRawContents()).toSucceedWith('{"endpoints": []}');
+          expect(item.getRawContents()).toSucceedWith('{ "endpoints": [] }\n');
         }
       });
     });

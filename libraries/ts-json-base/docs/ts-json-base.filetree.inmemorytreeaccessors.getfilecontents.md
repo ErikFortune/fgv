@@ -4,7 +4,6 @@
 
 ## FileTree.InMemoryTreeAccessors.getFileContents() method
 
-Gets the contents of a file in the file tree.
 
 **Signature:**
 
@@ -42,8 +41,6 @@ string
 
 </td><td>
 
-Absolute path of the file.
-
 
 </td></tr>
 </tbody></table>
@@ -51,6 +48,4 @@ Absolute path of the file.
 **Returns:**
 
 Result&lt;string&gt;
-
-The contents of the file.
 

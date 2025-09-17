@@ -27,7 +27,7 @@ import { FileTreeItem, IFileTreeAccessors } from '../fileTreeAccessors';
 import { InMemoryDirectory, InMemoryFile, TreeBuilder } from './treeBuilder';
 
 /**
- * Represents a single file in an in-memory {@link FileTree.FileTree | file tree}.
+ * Represents a single file in an in-memory {@link FileTree | file tree}.
  * @public
  */
 export interface IInMemoryFile {
@@ -43,7 +43,7 @@ export interface IInMemoryFile {
 }
 
 /**
- * Implementation of {@link FileTree.IFileTreeAccessors | IFileTreeAccessors} that uses an in-memory
+ * Implementation of {@link IFileTreeAccessors} that uses an in-memory
  * tree to access files and directories.
  * @public
  */
@@ -52,7 +52,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
 
   /**
    * Protected constructor for derived classes.
-   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+   * @param files - An array of {@link IInMemoryFile | in-memory files} to include in the tree.
    * @param prefix - Optional prefix for the tree.
    * @public
    */
@@ -64,9 +64,9 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * Creates a new {@link FileTree.InMemoryTreeAccessors | InMemoryTreeAccessors} instance with the supplied
+   * Creates a new {@link InMemoryTreeAccessors} instance with the supplied
    * in-memory files.
-   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+   * @param files - An array of {@link IInMemoryFile | in-memory files} to include in the tree.
    * @param prefix - Optional prefix for the tree.
    */
   public static create(files: IInMemoryFile[], prefix?: string): Result<InMemoryTreeAccessors> {
@@ -74,7 +74,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeAccessors.resolveAbsolutePath}
+   * {@inheritDoc IFileTreeAccessors.resolveAbsolutePath}
    */
   public resolveAbsolutePath(...paths: string[]): string {
     const parts = paths[0].startsWith('/') ? paths : [this._tree.prefix, ...paths];
@@ -83,7 +83,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getExtension}
+   * {@inheritdoc IFileTreeAccessors.getExtension}
    */
   public getExtension(path: string): string {
     const parts = path.split('.');
@@ -94,7 +94,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
+   * {@inheritdoc IFileTreeAccessors.getBaseName}
    */
   public getBaseName(path: string, suffix?: string): string {
     /* c8 ignore next 1 - ?? is defense in depth should never happen */
@@ -106,14 +106,14 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritdoc FileTree.IFileTreeAccessors.joinPaths}
+   * {@inheritdoc IFileTreeAccessors.joinPaths}
    */
   public joinPaths(...paths: string[]): string {
     return paths.join('/');
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeAccessors.getItem}
+   * {@inheritDoc IFileTreeAccessors.getItem}
    */
   public getItem(itemPath: string): Result<FileTreeItem> {
     const existing = this._tree.byAbsolutePath.get(itemPath);
@@ -128,7 +128,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeAccessors.getFileContents}
+   * {@inheritDoc IFileTreeAccessors.getFileContents}
    */
   public getFileContents(path: string): Result<string> {
     const item = this._tree.byAbsolutePath.get(path);
@@ -146,7 +146,7 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
-   * {@inheritDoc FileTree.IFileTreeAccessors.getChildren}
+   * {@inheritDoc IFileTreeAccessors.getChildren}
    */
   public getChildren(path: string): Result<ReadonlyArray<FileTreeItem>> {
     const item = this._tree.byAbsolutePath.get(path);

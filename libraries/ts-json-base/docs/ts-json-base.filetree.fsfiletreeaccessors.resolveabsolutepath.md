@@ -4,7 +4,6 @@
 
 ## FileTree.FsFileTreeAccessors.resolveAbsolutePath() method
 
-Resolves paths to an absolute path.
 
 **Signature:**
 
@@ -42,8 +41,6 @@ string\[\]
 
 </td><td>
 
-Paths to resolve.
-
 
 </td></tr>
 </tbody></table>
@@ -51,6 +48,4 @@ Paths to resolve.
 **Returns:**
 
 string
-
-The resolved absolute path.
 

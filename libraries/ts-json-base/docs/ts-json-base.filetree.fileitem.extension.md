@@ -4,7 +4,6 @@
 
 ## FileTree.FileItem.extension property
 
-The extension of the file
 
 **Signature:**
 

@@ -52,5 +52,5 @@ The name of the child.
 
 string
 
- with the absolute path if successful, or  with an error message otherwise.
+`Success` with the absolute path if successful, or `Failure` with an error message otherwise.
 

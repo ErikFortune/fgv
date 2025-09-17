@@ -15,5 +15,5 @@ getContents(): Result<JsonValue>;
 
 Result&lt;[JsonValue](./ts-json-base.jsonvalue.md)<!-- -->&gt;
 
- with the parsed JSON-compatible contents if successful, or  with an error message otherwise.
+`Success` with the parsed JSON-compatible contents if successful, or `Failure` with an error message otherwise.
 

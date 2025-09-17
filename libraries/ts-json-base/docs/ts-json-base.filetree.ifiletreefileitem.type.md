@@ -4,7 +4,7 @@
 
 ## FileTree.IFileTreeFileItem.type property
 
-Indicates that this [file tree item](./ts-json-base.filetree.filetreeitem.md) is a file.
+Indicates that this  is a file.
 
 **Signature:**
 

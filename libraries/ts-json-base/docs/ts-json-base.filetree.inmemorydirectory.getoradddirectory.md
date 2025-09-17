@@ -52,5 +52,5 @@ The name of the child directory.
 
 Result&lt;[InMemoryDirectory](./ts-json-base.filetree.inmemorydirectory.md)<!-- -->&gt;
 
- with the child directory if successful, or  with an error message otherwise.
+`Success` with the child directory if successful, or `Failure` with an error message otherwise.
 

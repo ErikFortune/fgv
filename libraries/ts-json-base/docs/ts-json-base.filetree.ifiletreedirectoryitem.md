@@ -94,7 +94,7 @@ The name of the directory
 
 </td><td>
 
-Indicates that this [file tree item](./ts-json-base.filetree.filetreeitem.md) is a directory
+Indicates that this  is a directory
 
 
 </td></tr>

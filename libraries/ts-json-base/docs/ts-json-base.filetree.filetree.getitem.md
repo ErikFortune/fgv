@@ -52,5 +52,5 @@ The path to the item.
 
 Result&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;
 
- with the item if successful, or  with an error message otherwise.
+`Success` with the item if successful, or `Failure` with an error message otherwise.
 

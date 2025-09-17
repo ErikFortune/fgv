@@ -57,7 +57,7 @@ Represents a file tree.
 
 </td><td>
 
-Implementation of [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses the file system to access files and directories.
+Implementation of  that uses the file system to access files and directories.
 
 
 </td></tr>
@@ -90,7 +90,7 @@ Represents a file in an in-memory file tree.
 
 </td><td>
 
-Implementation of [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md) that uses an in-memory tree to access files and directories.
+Implementation of  that uses an in-memory tree to access files and directories.
 
 
 </td></tr>
@@ -127,7 +127,7 @@ Description
 
 </td><td>
 
-Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for the filesystem.
+Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance with accessors for the filesystem.
 
 
 </td></tr>
@@ -138,7 +138,7 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) 
 
 </td><td>
 
-Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for an in-memory file tree.
+Helper function to create a new [FileTree](./ts-json-base.filetree.md) instance with accessors for an in-memory file tree.
 
 
 </td></tr>
@@ -197,7 +197,7 @@ Interface for a file in a file tree.
 
 </td><td>
 
-Represents a single file in an in-memory [file tree](./ts-json-base.filetree.filetree.md)<!-- -->.
+Represents a single file in an in-memory [file tree](./ts-json-base.filetree.md)<!-- -->.
 
 
 </td></tr>

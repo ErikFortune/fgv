@@ -37,7 +37,7 @@ export class InMemoryFile {
   public readonly contents: unknown;
 
   /**
-   * Creates a new {@link InMemoryFile | InMemoryFile} instance.
+   * Creates a new {@link InMemoryFile} instance.
    * @param absolutePath - The absolute path of the file.
    * @param contents - The contents of the file.
    */
@@ -66,7 +66,7 @@ export class InMemoryDirectory {
   }
 
   /**
-   * Creates an empty new {@link InMemoryDirectory | InMemoryDirectory} instance.
+   * Creates an empty new {@link InMemoryDirectory} instance.
    * @param absolutePath - The absolute path of the directory.
    */
   public constructor(absolutePath: string) {
@@ -77,8 +77,8 @@ export class InMemoryDirectory {
   /**
    * Gets or adds a child directory with the specified name.
    * @param name - The name of the child directory.
-   * @returns {@link Success | Success} with the child directory if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the child directory if successful, or
+   * `Failure` with an error message otherwise.
    */
   public getOrAddDirectory(name: string): Result<InMemoryDirectory> {
     const existing = this._children.get(name);
@@ -97,8 +97,8 @@ export class InMemoryDirectory {
    * Adds a file to the directory.
    * @param name - The name of the file.
    * @param contents - The contents of the file.
-   * @returns {@link Success | Success} with the new file if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the new file if successful, or
+   * `Failure` with an error message otherwise.
    */
   public addFile(name: string, contents: unknown): Result<InMemoryFile> {
     if (this._children.has(name)) {
@@ -113,8 +113,8 @@ export class InMemoryDirectory {
    * Gets the absolute path for a child of this directory with the supplied
    * name.
    * @param name - The name of the child.
-   * @returns {@link Success | Success} with the absolute path if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the absolute path if successful, or
+   * `Failure` with an error message otherwise.
    */
   public getChildPath(name: string): string {
     if (this.absolutePath === '/') {
@@ -166,10 +166,10 @@ export class TreeBuilder {
   }
 
   /**
-   * Creates a new {@link TreeBuilder | TreeBuilder} instance.
+   * Creates a new {@link TreeBuilder} instance.
    * @param prefix - The prefix for all paths in the tree.
-   * @returns {@link Success | Success} with the new {@link TreeBuilder | TreeBuilder} instance if successful,
-   * or {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the new {@link TreeBuilder} instance if successful,
+   * or `Failure` with an error message otherwise.
    * @public
    */
   public static create(prefix?: string): Result<TreeBuilder> {
@@ -180,8 +180,8 @@ export class TreeBuilder {
    * Adds a file to the tree.
    * @param absolutePath - The absolute path of the file.
    * @param contents - The contents of the file.
-   * @returns {@link Success | Success} with the new file if successful, or
-   * {@link Failure | Failure} with an error message otherwise.
+   * @returns `Success` with the new file if successful, or
+   * `Failure` with an error message otherwise.
    * @public
    */
   public addFile(absolutePath: string, contents: unknown): Result<InMemoryFile> {

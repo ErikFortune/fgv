@@ -68,5 +68,5 @@ The contents of the file.
 
 Result&lt;[InMemoryFile](./ts-json-base.filetree.inmemoryfile.md)<!-- -->&gt;
 
- with the new file if successful, or  with an error message otherwise.
+`Success` with the new file if successful, or `Failure` with an error message otherwise.
 

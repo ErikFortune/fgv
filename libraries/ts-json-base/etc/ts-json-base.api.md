@@ -51,26 +51,26 @@ const DefaultJsonTreeHelper: JsonTreeHelper;
 
 // @public
 class DirectoryItem implements IFileTreeDirectoryItem {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     protected constructor(path: string, hal: IFileTreeAccessors);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeDirectoryItem"
     //
     // (undocumented)
     readonly absolutePath: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Result"
     static create(path: string, hal: IFileTreeAccessors): Result<DirectoryItem>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeDirectoryItem"
     //
     // (undocumented)
     getChildren(): Result<ReadonlyArray<FileTreeItem>>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     protected readonly _hal: IFileTreeAccessors;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeDirectoryItem"
     //
     // (undocumented)
     get name(): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeDirectoryItem"
     //
     // (undocumented)
     readonly type: 'directory';
@@ -78,42 +78,42 @@ class DirectoryItem implements IFileTreeDirectoryItem {
 
 // @public
 class FileItem implements IFileTreeFileItem {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     protected constructor(path: string, hal: IFileTreeAccessors);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     readonly absolutePath: string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     get baseName(): string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "FileItem"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     static create(path: string, hal: IFileTreeAccessors): Result<FileItem>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     get extension(): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     getContents(): Result<JsonValue>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     getRawContents(): Result<string>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     protected readonly _hal: IFileTreeAccessors;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     get name(): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     //
     // (undocumented)
     readonly type: 'file';
@@ -143,23 +143,17 @@ export { FileTree }
 
 // @public
 class FileTree_2 {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     protected constructor(hal: IFileTreeAccessors);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     static create(hal: IFileTreeAccessors): Result<FileTree_2>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeDirectoryItem"
     getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeFileItem"
     getFile(filePath: string): Result<IFileTreeFileItem>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getItem(itemPath: string): Result<FileTreeItem>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     hal: IFileTreeAccessors;
 }
 
@@ -170,45 +164,43 @@ type FileTreeItem = IFileTreeFileItem | IFileTreeDirectoryItem;
 type FileTreeItemType = 'directory' | 'file';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
 //
 // @public
 function forFilesystem(prefix?: string): Result<FileTree_2>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
 //
 // @public
 class FsFileTreeAccessors implements IFileTreeAccessors {
     constructor(prefix?: string);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getBaseName(itemPath: string, suffix?: string): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getExtension(itemPath: string): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getFileContents(filePath: string): Result<string>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getItem(itemPath: string): Result<FileTreeItem>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     joinPaths(...paths: string[]): string;
     // (undocumented)
     readonly prefix: string | undefined;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     resolveAbsolutePath(...paths: string[]): string;
@@ -228,11 +220,9 @@ interface IFileTreeAccessors {
 // @public
 interface IFileTreeDirectoryItem {
     readonly absolutePath: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getChildren(): Result<ReadonlyArray<FileTreeItem>>;
     readonly name: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "FileTreeItem"
     readonly type: 'directory';
 }
 
@@ -241,19 +231,11 @@ interface IFileTreeFileItem {
     readonly absolutePath: string;
     readonly baseName: string;
     readonly extension: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getContents(): Result<JsonValue>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validation"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Conversion"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getRawContents(): Result<string>;
     readonly name: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "FileTreeItem"
     readonly type: 'file';
 }
 
@@ -310,10 +292,8 @@ interface IJsonValidatorContext {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IInMemoryFile"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
 //
 // @public
 function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
@@ -323,17 +303,11 @@ class InMemoryDirectory {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "InMemoryDirectory"
     constructor(absolutePath: string);
     readonly absolutePath: string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     addFile(name: string, contents: unknown): Result<InMemoryFile>;
     get children(): ReadonlyMap<string, InMemoryDirectory | InMemoryFile>;
     // (undocumented)
     protected _children: Map<string, InMemoryDirectory | InMemoryFile>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getChildPath(name: string): string;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     getOrAddDirectory(name: string): Result<InMemoryDirectory>;
 }
 
@@ -345,40 +319,40 @@ class InMemoryFile {
     readonly contents: unknown;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
 //
 // @public
 class InMemoryTreeAccessors implements IFileTreeAccessors {
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IInMemoryFile"
     protected constructor(files: IInMemoryFile[], prefix?: string);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "InMemoryTreeAccessors"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IInMemoryFile"
     static create(files: IInMemoryFile[], prefix?: string): Result<InMemoryTreeAccessors>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getBaseName(path: string, suffix?: string): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getExtension(path: string): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getFileContents(path: string): Result<string>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     getItem(itemPath: string): Result<FileTreeItem>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     joinPaths(...paths: string[]): string;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "IFileTreeAccessors"
     //
     // (undocumented)
     resolveAbsolutePath(...paths: string[]): string;
@@ -561,14 +535,10 @@ export function sanitizeJsonObject<T>(from: T): Result<T>;
 // @public
 class TreeBuilder {
     protected constructor(prefix?: string);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     addFile(absolutePath: string, contents: unknown): Result<InMemoryFile>;
     readonly byAbsolutePath: Map<string, InMemoryDirectory | InMemoryFile>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "TreeBuilder"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "TreeBuilder"
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
     static create(prefix?: string): Result<TreeBuilder>;
     readonly prefix: string;
     readonly root: InMemoryDirectory;

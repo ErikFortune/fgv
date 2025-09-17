@@ -86,7 +86,7 @@ Description
 
 </td><td>
 
-The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file system operations.
+The  to use for file system operations.
 
 
 </td></tr>
@@ -122,7 +122,7 @@ Description
 
 </td><td>
 
-Creates a new [FileTree](./ts-json-base.filetree.filetree.md) instance with the supplied accessors.
+Creates a new [FileTree](./ts-json-base.filetree.md) instance with the supplied accessors.
 
 
 </td></tr>

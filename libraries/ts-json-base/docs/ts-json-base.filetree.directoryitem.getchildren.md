@@ -4,7 +4,6 @@
 
 ## FileTree.DirectoryItem.getChildren() method
 
-Gets the children of the directory.
 
 **Signature:**
 
@@ -14,6 +13,4 @@ getChildren(): Result<ReadonlyArray<FileTreeItem>>;
 **Returns:**
 
 Result&lt;ReadonlyArray&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;&gt;
-
- with the children of the directory if successful, or  with an error message otherwise.
 

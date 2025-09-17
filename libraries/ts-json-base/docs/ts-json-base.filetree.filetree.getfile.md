@@ -52,5 +52,5 @@ The path to the file.
 
 Result&lt;[IFileTreeFileItem](./ts-json-base.filetree.ifiletreefileitem.md)<!-- -->&gt;
 
- with the [file item](./ts-json-base.filetree.ifiletreefileitem.md) if successful, or  with an error message otherwise.
+`Success` with the  if successful, or `Failure` with an error message otherwise.
 
