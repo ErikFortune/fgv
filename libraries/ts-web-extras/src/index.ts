@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2025 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,5 +20,21 @@
  * SOFTWARE.
  */
 
-export * from './md5Normalizer';
-export * from './browserHashNormalizer';
+/**
+ * Browser-compatible utilities and FileTree implementations.
+ *
+ * This library provides browser-compatible alternatives to Node.js-specific functionality,
+ * including Web Crypto API-based hashing and File API-based file tree implementations.
+ * All exports are designed to be tree-shakeable for optimal bundle size.
+ *
+ * @packageDocumentation
+ */
+
+// Export crypto functionality
+export * from './packlets/crypto';
+
+// Export file tree functionality
+export * from './packlets/file-tree';
+
+// Export helper functions
+export * from './packlets/helpers';

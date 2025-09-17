@@ -4,7 +4,7 @@
 
 ## ZipFileTree.ZipFileTreeAccessors.fromBuffer() method
 
-Creates a new ZipFileTreeAccessors instance from a ZIP file buffer.
+Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous).
 
 **Signature:**
 

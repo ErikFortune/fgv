@@ -43,7 +43,23 @@ Description
 
 </td><td>
 
-Creates a new ZipFileTreeAccessors instance from a ZIP file buffer.
+Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous).
+
+
+</td></tr>
+<tr><td>
+
+[fromBufferAsync(zipBuffer, prefix)](./ts-extras.zipfiletree.zipfiletreeaccessors.frombufferasync.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous).
 
 
 </td></tr>
