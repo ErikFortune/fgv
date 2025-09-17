@@ -36,6 +36,7 @@ export class BrowserHashProvider {
    */
   public static async hashString(data: string, algorithm: string = 'SHA-256'): Promise<Result<string>> {
     try {
+      /* c8 ignore next 3 - defense in depth */
       if (!crypto.subtle) {
         return fail('Web Crypto API not available in this environment');
       }

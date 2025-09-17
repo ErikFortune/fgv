@@ -85,6 +85,7 @@ export class FileApiTreeAccessors {
           });
         } catch (error) {
           return fail(
+            /* c8 ignore next 1 - defense in depth */
             `Failed to read file ${fileInfo.path}: ${error instanceof Error ? error.message : String(error)}`
           );
         }
@@ -92,6 +93,7 @@ export class FileApiTreeAccessors {
 
       return FileTree.inMemory(inMemoryFiles, prefix);
     } catch (error) {
+      /* c8 ignore next 3 - defense in depth */
       return fail(`Failed to process files: ${error instanceof Error ? error.message : String(error)}`);
     }
   }

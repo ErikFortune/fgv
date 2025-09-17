@@ -160,6 +160,34 @@ describe('FileApiTreeAccessors', () => {
         // Just verify the creation succeeds with nested paths
         expect(result).toSucceed();
       });
+
+      test('handles paths with leading slash correctly', async () => {
+        const files: IFileApiFile[] = [
+          {
+            file: createMockFile({ name: 'absolute.txt', content: 'absolute content' }),
+            path: '/already/absolute.txt'
+          },
+          {
+            file: createMockFile({ name: 'relative.txt', content: 'relative content' }),
+            path: 'relative/path.txt'
+          }
+        ];
+
+        const result = await FileApiTreeAccessors.create(files);
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          // Both paths should be normalized to start with /
+          expect(fileTree.getFile('/already/absolute.txt')).toSucceedAndSatisfy((file) => {
+            expect(file.name).toBe('absolute.txt');
+          });
+          expect(fileTree.getFile('/relative/path.txt')).toSucceedAndSatisfy((file) => {
+            expect(file.name).toBe('path.txt');
+          });
+
+          // Verify content is accessible
+          expect(fileTree.hal.getFileContents('/already/absolute.txt')).toSucceedWith('absolute content');
+          expect(fileTree.hal.getFileContents('/relative/path.txt')).toSucceedWith('relative content');
+        });
+      });
     });
 
     describe('fromFileList', () => {
