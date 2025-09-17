@@ -86,6 +86,7 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
       } else if (stat.isFile()) {
         return FileItem.create(itemPath, this).orThrow();
       }
+      /* c8 ignore next 1 - defensive coding: filesystem items should be file or directory */
       throw new Error(`${itemPath}: not a file or directory`);
     });
   }
