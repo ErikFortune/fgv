@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from '../base';
+import { Result, captureResult } from '@fgv/ts-utils';
 import { FileTreeItem, IFileTreeAccessors, IFileTreeDirectoryItem } from './fileTreeAccessors';
 
 /**

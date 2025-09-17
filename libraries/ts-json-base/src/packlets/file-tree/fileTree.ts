@@ -20,15 +20,13 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result, fail, succeed } from '../base';
+import { captureResult, Result, fail, succeed } from '@fgv/ts-utils';
 import {
   FileTreeItem,
   IFileTreeAccessors,
   IFileTreeDirectoryItem,
   IFileTreeFileItem
 } from './fileTreeAccessors';
-import { FsFileTreeAccessors } from './fsTree';
-import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
 
 /**
  * Represents a file tree.
@@ -59,29 +57,6 @@ export class FileTree {
    */
   public static create(hal: IFileTreeAccessors): Result<FileTree> {
     return captureResult(() => new FileTree(hal));
-  }
-
-  /**
-   * Creates a new {@link FileTree.FileTree | FileTree} instance with accessors
-   * for the filesystem.
-   * @param prefix - An optional prefix to prepended to supplied relative
-   * paths.
-   */
-  public static forFilesystem(prefix?: string): Result<FileTree> {
-    return captureResult(() => new FileTree(new FsFileTreeAccessors(prefix)));
-  }
-
-  /**
-   * Creates a new {@link FileTree.FileTree | FileTree} instance with accessors
-   * for an in-memory file tree.
-   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to
-   * include in the tree.
-   * @param prefix - An optional prefix to add to the paths of all files in the tree.
-   */
-  public static inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree> {
-    return InMemoryTreeAccessors.create(files, prefix).onSuccess((hal) =>
-      captureResult(() => new FileTree(hal))
-    );
   }
 
   /**
@@ -124,29 +99,4 @@ export class FileTree {
       return fail(`${directoryPath}: not a directory`);
     });
   }
-}
-
-/**
- * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
- * with accessors for the filesystem.
- * @param prefix - An optional prefix to prepended to supplied relative paths.
- * @returns {@link Success | Success} with the new {@link FileTree.FileTree | FileTree} instance
- * if successful, or {@link Failure | Failure} with an error message otherwise.
- * @public
- */
-export function forFilesystem(prefix?: string): Result<FileTree> {
-  return FileTree.forFilesystem(prefix);
-}
-
-/**
- * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
- * with accessors for an in-memory file tree.
- * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
- * @param prefix - An optional prefix to add to the paths of all files in the tree.
- * @returns {@link Success | Success} with the new {@link FileTree.FileTree | FileTree} instance
- * if successful, or {@link Failure | Failure} with an error message otherwise.
- * @public
- */
-export function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree> {
-  return FileTree.inMemory(files, prefix);
 }

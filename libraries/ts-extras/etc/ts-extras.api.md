@@ -6,8 +6,9 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
+import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
@@ -24,8 +25,10 @@ export { Converters }
 
 declare namespace Csv {
     export {
+        parseCsvString,
+        CsvOptions,
         readCsvFileSync,
-        CsvOptions
+        readCsvFromTree
     }
 }
 export { Csv }
@@ -153,6 +156,9 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
     static md5Hash(parts: string[]): string;
 }
 
+// @beta
+function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
+
 // @public
 function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]>;
 
@@ -218,16 +224,23 @@ function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(converter: Converte
 // @beta
 function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown>;
 
+// @beta
+function readCsvFromTree(fileTree: FileTree.FileTree, filePath: string, options?: CsvOptions): Result<unknown>;
+
 // @public
 function readRecordJarFileSync(srcPath: string, options?: JarRecordParserOptions): Result<JarRecord[]>;
+
+// @public
+function readRecordJarFromTree(fileTree: FileTree.FileTree, filePath: string, options?: JarRecordParserOptions): Result<JarRecord[]>;
 
 declare namespace RecordJar {
     export {
         parseRecordJarLines,
-        readRecordJarFileSync,
         JarRecord,
         JarFieldPicker,
-        JarRecordParserOptions
+        JarRecordParserOptions,
+        readRecordJarFileSync,
+        readRecordJarFromTree
     }
 }
 export { RecordJar }
@@ -250,7 +263,7 @@ class ZipFileItem implements FileTree.IFileTreeFileItem {
     readonly absolutePath: string;
     readonly baseName: string;
     readonly extension: string;
-    getContents(): Result<unknown>;
+    getContents(): Result<JsonValue>;
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
     getRawContents(): Result<string>;

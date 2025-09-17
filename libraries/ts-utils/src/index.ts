@@ -23,7 +23,6 @@
 import * as Collections from './packlets/collections';
 import * as Conversion from './packlets/conversion';
 import * as Hash from './packlets/hash';
-import * as FileTree from './packlets/file-tree';
 import * as Logging from './packlets/logging';
 import * as Validation from './packlets/validation';
 
@@ -48,7 +47,6 @@ export {
   Conversion,
   Converter,
   Converters,
-  FileTree,
   Hash,
   ICollectible,
   IReadOnlyResultMap,

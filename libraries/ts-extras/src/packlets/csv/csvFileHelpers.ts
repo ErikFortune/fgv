@@ -21,34 +21,42 @@
  */
 
 import { Result, captureResult } from '@fgv/ts-utils';
-import { parse } from 'papaparse';
+import { FileTree } from '@fgv/ts-json-base';
+import * as fs from 'fs';
+import * as path from 'path';
+import { parseCsvString, CsvOptions } from './csvHelpers';
 
 /**
- * Options for {@link Csv.readCsvFileSync | readCsvFileSync}
+ * Reads a CSV file from a supplied path.
+ * @param srcPath - Source path from which the file is read.
+ * @param options - optional parameters to control the processing
+ * @returns The contents of the file.
  * @beta
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export interface CsvOptions {
-  delimiter?: string;
+export function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown> {
+  return captureResult(() => {
+    const fullPath = path.resolve(srcPath);
+    return fs.readFileSync(fullPath, 'utf8').toString();
+  }).onSuccess((body) => {
+    return parseCsvString(body, options);
+  });
 }
 
 /**
- * Parses CSV data from a string.
- * @param body - The CSV string to parse.
+ * Reads a CSV file from a FileTree.
+ * @param fileTree - The FileTree to read from.
+ * @param filePath - Path of the file within the tree.
  * @param options - optional parameters to control the processing
  * @returns The parsed CSV data.
  * @beta
  */
-export function parseCsvString(body: string, options?: CsvOptions): Result<unknown> {
-  return captureResult(() => {
-    options = options ?? {};
-
-    return parse(body, {
-      transform: (s: string) => s.trim(),
-      header: false,
-      dynamicTyping: false,
-      skipEmptyLines: 'greedy',
-      ...options
-    }).data.slice(1);
-  });
+export function readCsvFromTree(
+  fileTree: FileTree.FileTree,
+  filePath: string,
+  options?: CsvOptions
+): Result<unknown> {
+  return fileTree
+    .getFile(filePath)
+    .onSuccess((file) => file.getRawContents())
+    .onSuccess((contents) => parseCsvString(contents, options));
 }

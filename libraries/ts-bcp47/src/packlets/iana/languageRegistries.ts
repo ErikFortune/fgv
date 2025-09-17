@@ -24,7 +24,6 @@ import { Result, captureResult } from '@fgv/ts-utils';
 
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
-import path from 'path';
 
 /**
  * @public
@@ -37,14 +36,11 @@ export class LanguageRegistries {
     this.extensions = extensions;
   }
 
-  public static load(root: string): Result<LanguageRegistries> {
-    return captureResult(() => {
-      const subtags = LanguageSubtagRegistry.load(path.join(root, 'language-subtags.json')).orThrow();
-      const extensions = LanguageTagExtensionRegistry.load(
-        path.join(root, 'language-tag-extensions.json')
-      ).orThrow();
-      return new LanguageRegistries(subtags, extensions);
-    });
+  public static create(
+    subtags: LanguageSubtagRegistry,
+    extensions: LanguageTagExtensionRegistry
+  ): Result<LanguageRegistries> {
+    return captureResult(() => new LanguageRegistries(subtags, extensions));
   }
 
   public static loadDefault(): Result<LanguageRegistries> {

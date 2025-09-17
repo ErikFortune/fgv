@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, fail, succeed } from '../../base';
+import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 /**
  * Represents a file in an in-memory file tree.
@@ -195,7 +195,7 @@ export class TreeBuilder {
         this.byAbsolutePath.set(dir.absolutePath, dir);
       }
     }
-    return dir.addFile(parts[0], contents).onSuccess((file) => {
+    return dir.addFile(parts[0], contents).onSuccess((file: InMemoryFile) => {
       this.byAbsolutePath.set(file.absolutePath, file);
       return succeed(file);
     });

@@ -6,7 +6,7 @@
 
 import { Bundle } from '@fgv/ts-res';
 import { Config } from '@fgv/ts-res';
-import { FileTree } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Import } from '@fgv/ts-res';
 import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';

@@ -46,6 +46,222 @@ const DefaultJsonFsHelperConfig: IJsonFsHelperConfig;
 // @public (undocumented)
 const DefaultJsonLike: IJsonLike;
 
+// @public (undocumented)
+const DefaultJsonTreeHelper: JsonTreeHelper;
+
+// @public
+class DirectoryItem implements IFileTreeDirectoryItem {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(path: string, hal: IFileTreeAccessors);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly absolutePath: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Result"
+    static create(path: string, hal: IFileTreeAccessors): Result<DirectoryItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getChildren(): Result<ReadonlyArray<FileTreeItem>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected readonly _hal: IFileTreeAccessors;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get name(): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly type: 'directory';
+}
+
+// @public
+class FileItem implements IFileTreeFileItem {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(path: string, hal: IFileTreeAccessors);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly absolutePath: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get baseName(): string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(path: string, hal: IFileTreeAccessors): Result<FileItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get extension(): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getContents(): Result<JsonValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getRawContents(): Result<string>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected readonly _hal: IFileTreeAccessors;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get name(): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly type: 'file';
+}
+
+declare namespace FileTree {
+    export {
+        IInMemoryFile,
+        InMemoryTreeAccessors,
+        FileTreeItemType,
+        IFileTreeFileItem,
+        IFileTreeDirectoryItem,
+        FileTreeItem,
+        IFileTreeAccessors,
+        FileTree_2 as FileTree,
+        DirectoryItem,
+        FileItem,
+        forFilesystem,
+        inMemory,
+        FsFileTreeAccessors
+    }
+}
+export { FileTree }
+
+// @public
+class FileTree_2 {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(hal: IFileTreeAccessors);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(hal: IFileTreeAccessors): Result<FileTree_2>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getFile(filePath: string): Result<IFileTreeFileItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getItem(itemPath: string): Result<FileTreeItem>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    hal: IFileTreeAccessors;
+}
+
+// @public
+type FileTreeItem = IFileTreeFileItem | IFileTreeDirectoryItem;
+
+// @public
+type FileTreeItemType = 'directory' | 'file';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+//
+// @public
+function forFilesystem(prefix?: string): Result<FileTree_2>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class FsFileTreeAccessors implements IFileTreeAccessors {
+    constructor(prefix?: string);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getBaseName(itemPath: string, suffix?: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getExtension(itemPath: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getFileContents(filePath: string): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getItem(itemPath: string): Result<FileTreeItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    joinPaths(...paths: string[]): string;
+    // (undocumented)
+    readonly prefix: string | undefined;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    resolveAbsolutePath(...paths: string[]): string;
+}
+
+// @public
+interface IFileTreeAccessors {
+    getBaseName(path: string, suffix?: string): string;
+    getChildren(path: string): Result<ReadonlyArray<FileTreeItem>>;
+    getExtension(path: string): string;
+    getFileContents(path: string): Result<string>;
+    getItem(path: string): Result<FileTreeItem>;
+    joinPaths(...paths: string[]): string;
+    resolveAbsolutePath(...paths: string[]): string;
+}
+
+// @public
+interface IFileTreeDirectoryItem {
+    readonly absolutePath: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getChildren(): Result<ReadonlyArray<FileTreeItem>>;
+    readonly name: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly type: 'directory';
+}
+
+// @public
+interface IFileTreeFileItem {
+    readonly absolutePath: string;
+    readonly baseName: string;
+    readonly extension: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getContents(): Result<JsonValue>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validation"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Conversion"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+    getRawContents(): Result<string>;
+    readonly name: string;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly type: 'file';
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IInMemoryFile {
+    readonly contents: unknown;
+    readonly path: string;
+}
+
 // @public
 interface IJsonConverterContext {
     // (undocumented)
@@ -88,6 +304,54 @@ interface IJsonLike {
 interface IJsonValidatorContext {
     // (undocumented)
     ignoreUndefinedProperties?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Success"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Failure"
+//
+// @public
+function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class InMemoryTreeAccessors implements IFileTreeAccessors {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    protected constructor(files: IInMemoryFile[], prefix?: string);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(files: IInMemoryFile[], prefix?: string): Result<InMemoryTreeAccessors>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getBaseName(path: string, suffix?: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getChildren(path: string): Result<ReadonlyArray<FileTreeItem>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getExtension(path: string): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getFileContents(path: string): Result<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getItem(itemPath: string): Result<FileTreeItem>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    joinPaths(...paths: string[]): string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    resolveAbsolutePath(...paths: string[]): string;
 }
 
 // @public
@@ -139,6 +403,14 @@ declare namespace JsonFile {
         convertJsonDirectorySync,
         convertJsonDirectoryToMapSync,
         writeJsonFileSync,
+        JsonReviver,
+        JsonReplacerFunction,
+        JsonReplacerArray,
+        JsonReplacer,
+        IJsonLike,
+        DefaultJsonLike,
+        JsonTreeHelper,
+        DefaultJsonTreeHelper,
         IJsonFsDirectoryOptions,
         IReadDirectoryItem,
         ItemNameTransformFunction,
@@ -147,13 +419,7 @@ declare namespace JsonFile {
         JsonFsHelperInitOptions,
         DefaultJsonFsHelperConfig,
         JsonFsHelper,
-        DefaultJsonFsHelper,
-        JsonReviver,
-        JsonReplacerFunction,
-        JsonReplacerArray,
-        JsonReplacer,
-        IJsonLike,
-        DefaultJsonLike
+        DefaultJsonFsHelper
     }
 }
 export { JsonFile }
@@ -217,6 +483,17 @@ type JsonReplacerFunction = (key: string, value: JsonValue) => JsonValue;
 
 // @public (undocumented)
 type JsonReviver = (key: string, value: JsonValue) => JsonValue;
+
+// @public
+class JsonTreeHelper {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(json?: IJsonLike);
+    convertJsonDirectoryFromTree<T, TC = unknown>(fileTree: FileTree.FileTree, dirPath: string, cv: Converter<T, TC> | Validator<T, TC>, filePattern?: RegExp, context?: TC): Result<IReadDirectoryItem<T>[]>;
+    convertJsonDirectoryToMapFromTree<T, TC = unknown>(fileTree: FileTree.FileTree, dirPath: string, cv: Converter<T, TC> | Validator<T, TC>, filePattern?: RegExp, context?: TC): Result<Map<string, T>>;
+    convertJsonFromTree<T, TC = unknown>(fileTree: FileTree.FileTree, filePath: string, cv: Converter<T, TC> | Validator<T, TC>, context?: TC): Result<T>;
+    readonly json: IJsonLike;
+    readJsonFromTree(fileTree: FileTree.FileTree, filePath: string): Result<JsonValue>;
+}
 
 // @public
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;

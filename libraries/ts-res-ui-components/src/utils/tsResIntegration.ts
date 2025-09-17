@@ -1,4 +1,5 @@
-import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
+import { Result, succeed, fail } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import {
   QualifierTypes,
   Qualifiers,

@@ -23,7 +23,7 @@
 import { FileTreeItem, IFileTreeAccessors } from './fileTreeAccessors';
 import path from 'path';
 import fs from 'fs';
-import { captureResult, Result } from '../base';
+import { captureResult, Result } from '@fgv/ts-utils';
 import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
 

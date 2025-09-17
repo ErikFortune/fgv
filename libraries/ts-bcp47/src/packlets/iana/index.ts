@@ -30,4 +30,6 @@ import * as Validate from './validate';
 
 export { DefaultRegistries } from './defaultRegistries';
 export * from './languageRegistries';
+// Export filesystem loader separately for tree-shaking
+export * from './languageRegistriesLoader';
 export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { Result } from '../base';
-import { Converter } from '../conversion';
-import { Validator } from '../validation';
+import { Result } from '@fgv/ts-utils';
+import { Converter, Validator } from '@fgv/ts-utils';
+import { JsonValue } from '../json';
 
 /**
  * Type of item in a file tree.
@@ -62,10 +62,10 @@ export interface IFileTreeFileItem {
 
   /**
    * Gets the contents of the file as parsed JSON.
-   * @returns {@link Success | Success} with the parsed contents if successful, or
-   * {@link Failure | Failure}with an error message otherwise.
+   * @returns {@link Success | Success} with the parsed JSON-compatible contents if successful, or
+   * {@link Failure | Failure} with an error message otherwise.
    */
-  getContents(): Result<unknown>;
+  getContents(): Result<JsonValue>;
 
   /**
    * Gets the contents of the file as parsed JSON, converted to a specific type.

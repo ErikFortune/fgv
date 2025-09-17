@@ -21,7 +21,8 @@
  */
 
 import { unzipSync, unzip, Unzipped } from 'fflate';
-import { Result, succeed, fail, captureResult, Converter, Validator, FileTree } from '@fgv/ts-utils';
+import { Result, succeed, fail, captureResult, Converter, Validator } from '@fgv/ts-utils';
+import { FileTree, JsonValue } from '@fgv/ts-json-base';
 
 /**
  * Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
@@ -81,20 +82,21 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
   /**
    * Gets the contents of the file as parsed JSON.
    */
-  public getContents(): Result<unknown>;
+  public getContents(): Result<JsonValue>;
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
-  public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | unknown> {
+  public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | JsonValue> {
     return this.getRawContents()
       .onSuccess((contents) => {
-        return captureResult(() => {
-          const parsed = JSON.parse(contents);
-          if (converter) {
-            return converter.convert(parsed);
-          }
-          return succeed(parsed);
-        }).onFailure(() => {
-          return fail(`Failed to parse JSON from file: ${this.absolutePath}`);
-        });
+        return captureResult(() => JSON.parse(contents))
+          .onSuccess((parsed) => {
+            if (converter) {
+              return converter.convert(parsed) as Result<T | JsonValue>;
+            }
+            return succeed(parsed as JsonValue);
+          })
+          .onFailure(() => {
+            return fail(`Failed to parse JSON from file: ${this.absolutePath}`);
+          });
       })
       .onFailure((error) => {
         return fail(`Failed to get contents from file: ${error}`);

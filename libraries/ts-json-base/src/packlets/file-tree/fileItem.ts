@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result, succeed } from '../base';
-import { Converter } from '../conversion';
-import { Validator } from '../validation';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
+import { Converter, Validator } from '@fgv/ts-utils';
+import { JsonValue } from '../json';
 import { IFileTreeAccessors, IFileTreeFileItem } from './fileTreeAccessors';
 
 /**
@@ -93,20 +93,20 @@ export class FileItem implements IFileTreeFileItem {
   /**
    * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:1)}
    */
-  public getContents(): Result<unknown>;
+  public getContents(): Result<JsonValue>;
   /**
    * {@inheritdoc FileTree.IFileTreeFileItem.(getContents:2)}
    */
   public getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
-  public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | unknown> {
+  public getContents<T>(converter?: Validator<T> | Converter<T>): Result<T | JsonValue> {
     return this._hal
       .getFileContents(this.absolutePath)
       .onSuccess((body) => captureResult(() => JSON.parse(body)).onFailure(() => succeed(body)))
       .onSuccess((parsed) => {
         if (converter !== undefined) {
-          return converter.convert(parsed);
+          return converter.convert(parsed) as Result<T | JsonValue>;
         }
-        return succeed(parsed);
+        return succeed(parsed as JsonValue) as Result<T | JsonValue>;
       });
   }
 

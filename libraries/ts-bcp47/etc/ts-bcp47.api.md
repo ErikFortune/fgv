@@ -7,6 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { RecordJar } from '@fgv/ts-extras';
 import { Result } from '@fgv/ts-utils';
 import { Validation } from '@fgv/ts-utils';
@@ -262,7 +263,9 @@ declare namespace Iana {
         LanguageTagExtensions_2 as LanguageTagExtensions,
         Validate_3 as Validate,
         nowAsYearMonthDay,
-        LanguageRegistries
+        LanguageRegistries,
+        loadLanguageRegistries,
+        loadLanguageRegistriesFromTree
     }
 }
 export { Iana }
@@ -743,9 +746,9 @@ declare namespace JarConverters_2 {
 // @public (undocumented)
 class LanguageRegistries {
     // (undocumented)
-    readonly extensions: LanguageTagExtensionRegistry;
+    static create(subtags: LanguageSubtagRegistry, extensions: LanguageTagExtensionRegistry): Result<LanguageRegistries>;
     // (undocumented)
-    static load(root: string): Result<LanguageRegistries>;
+    readonly extensions: LanguageTagExtensionRegistry;
     // (undocumented)
     static loadDefault(): Result<LanguageRegistries>;
     // (undocumented)
@@ -1064,6 +1067,12 @@ function loadJsonLanguageTagExtensionsRegistryFileSync(path: string): Result<Mod
 //
 // @internal
 function loadJsonSubtagRegistryFileSync(path: string): Result<Items.RegistryFile>;
+
+// @public
+function loadLanguageRegistries(root: string): Result<LanguageRegistries>;
+
+// @public
+function loadLanguageRegistriesFromTree(fileTree: FileTree.FileTree, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

@@ -20,14 +20,8 @@
  * SOFTWARE.
  */
 
-import {
-  captureResult,
-  DetailedResult,
-  failWithDetail,
-  Result,
-  succeedWithDetail,
-  FileTree
-} from '@fgv/ts-utils';
+import { captureResult, DetailedResult, failWithDetail, Result, succeedWithDetail } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { ResourceManagerBuilder } from '../../resources';
 import { IImportable } from '../importable';
 import { IImporter, ImporterResultDetail } from './importer';

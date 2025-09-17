@@ -110,6 +110,9 @@ importers:
 
   ../../libraries/ts-extras:
     dependencies:
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../ts-json-base
       fflate:
         specifier: ~0.8.2
         version: 0.8.2
@@ -305,10 +308,11 @@ importers:
         version: 5.8.3
 
   ../../libraries/ts-json-base:
+    dependencies:
+      luxon:
+        specifier: ^3.7.2
+        version: 3.7.2
     devDependencies:
-      '@fgv/ts-extras':
-        specifier: workspace:*
-        version: link:../ts-extras
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
@@ -339,6 +343,9 @@ importers:
       '@types/jest':
         specifier: ^29.5.14
         version: 29.5.14
+      '@types/luxon':
+        specifier: ^3.7.1
+        version: 3.7.1
       '@types/node':
         specifier: ^20.14.9
         version: 20.19.13
