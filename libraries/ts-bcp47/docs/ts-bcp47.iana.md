@@ -65,12 +65,34 @@ Loads language registries from filesystem.
 </td></tr>
 <tr><td>
 
+[loadLanguageRegistriesFromIanaOrg()](./ts-bcp47.iana.loadlanguageregistriesfromianaorg.md)
+
+
+</td><td>
+
+Loads language registries from the IANA.org online registries.
+
+
+</td></tr>
+<tr><td>
+
 [loadLanguageRegistriesFromTree(fileTree, subtagsPath, extensionsPath)](./ts-bcp47.iana.loadlanguageregistriesfromtree.md)
 
 
 </td><td>
 
 Loads language registries from a FileTree (web-compatible).
+
+
+</td></tr>
+<tr><td>
+
+[loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl)](./ts-bcp47.iana.loadlanguageregistriesfromurls.md)
+
+
+</td><td>
+
+Loads language registries from custom URLs.
 
 
 </td></tr>

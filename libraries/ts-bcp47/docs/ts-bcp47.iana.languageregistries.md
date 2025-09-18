@@ -120,5 +120,37 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[loadFromIanaOrg()](./ts-bcp47.iana.languageregistries.loadfromianaorg.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from the IANA.org online registries.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromUrls(subtagsUrl, extensionsUrl)](./ts-bcp47.iana.languageregistries.loadfromurls.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from custom URLs.
+
+
+</td></tr>
 </tbody></table>
 

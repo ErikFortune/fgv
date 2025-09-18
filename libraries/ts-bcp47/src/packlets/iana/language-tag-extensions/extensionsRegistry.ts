@@ -89,4 +89,10 @@ export class LanguageTagExtensionRegistry {
       return new LanguageTagExtensionRegistry(registry);
     });
   }
+
+  public static createFromTxtContent(content: string): Result<LanguageTagExtensionRegistry> {
+    return JarConverters.loadTxtLanguageTagExtensionsRegistryFromString(content).onSuccess(
+      LanguageTagExtensionRegistry.create
+    );
+  }
 }

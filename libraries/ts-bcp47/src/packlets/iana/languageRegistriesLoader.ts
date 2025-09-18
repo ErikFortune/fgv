@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from '@fgv/ts-utils';
+import { Result, captureResult, fail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
@@ -69,4 +69,62 @@ export function loadLanguageRegistriesFromTree(
           return LanguageRegistries.create(subtags, extensions);
         });
     });
+}
+
+/**
+ * Loads language registries from the IANA.org online registries.
+ * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
+ * @public
+ */
+export async function loadLanguageRegistriesFromIanaOrg(): Promise<Result<LanguageRegistries>> {
+  const subtagsUrl = 'https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry';
+  const extensionsUrl =
+    'https://www.iana.org/assignments/language-tag-extensions-registry/language-tag-extensions-registry';
+
+  return loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl);
+}
+
+/**
+ * Loads language registries from custom URLs.
+ * @param subtagsUrl - URL to the language subtags registry.
+ * @param extensionsUrl - URL to the language tag extensions registry.
+ * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
+ * @public
+ */
+export async function loadLanguageRegistriesFromUrls(
+  subtagsUrl: string,
+  extensionsUrl: string
+): Promise<Result<LanguageRegistries>> {
+  try {
+    // Fetch both registries in parallel
+    const [subtagsResponse, extensionsResponse] = await Promise.all([
+      fetch(subtagsUrl),
+      fetch(extensionsUrl)
+    ]);
+
+    if (!subtagsResponse.ok) {
+      return fail(
+        `Failed to fetch language subtags registry: ${subtagsResponse.status} ${subtagsResponse.statusText}`
+      );
+    }
+
+    if (!extensionsResponse.ok) {
+      return fail(
+        `Failed to fetch language tag extensions registry: ${extensionsResponse.status} ${extensionsResponse.statusText}`
+      );
+    }
+
+    const [subtagsContent, extensionsContent] = await Promise.all([
+      subtagsResponse.text(),
+      extensionsResponse.text()
+    ]);
+
+    return LanguageSubtagRegistry.createFromTxtContent(subtagsContent).onSuccess((subtags) => {
+      return LanguageTagExtensionRegistry.createFromTxtContent(extensionsContent).onSuccess((extensions) => {
+        return LanguageRegistries.create(subtags, extensions);
+      });
+    });
+  } catch (error) {
+    return fail(`Network error: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }

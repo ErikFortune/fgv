@@ -265,7 +265,9 @@ declare namespace Iana {
         nowAsYearMonthDay,
         LanguageRegistries,
         loadLanguageRegistries,
-        loadLanguageRegistriesFromTree
+        loadLanguageRegistriesFromTree,
+        loadLanguageRegistriesFromIanaOrg,
+        loadLanguageRegistriesFromUrls
     }
 }
 export { Iana }
@@ -722,6 +724,7 @@ declare namespace JarConverters {
     export {
         loadJsonSubtagRegistryFileSync,
         loadTxtSubtagRegistryFileSync,
+        loadTxtSubtagRegistryFromString,
         registeredLanguage_2 as registeredLanguage,
         registeredExtLang_2 as registeredExtLang,
         registeredScript_2 as registeredScript,
@@ -738,6 +741,7 @@ declare namespace JarConverters_2 {
     export {
         loadJsonLanguageTagExtensionsRegistryFileSync,
         loadTxtLanguageTagExtensionsRegistryFileSync,
+        loadTxtLanguageTagExtensionsRegistryFromString,
         languageTagExtension_2 as languageTagExtension,
         languageTagExtensions_2 as languageTagExtensions
     }
@@ -751,6 +755,8 @@ class LanguageRegistries {
     readonly extensions: LanguageTagExtensionRegistry;
     // (undocumented)
     static loadDefault(): Result<LanguageRegistries>;
+    static loadFromIanaOrg(): Promise<Result<LanguageRegistries>>;
+    static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
     // (undocumented)
     readonly subtags: LanguageSubtagRegistry;
 }
@@ -809,6 +815,8 @@ class LanguageSubtagRegistry {
     static create(registry: RegistryFile_2): Result<LanguageSubtagRegistry>;
     // (undocumented)
     static createFromJson(from: unknown): Result<LanguageSubtagRegistry>;
+    // (undocumented)
+    static createFromTxtContent(content: string): Result<LanguageSubtagRegistry>;
     // (undocumented)
     readonly extlangs: Scope.ExtLangSubtagScope;
     // (undocumented)
@@ -1003,6 +1011,8 @@ class LanguageTagExtensionRegistry {
     static create(registry: Model_2.LanguageTagExtensions): Result<LanguageTagExtensionRegistry>;
     // (undocumented)
     static createFromJson(from: unknown): Result<LanguageTagExtensionRegistry>;
+    // (undocumented)
+    static createFromTxtContent(content: string): Result<LanguageTagExtensionRegistry>;
     // Warning: (ae-forgotten-export) The symbol "TagExtensionsScope" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -1072,7 +1082,13 @@ function loadJsonSubtagRegistryFileSync(path: string): Result<Items.RegistryFile
 function loadLanguageRegistries(root: string): Result<LanguageRegistries>;
 
 // @public
+function loadLanguageRegistriesFromIanaOrg(): Promise<Result<LanguageRegistries>>;
+
+// @public
 function loadLanguageRegistriesFromTree(fileTree: FileTree.FileTree, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
+
+// @public
+function loadLanguageRegistriesFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1088,10 +1104,18 @@ function loadM49csvFileSync(csvPath: string): Result<Model_6.IM49CsvRow[]>;
 // @internal
 function loadTxtLanguageTagExtensionsRegistryFileSync(path: string): Result<Model_2.LanguageTagExtensions>;
 
+// @public
+function loadTxtLanguageTagExtensionsRegistryFromString(content: string): Result<Model_2.LanguageTagExtensions>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @internal
 function loadTxtSubtagRegistryFileSync(path: string): Result<Items.RegistryFile>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function loadTxtSubtagRegistryFromString(content: string): Result<Items.RegistryFile>;
 
 // @internal (undocumented)
 const m49CsvFile: Converter<Model_6.IM49CsvRow[], unknown>;

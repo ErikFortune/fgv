@@ -4,3 +4,29 @@
 
 ## Iana.LanguageSubtags.JarConverters namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[loadTxtSubtagRegistryFromString(content)](./ts-bcp47.iana.languagesubtags.jarconverters.loadtxtsubtagregistryfromstring.md)
+
+
+</td><td>
+
+Parses a text (JAR) format language subtag registry from string content.
+
+
+</td></tr>
+</tbody></table>
+

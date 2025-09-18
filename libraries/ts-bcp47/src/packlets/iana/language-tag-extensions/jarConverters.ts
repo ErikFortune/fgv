@@ -89,3 +89,22 @@ export function loadTxtLanguageTagExtensionsRegistryFileSync(
     return datedRegistryFromJarRecords(languageTagExtension).convert(jar);
   });
 }
+
+/**
+ * Parses language tag extensions registry data from string content.
+ * @param content - The string content of the registry file to be parsed.
+ * @returns `Success` with the loaded language tag extension data
+ * or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadTxtLanguageTagExtensionsRegistryFromString(
+  content: string
+): Result<Model.LanguageTagExtensions> {
+  const lines = content.split(/\r?\n/);
+  return RecordJar.parseRecordJarLines(lines, {
+    arrayFields: ['Comments', 'Description'],
+    fixedContinuationSize: 1
+  }).onSuccess((jar) => {
+    return datedRegistryFromJarRecords(languageTagExtension).convert(jar);
+  });
+}

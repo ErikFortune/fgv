@@ -133,4 +133,8 @@ export class LanguageSubtagRegistry {
       return new LanguageSubtagRegistry(registry);
     });
   }
+
+  public static createFromTxtContent(content: string): Result<LanguageSubtagRegistry> {
+    return JarConverters.loadTxtSubtagRegistryFromString(content).onSuccess(LanguageSubtagRegistry.create);
+  }
 }

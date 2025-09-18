@@ -4,3 +4,29 @@
 
 ## Iana.LanguageTagExtensions.JarConverters namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[loadTxtLanguageTagExtensionsRegistryFromString(content)](./ts-bcp47.iana.languagetagextensions.jarconverters.loadtxtlanguagetagextensionsregistryfromstring.md)
+
+
+</td><td>
+
+Parses language tag extensions registry data from string content.
+
+
+</td></tr>
+</tbody></table>
+

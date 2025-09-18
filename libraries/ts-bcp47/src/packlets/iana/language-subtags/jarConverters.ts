@@ -267,3 +267,20 @@ export function loadTxtSubtagRegistryFileSync(path: string): Result<Model.Regist
     return datedRegistryFromJarRecords(registeredItem).convert(jar);
   });
 }
+
+/**
+ * Parses a text (JAR) format language subtag registry from string content.
+ * @param content - The string content of the registry file to be parsed.
+ * @returns `Success` with the resulting {@link Iana.LanguageSubtags.Model.RegistryFile | registry file}
+ * or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadTxtSubtagRegistryFromString(content: string): Result<Model.RegistryFile> {
+  const lines = content.split(/\r?\n/);
+  return RecordJar.parseRecordJarLines(lines, {
+    arrayFields: ['Comments', 'Description', 'Prefix'],
+    fixedContinuationSize: 1
+  }).onSuccess((jar) => {
+    return datedRegistryFromJarRecords(registeredItem).convert(jar);
+  });
+}

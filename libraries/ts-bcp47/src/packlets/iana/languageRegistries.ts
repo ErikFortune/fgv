@@ -24,6 +24,7 @@ import { Result, captureResult } from '@fgv/ts-utils';
 
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
+import * as LanguageRegistriesLoader from './languageRegistriesLoader';
 
 /**
  * @public
@@ -49,5 +50,25 @@ export class LanguageRegistries {
         return LanguageRegistries.create(subtags, extensions);
       });
     });
+  }
+
+  /**
+   * Loads language registries from the IANA.org online registries.
+   * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromIanaOrg(): Promise<Result<LanguageRegistries>> {
+    return LanguageRegistriesLoader.loadLanguageRegistriesFromIanaOrg();
+  }
+
+  /**
+   * Loads language registries from custom URLs.
+   * @param subtagsUrl - URL to the language subtags registry.
+   * @param extensionsUrl - URL to the language tag extensions registry.
+   * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>> {
+    return LanguageRegistriesLoader.loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl);
   }
 }
