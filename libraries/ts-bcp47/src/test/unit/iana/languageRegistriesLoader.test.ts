@@ -63,9 +63,9 @@ describe('languageRegistriesLoader module', () => {
         expect(registries.extensions).toBeDefined();
 
         // Verify expected data structure from known test data
-        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8759);
-        expect(registries.subtags.scripts.getAllKeys()).toHaveLength(261);
-        expect(registries.subtags.regions.getAllKeys()).toHaveLength(342);
+        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8787);
+        expect(registries.subtags.scripts.getAllKeys()).toHaveLength(274);
+        expect(registries.subtags.regions.getAllKeys()).toHaveLength(343);
 
         // Verify extensions registry
         expect(registries.extensions.extensions.getAllKeys()).toHaveLength(2);
@@ -119,7 +119,7 @@ describe('languageRegistriesLoader module', () => {
         expect(registries.extensions).toBeDefined();
 
         // Verify expected data structure
-        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8759);
+        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8787);
         expect(registries.extensions.extensions.getAllKeys()).toHaveLength(2);
       });
     });
@@ -145,7 +145,7 @@ describe('languageRegistriesLoader module', () => {
       );
 
       expect(result).toSucceedAndSatisfy((registries) => {
-        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8759);
+        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8787);
         expect(registries.extensions.extensions.getAllKeys()).toHaveLength(2);
       });
     });

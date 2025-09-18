@@ -4,9 +4,7 @@
       "added": "2011-12-16",
       "authority": "Unicode Consortium",
       "comments": [
-        "Subtags for the identification of content that has been",
-        "transformed, including but not limited to:",
-        "transliteration, transcription, and translation."
+        "Subtags for the identification of content that has been transformed, including but not limited to: transliteration, transcription, and translation."
       ],
       "contactEmail": "cldr-contact&unicode.org",
       "description": ["Specifying Transformed Content"],
@@ -19,12 +17,7 @@
       "added": "2010-09-02",
       "authority": "Unicode Consortium",
       "comments": [
-        "Subtags for the identification of language and cultural",
-        "variations. Used to set behavior in locale APIs. Data is located in",
-        "the \"common/bcp47\" directory inside the referenced URL. Unicode",
-        "Technical Standard #35 (LDML) provides additional reference material",
-        "defining the keys and values. For more details please see",
-        "<http://cldr.unicode.org/index/bcp47-extension>."
+        "Subtags for the identification of language and cultural variations. Used to set behavior in locale APIs. Data is located in the \"common/bcp47\" directory inside the referenced URL. Unicode Technical Standard #35 (LDML) provides additional reference material defining the keys and values. For more details please see <http://cldr.unicode.org/index/bcp47-extension>."
       ],
       "contactEmail": "cldr-contact&unicode.org",
       "description": ["Unicode Locale"],

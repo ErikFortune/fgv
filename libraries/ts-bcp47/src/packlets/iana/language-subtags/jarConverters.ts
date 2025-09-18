@@ -27,18 +27,20 @@ import * as TagConverters from '../jar/language-subtags/tags/converters';
 import * as Model from './model';
 
 import { RecordJar } from '@fgv/ts-extras';
-import { Converters, Result } from '@fgv/ts-utils';
+import { Converters, Result, succeed } from '@fgv/ts-utils';
 import { datedRegistry, yearMonthDaySpec } from '../common/converters';
 
 import { JsonFile } from '@fgv/ts-json-base';
 import { datedRegistryFromJarRecords } from '../jar/jarConverters';
+import { jarRegistryEntry } from '../jar/language-subtags/registry/converters';
 import { registryScopeType } from '../jar/language-subtags/registry/converters';
+import { LanguageSubtag } from './common';
 
 /**
  * @internal
  */
 export const registeredLanguage = Converters.transformObject<
-  JarModel.LanguageSubtagRegistryEntry,
+  JarModel.ILanguageSubtagRegistryEntry,
   Model.IRegisteredLanguage
 >(
   {
@@ -68,7 +70,7 @@ export const registeredLanguage = Converters.transformObject<
  * @internal
  */
 export const registeredExtLang = Converters.transformObject<
-  JarModel.ExtLangSubtagRegistryEntry,
+  JarModel.IExtLangSubtagRegistryEntry,
   Model.IRegisteredExtLang
 >(
   {
@@ -94,7 +96,7 @@ export const registeredExtLang = Converters.transformObject<
  * @internal
  */
 export const registeredScript = Converters.transformObject<
-  JarModel.ScriptSubtagRegistryEntry,
+  JarModel.IScriptSubtagRegistryEntry,
   Model.IRegisteredScript
 >(
   {
@@ -121,7 +123,7 @@ export const registeredScript = Converters.transformObject<
  * @internal
  */
 export const registeredRegion = Converters.transformObject<
-  JarModel.RegionSubtagRegistryEntry,
+  JarModel.IRegionSubtagRegistryEntry,
   Model.IRegisteredRegion
 >(
   {
@@ -148,7 +150,7 @@ export const registeredRegion = Converters.transformObject<
  * @internal
  */
 export const registeredVariant = Converters.transformObject<
-  JarModel.VariantSubtagRegistryEntry,
+  JarModel.IVariantSubtagRegistryEntry,
   Model.IRegisteredVariant
 >(
   {
@@ -175,7 +177,7 @@ export const registeredVariant = Converters.transformObject<
  * @internal
  */
 export const registeredGrandfatheredTag = Converters.transformObject<
-  JarModel.GrandfatheredTagRegistryEntry,
+  JarModel.IGrandfatheredTagRegistryEntry,
   Model.IRegisteredGrandfatheredTag
 >(
   {
@@ -201,7 +203,7 @@ export const registeredGrandfatheredTag = Converters.transformObject<
  * @internal
  */
 export const registeredRedundantTag = Converters.transformObject<
-  JarModel.RedundantTagRegistryEntry,
+  JarModel.IRedundantTagRegistryEntry,
   Model.IRegisteredRedundantTag
 >(
   {
@@ -283,4 +285,73 @@ export function loadTxtSubtagRegistryFromString(content: string): Result<Model.R
   }).onSuccess((jar) => {
     return datedRegistryFromJarRecords(registeredItem).convert(jar);
   });
+}
+
+/**
+ * Loads a text (JAR) format language subtag registry file and returns the registry format
+ * with field names matching legacy test JSON format ("Suppress-Script", "Preferred-Value")
+ * suitable for creating test JSON files that work with JAR converters.
+ * @param path - The string path from which the registry is to be loaded.
+ * @returns `Success` with the transformed registry format or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadRawSubtagRegistryFileSync(path: string): Result<JarModel.RegistryFile> {
+  return RecordJar.readRecordJarFileSync(path, {
+    arrayFields: ['Comments', 'Description', 'Prefix'],
+    fixedContinuationSize: 1
+  }).onSuccess((jar) => {
+    return datedRegistryFromJarRecords(jarRegistryEntry).convert(jar);
+  });
+}
+
+/**
+ * Converts array subtags back to range string format for JAR intermediate compatibility
+ * @param entry - Registry entry to process
+ * @returns Entry with array subtags converted to range strings
+ * @internal
+ */
+function formatRangesForJarOutput(entry: JarModel.RegistryEntry): JarModel.RegistryEntry {
+  // Convert 2-element arrays back to range strings (e.g., ["qaa", "qtz"] -> "qaa..qtz")
+  // Applies to entries with Subtag field (language, extlang, script, region, variant)
+  // This preserves the JAR format where ranges are represented as strings, not arrays
+  if ('Subtag' in entry && Array.isArray(entry.Subtag) && entry.Subtag.length === 2) {
+    const result: JarModel.RegistryEntry = { ...entry };
+
+    // TypeScript doesn't understand that we're converting back to the original format,
+    // so we need to use a type assertion here. The JAR format accepts both string and array
+    // but we're converting arrays back to string ranges for consistency with the original format.
+    // since this is a union type there's no easy way to know exactly which of the possible
+    // types is being used, so we need to use a type assertion here.
+    const subtagRange = entry.Subtag.join('..') as unknown as LanguageSubtag;
+    result.Subtag = subtagRange;
+    return result;
+  }
+
+  return entry;
+}
+
+/**
+ * Parses a text (JAR) format language subtag registry from string content and returns the registry format
+ * with field names matching legacy test JSON format ("Suppress-Script", "Preferred-Value").
+ * @param content - The string content of the registry file to be parsed.
+ * @returns `Success` with the transformed registry format or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadRawSubtagRegistryFromString(content: string): Result<JarModel.RegistryFile> {
+  const lines = content.split(/\r?\n/);
+  return RecordJar.parseRecordJarLines(lines, {
+    arrayFields: ['Comments', 'Description', 'Prefix'],
+    fixedContinuationSize: 1
+  })
+    .onSuccess((jar) => {
+      return datedRegistryFromJarRecords(jarRegistryEntry).convert(jar);
+    })
+    .onSuccess((registry) => {
+      // Convert array subtags back to range strings for JAR intermediate format compatibility
+      const formattedEntries = registry.entries.map(formatRangesForJarOutput);
+      return succeed({
+        ...registry,
+        entries: formattedEntries
+      });
+    });
 }

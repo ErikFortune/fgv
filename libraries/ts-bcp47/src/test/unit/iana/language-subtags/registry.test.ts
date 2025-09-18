@@ -30,14 +30,14 @@ describe('LanguageSubtagRegistry class', () => {
         'src/test/data/iana/language-subtag-registry.json'
       ).orThrow();
       expect(Iana.LanguageSubtags.LanguageSubtagRegistry.create(registry)).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
+        expect(tags.languages.getAllKeys()).toHaveLength(8787);
+        expect(tags.extlangs.getAllKeys()).toHaveLength(256);
+        expect(tags.scripts.getAllKeys()).toHaveLength(274);
+        expect(tags.regions.getAllKeys()).toHaveLength(343);
+        expect(tags.variants.getAllKeys()).toHaveLength(134);
 
         expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
+        expect(tags.macrolanguages.getAllKeys()).toHaveLength(63);
         expect(tags.privateUse.getAllKeys()).toHaveLength(520);
         expect(tags.special.getAllKeys()).toHaveLength(4);
 
@@ -52,14 +52,14 @@ describe('LanguageSubtagRegistry class', () => {
       expect(
         Iana.LanguageSubtags.LanguageSubtagRegistry.load('src/data/iana/language-subtags.json')
       ).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
+        expect(tags.languages.getAllKeys()).toHaveLength(8787);
+        expect(tags.extlangs.getAllKeys()).toHaveLength(256);
+        expect(tags.scripts.getAllKeys()).toHaveLength(274);
+        expect(tags.regions.getAllKeys()).toHaveLength(343);
+        expect(tags.variants.getAllKeys()).toHaveLength(134);
 
         expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
+        expect(tags.macrolanguages.getAllKeys()).toHaveLength(63);
         expect(tags.privateUse.getAllKeys()).toHaveLength(520);
         expect(tags.special.getAllKeys()).toHaveLength(4);
 
@@ -74,14 +74,14 @@ describe('LanguageSubtagRegistry class', () => {
           'src/test/data/iana/language-subtag-registry.json'
         )
       ).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
+        expect(tags.languages.getAllKeys()).toHaveLength(8787);
+        expect(tags.extlangs.getAllKeys()).toHaveLength(256);
+        expect(tags.scripts.getAllKeys()).toHaveLength(274);
+        expect(tags.regions.getAllKeys()).toHaveLength(343);
+        expect(tags.variants.getAllKeys()).toHaveLength(134);
 
         expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
+        expect(tags.macrolanguages.getAllKeys()).toHaveLength(63);
         expect(tags.privateUse.getAllKeys()).toHaveLength(520);
         expect(tags.special.getAllKeys()).toHaveLength(4);
 
@@ -96,14 +96,14 @@ describe('LanguageSubtagRegistry class', () => {
           'src/test/data/iana/language-subtag-registry.txt'
         )
       ).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
+        expect(tags.languages.getAllKeys()).toHaveLength(8787);
+        expect(tags.extlangs.getAllKeys()).toHaveLength(256);
+        expect(tags.scripts.getAllKeys()).toHaveLength(274);
+        expect(tags.regions.getAllKeys()).toHaveLength(343);
+        expect(tags.variants.getAllKeys()).toHaveLength(134);
 
         expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
+        expect(tags.macrolanguages.getAllKeys()).toHaveLength(63);
         expect(tags.privateUse.getAllKeys()).toHaveLength(520);
         expect(tags.special.getAllKeys()).toHaveLength(4);
 
