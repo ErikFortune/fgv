@@ -28,10 +28,20 @@ import { Success } from '@fgv/ts-utils';
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: IProcessedResources, originalProcessedResources: IProcessedResources): IFilterResult;
 
+// Warning: (ae-forgotten-export) The symbol "IAppHeaderProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const AppHeader: React_2.FC<IAppHeaderProps>;
+
 // Warning: (ae-forgotten-export) The symbol "IAppLayoutProps" needs to be exported by the entry point index.d.ts
 //
 // @public
 export const AppLayout: <TTool = unknown>({ children, selectedTool, onToolSelect, messages, onClearMessages, header: headerComponent, sidebar: sidebarComponent }: IAppLayoutProps<TTool>) => React_2.ReactElement;
+
+// Warning: (ae-forgotten-export) The symbol "IAppSidebarProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const AppSidebar: <TTool = unknown>({ selectedTool, onToolSelect, tools, title }: IAppSidebarProps<TTool>) => React_2.ReactElement;
 
 // Warning: (ae-forgotten-export) The symbol "IBooleanCellProps" needs to be exported by the entry point index.d.ts
 //

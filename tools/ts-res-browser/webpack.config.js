@@ -18,14 +18,14 @@ module.exports = (env, argv) => {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       symlinks: true,
       fallback: {
-        // Only keep the polyfills we actually need
-        crypto: require.resolve('crypto-browserify'),
-        stream: require.resolve('stream-browserify'),
-        util: require.resolve('util'),
-        buffer: require.resolve('buffer/'),
-        process: require.resolve('process/browser'),
-        zlib: require.resolve('browserify-zlib'),
-        assert: require.resolve('assert/'),
+        // Keep only essential polyfills for ts-res libraries
+        crypto: false, // Use native Web Crypto API instead
+        stream: require.resolve('stream-browserify'), // Needed by some dependencies
+        util: require.resolve('util'), // Needed by some dependencies
+        buffer: require.resolve('buffer/'), // Needed by some dependencies
+        process: require.resolve('process/browser'), // Needed by some dependencies
+        zlib: false, // Not needed since we use FileApiTreeAccessors
+        assert: false, // Not needed for browser tools
         // Remove fs and path since we're using in-memory FileTree
         fs: false,
         path: false,

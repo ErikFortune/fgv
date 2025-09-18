@@ -30,6 +30,17 @@ Generic app layout component with header, sidebar, main content area, and messag
 </td></tr>
 <tr><td>
 
+[AppSidebar({ selectedTool, onToolSelect, tools, title })](./ts-res-ui-components.appsidebar.md)
+
+
+</td><td>
+
+Generic app sidebar component with configurable tools list
+
+
+</td></tr>
+<tr><td>
+
 [useNavigationWarning()](./ts-res-ui-components.usenavigationwarning.md)
 
 
@@ -297,6 +308,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[AppHeader](./ts-res-ui-components.appheader.md)
+
+
+</td><td>
+
+Generic app header component with configurable icon, title, and description
+
+
+</td></tr>
+<tr><td>
 
 [CompiledView](./ts-res-ui-components.compiledview.md)
 
