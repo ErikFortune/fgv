@@ -512,4 +512,477 @@ describe('FileApiTreeAccessors', () => {
       }
     });
   });
+
+  describe('create() method with different initializers', () => {
+    describe('FileList initializers', () => {
+      test('creates FileTree from FileList initializer', async () => {
+        const fileList = createMockFileList([
+          { name: 'file1.txt', content: 'content1' },
+          { name: 'file2.txt', content: 'content2' }
+        ]);
+
+        const initializers = [{ fileList }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/file1.txt')).toSucceedWith('content1');
+          expect(fileTree.hal.getFileContents('/file2.txt')).toSucceedWith('content2');
+        });
+      });
+
+      test('creates FileTree from multiple FileList initializers', async () => {
+        const fileList1 = createMockFileList([{ name: 'group1-file1.txt', content: 'group1-content1' }]);
+        const fileList2 = createMockFileList([{ name: 'group2-file1.txt', content: 'group2-content1' }]);
+
+        const initializers = [{ fileList: fileList1 }, { fileList: fileList2 }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/group1-file1.txt')).toSucceedWith('group1-content1');
+          expect(fileTree.hal.getFileContents('/group2-file1.txt')).toSucceedWith('group2-content1');
+        });
+      });
+
+      test('handles empty FileList initializer', async () => {
+        const fileList = createMockFileList([]);
+        const initializers = [{ fileList }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree).toBeDefined();
+        });
+      });
+
+      test('handles file read errors in FileList processing', async () => {
+        // Create a file that will fail when .text() is called
+        const failingFile = {
+          name: 'failing.txt',
+          size: 10,
+          type: 'text/plain',
+          lastModified: Date.now(),
+          webkitRelativePath: '',
+          text: () => Promise.reject(new Error('File read error')),
+          stream: () => new ReadableStream(),
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          slice: () => new Blob()
+        } as unknown as File;
+
+        // Create a FileList containing the failing file
+        const fileList = {
+          length: 1,
+          item: (index: number) => (index === 0 ? failingFile : null),
+          [0]: failingFile,
+          [Symbol.iterator]: function* () {
+            yield failingFile;
+          }
+        } as FileList;
+
+        const initializers = [{ fileList }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toFailWith(/Failed to read file failing\.txt.*File read error/);
+      });
+
+      test('handles files with absolute paths (webkitRelativePath starting with /)', async () => {
+        // Create files where webkitRelativePath already starts with '/'
+        const fileWithAbsolutePath = {
+          name: 'file.txt',
+          size: 10,
+          type: 'text/plain',
+          lastModified: Date.now(),
+          webkitRelativePath: '/absolute/path/file.txt', // Already absolute
+          text: () => Promise.resolve('absolute content'),
+          stream: () => new ReadableStream(),
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          slice: () => new Blob()
+        } as unknown as File;
+
+        const fileWithAbsoluteName = {
+          name: '/root/file2.txt', // Name itself starts with slash
+          size: 15,
+          type: 'text/plain',
+          lastModified: Date.now(),
+          webkitRelativePath: '', // Empty, so will use name
+          text: () => Promise.resolve('name absolute content'),
+          stream: () => new ReadableStream(),
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          slice: () => new Blob()
+        } as unknown as File;
+
+        // Create a FileList containing files with absolute paths
+        const fileList = {
+          length: 2,
+          item: (index: number) => {
+            if (index === 0) return fileWithAbsolutePath;
+            if (index === 1) return fileWithAbsoluteName;
+            return null;
+          },
+          [0]: fileWithAbsolutePath,
+          [1]: fileWithAbsoluteName,
+          [Symbol.iterator]: function* () {
+            yield fileWithAbsolutePath;
+            yield fileWithAbsoluteName;
+          }
+        } as FileList;
+
+        const initializers = [{ fileList }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          // Verify absolute webkitRelativePath is used as-is (not double-slashed)
+          expect(fileTree.hal.getFileContents('/absolute/path/file.txt')).toSucceedWith('absolute content');
+          // Verify absolute name is used as-is (not double-slashed)
+          expect(fileTree.hal.getFileContents('/root/file2.txt')).toSucceedWith('name absolute content');
+        });
+      });
+    });
+
+    describe('FileSystemFileHandle initializers', () => {
+      function createMockFileHandle(
+        name: string,
+        content: string
+      ): jest.Mocked<import('../../packlets/file-api-types').FileSystemFileHandle> {
+        const mockFile = createMockFile({ name, content });
+        return {
+          kind: 'file',
+          name,
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getFile: jest.fn().mockResolvedValue(mockFile),
+          createWritable: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemFileHandle>;
+      }
+
+      test('creates FileTree from FileSystemFileHandle initializer', async () => {
+        const fileHandle1 = createMockFileHandle('handle1.txt', 'handle content 1');
+        const fileHandle2 = createMockFileHandle('handle2.txt', 'handle content 2');
+
+        const initializers = [{ fileHandles: [fileHandle1, fileHandle2] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/handle1.txt')).toSucceedWith('handle content 1');
+          expect(fileTree.hal.getFileContents('/handle2.txt')).toSucceedWith('handle content 2');
+        });
+
+        expect(fileHandle1.getFile).toHaveBeenCalled();
+        expect(fileHandle2.getFile).toHaveBeenCalled();
+      });
+
+      test('creates FileTree from FileSystemFileHandle with prefix', async () => {
+        const fileHandle = createMockFileHandle('data.txt', 'file content');
+
+        const initializers = [{ fileHandles: [fileHandle], prefix: 'uploads' }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/uploads/data.txt')).toSucceedWith('file content');
+        });
+      });
+
+      test('handles FileSystemFileHandle read errors', async () => {
+        const failingHandle = {
+          kind: 'file' as const,
+          name: 'failing.txt',
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getFile: jest.fn().mockRejectedValue(new Error('File access denied')),
+          createWritable: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemFileHandle>;
+
+        const initializers = [{ fileHandles: [failingHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toFailWith(/Failed to read file handle failing\.txt.*File access denied/);
+      });
+
+      test('handles empty FileSystemFileHandle array', async () => {
+        const initializers = [{ fileHandles: [] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree).toBeDefined();
+        });
+      });
+    });
+
+    describe('FileSystemDirectoryHandle initializers', () => {
+      function createMockDirectoryHandle(
+        name: string,
+        entries: Array<{
+          name: string;
+          content?: string;
+          isDirectory?: boolean;
+          children?: Array<{ name: string; content: string }>;
+        }>
+      ): jest.Mocked<import('../../packlets/file-api-types').FileSystemDirectoryHandle> {
+        const mockEntries = entries.map((entry) => {
+          if (entry.isDirectory) {
+            const childEntries =
+              entry.children?.map((child) => ({
+                kind: 'file' as const,
+                name: child.name,
+                getFile: jest
+                  .fn()
+                  .mockResolvedValue(createMockFile({ name: child.name, content: child.content }))
+              })) || [];
+
+            return {
+              kind: 'directory' as const,
+              name: entry.name,
+              values: jest.fn().mockReturnValue({
+                async *[Symbol.asyncIterator]() {
+                  for (const child of childEntries) {
+                    yield child;
+                  }
+                }
+              })
+            };
+          } else {
+            return {
+              kind: 'file' as const,
+              name: entry.name,
+              getFile: jest
+                .fn()
+                .mockResolvedValue(createMockFile({ name: entry.name, content: entry.content || '' }))
+            };
+          }
+        });
+
+        return {
+          kind: 'directory',
+          name,
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getDirectoryHandle: jest.fn(),
+          getFileHandle: jest.fn(),
+          removeEntry: jest.fn(),
+          resolve: jest.fn(),
+          keys: jest.fn(),
+          values: jest.fn().mockReturnValue({
+            async *[Symbol.asyncIterator]() {
+              for (const entry of mockEntries) {
+                yield entry;
+              }
+            }
+          }),
+          entries: jest.fn(),
+          [Symbol.asyncIterator]: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemDirectoryHandle>;
+      }
+
+      test('creates FileTree from FileSystemDirectoryHandle initializer', async () => {
+        const dirHandle = createMockDirectoryHandle('testdir', [
+          { name: 'file1.txt', content: 'dir content 1' },
+          { name: 'file2.txt', content: 'dir content 2' }
+        ]);
+
+        const initializers = [{ dirHandles: [dirHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/testdir/file1.txt')).toSucceedWith('dir content 1');
+          expect(fileTree.hal.getFileContents('/testdir/file2.txt')).toSucceedWith('dir content 2');
+        });
+      });
+
+      test('creates FileTree from FileSystemDirectoryHandle with prefix', async () => {
+        const dirHandle = createMockDirectoryHandle('data', [
+          { name: 'config.json', content: '{"setting": "value"}' }
+        ]);
+
+        const initializers = [{ dirHandles: [dirHandle], prefix: 'project' }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/project/data/config.json')).toSucceedWith(
+            '{"setting": "value"}'
+          );
+        });
+      });
+
+      test('handles recursive directory processing', async () => {
+        const dirHandle = createMockDirectoryHandle('root', [
+          { name: 'file.txt', content: 'root file' },
+          {
+            name: 'subdir',
+            isDirectory: true,
+            children: [{ name: 'nested.txt', content: 'nested file' }]
+          }
+        ]);
+
+        const initializers = [{ dirHandles: [dirHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/root/file.txt')).toSucceedWith('root file');
+          expect(fileTree.hal.getFileContents('/root/subdir/nested.txt')).toSucceedWith('nested file');
+        });
+      });
+
+      test('handles non-recursive directory processing', async () => {
+        const dirHandle = createMockDirectoryHandle('root', [
+          { name: 'file.txt', content: 'root file' },
+          {
+            name: 'subdir',
+            isDirectory: true,
+            children: [{ name: 'nested.txt', content: 'nested file' }]
+          }
+        ]);
+
+        const initializers = [{ dirHandles: [dirHandle], nonRecursive: true }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/root/file.txt')).toSucceedWith('root file');
+          // Should not contain nested file in non-recursive mode
+          expect(fileTree.getFile('/root/subdir/nested.txt')).toFail();
+        });
+      });
+
+      test('handles directory iteration errors', async () => {
+        const failingDirHandle = {
+          kind: 'directory' as const,
+          name: 'failing-dir',
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getDirectoryHandle: jest.fn(),
+          getFileHandle: jest.fn(),
+          removeEntry: jest.fn(),
+          resolve: jest.fn(),
+          keys: jest.fn(),
+          values: jest.fn().mockReturnValue({
+            async *[Symbol.asyncIterator]() {
+              throw new Error('Directory access denied');
+            }
+          }),
+          entries: jest.fn(),
+          [Symbol.asyncIterator]: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemDirectoryHandle>;
+
+        const initializers = [{ dirHandles: [failingDirHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toFailWith(/Failed to process directory failing-dir.*Directory access denied/);
+      });
+
+      test('handles subdirectory processing failure in recursive mode', async () => {
+        // Create a directory with a subdirectory that will fail to process
+        const failingSubDir = {
+          kind: 'directory' as const,
+          name: 'failing-subdir',
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getDirectoryHandle: jest.fn(),
+          getFileHandle: jest.fn(),
+          removeEntry: jest.fn(),
+          resolve: jest.fn(),
+          keys: jest.fn(),
+          values: jest.fn().mockReturnValue({
+            async *[Symbol.asyncIterator]() {
+              throw new Error('Subdirectory access denied');
+            }
+          }),
+          entries: jest.fn(),
+          [Symbol.asyncIterator]: jest.fn()
+        };
+
+        const rootDirHandle = {
+          kind: 'directory' as const,
+          name: 'root',
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getDirectoryHandle: jest.fn(),
+          getFileHandle: jest.fn(),
+          removeEntry: jest.fn(),
+          resolve: jest.fn(),
+          keys: jest.fn(),
+          values: jest.fn().mockReturnValue({
+            async *[Symbol.asyncIterator]() {
+              yield failingSubDir; // This subdirectory will fail
+            }
+          }),
+          entries: jest.fn(),
+          [Symbol.asyncIterator]: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemDirectoryHandle>;
+
+        const initializers = [{ dirHandles: [rootDirHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toFailWith(/Failed to process directory failing-subdir.*Subdirectory access denied/);
+      });
+
+      test('handles empty directory', async () => {
+        const emptyDirHandle = createMockDirectoryHandle('empty', []);
+
+        const initializers = [{ dirHandles: [emptyDirHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree).toBeDefined();
+        });
+      });
+    });
+
+    describe('unknown initializer types', () => {
+      test('fails with unknown initializer type', async () => {
+        const unknownInitializer = {
+          unknown: 'type'
+        } as unknown as import('../../packlets/file-tree').TreeInitializer;
+        const initializers = [unknownInitializer];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toFailWith(/Unknown initializer type/);
+      });
+    });
+
+    describe('mixed initializer types', () => {
+      test('creates FileTree from mixed initializer types', async () => {
+        const fileList = createMockFileList([{ name: 'fromList.txt', content: 'list content' }]);
+        const fileHandle = {
+          kind: 'file' as const,
+          name: 'fromHandle.txt',
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getFile: jest
+            .fn()
+            .mockResolvedValue(createMockFile({ name: 'fromHandle.txt', content: 'handle content' })),
+          createWritable: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemFileHandle>;
+
+        const initializers = [{ fileList }, { fileHandles: [fileHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toSucceedAndSatisfy((fileTree) => {
+          expect(fileTree.hal.getFileContents('/fromList.txt')).toSucceedWith('list content');
+          expect(fileTree.hal.getFileContents('/fromHandle.txt')).toSucceedWith('handle content');
+        });
+      });
+
+      test('stops processing on first error from any initializer', async () => {
+        const goodFileList = createMockFileList([{ name: 'good.txt', content: 'good content' }]);
+        const badFileHandle = {
+          kind: 'file' as const,
+          name: 'bad.txt',
+          isSameEntry: jest.fn(),
+          queryPermission: jest.fn(),
+          requestPermission: jest.fn(),
+          getFile: jest.fn().mockRejectedValue(new Error('Handle error')),
+          createWritable: jest.fn()
+        } as jest.Mocked<import('../../packlets/file-api-types').FileSystemFileHandle>;
+
+        const initializers = [{ fileList: goodFileList }, { fileHandles: [badFileHandle] }];
+        const result = await FileApiTreeAccessors.create(initializers);
+
+        expect(result).toFailWith(/Failed to read file handle bad\.txt.*Handle error/);
+      });
+    });
+  });
 });
