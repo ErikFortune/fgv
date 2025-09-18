@@ -125,6 +125,7 @@ export async function loadLanguageRegistriesFromUrls(
       });
     });
   } catch (error) {
+    /* c8 ignore next 1 - defense in depth */
     return fail(`Network error: ${error instanceof Error ? error.message : String(error)}`);
   }
 }

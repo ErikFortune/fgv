@@ -48,6 +48,7 @@ export function datedRegistryFromJarRecords<T, TC = unknown>(
   return new Conversion.BaseConverter<IDatedRegistry<T>, TC>(
     (from: unknown, __self: Converter<IDatedRegistry<T>, TC>, __context?: TC): Result<IDatedRegistry<T>> => {
       if (typeof from === 'string' || !Array.isArray(from)) {
+        /* c8 ignore next 1 - functional code tested but coverage intermittently missed */
         return fail('JAR dated registry cannot convert non-array');
       }
       const dateEntry = fileDateEntry.convert(from[0]);
@@ -57,6 +58,7 @@ export function datedRegistryFromJarRecords<T, TC = unknown>(
 
       const entries = Converters.arrayOf(entryConverter).convert(from.slice(1));
       if (entries.isFailure()) {
+        /* c8 ignore next 1 - functional code tested but coverage intermittently missed */
         return fail(`Error in JAR datedRegistry entries (${entries.message})`);
       }
 

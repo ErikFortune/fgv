@@ -68,4 +68,79 @@ describe('TagExtensionRegistry class', () => {
       });
     });
   });
+
+  describe('JAR converter functions', () => {
+    test('loadRawLanguageTagExtensionsRegistryFileSync loads JAR format file successfully', () => {
+      expect(
+        Iana.LanguageTagExtensions.JarConverters.loadRawLanguageTagExtensionsRegistryFileSync(
+          'src/test/data/iana/language-tag-extension-registry.txt'
+        )
+      ).toSucceedAndSatisfy((registry) => {
+        expect(registry.fileDate).toBe('2014-04-02');
+        expect(registry.entries.length).toBeGreaterThan(0);
+        expect(registry.entries[0]).toHaveProperty('Identifier');
+      });
+    });
+
+    test('loadRawLanguageTagExtensionsRegistryFileSync fails for non-existent file', () => {
+      expect(
+        Iana.LanguageTagExtensions.JarConverters.loadRawLanguageTagExtensionsRegistryFileSync(
+          'src/test/data/iana/non-existent-file.txt'
+        )
+      ).toFailWith(/ENOENT|no such file/i);
+    });
+
+    test('loadRawLanguageTagExtensionsRegistryFromString loads from string content successfully', () => {
+      const testContent = `File-Date: 2023-01-01
+%%
+Identifier: u
+Description: Unicode Locale/Language Extensions
+Comments: RFC 6067 describes the u extension for Unicode locale identifiers.
+Added: 2010-09-02
+RFC: 6067
+Authority: Unicode Consortium
+Contact_Email: test@example.com
+Mailing_List: test-list@example.com
+URL: http://example.com
+%%
+Identifier: t
+Description: Transformed Content
+Comments: RFC 6497 describes the t extension for language tag transformation.
+Added: 2011-08-16
+RFC: 6497
+Authority: Unicode Consortium
+Contact_Email: test@example.com
+Mailing_List: test-list@example.com
+URL: http://example.com
+%%`;
+
+      expect(
+        Iana.LanguageTagExtensions.JarConverters.loadRawLanguageTagExtensionsRegistryFromString(testContent)
+      ).toSucceedAndSatisfy((registry) => {
+        expect(registry.fileDate).toBe('2023-01-01');
+        expect(registry.entries).toHaveLength(2);
+        expect(registry.entries[0]).toMatchObject({
+          Identifier: 'u',
+          Description: ['Unicode Locale/Language Extensions']
+        });
+        expect(registry.entries[1]).toMatchObject({
+          Identifier: 't',
+          Description: ['Transformed Content']
+        });
+      });
+    });
+
+    test('loadRawLanguageTagExtensionsRegistryFromString fails for malformed content', () => {
+      const malformedContent = `File-Date: invalid-date
+%%
+Identifier: u
+%%`;
+
+      expect(
+        Iana.LanguageTagExtensions.JarConverters.loadRawLanguageTagExtensionsRegistryFromString(
+          malformedContent
+        )
+      ).toFailWith(/invalid year-month-date/i);
+    });
+  });
 });

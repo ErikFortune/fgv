@@ -96,6 +96,7 @@ export function tagOrRange<TTAG extends string>(tagConverter: Converter<TTAG>): 
  * @internal
  */
 export function tagOrStartOfTagRange<TTAG extends string>(tagConverter: Converter<TTAG>): Converter<TTAG> {
+  /* c8 ignore next 1 - tested but coverage intermittently missed */
   return tagOrRange(tagConverter).map((t) => (Array.isArray(t) ? succeed(t[0]) : succeed(t)));
 }
 

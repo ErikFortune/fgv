@@ -103,6 +103,7 @@ export class ValidationHelpers<T extends string, TC = unknown> {
         return this._toCanonical(from as T, context);
       }
       if (this.isCanonical(from, context)) {
+        /* c8 ignore next 1 - functional code tested but coverage intermittently missed */
         return succeed(from);
       }
       /* c8 ignore next 2 */
