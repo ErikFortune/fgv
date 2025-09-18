@@ -4,7 +4,7 @@
 
 ## FileTreeHelpers.fromFileApiFiles() function
 
-Helper function to create a new  instance from an array of File API files with their paths.
+Helper function to create a new FileTree instance from an array of File API files with their paths.
 
 **Signature:**
 
@@ -68,5 +68,5 @@ _(Optional)_ An optional prefix to add to the paths of all files in the tree
 
 Promise&lt;Result&lt;FileTree.FileTree&gt;&gt;
 
-Promise resolving to  with the new  instance if successful, or  with an error message otherwise
+Promise resolving to a successful Result with the new FileTree instance if successful, or a failed Result with an error message otherwise
 

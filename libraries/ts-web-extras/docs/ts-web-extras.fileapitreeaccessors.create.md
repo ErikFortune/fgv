@@ -4,12 +4,12 @@
 
 ## FileApiTreeAccessors.create() method
 
-Create FileTree from File API files by pre-loading all content.
+Create FileTree from various file sources using TreeInitializer array.
 
 **Signature:**
 
 ```typescript
-static create(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>>;
+static create(initializers: TreeInitializer[]): Promise<Result<FileTree.FileTree>>;
 ```
 
 ## Parameters
@@ -32,33 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-files
+initializers
 
 
 </td><td>
 
-[IFileApiFile](./ts-web-extras.ifileapifile.md)<!-- -->\[\]
+[TreeInitializer](./ts-web-extras.treeinitializer.md)<!-- -->\[\]
 
 
 </td><td>
 
-Array of files with their paths
-
-
-</td></tr>
-<tr><td>
-
-prefix
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional prefix to add to all paths
+Array of TreeInitializer objects specifying file sources
 
 
 </td></tr>

@@ -37,6 +37,9 @@ import { useSmartObservability } from './hooks/useSmartObservability';
 
 export { useSmartObservability, ObservabilityProvider, useObservability, type IObservabilityProviderProps };
 
+// Export React hooks
+export * from './hooks';
+
 // Export common components (likely to be used by consumers)
 import { ResourceTreeView } from './components/common/ResourceTreeView';
 import { ResourceListView } from './components/common/ResourceListView';

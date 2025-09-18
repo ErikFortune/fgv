@@ -60,7 +60,7 @@ export function fromDirectoryUpload(fileList: FileList, prefix?: string): Promis
  * @public
  */
 export function fromFileApiFiles(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>> {
-  return FileApiTreeAccessors.create(files, prefix);
+  return FileApiTreeAccessors.createFromFiles(files, prefix);
 }
 
 /**

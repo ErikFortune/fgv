@@ -24,7 +24,8 @@
  * Browser-compatible utilities and FileTree implementations.
  *
  * This library provides browser-compatible alternatives to Node.js-specific functionality,
- * including Web Crypto API-based hashing and File API-based file tree implementations.
+ * including Web Crypto API-based hashing, File API-based file tree implementations,
+ * and URL parameter parsing utilities.
  * All exports are designed to be tree-shakeable for optimal bundle size.
  *
  * @packageDocumentation
@@ -38,3 +39,9 @@ export * from './packlets/file-tree';
 
 // Export helper functions
 export * from './packlets/helpers';
+
+// Export File System Access API types
+export * from './packlets/file-api-types';
+
+// Export URL utilities
+export * from './packlets/url-utils';

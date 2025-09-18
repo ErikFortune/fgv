@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[BrowserHashNormalizer](./ts-extras.hash.browserhashnormalizer.md)
-
-
-</td><td>
-
-Browser-compatible hash normalizer that uses SHA-256 instead of MD5. This provides a safer alternative to MD5 that works in browser environments using the Web Crypto API.
-
-
-</td></tr>
-<tr><td>
-
 [Md5Normalizer](./ts-extras.hash.md5normalizer.md)
 
 

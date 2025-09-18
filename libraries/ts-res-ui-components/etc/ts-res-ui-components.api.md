@@ -8,6 +8,7 @@ import { Bundle } from '@fgv/ts-res';
 import { Config } from '@fgv/ts-res';
 import { FileTree } from '@fgv/ts-json-base';
 import { Import } from '@fgv/ts-res';
+import { IUrlConfigOptions } from '@fgv/ts-web-extras';
 import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
@@ -664,6 +665,28 @@ interface IMultiGridViewProps extends IViewBaseProps {
     tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
 }
 
+// @public (undocumented)
+export interface INavigationWarningActions<T = unknown> {
+    // (undocumented)
+    confirmNavigation: () => T | null;
+    // (undocumented)
+    hideWarning: () => void;
+    // (undocumented)
+    setHasUnsavedChanges: (hasChanges: boolean) => void;
+    // (undocumented)
+    showWarning: (pendingTool: T) => void;
+}
+
+// @public (undocumented)
+export interface INavigationWarningState<T = unknown> {
+    // (undocumented)
+    hasUnsavedChanges: boolean;
+    // (undocumented)
+    isWarningOpen: boolean;
+    // (undocumented)
+    pendingTool: T | null;
+}
+
 // @public
 interface IObservabilityContext {
     readonly diag: Logging.ILogger;
@@ -1140,6 +1163,12 @@ export const MessagesWindow: React_2.FC<IMessagesWindowProps>;
 // @public
 export const MultiGridView: React_2.FC<IMultiGridViewProps>;
 
+// @public @deprecated (undocumented)
+export type NavigationWarningActions<T = unknown> = INavigationWarningActions<T>;
+
+// @public @deprecated (undocumented)
+export type NavigationWarningState<T = unknown> = INavigationWarningState<T>;
+
 // @public
 class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
     constructor(logLevel?: Logging.ReporterLogLevel);
@@ -1419,6 +1448,12 @@ function useFilterState(initialState?: Partial<IFilterState>): IUseFilterStateRe
 // @public
 function useIConfigurationState(initialConfiguration?: Config.Model.ISystemConfiguration, onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void, onUnsavedChanges?: (hasChanges: boolean) => void): IUseIConfigurationStateReturn;
 
+// @public (undocumented)
+export const useNavigationWarning: <T = unknown>() => {
+    state: INavigationWarningState<T>;
+    actions: INavigationWarningActions<T>;
+};
+
 // @public
 export const useObservability: () => ObservabilityTools_2.IObservabilityContext;
 
@@ -1435,6 +1470,12 @@ function useResourceData(params?: IUseResourceDataParams): IUseResourceDataRetur
 
 // @public
 export function useSmartObservability(): IObservabilityContext;
+
+// @public
+export function useUrlParams(): {
+    urlParams: IUrlConfigOptions;
+    hasUrlParams: boolean;
+};
 
 // Warning: (ae-forgotten-export) The symbol "IUseViewStateReturn" needs to be exported by the entry point index.d.ts
 //

@@ -4,7 +4,7 @@
 
 ## FileApiTreeAccessors class
 
-Helper class to create FileTree instances from File API files. Uses async static methods to pre-load all file contents and create synchronous InMemoryTreeAccessors.
+Helper class to create FileTree instances from various file sources. Supports File API (FileList) and File System Access API handles.
 
 **Signature:**
 
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(files, prefix)](./ts-web-extras.fileapitreeaccessors.create.md)
+[create(initializers)](./ts-web-extras.fileapitreeaccessors.create.md)
 
 
 </td><td>
@@ -42,7 +42,23 @@ Description
 
 </td><td>
 
-Create FileTree from File API files by pre-loading all content.
+Create FileTree from various file sources using TreeInitializer array.
+
+
+</td></tr>
+<tr><td>
+
+[createFromFiles(files, prefix)](./ts-web-extras.fileapitreeaccessors.createfromfiles.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Legacy method: Create FileTree from File API files by pre-loading all content.
 
 
 </td></tr>

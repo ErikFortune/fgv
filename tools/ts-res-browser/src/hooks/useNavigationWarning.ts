@@ -1,67 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useNavigationWarning as useNavigationWarningBase } from '@fgv/ts-res-ui-components';
 import { Tool } from '../types/app';
 
-export interface NavigationWarningState {
-  isWarningOpen: boolean;
-  pendingTool: Tool | null;
-  hasUnsavedChanges: boolean;
-}
+// Type aliases for backwards compatibility
+export type NavigationWarningState = import('@fgv/ts-res-ui-components').NavigationWarningState<Tool>;
+export type NavigationWarningActions = import('@fgv/ts-res-ui-components').NavigationWarningActions<Tool>;
 
-export interface NavigationWarningActions {
-  setHasUnsavedChanges: (hasChanges: boolean) => void;
-  showWarning: (pendingTool: Tool) => void;
-  hideWarning: () => void;
-  confirmNavigation: () => Tool | null;
-}
-
+// Re-export the hook with proper typing
 export const useNavigationWarning = (): {
   state: NavigationWarningState;
   actions: NavigationWarningActions;
 } => {
-  const [state, setState] = useState<NavigationWarningState>({
-    isWarningOpen: false,
-    pendingTool: null,
-    hasUnsavedChanges: false
-  });
-
-  const setHasUnsavedChanges = useCallback((hasChanges: boolean) => {
-    setState((prev) => ({ ...prev, hasUnsavedChanges: hasChanges }));
-  }, []);
-
-  const showWarning = useCallback((pendingTool: Tool) => {
-    setState((prev) => ({
-      ...prev,
-      isWarningOpen: true,
-      pendingTool
-    }));
-  }, []);
-
-  const hideWarning = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      isWarningOpen: false,
-      pendingTool: null
-    }));
-  }, []);
-
-  const confirmNavigation = useCallback(() => {
-    const toolToNavigateTo = state.pendingTool;
-    setState((prev) => ({
-      ...prev,
-      isWarningOpen: false,
-      pendingTool: null,
-      hasUnsavedChanges: false
-    }));
-    return toolToNavigateTo;
-  }, [state.pendingTool]);
-
-  return {
-    state,
-    actions: {
-      setHasUnsavedChanges,
-      showWarning,
-      hideWarning,
-      confirmNavigation
-    }
-  };
+  return useNavigationWarningBase<Tool>();
 };

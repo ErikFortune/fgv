@@ -40,7 +40,7 @@ describe('FileApiTreeAccessors', () => {
 
         const files: IFileApiFile[] = [{ file: mockFile, path: 'test.txt' }];
 
-        const result = await FileApiTreeAccessors.create(files);
+        const result = await FileApiTreeAccessors.createFromFiles(files);
         expect(result).toSucceedAndSatisfy((fileTree) => {
           // Verify the FileTree was created successfully
           expect(fileTree).toBeDefined();
@@ -59,7 +59,7 @@ describe('FileApiTreeAccessors', () => {
 
         const files: IFileApiFile[] = [{ file: mockFile, path: 'test.txt' }];
 
-        const result = await FileApiTreeAccessors.create(files, '/prefix');
+        const result = await FileApiTreeAccessors.createFromFiles(files, '/prefix');
         // Just verify the creation succeeds - the prefix handling is complex
         expect(result).toSucceed();
       });
@@ -76,7 +76,7 @@ describe('FileApiTreeAccessors', () => {
           }
         ];
 
-        const result = await FileApiTreeAccessors.create(files);
+        const result = await FileApiTreeAccessors.createFromFiles(files);
         expect(result).toSucceedAndSatisfy((fileTree) => {
           expect(fileTree.getFile('/file1.txt')).toSucceed();
           expect(fileTree.getFile('/file2.txt')).toSucceed();
@@ -95,7 +95,7 @@ describe('FileApiTreeAccessors', () => {
           }
         ];
 
-        const result = await FileApiTreeAccessors.create(files);
+        const result = await FileApiTreeAccessors.createFromFiles(files);
         expect(result).toSucceedAndSatisfy((fileTree) => {
           expect(fileTree.getFile('/src/index.js')).toSucceed();
           expect(fileTree.getFile('/config/config.json')).toSucceed();
@@ -117,12 +117,12 @@ describe('FileApiTreeAccessors', () => {
 
         const files: IFileApiFile[] = [{ file: badFile, path: 'bad.txt' }];
 
-        const result = await FileApiTreeAccessors.create(files);
+        const result = await FileApiTreeAccessors.createFromFiles(files);
         expect(result).toFailWith(/Failed to read file bad\.txt/);
       });
 
       test('handles empty files array', async () => {
-        const result = await FileApiTreeAccessors.create([]);
+        const result = await FileApiTreeAccessors.createFromFiles([]);
         expect(result).toSucceedAndSatisfy((fileTree) => {
           expect(fileTree).toBeDefined();
         });
@@ -136,7 +136,7 @@ describe('FileApiTreeAccessors', () => {
           }
         ];
 
-        const result = await FileApiTreeAccessors.create(files);
+        const result = await FileApiTreeAccessors.createFromFiles(files);
         expect(result).toSucceedAndSatisfy((fileTree) => {
           // Path should be normalized to start with / for FileTree compatibility
           const fileResult = fileTree.getFile('/test.txt');
@@ -156,7 +156,7 @@ describe('FileApiTreeAccessors', () => {
           }
         ];
 
-        const result = await FileApiTreeAccessors.create(files, '/prefix');
+        const result = await FileApiTreeAccessors.createFromFiles(files, '/prefix');
         // Just verify the creation succeeds with nested paths
         expect(result).toSucceed();
       });
@@ -173,7 +173,7 @@ describe('FileApiTreeAccessors', () => {
           }
         ];
 
-        const result = await FileApiTreeAccessors.create(files);
+        const result = await FileApiTreeAccessors.createFromFiles(files);
         expect(result).toSucceedAndSatisfy((fileTree) => {
           // Both paths should be normalized to start with /
           expect(fileTree.getFile('/already/absolute.txt')).toSucceedAndSatisfy((file) => {
@@ -407,7 +407,7 @@ describe('FileApiTreeAccessors', () => {
         }
       ];
 
-      const result = await FileApiTreeAccessors.create(files);
+      const result = await FileApiTreeAccessors.createFromFiles(files);
       expect(result).toSucceedAndSatisfy((fileTree) => {
         // Test file access
         const jsonFile = fileTree.getFile('/config/data.json');
@@ -438,7 +438,7 @@ describe('FileApiTreeAccessors', () => {
         }
       ];
 
-      const result = await FileApiTreeAccessors.create(files);
+      const result = await FileApiTreeAccessors.createFromFiles(files);
       expect(result).toSucceedAndSatisfy((fileTree) => {
         const file = fileTree.getFile('/package.json');
         expect(file).toSucceedAndSatisfy((fileItem) => {
@@ -462,7 +462,7 @@ describe('FileApiTreeAccessors', () => {
         }
       ];
 
-      const result = await FileApiTreeAccessors.create(files);
+      const result = await FileApiTreeAccessors.createFromFiles(files);
       expect(result).toSucceedAndSatisfy((fileTree) => {
         const srcDir = fileTree.getDirectory('/src');
         expect(srcDir).toSucceedAndSatisfy((dir) => {
@@ -490,7 +490,7 @@ describe('FileApiTreeAccessors', () => {
 
       const files: IFileApiFile[] = [{ file: errorFile, path: 'error.txt' }];
 
-      const result = await FileApiTreeAccessors.create(files);
+      const result = await FileApiTreeAccessors.createFromFiles(files);
       expect(result).toFailWith(/Failed to read file error\.txt.*Disk error/);
     });
 
@@ -503,7 +503,7 @@ describe('FileApiTreeAccessors', () => {
         }
       ];
 
-      const result = await FileApiTreeAccessors.create(files);
+      const result = await FileApiTreeAccessors.createFromFiles(files);
       // Should either succeed by handling empty path or fail gracefully
       if (result.isFailure()) {
         expect(result.message).toContain('');

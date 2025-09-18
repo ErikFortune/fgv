@@ -57,10 +57,12 @@
     "@rushstack/heft-node-rig": "2.9.5",
     "@types/heft-jest": "1.0.6",
     "eslint-plugin-tsdoc": "~0.4.0",
-    "@rushstack/eslint-patch": "~1.12.0"
+    "@rushstack/eslint-patch": "~1.12.0",
+    "@types/react": "~19.1.10"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",
-    "@fgv/ts-json-base": "workspace:*"
+    "@fgv/ts-json-base": "workspace:*",
+    "react": "~19.1.1"
   }
 }

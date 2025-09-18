@@ -20,37 +20,6 @@
  * SOFTWARE.
  */
 
-import { useEffect, useState } from 'react';
-import { parseUrlParameters, IUrlConfigOptions } from '../utils/urlParams';
-
-/**
- * Hook to parse and provide URL parameters for initial app configuration
- */
-export function useUrlParams() {
-  const [urlParams, setUrlParams] = useState<IUrlConfigOptions>({});
-  const [hasUrlParams, setHasUrlParams] = useState(false);
-
-  useEffect(() => {
-    const params = parseUrlParameters();
-    setUrlParams(params);
-
-    // Check if any meaningful parameters were provided
-    const hasParams = !!(
-      params.input ||
-      params.config ||
-      params.contextFilter ||
-      params.qualifierDefaults ||
-      params.resourceTypes ||
-      params.maxDistance !== undefined ||
-      params.reduceQualifiers ||
-      params.interactive
-    );
-
-    setHasUrlParams(hasParams);
-  }, []);
-
-  return {
-    urlParams,
-    hasUrlParams
-  };
-}
+// Re-export useUrlParams from ts-res-ui-components and types from ts-web-extras
+export { useUrlParams } from '@fgv/ts-res-ui-components';
+export type { IUrlConfigOptions } from '@fgv/ts-web-extras';

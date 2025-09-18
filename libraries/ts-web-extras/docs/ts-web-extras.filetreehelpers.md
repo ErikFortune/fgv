@@ -35,7 +35,7 @@ Helper function to extract metadata from a FileList.
 
 </td><td>
 
-Helper function to create a new  instance from a directory upload with webkitRelativePath support.
+Helper function to create a new FileTree instance from a directory upload with webkitRelativePath support.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ Helper function to create a new  instance from a directory upload with webkitRel
 
 </td><td>
 
-Helper function to create a new  instance from an array of File API files with their paths.
+Helper function to create a new FileTree instance from an array of File API files with their paths.
 
 
 </td></tr>
@@ -57,7 +57,7 @@ Helper function to create a new  instance from an array of File API files with t
 
 </td><td>
 
-Helper function to create a new  instance from a browser FileList (e.g., from input\[type="file"\]).
+Helper function to create a new FileTree instance from a browser FileList (e.g., from input\[type="file"\]).
 
 
 </td></tr>

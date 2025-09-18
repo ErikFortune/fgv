@@ -26,7 +26,7 @@ Description
 
 Browser-compatible utilities and FileTree implementations.
 
-This library provides browser-compatible alternatives to Node.js-specific functionality, including Web Crypto API-based hashing and File API-based file tree implementations. All exports are designed to be tree-shakeable for optimal bundle size.
+This library provides browser-compatible alternatives to Node.js-specific functionality, including Web Crypto API-based hashing, File API-based file tree implementations, and URL parameter parsing utilities. All exports are designed to be tree-shakeable for optimal bundle size.
 
 
 </td></tr>

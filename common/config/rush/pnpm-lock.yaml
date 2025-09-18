@@ -515,6 +515,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../ts-web-extras
       '@heroicons/react':
         specifier: ~2.2.0
         version: 2.2.0(react@19.1.1)
@@ -916,6 +919,9 @@ importers:
       '@types/node':
         specifier: ^20.14.9
         version: 20.19.13
+      '@types/react':
+        specifier: ~19.1.10
+        version: 19.1.12
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.42.0
         version: 8.43.0(@typescript-eslint/parser@8.43.0)(eslint@9.35.0)(typescript@5.8.3)
@@ -979,6 +985,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-web-extras
       '@heroicons/react':
         specifier: ~2.2.0
         version: 2.2.0(react@19.1.1)
@@ -1246,6 +1255,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils
+      '@fgv/ts-web-extras':
+        specifier: workspace:*
+        version: link:../../libraries/ts-web-extras
       '@heroicons/react':
         specifier: ~2.2.0
         version: 2.2.0(react@19.1.1)

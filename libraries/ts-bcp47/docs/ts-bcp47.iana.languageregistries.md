@@ -94,7 +94,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[load(root)](./ts-bcp47.iana.languageregistries.load.md)
+[create(subtags, extensions)](./ts-bcp47.iana.languageregistries.create.md)
 
 
 </td><td>

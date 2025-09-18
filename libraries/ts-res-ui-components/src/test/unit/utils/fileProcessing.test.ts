@@ -28,7 +28,7 @@ import {
   exportUsingFileSystemAPI
 } from '../../../utils/fileProcessing';
 import { IImportedDirectory, IImportedFile } from '../../../types';
-import { JsonObject } from '@fgv/ts-json-base';
+import { supportsFileSystemAccess, WindowWithFsAccess } from '@fgv/ts-web-extras';
 
 describe('fileProcessing utilities', () => {
   describe('readFilesFromInput', () => {
@@ -277,20 +277,12 @@ describe('fileProcessing utilities', () => {
   });
 
   describe('exportUsingFileSystemAPI', () => {
-    type WindowWithFileSystemAccess = Window & {
-      showSaveFilePicker: NonNullable<Window['showDirectoryPicker']>;
-    };
-
-    // Type guard to check if browser supports File System Access API
-    function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
-      return 'showSaveFilePicker' in w;
-    }
     test('returns false when File System Access API is not available', async () => {
-      if (!hasFileSystemAccess(window)) {
+      if (!supportsFileSystemAccess(window)) {
         return;
       }
       const originalShowSaveFilePicker = window.showSaveFilePicker;
-      delete (window as unknown as JsonObject).showSaveFilePicker;
+      (window as Partial<WindowWithFsAccess>).showSaveFilePicker = undefined;
 
       const result = await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
@@ -309,7 +301,7 @@ describe('fileProcessing utilities', () => {
       };
       const mockShowSaveFilePicker = jest.fn().mockResolvedValue(mockFileHandle);
 
-      if (!hasFileSystemAccess(window)) {
+      if (!supportsFileSystemAccess(window)) {
         return;
       }
 
@@ -340,7 +332,7 @@ describe('fileProcessing utilities', () => {
         .fn()
         .mockRejectedValue(Object.assign(new Error('User cancelled'), { name: 'AbortError' }));
 
-      if (!hasFileSystemAccess(window)) {
+      if (!supportsFileSystemAccess(window)) {
         return;
       }
 
@@ -354,7 +346,7 @@ describe('fileProcessing utilities', () => {
     test('throws error for non-AbortError exceptions', async () => {
       const mockShowSaveFilePicker = jest.fn().mockRejectedValue(new Error('Permission denied'));
 
-      if (!hasFileSystemAccess(window)) {
+      if (!supportsFileSystemAccess(window)) {
         return;
       }
 
@@ -375,7 +367,7 @@ describe('fileProcessing utilities', () => {
       };
       const mockShowSaveFilePicker = jest.fn().mockResolvedValue(mockFileHandle);
 
-      if (!hasFileSystemAccess(window)) {
+      if (!supportsFileSystemAccess(window)) {
         return;
       }
 

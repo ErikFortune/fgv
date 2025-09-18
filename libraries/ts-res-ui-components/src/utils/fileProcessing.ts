@@ -1,13 +1,5 @@
 import { IImportedFile, IImportedDirectory, JsonValue } from '../types';
-
-type WindowWithFileSystemAccess = Window & {
-  showSaveFilePicker: NonNullable<Window['showDirectoryPicker']>;
-};
-
-// Type guard to check if browser supports File System Access API
-function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
-  return 'showSaveFilePicker' in w;
-}
+import { supportsFileSystemAccess, safeShowSaveFilePicker } from '@fgv/ts-web-extras';
 
 /**
  * Read files from file input element
@@ -140,12 +132,12 @@ export async function exportUsingFileSystemAPI(
   suggestedName: string,
   description: string = 'JSON files'
 ): Promise<boolean> {
-  if (!hasFileSystemAccess(window)) {
+  if (!supportsFileSystemAccess(window)) {
     return false;
   }
 
   try {
-    const fileHandle = await window.showSaveFilePicker({
+    const fileHandle = await safeShowSaveFilePicker(window, {
       suggestedName,
       types: [
         {
@@ -156,6 +148,10 @@ export async function exportUsingFileSystemAPI(
         }
       ]
     });
+
+    if (!fileHandle) {
+      return false;
+    }
 
     const json = JSON.stringify(data, null, 2);
     const writable = await fileHandle.createWritable();

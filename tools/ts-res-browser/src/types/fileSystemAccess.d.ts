@@ -1,94 +1,27 @@
-// Type declarations for File System Access API
-// Based on https://wicg.github.io/file-system-access/
+/*
+ * Copyright (c) 2025 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 
-declare global {
-  interface FileSystemHandle {
-    readonly kind: 'file' | 'directory';
-    readonly name: string;
-    isSameEntry(other: FileSystemHandle): Promise<boolean>;
-    queryPermission(descriptor?: FileSystemHandlePermissionDescriptor): Promise<PermissionState>;
-    requestPermission(descriptor?: FileSystemHandlePermissionDescriptor): Promise<PermissionState>;
-  }
-
-  interface FileSystemFileHandle extends FileSystemHandle {
-    readonly kind: 'file';
-    getFile(): Promise<File>;
-    createWritable(options?: FileSystemCreateWritableOptions): Promise<FileSystemWritableFileStream>;
-  }
-
-  interface FileSystemDirectoryHandle extends FileSystemHandle {
-    readonly kind: 'directory';
-    getDirectoryHandle(
-      name: string,
-      options?: FileSystemGetDirectoryOptions
-    ): Promise<FileSystemDirectoryHandle>;
-    getFileHandle(name: string, options?: FileSystemGetFileOptions): Promise<FileSystemFileHandle>;
-    removeEntry(name: string, options?: FileSystemRemoveOptions): Promise<void>;
-    resolve(possibleDescendant: FileSystemHandle): Promise<string[] | null>;
-    keys(): AsyncIterableIterator<string>;
-    values(): AsyncIterableIterator<FileSystemHandle>;
-    entries(): AsyncIterableIterator<[string, FileSystemHandle]>;
-    [Symbol.asyncIterator](): AsyncIterableIterator<[string, FileSystemHandle]>;
-  }
-
-  interface FileSystemHandlePermissionDescriptor {
-    mode?: 'read' | 'readwrite';
-  }
-
-  interface FileSystemCreateWritableOptions {
-    keepExistingData?: boolean;
-  }
-
-  interface FileSystemGetDirectoryOptions {
-    create?: boolean;
-  }
-
-  interface FileSystemGetFileOptions {
-    create?: boolean;
-  }
-
-  interface FileSystemRemoveOptions {
-    recursive?: boolean;
-  }
-
-  interface FileSystemWritableFileStream extends WritableStream {
-    write(data: BufferSource | Blob | string): Promise<void>;
-    seek(position: number): Promise<void>;
-    truncate(size: number): Promise<void>;
-  }
-
-  interface ShowDirectoryPickerOptions {
-    id?: string;
-    mode?: 'read' | 'readwrite';
-    startIn?: FileSystemHandle | WellKnownDirectory;
-  }
-
-  interface ShowOpenFilePickerOptions {
-    multiple?: boolean;
-    excludeAcceptAllOption?: boolean;
-    types?: FilePickerAcceptType[];
-    startIn?: FileSystemHandle | WellKnownDirectory;
-  }
-
-  interface ShowSaveFilePickerOptions {
-    excludeAcceptAllOption?: boolean;
-    types?: FilePickerAcceptType[];
-    startIn?: FileSystemHandle | WellKnownDirectory;
-    suggestedName?: string;
-  }
-
-  interface FilePickerAcceptType {
-    description: string;
-    accept: Record<string, string[]>;
-  }
-
-  type WellKnownDirectory = 'desktop' | 'documents' | 'downloads' | 'music' | 'pictures' | 'videos';
-
-  interface Window {
-    showDirectoryPicker(options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle>;
-    showOpenFilePicker(options?: ShowOpenFilePickerOptions): Promise<FileSystemFileHandle[]>;
-    showSaveFilePicker(options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle>;
-  }
-}
+// Import File System Access API type definitions from ts-web-extras
+// This makes the global types available throughout this package
+import '@fgv/ts-web-extras/lib/packlets/file-api-types';
 
 export {};

@@ -54,6 +54,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[loadLanguageRegistries(root)](./ts-bcp47.iana.loadlanguageregistries.md)
+
+
+</td><td>
+
+Loads language registries from filesystem.
+
+
+</td></tr>
+<tr><td>
+
+[loadLanguageRegistriesFromTree(fileTree, subtagsPath, extensionsPath)](./ts-bcp47.iana.loadlanguageregistriesfromtree.md)
+
+
+</td><td>
+
+Loads language registries from a FileTree (web-compatible).
+
+
+</td></tr>
+<tr><td>
+
 [nowAsYearMonthDay()](./ts-bcp47.iana.nowasyearmonthday.md)
 
 

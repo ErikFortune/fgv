@@ -32,54 +32,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[createSha1Normalizer()](./ts-web-extras.browserhashprovider.createsha1normalizer.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Create a SHA-1 normalizer using browser crypto.
-
-
-</td></tr>
-<tr><td>
-
-[createSha256Normalizer()](./ts-web-extras.browserhashprovider.createsha256normalizer.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Create an MD5 normalizer using browser crypto (via SHA-256 as MD5 is not available in Web Crypto). Note: This uses SHA-256 instead of MD5 for better security and browser compatibility.
-
-
-</td></tr>
-<tr><td>
-
-[createSha512Normalizer()](./ts-web-extras.browserhashprovider.createsha512normalizer.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Create a SHA-512 normalizer using browser crypto.
-
-
-</td></tr>
-<tr><td>
-
 [hashParts(parts, algorithm, separator)](./ts-web-extras.browserhashprovider.hashparts.md)
 
 

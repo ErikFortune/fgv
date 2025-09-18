@@ -32,7 +32,7 @@ import ViewWithPresentationSelector, {
 } from './components/common/ViewWithPresentationSelector';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
 import { useUrlParams } from './hooks/useUrlParams';
-import { parseContextFilter } from './utils/urlParams';
+import { parseContextFilter } from '@fgv/ts-web-extras';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
 import { ContrastQualifierType } from './factories/ContrastQualifierType';

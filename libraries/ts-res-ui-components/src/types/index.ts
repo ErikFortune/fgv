@@ -11,6 +11,8 @@ import {
   Import
 } from '@fgv/ts-res';
 import { JsonCompatible, JsonValue } from '@fgv/ts-json-base';
+// Import File System Access API types
+import '@fgv/ts-web-extras';
 // IIResourcePickerOptions import removed - unused
 import type { IObservabilityContext } from '../utils/observability';
 import type { IResourcePickerOptions } from '../components/pickers/ResourcePicker/types';

@@ -14,6 +14,9 @@ export class BrowserHashProvider {
 }
 
 // @public
+export function extractDirectoryPath(path: string): string;
+
+// @public
 function extractFileMetadata(fileList: FileList): Array<{
     path: string;
     name: string;
@@ -24,7 +27,9 @@ function extractFileMetadata(fileList: FileList): Array<{
 
 // @public
 export class FileApiTreeAccessors {
-    static create(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>>;
+    static create(initializers: TreeInitializer[]): Promise<Result<FileTree.FileTree>>;
+    // @deprecated
+    static createFromFiles(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>>;
     static extractFileMetadata(fileList: FileList): Array<{
         path: string;
         name: string;
@@ -36,6 +41,108 @@ export class FileApiTreeAccessors {
     static fromFileList(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
     static getOriginalFile(fileList: FileList, targetPath: string): Result<File>;
 }
+
+// @public
+export interface FilePickerAcceptType {
+    // (undocumented)
+    accept: Record<string, string | string[]>;
+    // (undocumented)
+    description?: string;
+}
+
+// @public
+interface FileSystemCreateWritableOptions_2 {
+    // (undocumented)
+    keepExistingData?: boolean;
+}
+export { FileSystemCreateWritableOptions_2 as FileSystemCreateWritableOptions }
+
+// @public
+interface FileSystemDirectoryHandle_2 extends FileSystemHandle_2 {
+    // (undocumented)
+    [Symbol.asyncIterator](): AsyncIterableIterator<[string, FileSystemHandle_2]>;
+    // (undocumented)
+    entries(): AsyncIterableIterator<[string, FileSystemHandle_2]>;
+    // (undocumented)
+    getDirectoryHandle(name: string, options?: FileSystemGetDirectoryOptions_2): Promise<FileSystemDirectoryHandle_2>;
+    // (undocumented)
+    getFileHandle(name: string, options?: FileSystemGetFileOptions_2): Promise<FileSystemFileHandle_2>;
+    // (undocumented)
+    keys(): AsyncIterableIterator<string>;
+    // (undocumented)
+    readonly kind: 'directory';
+    // (undocumented)
+    removeEntry(name: string, options?: FileSystemRemoveOptions_2): Promise<void>;
+    // (undocumented)
+    resolve(possibleDescendant: FileSystemHandle_2): Promise<string[] | null>;
+    // (undocumented)
+    values(): AsyncIterableIterator<FileSystemHandle_2>;
+}
+export { FileSystemDirectoryHandle_2 as FileSystemDirectoryHandle }
+
+// @public
+interface FileSystemFileHandle_2 extends FileSystemHandle_2 {
+    // (undocumented)
+    createWritable(options?: FileSystemCreateWritableOptions_2): Promise<FileSystemWritableFileStream_2>;
+    // (undocumented)
+    getFile(): Promise<File>;
+    // (undocumented)
+    readonly kind: 'file';
+}
+export { FileSystemFileHandle_2 as FileSystemFileHandle }
+
+// @public
+interface FileSystemGetDirectoryOptions_2 {
+    // (undocumented)
+    create?: boolean;
+}
+export { FileSystemGetDirectoryOptions_2 as FileSystemGetDirectoryOptions }
+
+// @public
+interface FileSystemGetFileOptions_2 {
+    // (undocumented)
+    create?: boolean;
+}
+export { FileSystemGetFileOptions_2 as FileSystemGetFileOptions }
+
+// @public
+interface FileSystemHandle_2 {
+    // (undocumented)
+    isSameEntry(other: FileSystemHandle_2): Promise<boolean>;
+    // (undocumented)
+    readonly kind: 'file' | 'directory';
+    // (undocumented)
+    readonly name: string;
+    // (undocumented)
+    queryPermission(descriptor?: FileSystemHandlePermissionDescriptor): Promise<PermissionState>;
+    // (undocumented)
+    requestPermission(descriptor?: FileSystemHandlePermissionDescriptor): Promise<PermissionState>;
+}
+export { FileSystemHandle_2 as FileSystemHandle }
+
+// @public
+export interface FileSystemHandlePermissionDescriptor {
+    // (undocumented)
+    mode?: 'read' | 'readwrite';
+}
+
+// @public
+interface FileSystemRemoveOptions_2 {
+    // (undocumented)
+    recursive?: boolean;
+}
+export { FileSystemRemoveOptions_2 as FileSystemRemoveOptions }
+
+// @public
+interface FileSystemWritableFileStream_2 extends WritableStream {
+    // (undocumented)
+    seek(position: number): Promise<void>;
+    // (undocumented)
+    truncate(size: number): Promise<void>;
+    // (undocumented)
+    write(data: BufferSource | Blob | string): Promise<void>;
+}
+export { FileSystemWritableFileStream_2 as FileSystemWritableFileStream }
 
 declare namespace FileTreeHelpers {
     export {
@@ -60,9 +167,140 @@ function fromFileList(fileList: FileList, prefix?: string): Promise<Result<FileT
 function getOriginalFile(fileList: FileList, path: string): Result<File>;
 
 // @public
+export interface IDirectoryHandleTreeInitializer {
+    // (undocumented)
+    readonly dirHandles: FileSystemDirectoryHandle_2[];
+    // (undocumented)
+    readonly nonRecursive?: boolean;
+    // (undocumented)
+    readonly prefix?: string;
+}
+
+// @public
 export interface IFileApiFile {
     readonly file: File;
     readonly path: string;
 }
+
+// @public
+export interface IFileHandleTreeInitializer {
+    // (undocumented)
+    readonly fileHandles: FileSystemFileHandle_2[];
+    // (undocumented)
+    readonly prefix?: string;
+}
+
+// @public
+export interface IFileListTreeInitializer {
+    // (undocumented)
+    readonly fileList: FileList;
+}
+
+// @public
+export interface IFsAccessApis {
+    // (undocumented)
+    showDirectoryPicker(options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle_2>;
+    // (undocumented)
+    showOpenFilePicker(options?: ShowOpenFilePickerOptions): Promise<FileSystemFileHandle_2[]>;
+    // (undocumented)
+    showSaveFilePicker(options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle_2>;
+}
+
+// @public
+export function isDirectoryHandle(handle: FileSystemHandle_2): handle is FileSystemDirectoryHandle_2;
+
+// @public
+export function isFileHandle(handle: FileSystemHandle_2): handle is FileSystemFileHandle_2;
+
+// @public
+export function isFilePath(path: string): boolean;
+
+// @public
+export interface IUrlConfigOptions {
+    config?: string;
+    configStartDir?: string;
+    contextFilter?: string;
+    input?: string;
+    inputStartDir?: string;
+    interactive?: boolean;
+    loadZip?: boolean;
+    maxDistance?: number;
+    qualifierDefaults?: string;
+    reduceQualifiers?: boolean;
+    resourceTypes?: string;
+    zipFile?: string;
+    zipPath?: string;
+}
+
+// @public
+export function parseContextFilter(contextFilter: string): Record<string, string>;
+
+// @public
+export function parseQualifierDefaults(qualifierDefaults: string): Record<string, string[]>;
+
+// @public
+export function parseResourceTypes(resourceTypes: string): string[];
+
+// @public
+export function parseUrlParameters(): IUrlConfigOptions;
+
+// @public
+export function safeShowDirectoryPicker(window: Window, options?: ShowDirectoryPickerOptions): Promise<FileSystemDirectoryHandle_2 | null>;
+
+// @public
+export function safeShowOpenFilePicker(window: Window, options?: ShowOpenFilePickerOptions): Promise<FileSystemFileHandle_2[] | null>;
+
+// @public
+export function safeShowSaveFilePicker(window: Window, options?: ShowSaveFilePickerOptions): Promise<FileSystemFileHandle_2 | null>;
+
+// @public
+export interface ShowDirectoryPickerOptions {
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    mode?: 'read' | 'readwrite';
+    // (undocumented)
+    startIn?: FileSystemHandle_2 | WellKnownDirectory;
+}
+
+// @public
+export interface ShowOpenFilePickerOptions {
+    // (undocumented)
+    excludeAcceptAllOption?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    multiple?: boolean;
+    // (undocumented)
+    startIn?: FileSystemHandle_2 | WellKnownDirectory;
+    // (undocumented)
+    types?: FilePickerAcceptType[];
+}
+
+// @public
+export interface ShowSaveFilePickerOptions {
+    // (undocumented)
+    excludeAcceptAllOption?: boolean;
+    // (undocumented)
+    id?: string;
+    // (undocumented)
+    startIn?: FileSystemHandle_2 | WellKnownDirectory;
+    // (undocumented)
+    suggestedName?: string;
+    // (undocumented)
+    types?: FilePickerAcceptType[];
+}
+
+// @public
+export function supportsFileSystemAccess(window: Window): window is WindowWithFsAccess;
+
+// @public
+export type TreeInitializer = IFileListTreeInitializer | IFileHandleTreeInitializer | IDirectoryHandleTreeInitializer;
+
+// @public
+export type WellKnownDirectory = 'desktop' | 'documents' | 'downloads' | 'music' | 'pictures' | 'videos';
+
+// @public
+export type WindowWithFsAccess = Window & IFsAccessApis;
 
 ```

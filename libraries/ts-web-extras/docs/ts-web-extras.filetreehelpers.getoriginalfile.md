@@ -68,5 +68,5 @@ The path to the file
 
 Result&lt;File&gt;
 
- with the File object if found, or  with an error message otherwise
+A successful Result with the File object if found, or a failed Result with an error message otherwise
 

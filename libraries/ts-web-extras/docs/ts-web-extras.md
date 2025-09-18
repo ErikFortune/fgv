@@ -6,7 +6,7 @@
 
 Browser-compatible utilities and FileTree implementations.
 
-This library provides browser-compatible alternatives to Node.js-specific functionality, including Web Crypto API-based hashing and File API-based file tree implementations. All exports are designed to be tree-shakeable for optimal bundle size.
+This library provides browser-compatible alternatives to Node.js-specific functionality, including Web Crypto API-based hashing, File API-based file tree implementations, and URL parameter parsing utilities. All exports are designed to be tree-shakeable for optimal bundle size.
 
 ## Classes
 
@@ -22,17 +22,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[BrowserHashingNormalizer](./ts-web-extras.browserhashingnormalizer.md)
-
-
-</td><td>
-
-Browser-compatible hashing normalizer using Web Crypto API.
-
-
-</td></tr>
-<tr><td>
 
 [BrowserHashProvider](./ts-web-extras.browserhashprovider.md)
 
@@ -50,7 +39,154 @@ Browser-compatible hash provider using the Web Crypto API. Supports common hash 
 
 </td><td>
 
-Helper class to create FileTree instances from File API files. Uses async static methods to pre-load all file contents and create synchronous InMemoryTreeAccessors.
+Helper class to create FileTree instances from various file sources. Supports File API (FileList) and File System Access API handles.
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[extractDirectoryPath(path)](./ts-web-extras.extractdirectorypath.md)
+
+
+</td><td>
+
+Extracts the directory path from a file or directory path If the path appears to be a directory (no extension), returns it as-is If the path appears to be a file, returns the parent directory
+
+
+</td></tr>
+<tr><td>
+
+[isDirectoryHandle(handle)](./ts-web-extras.isdirectoryhandle.md)
+
+
+</td><td>
+
+Type guard to check if a FileSystemHandle is a directory handle
+
+
+</td></tr>
+<tr><td>
+
+[isFileHandle(handle)](./ts-web-extras.isfilehandle.md)
+
+
+</td><td>
+
+Type guard to check if a FileSystemHandle is a file handle
+
+
+</td></tr>
+<tr><td>
+
+[isFilePath(path)](./ts-web-extras.isfilepath.md)
+
+
+</td><td>
+
+Determines if a path appears to be a file (has extension) or directory
+
+
+</td></tr>
+<tr><td>
+
+[parseContextFilter(contextFilter)](./ts-web-extras.parsecontextfilter.md)
+
+
+</td><td>
+
+Converts context filter token to context object Example: "language=en-US\|territory=US" -<!-- -->&gt; { language: "en-US", territory: "US" }
+
+
+</td></tr>
+<tr><td>
+
+[parseQualifierDefaults(qualifierDefaults)](./ts-web-extras.parsequalifierdefaults.md)
+
+
+</td><td>
+
+Converts qualifier defaults token to structured format Example: "language=en-US,en-CA\|territory=US" -<!-- -->&gt; { language: \["en-US", "en-CA"\], territory: \["US"\] }
+
+
+</td></tr>
+<tr><td>
+
+[parseResourceTypes(resourceTypes)](./ts-web-extras.parseresourcetypes.md)
+
+
+</td><td>
+
+Converts resource types string to array Example: "json,string" -<!-- -->&gt; \["json", "string"\]
+
+
+</td></tr>
+<tr><td>
+
+[parseUrlParameters()](./ts-web-extras.parseurlparameters.md)
+
+
+</td><td>
+
+Parses URL parameters and extracts configuration options
+
+
+</td></tr>
+<tr><td>
+
+[safeShowDirectoryPicker(window, options)](./ts-web-extras.safeshowdirectorypicker.md)
+
+
+</td><td>
+
+Safely access showDirectoryPicker with proper type checking
+
+
+</td></tr>
+<tr><td>
+
+[safeShowOpenFilePicker(window, options)](./ts-web-extras.safeshowopenfilepicker.md)
+
+
+</td><td>
+
+Safely access showOpenFilePicker with proper type checking
+
+
+</td></tr>
+<tr><td>
+
+[safeShowSaveFilePicker(window, options)](./ts-web-extras.safeshowsavefilepicker.md)
+
+
+</td><td>
+
+Safely access showSaveFilePicker with proper type checking
+
+
+</td></tr>
+<tr><td>
+
+[supportsFileSystemAccess(window)](./ts-web-extras.supportsfilesystemaccess.md)
+
+
+</td><td>
+
+Type guard to check if the browser supports the File System Access API
 
 
 </td></tr>
@@ -71,12 +207,210 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[FilePickerAcceptType](./ts-web-extras.filepickeraccepttype.md)
+
+
+</td><td>
+
+File picker accept type
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemCreateWritableOptions\_2](./ts-web-extras.filesystemcreatewritableoptions_2.md)
+
+
+</td><td>
+
+Options for creating writable file streams
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemDirectoryHandle\_2](./ts-web-extras.filesystemdirectoryhandle_2.md)
+
+
+</td><td>
+
+Directory handle interface
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemFileHandle\_2](./ts-web-extras.filesystemfilehandle_2.md)
+
+
+</td><td>
+
+File handle interface
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemGetDirectoryOptions\_2](./ts-web-extras.filesystemgetdirectoryoptions_2.md)
+
+
+</td><td>
+
+Options for getting directory handles
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemGetFileOptions\_2](./ts-web-extras.filesystemgetfileoptions_2.md)
+
+
+</td><td>
+
+Options for getting file handles
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemHandle\_2](./ts-web-extras.filesystemhandle_2.md)
+
+
+</td><td>
+
+Base interface for file system handles
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemHandlePermissionDescriptor](./ts-web-extras.filesystemhandlepermissiondescriptor.md)
+
+
+</td><td>
+
+Permission descriptor for file system handles
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemRemoveOptions\_2](./ts-web-extras.filesystemremoveoptions_2.md)
+
+
+</td><td>
+
+Options for removing entries
+
+
+</td></tr>
+<tr><td>
+
+[FileSystemWritableFileStream\_2](./ts-web-extras.filesystemwritablefilestream_2.md)
+
+
+</td><td>
+
+Writable file stream interface
+
+
+</td></tr>
+<tr><td>
+
+[IDirectoryHandleTreeInitializer](./ts-web-extras.idirectoryhandletreeinitializer.md)
+
+
+</td><td>
+
+Tree initializer for File System Access API directory handles.
+
+
+</td></tr>
+<tr><td>
+
 [IFileApiFile](./ts-web-extras.ifileapifile.md)
 
 
 </td><td>
 
 Represents a file from the File API with its path information.
+
+
+</td></tr>
+<tr><td>
+
+[IFileHandleTreeInitializer](./ts-web-extras.ifilehandletreeinitializer.md)
+
+
+</td><td>
+
+Tree initializer for File System Access API file handles.
+
+
+</td></tr>
+<tr><td>
+
+[IFileListTreeInitializer](./ts-web-extras.ifilelisttreeinitializer.md)
+
+
+</td><td>
+
+Tree initializer for FileList objects (from File API).
+
+
+</td></tr>
+<tr><td>
+
+[IFsAccessApis](./ts-web-extras.ifsaccessapis.md)
+
+
+</td><td>
+
+File System Access API methods available on Window
+
+
+</td></tr>
+<tr><td>
+
+[IUrlConfigOptions](./ts-web-extras.iurlconfigoptions.md)
+
+
+</td><td>
+
+Configuration options that can be passed via URL parameters
+
+
+</td></tr>
+<tr><td>
+
+[ShowDirectoryPickerOptions](./ts-web-extras.showdirectorypickeroptions.md)
+
+
+</td><td>
+
+Directory picker options
+
+
+</td></tr>
+<tr><td>
+
+[ShowOpenFilePickerOptions](./ts-web-extras.showopenfilepickeroptions.md)
+
+
+</td><td>
+
+File picker options
+
+
+</td></tr>
+<tr><td>
+
+[ShowSaveFilePickerOptions](./ts-web-extras.showsavefilepickeroptions.md)
+
+
+</td><td>
+
+Save file picker options
 
 
 </td></tr>
@@ -101,6 +435,54 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[TreeInitializer](./ts-web-extras.treeinitializer.md)
+
+
+</td><td>
+
+Union type for all supported tree initializers.
+
+
+</td></tr>
+<tr><td>
+
+[WellKnownDirectory](./ts-web-extras.wellknowndirectory.md)
+
+
+</td><td>
+
+Well-known directory type
+
+
+</td></tr>
+<tr><td>
+
+[WindowWithFsAccess](./ts-web-extras.windowwithfsaccess.md)
+
+
+</td><td>
+
+Window interface extended with File System Access API
 
 
 </td></tr>

@@ -53,7 +53,8 @@
     "process": "~0.11.10",
     "assert": "~2.1.0",
     "serve-handler": "~6.1.6",
-    "json-edit-react": "~1.28.2"
+    "json-edit-react": "~1.28.2",
+    "@fgv/ts-web-extras": "workspace:*"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
