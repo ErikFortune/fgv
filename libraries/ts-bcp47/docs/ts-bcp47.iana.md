@@ -98,6 +98,28 @@ Loads language registries from custom URLs.
 </td></tr>
 <tr><td>
 
+[loadLanguageRegistriesFromZip(zipPath, subtagsPath, extensionsPath)](./ts-bcp47.iana.loadlanguageregistriesfromzip.md)
+
+
+</td><td>
+
+Loads language registries from a ZIP file containing the registry JSON files.
+
+
+</td></tr>
+<tr><td>
+
+[loadLanguageRegistriesFromZipBuffer(zipBuffer, subtagsPath, extensionsPath)](./ts-bcp47.iana.loadlanguageregistriesfromzipbuffer.md)
+
+
+</td><td>
+
+Loads language registries from a ZIP buffer containing the registry JSON files (web-compatible).
+
+
+</td></tr>
+<tr><td>
+
 [nowAsYearMonthDay()](./ts-bcp47.iana.nowasyearmonthday.md)
 
 

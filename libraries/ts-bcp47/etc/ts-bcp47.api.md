@@ -260,6 +260,8 @@ declare namespace Iana {
         LanguageRegistries,
         loadLanguageRegistries,
         loadLanguageRegistriesFromTree,
+        loadLanguageRegistriesFromZip,
+        loadLanguageRegistriesFromZipBuffer,
         loadLanguageRegistriesFromIanaOrg,
         loadLanguageRegistriesFromUrls
     }
@@ -919,8 +921,11 @@ class LanguageRegistries {
     readonly extensions: LanguageTagExtensionRegistry;
     // (undocumented)
     static loadDefault(): Result<LanguageRegistries>;
+    static loadDefaultCompressed(): Result<LanguageRegistries>;
     static loadFromIanaOrg(): Promise<Result<LanguageRegistries>>;
     static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
+    static loadFromZip(zipPath: string): Result<LanguageRegistries>;
+    static loadFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array): Result<LanguageRegistries>;
     // (undocumented)
     readonly subtags: LanguageSubtagRegistry;
 }
@@ -1253,6 +1258,12 @@ function loadLanguageRegistriesFromTree(fileTree: FileTree.FileTree, subtagsPath
 
 // @public
 function loadLanguageRegistriesFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
+
+// @public
+function loadLanguageRegistriesFromZip(zipPath: string, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
+
+// @public
+function loadLanguageRegistriesFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

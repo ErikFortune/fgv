@@ -16,7 +16,8 @@
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix",
     "update-iana-data": "node scripts/update-iana-data.js",
-    "update-iana-data:dry-run": "node scripts/update-iana-data.js --dry-run"
+    "update-iana-data:dry-run": "node scripts/update-iana-data.js --dry-run",
+    "generate-embedded-data": "node scripts/generate-embedded-data.js"
   },
   "keywords": [
     "bcp-47",

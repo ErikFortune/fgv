@@ -25,6 +25,7 @@ import { Result, captureResult } from '@fgv/ts-utils';
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
 import * as LanguageRegistriesLoader from './languageRegistriesLoader';
+import { getIanaDataBuffer } from './iana-data-embedded';
 
 /**
  * @public
@@ -53,6 +54,28 @@ export class LanguageRegistries {
   }
 
   /**
+   * Loads language registries with preferred compressed format, falling back to individual files.
+   * This method uses embedded compressed ZIP data that works in both Node.js and browser environments
+   * without requiring polyfills, then falls back to individual JSON files if decompression fails.
+   * @returns A Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadDefaultCompressed(): Result<LanguageRegistries> {
+    return captureResult(() => {
+      // Try to load from the embedded compressed ZIP data (browser-safe)
+      const zipBuffer = getIanaDataBuffer();
+      const zipResult = LanguageRegistriesLoader.loadLanguageRegistriesFromZipBuffer(zipBuffer);
+
+      if (zipResult.isSuccess()) {
+        return zipResult.orThrow();
+      }
+
+      // Fall back to individual JSON files if ZIP decompression fails
+      return LanguageRegistries.loadDefault().orThrow();
+    });
+  }
+
+  /**
    * Loads language registries from the IANA.org online registries.
    * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
    * @public
@@ -70,5 +93,25 @@ export class LanguageRegistries {
    */
   public static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>> {
     return LanguageRegistriesLoader.loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl);
+  }
+
+  /**
+   * Loads language registries from a compressed ZIP file.
+   * @param zipPath - Path to the ZIP file containing the registry data.
+   * @returns A Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromZip(zipPath: string): Result<LanguageRegistries> {
+    return LanguageRegistriesLoader.loadLanguageRegistriesFromZip(zipPath);
+  }
+
+  /**
+   * Loads language registries from a compressed ZIP buffer (web-compatible).
+   * @param zipBuffer - ArrayBuffer or Uint8Array containing the ZIP file data.
+   * @returns A Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array): Result<LanguageRegistries> {
+    return LanguageRegistriesLoader.loadLanguageRegistriesFromZipBuffer(zipBuffer);
   }
 }

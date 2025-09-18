@@ -19,6 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 const { execSync } = require('child_process');
+const zlib = require('zlib');
 
 // Import ts-utils Normalizer for consistent JSON formatting
 const { Normalizer } = require('@fgv/ts-utils');
@@ -33,6 +34,7 @@ const DATA_DIR = path.join(__dirname, '..', 'src', 'data', 'iana');
 const TEST_DATA_DIR = path.join(__dirname, '..', 'src', 'test', 'data', 'iana');
 const SUBTAGS_FILE = path.join(DATA_DIR, 'language-subtags.json');
 const EXTENSIONS_FILE = path.join(DATA_DIR, 'language-tag-extensions.json');
+const IANA_ZIP_FILE = path.join(DATA_DIR, 'iana-data.zip');
 const TEST_SUBTAGS_JSON = path.join(TEST_DATA_DIR, 'language-subtag-registry.json');
 const TEST_SUBTAGS_TXT = path.join(TEST_DATA_DIR, 'language-subtag-registry.txt');
 const TEST_EXTENSIONS_JSON = path.join(TEST_DATA_DIR, 'language-tag-extension-registry.json');
@@ -53,6 +55,63 @@ function normalizeAndFormat(data) {
 
   // Format with 2-space indentation and trailing newline (prettier compatible)
   return JSON.stringify(result.value, null, 2) + '\n';
+}
+
+/**
+ * Creates a ZIP file containing the IANA registry data
+ */
+function createIanaZipFile(subtags, extensions) {
+  if (isDryRun) {
+    const subtagsSize = Math.round(normalizeAndFormat(subtags).length / 1024);
+    const extensionsSize = Math.round(normalizeAndFormat(extensions).length / 1024);
+    const totalSize = subtagsSize + extensionsSize;
+    const estimatedCompressedSize = Math.round(totalSize * 0.08); // ~92% compression ratio observed
+
+    console.log(`🔍 Dry run: would create ${path.basename(IANA_ZIP_FILE)}`);
+    console.log(`   Estimated uncompressed size: ${totalSize}KB`);
+    console.log(`   Estimated compressed size: ${estimatedCompressedSize}KB`);
+    console.log(`   Estimated compression ratio: ~92%`);
+    return;
+  }
+
+  console.log('📦 Creating compressed IANA data ZIP file...');
+
+  try {
+    // Use the 'zip' command for simplicity and better compression
+    const tempDir = path.join(__dirname, '..', 'temp');
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    // Write temporary files
+    const tempSubtags = path.join(tempDir, 'language-subtags.json');
+    const tempExtensions = path.join(tempDir, 'language-tag-extensions.json');
+
+    fs.writeFileSync(tempSubtags, normalizeAndFormat(subtags));
+    fs.writeFileSync(tempExtensions, normalizeAndFormat(extensions));
+
+    // Create ZIP file using maximum compression
+    const zipCommand = `cd "${tempDir}" && zip -9 "${IANA_ZIP_FILE}" language-subtags.json language-tag-extensions.json`;
+    execSync(zipCommand, { stdio: 'pipe' });
+
+    // Clean up temporary files
+    fs.unlinkSync(tempSubtags);
+    fs.unlinkSync(tempExtensions);
+    fs.rmdirSync(tempDir);
+
+    // Report compression statistics
+    const zipStats = fs.statSync(IANA_ZIP_FILE);
+    const originalSize = normalizeAndFormat(subtags).length + normalizeAndFormat(extensions).length;
+    const compressionRatio = Math.round((1 - zipStats.size / originalSize) * 100);
+
+    console.log(`✅ Created ${path.basename(IANA_ZIP_FILE)}`);
+    console.log(`   Original size: ${Math.round(originalSize / 1024)}KB`);
+    console.log(`   Compressed size: ${Math.round(zipStats.size / 1024)}KB`);
+    console.log(`   Compression ratio: ${compressionRatio}%`);
+  } catch (error) {
+    console.warn(`⚠️  Failed to create ZIP file: ${error.message}`);
+    console.warn('   ZIP creation is optional - individual JSON files are still available');
+  }
 }
 
 /**
@@ -249,6 +308,12 @@ function backupExistingFiles() {
     console.log(`📋 Backed up production extensions to: ${path.basename(backupPath)}`);
   }
 
+  if (fs.existsSync(IANA_ZIP_FILE)) {
+    const backupPath = `${IANA_ZIP_FILE}.backup-${timestamp}`;
+    fs.copyFileSync(IANA_ZIP_FILE, backupPath);
+    console.log(`📋 Backed up production ZIP to: ${path.basename(backupPath)}`);
+  }
+
   // Backup test files
   if (fs.existsSync(TEST_SUBTAGS_JSON)) {
     const backupPath = `${TEST_SUBTAGS_JSON}.backup-${timestamp}`;
@@ -425,6 +490,19 @@ async function main() {
     // Backup and update files
     backupExistingFiles();
     writeDataFiles(subtags, extensions, testSubtags, testExtensions, subtagsContent, extensionsContent);
+
+    // Create compressed ZIP file
+    createIanaZipFile(subtags, extensions);
+
+    // Generate embedded data module for browser compatibility
+    if (!isDryRun) {
+      try {
+        execSync('node scripts/generate-embedded-data.js', { stdio: 'inherit' });
+      } catch (error) {
+        console.warn('⚠️  Failed to generate embedded data module:', error.message);
+        console.warn('   You can manually run: rushx generate-embedded-data');
+      }
+    }
 
     // Apply prettier formatting to ensure consistent formatting
     runPrettierOnGeneratedFiles();

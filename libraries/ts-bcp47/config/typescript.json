@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/heft/v0/typescript.schema.json",
+
+  /**
+   * Configures additional file types that should be copied into the TypeScript compiler's emit folders.
+   * This extends the base configuration to include ZIP files for compressed IANA data.
+   */
+  "staticAssetsToCopy": {
+    "fileExtensions": [".json", ".zip", ".base64"]
+  }
+}

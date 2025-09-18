@@ -122,6 +122,22 @@ Description
 </td></tr>
 <tr><td>
 
+[loadDefaultCompressed()](./ts-bcp47.iana.languageregistries.loaddefaultcompressed.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries with preferred compressed format, falling back to individual files. This method uses embedded compressed ZIP data that works in both Node.js and browser environments without requiring polyfills, then falls back to individual JSON files if decompression fails.
+
+
+</td></tr>
+<tr><td>
+
 [loadFromIanaOrg()](./ts-bcp47.iana.languageregistries.loadfromianaorg.md)
 
 
@@ -149,6 +165,38 @@ Loads language registries from the IANA.org online registries.
 </td><td>
 
 Loads language registries from custom URLs.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromZip(zipPath)](./ts-bcp47.iana.languageregistries.loadfromzip.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from a compressed ZIP file.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromZipBuffer(zipBuffer)](./ts-bcp47.iana.languageregistries.loadfromzipbuffer.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from a compressed ZIP buffer (web-compatible).
 
 
 </td></tr>

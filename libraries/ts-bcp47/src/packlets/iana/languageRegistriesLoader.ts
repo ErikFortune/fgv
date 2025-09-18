@@ -22,18 +22,26 @@
 
 import { Result, captureResult, fail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { ZipFileTree } from '@fgv/ts-extras';
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
 import { LanguageRegistries } from './languageRegistries';
 import path from 'path';
+import fs from 'fs';
 
 /**
  * Loads language registries from filesystem.
- * @param root - The root directory containing the registry JSON files.
+ * @param root - The root directory containing the registry JSON files or path to a ZIP file.
  * @returns A Result containing the loaded LanguageRegistries or an error.
  * @public
  */
 export function loadLanguageRegistries(root: string): Result<LanguageRegistries> {
+  // Check if root is a ZIP file
+  if (root.toLowerCase().endsWith('.zip')) {
+    return loadLanguageRegistriesFromZip(root);
+  }
+
+  // Handle directory with individual JSON files
   return captureResult(() => {
     const subtags = LanguageSubtagRegistry.load(path.join(root, 'language-subtags.json')).orThrow();
     const extensions = LanguageTagExtensionRegistry.load(
@@ -68,6 +76,56 @@ export function loadLanguageRegistriesFromTree(
         .onSuccess((extensions) => {
           return LanguageRegistries.create(subtags, extensions);
         });
+    });
+}
+
+/**
+ * Loads language registries from a ZIP file containing the registry JSON files.
+ * @param zipPath - Path to the ZIP file containing language-subtags.json and language-tag-extensions.json.
+ * @param subtagsPath - Path to the language-subtags.json file within the ZIP (default: 'language-subtags.json').
+ * @param extensionsPath - Path to the language-tag-extensions.json file within the ZIP (default: 'language-tag-extensions.json').
+ * @returns A Result containing the loaded LanguageRegistries or an error.
+ * @public
+ */
+export function loadLanguageRegistriesFromZip(
+  zipPath: string,
+  subtagsPath: string = 'language-subtags.json',
+  extensionsPath: string = 'language-tag-extensions.json'
+): Result<LanguageRegistries> {
+  return captureResult(() => {
+    // Read the ZIP file
+    const zipBuffer = fs.readFileSync(zipPath);
+
+    // Create ZIP file tree accessors
+    const zipAccessors = ZipFileTree.ZipFileTreeAccessors.fromBuffer(zipBuffer).orThrow();
+
+    // Create FileTree from ZIP accessors
+    const fileTree = FileTree.FileTree.create(zipAccessors).orThrow();
+
+    // Use existing tree loading function
+    return loadLanguageRegistriesFromTree(fileTree, subtagsPath, extensionsPath).orThrow();
+  });
+}
+
+/**
+ * Loads language registries from a ZIP buffer containing the registry JSON files (web-compatible).
+ * @param zipBuffer - ArrayBuffer or Uint8Array containing the ZIP file data.
+ * @param subtagsPath - Path to the language-subtags.json file within the ZIP (default: 'language-subtags.json').
+ * @param extensionsPath - Path to the language-tag-extensions.json file within the ZIP (default: 'language-tag-extensions.json').
+ * @returns A Result containing the loaded LanguageRegistries or an error.
+ * @public
+ */
+export function loadLanguageRegistriesFromZipBuffer(
+  zipBuffer: ArrayBuffer | Uint8Array,
+  subtagsPath: string = 'language-subtags.json',
+  extensionsPath: string = 'language-tag-extensions.json'
+): Result<LanguageRegistries> {
+  return ZipFileTree.ZipFileTreeAccessors.fromBuffer(zipBuffer)
+    .onSuccess((zipAccessors) => {
+      return FileTree.FileTree.create(zipAccessors);
+    })
+    .onSuccess((fileTree) => {
+      return loadLanguageRegistriesFromTree(fileTree, subtagsPath, extensionsPath);
     });
 }
 
