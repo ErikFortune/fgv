@@ -28,6 +28,11 @@ import { Success } from '@fgv/ts-utils';
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: IProcessedResources, originalProcessedResources: IProcessedResources): IFilterResult;
 
+// Warning: (ae-forgotten-export) The symbol "IAppLayoutProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const AppLayout: <TTool = unknown>({ children, selectedTool, onToolSelect, messages, onClearMessages, header: headerComponent, sidebar: sidebarComponent }: IAppLayoutProps<TTool>) => React_2.ReactElement;
+
 // Warning: (ae-forgotten-export) The symbol "IBooleanCellProps" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -1165,6 +1170,11 @@ export const MultiGridView: React_2.FC<IMultiGridViewProps>;
 
 // @public @deprecated (undocumented)
 export type NavigationWarningActions<T = unknown> = INavigationWarningActions<T>;
+
+// Warning: (ae-forgotten-export) The symbol "INavigationWarningModalProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const NavigationWarningModal: React_2.FC<INavigationWarningModalProps>;
 
 // @public @deprecated (undocumented)
 export type NavigationWarningState<T = unknown> = INavigationWarningState<T>;

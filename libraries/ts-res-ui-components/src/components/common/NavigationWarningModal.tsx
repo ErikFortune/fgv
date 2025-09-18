@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
-interface NavigationWarningModalProps {
+interface INavigationWarningModalProps {
   isOpen: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -9,7 +9,11 @@ interface NavigationWarningModalProps {
   hasUnsavedChanges: boolean;
 }
 
-const NavigationWarningModal: React.FC<NavigationWarningModalProps> = ({
+/**
+ * Modal component for warning users about unsaved changes before navigation
+ * @public
+ */
+const NavigationWarningModal: React.FC<INavigationWarningModalProps> = ({
   isOpen,
   onCancel,
   onConfirm,

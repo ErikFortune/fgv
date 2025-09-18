@@ -22,7 +22,7 @@ import {
   GridTools,
   ObservabilityTools
 } from '@fgv/ts-res-ui-components';
-import NavigationWarningModal from './components/common/NavigationWarningModal';
+import { NavigationWarningModal } from '@fgv/ts-res-ui-components';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
 import { playgroundResourceEditorFactory } from './utils/resourceEditorFactory';
 // Unified tool: HostControlledResolution and ResourceCreationTest functionality
@@ -31,7 +31,7 @@ import ViewWithPresentationSelector, {
   PresentationGearIcon
 } from './components/common/ViewWithPresentationSelector';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
-import { useUrlParams } from './hooks/useUrlParams';
+import { useUrlParams } from '@fgv/ts-res-ui-components';
 import { parseContextFilter } from '@fgv/ts-web-extras';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';

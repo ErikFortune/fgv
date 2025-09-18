@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AppLayout({ children, selectedTool, onToolSelect, messages, onClearMessages, header: headerComponent, sidebar: sidebarComponent })](./ts-res-ui-components.applayout.md)
+
+
+</td><td>
+
+Generic app layout component with header, sidebar, main content area, and messages window
+
+
+</td></tr>
+<tr><td>
+
 [useNavigationWarning()](./ts-res-ui-components.usenavigationwarning.md)
 
 
@@ -387,6 +398,17 @@ MultiGridView component for managing multiple grid instances with shared context
 Provides a comprehensive interface for displaying multiple related grids that share the same resolution context and batch operations. Perfect for administrative workflows where users need to configure related data across multiple resource types.
 
 \*\*Key Features:\*\* - \*\*Multiple Grids\*\*: Display multiple grid configurations with different resource selections - \*\*Shared Context\*\*: Single context management that applies to all grids simultaneously - \*\*Unified Changes\*\*: Batch operations work across all grids and resource types - \*\*Flexible Presentation\*\*: Support for tabs, cards, accordion, and dropdown grid selection - \*\*Validation Integration\*\*: Prevents batch operations when validation errors exist
+
+
+</td></tr>
+<tr><td>
+
+[NavigationWarningModal](./ts-res-ui-components.navigationwarningmodal.md)
+
+
+</td><td>
+
+Modal component for warning users about unsaved changes before navigation
 
 
 </td></tr>

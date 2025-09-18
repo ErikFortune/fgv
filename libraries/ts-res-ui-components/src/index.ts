@@ -45,8 +45,17 @@ import { ResourceTreeView } from './components/common/ResourceTreeView';
 import { ResourceListView } from './components/common/ResourceListView';
 import { SourceResourceDetail } from './components/common/SourceResourceDetail';
 import { ResolutionResults } from './components/common/ResolutionResults';
+import NavigationWarningModal from './components/common/NavigationWarningModal';
+import AppLayout from './components/common/AppLayout';
 
-export { ResourceTreeView, ResourceListView, SourceResourceDetail, ResolutionResults };
+export {
+  ResourceTreeView,
+  ResourceListView,
+  SourceResourceDetail,
+  ResolutionResults,
+  NavigationWarningModal,
+  AppLayout
+};
 
 // Form components are now available through ConfigurationTools namespace:
 // - ConfigurationTools.QualifierTypeEditForm

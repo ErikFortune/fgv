@@ -11,9 +11,9 @@ import {
   IOrchestratorState,
   IOrchestratorActions
 } from '@fgv/ts-res-ui-components';
-import NavigationWarningModal from './components/common/NavigationWarningModal';
+import { NavigationWarningModal } from '@fgv/ts-res-ui-components';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
-import { useUrlParams } from './hooks/useUrlParams';
+import { useUrlParams } from '@fgv/ts-res-ui-components';
 import { parseContextFilter } from '@fgv/ts-web-extras';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
