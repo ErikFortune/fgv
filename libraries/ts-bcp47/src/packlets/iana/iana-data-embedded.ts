@@ -50,6 +50,7 @@ export function getIanaDataBuffer(): Uint8Array {
     // Node.js environment
     return new Uint8Array(Buffer.from(ianaDataBase64, 'base64'));
   } else {
+  /* c8 ignore next 9 - browser environment code, tested in Node.js environment where Buffer is available */
     // Browser environment - use atob (available in all modern browsers)
     const binaryString = atob(ianaDataBase64);
     const bytes = new Uint8Array(binaryString.length);

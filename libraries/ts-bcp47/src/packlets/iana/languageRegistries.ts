@@ -46,18 +46,7 @@ export class LanguageRegistries {
   }
 
   public static loadDefault(): Result<LanguageRegistries> {
-    // Primary: Try compressed loading first (works in published packages)
-    const compressedResult = LanguageRegistries.loadDefaultCompressed();
-    if (compressedResult.isSuccess()) {
-      return compressedResult;
-    }
-
-    // Fallback: Try individual files (available in development environment)
-    return LanguageSubtagRegistry.loadDefault().onSuccess((subtags) => {
-      return LanguageTagExtensionRegistry.loadDefault().onSuccess((extensions) => {
-        return LanguageRegistries.create(subtags, extensions);
-      });
-    });
+    return LanguageRegistries.loadDefaultCompressed();
   }
 
   /**
