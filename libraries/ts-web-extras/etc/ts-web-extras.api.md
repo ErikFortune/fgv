@@ -23,28 +23,17 @@ export function exportUsingFileSystemAPI(data: unknown, suggestedName: string, d
 export function extractDirectoryPath(path: string): string;
 
 // @public
-function extractFileMetadata(fileList: FileList): Array<{
-    path: string;
-    name: string;
-    size: number;
-    type: string;
-    lastModified: number;
-}>;
+function extractFileListMetadata(fileList: FileList): Array<IFileMetadata>;
 
 // @public
-export class FileApiTreeAccessors {
-    static create(initializers: TreeInitializer[]): Promise<Result<FileTree.FileTree>>;
-    // @deprecated
-    static createFromFiles(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>>;
-    static extractFileMetadata(fileList: FileList): Array<{
-        path: string;
-        name: string;
-        size: number;
-        type: string;
-        lastModified: number;
-    }>;
-    static fromDirectoryUpload(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
-    static fromFileList(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
+function extractFileMetadata(file: File): IFileMetadata;
+
+// @public
+export class FileApiTreeAccessors<TCT extends string = string> {
+    static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static extractFileMetadata(file: File): IFileMetadata;
+    static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+    static fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
     static getOriginalFile(fileList: FileList, targetPath: string): Result<File>;
 }
 
@@ -154,20 +143,17 @@ declare namespace FileTreeHelpers {
     export {
         fromFileList,
         fromDirectoryUpload,
-        fromFileApiFiles,
         getOriginalFile,
+        extractFileListMetadata,
         extractFileMetadata
     }
 }
 
 // @public
-function fromDirectoryUpload(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
+function fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
 
 // @public
-function fromFileApiFiles(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>>;
-
-// @public
-function fromFileList(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
+function fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
 
 // @public
 function getOriginalFile(fileList: FileList, path: string): Result<File>;
@@ -183,12 +169,6 @@ export interface IDirectoryHandleTreeInitializer {
 }
 
 // @public
-export interface IFileApiFile {
-    readonly file: File;
-    readonly path: string;
-}
-
-// @public
 export interface IFileHandleTreeInitializer {
     // (undocumented)
     readonly fileHandles: FileSystemFileHandle_2[];
@@ -200,6 +180,20 @@ export interface IFileHandleTreeInitializer {
 export interface IFileListTreeInitializer {
     // (undocumented)
     readonly fileList: FileList;
+}
+
+// @public
+export interface IFileMetadata {
+    // (undocumented)
+    lastModified: number;
+    // (undocumented)
+    name: string;
+    // (undocumented)
+    path: string;
+    // (undocumented)
+    size: number;
+    // (undocumented)
+    type: string;
 }
 
 // @public

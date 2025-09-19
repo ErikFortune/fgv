@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { FileTreeHelpers } from '../../packlets/helpers';
-import { FileApiTreeAccessors, IFileApiFile } from '../../packlets/file-tree';
+import { FileApiTreeAccessors } from '../../packlets/file-tree';
 import { createMockFile, createMockFileList, createMockDirectoryFileList } from '../utils/testHelpers';
 
 describe('FileTreeHelpers', () => {
@@ -51,7 +51,7 @@ describe('FileTreeHelpers', () => {
     test('creates FileTree from FileList with prefix', async () => {
       const fileList = createMockFileList([{ name: 'test.txt', content: 'test content' }]);
 
-      const result = await FileTreeHelpers.fromFileList(fileList, '/upload');
+      const result = await FileTreeHelpers.fromFileList(fileList, { prefix: '/upload' });
       expect(result).toSucceed();
     });
 
@@ -157,7 +157,7 @@ describe('FileTreeHelpers', () => {
         { path: 'app/main.js', content: 'console.log("app");' }
       ]);
 
-      const result = await FileTreeHelpers.fromDirectoryUpload(fileList, '/upload');
+      const result = await FileTreeHelpers.fromDirectoryUpload(fileList, { prefix: '/upload' });
       expect(result).toSucceed();
     });
 
@@ -238,106 +238,9 @@ describe('FileTreeHelpers', () => {
     });
   });
 
-  describe('fromFileApiFiles', () => {
-    test('creates FileTree from IFileApiFile array', async () => {
-      const files: IFileApiFile[] = [
-        {
-          file: createMockFile({ name: 'file1.txt', content: 'content1' }),
-          path: 'custom/path1.txt'
-        },
-        {
-          file: createMockFile({ name: 'file2.txt', content: 'content2' }),
-          path: 'custom/path2.txt'
-        }
-      ];
-
-      const result = await FileTreeHelpers.fromFileApiFiles(files);
-      expect(result).toSucceedAndSatisfy((fileTree) => {
-        expect(fileTree.getFile('/custom/path1.txt')).toSucceed();
-        expect(fileTree.getFile('/custom/path2.txt')).toSucceed();
-        expect(fileTree.getDirectory('/custom')).toSucceed();
-      });
-    });
-
-    test('creates FileTree with custom path structures', async () => {
-      const files: IFileApiFile[] = [
-        {
-          file: createMockFile({ name: 'component.jsx', content: 'export default Component;' }),
-          path: 'src/components/Component.jsx'
-        },
-        {
-          file: createMockFile({ name: 'index.js', content: 'export * from "./Component";' }),
-          path: 'src/components/index.js'
-        },
-        {
-          file: createMockFile({ name: 'test.spec.js', content: 'describe("Component", () => {});' }),
-          path: 'src/components/__tests__/Component.test.js'
-        }
-      ];
-
-      const result = await FileTreeHelpers.fromFileApiFiles(files);
-      expect(result).toSucceedAndSatisfy((fileTree) => {
-        expect(fileTree.getFile('/src/components/Component.jsx')).toSucceed();
-        expect(fileTree.getFile('/src/components/index.js')).toSucceed();
-        expect(fileTree.getFile('/src/components/__tests__/Component.test.js')).toSucceed();
-
-        expect(fileTree.getDirectory('/src')).toSucceed();
-        expect(fileTree.getDirectory('/src/components')).toSucceed();
-        expect(fileTree.getDirectory('/src/components/__tests__')).toSucceed();
-      });
-    });
-
-    test('works with prefix parameter', async () => {
-      const files: IFileApiFile[] = [
-        {
-          file: createMockFile({ name: 'data.json', content: '{"key": "value"}' }),
-          path: 'config/data.json'
-        }
-      ];
-
-      const result = await FileTreeHelpers.fromFileApiFiles(files, '/project');
-      expect(result).toSucceed();
-    });
-
-    test('handles mixed file types and paths', async () => {
-      const files: IFileApiFile[] = [
-        {
-          file: createMockFile({
-            name: 'config.json',
-            content: '{"env": "production"}',
-            type: 'application/json'
-          }),
-          path: 'config.json'
-        },
-        {
-          file: createMockFile({
-            name: 'helper.js',
-            content: 'export const help = () => {};',
-            type: 'application/javascript'
-          }),
-          path: 'utils/helper.js'
-        },
-        {
-          file: createMockFile({
-            name: 'README.md',
-            content: '# Project\n\nDescription here.',
-            type: 'text/markdown'
-          }),
-          path: 'docs/README.md'
-        }
-      ];
-
-      const result = await FileTreeHelpers.fromFileApiFiles(files);
-      expect(result).toSucceedAndSatisfy((fileTree) => {
-        expect(fileTree.getFile('/config.json')).toSucceed();
-        expect(fileTree.getFile('/utils/helper.js')).toSucceed();
-        expect(fileTree.getFile('/docs/README.md')).toSucceed();
-
-        expect(fileTree.getDirectory('/utils')).toSucceed();
-        expect(fileTree.getDirectory('/docs')).toSucceed();
-      });
-    });
-  });
+  // Note: fromFileApiFiles method was deprecated and removed.
+  // The functionality has been replaced by the create() method in FileApiTreeAccessors
+  // which uses TreeInitializer[] instead of IFileApiFile[].
 
   describe('getOriginalFile', () => {
     test('retrieves original File object by path', () => {
@@ -402,8 +305,8 @@ describe('FileTreeHelpers', () => {
     });
   });
 
-  describe('extractFileMetadata', () => {
-    test('extracts complete metadata from files', () => {
+  describe('extractFileListMetadata', () => {
+    test('extracts complete metadata from FileList', () => {
       const testTime = Date.now();
       const fileList = createMockFileList([
         {
@@ -420,7 +323,7 @@ describe('FileTreeHelpers', () => {
         }
       ]);
 
-      const metadata = FileTreeHelpers.extractFileMetadata(fileList);
+      const metadata = FileTreeHelpers.extractFileListMetadata(fileList);
       expect(metadata).toHaveLength(2);
 
       const pdfMeta = metadata.find((m) => m.name === 'document.pdf');
@@ -448,7 +351,7 @@ describe('FileTreeHelpers', () => {
         { path: 'project/assets/logo.png', content: 'logo data', type: 'image/png' }
       ]);
 
-      const metadata = FileTreeHelpers.extractFileMetadata(fileList);
+      const metadata = FileTreeHelpers.extractFileListMetadata(fileList);
       expect(metadata).toHaveLength(2);
 
       expect(metadata.find((m) => m.name === 'main.js')?.path).toBe('project/src/main.js');
@@ -462,7 +365,7 @@ describe('FileTreeHelpers', () => {
         { name: 'large.txt', content: 'x'.repeat(10000) }
       ]);
 
-      const metadata = FileTreeHelpers.extractFileMetadata(fileList);
+      const metadata = FileTreeHelpers.extractFileListMetadata(fileList);
       const sizes = metadata.map((m) => m.size);
 
       expect(sizes[0]).toBe(0); // empty file
@@ -472,7 +375,7 @@ describe('FileTreeHelpers', () => {
 
     test('returns empty array for empty FileList', () => {
       const fileList = createMockFileList([]);
-      const metadata = FileTreeHelpers.extractFileMetadata(fileList);
+      const metadata = FileTreeHelpers.extractFileListMetadata(fileList);
       expect(metadata).toEqual([]);
     });
 
@@ -480,9 +383,43 @@ describe('FileTreeHelpers', () => {
       const expectedOrder = ['first.txt', 'second.txt', 'third.txt'];
       const fileList = createMockFileList(expectedOrder.map((name) => ({ name, content: 'content' })));
 
-      const metadata = FileTreeHelpers.extractFileMetadata(fileList);
+      const metadata = FileTreeHelpers.extractFileListMetadata(fileList);
       const actualOrder = metadata.map((m) => m.name);
       expect(actualOrder).toEqual(expectedOrder);
+    });
+  });
+
+  describe('extractFileMetadata', () => {
+    test('extracts metadata from single file', () => {
+      const testTime = Date.now();
+      const file = createMockFile({
+        name: 'single.txt',
+        content: 'single file content',
+        type: 'text/plain',
+        lastModified: testTime
+      });
+
+      const metadata = FileTreeHelpers.extractFileMetadata(file);
+      expect(metadata).toEqual({
+        path: 'single.txt',
+        name: 'single.txt',
+        size: expect.any(Number),
+        type: 'text/plain',
+        lastModified: testTime
+      });
+    });
+
+    test('handles webkitRelativePath for single file', () => {
+      const file = createMockFile({
+        name: 'nested.txt',
+        content: 'nested content',
+        type: 'text/plain',
+        webkitRelativePath: 'folder/nested.txt'
+      });
+
+      const metadata = FileTreeHelpers.extractFileMetadata(file);
+      expect(metadata.path).toBe('folder/nested.txt');
+      expect(metadata.name).toBe('nested.txt');
     });
   });
 
@@ -523,7 +460,7 @@ describe('FileTreeHelpers', () => {
       expect(result).toFailWith(/Failed to read file/);
     });
 
-    test('propagates errors from FileApiTreeAccessors.create', async () => {
+    test('propagates errors from FileApiTreeAccessors.create via fromFileList', async () => {
       const badFile = {
         name: 'bad.txt',
         size: 10,
@@ -532,8 +469,12 @@ describe('FileTreeHelpers', () => {
         text: () => Promise.reject(new Error('API error'))
       } as unknown as File;
 
-      const files: IFileApiFile[] = [{ file: badFile, path: 'bad.txt' }];
-      const result = await FileTreeHelpers.fromFileApiFiles(files);
+      // Create FileList with the bad file
+      const dt = new DataTransfer();
+      dt.items.add(badFile);
+      const fileList = dt.files;
+
+      const result = await FileTreeHelpers.fromFileList(fileList);
       expect(result).toFailWith(/Failed to read file/);
     });
   });
@@ -546,7 +487,7 @@ describe('FileTreeHelpers', () => {
         { name: 'metadata.txt', content: 'Photo metadata', type: 'text/plain' }
       ]);
 
-      const result = await FileTreeHelpers.fromFileList(fileList, '/uploads');
+      const result = await FileTreeHelpers.fromFileList(fileList, { prefix: '/uploads' });
       expect(result).toSucceed();
     });
 

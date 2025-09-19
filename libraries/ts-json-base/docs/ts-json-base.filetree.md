@@ -218,6 +218,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ContentTypeFactory](./ts-json-base.filetree.contenttypefactory.md)
+
+
+</td><td>
+
+Type of function to infer the content type of a file.
+
+
+</td></tr>
+<tr><td>
+
 [FileTreeItem](./ts-json-base.filetree.filetreeitem.md)
 
 

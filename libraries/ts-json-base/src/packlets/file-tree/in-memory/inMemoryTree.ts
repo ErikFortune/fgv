@@ -182,7 +182,12 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
   /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
    */
-  public getFileContentType(path: string): Result<TCT | undefined> {
+  public getFileContentType(path: string, provided?: string): Result<TCT | undefined> {
+    // If provided contentType is given, use it directly (highest priority)
+    if (provided !== undefined) {
+      return succeed(provided as TCT);
+    }
+
     const item = this._tree.byAbsolutePath.get(path);
     if (item === undefined) {
       // If file doesn't exist, still try to infer content type from path

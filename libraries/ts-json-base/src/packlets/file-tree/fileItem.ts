@@ -151,7 +151,8 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
    * @public
    */
   public static defaultInferContentType<TCT extends string = string>(
-    filePath: string
+    __filePath: string,
+    __provided?: string
   ): Result<TCT | undefined> {
     return succeed(undefined);
   }

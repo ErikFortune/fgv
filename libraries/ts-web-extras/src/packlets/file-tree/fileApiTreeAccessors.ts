@@ -48,23 +48,6 @@ function getFileRelativePath(file: File): string {
 }
 
 /**
- * Represents a file from the File API with its path information.
- * @public
- */
-export interface IFileApiFile {
-  /**
-   * The File object from the browser File API.
-   */
-  readonly file: File;
-
-  /**
-   * The relative path of the file within the file tree.
-   * For files from directory uploads, this includes the directory structure.
-   */
-  readonly path: string;
-}
-
-/**
  * Tree initializer for FileList objects (from File API).
  * @public
  */
@@ -101,29 +84,45 @@ export type TreeInitializer =
   | IDirectoryHandleTreeInitializer;
 
 /**
+ * Interface for file metadata.
+ * @public
+ */
+export interface IFileMetadata {
+  path: string;
+  name: string;
+  size: number;
+  type: string;
+  lastModified: number;
+}
+
+/**
  * Helper class to create FileTree instances from various file sources.
  * Supports File API (FileList) and File System Access API handles.
  * @public
  */
-export class FileApiTreeAccessors {
+export class FileApiTreeAccessors<TCT extends string = string> {
   /**
    * Create FileTree from various file sources using TreeInitializer array.
    * @param initializers - Array of TreeInitializer objects specifying file sources
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
    * @returns Promise resolving to a FileTree with all content pre-loaded
    */
-  public static async create(initializers: TreeInitializer[]): Promise<Result<FileTree.FileTree>> {
+  public static async create<TCT extends string = string>(
+    initializers: TreeInitializer[],
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.FileTree<TCT>>> {
     try {
-      const allFiles: FileTree.IInMemoryFile[] = [];
+      const allFiles: FileTree.IInMemoryFile<TCT>[] = [];
 
       for (const initializer of initializers) {
-        const filesResult = await this._processInitializer(initializer);
+        const filesResult = await this._processInitializer<TCT>(initializer, params);
         if (filesResult.isFailure()) {
           return fail(filesResult.message);
         }
         allFiles.push(...filesResult.value);
       }
 
-      return FileTree.inMemory(allFiles);
+      return FileTree.inMemory<TCT>(allFiles, params);
     } catch (error) {
       /* c8 ignore next 5 - defense in depth */
       const message = error instanceof Error ? error.message : String(error);
@@ -132,62 +131,28 @@ export class FileApiTreeAccessors {
   }
 
   /**
-   * Legacy method: Create FileTree from File API files by pre-loading all content.
-   * @param files - Array of files with their paths
-   * @param prefix - Optional prefix to add to all paths
-   * @returns Promise resolving to a FileTree with all content pre-loaded
-   * @deprecated Use create() with TreeInitializer array instead
-   */
-  public static async createFromFiles(
-    files: IFileApiFile[],
-    prefix?: string
-  ): Promise<Result<FileTree.FileTree>> {
-    try {
-      const inMemoryFiles: FileTree.IInMemoryFile[] = [];
-
-      for (const fileInfo of files) {
-        const fullPath = this._normalizePath(prefix || '', fileInfo.path);
-
-        try {
-          const content = await fileInfo.file.text();
-          inMemoryFiles.push({
-            path: fullPath,
-            contents: content
-          });
-        } catch (error) {
-          return fail(
-            /* c8 ignore next 1 - defense in depth */
-            `Failed to read file ${fileInfo.path}: ${error instanceof Error ? error.message : String(error)}`
-          );
-        }
-      }
-
-      return FileTree.inMemory(inMemoryFiles, prefix);
-    } catch (error) {
-      /* c8 ignore next 5 - defense in depth */
-      const message = error instanceof Error ? error.message : String(error);
-      return fail(`Failed to process files: ${message}`);
-    }
-  }
-
-  /**
    * Create FileTree from FileList (e.g., from input[type="file"]).
    * @param fileList - FileList from a file input element
-   * @param prefix - Optional prefix to add to all paths
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
    * @returns Promise resolving to a FileTree with all content pre-loaded
    */
-  public static async fromFileList(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>> {
-    const files: FileTree.IInMemoryFile[] = [];
+  public static async fromFileList<TCT extends string = string>(
+    fileList: FileList,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.FileTree<TCT>>> {
+    const files: FileTree.IInMemoryFile<TCT>[] = [];
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      const path = this._normalizePath(prefix || '', file.name);
+      const path = this._normalizePath(params?.prefix || '', file.name);
 
       try {
-        const content = await file.text();
+        const contents = await file.text();
+        const contentType = params?.inferContentType?.(path).orDefault();
         files.push({
           path,
-          contents: content
+          contents,
+          contentType
         });
       } catch (error) {
         /* c8 ignore next 1 - defense in depth */
@@ -196,31 +161,33 @@ export class FileApiTreeAccessors {
       }
     }
 
-    return FileTree.inMemory(files);
+    return FileTree.inMemory<TCT>(files, params);
   }
 
   /**
    * Create FileTree from directory upload with webkitRelativePath.
    * @param fileList - FileList from a directory upload (input with webkitdirectory)
-   * @param prefix - Optional prefix to add to all paths
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
    * @returns Promise resolving to a FileTree with all content pre-loaded
    */
-  public static async fromDirectoryUpload(
+  public static async fromDirectoryUpload<TCT extends string = string>(
     fileList: FileList,
-    prefix?: string
-  ): Promise<Result<FileTree.FileTree>> {
-    const files: FileTree.IInMemoryFile[] = [];
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.FileTree<TCT>>> {
+    const files: FileTree.IInMemoryFile<TCT>[] = [];
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
       const relativePath = getFileRelativePath(file);
-      const path = this._normalizePath(prefix || '', relativePath);
+      const path = this._normalizePath(params?.prefix || '', relativePath);
 
       try {
-        const content = await file.text();
+        const contents = await file.text();
+        const contentType = params?.inferContentType?.(path).orDefault();
         files.push({
           path,
-          contents: content
+          contents,
+          contentType
         });
       } catch (error) {
         /* c8 ignore next 1 - defense in depth */
@@ -229,7 +196,7 @@ export class FileApiTreeAccessors {
       }
     }
 
-    return FileTree.inMemory(files);
+    return FileTree.inMemory<TCT>(files, params);
   }
 
   /**
@@ -251,42 +218,41 @@ export class FileApiTreeAccessors {
   }
 
   /**
-   * Extract file metadata from a FileList.
-   * @param fileList - The FileList to extract metadata from
-   * @returns Array of file metadata objects
+   * Extract file metadata from a File.
+   * @param fileList - The File to extract metadata from
+   * @returns The {@link IFileMetadata | file metadata}
    */
-  public static extractFileMetadata(fileList: FileList): Array<{
-    path: string;
-    name: string;
-    size: number;
-    type: string;
-    lastModified: number;
-  }> {
-    return Array.from(fileList).map((file) => ({
+  public static extractFileMetadata(file: File): IFileMetadata {
+    return {
       path: getFileRelativePath(file),
       name: file.name,
       size: file.size,
       type: file.type,
       lastModified: file.lastModified
-    }));
+    };
   }
 
   /**
    * Process a single TreeInitializer and return the resulting files.
+   * @param initializer - The TreeInitializer to process
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
+   * @returns Promise resolving to an array of `IInMemoryFile` objects
    * @internal
    */
-  private static async _processInitializer(
-    initializer: TreeInitializer
-  ): Promise<Result<FileTree.IInMemoryFile[]>> {
+  private static async _processInitializer<TCT extends string = string>(
+    initializer: TreeInitializer,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.IInMemoryFile<TCT>[]>> {
     if ('fileList' in initializer) {
-      return this._processFileList(initializer.fileList);
+      return this._processFileList<TCT>(initializer.fileList, params);
     } else if ('fileHandles' in initializer) {
-      return this._processFileHandles(initializer.fileHandles, initializer.prefix);
+      return this._processFileHandles<TCT>(initializer.fileHandles, params);
     } else if ('dirHandles' in initializer) {
-      return this._processDirectoryHandles(
+      return this._processDirectoryHandles<TCT>(
         initializer.dirHandles,
-        initializer.prefix,
-        !initializer.nonRecursive
+        initializer.prefix ?? params?.prefix,
+        !initializer.nonRecursive,
+        params
       );
     } else {
       return fail('Unknown initializer type');
@@ -295,21 +261,30 @@ export class FileApiTreeAccessors {
 
   /**
    * Process a FileList and return IInMemoryFile array.
+   * @param fileList - The FileList to process
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
+   * @returns Promise resolving to an array of `IInMemoryFile` objects
    * @internal
    */
-  private static async _processFileList(fileList: FileList): Promise<Result<FileTree.IInMemoryFile[]>> {
-    const files: FileTree.IInMemoryFile[] = [];
+  private static async _processFileList<TCT extends string = string>(
+    fileList: FileList,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.IInMemoryFile<TCT>[]>> {
+    const files: FileTree.IInMemoryFile<TCT>[] = [];
 
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      const relativePath = getFileRelativePath(file);
+      const metadata = this.extractFileMetadata(file);
+      const relativePath = metadata.path;
       const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
 
       try {
-        const content = await file.text();
+        const contents = await file.text();
+        const contentType = params?.inferContentType?.(path, metadata.type).orDefault();
         files.push({
           path,
-          contents: content
+          contents,
+          contentType
         });
       } catch (error) {
         /* c8 ignore next 1 - defense in depth */
@@ -325,21 +300,24 @@ export class FileApiTreeAccessors {
    * Process FileSystemFileHandles and return IInMemoryFile array.
    * @internal
    */
-  private static async _processFileHandles(
+  private static async _processFileHandles<TCT extends string = string>(
     handles: FileSystemFileHandle[],
-    prefix?: string
-  ): Promise<Result<FileTree.IInMemoryFile[]>> {
-    const files: FileTree.IInMemoryFile[] = [];
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.IInMemoryFile<TCT>[]>> {
+    const files: FileTree.IInMemoryFile<TCT>[] = [];
 
     for (const handle of handles) {
       try {
         const file = await handle.getFile();
-        const content = await file.text();
-        const path = this._normalizePath(prefix || '', handle.name);
+        const contents = await file.text();
+        const metadata = this.extractFileMetadata(file);
+        const path = this._normalizePath(params?.prefix ?? '', handle.name);
+        const contentType = params?.inferContentType?.(path, metadata.type).orDefault();
 
         files.push({
           path,
-          contents: content
+          contents,
+          contentType
         });
       } catch (error) {
         /* c8 ignore next 1 - defense in depth */
@@ -353,18 +331,25 @@ export class FileApiTreeAccessors {
 
   /**
    * Process FileSystemDirectoryHandles and return IInMemoryFile array.
+   * @param handles - The FileSystemDirectoryHandle[] to process
+   * @param prefix - The prefix to use for the file paths
+   * @param recursive - Whether to process the directory recursively
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
+   * @returns Promise resolving to an array of `IInMemoryFile` objects
    * @internal
    */
-  private static async _processDirectoryHandles(
+  private static async _processDirectoryHandles<TCT extends string = string>(
     handles: FileSystemDirectoryHandle[],
     prefix?: string,
-    recursive: boolean = true
-  ): Promise<Result<FileTree.IInMemoryFile[]>> {
-    const allFiles: FileTree.IInMemoryFile[] = [];
+    recursive: boolean = true,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.IInMemoryFile<TCT>[]>> {
+    const allFiles: FileTree.IInMemoryFile<TCT>[] = [];
+    prefix = prefix ?? params?.prefix;
 
     for (const handle of handles) {
-      const dirPrefix = this._normalizePath(prefix || '', handle.name);
-      const filesResult = await this._processDirectoryHandle(handle, dirPrefix, recursive);
+      const dirPrefix = this._normalizePath(prefix ?? '', handle.name);
+      const filesResult = await this._processDirectoryHandle<TCT>(handle, dirPrefix, recursive, params);
       if (filesResult.isFailure()) {
         return filesResult;
       }
@@ -376,29 +361,37 @@ export class FileApiTreeAccessors {
 
   /**
    * Process a single FileSystemDirectoryHandle recursively.
+   * @param handle - The FileSystemDirectoryHandle to process
+   * @param basePath - The base path to use for the file paths
+   * @param recursive - Whether to process the directory recursively
+   * @param params - Optional `IFileTreeInitParams` for the file tree.
+   * @returns Promise resolving to an array of `IInMemoryFile` objects
    * @internal
    */
-  private static async _processDirectoryHandle(
+  private static async _processDirectoryHandle<TCT extends string = string>(
     handle: FileSystemDirectoryHandle,
     basePath: string,
-    recursive: boolean
-  ): Promise<Result<FileTree.IInMemoryFile[]>> {
-    const files: FileTree.IInMemoryFile[] = [];
+    recursive: boolean,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<FileTree.IInMemoryFile<TCT>[]>> {
+    const files: FileTree.IInMemoryFile<TCT>[] = [];
 
     try {
       for await (const entry of handle.values()) {
         if (isFileHandle(entry)) {
           const file = await entry.getFile();
-          const content = await file.text();
-          const filePath = this._normalizePath(basePath, entry.name);
+          const contents = await file.text();
+          const path = this._normalizePath(basePath, entry.name);
+          const contentType = params?.inferContentType?.(path).orDefault();
 
           files.push({
-            path: filePath,
-            contents: content
+            path,
+            contents,
+            contentType
           });
         } else if (isDirectoryHandle(entry) && recursive) {
           const subDirPath = this._normalizePath(basePath, entry.name);
-          const subdirResult = await this._processDirectoryHandle(entry, subDirPath, recursive);
+          const subdirResult = await this._processDirectoryHandle<TCT>(entry, subDirPath, recursive, params);
           if (subdirResult.isFailure()) {
             return subdirResult;
           }

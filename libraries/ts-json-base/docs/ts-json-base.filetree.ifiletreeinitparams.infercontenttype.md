@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-inferContentType?: (filePath: string) => Result<TCT | undefined>;
+inferContentType?: ContentTypeFactory<TCT>;
 ```

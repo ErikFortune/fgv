@@ -9,7 +9,7 @@ Default function to infer the content type of a file.
 **Signature:**
 
 ```typescript
-static defaultInferContentType<TCT extends string = string>(filePath: string): Result<TCT | undefined>;
+static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-filePath
+\_\_filePath
 
 
 </td><td>
@@ -42,7 +42,21 @@ string
 
 </td><td>
 
-The path of the file.
+
+</td></tr>
+<tr><td>
+
+\_\_provided
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

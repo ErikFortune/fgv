@@ -31,12 +31,21 @@ import { JsonValue } from '../json';
 export type FileTreeItemType = 'directory' | 'file';
 
 /**
+ * Type of function to infer the content type of a file.
+ * @public
+ */
+export type ContentTypeFactory<TCT extends string = string> = (
+  filePath: string,
+  provided?: string
+) => Result<TCT | undefined>;
+
+/**
  * Initialization parameters for a file tree.
  * @public
  */
 export interface IFileTreeInitParams<TCT extends string = string> {
   prefix?: string;
-  inferContentType?: (filePath: string) => Result<TCT | undefined>;
+  inferContentType?: ContentTypeFactory<TCT>;
 }
 
 /**
@@ -184,9 +193,10 @@ export interface IFileTreeAccessors<TCT extends string = string> {
   /**
    * Gets the content type of a file in the file tree.
    * @param path - Absolute path of the file.
+   * @param provided - Optional supplied content type.
    * @returns The content type of the file.
    */
-  getFileContentType(path: string): Result<TCT | undefined>;
+  getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
 
   /**
    * Gets the children of a directory in the file tree.

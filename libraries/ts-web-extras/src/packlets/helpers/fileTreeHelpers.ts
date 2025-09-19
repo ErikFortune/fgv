@@ -22,45 +22,38 @@
 
 import { Result } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { FileApiTreeAccessors, IFileApiFile } from '../file-tree/fileApiTreeAccessors';
+import { FileApiTreeAccessors, IFileMetadata } from '../file-tree/fileApiTreeAccessors';
 
 /**
  * Helper function to create a new FileTree instance
  * from a browser FileList (e.g., from input[type="file"]).
  * @param fileList - FileList from a file input element
- * @param prefix - An optional prefix to add to the paths of all files in the tree
+ * @param params - Optional `IFileTreeInitParams` for the file tree.
  * @returns Promise resolving to a successful Result with the new FileTree instance
  * if successful, or a failed Result with an error message otherwise
  * @public
  */
-export function fromFileList(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>> {
-  return FileApiTreeAccessors.fromFileList(fileList, prefix);
+export function fromFileList<TCT extends string = string>(
+  fileList: FileList,
+  params?: FileTree.IFileTreeInitParams<TCT>
+): Promise<Result<FileTree.FileTree<TCT>>> {
+  return FileApiTreeAccessors.fromFileList(fileList, params);
 }
 
 /**
  * Helper function to create a new FileTree instance
  * from a directory upload with webkitRelativePath support.
  * @param fileList - FileList from a directory upload (input with webkitdirectory)
- * @param prefix - An optional prefix to add to the paths of all files in the tree
+ * @param params - Optional `IFileTreeInitParams` for the file tree.
  * @returns Promise resolving to a successful Result with the new FileTree instance
  * if successful, or a failed Result with an error message otherwise
  * @public
  */
-export function fromDirectoryUpload(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>> {
-  return FileApiTreeAccessors.fromDirectoryUpload(fileList, prefix);
-}
-
-/**
- * Helper function to create a new FileTree instance
- * from an array of File API files with their paths.
- * @param files - Array of {@link IFileApiFile | File API files} with path information
- * @param prefix - An optional prefix to add to the paths of all files in the tree
- * @returns Promise resolving to a successful Result with the new FileTree instance
- * if successful, or a failed Result with an error message otherwise
- * @public
- */
-export function fromFileApiFiles(files: IFileApiFile[], prefix?: string): Promise<Result<FileTree.FileTree>> {
-  return FileApiTreeAccessors.createFromFiles(files, prefix);
+export function fromDirectoryUpload<TCT extends string = string>(
+  fileList: FileList,
+  params?: FileTree.IFileTreeInitParams<TCT>
+): Promise<Result<FileTree.FileTree<TCT>>> {
+  return FileApiTreeAccessors.fromDirectoryUpload(fileList, params);
 }
 
 /**
@@ -76,17 +69,21 @@ export function getOriginalFile(fileList: FileList, path: string): Result<File> 
 }
 
 /**
- * Helper function to extract metadata from a FileList.
- * @param fileList - The FileList to extract metadata from
- * @returns Array of file metadata objects
+ * Helper function to extract metadata from a `FileList`.
+ * @param fileList - The `FileList` to extract metadata from
+ * @returns Array of {@link IFileMetadata | file metadata} objects
  * @public
  */
-export function extractFileMetadata(fileList: FileList): Array<{
-  path: string;
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-}> {
-  return FileApiTreeAccessors.extractFileMetadata(fileList);
+export function extractFileListMetadata(fileList: FileList): Array<IFileMetadata> {
+  return Array.from(fileList).map((f) => FileApiTreeAccessors.extractFileMetadata(f));
+}
+
+/**
+ * Helper function to extract metadata from a `File`.
+ * @param file - The File to extract metadata from
+ * @returns {@link IFileMetadata | file metadata} object
+ * @public
+ */
+export function extractFileMetadata(file: File): IFileMetadata {
+  return FileApiTreeAccessors.extractFileMetadata(file);
 }

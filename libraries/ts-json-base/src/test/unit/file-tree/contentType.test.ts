@@ -324,4 +324,161 @@ describe('ContentType functionality', () => {
       expect(fileItem.contentType).toBe('text/plain');
     });
   });
+
+  describe('Provided contentType parameter functionality', () => {
+    test('Provided contentType takes precedence over stored contentType', () => {
+      const files: IInMemoryFile[] = [
+        { path: '/test.json', contents: '{}', contentType: 'application/json' as const }
+      ];
+      const accessors = InMemoryTreeAccessors.create(files).orThrow();
+
+      // Without provided parameter, uses stored contentType
+      expect(accessors.getFileContentType('/test.json')).toSucceedWith('application/json');
+
+      // With provided parameter, uses provided contentType
+      expect(accessors.getFileContentType('/test.json', 'text/plain')).toSucceedWith('text/plain');
+      expect(accessors.getFileContentType('/test.json', 'application/xml')).toSucceedWith('application/xml');
+    });
+
+    test('Provided contentType takes precedence over inference', () => {
+      const files: IInMemoryFile[] = [
+        { path: '/test.json', contents: '{}' } // No explicit contentType
+      ];
+
+      const inferContentType = (path: string): Result<string | undefined> => {
+        if (path.endsWith('.json')) return succeed('application/json');
+        return succeed(undefined);
+      };
+
+      const accessors = InMemoryTreeAccessors.create(files, { inferContentType }).orThrow();
+
+      // Without provided parameter, uses inference
+      expect(accessors.getFileContentType('/test.json')).toSucceedWith('application/json');
+
+      // With provided parameter, uses provided contentType
+      expect(accessors.getFileContentType('/test.json', 'text/custom')).toSucceedWith('text/custom');
+    });
+
+    test('Provided contentType works for non-existent files', () => {
+      const files: IInMemoryFile[] = [{ path: '/exists.txt', contents: 'test' }];
+      const accessors = InMemoryTreeAccessors.create(files).orThrow();
+
+      // Without provided parameter, non-existent files use inference (returns undefined by default)
+      expect(accessors.getFileContentType('/missing.json')).toSucceedWith(undefined);
+
+      // With provided parameter, uses provided contentType even for non-existent files
+      expect(accessors.getFileContentType('/missing.json', 'application/json')).toSucceedWith(
+        'application/json'
+      );
+      expect(accessors.getFileContentType('/missing.xml', 'application/xml')).toSucceedWith(
+        'application/xml'
+      );
+    });
+
+    test('Provided contentType works for directories', () => {
+      const files: IInMemoryFile[] = [{ path: '/dir/file.txt', contents: 'test' }];
+      const accessors = InMemoryTreeAccessors.create(files).orThrow();
+
+      // Without provided parameter, directories return undefined
+      expect(accessors.getFileContentType('/dir')).toSucceedWith(undefined);
+
+      // With provided parameter, uses provided contentType even for directories
+      expect(accessors.getFileContentType('/dir', 'application/directory')).toSucceedWith(
+        'application/directory'
+      );
+    });
+
+    test('Provided empty string contentType is handled correctly', () => {
+      const files: IInMemoryFile[] = [
+        { path: '/test.txt', contents: 'test', contentType: 'text/plain' as const }
+      ];
+      const accessors = InMemoryTreeAccessors.create(files).orThrow();
+
+      // Empty string should be treated as a valid provided contentType
+      expect(accessors.getFileContentType('/test.txt', '')).toSucceedWith('');
+      expect(accessors.getFileContentType('/test.txt', '   ')).toSucceedWith('   '); // Spaces are valid too
+    });
+
+    test('Provided undefined parameter falls back to normal behavior', () => {
+      const files: IInMemoryFile[] = [
+        { path: '/test.json', contents: '{}', contentType: 'application/json' as const }
+      ];
+      const accessors = InMemoryTreeAccessors.create(files).orThrow();
+
+      // Explicitly passing undefined should be same as not passing the parameter
+      expect(accessors.getFileContentType('/test.json', undefined)).toSucceedWith('application/json');
+      expect(accessors.getFileContentType('/test.json')).toSucceedWith('application/json');
+    });
+
+    test('Provided parameter works with FsFileTreeAccessors', () => {
+      // Import FsFileTreeAccessors for filesystem tests
+      const { FsFileTreeAccessors } = require('../../../packlets/file-tree/fsTree');
+
+      const fsAccessors = new FsFileTreeAccessors();
+
+      // Test that provided parameter takes precedence over inference for filesystem
+      expect(fsAccessors.getFileContentType('/any/path.json', 'custom/type')).toSucceedWith('custom/type');
+      expect(fsAccessors.getFileContentType('/any/path.txt', 'application/override')).toSucceedWith(
+        'application/override'
+      );
+    });
+
+    test('Provided contentType with type safety', () => {
+      type CustomContentTypes = 'custom/type1' | 'custom/type2' | 'custom/type3';
+
+      const files: IInMemoryFile<CustomContentTypes>[] = [
+        { path: '/test.txt', contents: 'test', contentType: 'custom/type1' }
+      ];
+      const accessors = InMemoryTreeAccessors.create<CustomContentTypes>(files).orThrow();
+
+      // Provided parameter should work with custom types
+      expect(accessors.getFileContentType('/test.txt', 'custom/type2')).toSucceedWith('custom/type2');
+      expect(accessors.getFileContentType('/test.txt', 'custom/type3')).toSucceedWith('custom/type3');
+    });
+
+    test('Provided contentType precedence order', () => {
+      const files: IInMemoryFile[] = [
+        { path: '/test.json', contents: '{}', contentType: 'stored/type' as const }
+      ];
+
+      const inferContentType = (path: string): Result<string | undefined> => {
+        if (path.endsWith('.json')) return succeed('inferred/type');
+        return succeed(undefined);
+      };
+
+      const accessors = InMemoryTreeAccessors.create(files, { inferContentType }).orThrow();
+
+      // Test precedence order: provided > stored > inferred
+
+      // 1. Only inference available (for new path)
+      expect(accessors.getFileContentType('/new.json')).toSucceedWith('inferred/type');
+
+      // 2. Stored contentType takes precedence over inference
+      expect(accessors.getFileContentType('/test.json')).toSucceedWith('stored/type');
+
+      // 3. Provided takes precedence over everything
+      expect(accessors.getFileContentType('/test.json', 'provided/type')).toSucceedWith('provided/type');
+      expect(accessors.getFileContentType('/new.json', 'provided/type')).toSucceedWith('provided/type');
+    });
+
+    test('Provided contentType with special characters and formats', () => {
+      const files: IInMemoryFile[] = [{ path: '/test.file', contents: 'test' }];
+      const accessors = InMemoryTreeAccessors.create(files).orThrow();
+
+      // Test various contentType formats that might be provided
+      const testCases = [
+        'application/json',
+        'text/plain; charset=utf-8',
+        'multipart/form-data; boundary=something',
+        'application/vnd.api+json',
+        'text/html; charset=ISO-8859-1',
+        'application/x-custom+type',
+        'image/svg+xml'
+      ];
+
+      testCases.forEach((contentType) => {
+        expect(accessors.getFileContentType('/test.file', contentType)).toSucceedWith(contentType);
+      });
+    });
+  });
 });

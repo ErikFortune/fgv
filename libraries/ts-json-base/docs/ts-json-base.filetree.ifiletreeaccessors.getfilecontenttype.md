@@ -9,7 +9,7 @@ Gets the content type of a file in the file tree.
 **Signature:**
 
 ```typescript
-getFileContentType(path: string): Result<TCT | undefined>;
+getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ string
 </td><td>
 
 Absolute path of the file.
+
+
+</td></tr>
+<tr><td>
+
+provided
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional supplied content type.
 
 
 </td></tr>

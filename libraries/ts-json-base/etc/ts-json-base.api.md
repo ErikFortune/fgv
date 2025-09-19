@@ -11,6 +11,9 @@ import { Validator } from '@fgv/ts-utils';
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
 
+// @public
+type ContentTypeFactory<TCT extends string = string> = (filePath: string, provided?: string) => Result<TCT | undefined>;
+
 declare namespace Converters {
     export {
         IJsonConverterContext,
@@ -95,7 +98,7 @@ class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create<TCT extends string = string>(path: string, hal: IFileTreeAccessors<TCT>): Result<FileItem<TCT>>;
-    static defaultInferContentType<TCT extends string = string>(filePath: string): Result<TCT | undefined>;
+    static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -128,6 +131,7 @@ class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
 declare namespace FileTree {
     export {
         FileTreeItemType,
+        ContentTypeFactory,
         IFileTreeInitParams,
         IFileTreeFileItem,
         IFileTreeDirectoryItem,
@@ -208,7 +212,7 @@ class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAcces
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    getFileContentType(filePath: string): Result<TCT | undefined>;
+    getFileContentType(filePath: string, provided?: string): Result<TCT | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -231,7 +235,7 @@ interface IFileTreeAccessors<TCT extends string = string> {
     getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
     getExtension(path: string): string;
     getFileContents(path: string): Result<string>;
-    getFileContentType(path: string): Result<TCT | undefined>;
+    getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
     getItem(path: string): Result<FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
@@ -263,7 +267,7 @@ interface IFileTreeFileItem<TCT extends string = string> {
 // @public
 interface IFileTreeInitParams<TCT extends string = string> {
     // (undocumented)
-    inferContentType?: (filePath: string) => Result<TCT | undefined>;
+    inferContentType?: ContentTypeFactory<TCT>;
     // (undocumented)
     prefix?: string;
 }
@@ -367,7 +371,7 @@ class InMemoryTreeAccessors<TCT extends string = string> implements IFileTreeAcc
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    getFileContentType(path: string): Result<TCT | undefined>;
+    getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)

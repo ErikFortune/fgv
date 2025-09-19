@@ -206,7 +206,7 @@ Gets the contents of a file in the file tree.
 </td></tr>
 <tr><td>
 
-[getFileContentType(filePath)](./ts-json-base.filetree.fsfiletreeaccessors.getfilecontenttype.md)
+[getFileContentType(filePath, provided)](./ts-json-base.filetree.fsfiletreeaccessors.getfilecontenttype.md)
 
 
 </td><td>

@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-(filePath: string) =&gt; Result&lt;TCT \| undefined&gt;
+[ContentTypeFactory](./ts-json-base.filetree.contenttypefactory.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>

@@ -23,7 +23,7 @@
 import { FileTreeItem, IFileTreeAccessors, IFileTreeInitParams } from './fileTreeAccessors';
 import path from 'path';
 import fs from 'fs';
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, Result, succeed } from '@fgv/ts-utils';
 import { DirectoryItem } from './directoryItem';
 import { FileItem } from './fileItem';
 
@@ -62,8 +62,8 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
       this.prefix = params;
       this._inferContentType = FileItem.defaultInferContentType;
     } else {
+      /* c8 ignore next 2 - tested but code coverage has intermittent issues */
       this.prefix = params?.prefix;
-      /* c8 ignore next 1 - tested but code coverage has intermittent issues */
       this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
     }
   }
@@ -125,7 +125,10 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
   /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
    */
-  public getFileContentType(filePath: string): Result<TCT | undefined> {
+  public getFileContentType(filePath: string, provided?: string): Result<TCT | undefined> {
+    if (provided !== undefined) {
+      return succeed(provided as TCT);
+    }
     return this._inferContentType(filePath);
   }
 

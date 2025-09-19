@@ -259,7 +259,7 @@ Creates a new [FileTree.FileItem](./ts-json-base.filetree.fileitem.md) instance.
 </td></tr>
 <tr><td>
 
-[defaultInferContentType(filePath)](./ts-json-base.filetree.fileitem.defaultinfercontenttype.md)
+[defaultInferContentType(\_\_filePath, \_\_provided)](./ts-json-base.filetree.fileitem.defaultinfercontenttype.md)
 
 
 </td><td>
