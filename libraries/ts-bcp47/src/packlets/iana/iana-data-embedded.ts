@@ -49,16 +49,16 @@ export function getIanaDataBuffer(): Uint8Array {
   if (typeof Buffer !== 'undefined') {
     // Node.js environment
     return new Uint8Array(Buffer.from(ianaDataBase64, 'base64'));
-  } else {
-  /* c8 ignore next 9 - browser environment code, tested in Node.js environment where Buffer is available */
-    // Browser environment - use atob (available in all modern browsers)
-    const binaryString = atob(ianaDataBase64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes;
+    /* c8 ignore next 1 - for some reason coverage is complaining about this closing brace (?!) */
   }
+  /* c8 ignore next 8 - browser environment code, tested in Node.js environment where Buffer is available */
+  // Browser environment - use atob (available in all modern browsers)
+  const binaryString = atob(ianaDataBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
 }
 
 export default ianaDataBase64;
