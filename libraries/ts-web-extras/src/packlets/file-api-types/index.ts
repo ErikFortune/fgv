@@ -264,3 +264,82 @@ export async function safeShowDirectoryPicker(
   }
   return null;
 }
+
+/**
+ * Export data as JSON file using legacy blob download method.
+ * Creates a temporary download link and triggers file download.
+ * @param data - Data to export as JSON
+ * @param filename - Name for the downloaded file
+ * @public
+ */
+export function exportAsJson(data: unknown, filename: string): void {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Export data using File System Access API with fallback to blob download.
+ * @param data - Data to export as JSON
+ * @param suggestedName - Suggested filename for the save dialog
+ * @param description - Description for file type filter (default: 'JSON files')
+ * @param window - Window object for API access (default: globalThis.window)
+ * @returns Promise resolving to true if saved via File System Access API, false if fallback used
+ * @public
+ */
+export async function exportUsingFileSystemAPI(
+  data: unknown,
+  suggestedName: string,
+  description: string = 'JSON files',
+  window: Window = globalThis.window
+): Promise<boolean> {
+  if (!supportsFileSystemAccess(window)) {
+    // Fallback to blob download
+    exportAsJson(data, suggestedName);
+    return false;
+  }
+
+  try {
+    const fileHandle = await safeShowSaveFilePicker(window, {
+      suggestedName,
+      types: [
+        {
+          description,
+          accept: {
+            'application/json': ['.json']
+          }
+        }
+      ]
+    });
+
+    if (!fileHandle) {
+      // User cancelled - fallback to blob download
+      exportAsJson(data, suggestedName);
+      return false;
+    }
+
+    const json = JSON.stringify(data, null, 2);
+    const writable = await fileHandle.createWritable();
+    await writable.write(json);
+    await writable.close();
+
+    return true;
+  } catch (error) {
+    // Handle errors by falling back to blob download
+    if ((error as Error).name === 'AbortError') {
+      // User cancelled - fallback
+      exportAsJson(data, suggestedName);
+      return false;
+    }
+    // Other errors - re-throw as they indicate a real problem
+    throw error;
+  }
+}

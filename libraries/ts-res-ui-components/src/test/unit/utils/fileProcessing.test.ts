@@ -21,12 +21,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import {
-  readFilesFromInput,
-  filesToDirectory,
-  exportAsJson,
-  exportUsingFileSystemAPI
-} from '../../../utils/fileProcessing';
+import { readFilesFromInput, filesToDirectory } from '../../../utils/fileProcessing';
+import { exportAsJson, exportUsingFileSystemAPI } from '@fgv/ts-web-extras';
 import { IImportedDirectory, IImportedFile } from '../../../types';
 import { supportsFileSystemAccess, WindowWithFsAccess } from '@fgv/ts-web-extras';
 

@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "FileTree moved from ts-utils and to use JsonTypes",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}

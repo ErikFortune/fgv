@@ -1,169 +1,185 @@
-import { IImportedFile, IImportedDirectory, JsonValue } from '../types';
-import { supportsFileSystemAccess, safeShowSaveFilePicker } from '@fgv/ts-web-extras';
+import { IImportedFile, IImportedDirectory } from '../types';
+import { FileTreeHelpers } from '@fgv/ts-web-extras';
+import { FileTree } from '@fgv/ts-json-base';
 
 /**
- * Read files from file input element
+ * Read files from file input element using FileTree
  */
 /** @internal */
 export async function readFilesFromInput(files: FileList): Promise<IImportedFile[]> {
-  const importedFiles: IImportedFile[] = [];
-
+  // Capture MIME types before FileTree processing loses them
+  const mimeTypeMap = new Map<string, string>();
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
-    const content = await readFileContent(file);
-    importedFiles.push({
-      name: file.name,
-      path: file.webkitRelativePath || file.name,
-      content,
-      type: file.type
-    });
+    const path = file.webkitRelativePath || file.name;
+    mimeTypeMap.set(path, file.type);
   }
+
+  // Use FileTree to process files (with fallback for test environment)
+  const fileTreeResult = await FileTreeHelpers.fromFileList(files);
+  if (fileTreeResult.isFailure()) {
+    // Fallback for test environment where File.text() might not be available
+    const importedFiles: IImportedFile[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const path = file.webkitRelativePath || file.name;
+
+      // Try to read content with fallback
+      let content: string;
+      try {
+        content = typeof file.text === 'function' ? await file.text() : await readFileContentLegacy(file);
+      } catch (error) {
+        throw new Error(`Failed to read file ${file.name}: ${error}`);
+      }
+
+      importedFiles.push({
+        name: file.name,
+        path,
+        content,
+        type: file.type
+      });
+    }
+    return importedFiles;
+  }
+
+  const fileTree = fileTreeResult.value;
+
+  // Convert FileTree to IImportedFile array
+  const importedFiles: IImportedFile[] = [];
+
+  // Recursively collect all files from the tree
+  const collectFiles = (directory: FileTree.IFileTreeDirectoryItem): void => {
+    const children = directory.getChildren().orThrow();
+
+    for (const item of children) {
+      if (item.type === 'file') {
+        const content = item.getRawContents().orThrow();
+        const relativePath = item.absolutePath.startsWith('/')
+          ? item.absolutePath.substring(1)
+          : item.absolutePath;
+
+        importedFiles.push({
+          name: item.name,
+          path: relativePath,
+          content,
+          type: mimeTypeMap.get(relativePath) || undefined
+        });
+      } else {
+        // Recursively collect from subdirectories
+        collectFiles(item);
+      }
+    }
+  };
+
+  // Start from root directory
+  const rootDir = fileTree.getDirectory('/').orThrow();
+  collectFiles(rootDir);
 
   return importedFiles;
 }
 
 /**
- * Read file content as text
+ * Convert flat file list to directory structure using FileTree navigation
  */
-function readFileContent(file: File): Promise<string> {
+/** @internal */
+export function filesToDirectory(files: IImportedFile[]): IImportedDirectory {
+  // Create in-memory FileTree from files
+  const inMemoryFiles: FileTree.IInMemoryFile[] = files.map((file) => ({
+    path: `/${file.path || file.name}`,
+    contents: file.content
+  }));
+
+  const fileTree = FileTree.inMemory(inMemoryFiles).orThrow();
+  const rootDir = fileTree.getDirectory('/').orThrow();
+  const rootItems = rootDir.getChildren().orThrow();
+
+  // Convert FileTree directory structure to IImportedDirectory
+  const convertDirectoryItem = (dirItem: FileTree.IFileTreeDirectoryItem): IImportedDirectory => {
+    const dirContents = dirItem.getChildren().orThrow();
+
+    const subFiles: IImportedFile[] = [];
+    const subdirectories: IImportedDirectory[] = [];
+
+    for (const item of dirContents) {
+      if (item.type === 'file') {
+        const content = item.getRawContents().orThrow();
+        const relativePath = item.absolutePath.startsWith('/')
+          ? item.absolutePath.substring(1)
+          : item.absolutePath;
+
+        // Find original file to get MIME type
+        const originalFile = files.find((f) => (f.path || f.name) === relativePath);
+
+        subFiles.push({
+          name: item.name,
+          path: originalFile?.path,
+          content,
+          type: originalFile?.type
+        });
+      } else {
+        subdirectories.push(convertDirectoryItem(item));
+      }
+    }
+
+    const relativePath = dirItem.absolutePath.startsWith('/')
+      ? dirItem.absolutePath.substring(1)
+      : dirItem.absolutePath;
+
+    return {
+      name: dirItem.name,
+      path: relativePath,
+      files: subFiles,
+      subdirectories
+    };
+  };
+
+  // Handle root directory specially
+  const rootFiles: IImportedFile[] = [];
+  const rootSubdirectories: IImportedDirectory[] = [];
+
+  for (const item of rootItems) {
+    if (item.type === 'file') {
+      const content = item.getRawContents().orThrow();
+      const relativePath = item.absolutePath.startsWith('/')
+        ? item.absolutePath.substring(1)
+        : item.absolutePath;
+
+      const originalFile = files.find((f) => (f.path || f.name) === relativePath);
+
+      rootFiles.push({
+        name: item.name,
+        path: originalFile?.path,
+        content,
+        type: originalFile?.type
+      });
+    } else {
+      rootSubdirectories.push(convertDirectoryItem(item));
+    }
+  }
+
+  return {
+    name: 'root',
+    path: '',
+    files: rootFiles,
+    subdirectories: rootSubdirectories
+  };
+}
+
+/**
+ * Legacy file reading function for test environments
+ * @internal
+ */
+function readFileContentLegacy(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       resolve(e.target?.result as string);
     };
     reader.onerror = (e) => {
-      reject(new Error(`Failed to read file ${file.name}: ${e}`));
+      reject(new Error(`FileReader error: ${e}`));
     };
     reader.readAsText(file);
   });
 }
 
-/**
- * Convert flat file list to directory structure
- */
-/** @internal */
-export function filesToDirectory(files: IImportedFile[]): IImportedDirectory {
-  // Group files by directory path
-  const filesByPath = new Map<string, IImportedFile[]>();
-  const dirPaths = new Set<string>();
-
-  files.forEach((file) => {
-    if (file.path) {
-      const parts = file.path.split('/');
-      if (parts.length > 1) {
-        // File is in a subdirectory
-        const dirPath = parts.slice(0, -1).join('/');
-        dirPaths.add(dirPath);
-
-        if (!filesByPath.has(dirPath)) {
-          filesByPath.set(dirPath, []);
-        }
-        filesByPath.get(dirPath)!.push({
-          ...file,
-          name: parts[parts.length - 1]
-        });
-      } else {
-        // File is in root
-        if (!filesByPath.has('')) {
-          filesByPath.set('', []);
-        }
-        filesByPath.get('')!.push(file);
-      }
-    } else {
-      // No path, add to root
-      if (!filesByPath.has('')) {
-        filesByPath.set('', []);
-      }
-      filesByPath.get('')!.push(file);
-    }
-  });
-
-  // Build directory tree
-  const buildDirectory = (path: string, name: string): IImportedDirectory => {
-    const dir: IImportedDirectory = {
-      name,
-      path,
-      files: filesByPath.get(path) || [],
-      subdirectories: []
-    };
-
-    // Find subdirectories
-    const prefix = path ? `${path}/` : '';
-    dirPaths.forEach((dirPath) => {
-      if (dirPath.startsWith(prefix)) {
-        const remaining = dirPath.slice(prefix.length);
-        if (remaining && !remaining.includes('/')) {
-          // This is a direct subdirectory
-          dir.subdirectories!.push(buildDirectory(dirPath, remaining));
-        }
-      }
-    });
-
-    return dir;
-  };
-
-  return buildDirectory('', 'root');
-}
-
-/**
- * Export data as JSON file
- */
-/** @internal */
-export function exportAsJson(data: JsonValue, filename: string): void {
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-/**
- * Export data using File System Access API if available
- */
-/** @internal */
-export async function exportUsingFileSystemAPI(
-  data: JsonValue,
-  suggestedName: string,
-  description: string = 'JSON files'
-): Promise<boolean> {
-  if (!supportsFileSystemAccess(window)) {
-    return false;
-  }
-
-  try {
-    const fileHandle = await safeShowSaveFilePicker(window, {
-      suggestedName,
-      types: [
-        {
-          description,
-          accept: {
-            'application/json': ['.json']
-          }
-        }
-      ]
-    });
-
-    if (!fileHandle) {
-      return false;
-    }
-
-    const json = JSON.stringify(data, null, 2);
-    const writable = await fileHandle.createWritable();
-    await writable.write(json);
-    await writable.close();
-
-    return true;
-  } catch (error) {
-    // User cancelled or other error
-    if ((error as Error).name === 'AbortError') {
-      return false;
-    }
-    throw error;
-  }
-}
+// Export functions moved to @fgv/ts-web-extras

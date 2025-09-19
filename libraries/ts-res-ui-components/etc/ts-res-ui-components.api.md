@@ -6,6 +6,8 @@
 
 import { Bundle } from '@fgv/ts-res';
 import { Config } from '@fgv/ts-res';
+import { exportAsJson } from '@fgv/ts-web-extras';
+import { exportUsingFileSystemAPI } from '@fgv/ts-web-extras';
 import { FileTree } from '@fgv/ts-json-base';
 import { Import } from '@fgv/ts-res';
 import { IUrlConfigOptions } from '@fgv/ts-web-extras';
@@ -196,16 +198,10 @@ const EditableJsonView: React_2.FC<IEditableJsonViewProps>;
 // @public
 function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: ResourceJson.Compiled.ICompiledResource, compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection): IConditionEvaluationResult[];
 
-// @internal (undocumented)
-function exportAsJson(data: JsonValue, filename: string): void;
-
 // Warning: (ae-forgotten-export) The symbol "IConfigurationExportOptions" needs to be exported by the entry point index.d.ts
 //
 // @public
 function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: IConfigurationExportOptions): Result<string>;
-
-// @internal (undocumented)
-function exportUsingFileSystemAPI(data: JsonValue, suggestedName: string, description?: string): Promise<boolean>;
 
 // @internal (undocumented)
 function filesToDirectory(files: IImportedFile[]): IImportedDirectory;

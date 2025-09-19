@@ -14,6 +14,12 @@ export class BrowserHashProvider {
 }
 
 // @public
+export function exportAsJson(data: unknown, filename: string): void;
+
+// @public
+export function exportUsingFileSystemAPI(data: unknown, suggestedName: string, description?: string, window?: Window): Promise<boolean>;
+
+// @public
 export function extractDirectoryPath(path: string): string;
 
 // @public
