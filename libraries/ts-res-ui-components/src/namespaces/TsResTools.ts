@@ -37,10 +37,8 @@ export { CompiledView } from '../components/views/CompiledView';
 export {
   getDefaultSystemConfiguration,
   createSimpleContext,
-  convertImportedDirectoryToFileTree,
   createTsResSystemFromConfig,
-  processImportedFiles,
-  processImportedDirectory
+  processFileTree
 } from '../utils/tsResIntegration';
 
 // Export view component props

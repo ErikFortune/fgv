@@ -62,8 +62,8 @@ Object containing current state and available actions
 ```typescript
 const { state, actions } = useResourceData();
 
-// Process imported files
-await actions.processFiles(importedFiles);
+// Process a FileTree
+await actions.processFileTree(fileTree);
 
 // Resolve a resource with context
 const result = await actions.resolveResource('my.resource', {

@@ -29,11 +29,11 @@
 // Export the ImportView component (dual export with ZipTools)
 export { ImportView } from '../components/views/ImportView';
 
-// Export file processing utilities - tree building from local, export from ts-web-extras
-export { readFilesFromInput, filesToDirectory } from '../utils/fileProcessing';
+// Export file processing utilities - now return FileTree directly
+export { readFilesFromInput, readDirectoryFromInput, createFileTreeFromFiles } from '../utils/fileProcessing';
 
 // Export utilities moved to ts-web-extras
 export { exportAsJson, exportUsingFileSystemAPI } from '@fgv/ts-web-extras';
 
 // Export types related to file handling and processing
-export type { IImportedFile, IImportedDirectory, IImportViewProps } from '../types';
+export type { IImportViewProps } from '../types';

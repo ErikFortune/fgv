@@ -451,7 +451,7 @@ Description
 </td></tr>
 <tr><td>
 
-[importDirectory](./ts-res-ui-components.iorchestratoractions.importdirectory.md)
+[importFileTree](./ts-res-ui-components.iorchestratoractions.importfiletree.md)
 
 
 </td><td>
@@ -459,24 +459,7 @@ Description
 
 </td><td>
 
-(directory: [IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md)<!-- -->) =&gt; Promise&lt;void&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[importDirectoryWithConfig](./ts-res-ui-components.iorchestratoractions.importdirectorywithconfig.md)
-
-
-</td><td>
-
-
-</td><td>
-
-(directory: [IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md)<!-- -->, config: Config.Model.ISystemConfiguration) =&gt; Promise&lt;void&gt;
+(fileTree: FileTree.FileTree) =&gt; Promise&lt;void&gt;
 
 
 </td><td>
@@ -485,7 +468,7 @@ Description
 </td></tr>
 <tr><td>
 
-[importFiles](./ts-res-ui-components.iorchestratoractions.importfiles.md)
+[importFileTreeWithConfig](./ts-res-ui-components.iorchestratoractions.importfiletreewithconfig.md)
 
 
 </td><td>
@@ -493,7 +476,7 @@ Description
 
 </td><td>
 
-(files: [IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)<!-- -->\[\]) =&gt; Promise&lt;void&gt;
+(fileTree: FileTree.FileTree, config: Config.Model.ISystemConfiguration) =&gt; Promise&lt;void&gt;
 
 
 </td><td>

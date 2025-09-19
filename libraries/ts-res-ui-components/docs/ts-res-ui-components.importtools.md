@@ -19,28 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md)
-
-
-</td><td>
-
-Represents a directory structure imported into the system. Supports nested directory hierarchies with files and subdirectories.
-
-
-</td></tr>
-<tr><td>
-
-[IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)
-
-
-</td><td>
-
-Represents a file imported into the system. Used for handling individual resource files and configurations.
-
-
-</td></tr>
-<tr><td>
-
 [IImportViewProps](./ts-res-ui-components.importtools.iimportviewprops.md)
 
 

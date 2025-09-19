@@ -41,7 +41,7 @@ Helper function to process resources from a ZIP load result
 </td></tr>
 <tr><td>
 
-[processZipResources(files, directory, config, o11y)](./ts-res-ui-components.ziptools.processzipresources.md)
+[processZipResources(fileTree, config, o11y)](./ts-res-ui-components.ziptools.processzipresources.md)
 
 
 </td><td>

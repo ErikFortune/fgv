@@ -1,25 +1,64 @@
-import { IImportedFile, IImportedDirectory } from '../types';
+import { Result, fail } from '@fgv/ts-utils';
 import { FileTreeHelpers } from '@fgv/ts-web-extras';
 import { FileTree } from '@fgv/ts-json-base';
 
 /**
- * Read files from file input element using FileTree
+ * Read files from file input element and return FileTree
+ * Leverages FileTree's automatic contentType initialization from MIME types
  */
 /** @internal */
-export async function readFilesFromInput(files: FileList): Promise<IImportedFile[]> {
-  // Capture MIME types before FileTree processing loses them
-  const mimeTypeMap = new Map<string, string>();
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const path = file.webkitRelativePath || file.name;
-    mimeTypeMap.set(path, file.type);
-  }
-
-  // Use FileTree to process files (with fallback for test environment)
+export async function readFilesFromInput(files: FileList): Promise<Result<FileTree.FileTree>> {
+  // Use FileTreeHelpers which automatically preserves MIME types as contentType
   const fileTreeResult = await FileTreeHelpers.fromFileList(files);
   if (fileTreeResult.isFailure()) {
     // Fallback for test environment where File.text() might not be available
-    const importedFiles: IImportedFile[] = [];
+    return createFileTreeFallback(files);
+  }
+
+  return fileTreeResult;
+}
+
+/**
+ * Create FileTree from files array
+ * For converting existing file data to FileTree format
+ */
+/** @internal */
+export function createFileTreeFromFiles(
+  files: Array<{ name: string; path?: string; content: string; type?: string }>
+): Result<FileTree.FileTree> {
+  // Convert to IInMemoryFile format
+  const inMemoryFiles: FileTree.IInMemoryFile[] = files.map((file) => ({
+    path: `/${file.path || file.name}`,
+    contents: file.content,
+    contentType: file.type
+  }));
+
+  return FileTree.inMemory(inMemoryFiles);
+}
+
+/**
+ * Read directory upload (with webkitRelativePath) and return FileTree
+ */
+/** @internal */
+export async function readDirectoryFromInput(files: FileList): Promise<Result<FileTree.FileTree>> {
+  // Use FileTreeHelpers which handles webkitRelativePath automatically
+  const fileTreeResult = await FileTreeHelpers.fromDirectoryUpload(files);
+  if (fileTreeResult.isFailure()) {
+    // Fallback for test environment
+    return createFileTreeFallback(files);
+  }
+
+  return fileTreeResult;
+}
+
+/**
+ * Fallback FileTree creation for test environments
+ * @internal
+ */
+async function createFileTreeFallback(files: FileList): Promise<Result<FileTree.FileTree>> {
+  try {
+    const inMemoryFiles: FileTree.IInMemoryFile[] = [];
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const path = file.webkitRelativePath || file.name;
@@ -29,140 +68,20 @@ export async function readFilesFromInput(files: FileList): Promise<IImportedFile
       try {
         content = typeof file.text === 'function' ? await file.text() : await readFileContentLegacy(file);
       } catch (error) {
-        throw new Error(`Failed to read file ${file.name}: ${error}`);
+        return fail(`Failed to read file ${file.name}: ${error}`);
       }
 
-      importedFiles.push({
-        name: file.name,
-        path,
-        content,
-        type: file.type
+      inMemoryFiles.push({
+        path: `/${path}`,
+        contents: content,
+        contentType: file.type || undefined
       });
     }
-    return importedFiles;
+
+    return FileTree.inMemory(inMemoryFiles);
+  } catch (error) {
+    return fail(`Failed to create FileTree: ${error}`);
   }
-
-  const fileTree = fileTreeResult.value;
-
-  // Convert FileTree to IImportedFile array
-  const importedFiles: IImportedFile[] = [];
-
-  // Recursively collect all files from the tree
-  const collectFiles = (directory: FileTree.IFileTreeDirectoryItem): void => {
-    const children = directory.getChildren().orThrow();
-
-    for (const item of children) {
-      if (item.type === 'file') {
-        const content = item.getRawContents().orThrow();
-        const relativePath = item.absolutePath.startsWith('/')
-          ? item.absolutePath.substring(1)
-          : item.absolutePath;
-
-        importedFiles.push({
-          name: item.name,
-          path: relativePath,
-          content,
-          type: mimeTypeMap.get(relativePath) || undefined
-        });
-      } else {
-        // Recursively collect from subdirectories
-        collectFiles(item);
-      }
-    }
-  };
-
-  // Start from root directory
-  const rootDir = fileTree.getDirectory('/').orThrow();
-  collectFiles(rootDir);
-
-  return importedFiles;
-}
-
-/**
- * Convert flat file list to directory structure using FileTree navigation
- */
-/** @internal */
-export function filesToDirectory(files: IImportedFile[]): IImportedDirectory {
-  // Create in-memory FileTree from files
-  const inMemoryFiles: FileTree.IInMemoryFile[] = files.map((file) => ({
-    path: `/${file.path || file.name}`,
-    contents: file.content
-  }));
-
-  const fileTree = FileTree.inMemory(inMemoryFiles).orThrow();
-  const rootDir = fileTree.getDirectory('/').orThrow();
-  const rootItems = rootDir.getChildren().orThrow();
-
-  // Convert FileTree directory structure to IImportedDirectory
-  const convertDirectoryItem = (dirItem: FileTree.IFileTreeDirectoryItem): IImportedDirectory => {
-    const dirContents = dirItem.getChildren().orThrow();
-
-    const subFiles: IImportedFile[] = [];
-    const subdirectories: IImportedDirectory[] = [];
-
-    for (const item of dirContents) {
-      if (item.type === 'file') {
-        const content = item.getRawContents().orThrow();
-        const relativePath = item.absolutePath.startsWith('/')
-          ? item.absolutePath.substring(1)
-          : item.absolutePath;
-
-        // Find original file to get MIME type
-        const originalFile = files.find((f) => (f.path || f.name) === relativePath);
-
-        subFiles.push({
-          name: item.name,
-          path: originalFile?.path,
-          content,
-          type: originalFile?.type
-        });
-      } else {
-        subdirectories.push(convertDirectoryItem(item));
-      }
-    }
-
-    const relativePath = dirItem.absolutePath.startsWith('/')
-      ? dirItem.absolutePath.substring(1)
-      : dirItem.absolutePath;
-
-    return {
-      name: dirItem.name,
-      path: relativePath,
-      files: subFiles,
-      subdirectories
-    };
-  };
-
-  // Handle root directory specially
-  const rootFiles: IImportedFile[] = [];
-  const rootSubdirectories: IImportedDirectory[] = [];
-
-  for (const item of rootItems) {
-    if (item.type === 'file') {
-      const content = item.getRawContents().orThrow();
-      const relativePath = item.absolutePath.startsWith('/')
-        ? item.absolutePath.substring(1)
-        : item.absolutePath;
-
-      const originalFile = files.find((f) => (f.path || f.name) === relativePath);
-
-      rootFiles.push({
-        name: item.name,
-        path: originalFile?.path,
-        content,
-        type: originalFile?.type
-      });
-    } else {
-      rootSubdirectories.push(convertDirectoryItem(item));
-    }
-  }
-
-  return {
-    name: 'root',
-    path: '',
-    files: rootFiles,
-    subdirectories: rootSubdirectories
-  };
 }
 
 /**
@@ -173,7 +92,12 @@ function readFileContentLegacy(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
-      resolve(e.target?.result as string);
+      const result = e.target?.result;
+      if (typeof result === 'string') {
+        resolve(result);
+      } else {
+        reject(new Error(`FileReader result is not a string: ${typeof result}`));
+      }
     };
     reader.onerror = (e) => {
       reject(new Error(`FileReader error: ${e}`));

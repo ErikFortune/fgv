@@ -90,13 +90,16 @@ class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
     success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
 }
 
-// Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
-//
-// @internal (undocumented)
-function convertImportedDirectoryToFileTree(directory: IImportedDirectory, o11y?: ObservabilityTools_2.IObservabilityContext): FileTree.FileTree;
-
 // @public
 function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
+
+// @internal (undocumented)
+function createFileTreeFromFiles(files: Array<{
+    name: string;
+    path?: string;
+    content: string;
+    type?: string;
+}>): Result<FileTree.FileTree>;
 
 // @public
 const createFilteredResourceManagerSimple: (originalSystem: IProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: IFilterOptions) => Promise<Result<IProcessedResources>>;
@@ -202,9 +205,6 @@ function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, cand
 //
 // @public
 function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: IConfigurationExportOptions): Result<string>;
-
-// @internal (undocumented)
-function filesToDirectory(files: IImportedFile[]): IImportedDirectory;
 
 declare namespace FilterTools {
     export {
@@ -602,28 +602,12 @@ interface IGridViewProps extends IViewBaseProps {
 }
 
 // @public
-interface IImportedDirectory {
-    files: IImportedFile[];
-    name: string;
-    path?: string;
-    subdirectories?: IImportedDirectory[];
-}
-
-// @public
-interface IImportedFile {
-    content: string;
-    name: string;
-    path?: string;
-    type?: string;
-}
-
-// @public
 interface IImportViewProps extends IViewBaseProps {
     acceptedFileTypes?: string[];
     importError?: string | null;
     onBundleImport?: (bundle: Bundle.IBundle) => void;
-    onImport?: (data: IImportedDirectory | IImportedFile[]) => void;
-    onZipImport?: (zipData: IImportedDirectory | IImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
+    onImport?: (data: FileTree.FileTree) => void;
+    onZipImport?: (zipData: FileTree.FileTree, config?: Config.Model.ISystemConfiguration) => void;
 }
 
 // @public
@@ -648,11 +632,10 @@ declare namespace ImportTools {
     export {
         ImportView,
         readFilesFromInput,
-        filesToDirectory,
+        readDirectoryFromInput,
+        createFileTreeFromFiles,
         exportAsJson,
         exportUsingFileSystemAPI,
-        IImportedFile,
-        IImportedDirectory,
         IImportViewProps
     }
 }
@@ -707,6 +690,7 @@ interface IObservabilityContext {
 // @public
 export interface IObservabilityProviderProps {
     children: ReactNode;
+    // Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
     observabilityContext?: ObservabilityTools_2.IObservabilityContext;
 }
 
@@ -759,11 +743,9 @@ export interface IOrchestratorActions {
     // (undocumented)
     importBundle: (bundle: Bundle.IBundle) => Promise<void>;
     // (undocumented)
-    importDirectory: (directory: IImportedDirectory) => Promise<void>;
+    importFileTree: (fileTree: FileTree.FileTree) => Promise<void>;
     // (undocumented)
-    importDirectoryWithConfig: (directory: IImportedDirectory, config: Config.Model.ISystemConfiguration) => Promise<void>;
-    // (undocumented)
-    importFiles: (files: IImportedFile[]) => Promise<void>;
+    importFileTreeWithConfig: (fileTree: FileTree.FileTree, config: Config.Model.ISystemConfiguration) => Promise<void>;
     // (undocumented)
     markResourceForDeletion: (resourceId: string) => void;
     // (undocumented)
@@ -1250,25 +1232,19 @@ declare namespace PickerTools {
 }
 export { PickerTools }
 
-// Warning: (ae-forgotten-export) The symbol "ICreateProcessImportedDirectoryParams" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ICreateProcessFileTreeParams" needs to be exported by the entry point index.d.ts
 //
 // @internal (undocumented)
-function processImportedDirectory(params: ICreateProcessImportedDirectoryParams): Result<IExtendedProcessedResources>;
-
-// Warning: (ae-forgotten-export) The symbol "ICreateProcessImportedFilesParams" needs to be exported by the entry point index.d.ts
-//
-// @internal (undocumented)
-function processImportedFiles(params: ICreateProcessImportedFilesParams): Result<IExtendedProcessedResources>;
+function processFileTree(params: ICreateProcessFileTreeParams): Result<IExtendedProcessedResources>;
 
 // @public
 function processZipLoadResult(zipResult: {
-    files: IImportedFile[];
-    directory?: IImportedDirectory;
+    fileTree: FileTree.FileTree;
     config?: Config.Model.ISystemConfiguration;
 }, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
 
 // @public
-function processZipResources(files: IImportedFile[], directory: IImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
+function processZipResources(fileTree: FileTree.FileTree, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
 
 // Warning: (ae-forgotten-export) The symbol "IQualifierContextControlProps" needs to be exported by the entry point index.d.ts
 //
@@ -1286,7 +1262,10 @@ const QualifierEditForm: React_2.FC<IQualifierEditFormProps>;
 const QualifierTypeEditForm: React_2.FC<IQualifierTypeEditFormProps>;
 
 // @internal (undocumented)
-function readFilesFromInput(files: FileList): Promise<IImportedFile[]>;
+function readDirectoryFromInput(files: FileList): Promise<Result<FileTree.FileTree>>;
+
+// @internal (undocumented)
+function readFilesFromInput(files: FileList): Promise<Result<FileTree.FileTree>>;
 
 // @public
 const ResolutionContextOptionsControl: React_2.FC<IResolutionContextOptionsControlProps>;
@@ -1439,10 +1418,8 @@ declare namespace TsResTools {
         CompiledView,
         getDefaultSystemConfiguration,
         createSimpleContext,
-        convertImportedDirectoryToFileTree,
         createTsResSystemFromConfig,
-        processImportedFiles,
-        processImportedDirectory,
+        processFileTree,
         ISourceViewProps,
         ICompiledViewProps
     }

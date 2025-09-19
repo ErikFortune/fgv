@@ -23,16 +23,16 @@ ImportView: React.FC<IImportViewProps>
 import { ImportView } from '@fgv/ts-res-ui-components';
 
 function MyImportTool() {
-  const handleFileImport = (files, directory) => {
-    console.log('Importing files:', files, directory);
+  const handleFileImport = (fileTree) => {
+    console.log('Importing files:', fileTree);
   };
 
   const handleBundleImport = (bundle) => {
     console.log('Importing bundle:', bundle);
   };
 
-  const handleZipImport = (zipData) => {
-    console.log('Importing ZIP:', zipData);
+  const handleZipImport = (zipData, config) => {
+    console.log('Importing ZIP:', zipData, config);
   };
 
   return (

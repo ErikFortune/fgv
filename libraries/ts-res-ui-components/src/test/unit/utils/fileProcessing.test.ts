@@ -21,66 +21,80 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { readFilesFromInput, filesToDirectory } from '../../../utils/fileProcessing';
+import {
+  readFilesFromInput,
+  readDirectoryFromInput,
+  createFileTreeFromFiles
+} from '../../../utils/fileProcessing';
 import { exportAsJson, exportUsingFileSystemAPI } from '@fgv/ts-web-extras';
-import { IImportedDirectory, IImportedFile } from '../../../types';
 import { supportsFileSystemAccess, WindowWithFsAccess } from '@fgv/ts-web-extras';
 
 describe('fileProcessing utilities', () => {
   describe('readFilesFromInput', () => {
-    test('reads single file from FileList', async () => {
+    test('reads single file from FileList and returns FileTree', async () => {
       const mockFile = new File(['test content'], 'test.json', { type: 'application/json' });
       const fileList = [mockFile] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({
-        name: 'test.json',
-        path: 'test.json',
-        content: 'test content',
-        type: 'application/json'
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Verify it's a FileTree
+        expect(fileTree).toHaveProperty('getFile');
+        expect(fileTree).toHaveProperty('getDirectory');
+
+        // Check that we can get the file
+        expect(fileTree.getFile('/test.json')).toSucceedAndSatisfy((file) => {
+          expect(file.name).toBe('test.json');
+          expect(file.getRawContents()).toSucceedWith('test content');
+          expect(file.contentType).toBe('application/json');
+        });
       });
     });
 
-    test('reads multiple files from FileList', async () => {
+    test('reads multiple files from FileList and returns FileTree', async () => {
       const mockFile1 = new File(['content 1'], 'file1.json', { type: 'application/json' });
       const mockFile2 = new File(['content 2'], 'file2.json', { type: 'application/json' });
       const fileList = [mockFile1, mockFile2] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
-        name: 'file1.json',
-        path: 'file1.json',
-        content: 'content 1',
-        type: 'application/json'
-      });
-      expect(result[1]).toEqual({
-        name: 'file2.json',
-        path: 'file2.json',
-        content: 'content 2',
-        type: 'application/json'
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Check first file
+        expect(fileTree.getFile('/file1.json')).toSucceedAndSatisfy((file) => {
+          expect(file.name).toBe('file1.json');
+          expect(file.getRawContents()).toSucceedWith('content 1');
+          expect(file.contentType).toBe('application/json');
+        });
+
+        // Check second file
+        expect(fileTree.getFile('/file2.json')).toSucceedAndSatisfy((file) => {
+          expect(file.name).toBe('file2.json');
+          expect(file.getRawContents()).toSucceedWith('content 2');
+          expect(file.contentType).toBe('application/json');
+        });
       });
     });
 
     test('handles file with webkitRelativePath', async () => {
       const mockFile = new File(['test content'], 'test.json', {
-        type: 'application/json',
-        webkitRelativePath: 'folder/test.json'
-      } as unknown as FilePropertyBag);
-
+        type: 'application/json'
+      });
+      // Simulate webkitRelativePath
+      Object.defineProperty(mockFile, 'webkitRelativePath', {
+        value: 'folder/test.json',
+        writable: false
+      });
       const fileList = [mockFile] as unknown as FileList;
 
       const result = await readFilesFromInput(fileList);
 
-      expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({
-        name: 'test.json',
-        path: 'folder/test.json',
-        content: 'test content',
-        type: 'application/json'
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Check that file is at the webkitRelativePath location
+        expect(fileTree.getFile('/folder/test.json')).toSucceedAndSatisfy((file) => {
+          expect(file.name).toBe('test.json');
+          expect(file.getRawContents()).toSucceedWith('test content');
+          expect(file.contentType).toBe('application/json');
+        });
       });
     });
 
@@ -89,147 +103,143 @@ describe('fileProcessing utilities', () => {
 
       const result = await readFilesFromInput(fileList);
 
-      expect(result).toEqual([]);
-    });
-
-    test('handles FileReader error', async () => {
-      const mockFile = new File(['test content'], 'test.json', { type: 'application/json' });
-
-      // Override the global FileReader for this test
-      const originalFileReader = global.FileReader;
-      global.FileReader = class MockErrorFileReader {
-        public onload: ((event: unknown) => void) | null = null;
-        public onerror: ((event: unknown) => void) | null = null;
-        public readAsText(): void {
-          setTimeout(() => {
-            if (this.onerror) {
-              this.onerror(new Error('Read error'));
-            }
-          }, 0);
-        }
-      } as unknown as typeof global.FileReader;
-
-      const fileList = [mockFile] as unknown as FileList;
-
-      await expect(readFilesFromInput(fileList)).rejects.toThrow('Failed to read file test.json');
-
-      // Restore original FileReader
-      global.FileReader = originalFileReader;
-    });
-  });
-
-  describe('filesToDirectory', () => {
-    test('creates root directory from files without paths', () => {
-      const files: IImportedFile[] = [
-        { name: 'file1.json', content: 'content1' },
-        { name: 'file2.json', content: 'content2' }
-      ];
-
-      const result = filesToDirectory(files);
-
-      expect(result).toEqual({
-        name: 'root',
-        path: '',
-        files: [
-          { name: 'file1.json', content: 'content1' },
-          { name: 'file2.json', content: 'content2' }
-        ],
-        subdirectories: []
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Should be a valid but empty FileTree
+        const rootDir = fileTree.getDirectory('/');
+        expect(rootDir).toSucceedAndSatisfy((dir) => {
+          expect(dir.getChildren()).toSucceedWith([]);
+        });
       });
     });
 
-    test('creates directory structure from files with paths', () => {
-      const files: IImportedFile[] = [
+    test('handles FileReader error with graceful fallback', async () => {
+      const mockFile = new File(['test content'], 'test.json', { type: 'application/json' });
+
+      // Mock File.text to throw an error to trigger fallback
+      const originalText = mockFile.text;
+      mockFile.text = jest.fn().mockRejectedValue(new Error('Read error'));
+
+      const fileList = [mockFile] as unknown as FileList;
+
+      const result = await readFilesFromInput(fileList);
+
+      // Should still succeed with fallback FileReader
+      expect(result).toSucceed();
+
+      // Restore original method
+      mockFile.text = originalText;
+    });
+  });
+
+  describe('createFileTreeFromFiles', () => {
+    test('creates FileTree from file array with root files', () => {
+      const files = [
+        { name: 'file1.json', content: 'content1', type: 'application/json' },
+        { name: 'file2.json', content: 'content2', type: 'application/json' }
+      ];
+
+      const result = createFileTreeFromFiles(files);
+
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        expect(fileTree.getFile('/file1.json')).toSucceedAndSatisfy((file) => {
+          expect(file.name).toBe('file1.json');
+          expect(file.getRawContents()).toSucceedWith('content1');
+          expect(file.contentType).toBe('application/json');
+        });
+
+        expect(fileTree.getFile('/file2.json')).toSucceedAndSatisfy((file) => {
+          expect(file.name).toBe('file2.json');
+          expect(file.getRawContents()).toSucceedWith('content2');
+          expect(file.contentType).toBe('application/json');
+        });
+      });
+    });
+
+    test('creates FileTree with directory structure from files with paths', () => {
+      const files = [
         { name: 'root.json', path: 'root.json', content: 'root content' },
         { name: 'sub1.json', path: 'folder1/sub1.json', content: 'sub1 content' },
         { name: 'sub2.json', path: 'folder1/sub2.json', content: 'sub2 content' },
         { name: 'nested.json', path: 'folder1/subfolder/nested.json', content: 'nested content' }
       ];
 
-      const result = filesToDirectory(files);
+      const result = createFileTreeFromFiles(files);
 
-      expect(result.name).toBe('root');
-      expect(result.path).toBe('');
-      expect(result.files).toHaveLength(1);
-      expect(result.files[0]).toEqual({ name: 'root.json', path: 'root.json', content: 'root content' });
-      expect(result.subdirectories).toHaveLength(1);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Check root file
+        expect(fileTree.getFile('/root.json')).toSucceedAndSatisfy((file) => {
+          expect(file.getRawContents()).toSucceedWith('root content');
+        });
 
-      const folder1 = result.subdirectories![0];
-      expect(folder1.name).toBe('folder1');
-      expect(folder1.path).toBe('folder1');
-      expect(folder1.files).toHaveLength(2);
-      expect(folder1.files[0]).toEqual({
-        name: 'sub1.json',
-        path: 'folder1/sub1.json',
-        content: 'sub1 content'
+        // Check folder1 files
+        expect(fileTree.getFile('/folder1/sub1.json')).toSucceedAndSatisfy((file) => {
+          expect(file.getRawContents()).toSucceedWith('sub1 content');
+        });
+
+        expect(fileTree.getFile('/folder1/sub2.json')).toSucceedAndSatisfy((file) => {
+          expect(file.getRawContents()).toSucceedWith('sub2 content');
+        });
+
+        // Check nested file
+        expect(fileTree.getFile('/folder1/subfolder/nested.json')).toSucceedAndSatisfy((file) => {
+          expect(file.getRawContents()).toSucceedWith('nested content');
+        });
+
+        // Check directory structure
+        expect(fileTree.getDirectory('/folder1')).toSucceedAndSatisfy((dir) => {
+          expect(dir.name).toBe('folder1');
+        });
+
+        expect(fileTree.getDirectory('/folder1/subfolder')).toSucceedAndSatisfy((subdir) => {
+          expect(subdir.name).toBe('subfolder');
+        });
       });
-      expect(folder1.files[1]).toEqual({
-        name: 'sub2.json',
-        path: 'folder1/sub2.json',
-        content: 'sub2 content'
-      });
-      expect(folder1.subdirectories).toHaveLength(1);
-
-      const subfolder = folder1.subdirectories![0];
-      expect(subfolder.name).toBe('subfolder');
-      expect(subfolder.path).toBe('folder1/subfolder');
-      expect(subfolder.files).toHaveLength(1);
-      expect(subfolder.files[0]).toEqual({
-        name: 'nested.json',
-        path: 'folder1/subfolder/nested.json',
-        content: 'nested content'
-      });
-    });
-
-    test('handles complex nested directory structure', () => {
-      const files: IImportedFile[] = [
-        { name: 'a.json', path: 'dir1/dir2/a.json', content: 'a' },
-        { name: 'b.json', path: 'dir1/b.json', content: 'b' },
-        { name: 'c.json', path: 'dir3/c.json', content: 'c' }
-      ];
-
-      const result = filesToDirectory(files);
-
-      expect(result.subdirectories).toHaveLength(2);
-
-      const dir1 = result.subdirectories!.find((d: IImportedDirectory) => d.name === 'dir1');
-      const dir3 = result.subdirectories!.find((d: IImportedDirectory) => d.name === 'dir3');
-
-      expect(dir1).toBeDefined();
-      expect(dir1!.files).toHaveLength(1);
-      expect(dir1!.files[0].name).toBe('b.json');
-      expect(dir1!.subdirectories).toHaveLength(1);
-      expect(dir1!.subdirectories![0].name).toBe('dir2');
-
-      expect(dir3).toBeDefined();
-      expect(dir3!.files).toHaveLength(1);
-      expect(dir3!.files[0].name).toBe('c.json');
-      expect(dir3!.subdirectories).toHaveLength(0);
     });
 
     test('handles empty file list', () => {
-      const result = filesToDirectory([]);
+      const result = createFileTreeFromFiles([]);
 
-      expect(result).toEqual({
-        name: 'root',
-        path: '',
-        files: [],
-        subdirectories: []
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        const rootDir = fileTree.getDirectory('/');
+        expect(rootDir).toSucceedAndSatisfy((dir) => {
+          expect(dir.getChildren()).toSucceedWith([]);
+        });
       });
     });
+  });
 
-    test('handles files with mixed path and no-path entries', () => {
-      const files: IImportedFile[] = [
-        { name: 'root.json', content: 'root' },
-        { name: 'sub.json', path: 'folder/sub.json', content: 'sub' }
-      ];
+  describe('readDirectoryFromInput', () => {
+    test('reads directory upload with webkitRelativePath', async () => {
+      const mockFile1 = new File(['content1'], 'file1.json', { type: 'application/json' });
+      const mockFile2 = new File(['content2'], 'file2.json', { type: 'application/json' });
 
-      const result = filesToDirectory(files);
+      // Simulate webkitRelativePath for directory upload
+      Object.defineProperty(mockFile1, 'webkitRelativePath', {
+        value: 'mydir/file1.json',
+        writable: false
+      });
+      Object.defineProperty(mockFile2, 'webkitRelativePath', {
+        value: 'mydir/file2.json',
+        writable: false
+      });
 
-      expect(result.files).toHaveLength(1);
-      expect(result.files[0].name).toBe('root.json');
-      expect(result.subdirectories).toHaveLength(1);
-      expect(result.subdirectories![0].name).toBe('folder');
+      const fileList = [mockFile1, mockFile2] as unknown as FileList;
+
+      const result = await readDirectoryFromInput(fileList);
+
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        expect(fileTree.getFile('/mydir/file1.json')).toSucceedAndSatisfy((file) => {
+          expect(file.getRawContents()).toSucceedWith('content1');
+        });
+
+        expect(fileTree.getFile('/mydir/file2.json')).toSucceedAndSatisfy((file) => {
+          expect(file.getRawContents()).toSucceedWith('content2');
+        });
+
+        expect(fileTree.getDirectory('/mydir')).toSucceedAndSatisfy((dir) => {
+          expect(dir.name).toBe('mydir');
+        });
+      });
     });
   });
 
@@ -277,8 +287,9 @@ describe('fileProcessing utilities', () => {
       if (!supportsFileSystemAccess(window)) {
         return;
       }
+
       const originalShowSaveFilePicker = window.showSaveFilePicker;
-      (window as Partial<WindowWithFsAccess>).showSaveFilePicker = undefined;
+      window.showSaveFilePicker = undefined as unknown as typeof window.showSaveFilePicker;
 
       const result = await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
@@ -292,16 +303,18 @@ describe('fileProcessing utilities', () => {
         write: jest.fn().mockResolvedValue(undefined),
         close: jest.fn().mockResolvedValue(undefined)
       };
+
       const mockFileHandle = {
         createWritable: jest.fn().mockResolvedValue(mockWritable)
       };
+
       const mockShowSaveFilePicker = jest.fn().mockResolvedValue(mockFileHandle);
 
       if (!supportsFileSystemAccess(window)) {
         return;
       }
 
-      window.showSaveFilePicker = mockShowSaveFilePicker;
+      (window as WindowWithFsAccess).showSaveFilePicker = mockShowSaveFilePicker;
 
       const testData = { test: 'data' };
       const result = await exportUsingFileSystemAPI(testData, 'test.json', 'Test files');
@@ -332,7 +345,7 @@ describe('fileProcessing utilities', () => {
         return;
       }
 
-      window.showSaveFilePicker = mockShowSaveFilePicker;
+      (window as WindowWithFsAccess).showSaveFilePicker = mockShowSaveFilePicker;
 
       const result = await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
@@ -346,7 +359,7 @@ describe('fileProcessing utilities', () => {
         return;
       }
 
-      window.showSaveFilePicker = mockShowSaveFilePicker;
+      (window as WindowWithFsAccess).showSaveFilePicker = mockShowSaveFilePicker;
 
       await expect(exportUsingFileSystemAPI({ test: 'data' }, 'test.json')).rejects.toThrow(
         'Permission denied'
@@ -358,16 +371,18 @@ describe('fileProcessing utilities', () => {
         write: jest.fn().mockResolvedValue(undefined),
         close: jest.fn().mockResolvedValue(undefined)
       };
+
       const mockFileHandle = {
         createWritable: jest.fn().mockResolvedValue(mockWritable)
       };
+
       const mockShowSaveFilePicker = jest.fn().mockResolvedValue(mockFileHandle);
 
       if (!supportsFileSystemAccess(window)) {
         return;
       }
 
-      window.showSaveFilePicker = mockShowSaveFilePicker;
+      (window as WindowWithFsAccess).showSaveFilePicker = mockShowSaveFilePicker;
 
       await exportUsingFileSystemAPI({ test: 'data' }, 'test.json');
 
