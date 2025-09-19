@@ -4,6 +4,8 @@
 
 ## FileTree.FsFileTreeAccessors.prefix property
 
+Optional path prefix to prepend to all paths.
+
 **Signature:**
 
 ```typescript

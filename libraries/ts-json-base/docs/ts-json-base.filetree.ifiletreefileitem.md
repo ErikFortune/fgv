@@ -9,7 +9,7 @@ Interface for a file in a file tree.
 **Signature:**
 
 ```typescript
-export interface IFileTreeFileItem 
+export interface IFileTreeFileItem<TCT extends string = string> 
 ```
 
 ## Properties
@@ -74,6 +74,27 @@ string
 </td><td>
 
 The base name of the file (without extension)
+
+
+</td></tr>
+<tr><td>
+
+[contentType](./ts-json-base.filetree.ifiletreefileitem.contenttype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TCT \| undefined
+
+
+</td><td>
+
+An optional content type (e.g. mime type) for the file.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Type for an item in a file tree.
 **Signature:**
 
 ```typescript
-export type FileTreeItem = IFileTreeFileItem | IFileTreeDirectoryItem;
+export type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileTreeDirectoryItem<TCT>;
 ```
 **References:** [IFileTreeFileItem](./ts-json-base.filetree.ifiletreefileitem.md)<!-- -->, [IFileTreeDirectoryItem](./ts-json-base.filetree.ifiletreedirectoryitem.md)
 

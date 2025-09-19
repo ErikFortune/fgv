@@ -9,9 +9,9 @@ Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletre
 **Signature:**
 
 ```typescript
-export declare class InMemoryTreeAccessors implements IFileTreeAccessors 
+export declare class InMemoryTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> 
 ```
-**Implements:** [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+**Implements:** [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 ## Constructors
 
@@ -33,7 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(files, prefix)](./ts-json-base.filetree.inmemorytreeaccessors._constructor_.md)
+[(constructor)(files, params)](./ts-json-base.filetree.inmemorytreeaccessors._constructor_.md)
 
 
 </td><td>
@@ -70,6 +70,22 @@ Description
 <tbody><tr><td>
 
 [create(files, prefix)](./ts-json-base.filetree.inmemorytreeaccessors.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new [InMemoryTreeAccessors](./ts-json-base.filetree.inmemorytreeaccessors.md) instance with the supplied in-memory files.
+
+
+</td></tr>
+<tr><td>
+
+[create(files, params)](./ts-json-base.filetree.inmemorytreeaccessors.create_1.md)
 
 
 </td><td>
@@ -136,6 +152,20 @@ Gets the extension of a path.
 </td><td>
 
 Gets the contents of a file in the file tree.
+
+
+</td></tr>
+<tr><td>
+
+[getFileContentType(path)](./ts-json-base.filetree.inmemorytreeaccessors.getfilecontenttype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the content type of a file in the file tree.
 
 
 </td></tr>

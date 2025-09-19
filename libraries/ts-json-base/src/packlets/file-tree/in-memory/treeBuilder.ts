@@ -26,7 +26,7 @@ import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
  * Represents a file in an in-memory file tree.
  * @public
  */
-export class InMemoryFile {
+export class InMemoryFile<TCT extends string = string> {
   /**
    * The absolute path of the file.
    */
@@ -37,13 +37,20 @@ export class InMemoryFile {
   public readonly contents: unknown;
 
   /**
-   * Creates a new {@link InMemoryFile} instance.
+   * The content type of the file.
+   */
+  public readonly contentType?: TCT;
+
+  /**
+   * Creates a new {@link FileTree.InMemoryFile | InMemoryFile} instance.
    * @param absolutePath - The absolute path of the file.
    * @param contents - The contents of the file.
+   * @param contentType - Optional content type of the file.
    */
-  public constructor(absolutePath: string, contents: unknown) {
+  public constructor(absolutePath: string, contents: unknown, contentType?: TCT) {
     this.absolutePath = absolutePath;
     this.contents = contents;
+    this.contentType = contentType;
   }
 }
 
@@ -51,27 +58,27 @@ export class InMemoryFile {
  * Represents a directory in an in-memory file tree.
  * @public
  */
-export class InMemoryDirectory {
+export class InMemoryDirectory<TCT extends string = string> {
   /**
    * The absolute path of the directory.
    */
   public readonly absolutePath: string;
-  protected _children: Map<string, InMemoryDirectory | InMemoryFile>;
+  protected _children: Map<string, InMemoryDirectory<TCT> | InMemoryFile<TCT>>;
 
   /**
    * The children of the directory.
    */
-  public get children(): ReadonlyMap<string, InMemoryDirectory | InMemoryFile> {
+  public get children(): ReadonlyMap<string, InMemoryDirectory<TCT> | InMemoryFile<TCT>> {
     return this._children;
   }
 
   /**
-   * Creates an empty new {@link InMemoryDirectory} instance.
+   * Creates an empty new {@link FileTree.InMemoryDirectory | InMemoryDirectory} instance.
    * @param absolutePath - The absolute path of the directory.
    */
   public constructor(absolutePath: string) {
     this.absolutePath = absolutePath;
-    this._children = new Map<string, InMemoryDirectory | InMemoryFile>();
+    this._children = new Map<string, InMemoryDirectory<TCT> | InMemoryFile<TCT>>();
   }
 
   /**
@@ -80,7 +87,7 @@ export class InMemoryDirectory {
    * @returns `Success` with the child directory if successful, or
    * `Failure` with an error message otherwise.
    */
-  public getOrAddDirectory(name: string): Result<InMemoryDirectory> {
+  public getOrAddDirectory(name: string): Result<InMemoryDirectory<TCT>> {
     const existing = this._children.get(name);
     if (existing) {
       if (existing instanceof InMemoryDirectory) {
@@ -88,7 +95,7 @@ export class InMemoryDirectory {
       }
       return fail(`${name}: not a directory`);
     }
-    const child = new InMemoryDirectory(this.getChildPath(name));
+    const child = new InMemoryDirectory<TCT>(this.getChildPath(name));
     this._children.set(name, child);
     return succeed(child);
   }
@@ -97,14 +104,15 @@ export class InMemoryDirectory {
    * Adds a file to the directory.
    * @param name - The name of the file.
    * @param contents - The contents of the file.
+   * @param contentType - Optional content type of the file.
    * @returns `Success` with the new file if successful, or
    * `Failure` with an error message otherwise.
    */
-  public addFile(name: string, contents: unknown): Result<InMemoryFile> {
+  public addFile(name: string, contents: unknown, contentType?: TCT): Result<InMemoryFile<TCT>> {
     if (this._children.has(name)) {
       return fail(`${name}: already exists`);
     }
-    const child = new InMemoryFile(this.getChildPath(name), contents);
+    const child = new InMemoryFile<TCT>(this.getChildPath(name), contents, contentType);
     this._children.set(name, child);
     return succeed(child);
   }
@@ -128,7 +136,7 @@ export class InMemoryDirectory {
  * Helper class to build an in-memory file tree.
  * @public
  */
-export class TreeBuilder {
+export class TreeBuilder<TCT extends string = string> {
   /**
    * The prefix for all paths in the tree.
    */
@@ -137,12 +145,12 @@ export class TreeBuilder {
   /**
    * The root directory of the tree.
    */
-  public readonly root: InMemoryDirectory;
+  public readonly root: InMemoryDirectory<TCT>;
 
   /**
    * A map of all directories and files in the tree by absolute path.
    */
-  public readonly byAbsolutePath: Map<string, InMemoryDirectory | InMemoryFile>;
+  public readonly byAbsolutePath: Map<string, InMemoryDirectory<TCT> | InMemoryFile<TCT>>;
 
   /**
    * Protected constructor for derived classes.
@@ -160,8 +168,8 @@ export class TreeBuilder {
       this.prefix = this.prefix.slice(0, -1);
     }
 
-    this.root = new InMemoryDirectory(this.prefix);
-    this.byAbsolutePath = new Map<string, InMemoryDirectory | InMemoryFile>();
+    this.root = new InMemoryDirectory<TCT>(this.prefix);
+    this.byAbsolutePath = new Map<string, InMemoryDirectory<TCT> | InMemoryFile<TCT>>();
     this.byAbsolutePath.set(this.prefix, this.root);
   }
 
@@ -172,7 +180,7 @@ export class TreeBuilder {
    * or `Failure` with an error message otherwise.
    * @public
    */
-  public static create(prefix?: string): Result<TreeBuilder> {
+  public static create<TCT extends string = string>(prefix?: string): Result<TreeBuilder<TCT>> {
     return captureResult(() => new TreeBuilder(prefix));
   }
 
@@ -180,11 +188,12 @@ export class TreeBuilder {
    * Adds a file to the tree.
    * @param absolutePath - The absolute path of the file.
    * @param contents - The contents of the file.
+   * @param contentType - The content type of the file.
    * @returns `Success` with the new file if successful, or
    * `Failure` with an error message otherwise.
    * @public
    */
-  public addFile(absolutePath: string, contents: unknown): Result<InMemoryFile> {
+  public addFile(absolutePath: string, contents: unknown, contentType?: TCT): Result<InMemoryFile<TCT>> {
     const parts = absolutePath.split('/').filter((p) => p.length > 0);
     if (parts.length === 0) {
       return fail(`${absolutePath}: invalid file path`);
@@ -201,7 +210,7 @@ export class TreeBuilder {
         this.byAbsolutePath.set(dir.absolutePath, dir);
       }
     }
-    return dir.addFile(parts[0], contents).onSuccess((file: InMemoryFile) => {
+    return dir.addFile(parts[0], contents, contentType).onSuccess((file: InMemoryFile<TCT>) => {
       this.byAbsolutePath.set(file.absolutePath, file);
       return succeed(file);
     });

@@ -4,12 +4,12 @@
 
 ## FileTree.FsFileTreeAccessors.(constructor)
 
-Protected constructor for derived classes.
+Construct a new instance of the [FsFileTreeAccessors](./ts-json-base.filetree.fsfiletreeaccessors.md) class.
 
 **Signature:**
 
 ```typescript
-constructor(prefix?: string);
+constructor(prefix: string);
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ string
 
 </td><td>
 
-_(Optional)_ Optional prefix for the tree.
+Optional prefix for the tree.
 
 
 </td></tr>

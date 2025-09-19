@@ -9,7 +9,7 @@ Represents a single file in an in-memory [file tree](./ts-json-base.filetree.md)
 **Signature:**
 
 ```typescript
-export interface IInMemoryFile 
+export interface IInMemoryFile<TCT extends string = string> 
 ```
 
 ## Properties
@@ -53,6 +53,27 @@ unknown
 </td><td>
 
 The contents of the file
+
+
+</td></tr>
+<tr><td>
+
+[contentType?](./ts-json-base.filetree.iinmemoryfile.contenttype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TCT
+
+
+</td><td>
+
+_(Optional)_ The content type of the file.
 
 
 </td></tr>

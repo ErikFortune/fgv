@@ -9,7 +9,7 @@ Common abstraction layer interface for a tree of files (e.g. a file system or a 
 **Signature:**
 
 ```typescript
-export interface IFileTreeAccessors 
+export interface IFileTreeAccessors<TCT extends string = string> 
 ```
 
 ## Methods
@@ -66,6 +66,17 @@ Gets the extension of a path.
 </td><td>
 
 Gets the contents of a file in the file tree.
+
+
+</td></tr>
+<tr><td>
+
+[getFileContentType(path)](./ts-json-base.filetree.ifiletreeaccessors.getfilecontenttype.md)
+
+
+</td><td>
+
+Gets the content type of a file in the file tree.
 
 
 </td></tr>

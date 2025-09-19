@@ -27,7 +27,7 @@ import { FileTreeItem, IFileTreeAccessors, IFileTreeDirectoryItem } from './file
  * Class representing a directory in a file tree.
  * @public
  */
-export class DirectoryItem implements IFileTreeDirectoryItem {
+export class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryItem<TCT> {
   /**
    * {@inheritdoc FileTree.IFileTreeDirectoryItem."type"}
    */
@@ -49,7 +49,7 @@ export class DirectoryItem implements IFileTreeDirectoryItem {
    * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
-  protected readonly _hal: IFileTreeAccessors;
+  protected readonly _hal: IFileTreeAccessors<TCT>;
 
   /**
    * Protected constructor for derived classes.
@@ -58,7 +58,7 @@ export class DirectoryItem implements IFileTreeDirectoryItem {
    * file system operations.
    * @public
    */
-  protected constructor(path: string, hal: IFileTreeAccessors) {
+  protected constructor(path: string, hal: IFileTreeAccessors<TCT>) {
     this._hal = hal;
     this.absolutePath = hal.resolveAbsolutePath(path);
   }
@@ -71,14 +71,17 @@ export class DirectoryItem implements IFileTreeDirectoryItem {
    * @returns `Success` with the new {@link FileTree.DirectoryItem | DirectoryItem} instance if successful,
    * or `Failure` with an error message otherwise.
    */
-  public static create(path: string, hal: IFileTreeAccessors): Result<DirectoryItem> {
-    return captureResult(() => new DirectoryItem(path, hal));
+  public static create<TCT extends string = string>(
+    path: string,
+    hal: IFileTreeAccessors<TCT>
+  ): Result<DirectoryItem<TCT>> {
+    return captureResult(() => new DirectoryItem<TCT>(path, hal));
   }
 
   /**
    * {@inheritdoc FileTree.IFileTreeDirectoryItem.getChildren}
    */
-  public getChildren(): Result<ReadonlyArray<FileTreeItem>> {
+  public getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     return this._hal.getChildren(this.absolutePath);
   }
 }

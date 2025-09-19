@@ -9,7 +9,7 @@ Creates a new [FileTree.FileItem](./ts-json-base.filetree.fileitem.md) instance.
 **Signature:**
 
 ```typescript
-static create(path: string, hal: IFileTreeAccessors): Result<FileItem>;
+static create<TCT extends string = string>(path: string, hal: IFileTreeAccessors<TCT>): Result<FileItem<TCT>>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ hal
 
 </td><td>
 
-[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
@@ -66,5 +66,5 @@ The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file s
 
 **Returns:**
 
-Result&lt;[FileItem](./ts-json-base.filetree.fileitem.md)<!-- -->&gt;
+Result&lt;[FileItem](./ts-json-base.filetree.fileitem.md)<!-- -->&lt;TCT&gt;&gt;
 

@@ -9,7 +9,7 @@ Represents a file tree.
 **Signature:**
 
 ```typescript
-export declare class FileTree 
+export declare class FileTree<TCT extends string = string> 
 ```
 
 ## Constructors
@@ -81,7 +81,7 @@ Description
 
 </td><td>
 
-[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>

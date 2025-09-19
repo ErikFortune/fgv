@@ -9,9 +9,9 @@ Implementation of [FileTree.IFileTreeAccessors](./ts-json-base.filetree.ifiletre
 **Signature:**
 
 ```typescript
-export declare class FsFileTreeAccessors implements IFileTreeAccessors 
+export declare class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> 
 ```
-**Implements:** [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+**Implements:** [IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 ## Constructors
 
@@ -41,7 +41,21 @@ Description
 
 </td><td>
 
-Protected constructor for derived classes.
+Construct a new instance of the [FsFileTreeAccessors](./ts-json-base.filetree.fsfiletreeaccessors.md) class.
+
+
+</td></tr>
+<tr><td>
+
+[(constructor)(params)](./ts-json-base.filetree.fsfiletreeaccessors._constructor__1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Construct a new instance of the [FsFileTreeAccessors](./ts-json-base.filetree.fsfiletreeaccessors.md) class.
 
 
 </td></tr>
@@ -72,6 +86,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_inferContentType](./ts-json-base.filetree.fsfiletreeaccessors._infercontenttype.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+(filePath: string) =&gt; Result&lt;TCT \| undefined&gt;
+
+
+</td><td>
+
+Function to infer the content type of a file.
+
+
+</td></tr>
+<tr><td>
+
 [prefix](./ts-json-base.filetree.fsfiletreeaccessors.prefix.md)
 
 
@@ -86,6 +123,8 @@ string \| undefined
 
 
 </td><td>
+
+Optional path prefix to prepend to all paths.
 
 
 </td></tr>
@@ -162,6 +201,20 @@ Gets the extension of a path.
 </td><td>
 
 Gets the contents of a file in the file tree.
+
+
+</td></tr>
+<tr><td>
+
+[getFileContentType(filePath)](./ts-json-base.filetree.fsfiletreeaccessors.getfilecontenttype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the content type of a file in the file tree.
 
 
 </td></tr>

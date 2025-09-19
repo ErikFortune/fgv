@@ -9,5 +9,5 @@ The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file s
 **Signature:**
 
 ```typescript
-protected readonly _hal: IFileTreeAccessors;
+protected readonly _hal: IFileTreeAccessors<TCT>;
 ```

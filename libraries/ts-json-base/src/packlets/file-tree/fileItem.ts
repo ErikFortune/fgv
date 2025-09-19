@@ -29,7 +29,7 @@ import { IFileTreeAccessors, IFileTreeFileItem } from './fileTreeAccessors';
  * Class representing a file in a file tree.
  * @public
  */
-export class FileItem implements IFileTreeFileItem {
+export class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
   /**
    * {@inheritdoc FileTree.IFileTreeFileItem."type"}
    */
@@ -62,10 +62,23 @@ export class FileItem implements IFileTreeFileItem {
   }
 
   /**
+   * {@inheritdoc FileTree.IFileTreeFileItem.contentType}
+   */
+  public get contentType(): TCT | undefined {
+    return this._contentType;
+  }
+
+  /**
+   * Mutable content type of the file.
+   * @public
+   */
+  private _contentType: TCT | undefined;
+
+  /**
    * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
-  protected readonly _hal: IFileTreeAccessors;
+  protected readonly _hal: IFileTreeAccessors<TCT>;
 
   /**
    * Protected constructor for derived classes.
@@ -74,9 +87,10 @@ export class FileItem implements IFileTreeFileItem {
    * file system operations.
    * @public
    */
-  protected constructor(path: string, hal: IFileTreeAccessors) {
+  protected constructor(path: string, hal: IFileTreeAccessors<TCT>) {
     this._hal = hal;
     this.absolutePath = hal.resolveAbsolutePath(path);
+    this._contentType = hal.getFileContentType(this.absolutePath).orDefault();
   }
 
   /**
@@ -86,7 +100,10 @@ export class FileItem implements IFileTreeFileItem {
    * file system operations.
    * @public
    */
-  public static create(path: string, hal: IFileTreeAccessors): Result<FileItem> {
+  public static create<TCT extends string = string>(
+    path: string,
+    hal: IFileTreeAccessors<TCT>
+  ): Result<FileItem<TCT>> {
     return captureResult(() => new FileItem(path, hal));
   }
 
@@ -102,11 +119,11 @@ export class FileItem implements IFileTreeFileItem {
     return this._hal
       .getFileContents(this.absolutePath)
       .onSuccess((body) => captureResult(() => JSON.parse(body)).onFailure(() => succeed(body)))
-      .onSuccess((parsed) => {
+      .onSuccess<T | JsonValue>((parsed) => {
         if (converter !== undefined) {
-          return converter.convert(parsed) as Result<T | JsonValue>;
+          return converter.convert(parsed);
         }
-        return succeed(parsed as JsonValue) as Result<T | JsonValue>;
+        return succeed(parsed as JsonValue);
       });
   }
 
@@ -115,5 +132,27 @@ export class FileItem implements IFileTreeFileItem {
    */
   public getRawContents(): Result<string> {
     return this._hal.getFileContents(this.absolutePath);
+  }
+
+  /**
+   * Sets the content type of the file.
+   * @param contentType - The content type of the file.
+   */
+  public setContentType(contentType: TCT | undefined): void {
+    this._contentType = contentType;
+  }
+
+  /**
+   * Default function to infer the content type of a file.
+   * @param filePath - The path of the file.
+   * @returns `Success` with the content type of the file if successful, or
+   * `Failure` with an error message otherwise.
+   * @remarks This default implementation always returns `Success` with `undefined`.
+   * @public
+   */
+  public static defaultInferContentType<TCT extends string = string>(
+    filePath: string
+  ): Result<TCT | undefined> {
+    return succeed(undefined);
   }
 }

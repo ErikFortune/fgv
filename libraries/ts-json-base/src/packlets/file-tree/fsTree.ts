@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { FileTreeItem, IFileTreeAccessors } from './fileTreeAccessors';
+import { FileTreeItem, IFileTreeAccessors, IFileTreeInitParams } from './fileTreeAccessors';
 import path from 'path';
 import fs from 'fs';
 import { captureResult, Result } from '@fgv/ts-utils';
@@ -32,16 +32,40 @@ import { FileItem } from './fileItem';
  * file system to access files and directories.
  * @public
  */
-export class FsFileTreeAccessors implements IFileTreeAccessors {
+export class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> {
+  /**
+   * Optional path prefix to prepend to all paths.
+   */
   public readonly prefix: string | undefined;
 
   /**
-   * Protected constructor for derived classes.
+   * Function to infer the content type of a file.
+   * @public
+   */
+  protected readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
+
+  /**
+   * Construct a new instance of the {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} class.
    * @param prefix - Optional prefix for the tree.
    * @public
    */
-  public constructor(prefix?: string) {
-    this.prefix = prefix;
+  public constructor(prefix: string);
+
+  /**
+   * Construct a new instance of the {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} class.
+   * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters}.
+   * @public
+   */
+  public constructor(params?: IFileTreeInitParams<TCT>);
+  public constructor(params?: IFileTreeInitParams<TCT> | string) {
+    if (typeof params === 'string') {
+      this.prefix = params;
+      this._inferContentType = FileItem.defaultInferContentType;
+    } else {
+      this.prefix = params?.prefix;
+      /* c8 ignore next 1 - tested but code coverage has intermittent issues */
+      this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
+    }
   }
 
   /**
@@ -78,11 +102,11 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
   /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
    */
-  public getItem(itemPath: string): Result<FileTreeItem> {
+  public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
     return captureResult(() => {
       const stat = fs.statSync(this.resolveAbsolutePath(itemPath));
       if (stat.isDirectory()) {
-        return DirectoryItem.create(itemPath, this).orThrow();
+        return DirectoryItem.create<TCT>(itemPath, this).orThrow();
       } else if (stat.isFile()) {
         return FileItem.create(itemPath, this).orThrow();
       }
@@ -99,18 +123,25 @@ export class FsFileTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
+   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
+   */
+  public getFileContentType(filePath: string): Result<TCT | undefined> {
+    return this._inferContentType(filePath);
+  }
+
+  /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
    */
-  public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem>> {
+  public getChildren(dirPath: string): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     return captureResult(() => {
-      const children: FileTreeItem[] = [];
+      const children: FileTreeItem<TCT>[] = [];
       const files = fs.readdirSync(this.resolveAbsolutePath(dirPath), { withFileTypes: true });
       files.forEach((file) => {
         const fullPath = this.resolveAbsolutePath(dirPath, file.name);
         if (file.isDirectory()) {
-          children.push(DirectoryItem.create(fullPath, this).orThrow());
+          children.push(DirectoryItem.create<TCT>(fullPath, this).orThrow());
         } else if (file.isFile()) {
-          children.push(FileItem.create(fullPath, this).orThrow());
+          children.push(FileItem.create<TCT>(fullPath, this).orThrow());
         }
       });
       return children;

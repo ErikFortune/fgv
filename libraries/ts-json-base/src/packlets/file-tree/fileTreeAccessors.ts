@@ -31,10 +31,19 @@ import { JsonValue } from '../json';
 export type FileTreeItemType = 'directory' | 'file';
 
 /**
+ * Initialization parameters for a file tree.
+ * @public
+ */
+export interface IFileTreeInitParams<TCT extends string = string> {
+  prefix?: string;
+  inferContentType?: (filePath: string) => Result<TCT | undefined>;
+}
+
+/**
  * Interface for a file in a file tree.
  * @public
  */
-export interface IFileTreeFileItem {
+export interface IFileTreeFileItem<TCT extends string = string> {
   /**
    * Indicates that this {@link FileTree.FileTreeItem | file tree item} is a file.
    */
@@ -59,6 +68,11 @@ export interface IFileTreeFileItem {
    * The extension of the file
    */
   readonly extension: string;
+
+  /**
+   * An optional content type (e.g. mime type) for the file.
+   */
+  readonly contentType: TCT | undefined;
 
   /**
    * Gets the contents of the file as parsed JSON.
@@ -88,7 +102,7 @@ export interface IFileTreeFileItem {
  * Interface for a directory in a file tree.
  * @public
  */
-export interface IFileTreeDirectoryItem {
+export interface IFileTreeDirectoryItem<TCT extends string = string> {
   /**
    * Indicates that this {@link FileTree.FileTreeItem | file tree item} is a directory
    */
@@ -109,21 +123,21 @@ export interface IFileTreeDirectoryItem {
    * @returns `Success` with the children of the directory if successful,
    * or `Failure` with an error message otherwise.
    */
-  getChildren(): Result<ReadonlyArray<FileTreeItem>>;
+  getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
 }
 
 /**
  * Type for an item in a file tree.
  * @public
  */
-export type FileTreeItem = IFileTreeFileItem | IFileTreeDirectoryItem;
+export type FileTreeItem<TCT extends string = string> = IFileTreeFileItem<TCT> | IFileTreeDirectoryItem<TCT>;
 
 /**
  * Common abstraction layer interface for a tree of files
  * (e.g. a file system or a zip file).
  * @public
  */
-export interface IFileTreeAccessors {
+export interface IFileTreeAccessors<TCT extends string = string> {
   /**
    * Resolves paths to an absolute path.
    * @param paths - Paths to resolve.
@@ -158,7 +172,7 @@ export interface IFileTreeAccessors {
    * @param path - Path of the item to get.
    * @returns The item if it exists.
    */
-  getItem(path: string): Result<FileTreeItem>;
+  getItem(path: string): Result<FileTreeItem<TCT>>;
 
   /**
    * Gets the contents of a file in the file tree.
@@ -168,9 +182,16 @@ export interface IFileTreeAccessors {
   getFileContents(path: string): Result<string>;
 
   /**
+   * Gets the content type of a file in the file tree.
+   * @param path - Absolute path of the file.
+   * @returns The content type of the file.
+   */
+  getFileContentType(path: string): Result<TCT | undefined>;
+
+  /**
    * Gets the children of a directory in the file tree.
    * @param path - Path of the directory.
    * @returns The children of the directory.
    */
-  getChildren(path: string): Result<ReadonlyArray<FileTreeItem>>;
+  getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>>;
 }

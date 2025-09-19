@@ -23,14 +23,14 @@
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import { DirectoryItem } from '../directoryItem';
 import { FileItem } from '../fileItem';
-import { FileTreeItem, IFileTreeAccessors } from '../fileTreeAccessors';
+import { FileTreeItem, IFileTreeAccessors, IFileTreeInitParams } from '../fileTreeAccessors';
 import { InMemoryDirectory, InMemoryFile, TreeBuilder } from './treeBuilder';
 
 /**
  * Represents a single file in an in-memory {@link FileTree | file tree}.
  * @public
  */
-export interface IInMemoryFile {
+export interface IInMemoryFile<TCT extends string = string> {
   /**
    * The absolute path of the file in the tree.
    */
@@ -40,6 +40,11 @@ export interface IInMemoryFile {
    * The contents of the file
    */
   readonly contents: unknown;
+
+  /**
+   * The content type of the file.
+   */
+  readonly contentType?: TCT;
 }
 
 /**
@@ -47,19 +52,22 @@ export interface IInMemoryFile {
  * tree to access files and directories.
  * @public
  */
-export class InMemoryTreeAccessors implements IFileTreeAccessors {
-  private readonly _tree: TreeBuilder;
+export class InMemoryTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> {
+  private readonly _tree: TreeBuilder<TCT>;
+  private readonly _inferContentType: (filePath: string) => Result<TCT | undefined>;
 
   /**
    * Protected constructor for derived classes.
    * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
-   * @param prefix - Optional prefix for the tree.
+   * @param params - Optional params for the tree.
    * @public
    */
-  protected constructor(files: IInMemoryFile[], prefix?: string) {
-    this._tree = TreeBuilder.create(prefix).orThrow();
+  protected constructor(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>) {
+    this._tree = TreeBuilder.create<TCT>(params?.prefix).orThrow();
+    this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
     for (const file of files) {
-      this._tree.addFile(file.path, file.contents).orThrow();
+      const contentType = file.contentType ?? this._inferContentType(file.path).orDefault();
+      this._tree.addFile(file.path, file.contents, contentType).orThrow();
     }
   }
 
@@ -69,8 +77,34 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
    * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
    * @param prefix - Optional prefix for the tree.
    */
-  public static create(files: IInMemoryFile[], prefix?: string): Result<InMemoryTreeAccessors> {
-    return captureResult(() => new InMemoryTreeAccessors(files, prefix));
+  public static create<TCT extends string = string>(
+    files: IInMemoryFile<TCT>[],
+    prefix?: string
+  ): Result<InMemoryTreeAccessors<TCT>>;
+
+  /**
+   * Creates a new {@link FileTree.InMemoryTreeAccessors | InMemoryTreeAccessors} instance with the supplied
+   * in-memory files.
+   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+   * @param params - Optional params for the tree.
+   */
+  public static create<TCT extends string = string>(
+    files: IInMemoryFile<TCT>[],
+    params?: IFileTreeInitParams<TCT>
+  ): Result<InMemoryTreeAccessors<TCT>>;
+
+  /**
+   * Creates a new {@link FileTree.InMemoryTreeAccessors | InMemoryTreeAccessors} instance with the supplied
+   * in-memory files.
+   * @param files - An array of {@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+   * @param params - Optional params for the tree.
+   */
+  public static create<TCT extends string = string>(
+    files: IInMemoryFile<TCT>[],
+    params?: IFileTreeInitParams<TCT> | string
+  ): Result<InMemoryTreeAccessors<TCT>> {
+    params = typeof params === 'string' ? { prefix: params } : params;
+    return captureResult(() => new InMemoryTreeAccessors(files, params));
   }
 
   /**
@@ -115,13 +149,13 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getItem}
    */
-  public getItem(itemPath: string): Result<FileTreeItem> {
+  public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
     const existing = this._tree.byAbsolutePath.get(itemPath);
     if (existing) {
       if (existing instanceof InMemoryFile) {
-        return FileItem.create(existing.absolutePath, this);
+        return FileItem.create<TCT>(existing.absolutePath, this);
       } else if (existing instanceof InMemoryDirectory) {
-        return DirectoryItem.create(existing.absolutePath, this);
+        return DirectoryItem.create<TCT>(existing.absolutePath, this);
       }
     }
     return fail(`${itemPath}: not found`);
@@ -146,9 +180,29 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
   }
 
   /**
+   * {@inheritdoc FileTree.IFileTreeAccessors.getFileContentType}
+   */
+  public getFileContentType(path: string): Result<TCT | undefined> {
+    const item = this._tree.byAbsolutePath.get(path);
+    if (item === undefined) {
+      // If file doesn't exist, still try to infer content type from path
+      return this._inferContentType(path);
+    }
+    if (!(item instanceof InMemoryFile)) {
+      // For directories, return undefined
+      return succeed(undefined);
+    }
+    // Return stored contentType if it exists, otherwise infer
+    if (item.contentType !== undefined) {
+      return succeed(item.contentType);
+    }
+    return this._inferContentType(path);
+  }
+
+  /**
    * {@inheritdoc FileTree.IFileTreeAccessors.getChildren}
    */
-  public getChildren(path: string): Result<ReadonlyArray<FileTreeItem>> {
+  public getChildren(path: string): Result<ReadonlyArray<FileTreeItem<TCT>>> {
     const item = this._tree.byAbsolutePath.get(path);
     if (item === undefined) {
       return fail(`${path}: not found`);
@@ -157,12 +211,12 @@ export class InMemoryTreeAccessors implements IFileTreeAccessors {
       return fail(`${path}: not a directory`);
     }
     return captureResult(() => {
-      const children: FileTreeItem[] = [];
+      const children: FileTreeItem<TCT>[] = [];
       for (const child of item.children.values()) {
         if (child instanceof InMemoryFile) {
-          children.push(FileItem.create(child.absolutePath, this).orThrow());
+          children.push(FileItem.create<TCT>(child.absolutePath, this).orThrow());
         } else if (child instanceof InMemoryDirectory) {
-          children.push(DirectoryItem.create(child.absolutePath, this).orThrow());
+          children.push(DirectoryItem.create<TCT>(child.absolutePath, this).orThrow());
         }
       }
       return children;

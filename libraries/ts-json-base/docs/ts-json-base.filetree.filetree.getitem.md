@@ -9,7 +9,7 @@ Gets an item from the tree.
 **Signature:**
 
 ```typescript
-getItem(itemPath: string): Result<FileTreeItem>;
+getItem(itemPath: string): Result<FileTreeItem<TCT>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The path to the item.
 
 **Returns:**
 
-Result&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;
+Result&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&lt;TCT&gt;&gt;
 
 `Success` with the item if successful, or `Failure` with an error message otherwise.
 

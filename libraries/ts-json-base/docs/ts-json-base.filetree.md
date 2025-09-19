@@ -100,7 +100,29 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) 
 </td></tr>
 <tr><td>
 
+[forFilesystem(params)](./ts-json-base.filetree.forfilesystem_1.md)
+
+
+</td><td>
+
+Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for the filesystem.
+
+
+</td></tr>
+<tr><td>
+
 [inMemory(files, prefix)](./ts-json-base.filetree.inmemory.md)
+
+
+</td><td>
+
+Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) instance with accessors for an in-memory file tree.
+
+
+</td></tr>
+<tr><td>
+
+[inMemory(files, params)](./ts-json-base.filetree.inmemory_1.md)
 
 
 </td><td>
@@ -154,6 +176,17 @@ Interface for a directory in a file tree.
 </td><td>
 
 Interface for a file in a file tree.
+
+
+</td></tr>
+<tr><td>
+
+[IFileTreeInitParams](./ts-json-base.filetree.ifiletreeinitparams.md)
+
+
+</td><td>
+
+Initialization parameters for a file tree.
 
 
 </td></tr>

@@ -9,11 +9,11 @@ Gets the children of the directory.
 **Signature:**
 
 ```typescript
-getChildren(): Result<ReadonlyArray<FileTreeItem>>;
+getChildren(): Result<ReadonlyArray<FileTreeItem<TCT>>>;
 ```
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[FileTreeItem](./ts-json-base.filetree.filetreeitem.md)<!-- -->&lt;TCT&gt;&gt;&gt;
 
 `Success` with the children of the directory if successful, or `Failure` with an error message otherwise.
 

@@ -32,12 +32,12 @@ import {
  * Represents a file tree.
  * @public
  */
-export class FileTree {
+export class FileTree<TCT extends string = string> {
   /**
    * The {@link FileTree.IFileTreeAccessors | accessors} to use for file system operations.
    * @public
    */
-  public hal: IFileTreeAccessors;
+  public hal: IFileTreeAccessors<TCT>;
 
   /**
    * Protected constructor for derived classes.
@@ -45,7 +45,7 @@ export class FileTree {
    * file system operations.
    * @public
    */
-  protected constructor(hal: IFileTreeAccessors) {
+  protected constructor(hal: IFileTreeAccessors<TCT>) {
     this.hal = hal;
   }
 
@@ -55,7 +55,7 @@ export class FileTree {
    * @param hal - The {@link FileTree.IFileTreeAccessors | accessors} to use for
    * file system operations.
    */
-  public static create(hal: IFileTreeAccessors): Result<FileTree> {
+  public static create<TCT extends string = string>(hal: IFileTreeAccessors<TCT>): Result<FileTree<TCT>> {
     return captureResult(() => new FileTree(hal));
   }
 
@@ -65,7 +65,7 @@ export class FileTree {
    * @returns `Success` with the item if successful,
    * or `Failure` with an error message otherwise.
    */
-  public getItem(itemPath: string): Result<FileTreeItem> {
+  public getItem(itemPath: string): Result<FileTreeItem<TCT>> {
     const absolutePath = this.hal.resolveAbsolutePath(itemPath);
     return this.hal.getItem(absolutePath);
   }
@@ -76,7 +76,7 @@ export class FileTree {
    * @returns `Success` with the {@link FileTree.IFileTreeFileItem | file item}
    * if successful, or `Failure` with an error message otherwise.
    */
-  public getFile(filePath: string): Result<IFileTreeFileItem> {
+  public getFile(filePath: string): Result<IFileTreeFileItem<TCT>> {
     return this.getItem(filePath).onSuccess((item) => {
       if (item.type === 'file') {
         return succeed(item);
@@ -91,7 +91,7 @@ export class FileTree {
    * @returns `Success` with the {@link FileTree.IFileTreeDirectoryItem | directory item}
    * if successful, or `Failure` with an error message otherwise.
    */
-  public getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem> {
+  public getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem<TCT>> {
     return this.getItem(directoryPath).onSuccess((item) => {
       if (item.type === 'directory') {
         return succeed(item);

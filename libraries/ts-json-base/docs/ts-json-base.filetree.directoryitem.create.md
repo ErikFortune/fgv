@@ -9,7 +9,7 @@ Creates a new DirectoryItem instance.
 **Signature:**
 
 ```typescript
-static create(path: string, hal: IFileTreeAccessors): Result<DirectoryItem>;
+static create<TCT extends string = string>(path: string, hal: IFileTreeAccessors<TCT>): Result<DirectoryItem<TCT>>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ hal
 
 </td><td>
 
-[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ The [accessors](./ts-json-base.filetree.ifiletreeaccessors.md) to use for file s
 
 **Returns:**
 
-Result&lt;[DirectoryItem](./ts-json-base.filetree.directoryitem.md)<!-- -->&gt;
+Result&lt;[DirectoryItem](./ts-json-base.filetree.directoryitem.md)<!-- -->&lt;TCT&gt;&gt;
 
 `Success` with the new [DirectoryItem](./ts-json-base.filetree.directoryitem.md) instance if successful, or `Failure` with an error message otherwise.
 

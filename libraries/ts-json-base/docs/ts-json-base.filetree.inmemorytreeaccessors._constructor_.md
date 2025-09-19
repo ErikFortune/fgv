@@ -9,7 +9,7 @@ Protected constructor for derived classes.
 **Signature:**
 
 ```typescript
-protected constructor(files: IInMemoryFile[], prefix?: string);
+protected constructor(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ files
 
 </td><td>
 
-[IInMemoryFile](./ts-json-base.filetree.iinmemoryfile.md)<!-- -->\[\]
+[IInMemoryFile](./ts-json-base.filetree.iinmemoryfile.md)<!-- -->&lt;TCT&gt;\[\]
 
 
 </td><td>
@@ -48,17 +48,17 @@ An array of [in-memory files](./ts-json-base.filetree.iinmemoryfile.md) to inclu
 </td></tr>
 <tr><td>
 
-prefix
+params
 
 
 </td><td>
 
-string
+[IFileTreeInitParams](./ts-json-base.filetree.ifiletreeinitparams.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional prefix for the tree.
+_(Optional)_ Optional params for the tree.
 
 
 </td></tr>

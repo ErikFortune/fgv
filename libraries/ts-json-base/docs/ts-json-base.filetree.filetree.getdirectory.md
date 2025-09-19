@@ -9,7 +9,7 @@ Gets a directory item from the tree.
 **Signature:**
 
 ```typescript
-getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem>;
+getDirectory(directoryPath: string): Result<IFileTreeDirectoryItem<TCT>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The path to the directory.
 
 **Returns:**
 
-Result&lt;[IFileTreeDirectoryItem](./ts-json-base.filetree.ifiletreedirectoryitem.md)<!-- -->&gt;
+Result&lt;[IFileTreeDirectoryItem](./ts-json-base.filetree.ifiletreedirectoryitem.md)<!-- -->&lt;TCT&gt;&gt;
 
 `Success` with the [directory item](./ts-json-base.filetree.ifiletreedirectoryitem.md) if successful, or `Failure` with an error message otherwise.
 

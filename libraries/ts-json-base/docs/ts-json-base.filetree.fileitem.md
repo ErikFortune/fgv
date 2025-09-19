@@ -9,9 +9,9 @@ Class representing a file in a file tree.
 **Signature:**
 
 ```typescript
-export declare class FileItem implements IFileTreeFileItem 
+export declare class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> 
 ```
-**Implements:** [IFileTreeFileItem](./ts-json-base.filetree.ifiletreefileitem.md)
+**Implements:** [IFileTreeFileItem](./ts-json-base.filetree.ifiletreefileitem.md)<!-- -->&lt;TCT&gt;
 
 ## Constructors
 
@@ -86,7 +86,7 @@ Description
 
 </td><td>
 
-[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
@@ -134,6 +134,27 @@ string
 </td><td>
 
 The base name of the file (without extension)
+
+
+</td></tr>
+<tr><td>
+
+[contentType](./ts-json-base.filetree.fileitem.contenttype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TCT \| undefined
+
+
+</td><td>
+
+An optional content type (e.g. mime type) for the file.
 
 
 </td></tr>
@@ -238,6 +259,22 @@ Creates a new [FileTree.FileItem](./ts-json-base.filetree.fileitem.md) instance.
 </td></tr>
 <tr><td>
 
+[defaultInferContentType(filePath)](./ts-json-base.filetree.fileitem.defaultinfercontenttype.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Default function to infer the content type of a file.
+
+
+</td></tr>
+<tr><td>
+
 [getContents()](./ts-json-base.filetree.fileitem.getcontents.md)
 
 
@@ -275,6 +312,20 @@ Gets the contents of the file as parsed JSON, converted to a specific type.
 </td><td>
 
 Gets the raw contents of the file as a string.
+
+
+</td></tr>
+<tr><td>
+
+[setContentType(contentType)](./ts-json-base.filetree.fileitem.setcontenttype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the content type of the file.
 
 
 </td></tr>

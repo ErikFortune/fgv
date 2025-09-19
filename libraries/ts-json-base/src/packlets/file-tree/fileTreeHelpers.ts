@@ -24,6 +24,7 @@ import { captureResult, Result } from '@fgv/ts-utils';
 import { FileTree } from './fileTree';
 import { FsFileTreeAccessors } from './fsTree';
 import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
+import { IFileTreeInitParams } from './fileTreeAccessors';
 
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
@@ -33,8 +34,20 @@ import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function forFilesystem(prefix?: string): Result<FileTree> {
-  return captureResult(() => new FsFileTreeAccessors(prefix)).onSuccess((hal) => FileTree.create(hal));
+export function forFilesystem(prefix?: string): Result<FileTree>;
+
+/**
+ * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
+ * with accessors for the filesystem.
+ * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters} for the file tree.
+ * @returns `Success` with the new {@link FileTree.FileTree | FileTree} instance
+ * if successful, or `Failure` with an error message otherwise.
+ * @public
+ */
+export function forFilesystem(params?: IFileTreeInitParams<string>): Result<FileTree>;
+export function forFilesystem(params?: IFileTreeInitParams<string> | string): Result<FileTree> {
+  params = typeof params === 'string' ? { prefix: params } : params;
+  return captureResult(() => new FsFileTreeAccessors(params)).onSuccess((hal) => FileTree.create(hal));
 }
 
 /**
@@ -46,8 +59,24 @@ export function forFilesystem(prefix?: string): Result<FileTree> {
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree> {
-  return InMemoryTreeAccessors.create(files, prefix).onSuccess((hal: InMemoryTreeAccessors) =>
+export function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree>;
+
+/**
+ * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
+ * with accessors for an in-memory file tree.
+ * @param files - An array of File |{@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+ * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters} for the file tree.
+ * @returns `Success` with the new {@link FileTree.FileTree | FileTree} instance
+ * if successful, or `Failure` with an error message otherwise.
+ * @public
+ */
+export function inMemory(files: IInMemoryFile[], params?: IFileTreeInitParams<string>): Result<FileTree>;
+export function inMemory(
+  files: IInMemoryFile[],
+  params?: IFileTreeInitParams<string> | string
+): Result<FileTree> {
+  params = typeof params === 'string' ? { prefix: params } : params;
+  return InMemoryTreeAccessors.create(files, params).onSuccess((hal: InMemoryTreeAccessors) =>
     FileTree.create(hal)
   );
 }

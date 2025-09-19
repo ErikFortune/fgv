@@ -9,7 +9,7 @@ Protected constructor for derived classes.
 **Signature:**
 
 ```typescript
-protected constructor(hal: IFileTreeAccessors);
+protected constructor(hal: IFileTreeAccessors<TCT>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ hal
 
 </td><td>
 
-[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>

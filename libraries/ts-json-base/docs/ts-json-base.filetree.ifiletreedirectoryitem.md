@@ -9,7 +9,7 @@ Interface for a directory in a file tree.
 **Signature:**
 
 ```typescript
-export interface IFileTreeDirectoryItem 
+export interface IFileTreeDirectoryItem<TCT extends string = string> 
 ```
 
 ## Properties

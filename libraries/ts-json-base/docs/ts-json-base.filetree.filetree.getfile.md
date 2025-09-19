@@ -9,7 +9,7 @@ Gets a file item from the tree.
 **Signature:**
 
 ```typescript
-getFile(filePath: string): Result<IFileTreeFileItem>;
+getFile(filePath: string): Result<IFileTreeFileItem<TCT>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The path to the file.
 
 **Returns:**
 
-Result&lt;[IFileTreeFileItem](./ts-json-base.filetree.ifiletreefileitem.md)<!-- -->&gt;
+Result&lt;[IFileTreeFileItem](./ts-json-base.filetree.ifiletreefileitem.md)<!-- -->&lt;TCT&gt;&gt;
 
 `Success` with the [file item](./ts-json-base.filetree.ifiletreefileitem.md) if successful, or `Failure` with an error message otherwise.
 

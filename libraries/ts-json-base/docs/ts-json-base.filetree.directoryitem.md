@@ -9,9 +9,9 @@ Class representing a directory in a file tree.
 **Signature:**
 
 ```typescript
-export declare class DirectoryItem implements IFileTreeDirectoryItem 
+export declare class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryItem<TCT> 
 ```
-**Implements:** [IFileTreeDirectoryItem](./ts-json-base.filetree.ifiletreedirectoryitem.md)
+**Implements:** [IFileTreeDirectoryItem](./ts-json-base.filetree.ifiletreedirectoryitem.md)<!-- -->&lt;TCT&gt;
 
 ## Constructors
 
@@ -86,7 +86,7 @@ Description
 
 </td><td>
 
-[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)
+[IFileTreeAccessors](./ts-json-base.filetree.ifiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
