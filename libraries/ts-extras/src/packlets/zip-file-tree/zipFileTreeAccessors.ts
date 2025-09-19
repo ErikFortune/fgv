@@ -326,38 +326,18 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
   /**
    * Creates a new ZipFileTreeAccessors instance from a File object (browser environment).
    * @param file - The File object containing ZIP data.
-   * @param prefix - Optional prefix to prepend to paths.
-   * @returns Result containing the ZipFileTreeAccessors instance.
-   */
-  public static async fromFile<TCT extends string = string>(
-    file: File,
-    prefix?: string
-  ): Promise<Result<ZipFileTreeAccessors<TCT>>>;
-
-  /**
-   * Creates a new ZipFileTreeAccessors instance from a File object (browser environment).
-   * @param file - The File object containing ZIP data.
    * @param params - Optional initialization parameters.
    * @returns Result containing the ZipFileTreeAccessors instance.
    */
   public static async fromFile<TCT extends string = string>(
     file: File,
     params?: FileTree.IFileTreeInitParams<TCT>
-  ): Promise<Result<ZipFileTreeAccessors<TCT>>>;
-
-  public static async fromFile<TCT extends string = string>(
-    file: File,
-    params?: FileTree.IFileTreeInitParams<TCT> | string
   ): Promise<Result<ZipFileTreeAccessors<TCT>>> {
     try {
       const arrayBuffer = await file.arrayBuffer();
       const uint8Buffer = new Uint8Array(arrayBuffer);
 
-      if (typeof params === 'string') {
-        return await ZipFileTreeAccessors.fromBufferAsync<TCT>(uint8Buffer, params);
-      } else {
-        return await ZipFileTreeAccessors.fromBufferAsync<TCT>(uint8Buffer, params);
-      }
+      return await ZipFileTreeAccessors.fromBufferAsync<TCT>(uint8Buffer, params);
     } catch (error) {
       return fail(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
     }

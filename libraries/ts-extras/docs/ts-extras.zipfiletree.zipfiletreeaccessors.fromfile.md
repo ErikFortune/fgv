@@ -9,7 +9,7 @@ Creates a new ZipFileTreeAccessors instance from a File object (browser environm
 **Signature:**
 
 ```typescript
-static fromFile<TCT extends string = string>(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+static fromFile<TCT extends string = string>(file: File, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<ZipFileTreeAccessors<TCT>>>;
 ```
 
 ## Parameters
@@ -48,17 +48,17 @@ The File object containing ZIP data.
 </td></tr>
 <tr><td>
 
-prefix
+params
 
 
 </td><td>
 
-string
+FileTree.IFileTreeInitParams&lt;TCT&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional prefix to prepend to paths.
+_(Optional)_ Optional initialization parameters.
 
 
 </td></tr>

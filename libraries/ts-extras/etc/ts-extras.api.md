@@ -289,7 +289,6 @@ class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFil
     static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Result<ZipFileTreeAccessors<TCT>>;
     static fromBufferAsync<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Promise<Result<ZipFileTreeAccessors<TCT>>>;
     static fromBufferAsync<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<ZipFileTreeAccessors<TCT>>>;
-    static fromFile<TCT extends string = string>(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors<TCT>>>;
     static fromFile<TCT extends string = string>(file: File, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<ZipFileTreeAccessors<TCT>>>;
     getBaseName(path: string, suffix?: string): string;
     getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;

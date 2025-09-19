@@ -113,23 +113,7 @@ Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous
 </td></tr>
 <tr><td>
 
-[fromFile(file, prefix)](./ts-extras.zipfiletree.zipfiletreeaccessors.fromfile.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Creates a new ZipFileTreeAccessors instance from a File object (browser environment).
-
-
-</td></tr>
-<tr><td>
-
-[fromFile(file, params)](./ts-extras.zipfiletree.zipfiletreeaccessors.fromfile_1.md)
+[fromFile(file, params)](./ts-extras.zipfiletree.zipfiletreeaccessors.fromfile.md)
 
 
 </td><td>
