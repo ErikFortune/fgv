@@ -25,18 +25,31 @@ import { FileTree } from '@fgv/ts-json-base';
 import { FileApiTreeAccessors, IFileMetadata } from '../file-tree/fileApiTreeAccessors';
 
 /**
+ * Default initialization parameters for a `FileTree` using {@link FileApiTreeAccessors}.
+ * @public
+ */
+export const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string> = {
+  inferContentType: FileTree.FileItem.defaultAcceptContentType
+};
+
+/**
  * Helper function to create a new FileTree instance
  * from a browser FileList (e.g., from input[type="file"]).
  * @param fileList - FileList from a file input element
  * @param params - Optional `IFileTreeInitParams` for the file tree.
  * @returns Promise resolving to a successful Result with the new FileTree instance
  * if successful, or a failed Result with an error message otherwise
+ * @remarks The content type of the files is always `string` and the default
+ * {@link FileTree.FileItem.defaultAcceptContentType | accept contentType} function
+ * is used, so content type is derived from the mime type of the file, when
+ * available.
  * @public
  */
-export function fromFileList<TCT extends string = string>(
+export function fromFileList(
   fileList: FileList,
-  params?: FileTree.IFileTreeInitParams<TCT>
-): Promise<Result<FileTree.FileTree<TCT>>> {
+  params?: FileTree.IFileTreeInitParams<string>
+): Promise<Result<FileTree.FileTree<string>>> {
+  params = { ...defaultFileApiTreeInitParams, ...(params ?? {}) };
   return FileApiTreeAccessors.fromFileList(fileList, params);
 }
 
@@ -47,12 +60,17 @@ export function fromFileList<TCT extends string = string>(
  * @param params - Optional `IFileTreeInitParams` for the file tree.
  * @returns Promise resolving to a successful Result with the new FileTree instance
  * if successful, or a failed Result with an error message otherwise
+ * @remarks The content type of the files is always `string` and the default
+ * {@link FileTree.FileItem.defaultAcceptContentType | accept contentType} function
+ * is used, so content type is derived from the mime type of the file, when
+ * available.
  * @public
  */
-export function fromDirectoryUpload<TCT extends string = string>(
+export function fromDirectoryUpload(
   fileList: FileList,
-  params?: FileTree.IFileTreeInitParams<TCT>
-): Promise<Result<FileTree.FileTree<TCT>>> {
+  params?: FileTree.IFileTreeInitParams<string>
+): Promise<Result<FileTree.FileTree<string>>> {
+  params = { ...defaultFileApiTreeInitParams, ...(params ?? {}) };
   return FileApiTreeAccessors.fromDirectoryUpload(fileList, params);
 }
 

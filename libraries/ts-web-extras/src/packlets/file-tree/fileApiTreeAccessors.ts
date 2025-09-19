@@ -148,7 +148,7 @@ export class FileApiTreeAccessors<TCT extends string = string> {
 
       try {
         const contents = await file.text();
-        const contentType = params?.inferContentType?.(path).orDefault();
+        const contentType = params?.inferContentType?.(path, file.type).orDefault();
         files.push({
           path,
           contents,
@@ -183,7 +183,7 @@ export class FileApiTreeAccessors<TCT extends string = string> {
 
       try {
         const contents = await file.text();
-        const contentType = params?.inferContentType?.(path).orDefault();
+        const contentType = params?.inferContentType?.(path, file.type).orDefault();
         files.push({
           path,
           contents,

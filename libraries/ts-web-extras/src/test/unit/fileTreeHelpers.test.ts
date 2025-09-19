@@ -78,6 +78,89 @@ describe('FileTreeHelpers', () => {
       });
     });
 
+    test('automatically applies MIME types as contentType', async () => {
+      const fileList = createMockFileList([
+        { name: 'data.json', content: '{"key": "value"}', type: 'application/json' },
+        { name: 'script.js', content: 'console.log("hello");', type: 'application/javascript' },
+        { name: 'style.css', content: 'body { margin: 0; }', type: 'text/css' },
+        { name: 'readme.txt', content: 'This is a readme', type: 'text/plain' },
+        { name: 'image.png', content: 'PNG data', type: 'image/png' },
+        { name: 'document.pdf', content: 'PDF content', type: 'application/pdf' },
+        { name: 'archive.zip', content: 'ZIP data', type: 'application/zip' }
+      ]);
+
+      const result = await FileTreeHelpers.fromFileList(fileList);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Verify MIME types are automatically applied as contentType
+        expect(fileTree.getFile('/data.json')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/json');
+        });
+
+        expect(fileTree.getFile('/script.js')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/javascript');
+        });
+
+        expect(fileTree.getFile('/style.css')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/css');
+        });
+
+        expect(fileTree.getFile('/readme.txt')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/plain');
+        });
+
+        expect(fileTree.getFile('/image.png')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('image/png');
+        });
+
+        expect(fileTree.getFile('/document.pdf')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/pdf');
+        });
+
+        expect(fileTree.getFile('/archive.zip')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/zip');
+        });
+      });
+    });
+
+    test('handles files without MIME types', async () => {
+      const fileList = createMockFileList([
+        { name: 'no-type.txt', content: 'content without type' },
+        { name: 'empty-type.dat', content: 'empty type', type: '' },
+        { name: 'unknown.ext', content: 'unknown extension' }
+      ]);
+
+      const result = await FileTreeHelpers.fromFileList(fileList);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Files without MIME types should have undefined contentType
+        expect(fileTree.getFile('/no-type.txt')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/plain'); // Default from createMockFile
+        });
+
+        expect(fileTree.getFile('/empty-type.dat')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/plain'); // Browser defaults empty type to text/plain
+        });
+
+        expect(fileTree.getFile('/unknown.ext')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/plain'); // Default from createMockFile
+        });
+      });
+    });
+
+    test('forces content type to string (not templated)', async () => {
+      const fileList = createMockFileList([
+        { name: 'test.json', content: '{"test": true}', type: 'application/json' }
+      ]);
+
+      const result = await FileTreeHelpers.fromFileList(fileList);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Verify the return type is FileTree<string> not FileTree<T>
+        expect(fileTree.getFile('/test.json')).toSucceedAndSatisfy((file) => {
+          expect(typeof file.contentType).toBe('string');
+          expect(file.contentType).toBe('application/json');
+        });
+      });
+    });
+
     test('propagates file reading errors', async () => {
       const badFile = {
         name: 'bad.txt',
@@ -235,6 +318,93 @@ describe('FileTreeHelpers', () => {
       const fileList = createMockDirectoryFileList([]);
       const result = await FileTreeHelpers.fromDirectoryUpload(fileList);
       expect(result).toSucceed();
+    });
+
+    test('automatically applies MIME types as contentType in directory upload', async () => {
+      const fileList = createMockDirectoryFileList([
+        { path: 'project/package.json', content: '{"name": "test"}', type: 'application/json' },
+        { path: 'project/src/index.js', content: 'console.log("main");', type: 'application/javascript' },
+        { path: 'project/src/styles.css', content: 'body { color: red; }', type: 'text/css' },
+        { path: 'project/README.md', content: '# Project', type: 'text/markdown' },
+        { path: 'project/data.xml', content: '<root></root>', type: 'application/xml' },
+        { path: 'project/assets/logo.svg', content: '<svg></svg>', type: 'image/svg+xml' },
+        { path: 'project/docs/manual.pdf', content: 'PDF content', type: 'application/pdf' }
+      ]);
+
+      const result = await FileTreeHelpers.fromDirectoryUpload(fileList);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Verify MIME types are automatically applied as contentType
+        expect(fileTree.getFile('/project/package.json')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/json');
+        });
+
+        expect(fileTree.getFile('/project/src/index.js')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/javascript');
+        });
+
+        expect(fileTree.getFile('/project/src/styles.css')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/css');
+        });
+
+        expect(fileTree.getFile('/project/README.md')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/markdown');
+        });
+
+        expect(fileTree.getFile('/project/data.xml')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/xml');
+        });
+
+        expect(fileTree.getFile('/project/assets/logo.svg')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('image/svg+xml');
+        });
+
+        expect(fileTree.getFile('/project/docs/manual.pdf')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/pdf');
+        });
+      });
+    });
+
+    test('handles mixed MIME types and missing types in directory upload', async () => {
+      const fileList = createMockDirectoryFileList([
+        { path: 'mixed/typed.json', content: '{}', type: 'application/json' },
+        { path: 'mixed/untyped.txt', content: 'plain text' }, // No type specified
+        { path: 'mixed/empty-type.dat', content: 'data', type: '' }, // Empty type
+        { path: 'mixed/binary.bin', content: 'binary data', type: 'application/octet-stream' }
+      ]);
+
+      const result = await FileTreeHelpers.fromDirectoryUpload(fileList);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        expect(fileTree.getFile('/mixed/typed.json')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/json');
+        });
+
+        expect(fileTree.getFile('/mixed/untyped.txt')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/plain'); // Default from createMockFile
+        });
+
+        expect(fileTree.getFile('/mixed/empty-type.dat')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('text/plain'); // Browser defaults empty type to text/plain
+        });
+
+        expect(fileTree.getFile('/mixed/binary.bin')).toSucceedAndSatisfy((file) => {
+          expect(file.contentType).toBe('application/octet-stream');
+        });
+      });
+    });
+
+    test('forces content type to string for directory upload (not templated)', async () => {
+      const fileList = createMockDirectoryFileList([
+        { path: 'app/config.json', content: '{"app": "test"}', type: 'application/json' }
+      ]);
+
+      const result = await FileTreeHelpers.fromDirectoryUpload(fileList);
+      expect(result).toSucceedAndSatisfy((fileTree) => {
+        // Verify the return type is FileTree<string> not FileTree<T>
+        expect(fileTree.getFile('/app/config.json')).toSucceedAndSatisfy((file) => {
+          expect(typeof file.contentType).toBe('string');
+          expect(file.contentType).toBe('application/json');
+        });
+      });
     });
   });
 

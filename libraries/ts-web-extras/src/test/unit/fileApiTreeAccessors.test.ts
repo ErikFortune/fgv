@@ -986,10 +986,10 @@ describe('FileApiTreeAccessors', () => {
 
         const result = await FileApiTreeAccessors.fromFileList(fileList, { inferContentType });
         expect(result).toSucceedAndSatisfy((fileTree) => {
-          // Note: fromFileList has inconsistent behavior - it only passes the path parameter
-          // This is inconsistent with _processFileList which passes both path and MIME type
-          expect(inferContentType).toHaveBeenCalledWith('/document.txt');
-          expect(inferContentType).toHaveBeenCalledWith('/data.json');
+          // fromFileList now consistently passes both path and MIME type parameters
+          // This is consistent with _processFileList behavior
+          expect(inferContentType).toHaveBeenCalledWith('/document.txt', 'text/plain');
+          expect(inferContentType).toHaveBeenCalledWith('/data.json', 'application/json');
 
           // The specific content type assignments depend on the internal FileTree implementation
           expect(fileTree.getFile('/document.txt')).toSucceed();
@@ -1014,9 +1014,9 @@ describe('FileApiTreeAccessors', () => {
         const result = await FileApiTreeAccessors.fromFileList(fileList, { inferContentType });
         expect(result).toSucceed();
 
-        // Current limitation: fromFileList doesn't pass the MIME type parameter
-        expect(inferContentType).toHaveBeenCalledWith('/image.png');
-        expect(inferContentType).toHaveBeenCalledWith('/unknown.xyz');
+        // fromFileList now passes both path and MIME type parameters
+        expect(inferContentType).toHaveBeenCalledWith('/image.png', 'image/png');
+        expect(inferContentType).toHaveBeenCalledWith('/unknown.xyz', 'text/plain');
       });
 
       test('works with fromDirectoryUpload', async () => {
@@ -1035,9 +1035,9 @@ describe('FileApiTreeAccessors', () => {
         const result = await FileApiTreeAccessors.fromDirectoryUpload(fileList, { inferContentType });
         expect(result).toSucceed();
 
-        // fromDirectoryUpload also has the same limitation - only passes path
-        expect(inferContentType).toHaveBeenCalledWith('/project/src/component.tsx');
-        expect(inferContentType).toHaveBeenCalledWith('/project/styles/main.css');
+        // fromDirectoryUpload now consistently passes both path and MIME type parameters
+        expect(inferContentType).toHaveBeenCalledWith('/project/src/component.tsx', 'text/typescript');
+        expect(inferContentType).toHaveBeenCalledWith('/project/styles/main.css', 'text/css');
       });
 
       test('receives provided MIME type when using create method (correct behavior)', async () => {
@@ -1107,7 +1107,7 @@ describe('FileApiTreeAccessors', () => {
 
         const result = await FileTreeHelpers.fromFileList(fileList, { inferContentType });
         expect(result).toSucceed();
-        expect(inferContentType).toHaveBeenCalledWith('/helper.js');
+        expect(inferContentType).toHaveBeenCalledWith('/helper.js', 'application/javascript');
       });
 
       test('fromDirectoryUpload passes through inferContentType parameter', async () => {
@@ -1121,7 +1121,7 @@ describe('FileApiTreeAccessors', () => {
 
         const result = await FileTreeHelpers.fromDirectoryUpload(fileList, { inferContentType });
         expect(result).toSucceed();
-        expect(inferContentType).toHaveBeenCalledWith('/dist/bundle.js');
+        expect(inferContentType).toHaveBeenCalledWith('/dist/bundle.js', 'application/javascript');
       });
     });
   });

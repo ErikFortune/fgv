@@ -14,6 +14,9 @@ export class BrowserHashProvider {
 }
 
 // @public
+const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string>;
+
+// @public
 export function exportAsJson(data: unknown, filename: string): void;
 
 // @public
@@ -145,15 +148,20 @@ declare namespace FileTreeHelpers {
         fromDirectoryUpload,
         getOriginalFile,
         extractFileListMetadata,
-        extractFileMetadata
+        extractFileMetadata,
+        defaultFileApiTreeInitParams
     }
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+//
 // @public
-function fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+function fromDirectoryUpload(fileList: FileList, params?: FileTree.IFileTreeInitParams<string>): Promise<Result<FileTree.FileTree<string>>>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
+//
 // @public
-function fromFileList<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+function fromFileList(fileList: FileList, params?: FileTree.IFileTreeInitParams<string>): Promise<Result<FileTree.FileTree<string>>>;
 
 // @public
 function getOriginalFile(fileList: FileList, path: string): Result<File>;
