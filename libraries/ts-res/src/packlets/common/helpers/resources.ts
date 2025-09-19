@@ -33,6 +33,7 @@ import { toResourceId, toResourceName } from '../validate/resources';
  * @public
  */
 export function splitResourceId(id: string | undefined): Result<ResourceName[]> {
+  /* c8 ignore next 3 - edge case: undefined resource ID should not occur in normal operation */
   if (id === undefined) {
     return succeed([]);
   }

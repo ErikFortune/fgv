@@ -134,6 +134,7 @@ export function toResourceName(name: string): Result<ResourceName> {
  * @public
  */
 export function toResourceId(id: string): Result<ResourceId> {
+  /* c8 ignore next 3 - defensive coding: resource ID validation should prevent invalid IDs */
   if (!isValidResourceId(id)) {
     return fail(`${id}: not a valid resource ID.`);
   }

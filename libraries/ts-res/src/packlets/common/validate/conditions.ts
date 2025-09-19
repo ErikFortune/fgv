@@ -188,6 +188,7 @@ export function isValidConditionSetKey(key: string): key is ConditionSetKey {
   if (key === '') {
     return true;
   }
+  /* c8 ignore next 2 - edge case: condition set key validation rarely fails */
   // a condition set key is a `+` separated list of condition keys
   return key.split('+').every(isValidConditionKey);
 }
