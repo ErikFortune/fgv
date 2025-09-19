@@ -40,8 +40,8 @@ export const defaultFileApiTreeInitParams: FileTree.IFileTreeInitParams<string> 
  * @returns Promise resolving to a successful Result with the new FileTree instance
  * if successful, or a failed Result with an error message otherwise
  * @remarks The content type of the files is always `string` and the default
- * {@link FileTree.FileItem.defaultAcceptContentType | accept contentType} function
- * is used, so content type is derived from the mime type of the file, when
+ * accept contentType function (`FileTree.FileItem.defaultAcceptContentType`) is
+ * used, so content type is derived from the mime type of the file, when
  * available.
  * @public
  */
@@ -61,7 +61,7 @@ export function fromFileList(
  * @returns Promise resolving to a successful Result with the new FileTree instance
  * if successful, or a failed Result with an error message otherwise
  * @remarks The content type of the files is always `string` and the default
- * {@link FileTree.FileItem.defaultAcceptContentType | accept contentType} function
+ * accept contentType function (`FileTree.FileItem.defaultAcceptContentType`) is
  * is used, so content type is derived from the mime type of the file, when
  * available.
  * @public

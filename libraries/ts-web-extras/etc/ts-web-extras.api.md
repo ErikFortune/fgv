@@ -153,13 +153,9 @@ declare namespace FileTreeHelpers {
     }
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-//
 // @public
 function fromDirectoryUpload(fileList: FileList, params?: FileTree.IFileTreeInitParams<string>): Promise<Result<FileTree.FileTree<string>>>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-web-extras" does not have an export "FileTree"
-//
 // @public
 function fromFileList(fileList: FileList, params?: FileTree.IFileTreeInitParams<string>): Promise<Result<FileTree.FileTree<string>>>;
 

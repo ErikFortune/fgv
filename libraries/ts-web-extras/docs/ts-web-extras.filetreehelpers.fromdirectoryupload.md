@@ -9,7 +9,7 @@ Helper function to create a new FileTree instance from a directory upload with w
 **Signature:**
 
 ```typescript
-export declare function fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
+export declare function fromDirectoryUpload(fileList: FileList, params?: FileTree.IFileTreeInitParams<string>): Promise<Result<FileTree.FileTree<string>>>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ params
 
 </td><td>
 
-FileTree.IFileTreeInitParams&lt;TCT&gt;
+FileTree.IFileTreeInitParams&lt;string&gt;
 
 
 </td><td>
@@ -66,7 +66,11 @@ _(Optional)_ Optional `IFileTreeInitParams` for the file tree.
 
 **Returns:**
 
-Promise&lt;Result&lt;FileTree.FileTree&lt;TCT&gt;&gt;&gt;
+Promise&lt;Result&lt;FileTree.FileTree&lt;string&gt;&gt;&gt;
 
 Promise resolving to a successful Result with the new FileTree instance if successful, or a failed Result with an error message otherwise
+
+## Remarks
+
+The content type of the files is always `string` and the default accept contentType<!-- -->} function (`FileTree.FileItem.defaultAcceptContentType`<!-- -->) is is used, so content type is derived from the mime type of the file, when available.
 

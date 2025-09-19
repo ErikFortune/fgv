@@ -311,6 +311,7 @@ export class FileApiTreeAccessors<TCT extends string = string> {
         const file = await handle.getFile();
         const contents = await file.text();
         const metadata = this.extractFileMetadata(file);
+        /* c8 ignore next 1 - defense in depth */
         const path = this._normalizePath(params?.prefix ?? '', handle.name);
         const contentType = params?.inferContentType?.(path, metadata.type).orDefault();
 

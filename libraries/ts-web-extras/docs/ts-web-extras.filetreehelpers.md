@@ -74,3 +74,29 @@ Helper function to get the original File object from a FileList by path.
 </td></tr>
 </tbody></table>
 
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[defaultFileApiTreeInitParams](./ts-web-extras.filetreehelpers.defaultfileapitreeinitparams.md)
+
+
+</td><td>
+
+Default initialization parameters for a `FileTree` using [FileApiTreeAccessors](./ts-web-extras.fileapitreeaccessors.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
