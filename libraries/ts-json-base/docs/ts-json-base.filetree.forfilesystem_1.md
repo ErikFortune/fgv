@@ -9,7 +9,7 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) 
 **Signature:**
 
 ```typescript
-export declare function forFilesystem(params?: IFileTreeInitParams<string>): Result<FileTree>;
+export declare function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree<TCT>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IFileTreeInitParams](./ts-json-base.filetree.ifiletreeinitparams.md)<!-- -->&lt;string&gt;
+[IFileTreeInitParams](./ts-json-base.filetree.ifiletreeinitparams.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ _(Optional)_ Optional [initialization parameters](./ts-json-base.filetree.ifilet
 
 **Returns:**
 
-Result&lt;FileTree&gt;
+Result&lt;FileTree&lt;TCT&gt;&gt;
 
 `Success` with the new [FileTree](./ts-json-base.filetree.filetree.md) instance if successful, or `Failure` with an error message otherwise.
 

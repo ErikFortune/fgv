@@ -171,14 +171,14 @@ type FileTreeItemType = 'directory' | 'file';
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function forFilesystem(prefix?: string): Result<FileTree_2>;
+function forFilesystem<TCT extends string = string>(prefix?: string): Result<FileTree_2<TCT>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function forFilesystem(params?: IFileTreeInitParams<string>): Result<FileTree_2>;
+function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -326,7 +326,7 @@ interface IJsonValidatorContext {
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
+function inMemory<TCT extends string = string>(files: IInMemoryFile<TCT>[], prefix?: string): Result<FileTree_2<TCT>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -334,7 +334,7 @@ function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree_2>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function inMemory(files: IInMemoryFile[], params?: IFileTreeInitParams<string>): Result<FileTree_2>;
+function inMemory<TCT extends string = string>(files: IInMemoryFile<TCT>[], params?: IFileTreeInitParams<TCT>): Result<FileTree_2<TCT>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

@@ -9,7 +9,7 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) 
 **Signature:**
 
 ```typescript
-export declare function forFilesystem(prefix?: string): Result<FileTree>;
+export declare function forFilesystem<TCT extends string = string>(prefix?: string): Result<FileTree<TCT>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ _(Optional)_ An optional prefix to prepended to supplied relative paths.
 
 **Returns:**
 
-Result&lt;FileTree&gt;
+Result&lt;FileTree&lt;TCT&gt;&gt;
 
 `Success` with the new [FileTree](./ts-json-base.filetree.filetree.md) instance if successful, or `Failure` with an error message otherwise.
 

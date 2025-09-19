@@ -34,7 +34,7 @@ import { IFileTreeInitParams } from './fileTreeAccessors';
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function forFilesystem(prefix?: string): Result<FileTree>;
+export function forFilesystem<TCT extends string = string>(prefix?: string): Result<FileTree<TCT>>;
 
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
@@ -44,10 +44,14 @@ export function forFilesystem(prefix?: string): Result<FileTree>;
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function forFilesystem(params?: IFileTreeInitParams<string>): Result<FileTree>;
-export function forFilesystem(params?: IFileTreeInitParams<string> | string): Result<FileTree> {
+export function forFilesystem<TCT extends string = string>(
+  params?: IFileTreeInitParams<TCT>
+): Result<FileTree<TCT>>;
+export function forFilesystem<TCT extends string = string>(
+  params?: IFileTreeInitParams<TCT> | string
+): Result<FileTree<TCT>> {
   params = typeof params === 'string' ? { prefix: params } : params;
-  return captureResult(() => new FsFileTreeAccessors(params)).onSuccess((hal) => FileTree.create(hal));
+  return captureResult(() => new FsFileTreeAccessors<TCT>(params)).onSuccess((hal) => FileTree.create(hal));
 }
 
 /**
@@ -59,7 +63,10 @@ export function forFilesystem(params?: IFileTreeInitParams<string> | string): Re
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree>;
+export function inMemory<TCT extends string = string>(
+  files: IInMemoryFile<TCT>[],
+  prefix?: string
+): Result<FileTree<TCT>>;
 
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
@@ -70,13 +77,16 @@ export function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTr
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function inMemory(files: IInMemoryFile[], params?: IFileTreeInitParams<string>): Result<FileTree>;
-export function inMemory(
-  files: IInMemoryFile[],
-  params?: IFileTreeInitParams<string> | string
-): Result<FileTree> {
+export function inMemory<TCT extends string = string>(
+  files: IInMemoryFile<TCT>[],
+  params?: IFileTreeInitParams<TCT>
+): Result<FileTree<TCT>>;
+export function inMemory<TCT extends string = string>(
+  files: IInMemoryFile<TCT>[],
+  params?: IFileTreeInitParams<TCT> | string
+): Result<FileTree<TCT>> {
   params = typeof params === 'string' ? { prefix: params } : params;
-  return InMemoryTreeAccessors.create(files, params).onSuccess((hal: InMemoryTreeAccessors) =>
-    FileTree.create(hal)
+  return InMemoryTreeAccessors.create<TCT>(files, params).onSuccess((hal: InMemoryTreeAccessors<TCT>) =>
+    FileTree.create<TCT>(hal)
   );
 }

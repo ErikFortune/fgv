@@ -9,7 +9,7 @@ Helper function to create a new [FileTree](./ts-json-base.filetree.filetree.md) 
 **Signature:**
 
 ```typescript
-export declare function inMemory(files: IInMemoryFile[], prefix?: string): Result<FileTree>;
+export declare function inMemory<TCT extends string = string>(files: IInMemoryFile<TCT>[], prefix?: string): Result<FileTree<TCT>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ files
 
 </td><td>
 
-[IInMemoryFile](./ts-json-base.filetree.iinmemoryfile.md)<!-- -->\[\]
+[IInMemoryFile](./ts-json-base.filetree.iinmemoryfile.md)<!-- -->&lt;TCT&gt;\[\]
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ An optional prefix to add to the paths of all files in the tree.
 
 **Returns:**
 
-Result&lt;FileTree&gt;
+Result&lt;FileTree&lt;TCT&gt;&gt;
 
 `Success` with the new [FileTree](./ts-json-base.filetree.filetree.md) instance if successful, or `Failure` with an error message otherwise.
 
