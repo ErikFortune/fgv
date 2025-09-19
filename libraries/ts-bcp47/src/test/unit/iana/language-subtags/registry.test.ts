@@ -111,5 +111,23 @@ describe('LanguageSubtagRegistry class', () => {
         expect(tags.redundant.getAllKeys()).toHaveLength(67);
       });
     });
+
+    test('loads default subtag registry from embedded zip data', () => {
+      expect(Iana.LanguageSubtags.LanguageSubtagRegistry.loadDefault()).toSucceedAndSatisfy((tags) => {
+        expect(tags.languages.getAllKeys()).toHaveLength(8787);
+        expect(tags.extlangs.getAllKeys()).toHaveLength(256);
+        expect(tags.scripts.getAllKeys()).toHaveLength(274);
+        expect(tags.regions.getAllKeys()).toHaveLength(343);
+        expect(tags.variants.getAllKeys()).toHaveLength(134);
+
+        expect(tags.collections.getAllKeys()).toHaveLength(116);
+        expect(tags.macrolanguages.getAllKeys()).toHaveLength(63);
+        expect(tags.privateUse.getAllKeys()).toHaveLength(520);
+        expect(tags.special.getAllKeys()).toHaveLength(4);
+
+        expect(tags.grandfathered.getAllKeys()).toHaveLength(26);
+        expect(tags.redundant.getAllKeys()).toHaveLength(67);
+      });
+    });
   });
 });

@@ -67,6 +67,47 @@ describe('TagExtensionRegistry class', () => {
         expect(tags.extensions.getAllKeys()).toHaveLength(2);
       });
     });
+
+    test('loads default tag extension registry from embedded zip data', () => {
+      expect(Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.loadDefault()).toSucceedAndSatisfy(
+        (tags) => {
+          expect(tags.extensions.getAllKeys()).toHaveLength(2);
+        }
+      );
+    });
+
+    test('creates from TXT content', () => {
+      const testContent = `File-Date: 2023-01-01
+%%
+Identifier: u
+Description: Unicode Locale/Language Extensions
+Comments: RFC 6067 describes the u extension for Unicode locale identifiers.
+Added: 2010-09-02
+RFC: 6067
+Authority: Unicode Consortium
+Contact_Email: test@example.com
+Mailing_List: test-list@example.com
+URL: http://example.com
+%%
+Identifier: t
+Description: Transformed Content
+Comments: RFC 6497 describes the t extension for language tag transformation.
+Added: 2011-08-16
+RFC: 6497
+Authority: Unicode Consortium
+Contact_Email: test@example.com
+Mailing_List: test-list@example.com
+URL: http://example.com
+%%`;
+
+      expect(
+        Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.createFromTxtContent(testContent)
+      ).toSucceedAndSatisfy((tags) => {
+        expect(tags.extensions.getAllKeys()).toHaveLength(2);
+        expect(tags.extensions.getAllKeys()).toContain('u');
+        expect(tags.extensions.getAllKeys()).toContain('t');
+      });
+    });
   });
 
   describe('JAR converter functions', () => {
