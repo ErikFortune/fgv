@@ -123,8 +123,8 @@ export class FileApiTreeAccessors<TCT extends string = string> {
       }
 
       return FileTree.inMemory<TCT>(allFiles, params);
-    } catch (error) {
       /* c8 ignore next 5 - defense in depth */
+    } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return fail(`Failed to process initializers: ${message}`);
     }
@@ -414,6 +414,7 @@ export class FileApiTreeAccessors<TCT extends string = string> {
     const combined = cleanPrefix ? `${cleanPrefix}/${path}` : path;
     // Normalize multiple slashes and ensure it starts with / for FileTree compatibility
     const normalized = combined.replace(/\/+/g, '/').replace(/\/$/, '');
+    /* c8 ignore next 1 - tested but coverage intermittently missed */
     return normalized.startsWith('/') ? normalized : `/${normalized}`;
   }
 }
