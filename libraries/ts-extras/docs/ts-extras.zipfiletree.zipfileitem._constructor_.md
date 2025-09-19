@@ -9,7 +9,7 @@ Constructor for ZipFileItem.
 **Signature:**
 
 ```typescript
-constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors);
+constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>);
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ accessors
 
 </td><td>
 
-[ZipFileTreeAccessors](./ts-extras.zipfiletree.zipfiletreeaccessors.md)
+[ZipFileTreeAccessors](./ts-extras.zipfiletree.zipfiletreeaccessors.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>

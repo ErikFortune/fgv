@@ -60,6 +60,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[exportAsJson(data, filename)](./ts-web-extras.exportasjson.md)
+
+
+</td><td>
+
+Export data as JSON file using legacy blob download method. Creates a temporary download link and triggers file download.
+
+
+</td></tr>
+<tr><td>
+
+[exportUsingFileSystemAPI(data, suggestedName, description, window)](./ts-web-extras.exportusingfilesystemapi.md)
+
+
+</td><td>
+
+Export data using File System Access API with fallback to blob download.
+
+
+</td></tr>
+<tr><td>
+
 [extractDirectoryPath(path)](./ts-web-extras.extractdirectorypath.md)
 
 
@@ -328,17 +350,6 @@ Tree initializer for File System Access API directory handles.
 </td></tr>
 <tr><td>
 
-[IFileApiFile](./ts-web-extras.ifileapifile.md)
-
-
-</td><td>
-
-Represents a file from the File API with its path information.
-
-
-</td></tr>
-<tr><td>
-
 [IFileHandleTreeInitializer](./ts-web-extras.ifilehandletreeinitializer.md)
 
 
@@ -356,6 +367,17 @@ Tree initializer for File System Access API file handles.
 </td><td>
 
 Tree initializer for FileList objects (from File API).
+
+
+</td></tr>
+<tr><td>
+
+[IFileMetadata](./ts-web-extras.ifilemetadata.md)
+
+
+</td><td>
+
+Interface for file metadata.
 
 
 </td></tr>

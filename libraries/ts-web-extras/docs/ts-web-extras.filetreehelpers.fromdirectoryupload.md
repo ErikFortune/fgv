@@ -9,7 +9,7 @@ Helper function to create a new FileTree instance from a directory upload with w
 **Signature:**
 
 ```typescript
-export declare function fromDirectoryUpload(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
+export declare function fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
 ```
 
 ## Parameters
@@ -48,17 +48,17 @@ FileList from a directory upload (input with webkitdirectory)
 </td></tr>
 <tr><td>
 
-prefix
+params
 
 
 </td><td>
 
-string
+FileTree.IFileTreeInitParams&lt;TCT&gt;
 
 
 </td><td>
 
-_(Optional)_ An optional prefix to add to the paths of all files in the tree
+_(Optional)_ Optional `IFileTreeInitParams` for the file tree.
 
 
 </td></tr>
@@ -66,7 +66,7 @@ _(Optional)_ An optional prefix to add to the paths of all files in the tree
 
 **Returns:**
 
-Promise&lt;Result&lt;FileTree.FileTree&gt;&gt;
+Promise&lt;Result&lt;FileTree.FileTree&lt;TCT&gt;&gt;&gt;
 
 Promise resolving to a successful Result with the new FileTree instance if successful, or a failed Result with an error message otherwise
 

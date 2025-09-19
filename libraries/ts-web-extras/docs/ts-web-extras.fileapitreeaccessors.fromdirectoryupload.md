@@ -9,7 +9,7 @@ Create FileTree from directory upload with webkitRelativePath.
 **Signature:**
 
 ```typescript
-static fromDirectoryUpload(fileList: FileList, prefix?: string): Promise<Result<FileTree.FileTree>>;
+static fromDirectoryUpload<TCT extends string = string>(fileList: FileList, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
 ```
 
 ## Parameters
@@ -48,17 +48,17 @@ FileList from a directory upload (input with webkitdirectory)
 </td></tr>
 <tr><td>
 
-prefix
+params
 
 
 </td><td>
 
-string
+FileTree.IFileTreeInitParams&lt;TCT&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional prefix to add to all paths
+_(Optional)_ Optional `IFileTreeInitParams` for the file tree.
 
 
 </td></tr>
@@ -66,7 +66,7 @@ _(Optional)_ Optional prefix to add to all paths
 
 **Returns:**
 
-Promise&lt;Result&lt;FileTree.FileTree&gt;&gt;
+Promise&lt;Result&lt;FileTree.FileTree&lt;TCT&gt;&gt;&gt;
 
 Promise resolving to a FileTree with all content pre-loaded
 

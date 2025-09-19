@@ -28,7 +28,7 @@ import { FileTree, JsonValue } from '@fgv/ts-json-base';
  * Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
  * @public
  */
-export class ZipFileItem implements FileTree.IFileTreeFileItem {
+export class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
   /**
    * Indicates that this `FileTree.FileTreeItem` is a file.
    */
@@ -55,6 +55,17 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
   public readonly extension: string;
 
   /**
+   * The content type of the file.
+   */
+  public get contentType(): TCT | undefined {
+    if (this._contentType === undefined && this._shouldInferContentType) {
+      this._contentType = this._accessors.getFileContentType(this.absolutePath).orDefault();
+      this._shouldInferContentType = false;
+    }
+    return this._contentType;
+  }
+
+  /**
    * The pre-loaded contents of the file.
    */
   private readonly _contents: string;
@@ -62,7 +73,17 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
   /**
    * The ZIP file tree accessors that created this item.
    */
-  private readonly _accessors: ZipFileTreeAccessors;
+  private readonly _accessors: ZipFileTreeAccessors<TCT>;
+
+  /**
+   * Mutable content type of the file.
+   */
+  private _contentType: TCT | undefined;
+
+  /**
+   * Flag to track if content type should be inferred on first access.
+   */
+  private _shouldInferContentType: boolean = true;
 
   /**
    * Constructor for ZipFileItem.
@@ -70,13 +91,22 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
    * @param contents - The pre-loaded contents of the file.
    * @param accessors - The ZIP file tree accessors.
    */
-  public constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors) {
+  public constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>) {
     this._contents = contents;
     this._accessors = accessors;
     this.absolutePath = '/' + zipFilePath;
     this.name = accessors.getBaseName(zipFilePath);
     this.extension = accessors.getExtension(zipFilePath);
     this.baseName = accessors.getBaseName(zipFilePath, this.extension);
+  }
+
+  /**
+   * Sets the content type of the file.
+   * @param contentType - The content type of the file.
+   */
+  public setContentType(contentType: TCT | undefined): void {
+    this._contentType = contentType;
+    this._shouldInferContentType = false;
   }
 
   /**
@@ -115,7 +145,7 @@ export class ZipFileItem implements FileTree.IFileTreeFileItem {
  * Implementation of `IFileTreeDirectoryItem` for directories in a ZIP archive.
  * @public
  */
-export class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
+export class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTreeDirectoryItem<TCT> {
   /**
    * Indicates that this `FileTree.FileTreeItem` is a directory.
    */
@@ -134,14 +164,14 @@ export class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
   /**
    * The ZIP file tree accessors that created this item.
    */
-  private readonly _accessors: ZipFileTreeAccessors;
+  private readonly _accessors: ZipFileTreeAccessors<TCT>;
 
   /**
    * Constructor for ZipDirectoryItem.
    * @param directoryPath - The path of the directory within the ZIP.
    * @param accessors - The ZIP file tree accessors.
    */
-  public constructor(directoryPath: string, accessors: ZipFileTreeAccessors) {
+  public constructor(directoryPath: string, accessors: ZipFileTreeAccessors<TCT>) {
     this._accessors = accessors;
     this.absolutePath = '/' + directoryPath.replace(/\/$/, ''); // Normalize path
     this.name = accessors.getBaseName(directoryPath);
@@ -150,7 +180,7 @@ export class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
   /**
    * Gets the children of the directory.
    */
-  public getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>> {
+  public getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>> {
     return this._accessors.getChildren(this.absolutePath);
   }
 }
@@ -159,7 +189,7 @@ export class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
  * File tree accessors for ZIP archives.
  * @public
  */
-export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
+export class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
   /**
    * The unzipped file data.
    */
@@ -171,19 +201,41 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
   private readonly _prefix: string;
 
   /**
+   * Content type inference function.
+   */
+  private readonly _inferContentType: FileTree.ContentTypeFactory<TCT>;
+
+  /**
    * Cache of all items in the ZIP for efficient lookups.
    */
-  private readonly _itemCache: Map<string, FileTree.FileTreeItem> = new Map();
+  private readonly _itemCache: Map<string, FileTree.FileTreeItem<TCT>> = new Map();
 
   /**
    * Constructor for ZipFileTreeAccessors.
    * @param files - The unzipped file data from fflate.
-   * @param prefix - Optional prefix to prepend to paths.
+   * @param params - Optional initialization parameters.
    */
-  private constructor(files: Unzipped, prefix?: string) {
+  private constructor(files: Unzipped, params?: FileTree.IFileTreeInitParams<TCT>) {
     this._files = files;
-    this._prefix = prefix || '';
+    this._prefix = params?.prefix || '';
+    this._inferContentType = params?.inferContentType ?? ZipFileTreeAccessors.defaultInferContentType;
     this._buildItemCache();
+  }
+
+  /**
+   * Default function to infer the content type of a file.
+   * @param filePath - The path of the file.
+   * @param provided - Optional supplied content type.
+   * @returns `Success` with the content type of the file if successful, or
+   * `Failure` with an error message otherwise.
+   * @remarks This default implementation always returns `Success` with `undefined`.
+   * @public
+   */
+  public static defaultInferContentType<TCT extends string = string>(
+    __filePath: string,
+    __provided?: string
+  ): Result<TCT | undefined> {
+    return succeed(undefined);
   }
 
   /**
@@ -192,15 +244,32 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
    * @param prefix - Optional prefix to prepend to paths.
    * @returns Result containing the ZipFileTreeAccessors instance.
    */
-  public static fromBuffer(
+  public static fromBuffer<TCT extends string = string>(
     zipBuffer: ArrayBuffer | Uint8Array,
     prefix?: string
-  ): Result<ZipFileTreeAccessors> {
+  ): Result<ZipFileTreeAccessors<TCT>>;
+
+  /**
+   * Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous).
+   * @param zipBuffer - The ZIP file as an ArrayBuffer or Uint8Array.
+   * @param params - Optional initialization parameters.
+   * @returns Result containing the ZipFileTreeAccessors instance.
+   */
+  public static fromBuffer<TCT extends string = string>(
+    zipBuffer: ArrayBuffer | Uint8Array,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Result<ZipFileTreeAccessors<TCT>>;
+
+  public static fromBuffer<TCT extends string = string>(
+    zipBuffer: ArrayBuffer | Uint8Array,
+    params?: FileTree.IFileTreeInitParams<TCT> | string
+  ): Result<ZipFileTreeAccessors<TCT>> {
     try {
       /* c8 ignore next 1 - defense in depth */
       const uint8Buffer = zipBuffer instanceof Uint8Array ? zipBuffer : new Uint8Array(zipBuffer);
       const files = unzipSync(uint8Buffer);
-      return succeed(new ZipFileTreeAccessors(files, prefix));
+      const normalizedParams = typeof params === 'string' ? { prefix: params } : params;
+      return succeed(new ZipFileTreeAccessors<TCT>(files, normalizedParams));
     } catch (error) {
       /* c8 ignore next 1 - defensive coding: fflate always throws Error objects in practice */
       return fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`);
@@ -213,10 +282,26 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
    * @param prefix - Optional prefix to prepend to paths.
    * @returns Promise containing Result with the ZipFileTreeAccessors instance.
    */
-  public static async fromBufferAsync(
+  public static async fromBufferAsync<TCT extends string = string>(
     zipBuffer: ArrayBuffer | Uint8Array,
     prefix?: string
-  ): Promise<Result<ZipFileTreeAccessors>> {
+  ): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+
+  /**
+   * Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous).
+   * @param zipBuffer - The ZIP file as an ArrayBuffer or Uint8Array.
+   * @param params - Optional initialization parameters.
+   * @returns Promise containing Result with the ZipFileTreeAccessors instance.
+   */
+  public static async fromBufferAsync<TCT extends string = string>(
+    zipBuffer: ArrayBuffer | Uint8Array,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+
+  public static async fromBufferAsync<TCT extends string = string>(
+    zipBuffer: ArrayBuffer | Uint8Array,
+    params?: FileTree.IFileTreeInitParams<TCT> | string
+  ): Promise<Result<ZipFileTreeAccessors<TCT>>> {
     return new Promise((resolve) => {
       try {
         /* c8 ignore next 1 - defense in depth */
@@ -225,7 +310,8 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
           if (err) {
             resolve(fail(`Failed to load ZIP archive: ${err.message}`));
           } else {
-            resolve(succeed(new ZipFileTreeAccessors(files, prefix)));
+            const normalizedParams = typeof params === 'string' ? { prefix: params } : params;
+            resolve(succeed(new ZipFileTreeAccessors<TCT>(files, normalizedParams)));
           }
         });
       } catch (error) {
@@ -243,10 +329,35 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
    * @param prefix - Optional prefix to prepend to paths.
    * @returns Result containing the ZipFileTreeAccessors instance.
    */
-  public static async fromFile(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors>> {
+  public static async fromFile<TCT extends string = string>(
+    file: File,
+    prefix?: string
+  ): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+
+  /**
+   * Creates a new ZipFileTreeAccessors instance from a File object (browser environment).
+   * @param file - The File object containing ZIP data.
+   * @param params - Optional initialization parameters.
+   * @returns Result containing the ZipFileTreeAccessors instance.
+   */
+  public static async fromFile<TCT extends string = string>(
+    file: File,
+    params?: FileTree.IFileTreeInitParams<TCT>
+  ): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+
+  public static async fromFile<TCT extends string = string>(
+    file: File,
+    params?: FileTree.IFileTreeInitParams<TCT> | string
+  ): Promise<Result<ZipFileTreeAccessors<TCT>>> {
     try {
       const arrayBuffer = await file.arrayBuffer();
-      return await ZipFileTreeAccessors.fromBufferAsync(new Uint8Array(arrayBuffer), prefix);
+      const uint8Buffer = new Uint8Array(arrayBuffer);
+
+      if (typeof params === 'string') {
+        return await ZipFileTreeAccessors.fromBufferAsync<TCT>(uint8Buffer, params);
+      } else {
+        return await ZipFileTreeAccessors.fromBufferAsync<TCT>(uint8Buffer, params);
+      }
     } catch (error) {
       return fail(`Failed to read file: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -280,7 +391,7 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
         // Add the file item with its contents
         const absolutePath = this.resolveAbsolutePath(relativePath);
         const contents = new TextDecoder().decode(fileData);
-        const item = new ZipFileItem(relativePath, contents, this);
+        const item = new ZipFileItem<TCT>(relativePath, contents, this);
         this._itemCache.set(absolutePath, item);
       }
     }
@@ -288,7 +399,7 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
     // Add directory items to cache
     directories.forEach((dirPath) => {
       const absolutePath = this.resolveAbsolutePath(dirPath);
-      const item = new ZipDirectoryItem(dirPath, this);
+      const item = new ZipDirectoryItem<TCT>(dirPath, this);
       this._itemCache.set(absolutePath, item);
     });
   }
@@ -340,7 +451,7 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
   /**
    * Gets an item from the file tree.
    */
-  public getItem(path: string): Result<FileTree.FileTreeItem> {
+  public getItem(path: string): Result<FileTree.FileTreeItem<TCT>> {
     const absolutePath = this.resolveAbsolutePath(path);
     const item = this._itemCache.get(absolutePath);
 
@@ -364,11 +475,25 @@ export class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
   }
 
   /**
+   * Gets the content type of a file in the file tree.
+   */
+  public getFileContentType(path: string, provided?: string): Result<TCT | undefined> {
+    // If provided contentType is given, use it directly (highest priority)
+    if (provided !== undefined) {
+      return succeed(provided as TCT);
+    }
+
+    // For files that exist in the ZIP, we don't store explicit contentType
+    // so we always fall back to inference
+    return this._inferContentType(path);
+  }
+
+  /**
    * Gets the children of a directory in the file tree.
    */
-  public getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem>> {
+  public getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>> {
     const absolutePath = this.resolveAbsolutePath(path);
-    const children: FileTree.FileTreeItem[] = [];
+    const children: FileTree.FileTreeItem<TCT>[] = [];
 
     // Find all items that are direct children of this directory
     for (const [itemPath, item] of this._itemCache) {

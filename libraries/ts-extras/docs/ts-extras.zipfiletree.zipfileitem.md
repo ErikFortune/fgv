@@ -9,9 +9,9 @@ Implementation of `FileTree.IFileTreeFileItem` for files in a ZIP archive.
 **Signature:**
 
 ```typescript
-export declare class ZipFileItem implements FileTree.IFileTreeFileItem 
+export declare class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> 
 ```
-**Implements:** FileTree.IFileTreeFileItem
+**Implements:** FileTree.IFileTreeFileItem&lt;TCT&gt;
 
 ## Constructors
 
@@ -109,6 +109,27 @@ string
 </td><td>
 
 The base name of the file (without extension)
+
+
+</td></tr>
+<tr><td>
+
+[contentType](./ts-extras.zipfiletree.zipfileitem.contenttype.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TCT \| undefined
+
+
+</td><td>
+
+The content type of the file.
 
 
 </td></tr>
@@ -232,6 +253,20 @@ Gets the contents of the file as parsed JSON.
 </td><td>
 
 Gets the raw contents of the file as a string.
+
+
+</td></tr>
+<tr><td>
+
+[setContentType(contentType)](./ts-extras.zipfiletree.zipfileitem.setcontenttype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the content type of the file.
 
 
 </td></tr>

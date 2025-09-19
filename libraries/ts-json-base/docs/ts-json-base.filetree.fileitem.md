@@ -259,6 +259,22 @@ Creates a new [FileTree.FileItem](./ts-json-base.filetree.fileitem.md) instance.
 </td></tr>
 <tr><td>
 
+[defaultAcceptContentType(\_\_filePath, provided)](./ts-json-base.filetree.fileitem.defaultacceptcontenttype.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Default function to accept the content type of a file.
+
+
+</td></tr>
+<tr><td>
+
 [defaultInferContentType(\_\_filePath, \_\_provided)](./ts-json-base.filetree.fileitem.defaultinfercontenttype.md)
 
 

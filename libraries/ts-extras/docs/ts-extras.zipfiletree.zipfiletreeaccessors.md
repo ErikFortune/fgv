@@ -9,9 +9,9 @@ File tree accessors for ZIP archives.
 **Signature:**
 
 ```typescript
-export declare class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors 
+export declare class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> 
 ```
-**Implements:** FileTree.IFileTreeAccessors
+**Implements:** FileTree.IFileTreeAccessors&lt;TCT&gt;
 
 ## Methods
 
@@ -33,7 +33,39 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[defaultInferContentType(\_\_filePath, \_\_provided)](./ts-extras.zipfiletree.zipfiletreeaccessors.defaultinfercontenttype.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Default function to infer the content type of a file.
+
+
+</td></tr>
+<tr><td>
+
 [fromBuffer(zipBuffer, prefix)](./ts-extras.zipfiletree.zipfiletreeaccessors.frombuffer.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous).
+
+
+</td></tr>
+<tr><td>
+
+[fromBuffer(zipBuffer, params)](./ts-extras.zipfiletree.zipfiletreeaccessors.frombuffer_1.md)
 
 
 </td><td>
@@ -65,7 +97,39 @@ Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous
 </td></tr>
 <tr><td>
 
+[fromBufferAsync(zipBuffer, params)](./ts-extras.zipfiletree.zipfiletreeaccessors.frombufferasync_1.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (asynchronous).
+
+
+</td></tr>
+<tr><td>
+
 [fromFile(file, prefix)](./ts-extras.zipfiletree.zipfiletreeaccessors.fromfile.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new ZipFileTreeAccessors instance from a File object (browser environment).
+
+
+</td></tr>
+<tr><td>
+
+[fromFile(file, params)](./ts-extras.zipfiletree.zipfiletreeaccessors.fromfile_1.md)
 
 
 </td><td>
@@ -132,6 +196,20 @@ Gets the extension of a path.
 </td><td>
 
 Gets the contents of a file in the file tree.
+
+
+</td></tr>
+<tr><td>
+
+[getFileContentType(path, provided)](./ts-extras.zipfiletree.zipfiletreeaccessors.getfilecontenttype.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the content type of a file in the file tree.
 
 
 </td></tr>

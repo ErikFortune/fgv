@@ -139,6 +139,65 @@ describe('FileItem', () => {
       expect(fileItem.baseName).toBe('config');
       expect(fileItem.extension).toBe('.json');
     });
+
+    test('contentType property returns current content type', () => {
+      const fileItem = FileItem.create('/test.json', accessors).orThrow();
+
+      // Initial contentType should be undefined (since our test accessors don't set it)
+      expect(fileItem.contentType).toBeUndefined();
+    });
+  });
+
+  describe('setContentType method', () => {
+    test('sets content type to a specific value', () => {
+      const fileItem = FileItem.create('/test.json', accessors).orThrow();
+
+      expect(fileItem.contentType).toBeUndefined();
+
+      fileItem.setContentType('application/json');
+      expect(fileItem.contentType).toBe('application/json');
+    });
+
+    test('sets content type to undefined', () => {
+      const fileItem = FileItem.create('/test.json', accessors).orThrow();
+
+      // First set a content type
+      fileItem.setContentType('application/json');
+      expect(fileItem.contentType).toBe('application/json');
+
+      // Then set it back to undefined
+      fileItem.setContentType(undefined);
+      expect(fileItem.contentType).toBeUndefined();
+    });
+
+    test('can change content type multiple times', () => {
+      const fileItem = FileItem.create('/test.json', accessors).orThrow();
+
+      fileItem.setContentType('application/json');
+      expect(fileItem.contentType).toBe('application/json');
+
+      fileItem.setContentType('text/plain');
+      expect(fileItem.contentType).toBe('text/plain');
+
+      fileItem.setContentType('application/xml');
+      expect(fileItem.contentType).toBe('application/xml');
+    });
+
+    test('handles special content types', () => {
+      const fileItem = FileItem.create('/test.json', accessors).orThrow();
+
+      const specialTypes = [
+        'application/vnd.api+json',
+        'text/plain; charset=utf-8',
+        'multipart/form-data; boundary=test',
+        ''
+      ];
+
+      specialTypes.forEach((contentType) => {
+        fileItem.setContentType(contentType);
+        expect(fileItem.contentType).toBe(contentType);
+      });
+    });
   });
 
   describe('getContents method', () => {
@@ -356,6 +415,134 @@ describe('FileItem', () => {
 
       expect(absoluteItem.getContents()).toSucceedWith(relativeItem.getContents().orThrow());
       expect(absoluteItem.getRawContents()).toSucceedWith(relativeItem.getRawContents().orThrow());
+    });
+  });
+
+  describe('static methods', () => {
+    describe('defaultAcceptContentType', () => {
+      test('returns success with provided content type when provided is defined', () => {
+        const result = FileItem.defaultAcceptContentType('/test/file.json', 'application/json');
+        expect(result).toSucceedWith('application/json');
+      });
+
+      test('returns success with provided content type for different content types', () => {
+        expect(FileItem.defaultAcceptContentType('/test/file.xml', 'application/xml')).toSucceedWith(
+          'application/xml'
+        );
+        expect(FileItem.defaultAcceptContentType('/test/file.txt', 'text/plain')).toSucceedWith('text/plain');
+        expect(FileItem.defaultAcceptContentType('/test/file.html', 'text/html')).toSucceedWith('text/html');
+        expect(FileItem.defaultAcceptContentType('/test/script.js', 'application/javascript')).toSucceedWith(
+          'application/javascript'
+        );
+      });
+
+      test('returns success with undefined when provided is undefined', () => {
+        const result = FileItem.defaultAcceptContentType('/test/file.json');
+        expect(result).toSucceedWith(undefined);
+      });
+
+      test('returns success with undefined when provided is explicitly undefined', () => {
+        const result = FileItem.defaultAcceptContentType('/test/file.json', undefined);
+        expect(result).toSucceedWith(undefined);
+      });
+
+      test('ignores file path parameter - works with any path', () => {
+        const testPaths = [
+          '/simple.json',
+          '/path/to/nested/file.xml',
+          '/deeply/nested/directory/structure/file.txt',
+          '/file-without-extension',
+          '/file.with.multiple.dots.json',
+          '/UPPERCASE.JSON',
+          '/special-chars_123.json',
+          '',
+          '/',
+          'relative/path.json',
+          './relative/path.json',
+          '../parent/path.json'
+        ];
+
+        testPaths.forEach((path) => {
+          expect(FileItem.defaultAcceptContentType(path, 'test/content-type')).toSucceedWith(
+            'test/content-type'
+          );
+          expect(FileItem.defaultAcceptContentType(path)).toSucceedWith(undefined);
+        });
+      });
+
+      test('works with typed content type parameter', () => {
+        type CustomContentType = 'custom/type1' | 'custom/type2';
+
+        const result1 = FileItem.defaultAcceptContentType<CustomContentType>('/test.file', 'custom/type1');
+        expect(result1).toSucceedWith('custom/type1');
+
+        const result2 = FileItem.defaultAcceptContentType<CustomContentType>('/test.file', 'custom/type2');
+        expect(result2).toSucceedWith('custom/type2');
+
+        const result3 = FileItem.defaultAcceptContentType<CustomContentType>('/test.file');
+        expect(result3).toSucceedWith(undefined);
+      });
+
+      test('handles empty string as content type', () => {
+        const result = FileItem.defaultAcceptContentType('/test/file.json', '');
+        expect(result).toSucceedWith('');
+      });
+
+      test('handles special characters in content type', () => {
+        const specialContentTypes = [
+          'application/vnd.api+json',
+          'text/plain; charset=utf-8',
+          'multipart/form-data; boundary=something',
+          'application/x-custom-type'
+        ];
+
+        specialContentTypes.forEach((contentType) => {
+          expect(FileItem.defaultAcceptContentType('/test.file', contentType)).toSucceedWith(contentType);
+        });
+      });
+
+      test('is a pure function - same inputs always produce same outputs', () => {
+        const path = '/test/consistent.json';
+        const contentType = 'application/json';
+
+        // Call multiple times to ensure consistency
+        for (let i = 0; i < 5; i++) {
+          expect(FileItem.defaultAcceptContentType(path, contentType)).toSucceedWith(contentType);
+          expect(FileItem.defaultAcceptContentType(path)).toSucceedWith(undefined);
+        }
+      });
+    });
+
+    describe('defaultInferContentType', () => {
+      test('always returns success with undefined regardless of input', () => {
+        expect(FileItem.defaultInferContentType('/test/file.json')).toSucceedWith(undefined);
+        expect(FileItem.defaultInferContentType('/test/file.xml', 'provided')).toSucceedWith(undefined);
+        expect(FileItem.defaultInferContentType('')).toSucceedWith(undefined);
+        expect(FileItem.defaultInferContentType('/', undefined)).toSucceedWith(undefined);
+      });
+
+      test('ignores all parameters', () => {
+        const testCases: Array<[string, string | undefined]> = [
+          ['/simple.json', undefined],
+          ['/path/to/file.xml', 'some-value'],
+          ['', ''],
+          ['relative/path', 'application/json']
+        ];
+
+        testCases.forEach(([path, provided]) => {
+          expect(FileItem.defaultInferContentType(path, provided)).toSucceedWith(undefined);
+        });
+      });
+
+      test('works with typed content type parameter', () => {
+        type CustomContentType = 'custom/type1' | 'custom/type2';
+
+        const result1 = FileItem.defaultInferContentType<CustomContentType>('/test.file');
+        expect(result1).toSucceedWith(undefined);
+
+        const result2 = FileItem.defaultInferContentType<CustomContentType>('/test.file', 'provided');
+        expect(result2).toSucceedWith(undefined);
+      });
     });
   });
 

@@ -4,18 +4,12 @@
 
 ## FileTreeHelpers.extractFileMetadata() function
 
-Helper function to extract metadata from a FileList.
+Helper function to extract metadata from a `File`<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare function extractFileMetadata(fileList: FileList): Array<{
-    path: string;
-    name: string;
-    size: number;
-    type: string;
-    lastModified: number;
-}>;
+export declare function extractFileMetadata(file: File): IFileMetadata;
 ```
 
 ## Parameters
@@ -38,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-fileList
+file
 
 
 </td><td>
 
-FileList
+File
 
 
 </td><td>
 
-The FileList to extract metadata from
+The File to extract metadata from
 
 
 </td></tr>
@@ -56,7 +50,7 @@ The FileList to extract metadata from
 
 **Returns:**
 
-Array&lt;{ path: string; name: string; size: number; type: string; lastModified: number; }&gt;
+[IFileMetadata](./ts-web-extras.ifilemetadata.md)
 
-Array of file metadata objects
+[file metadata](./ts-web-extras.ifilemetadata.md) object
 

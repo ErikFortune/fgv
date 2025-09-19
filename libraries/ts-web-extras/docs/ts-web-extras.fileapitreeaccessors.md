@@ -9,7 +9,7 @@ Helper class to create FileTree instances from various file sources. Supports Fi
 **Signature:**
 
 ```typescript
-export declare class FileApiTreeAccessors 
+export declare class FileApiTreeAccessors<TCT extends string = string> 
 ```
 
 ## Methods
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[create(initializers)](./ts-web-extras.fileapitreeaccessors.create.md)
+[create(initializers, params)](./ts-web-extras.fileapitreeaccessors.create.md)
 
 
 </td><td>
@@ -48,7 +48,7 @@ Create FileTree from various file sources using TreeInitializer array.
 </td></tr>
 <tr><td>
 
-[createFromFiles(files, prefix)](./ts-web-extras.fileapitreeaccessors.createfromfiles.md)
+[extractFileMetadata(file)](./ts-web-extras.fileapitreeaccessors.extractfilemetadata.md)
 
 
 </td><td>
@@ -58,29 +58,13 @@ Create FileTree from various file sources using TreeInitializer array.
 
 </td><td>
 
-Legacy method: Create FileTree from File API files by pre-loading all content.
+Extract file metadata from a File.
 
 
 </td></tr>
 <tr><td>
 
-[extractFileMetadata(fileList)](./ts-web-extras.fileapitreeaccessors.extractfilemetadata.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Extract file metadata from a FileList.
-
-
-</td></tr>
-<tr><td>
-
-[fromDirectoryUpload(fileList, prefix)](./ts-web-extras.fileapitreeaccessors.fromdirectoryupload.md)
+[fromDirectoryUpload(fileList, params)](./ts-web-extras.fileapitreeaccessors.fromdirectoryupload.md)
 
 
 </td><td>
@@ -96,7 +80,7 @@ Create FileTree from directory upload with webkitRelativePath.
 </td></tr>
 <tr><td>
 
-[fromFileList(fileList, prefix)](./ts-web-extras.fileapitreeaccessors.fromfilelist.md)
+[fromFileList(fileList, params)](./ts-web-extras.fileapitreeaccessors.fromfilelist.md)
 
 
 </td><td>

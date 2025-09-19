@@ -19,18 +19,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[extractFileMetadata(fileList)](./ts-web-extras.filetreehelpers.extractfilemetadata.md)
+[extractFileListMetadata(fileList)](./ts-web-extras.filetreehelpers.extractfilelistmetadata.md)
 
 
 </td><td>
 
-Helper function to extract metadata from a FileList.
+Helper function to extract metadata from a `FileList`<!-- -->.
 
 
 </td></tr>
 <tr><td>
 
-[fromDirectoryUpload(fileList, prefix)](./ts-web-extras.filetreehelpers.fromdirectoryupload.md)
+[extractFileMetadata(file)](./ts-web-extras.filetreehelpers.extractfilemetadata.md)
+
+
+</td><td>
+
+Helper function to extract metadata from a `File`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[fromDirectoryUpload(fileList, params)](./ts-web-extras.filetreehelpers.fromdirectoryupload.md)
 
 
 </td><td>
@@ -41,18 +52,7 @@ Helper function to create a new FileTree instance from a directory upload with w
 </td></tr>
 <tr><td>
 
-[fromFileApiFiles(files, prefix)](./ts-web-extras.filetreehelpers.fromfileapifiles.md)
-
-
-</td><td>
-
-Helper function to create a new FileTree instance from an array of File API files with their paths.
-
-
-</td></tr>
-<tr><td>
-
-[fromFileList(fileList, prefix)](./ts-web-extras.filetreehelpers.fromfilelist.md)
+[fromFileList(fileList, params)](./ts-web-extras.filetreehelpers.fromfilelist.md)
 
 
 </td><td>

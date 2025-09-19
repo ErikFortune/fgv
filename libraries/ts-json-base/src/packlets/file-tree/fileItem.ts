@@ -156,4 +156,20 @@ export class FileItem<TCT extends string = string> implements IFileTreeFileItem<
   ): Result<TCT | undefined> {
     return succeed(undefined);
   }
+
+  /**
+   * Default function to accept the content type of a file.
+   * @param filePath - The path of the file.
+   * @param provided - Optional supplied content type.
+   * @returns `Success` with the content type of the file if successful, or
+   * `Failure` with an error message otherwise.
+   * @remarks This default implementation always returns `Success` with `undefined`.
+   * @public
+   */
+  public static defaultAcceptContentType<TCT extends string = string>(
+    __filePath: string,
+    provided?: TCT
+  ): Result<TCT | undefined> {
+    return succeed(provided);
+  }
 }

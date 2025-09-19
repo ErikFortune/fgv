@@ -9,7 +9,7 @@ Create FileTree from various file sources using TreeInitializer array.
 **Signature:**
 
 ```typescript
-static create(initializers: TreeInitializer[]): Promise<Result<FileTree.FileTree>>;
+static create<TCT extends string = string>(initializers: TreeInitializer[], params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<FileTree.FileTree<TCT>>>;
 ```
 
 ## Parameters
@@ -46,11 +46,27 @@ Array of TreeInitializer objects specifying file sources
 
 
 </td></tr>
+<tr><td>
+
+params
+
+
+</td><td>
+
+FileTree.IFileTreeInitParams&lt;TCT&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional `IFileTreeInitParams` for the file tree.
+
+
+</td></tr>
 </tbody></table>
 
 **Returns:**
 
-Promise&lt;Result&lt;FileTree.FileTree&gt;&gt;
+Promise&lt;Result&lt;FileTree.FileTree&lt;TCT&gt;&gt;&gt;
 
 Promise resolving to a FileTree with all content pre-loaded
 
