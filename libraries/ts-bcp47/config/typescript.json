@@ -3,9 +3,10 @@
 
   /**
    * Configures additional file types that should be copied into the TypeScript compiler's emit folders.
-   * This extends the base configuration to include ZIP files for compressed IANA data.
+   * Note: IANA data is now embedded in TypeScript modules and no longer requires separate files.
    */
   "staticAssetsToCopy": {
-    "fileExtensions": [".json", ".zip", ".base64"]
+    "excludeGlobs": ["**/data/iana/**"],
+    "fileExtensions": [".json"]
   }
 }

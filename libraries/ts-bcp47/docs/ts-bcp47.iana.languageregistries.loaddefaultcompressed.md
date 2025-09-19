@@ -4,7 +4,7 @@
 
 ## Iana.LanguageRegistries.loadDefaultCompressed() method
 
-Loads language registries with preferred compressed format, falling back to individual files. This method uses embedded compressed ZIP data that works in both Node.js and browser environments without requiring polyfills, then falls back to individual JSON files if decompression fails.
+Loads language registries from embedded compressed data. This method uses embedded compressed ZIP data that works in both Node.js and browser environments without requiring polyfills. This is the preferred loading method for published packages.
 
 **Signature:**
 

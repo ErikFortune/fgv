@@ -46,6 +46,13 @@ export class LanguageRegistries {
   }
 
   public static loadDefault(): Result<LanguageRegistries> {
+    // Primary: Try compressed loading first (works in published packages)
+    const compressedResult = LanguageRegistries.loadDefaultCompressed();
+    if (compressedResult.isSuccess()) {
+      return compressedResult;
+    }
+
+    // Fallback: Try individual files (available in development environment)
     return LanguageSubtagRegistry.loadDefault().onSuccess((subtags) => {
       return LanguageTagExtensionRegistry.loadDefault().onSuccess((extensions) => {
         return LanguageRegistries.create(subtags, extensions);
@@ -54,24 +61,16 @@ export class LanguageRegistries {
   }
 
   /**
-   * Loads language registries with preferred compressed format, falling back to individual files.
+   * Loads language registries from embedded compressed data.
    * This method uses embedded compressed ZIP data that works in both Node.js and browser environments
-   * without requiring polyfills, then falls back to individual JSON files if decompression fails.
+   * without requiring polyfills. This is the preferred loading method for published packages.
    * @returns A Result containing the loaded LanguageRegistries or an error.
    * @public
    */
   public static loadDefaultCompressed(): Result<LanguageRegistries> {
     return captureResult(() => {
-      // Try to load from the embedded compressed ZIP data (browser-safe)
       const zipBuffer = getIanaDataBuffer();
-      const zipResult = LanguageRegistriesLoader.loadLanguageRegistriesFromZipBuffer(zipBuffer);
-
-      if (zipResult.isSuccess()) {
-        return zipResult.orThrow();
-      }
-
-      // Fall back to individual JSON files if ZIP decompression fails
-      return LanguageRegistries.loadDefault().orThrow();
+      return LanguageRegistriesLoader.loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
     });
   }
 
