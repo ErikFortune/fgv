@@ -113,6 +113,17 @@ Compares two log levels.
 
 
 </td></tr>
+<tr><td>
+
+[stringifyLogValue(value, maxLength)](./ts-utils.logging.stringifylogvalue.md)
+
+
+</td><td>
+
+Stringifies an arbitrary value for logging.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces

@@ -9,7 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { IImportViewProps } from '../../../types';
 import { FileTree } from '@fgv/ts-json-base';
-import { Bundle, ZipArchive } from '@fgv/ts-res';
+import { Bundle, Config } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
 import { useSmartObservability } from '../../../hooks/useSmartObservability';
 import {
@@ -18,13 +18,11 @@ import {
   safeShowOpenFilePicker,
   FileSystemDirectoryHandle,
   isFileHandle,
-  isDirectoryHandle
+  isDirectoryHandle,
+  FileTreeHelpers
 } from '@fgv/ts-web-extras';
-import {
-  readFilesFromInput,
-  readDirectoryFromInput,
-  createFileTreeFromFiles
-} from '../../../utils/fileProcessing';
+import { ZipFileTree } from '@fgv/ts-extras';
+import { succeed } from '@fgv/ts-utils';
 
 /**
  * ImportView component for importing resource files, directories, and bundles.
@@ -101,53 +99,68 @@ export const ImportView: React.FC<IImportViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dirInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to process ZIP files using zip-archive packlet
+  // Helper function to process ZIP files using ZipFileTree directly
   const processZipFile = useCallback(
     async (file: File) => {
       o11y.diag.info(`[ImportView] Processing ZIP file: ${file.name}`);
       o11y.user.info(`Processing ZIP file: ${file.name}`);
 
-      const loader = new ZipArchive.ZipArchiveLoader();
-      const loadResult = await loader.loadFromFile(file, {
-        strictManifestValidation: false // Be lenient with manifests
-      });
+      try {
+        // Read file as ArrayBuffer
+        const buffer = await file.arrayBuffer();
 
-      if (loadResult.isFailure()) {
-        throw new Error(`Failed to load ZIP: ${loadResult.message}`);
-      }
-
-      const zipData = loadResult.value;
-      o11y.diag.info(`[ImportView] ZIP loaded successfully:`, zipData);
-
-      // Convert ZIP result to FileTree
-      let fileTree: FileTree.FileTree;
-      if (zipData.directory) {
-        // Convert IImportedDirectory to FileTree using createFileTreeFromFiles
-        const allFiles = extractAllFilesFromDirectory(zipData.directory);
-        const fileTreeResult = createFileTreeFromFiles(allFiles);
-        if (fileTreeResult.isFailure()) {
-          throw new Error(`Failed to convert ZIP directory to FileTree: ${fileTreeResult.message}`);
+        // Create FileTree directly from ZIP buffer
+        const zipAccessorsResult = ZipFileTree.ZipFileTreeAccessors.fromBuffer(buffer);
+        if (zipAccessorsResult.isFailure()) {
+          throw new Error(`Failed to parse ZIP: ${zipAccessorsResult.message}`);
         }
-        fileTree = fileTreeResult.value;
-      } else if (zipData.files.length > 0) {
-        // Convert IImportedFile[] to FileTree using createFileTreeFromFiles
-        const fileTreeResult = createFileTreeFromFiles(zipData.files);
+
+        const zipAccessors = zipAccessorsResult.value;
+
+        // Create FileTree from ZIP accessors
+        const fileTreeResult = FileTree.FileTree.create(zipAccessors);
         if (fileTreeResult.isFailure()) {
-          throw new Error(`Failed to convert ZIP files to FileTree: ${fileTreeResult.message}`);
+          throw new Error(`Failed to create FileTree from ZIP: ${fileTreeResult.message}`);
         }
-        fileTree = fileTreeResult.value;
-      } else {
-        throw new Error('No files found in ZIP archive');
-      }
 
-      // Pass the FileTree and any configuration found
-      if (onZipImport) {
-        onZipImport(fileTree, zipData.config);
-      } else {
-        throw new Error('No ZIP import handler configured');
-      }
+        const fileTree = fileTreeResult.value;
+        o11y.diag.info(`[ImportView] ZIP FileTree created successfully`);
 
-      return { ...zipData, fileTree };
+        // For configuration, try to find a config file in the ZIP
+        // This is optional - if no config is found, we pass undefined
+        const config = fileTree
+          .getFile('/config.json')
+          .onFailure((message) => {
+            o11y.diag.info(`[ImportView] No config.json found in ZIP:`);
+            return fail(message);
+          })
+          .onSuccess((file) => {
+            return file
+              .getContents()
+              .onSuccess((contents) => Config.Convert.systemConfiguration.convert(contents))
+              .onSuccess((config) => {
+                o11y.diag.info(`[ImportView] Found config.json in ZIP`);
+                return succeed(config);
+              })
+              .onFailure((error) => {
+                throw new Error(`Failed to convert config.json from ZIP: ${error}`);
+              });
+          })
+          .orDefault();
+
+        // Pass the FileTree and any configuration found
+        if (onZipImport) {
+          onZipImport(fileTree, config);
+        } else {
+          throw new Error('No ZIP import handler configured');
+        }
+
+        return { fileTree, config };
+      } catch (error) {
+        throw new Error(
+          `Failed to process ZIP file: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     },
     [onZipImport, o11y]
   );
@@ -191,8 +204,8 @@ export const ImportView: React.FC<IImportViewProps> = ({
           }
         }
 
-        // Use fileProcessing helper to get FileTree
-        const fileTreeResult = await readFilesFromInput(files);
+        // Use FileTreeHelpers to create FileTree from files
+        const fileTreeResult = await FileTreeHelpers.fromFileList(files);
         if (fileTreeResult.isFailure()) {
           throw new Error(fileTreeResult.message);
         }
@@ -259,8 +272,8 @@ export const ImportView: React.FC<IImportViewProps> = ({
       setError(null);
 
       try {
-        // Use fileProcessing helper to get FileTree
-        const fileTreeResult = await readDirectoryFromInput(files);
+        // Use FileTreeHelpers for directory upload
+        const fileTreeResult = await FileTreeHelpers.fromDirectoryUpload(files);
         if (fileTreeResult.isFailure()) {
           throw new Error(fileTreeResult.message);
         }
@@ -334,9 +347,9 @@ export const ImportView: React.FC<IImportViewProps> = ({
 
       await collectFiles(dirHandle);
 
-      // Convert File array to FileList-like object
+      // Convert File array to FileList-like object and create FileTree
       const fileList = createFileListFromArray(files);
-      const fileTreeResult = await readDirectoryFromInput(fileList);
+      const fileTreeResult = await FileTreeHelpers.fromDirectoryUpload(fileList);
       if (fileTreeResult.isFailure()) {
         throw new Error(fileTreeResult.message);
       }
@@ -441,9 +454,9 @@ export const ImportView: React.FC<IImportViewProps> = ({
         files.push(file);
       }
 
-      // Convert File array to FileList-like object
+      // Convert File array to FileList-like object and create FileTree
       const fileList = createFileListFromArray(files);
-      const fileTreeResult = await readFilesFromInput(fileList);
+      const fileTreeResult = await FileTreeHelpers.fromFileList(fileList);
       if (fileTreeResult.isFailure()) {
         throw new Error(fileTreeResult.message);
       }
@@ -740,41 +753,6 @@ function createFileListFromArray(files: File[]): FileList {
   });
 
   return fileList;
-}
-
-interface IDirectoryStructure {
-  name: string;
-  path?: string;
-  files?: Array<{ name: string; path?: string; content: string; type?: string }>;
-  subdirectories?: Array<IDirectoryStructure>;
-}
-
-function extractAllFilesFromDirectory(
-  directory: IDirectoryStructure
-): Array<{ name: string; path: string; content: string; type?: string }> {
-  const allFiles: Array<{ name: string; path: string; content: string; type?: string }> = [];
-
-  // Add files from current directory
-  if (directory.files) {
-    for (const file of directory.files) {
-      allFiles.push({
-        name: file.name,
-        path: file.path || file.name,
-        content: file.content,
-        type: file.type
-      });
-    }
-  }
-
-  // Recursively add files from subdirectories
-  if (directory.subdirectories) {
-    for (const subdir of directory.subdirectories) {
-      const subdirFiles = extractAllFilesFromDirectory(subdir);
-      allFiles.push(...subdirFiles);
-    }
-  }
-
-  return allFiles;
 }
 
 function countFilesInTree(fileTree: FileTree.FileTree): number {

@@ -1,14 +1,14 @@
 /**
- * Tools and utilities for import operations and file processing.
+ * Tools and utilities for import operations.
  *
- * This namespace contains the ImportView component and functions for reading files
- * from inputs, processing directories, and exporting data in various formats including
- * JSON and ZIP. It provides a comprehensive toolkit for handling resource imports
- * and file operations.
+ * This namespace contains the ImportView component and re-exports utilities for
+ * exporting data in various formats. For file processing operations, use
+ * FileTreeHelpers from `@fgv/ts-web-extras` directly.
  *
  * @example
  * ```tsx
  * import { ImportTools } from '@fgv/ts-res-ui-components';
+ * import { FileTreeHelpers } from '@fgv/ts-web-extras';
  *
  * // Use the ImportView component for file/directory imports
  * <ImportTools.ImportView
@@ -17,9 +17,9 @@
  *   onZipImport={handleZipImport}
  * />
  *
- * // Or use utility functions for file processing
- * const files = await ImportTools.readFilesFromInput(fileInput);
- * const directory = ImportTools.filesToDirectory(files);
+ * // For file processing, use FileTreeHelpers directly
+ * const fileTree = await FileTreeHelpers.fromFileList(fileInput);
+ * const dirTree = await FileTreeHelpers.fromDirectoryUpload(dirInput);
  * ImportTools.exportAsJson(data, 'my-resources.json');
  * ```
  *
@@ -29,8 +29,7 @@
 // Export the ImportView component (dual export with ZipTools)
 export { ImportView } from '../components/views/ImportView';
 
-// Export file processing utilities - now return FileTree directly
-export { readFilesFromInput, readDirectoryFromInput, createFileTreeFromFiles } from '../utils/fileProcessing';
+// File processing utilities have been removed - use FileTreeHelpers from @fgv/ts-web-extras directly
 
 // Export utilities moved to ts-web-extras
 export { exportAsJson, exportUsingFileSystemAPI } from '@fgv/ts-web-extras';

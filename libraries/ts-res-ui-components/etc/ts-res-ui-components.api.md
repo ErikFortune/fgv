@@ -93,14 +93,6 @@ class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
 // @public
 function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
 
-// @internal (undocumented)
-function createFileTreeFromFiles(files: Array<{
-    name: string;
-    path?: string;
-    content: string;
-    type?: string;
-}>): Result<FileTree.FileTree>;
-
 // @public
 const createFilteredResourceManagerSimple: (originalSystem: IProcessedResources["system"], partialContext: Record<string, string | undefined>, options?: IFilterOptions) => Promise<Result<IProcessedResources>>;
 
@@ -631,9 +623,6 @@ function importConfiguration(data: string): Result<Config.Model.ISystemConfigura
 declare namespace ImportTools {
     export {
         ImportView,
-        readFilesFromInput,
-        readDirectoryFromInput,
-        createFileTreeFromFiles,
         exportAsJson,
         exportUsingFileSystemAPI,
         IImportViewProps
@@ -1260,12 +1249,6 @@ const QualifierEditForm: React_2.FC<IQualifierEditFormProps>;
 //
 // @public
 const QualifierTypeEditForm: React_2.FC<IQualifierTypeEditFormProps>;
-
-// @internal (undocumented)
-function readDirectoryFromInput(files: FileList): Promise<Result<FileTree.FileTree>>;
-
-// @internal (undocumented)
-function readFilesFromInput(files: FileList): Promise<Result<FileTree.FileTree>>;
 
 // @public
 const ResolutionContextOptionsControl: React_2.FC<IResolutionContextOptionsControlProps>;

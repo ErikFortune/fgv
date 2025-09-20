@@ -22,15 +22,10 @@
 
 import '@fgv/ts-utils-jest';
 import { fail } from '@fgv/ts-utils';
-import {
-  getDefaultSystemConfiguration,
-  createTsResSystemFromConfig,
-  processFileTree
-} from '../../../utils/tsResIntegration';
-import { loadTestConfiguration, loadTestResources } from '../../helpers/testDataLoader';
+import { getDefaultSystemConfiguration, createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
+import { loadTestConfiguration } from '../../helpers/testDataLoader';
 import * as TsRes from '@fgv/ts-res';
 import { ObservabilityTools } from '../../../namespaces';
-import { createFileTreeFromFiles } from '../../../utils/fileProcessing';
 
 describe('tsResIntegration', () => {
   describe('getDefaultSystemConfiguration', () => {
@@ -174,128 +169,6 @@ describe('tsResIntegration', () => {
         incompleteConfig as unknown as TsRes.Config.Model.ISystemConfiguration
       );
       expect(result).toFail();
-    });
-  });
-
-  describe('processFileTree', () => {
-    test('handles empty FileTree', () => {
-      const fileTreeResult = createFileTreeFromFiles([]);
-      expect(fileTreeResult).toSucceedAndSatisfy((fileTree) => {
-        const result = processFileTree({
-          fileTree,
-          o11y: ObservabilityTools.TestObservabilityContext
-        });
-
-        expect(result).toSucceedAndSatisfy((processedResources) => {
-          expect(processedResources.resourceCount).toBe(0);
-          expect(processedResources.summary.totalResources).toBe(0);
-          expect(processedResources.system).toBeDefined();
-        });
-      });
-    });
-
-    test('processes FileTree with real test resource files', () => {
-      const resourcesResult = loadTestResources('default');
-      if (resourcesResult.isSuccess()) {
-        const testFiles = resourcesResult.value.map((file) => ({
-          name: file.path.split('/').pop() || file.path,
-          path: file.path,
-          content: file.content,
-          type: 'application/json'
-        }));
-
-        if (testFiles.length > 0) {
-          const fileTreeResult = createFileTreeFromFiles(testFiles);
-          expect(fileTreeResult).toSucceedAndSatisfy((fileTree) => {
-            const result = processFileTree({
-              fileTree,
-              o11y: ObservabilityTools.TestObservabilityContext
-            });
-
-            if (result.isSuccess()) {
-              expect(result.value.system).toBeDefined();
-              expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
-              expect(result.value.summary).toBeDefined();
-            } else {
-              ObservabilityTools.TestObservabilityContext.diag.warn(
-                'Processing failed but this may be expected:',
-                result.message
-              );
-              expect(result.message).toBeDefined();
-            }
-          });
-        } else {
-          ObservabilityTools.TestObservabilityContext.diag.warn(
-            'No test files available for processing test'
-          );
-          expect(true).toBe(true);
-        }
-      } else {
-        ObservabilityTools.TestObservabilityContext.diag.warn(
-          'Skipping test - test resources not available:',
-          resourcesResult.message
-        );
-        expect(true).toBe(true);
-      }
-    });
-
-    test('handles invalid JSON files gracefully', () => {
-      const invalidFiles = [
-        {
-          name: 'invalid.json',
-          path: '/invalid.json',
-          content: 'invalid json {',
-          type: 'application/json'
-        }
-      ];
-
-      const fileTreeResult = createFileTreeFromFiles(invalidFiles);
-      expect(fileTreeResult).toSucceedAndSatisfy((fileTree) => {
-        const result = processFileTree({
-          fileTree,
-          o11y: ObservabilityTools.TestObservabilityContext
-        });
-        expect(result).toFail();
-      });
-    });
-
-    test('processes FileTree with system configuration', () => {
-      const resourcesResult = loadTestResources('default');
-      const configResult = loadTestConfiguration('default');
-
-      if (resourcesResult.isSuccess() && configResult.isSuccess() && resourcesResult.value.length > 0) {
-        const testFiles = resourcesResult.value.map((file) => ({
-          name: file.path.split('/').pop() || file.path,
-          path: file.path,
-          content: file.content,
-          type: 'application/json'
-        }));
-
-        const fileTreeResult = createFileTreeFromFiles(testFiles);
-        expect(fileTreeResult).toSucceedAndSatisfy((fileTree) => {
-          const result = processFileTree({
-            fileTree,
-            systemConfig: configResult.value,
-            o11y: ObservabilityTools.TestObservabilityContext
-          });
-
-          if (result.isSuccess()) {
-            expect(result.value.system).toBeDefined();
-            expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
-          } else {
-            ObservabilityTools.TestObservabilityContext.diag.warn(
-              'Processing with config failed but this may be expected:',
-              result.message
-            );
-            expect(result.message).toBeDefined();
-          }
-        });
-      } else {
-        ObservabilityTools.TestObservabilityContext.diag.warn(
-          'Skipping test - test resources or configuration not available'
-        );
-        expect(true).toBe(true);
-      }
     });
   });
 

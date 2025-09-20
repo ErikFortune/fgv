@@ -1376,6 +1376,7 @@ abstract class LoggerBase implements ILogger {
 declare namespace Logging {
     export {
         shouldLog,
+        stringifyLogValue,
         ReporterLogLevel,
         ILogger,
         LoggerBase,
@@ -1993,6 +1994,9 @@ export class StringConverter<T extends string = string, TC = unknown> extends Ba
     // @internal (undocumented)
     protected static _wrap<T extends string, TC>(wrapped: StringConverter<T, TC>, converter: (from: T) => Result<T>, traits?: ConverterTraits): StringConverter<T, TC>;
 }
+
+// @public
+function stringifyLogValue(value: unknown, maxLength?: number): string;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
