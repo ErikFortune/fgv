@@ -47,12 +47,33 @@ Description
 
 </td><td>
 
-Logging.ILogger
+Logging.LogReporter&lt;unknown&gt;
 
 
 </td><td>
 
 Diagnostic logger for internal system diagnostics.
+
+
+</td></tr>
+<tr><td>
+
+[policy?](./ts-res-ui-components.observabilitytools.iobservabilitycontext.policy.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+IObservabilityPolicy
+
+
+</td><td>
+
+_(Optional)_ Optional policy configuration for context behavior.
 
 
 </td></tr>
@@ -68,7 +89,7 @@ Diagnostic logger for internal system diagnostics.
 
 </td><td>
 
-[IUserLogger](./ts-res-ui-components.observabilitytools.iuserlogger.md)
+IUserLogReporter
 
 
 </td><td>

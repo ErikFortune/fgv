@@ -10,6 +10,7 @@ import { exportAsJson } from '@fgv/ts-web-extras';
 import { exportUsingFileSystemAPI } from '@fgv/ts-web-extras';
 import { FileTree } from '@fgv/ts-json-base';
 import { Import } from '@fgv/ts-res';
+import type { IResultReporter } from '@fgv/ts-utils';
 import { IUrlConfigOptions } from '@fgv/ts-web-extras';
 import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -672,8 +673,11 @@ export interface INavigationWarningState<T = unknown> {
 
 // @public
 interface IObservabilityContext {
-    readonly diag: Logging.ILogger;
-    readonly user: IUserLogger;
+    readonly diag: Logging.LogReporter<unknown>;
+    // Warning: (ae-forgotten-export) The symbol "IObservabilityPolicy" needs to be exported by the entry point index.d.ts
+    readonly policy?: IObservabilityPolicy;
+    // Warning: (ae-forgotten-export) The symbol "IUserLogReporter" needs to be exported by the entry point index.d.ts
+    readonly user: IUserLogReporter;
 }
 
 // @public
@@ -1168,15 +1172,19 @@ class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
 
 // @public
 class ObservabilityContext implements IObservabilityContext {
-    constructor(diag: Logging.ILogger, user: IUserLogger);
+    constructor(diag: Logging.ILogger, user: IUserLogger, policy?: IObservabilityPolicy);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly diag: Logging.ILogger;
+    readonly diag: Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly user: IUserLogger;
+    readonly policy?: IObservabilityPolicy;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly user: IUserLogReporter;
 }
 
 // @public

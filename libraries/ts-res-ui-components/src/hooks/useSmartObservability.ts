@@ -27,7 +27,8 @@ import {
   detectObservabilityContextType,
   isViewStateConnected,
   isConsoleOnlyContext,
-  createViewStateObservabilityContext
+  createViewStateObservabilityContext,
+  DefaultObservabilityContext
 } from '../utils/observability';
 import type { IObservabilityContext, ObservabilityContextType } from '../utils/observability';
 
@@ -65,6 +66,19 @@ export function useSmartObservability(): IObservabilityContext {
   const contextType = useMemo(() => detectObservabilityContextType(existingContext), [existingContext]);
 
   const smartContext = useMemo(() => {
+    // If no context exists, create a default one
+    if (!existingContext) {
+      if (viewState) {
+        return createViewStateObservabilityContext(viewState.addMessage);
+      }
+      return DefaultObservabilityContext;
+    }
+
+    // If context has doNotUpgrade policy, respect it and return as-is
+    if (existingContext.policy?.doNotUpgrade) {
+      return existingContext;
+    }
+
     // If we already have ViewState connection or custom context, use it
     if (contextType === 'viewstate' || contextType === 'custom') {
       return existingContext;
@@ -81,6 +95,11 @@ export function useSmartObservability(): IObservabilityContext {
 
   // Provide helpful warnings for suboptimal usage
   useEffect(() => {
+    // Skip warnings if context has doNotUpgrade policy (e.g., in tests)
+    if (existingContext?.policy?.doNotUpgrade) {
+      return;
+    }
+
     if (contextType === 'console') {
       if (viewState) {
         // We auto-upgraded to ViewState, inform developer about better patterns
@@ -127,7 +146,7 @@ export function useSmartObservability(): IObservabilityContext {
         );
       }
     }
-  }, [contextType, viewState]);
+  }, [contextType, viewState, existingContext]);
 
   return smartContext;
 }
