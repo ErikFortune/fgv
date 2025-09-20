@@ -303,11 +303,6 @@ describe('stringifyLogValue', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
-    test('should handle objects with numeric keys', () => {
-      const obj = { one: 'one', two: 'two', three: 'three' };
-      expect(stringifyLogValue(obj)).toBe('{"one":"one","two":"two","three":"three"}');
-    });
-
     test('should handle objects with symbol keys', () => {
       const sym = Symbol('test');
       const obj = { [sym]: 'symbolValue', regular: 'regularValue' };

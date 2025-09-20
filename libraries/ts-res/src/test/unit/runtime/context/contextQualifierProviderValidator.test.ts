@@ -150,7 +150,7 @@ describe('ContextQualifierProviderValidator class', () => {
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.get('')).toFailWith(/Invalid qualifier name/);
+      expect(validator.get('')).toFailWith(/invalid qualifier name/i);
     });
   });
 
@@ -163,8 +163,8 @@ describe('ContextQualifierProviderValidator class', () => {
 
     test('fails for invalid indices', () => {
       expect(validator.getByIndex(99)).toFailWith(/Index not found:/);
-      expect(validator.getByIndex(-1)).toFailWith(/Invalid qualifier index/);
-      expect(validator.getByIndex(1.5)).toFailWith(/Invalid qualifier index/);
+      expect(validator.getByIndex(-1)).toFailWith(/invalid qualifier index/i);
+      expect(validator.getByIndex(1.5)).toFailWith(/invalid qualifier index/i);
     });
   });
 
@@ -180,7 +180,7 @@ describe('ContextQualifierProviderValidator class', () => {
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.getValidated('')).toFailWith(/Invalid qualifier name/);
+      expect(validator.getValidated('')).toFailWith(/invalid qualifier name/i);
     });
   });
 
@@ -193,7 +193,7 @@ describe('ContextQualifierProviderValidator class', () => {
 
     test('fails for invalid indices', () => {
       expect(validator.getValidatedByIndex(99)).toFailWith(/Index not found:/);
-      expect(validator.getValidatedByIndex(-1)).toFailWith(/Invalid qualifier index/);
+      expect(validator.getValidatedByIndex(-1)).toFailWith(/invalid qualifier index/i);
     });
   });
 
@@ -209,7 +209,7 @@ describe('ContextQualifierProviderValidator class', () => {
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.has('')).toFailWith(/Invalid qualifier name/);
+      expect(validator.has('')).toFailWith(/invalid qualifier name/i);
     });
   });
 
@@ -220,7 +220,7 @@ describe('ContextQualifierProviderValidator class', () => {
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.set('', 'value')).toFailWith(/Invalid qualifier name/);
+      expect(validator.set('', 'value')).toFailWith(/invalid qualifier name/i);
     });
 
     test('fails with invalid qualifier context value type', () => {
@@ -228,7 +228,7 @@ describe('ContextQualifierProviderValidator class', () => {
       const invalidValidator = validator as unknown as {
         set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
       };
-      expect(invalidValidator.set('language', 123)).toFailWith(/Invalid qualifier context value/);
+      expect(invalidValidator.set('language', 123)).toFailWith(/invalid qualifier context value/i);
     });
 
     test('fails with provider that does not support setting', () => {
@@ -281,7 +281,7 @@ describe('ContextQualifierProviderValidator class', () => {
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.remove('')).toFailWith(/Invalid qualifier name/);
+      expect(validator.remove('')).toFailWith(/invalid qualifier name/i);
     });
 
     test('fails with provider that does not support removing', () => {
@@ -322,14 +322,14 @@ describe('ContextQualifierProviderValidator class', () => {
   describe('private validation methods coverage', () => {
     test('covers _validateQualifierName with non-string input', () => {
       // Test with non-string input to cover validation failure (lines 253-254)
-      expect(validator.get(123 as unknown as string)).toFailWith(/Invalid qualifier name/);
+      expect(validator.get(123 as unknown as string)).toFailWith(/invalid qualifier name/i);
     });
 
     test('covers _validateQualifierIndex with invalid numbers', () => {
       // Test with invalid number inputs to cover validation failure (lines 265-266)
-      expect(validator.getByIndex(-1 as TsRes.QualifierIndex)).toFailWith(/Invalid qualifier index/);
-      expect(validator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/Invalid qualifier index/);
-      expect(validator.getByIndex(NaN as TsRes.QualifierIndex)).toFailWith(/Invalid qualifier index/);
+      expect(validator.getByIndex(-1 as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
+      expect(validator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
+      expect(validator.getByIndex(NaN as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
     });
 
     test('covers _validateQualifierContextValue with non-string input', () => {
@@ -337,9 +337,9 @@ describe('ContextQualifierProviderValidator class', () => {
       const invalidValidator = validator as unknown as {
         set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
       };
-      expect(invalidValidator.set('language', null)).toFailWith(/Invalid qualifier context value/);
-      expect(invalidValidator.set('language', undefined)).toFailWith(/Invalid qualifier context value/);
-      expect(invalidValidator.set('language', 123)).toFailWith(/Invalid qualifier context value/);
+      expect(invalidValidator.set('language', null)).toFailWith(/invalid qualifier context value/i);
+      expect(invalidValidator.set('language', undefined)).toFailWith(/invalid qualifier context value/i);
+      expect(invalidValidator.set('language', 123)).toFailWith(/invalid qualifier context value/i);
     });
   });
 });

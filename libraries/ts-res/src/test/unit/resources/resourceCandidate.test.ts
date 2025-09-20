@@ -217,7 +217,7 @@ describe('ResourceCandidate', () => {
           candidateValues,
           decl
         })
-      ).toFailWith(/not a valid qualifier name/i);
+      ).toFailWith(/invalid qualifier name/i);
     });
 
     test('fails if resourceType validation fails', () => {

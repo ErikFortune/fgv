@@ -98,7 +98,7 @@ describe('TerritoryQualifierType', () => {
         TsRes.QualifierTypes.TerritoryQualifierType.create({
           name: 'not a valid name'
         })
-      ).toFailWith(/not a valid qualifier type name/i);
+      ).toFailWith(/invalid qualifier type name/i);
     });
 
     test('fails if an allowed territory is not valid', () => {
@@ -651,7 +651,7 @@ describe('TerritoryQualifierType', () => {
         };
 
       expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toFailWith(
-        /not a valid qualifier type name/i
+        /invalid qualifier type name/i
       );
     });
 

@@ -76,7 +76,7 @@ describe('QualifierDefaultValues Common Helpers', () => {
       };
 
       expect(CommonHelpers.buildQualifierDefaultValueToken(parts)).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
@@ -87,7 +87,7 @@ describe('QualifierDefaultValues Common Helpers', () => {
       };
 
       expect(CommonHelpers.buildQualifierDefaultValueToken(parts)).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
@@ -98,7 +98,7 @@ describe('QualifierDefaultValues Common Helpers', () => {
       };
 
       expect(CommonHelpers.buildQualifierDefaultValueToken(parts)).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
@@ -176,7 +176,7 @@ describe('QualifierDefaultValues Common Helpers', () => {
       ];
 
       expect(CommonHelpers.buildQualifierDefaultValuesToken(parts)).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
   });
@@ -227,49 +227,49 @@ describe('QualifierDefaultValues Common Helpers', () => {
 
     test('fails with missing equals sign', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('language')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with multiple equals signs', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('language=en=US')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with empty qualifier name', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('=en-US')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with invalid qualifier name (starts with number)', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('1language=en-US')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with invalid qualifier name (contains spaces)', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('my language=en-US')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with invalid qualifier name (contains special characters)', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('language@name=en-US')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with empty token', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with whitespace-only token', () => {
       expect(CommonHelpers.parseQualifierDefaultValueTokenParts('   ')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
   });
@@ -367,25 +367,25 @@ describe('QualifierDefaultValues Common Helpers', () => {
     test('fails when any token is invalid', () => {
       expect(
         CommonHelpers.parseQualifierDefaultValuesTokenParts('language=en-US|invalid-token|territory=US')
-      ).toFailWith(/not a valid qualifier default value token/i);
+      ).toFailWith(/invalid qualifier default value token/i);
     });
 
     test('fails with pipe only', () => {
       expect(CommonHelpers.parseQualifierDefaultValuesTokenParts('|')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with empty tokens in pipe-separated list', () => {
       expect(CommonHelpers.parseQualifierDefaultValuesTokenParts('language=en-US||territory=US')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
     test('fails with whitespace-only tokens', () => {
       expect(
         CommonHelpers.parseQualifierDefaultValuesTokenParts('language=en-US|   |territory=US')
-      ).toFailWith(/not a valid qualifier default value token/i);
+      ).toFailWith(/invalid qualifier default value token/i);
     });
 
     test('handles complex real-world example', () => {
@@ -505,7 +505,7 @@ describe('QualifierDefaultValues Common Helpers', () => {
       };
 
       expect(CommonHelpers.buildQualifierDefaultValueToken(parts)).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 
