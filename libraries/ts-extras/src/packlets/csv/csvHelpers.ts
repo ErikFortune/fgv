@@ -21,9 +21,7 @@
  */
 
 import { Result, captureResult } from '@fgv/ts-utils';
-import * as fs from 'fs';
 import { parse } from 'papaparse';
-import * as path from 'path';
 
 /**
  * Options for {@link Csv.readCsvFileSync | readCsvFileSync}
@@ -35,18 +33,16 @@ export interface CsvOptions {
 }
 
 /**
- * Reads a CSV file from a supplied path.
- * @param srcPath - Source path from which the file is read.
+ * Parses CSV data from a string.
+ * @param body - The CSV string to parse.
  * @param options - optional parameters to control the processing
- * @returns The contents of the file.
+ * @returns The parsed CSV data.
  * @beta
  */
-export function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown> {
+export function parseCsvString(body: string, options?: CsvOptions): Result<unknown> {
   return captureResult(() => {
-    const fullPath = path.resolve(srcPath);
-    const body = fs.readFileSync(fullPath, 'utf8').toString();
     options = options ?? {};
-    // eslint-disable-next-line
+
     return parse(body, {
       transform: (s: string) => s.trim(),
       header: false,

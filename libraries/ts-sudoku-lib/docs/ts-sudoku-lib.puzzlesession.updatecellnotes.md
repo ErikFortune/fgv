@@ -63,6 +63,7 @@ New notes for the cell.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;this&gt;

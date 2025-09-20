@@ -1,0 +1,48 @@
+{
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "region",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["north-america", "europe", "asia-pacific", "latin-america"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 800,
+      "token": "lang"
+    },
+    {
+      "name": "territory",
+      "typeName": "territory",
+      "defaultPriority": 700
+    },
+    {
+      "name": "region",
+      "typeName": "region",
+      "defaultPriority": 600
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

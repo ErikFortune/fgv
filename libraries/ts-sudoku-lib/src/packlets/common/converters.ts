@@ -59,8 +59,10 @@ export const cellId: Converter<CellId> = Converters.string.map(validateCellId);
  * Converts an arbitrary value to a {@link PuzzleType | PuzzleType}.
  * @public
  */
-export const puzzleType: Converter<PuzzleType, PuzzleType[]> =
-  Converters.enumeratedValue<PuzzleType>(allPuzzleTypes);
+export const puzzleType: Converter<
+  PuzzleType,
+  ReadonlyArray<PuzzleType>
+> = Converters.enumeratedValue<PuzzleType>(allPuzzleTypes);
 
 /**
  * Converts an arbitrary object to a {@link IPuzzleDescription | IPuzzleDescription}.

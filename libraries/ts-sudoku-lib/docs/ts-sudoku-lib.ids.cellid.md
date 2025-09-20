@@ -43,6 +43,7 @@ string \| [IRowColumn](./ts-sudoku-lib.irowcolumn.md) \| [ICell](./ts-sudoku-lib
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[CellId](./ts-sudoku-lib.cellid.md)<!-- -->&gt;

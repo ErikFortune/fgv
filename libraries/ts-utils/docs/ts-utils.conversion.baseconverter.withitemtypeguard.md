@@ -63,6 +63,7 @@ _(Optional)_ Optional message to be reported if the type guard fails.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Converter](./ts-utils.converter.md)<!-- -->&lt;TI\[\], TC&gt;

@@ -45,6 +45,7 @@ B
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;[Brand](./ts-utils.brand.md)<!-- -->&lt;T, B&gt;, TC&gt;

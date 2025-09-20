@@ -66,6 +66,7 @@ _(Optional)_ Optional initializer containing [variable values](./ts-json.variabl
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[IJsonContext](./ts-json.ijsoncontext.md) \| undefined&gt;

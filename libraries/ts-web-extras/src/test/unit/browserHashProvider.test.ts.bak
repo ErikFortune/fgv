@@ -1,0 +1,376 @@
+/*
+ * Copyright (c) 2025 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import '@fgv/ts-utils-jest';
+import { BrowserHashProvider, BrowserHashingNormalizer } from '../../packlets/crypto';
+
+describe('BrowserHashProvider', () => {
+  describe('Static factory methods', () => {
+    test('createSha256Normalizer returns BrowserHashingNormalizer with SHA-256', () => {
+      const normalizer = BrowserHashProvider.createSha256Normalizer();
+      expect(normalizer).toBeInstanceOf(BrowserHashingNormalizer);
+      expect(normalizer.algorithm).toBe('SHA-256');
+    });
+
+    test('createSha1Normalizer returns BrowserHashingNormalizer with SHA-1', () => {
+      const normalizer = BrowserHashProvider.createSha1Normalizer();
+      expect(normalizer).toBeInstanceOf(BrowserHashingNormalizer);
+      expect(normalizer.algorithm).toBe('SHA-1');
+    });
+
+    test('createSha512Normalizer returns BrowserHashingNormalizer with SHA-512', () => {
+      const normalizer = BrowserHashProvider.createSha512Normalizer();
+      expect(normalizer).toBeInstanceOf(BrowserHashingNormalizer);
+      expect(normalizer.algorithm).toBe('SHA-512');
+    });
+  });
+
+  describe('hashString', () => {
+    test('successfully hashes a string with SHA-256', async () => {
+      const result = await BrowserHashProvider.hashString('test data', 'SHA-256');
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(typeof hash).toBe('string');
+        expect(hash).toMatch(/^[a-f0-9]{64}$/); // SHA-256 produces 64 hex characters
+      });
+    });
+
+    test('successfully hashes a string with SHA-1', async () => {
+      const result = await BrowserHashProvider.hashString('test data', 'SHA-1');
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(typeof hash).toBe('string');
+        expect(hash).toMatch(/^[a-f0-9]{40}$/); // SHA-1 produces 40 hex characters
+      });
+    });
+
+    test('successfully hashes a string with SHA-512', async () => {
+      const result = await BrowserHashProvider.hashString('test data', 'SHA-512');
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(typeof hash).toBe('string');
+        expect(hash).toMatch(/^[a-f0-9]{128}$/); // SHA-512 produces 128 hex characters
+      });
+    });
+
+    test('uses SHA-256 as default algorithm', async () => {
+      const result = await BrowserHashProvider.hashString('test data');
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(hash).toMatch(/^[a-f0-9]{64}$/); // SHA-256 produces 64 hex characters
+      });
+    });
+
+    test('produces consistent hash for same input', async () => {
+      const input = 'consistent input';
+      const result1 = await BrowserHashProvider.hashString(input);
+      const result2 = await BrowserHashProvider.hashString(input);
+      
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+      if (result1.isSuccess() && result2.isSuccess()) {
+        expect(result1.value).toBe(result2.value);
+      }
+    });
+
+    test('produces different hashes for different inputs', async () => {
+      const result1 = await BrowserHashProvider.hashString('input1');
+      const result2 = await BrowserHashProvider.hashString('input2');
+      
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+      if (result1.isSuccess() && result2.isSuccess()) {
+        expect(result1.value).not.toBe(result2.value);
+      }
+    });
+
+    test('handles empty string input', async () => {
+      const result = await BrowserHashProvider.hashString('');
+      expect(result).toSucceed();
+    });
+
+    test('handles unicode input', async () => {
+      const result = await BrowserHashProvider.hashString('🚀 Unicode test 测试');
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(hash).toMatch(/^[a-f0-9]{64}$/);
+      });
+    });
+
+    test('fails when crypto.subtle is unavailable', async () => {
+      const originalCrypto = global.crypto;
+      // @ts-ignore - Intentionally removing crypto for test
+      delete global.crypto;
+
+      const result = await BrowserHashProvider.hashString('test');
+      expect(result).toFailWith(/Hash computation failed/);
+
+      global.crypto = originalCrypto;
+    });
+
+    test('handles invalid algorithm gracefully', async () => {
+      const result = await BrowserHashProvider.hashString('test', 'INVALID-ALG');
+      expect(result).toFailWith(/Hash computation failed/);
+    });
+  });
+
+  describe('hashParts', () => {
+    test('hashes multiple parts with default separator', async () => {
+      const parts = ['part1', 'part2', 'part3'];
+      const result = await BrowserHashProvider.hashParts(parts);
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(hash).toMatch(/^[a-f0-9]{64}$/);
+      });
+    });
+
+    test('hashes multiple parts with custom separator', async () => {
+      const parts = ['part1', 'part2', 'part3'];
+      const result1 = await BrowserHashProvider.hashParts(parts, 'SHA-256', '|');
+      const result2 = await BrowserHashProvider.hashParts(parts, 'SHA-256', ',');
+      
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+      if (result1.isSuccess() && result2.isSuccess()) {
+        expect(result1.value).not.toBe(result2.value);
+      }
+    });
+
+    test('produces same hash as hashString for joined parts', async () => {
+      const parts = ['a', 'b', 'c'];
+      const separator = '-';
+      const joined = parts.join(separator);
+      
+      const partsResult = await BrowserHashProvider.hashParts(parts, 'SHA-256', separator);
+      const stringResult = await BrowserHashProvider.hashString(joined);
+      
+      expect(partsResult).toSucceed();
+      expect(stringResult).toSucceed();
+      if (partsResult.isSuccess() && stringResult.isSuccess()) {
+        expect(partsResult.value).toBe(stringResult.value);
+      }
+    });
+
+    test('handles empty array', async () => {
+      const result = await BrowserHashProvider.hashParts([]);
+      expect(result).toSucceed();
+    });
+
+    test('handles single part', async () => {
+      const result = await BrowserHashProvider.hashParts(['single']);
+      const stringResult = await BrowserHashProvider.hashString('single');
+      
+      expect(result).toSucceed();
+      expect(stringResult).toSucceed();
+      if (result.isSuccess() && stringResult.isSuccess()) {
+        expect(result.value).toBe(stringResult.value);
+      }
+    });
+  });
+});
+
+describe('BrowserHashingNormalizer', () => {
+  describe('constructor', () => {
+    test('creates instance with default SHA-256 algorithm', () => {
+      const normalizer = new BrowserHashingNormalizer();
+      expect(normalizer).toBeInstanceOf(BrowserHashingNormalizer);
+      expect(normalizer.algorithm).toBe('SHA-256');
+    });
+
+    test('creates instance with custom algorithm', () => {
+      const normalizer = new BrowserHashingNormalizer('SHA-512');
+      expect(normalizer.algorithm).toBe('SHA-512');
+    });
+  });
+
+  describe('hashAsync', () => {
+    test('hashes array of strings', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const result = await normalizer.hashAsync(['test1', 'test2']);
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(hash).toMatch(/^[a-f0-9]{64}$/);
+      });
+    });
+
+    test('produces consistent results', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const parts = ['consistent', 'parts'];
+      
+      const result1 = await normalizer.hashAsync(parts);
+      const result2 = await normalizer.hashAsync(parts);
+      
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+      if (result1.isSuccess() && result2.isSuccess()) {
+        expect(result1.value).toBe(result2.value);
+      }
+    });
+  });
+
+  describe('normalizeAsync', () => {
+    test('normalizes primitive values', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      
+      const stringResult = await normalizer.normalizeAsync('test');
+      expect(stringResult).toSucceed();
+      
+      const numberResult = await normalizer.normalizeAsync(42);
+      expect(numberResult).toSucceed();
+      
+      const booleanResult = await normalizer.normalizeAsync(true);
+      expect(booleanResult).toSucceed();
+      
+      const nullResult = await normalizer.normalizeAsync(null);
+      expect(nullResult).toSucceed();
+      
+      const undefinedResult = await normalizer.normalizeAsync(undefined);
+      expect(undefinedResult).toSucceed();
+    });
+
+    test('normalizes arrays', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const array = ['item1', 'item2', 42, true];
+      
+      const result = await normalizer.normalizeAsync(array);
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(hash).toMatch(/^[a-f0-9]{64}$/);
+      });
+    });
+
+    test('normalizes nested arrays', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const nestedArray = ['item1', ['nested1', 'nested2'], 'item3'];
+      
+      const result = await normalizer.normalizeAsync(nestedArray);
+      expect(result).toSucceed();
+    });
+
+    test('normalizes objects', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const obj = { 
+        name: 'test', 
+        value: 42,
+        nested: { key: 'value' }
+      };
+      
+      const result = await normalizer.normalizeAsync(obj);
+      expect(result).toSucceedAndSatisfy(hash => {
+        expect(hash).toMatch(/^[a-f0-9]{64}$/);
+      });
+    });
+
+    test('normalizes objects with consistent key ordering', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const obj1 = { b: 2, a: 1, c: 3 };
+      const obj2 = { a: 1, c: 3, b: 2 };
+      
+      const result1 = await normalizer.normalizeAsync(obj1);
+      const result2 = await normalizer.normalizeAsync(obj2);
+      
+      expect(result1).toSucceed();
+      expect(result2).toSucceed();
+      if (result1.isSuccess() && result2.isSuccess()) {
+        expect(result1.value).toBe(result2.value);
+      }
+    });
+
+    test('normalizes Date objects', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const date = new Date('2025-01-01T00:00:00Z');
+      
+      const result = await normalizer.normalizeAsync(date);
+      expect(result).toSucceed();
+    });
+
+    test('normalizes RegExp objects', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const regex = /test.*pattern/gi;
+      
+      const result = await normalizer.normalizeAsync(regex);
+      expect(result).toSucceed();
+    });
+
+    test('normalizes complex nested structures', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const complex = {
+        id: 'test-id',
+        data: {
+          values: [1, 2, 3],
+          metadata: {
+            created: new Date('2025-01-01'),
+            tags: ['tag1', 'tag2']
+          }
+        },
+        flags: {
+          active: true,
+          validated: false
+        }
+      };
+      
+      const result = await normalizer.normalizeAsync(complex);
+      expect(result).toSucceed();
+    });
+
+    test('handles bigint values', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const bigIntValue = BigInt(9007199254740991);
+      
+      const result = await normalizer.normalizeAsync(bigIntValue);
+      expect(result).toSucceed();
+    });
+
+    test('handles symbol values', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const symbolValue = Symbol('test');
+      
+      const result = await normalizer.normalizeAsync(symbolValue);
+      expect(result).toSucceed();
+    });
+  });
+
+  describe('computeHash', () => {
+    test('throws error for synchronous operation', () => {
+      const normalizer = new BrowserHashingNormalizer();
+      const result = normalizer.computeHash('test');
+      
+      expect(result).toFailWith(/Synchronous hashing not supported in browser/);
+    });
+  });
+
+  describe('algorithm getter', () => {
+    test('returns the correct algorithm', () => {
+      const sha256 = new BrowserHashingNormalizer('SHA-256');
+      expect(sha256.algorithm).toBe('SHA-256');
+      
+      const sha1 = new BrowserHashingNormalizer('SHA-1');
+      expect(sha1.algorithm).toBe('SHA-1');
+      
+      const sha512 = new BrowserHashingNormalizer('SHA-512');
+      expect(sha512.algorithm).toBe('SHA-512');
+    });
+  });
+
+  describe('_computeHashAsync', () => {
+    test('handles unexpected types gracefully', async () => {
+      const normalizer = new BrowserHashingNormalizer();
+      
+      // Test with function (which is an unexpected type)
+      const func = () => 'test';
+      const result = await normalizer.normalizeAsync(func as unknown);
+      expect(result).toFailWith(/Unexpected type/);
+    });
+  });
+});

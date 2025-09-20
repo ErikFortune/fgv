@@ -89,3 +89,87 @@ export function loadTxtLanguageTagExtensionsRegistryFileSync(
     return datedRegistryFromJarRecords(languageTagExtension).convert(jar);
   });
 }
+
+/**
+ * Parses language tag extensions registry data from string content.
+ * @param content - The string content of the registry file to be parsed.
+ * @returns `Success` with the loaded language tag extension data
+ * or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadTxtLanguageTagExtensionsRegistryFromString(
+  content: string
+): Result<Model.LanguageTagExtensions> {
+  const lines = content.split(/\r?\n/);
+  return RecordJar.parseRecordJarLines(lines, {
+    arrayFields: ['Comments', 'Description'],
+    fixedContinuationSize: 1
+  }).onSuccess((jar) => {
+    return datedRegistryFromJarRecords(languageTagExtension).convert(jar);
+  });
+}
+
+/**
+ * JAR format converter for language tag extension entries (preserves underscored field names)
+ * @internal
+ */
+const jarLanguageTagExtensionEntry = Converters.transformObject<
+  Model.LanguageTagExtensionRegistryEntry,
+  Model.LanguageTagExtensionRegistryEntry
+>(
+  {
+    Identifier: { from: 'Identifier', converter: extensionSingleton.converter },
+    Description: { from: 'Description', converter: Converters.stringArray },
+    Comments: { from: 'Comments', converter: Converters.stringArray },
+    Added: { from: 'Added', converter: yearMonthDaySpec },
+    RFC: { from: 'RFC', converter: Converters.string },
+    Authority: { from: 'Authority', converter: Converters.string },
+    /* eslint-disable @typescript-eslint/naming-convention */
+    Contact_Email: { from: 'Contact_Email', converter: Converters.string },
+    Mailing_List: { from: 'Mailing_List', converter: Converters.string },
+    /* eslint-enable @typescript-eslint/naming-convention */
+    URL: { from: 'URL', converter: Converters.string }
+  },
+  {
+    strict: true,
+    description: 'JAR language tag extension entry'
+  }
+);
+
+/**
+ * Loads a text (JAR) format language tag extensions registry file and returns the registry format
+ * with field names matching legacy test JSON format ("Contact_Email", "Mailing_List") suitable for
+ * creating test JSON files that work with JAR converters.
+ * @param path - The string path from which the registry is to be loaded.
+ * @returns `Success` with the transformed registry format or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadRawLanguageTagExtensionsRegistryFileSync(
+  path: string
+): Result<Model.LanguageTagExtensionRegistryFile> {
+  return RecordJar.readRecordJarFileSync(path, {
+    arrayFields: ['Comments', 'Description'],
+    fixedContinuationSize: 1
+  }).onSuccess((jar) => {
+    return datedRegistryFromJarRecords(jarLanguageTagExtensionEntry).convert(jar);
+  });
+}
+
+/**
+ * Parses a text (JAR) format language tag extensions registry from string content and returns the registry format
+ * with field names matching legacy test JSON format ("Contact_Email", "Mailing_List").
+ * @param content - The string content of the registry file to be parsed.
+ * @returns `Success` with the transformed registry format or `Failure` with details if an error occurs.
+ * @public
+ */
+export function loadRawLanguageTagExtensionsRegistryFromString(
+  content: string
+): Result<Model.LanguageTagExtensionRegistryFile> {
+  const lines = content.split(/\r?\n/);
+  return RecordJar.parseRecordJarLines(lines, {
+    arrayFields: ['Comments', 'Description'],
+    fixedContinuationSize: 1
+  }).onSuccess((jar) => {
+    return datedRegistryFromJarRecords(jarLanguageTagExtensionEntry).convert(jar);
+  });
+}

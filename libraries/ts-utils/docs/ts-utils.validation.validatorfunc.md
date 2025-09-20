@@ -9,7 +9,7 @@ Type for a validation function, which validates that a supplied `unknown` value 
 **Signature:**
 
 ```typescript
-export type ValidatorFunc<T, TC> = (from: unknown, context?: TC) => boolean | Failure<T>;
+export type ValidatorFunc<T, TC> = (from: unknown, context?: TC, self?: Validator<T, TC>) => boolean | Failure<T>;
 ```
-**References:** [Failure](./ts-utils.failure.md)
+**References:** [Validator](./ts-utils.validator.md)<!-- -->, [Failure](./ts-utils.failure.md)
 

@@ -59,9 +59,9 @@ describe('Hash module', () => {
       ['like numbers', 123456, 123456],
       [
         'like BigInt',
-        // eslint-disable-next-line no-undef
+
         BigInt('0x1ffffffffffffffffffffffffffffff'),
-        // eslint-disable-next-line no-undef
+
         BigInt('0x1ffffffffffffffffffffffffffffff')
       ],
       ['like booleans', false, false],
@@ -93,17 +93,12 @@ describe('Hash module', () => {
       ['number and string', 123456, '123456'],
       [
         'unlike BigInt',
-        // eslint-disable-next-line no-undef
+
         BigInt('0x1ffffffffffffffffffffffffffffff'),
-        // eslint-disable-next-line no-undef
+
         BigInt('0x1fffffffffffffffffffffffffffffff')
       ],
-      [
-        'BigInt and string',
-        // eslint-disable-next-line no-undef
-        BigInt('0x1ffffffffffffffffffffffffffffff'),
-        '0x1ffffffffffffffffffffffffffffff'
-      ],
+      ['BigInt and string', BigInt('0x1ffffffffffffffffffffffffffffff'), '0x1ffffffffffffffffffffffffffffff'],
       ['unlike booleans', false, true],
       ['boolean and string', false, 'false'],
       ['undefined and string', undefined, 'undefined'],

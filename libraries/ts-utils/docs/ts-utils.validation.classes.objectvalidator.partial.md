@@ -47,6 +47,7 @@ _(Optional)_ The [options](./ts-utils.validation.classes.objectvalidatoroptions.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;

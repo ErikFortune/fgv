@@ -4,12 +4,17 @@
 
 ## ObjectConverter.partial() method
 
-Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied array of `keyof T`<!-- -->.
+> Warning: This API is now obsolete.
+> 
+> Pass just the keys to be made optional.
+> 
+
+Creates a new [ObjectConverter](./ts-utils.conversion.objectconverter.md) derived from this one but with new optional properties as specified by a supplied [ObjectConverterOptions&lt;T&gt;](./ts-utils.conversion.objectconverteroptions.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+partial(options: ObjectConverterOptions<T>): ObjectConverter<Partial<T>, TC>;
 ```
 
 ## Parameters
@@ -32,21 +37,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-optional
+options
 
 
 </td><td>
 
-(keyof T)\[\]
+[ObjectConverterOptions](./ts-utils.conversion.objectconverteroptions.md)<!-- -->&lt;T&gt;
 
 
 </td><td>
 
-_(Optional)_ The keys of the source object properties to be made optional.
+The [options](./ts-utils.conversion.objectconverteroptions.md) to be applied to the new converter.
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [ObjectConverter](./ts-utils.objectconverter.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;

@@ -9,11 +9,11 @@ Returns an iterator over the map keys.
 **Signature:**
 
 ```typescript
-keys(): MapIterator<TK>;
+keys(): IterableIterator<TK>;
 ```
 **Returns:**
 
-MapIterator&lt;TK&gt;
+IterableIterator&lt;TK&gt;
 
 An iterator over the map keys.
 

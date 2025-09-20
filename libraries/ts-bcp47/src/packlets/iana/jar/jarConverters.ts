@@ -32,7 +32,6 @@ import { IFileDateEntry } from './jarModel';
  * @public
  */
 export const fileDateEntry = Converters.strictObject<IFileDateEntry>({
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   'File-Date': CommonConverters.yearMonthDaySpec
 });
 
@@ -48,6 +47,7 @@ export function datedRegistryFromJarRecords<T, TC = unknown>(
 ): Converter<IDatedRegistry<T>, TC> {
   return new Conversion.BaseConverter<IDatedRegistry<T>, TC>(
     (from: unknown, __self: Converter<IDatedRegistry<T>, TC>, __context?: TC): Result<IDatedRegistry<T>> => {
+      /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
       if (typeof from === 'string' || !Array.isArray(from)) {
         return fail('JAR dated registry cannot convert non-array');
       }
@@ -57,6 +57,7 @@ export function datedRegistryFromJarRecords<T, TC = unknown>(
       }
 
       const entries = Converters.arrayOf(entryConverter).convert(from.slice(1));
+      /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
       if (entries.isFailure()) {
         return fail(`Error in JAR datedRegistry entries (${entries.message})`);
       }

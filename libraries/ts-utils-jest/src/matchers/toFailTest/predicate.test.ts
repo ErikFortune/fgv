@@ -10,7 +10,6 @@ describe('toFailTest', () => {
   });
 
   test('returns false for a callback that succeeds', () => {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     expect(predicate(() => {})).toBe(false);
   });
 });

@@ -24,10 +24,8 @@ import { Result, fail, succeed } from '@fgv/ts-utils';
 import * as Iana from '../iana';
 import { IGlobalRegion, IntermediateRegionTier, Region } from './common';
 
-/* eslint-disable @typescript-eslint/naming-convention */
 export const GlobalRegionName: string = 'World';
 export const GlobalRegionCode: Iana.Model.UnM49RegionCode = '001' as Iana.Model.UnM49RegionCode;
-/* eslint-enable @typescript-eslint/naming-convention */
 
 /**
  * @public

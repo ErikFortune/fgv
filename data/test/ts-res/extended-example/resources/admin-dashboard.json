@@ -1,0 +1,91 @@
+{
+  "resources": [
+    {
+      "id": "dashboard-config",
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "title": "📊 Basic Dashboard (DEFAULT)",
+            "userManagementLabel": "👥 User Management (Default)",
+            "systemSettingsLabel": "⚙️ System Settings (Default)",
+            "reportsLabel": "📋 Reports (Default)",
+            "auditLogLabel": "📜 Audit Log (Default)",
+            "maxUsersDisplayed": 50,
+            "selectedBy": "DEFAULT - no conditions"
+          }
+        },
+        {
+          "json": {
+            "title": "🔐 ADMIN Command Center",
+            "userManagementLabel": "👑 ADMIN User Management",
+            "systemSettingsLabel": "🛠️ ADMIN System Settings",
+            "reportsLabel": "📊 ADMIN Advanced Reports",
+            "auditLogLabel": "🔍 ADMIN Security Audit Log",
+            "maxUsersDisplayed": 100,
+            "selectedBy": "ROLE: Admin selected"
+          },
+          "conditions": {
+            "role": "admin"
+          }
+        },
+        {
+          "json": {
+            "title": "🎧 AGENT Support Center",
+            "userManagementLabel": "👤 AGENT Customer Management",
+            "systemSettingsLabel": "🎛️ AGENT Settings",
+            "reportsLabel": "📈 AGENT Customer Reports",
+            "auditLogLabel": "📝 AGENT Activity Log",
+            "maxUsersDisplayed": 25,
+            "selectedBy": "ROLE: Agent selected"
+          },
+          "conditions": {
+            "role": "agent"
+          }
+        },
+        {
+          "json": {
+            "title": "👤 USER Personal Space",
+            "userManagementLabel": "👤 USER Profile",
+            "systemSettingsLabel": "⚙️ USER Preferences",
+            "reportsLabel": "📄 USER My Reports",
+            "auditLogLabel": "🕒 USER Activity History",
+            "maxUsersDisplayed": 10,
+            "selectedBy": "ROLE: User selected"
+          },
+          "conditions": {
+            "role": "user"
+          }
+        },
+        {
+          "json": {
+            "title": "🛠️ DEV Debug Console",
+            "userManagementLabel": "🧪 DEV Test User Management",
+            "systemSettingsLabel": "🐛 DEV Debug Settings",
+            "reportsLabel": "🔬 DEV Debug Reports",
+            "auditLogLabel": "🔍 DEV Debug Audit Log",
+            "maxUsersDisplayed": 1000,
+            "selectedBy": "ENVIRONMENT: Development"
+          },
+          "conditions": {
+            "environment": "development"
+          }
+        },
+        {
+          "json": {
+            "title": "🚀 PROD Live Dashboard",
+            "userManagementLabel": "👥 PROD User Management",
+            "systemSettingsLabel": "⚙️ PROD System Settings",
+            "reportsLabel": "📊 PROD Live Reports",
+            "auditLogLabel": "📋 PROD Audit Log",
+            "maxUsersDisplayed": 50,
+            "selectedBy": "ENVIRONMENT: Production"
+          },
+          "conditions": {
+            "environment": "production"
+          }
+        }
+      ]
+    }
+  ]
+}

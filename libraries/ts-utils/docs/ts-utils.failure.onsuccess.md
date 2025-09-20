@@ -45,6 +45,7 @@ Description
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;TN&gt;

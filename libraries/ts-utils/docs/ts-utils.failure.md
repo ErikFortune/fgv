@@ -297,6 +297,34 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td></tr>
 <tr><td>
 
+[orThrow(cb)](./ts-utils.failure.orthrow_1.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- -->, or throws the error message if the corresponding operation failed.
+
+
+</td></tr>
+<tr><td>
+
+[report(reporter, options)](./ts-utils.failure.report.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Reports the result to the supplied reporter
+
+
+</td></tr>
+<tr><td>
+
 [toString()](./ts-utils.failure.tostring.md)
 
 
@@ -306,6 +334,22 @@ Gets the value associated with a successful [result](./ts-utils.iresult.md)<!-- 
 </td><td>
 
 Get a 'friendly' string representation of this object.
+
+
+</td></tr>
+<tr><td>
+
+[with(message)](./ts-utils.failure.with.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a [Failure&lt;T&gt;](./ts-utils.failure.md) with the supplied error message.
 
 
 </td></tr>
@@ -352,3 +396,4 @@ Converts a [IResult&lt;T&gt;](./ts-utils.iresult.md) to a [DetailedResult&lt;T, 
 
 </td></tr>
 </tbody></table>
+

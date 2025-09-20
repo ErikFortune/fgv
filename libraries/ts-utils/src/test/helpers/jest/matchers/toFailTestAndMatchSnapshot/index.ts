@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars,no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { matcherName, predicate } from './predicate';
 
 import { matcherHint } from 'jest-matcher-utils';
@@ -8,7 +8,6 @@ import { Context } from 'jest-snapshot/build';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars, @typescript-eslint/naming-convention
     interface Matchers<R, T> {
       /**
        * Use .toFailTestWith to test a custom matcher by

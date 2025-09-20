@@ -30,7 +30,6 @@ import { Converter, ConverterTraits } from './converter';
  * @public
  */
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface StringMatchOptions {
   /**
    * An optional message to be displayed if a non-matching string

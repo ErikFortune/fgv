@@ -1,0 +1,26 @@
+# Heft build outputs
+dist/
+lib/
+lib-commonjs/
+temp/
+
+# Rush files
+common/temp/
+**/.rush/temp/
+
+# Logs
+*.log
+
+# Test coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/

@@ -23,7 +23,7 @@
 import { Conversion, Converter, Result, fail, succeed } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
 
-/* eslint-disable no-use-before-define, @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 /**
  * Conversion context for JSON converters.

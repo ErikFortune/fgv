@@ -20,4 +20,7 @@
  * SOFTWARE.
  */
 
+// Export tree-shakeable functions
 export * from './recordJarHelpers';
+// Filesystem helpers in separate module for tree-shaking
+export * from './recordJarFileHelpers';

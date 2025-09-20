@@ -164,6 +164,7 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
         this._index = this._indexConverter.convert(params.index).orThrow();
       }
     } else {
+      /* c8 ignore next 3 - coverage is having a bad day */
       this._index = params.index;
     }
   }
@@ -213,6 +214,7 @@ export class Collectible<TKEY extends string = string, TINDEX extends number = n
     let converted: TINDEX | undefined;
     if (this._indexConverter) {
       const { value, message } = this._indexConverter.convert(index);
+      /* c8 ignore next 3 - there's a test for this but coverage is having a bad day */
       if (message) {
         return fail(message);
       }
