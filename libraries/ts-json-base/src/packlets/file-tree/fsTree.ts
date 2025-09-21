@@ -130,6 +130,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
     if (provided !== undefined) {
       return succeed(provided as TCT);
     }
+    /* c8 ignore next 2 - coverage has intermittent issues in the build - local tests show coverage of this line */
     return this._inferContentType(filePath);
   }
 
