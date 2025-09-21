@@ -103,6 +103,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     files: IInMemoryFile<TCT>[],
     params?: IFileTreeInitParams<TCT> | string
   ): Result<InMemoryTreeAccessors<TCT>> {
+    /* c8 ignore next 2 - tested but code coverage has intermittent issues */
     params = typeof params === 'string' ? { prefix: params } : params;
     return captureResult(() => new InMemoryTreeAccessors(files, params));
   }

@@ -46,27 +46,12 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
 
   /**
    * Construct a new instance of the {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} class.
-   * @param prefix - Optional prefix for the tree.
-   * @public
-   */
-  public constructor(prefix: string);
-
-  /**
-   * Construct a new instance of the {@link FileTree.FsFileTreeAccessors | FsFileTreeAccessors} class.
    * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters}.
    * @public
    */
-  public constructor(params?: IFileTreeInitParams<TCT>);
-  public constructor(params?: IFileTreeInitParams<TCT> | string) {
-    if (typeof params === 'string') {
-      /* c8 ignore next 2 - tested but code coverage has intermittent issues */
-      this.prefix = params;
-      this._inferContentType = FileItem.defaultInferContentType;
-    } else {
-      /* c8 ignore next 2 - tested but code coverage has intermittent issues */
-      this.prefix = params?.prefix;
-      this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
-    }
+  public constructor(params?: IFileTreeInitParams<TCT>) {
+    this.prefix = params?.prefix;
+    this._inferContentType = params?.inferContentType ?? FileItem.defaultInferContentType;
   }
 
   /**

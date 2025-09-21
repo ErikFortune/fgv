@@ -9,7 +9,7 @@ Construct a new instance of the [FsFileTreeAccessors](./ts-json-base.filetree.fs
 **Signature:**
 
 ```typescript
-constructor(prefix: string);
+constructor(params?: IFileTreeInitParams<TCT>);
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-prefix
+params
 
 
 </td><td>
 
-string
+[IFileTreeInitParams](./ts-json-base.filetree.ifiletreeinitparams.md)<!-- -->&lt;TCT&gt;
 
 
 </td><td>
 
-Optional prefix for the tree.
+_(Optional)_ Optional [initialization parameters](./ts-json-base.filetree.ifiletreeinitparams.md)<!-- -->.
 
 
 </td></tr>

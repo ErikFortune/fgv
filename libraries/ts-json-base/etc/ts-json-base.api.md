@@ -190,8 +190,6 @@ function forFilesystem<TCT extends string = string>(params?: IFileTreeInitParams
 // @public
 class FsFileTreeAccessors<TCT extends string = string> implements IFileTreeAccessors<TCT> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    constructor(prefix: string);
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     constructor(params?: IFileTreeInitParams<TCT>);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver

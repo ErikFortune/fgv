@@ -33,21 +33,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(prefix)](./ts-json-base.filetree.fsfiletreeaccessors._constructor_.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Construct a new instance of the [FsFileTreeAccessors](./ts-json-base.filetree.fsfiletreeaccessors.md) class.
-
-
-</td></tr>
-<tr><td>
-
-[(constructor)(params)](./ts-json-base.filetree.fsfiletreeaccessors._constructor__1.md)
+[(constructor)(params)](./ts-json-base.filetree.fsfiletreeaccessors._constructor_.md)
 
 
 </td><td>
