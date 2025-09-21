@@ -942,9 +942,9 @@ const App: React.FC = () => {
   // Note: This is only used for the factory chain, not for UI messages
   const appO11yContext = createPlaygroundObservabilityContext();
 
-  // Create observable custom factory and wrap in GenericQualifierTypeFactory for proper chaining
+  // Create observable custom factory and wrap in QualifierTypeFactory for proper chaining
   const observableContrastFactory = createObservableContrastFactory<PlaygroundQualifierType>(appO11yContext);
-  const qualifierTypeFactory = new TsRes.Config.GenericQualifierTypeFactory<PlaygroundQualifierType>([
+  const qualifierTypeFactory = new TsRes.Config.QualifierTypeFactory<PlaygroundQualifierType>([
     observableContrastFactory
   ]);
   const demoResourceTypeFactory = undefined;
