@@ -1,0 +1,23 @@
+# FGV Multi-Agent Development Task Log
+#
+# This file contains a sequential log of all development tasks completed through
+# the multi-agent workflow system. Each line is a JSON object representing one
+# completed task with summary information for debugging and system understanding.
+#
+# Format: JSON Lines (JSONL) - one JSON object per line
+# Schema: See task-log-schema.json for complete format specification
+#
+# Usage Examples:
+#   # Find recent authentication-related changes
+#   grep "auth\|login\|session" .agents/task-log.jsonl | tail -5
+#
+#   # Find changes to UserService in last 30 days
+#   grep "UserService" .agents/task-log.jsonl | grep "$(date -d '30 days ago' +%Y-%m)"
+#
+#   # Find high-risk changes
+#   grep '"level":"high"' .agents/task-log.jsonl
+#
+#   # Find breaking API changes
+#   grep '"breaking":true' .agents/task-log.jsonl
+#
+# Log entries begin below this header:

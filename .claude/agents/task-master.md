@@ -389,5 +389,145 @@ A task is complete when:
 - No blocking escalations remain
 - All artifacts are properly documented
 - Audit trail is complete
+- **Task log entry created** for debugging and system understanding
 
-Begin task orchestration by analyzing the user's request and selecting the appropriate workflow template.
+## Task Logging for System Understanding
+
+### Sequential Task Log Creation
+
+Upon successful task completion, you MUST create a concise log entry for debugging and system understanding. This log helps correlate code changes with business context for future troubleshooting.
+
+### Log Entry Collection Process
+
+**Step 1: Gather Summary Inputs from Agents**
+
+Collect these specific inputs from each agent:
+
+```yaml
+tpm_summary_input:
+  business_rationale: "Why this change was needed from user/business perspective"
+  user_impact: "none|low|medium|high - Level of impact on end users"
+  scope_summary: "Concise description of what was accomplished"
+
+senior_developer_input:
+  components_affected: ["ComponentA", "ServiceB", "ModuleC"]
+  api_changes:
+    breaking: false
+    new_endpoints: ["/api/new-endpoint"]
+    modified_endpoints: ["/api/existing-endpoint"]
+  database_changes:
+    migrations: true
+    schema_changes: ["users", "sessions"]
+  integration_points: ["ExternalServiceA", "DatabaseB"]
+
+senior_sdet_input:
+  risk_level: "low|medium|high|critical"
+  risk_factors:
+    - "new_external_dependency"
+    - "authentication_changes"
+    - "data_migration_required"
+  validation_status:
+    automated_tests: true
+    manual_validation_completed: true
+    performance_validated: false
+```
+
+**Step 2: Synthesize Log Entry**
+
+Create a concise, searchable log entry:
+
+```typescript
+interface TaskLogEntry {
+  task_id: string;              // Format: task-YYYYMMDD-NNN
+  timestamp: string;            // ISO 8601 format
+  type: "feature|bugfix|refactor|hotfix|documentation";
+  workflow: string;             // Workflow template used
+
+  // Business context (from TPM)
+  summary: string;              // Max 120 chars, searchable
+  business_rationale: string;   // Max 200 chars
+  user_impact: "none|low|medium|high";
+
+  // Technical impact (from Senior Developer)
+  components_affected: string[];
+  api_changes?: {
+    breaking: boolean;
+    new_endpoints?: string[];
+    modified_endpoints?: string[];
+  };
+  database_changes?: {
+    migrations: boolean;
+    schema_changes?: string[];
+  };
+
+  // Risk assessment (from Senior SDET)
+  risk_assessment: {
+    level: "low|medium|high|critical";
+    factors: string[];
+  };
+
+  // Validation status
+  validation: {
+    automated_tests: boolean;
+    manual_validation_completed: boolean;
+    performance_validated: boolean;
+  };
+
+  // References
+  artifacts_path: string;       // Path to full task artifacts
+  related_commits?: string[];   // Git commit hashes
+  tags: string[];              // Searchable tags
+}
+```
+
+**Step 3: Append to Task Log**
+
+1. Generate unique task ID: `task-YYYYMMDD-NNN` (sequential daily counter)
+2. Create JSONL entry (one line, no formatting)
+3. Append to `.agents/task-log.jsonl`
+4. Update `.agents/task-log-index.json` indices
+
+### Example Log Entry Creation
+
+```yaml
+# After task completion, collect inputs:
+log_entry_creation:
+  tpm_input:
+    business_rationale: "Improve API response times from 500ms to <100ms for user dashboard"
+    user_impact: "medium"
+    scope_summary: "Added Redis caching layer for user session data"
+
+  senior_dev_input:
+    components_affected: ["UserSessionService", "RedisCache", "SessionMiddleware"]
+    api_changes:
+      breaking: false
+      modified_endpoints: ["/api/users/session"]
+    database_changes:
+      migrations: false
+
+  senior_sdet_input:
+    risk_level: "medium"
+    risk_factors: ["new_external_dependency", "session_handling_changes"]
+    validation_status:
+      automated_tests: true
+      manual_validation_completed: true
+
+# Generate this JSONL entry:
+{"task_id":"task-20240120-001","timestamp":"2024-01-20T15:45:00Z","type":"feature","workflow":"standard-feature","summary":"Added Redis caching layer for user session data","business_rationale":"Improve API response times from 500ms to <100ms for user dashboard","user_impact":"medium","components_affected":["UserSessionService","RedisCache","SessionMiddleware"],"api_changes":{"breaking":false,"modified_endpoints":["/api/users/session"]},"risk_assessment":{"level":"medium","factors":["new_external_dependency","session_handling_changes"]},"validation":{"automated_tests":true,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".agents/tasks/completed/2024-01/task-20240120-001/","tags":["performance","caching","redis","session"]}
+```
+
+### Task Log Benefits
+
+1. **Bug Correlation**: "Login issues started last week" → grep recent session-related changes
+2. **Impact Assessment**: "What changed in UserService recently?" → see modifications and risk
+3. **Release Planning**: Review cumulative risk of recent changes
+4. **System Understanding**: Track how architecture evolved over time
+
+### Log Maintenance
+
+- **Active Log**: `.agents/task-log.jsonl` (current year)
+- **Archive Policy**: Rotate annually, keep 3 years
+- **Search Tools**: Command-line friendly (grep, jq)
+- **Index Updates**: Maintain searchable index for quick lookups
+
+Begin task orchestration by analyzing the user's request and selecting the appropriate workflow template. Upon completion, ensure task log entry is created for future debugging and system understanding.

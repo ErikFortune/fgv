@@ -278,6 +278,12 @@ requirements_artifact:
   assumptions: {...}
   success_criteria: {...}
 
+  # Task log inputs for system understanding
+  task_log_input:
+    business_rationale: "Why this change was needed from user/business perspective"
+    user_impact: "none|low|medium|high - Level of impact on end users"
+    scope_summary: "Concise description of what was accomplished"
+
   escalations:
     - type: "clarification"
       description: "Error handling strategy unclear"

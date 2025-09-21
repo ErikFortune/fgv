@@ -310,6 +310,18 @@ design_artifact:
   interfaces: {...}
   integration_points: {...}
 
+  # Task log inputs for system understanding
+  task_log_input:
+    components_affected: ["ComponentA", "ServiceB", "ModuleC"]
+    api_changes:
+      breaking: false
+      new_endpoints: ["/api/new-endpoint"]
+      modified_endpoints: ["/api/existing-endpoint"]
+    database_changes:
+      migrations: true
+      schema_changes: ["users", "sessions"]
+    integration_points: ["ExternalServiceA", "DatabaseB"]
+
   escalations:
     - type: "technical_impossibility"
       description: "Requirement cannot be implemented as specified"

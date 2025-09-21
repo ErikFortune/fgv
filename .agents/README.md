@@ -56,9 +56,9 @@ This system provides **8 specialized agents** that can work individually or toge
 - **Output**: Classified coverage gaps with specific remediation plans
 
 ### 🏆 **Senior SDET** - Test Architecture & Quality
-- **Use when**: Need to review test quality, organization, and patterns
-- **Capabilities**: Test architecture review, anti-pattern detection, cross-suite optimization
-- **Output**: Test quality assessment with improvement recommendations
+- **Use when**: Need test quality review, bug analysis, or manual validation planning
+- **Capabilities**: Test architecture review, anti-pattern detection, bug triage, manual validation planning
+- **Output**: Test quality assessment, bug analysis with workflow recommendations, manual testing plans
 
 ## Workflow Templates
 
@@ -95,6 +95,13 @@ Strong enforcement of established patterns, especially:
 - **Converters/Validators** instead of manual type checking
 - **Consistent code style** matching existing patterns
 
+### 📝 **Sequential Task Logging**
+Automatic creation of searchable task logs for debugging and system understanding:
+- **Business Context**: Why changes were made and their user impact
+- **Technical Impact**: Components affected, API changes, database modifications
+- **Risk Assessment**: Risk level and mitigation factors
+- **Searchable History**: Command-line friendly format for correlating bugs with changes
+
 ## File Organization
 
 ```
@@ -115,6 +122,9 @@ Repository Root/
     │   └── completed/        # Historical tasks
     ├── workflows/            # Workflow templates
     ├── patterns/             # Learned patterns
+    ├── task-log.jsonl        # Sequential task log for debugging
+    ├── task-log-index.json   # Searchable index for task log
+    ├── task-log-schema.json  # Schema for task log entries
     └── AGENT_SYSTEM_NOTES.md # Design decisions
 ```
 
@@ -174,6 +184,71 @@ Senior Developer: For user session caching, I recommend this approach:
 [Detailed design follows with rationale and examples]
 ```
 
+### Example 4: Bug Analysis
+```
+User: @senior-sdet Users are reporting that CSV exports are failing with timeout errors
+
+Senior SDET: I'll analyze this bug to determine the appropriate workflow.
+
+## Bug Analysis Results
+
+**Reproduction Status:** Confirmed
+- Issue occurs with exports containing >1000 records
+- Timeout happens after exactly 30 seconds
+- Error message: "Request timeout while generating CSV"
+
+**Root Cause Hypothesis:**
+- Primary: CSV generation is synchronous and blocking for large datasets
+- Secondary: Database query not optimized for large result sets
+
+**Affected Components:**
+- `ExportService.generateCSV()`
+- `OrderRepository.findAllByDateRange()`
+- `CSVFormatter.formatData()`
+
+**Workflow Recommendation:** `bugfix-fast`
+- Issue is reproducible and well-defined
+- Fix likely involves async processing or pagination
+- No major architecture changes needed
+
+**Manual Validation Required:**
+- Test CSV export with various file sizes (100, 1000, 5000 records)
+- Verify file downloads correctly in different browsers
+- Confirm exported data integrity
+
+**Next Steps:** Execute bugfix-fast workflow with focus on async processing
+```
+
+### Example 5: Manual Validation Planning
+```
+User: @senior-sdet We're implementing payment processing - what manual testing do we need?
+
+Senior SDET: For payment processing, you'll need comprehensive manual validation:
+
+## Manual Testing Plan
+
+**Payment Flow Validation:**
+1. **Test Payment Processing** (30 minutes)
+   - Process payment with valid test card
+   - Verify payment confirmation appears
+   - Check transaction in payment gateway dashboard
+   - Test declined card scenarios
+
+2. **Refund Process** (15 minutes)
+   - Initiate refund through admin interface
+   - Verify refund appears in gateway
+   - Confirm user receives refund notification
+
+3. **Cross-Browser Testing** (45 minutes)
+   - Test payment flow in Chrome, Firefox, Safari, Edge
+   - Verify 3D Secure popup handling
+   - Check mobile responsive payment forms
+
+**Total Estimated Time:** 90 minutes
+**Recommended Tester:** Someone with access to payment gateway test environment
+**Prerequisites:** Test payment cards and gateway access configured
+```
+
 ## Best Practices
 
 ### When to Use Task-Master
@@ -214,6 +289,106 @@ Senior Developer: For user session caching, I recommend this approach:
 **"Coverage analysis seems overly detailed"**
 - The system distinguishes between functional code and defensive code
 - This ensures 100% coverage through meaningful tests, not just coverage gaming
+
+## Task Logging System
+
+The system maintains a sequential log of all completed tasks to support debugging and system understanding. This creates a searchable history that correlates code changes with business context.
+
+### What Gets Logged
+
+Each completed task creates a structured log entry containing:
+
+**Business Context** (from TPM Agent):
+- Why the change was needed from user/business perspective
+- Level of impact on end users (none/low/medium/high)
+- Concise description of what was accomplished
+
+**Technical Impact** (from Senior Developer):
+- Components/services/files that were modified
+- API changes (breaking changes, new/modified endpoints)
+- Database changes (migrations, schema changes)
+- Integration points with external systems
+
+**Risk Assessment** (from Senior SDET):
+- Overall risk level (low/medium/high/critical)
+- Specific risk factors (new dependencies, auth changes, etc.)
+- Validation status (automated tests, manual validation, performance)
+
+### Usage Examples
+
+#### Find Recent Authentication Changes
+```bash
+# Search for auth-related changes
+grep "auth\|login\|session" .agents/task-log.jsonl | tail -5
+
+# Find changes to UserService in last 30 days
+grep "UserService" .agents/task-log.jsonl | grep "$(date -d '30 days ago' +%Y-%m)"
+```
+
+#### Identify High-Risk Changes
+```bash
+# Find high-risk or critical changes
+grep '"level":"high"\|"level":"critical"' .agents/task-log.jsonl
+
+# Find breaking API changes
+grep '"breaking":true' .agents/task-log.jsonl
+```
+
+#### Correlate Issues with Recent Changes
+```bash
+# When login issues started last week, find recent session-related changes
+grep "session\|auth" .agents/task-log.jsonl | grep "2024-01-1[5-9]"
+
+# Find what changed in a specific component recently
+grep "OrderService" .agents/task-log.jsonl | tail -3 | jq '.summary'
+```
+
+### Log Entry Format
+
+Each entry is a single-line JSON object with this structure:
+```json
+{
+  "task_id": "task-20240120-001",
+  "timestamp": "2024-01-20T15:45:00Z",
+  "type": "feature",
+  "summary": "Added Redis caching layer for user session data",
+  "business_rationale": "Improve API response times from 500ms to <100ms",
+  "user_impact": "medium",
+  "components_affected": ["UserSessionService", "RedisCache"],
+  "api_changes": {
+    "breaking": false,
+    "modified_endpoints": ["/api/users/session"]
+  },
+  "risk_assessment": {
+    "level": "medium",
+    "factors": ["new_external_dependency", "session_handling_changes"]
+  },
+  "validation": {
+    "automated_tests": true,
+    "manual_validation_completed": true,
+    "performance_validated": true
+  },
+  "artifacts_path": ".agents/tasks/completed/2024-01/task-20240120-001/",
+  "tags": ["performance", "caching", "redis", "session"]
+}
+```
+
+### Benefits
+
+1. **Bug Correlation**: "Login issues started last week" → find recent auth changes
+2. **Impact Assessment**: "What changed in UserService recently?" → see modifications and risk
+3. **Release Planning**: Review cumulative risk of recent changes
+4. **System Understanding**: Track how architecture evolved over time
+5. **Debugging Context**: Understand why changes were made when investigating issues
+
+### Log Maintenance
+
+- **Active Log**: `task-log.jsonl` contains current year entries
+- **Search Tools**: Command-line friendly (grep, jq, standard Unix tools)
+- **Index**: `task-log-index.json` provides quick lookups by component, date, risk level
+- **Schema**: `task-log-schema.json` documents the complete entry format
+
+The task logging system runs automatically - every workflow completion adds an entry, creating a comprehensive development history for future debugging and system understanding.
 
 ## System Design Notes
 
