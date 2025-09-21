@@ -1,0 +1,131 @@
+# Standard Feature Development Workflow
+# Used for new features that require full development lifecycle
+
+name: 'standard_feature'
+description: 'Complete feature development with requirements, design, implementation, review, and testing'
+
+triggers:
+  - task_type: 'feature'
+  - complexity: ['moderate', 'complex']
+  - user_request_type: 'new_functionality'
+
+phases:
+  - phase: requirements_confirmation
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    type: gate # Requires user approval before proceeding
+    dependencies: []
+    timeout_minutes: 30
+    description: 'Confirm understanding of requirements with user'
+
+  - phase: requirements_analysis
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    dependencies: [requirements_confirmation]
+    max_iterations: 2
+    description: 'Analyze and document detailed requirements'
+
+  - phase: design
+    agent: senior-developer
+    mode: workflow
+    required: true
+    dependencies: [requirements_analysis]
+    max_iterations: 2
+    description: 'Create architectural design and implementation plan'
+
+  - phase: implementation
+    agent: code-monkey
+    mode: workflow
+    required: true
+    dependencies: [design]
+    max_iterations: 3
+    description: 'Implement the designed solution'
+
+  - phase: review
+    agent: code-reviewer
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    can_run_in_parallel: [functional_test]
+    max_iterations: 2
+    description: 'Review code for quality and adherence to standards'
+
+  - phase: functional_test
+    agent: sdet-functional
+    mode: workflow
+    required: true
+    dependencies: [design] # Can start test design early
+    can_run_in_parallel: [review]
+    max_iterations: 2
+    description: 'Create comprehensive functional tests'
+
+  - phase: coverage_analysis
+    agent: sdet-coverage
+    mode: workflow
+    required: true
+    dependencies: [functional_test, implementation]
+    max_iterations: 1
+    description: 'Analyze coverage gaps and add directives as needed'
+
+  - phase: test_architecture_review
+    agent: senior-sdet
+    mode: workflow
+    required: true
+    dependencies: [functional_test, coverage_analysis]
+    can_run_in_parallel: [review]
+    condition: 'if_test_complexity_high OR test_files_created >= 3'
+    max_iterations: 1
+    description: 'Review test architecture, quality, and patterns'
+
+success_criteria:
+  - all_requirements_implemented: true
+  - design_followed: true
+  - code_quality_acceptable: true
+  - tests_comprehensive: true
+  - test_architecture_good: true
+  - coverage_100_percent: true
+
+escalation_rules:
+  - trigger: 'critical_blocking_issue'
+    action: 'immediate_escalation'
+  - trigger: 'design_requirements_conflict'
+    action: 'batch_with_related'
+  - trigger: 'implementation_complexity_higher_than_expected'
+    action: 'escalate_if_no_progress_in_30min'
+
+quality_gates:
+  after_requirements_analysis:
+    - requirements_complete: true
+    - ambiguities_resolved: true
+
+  after_design:
+    - architecture_defined: true
+    - patterns_identified: true
+    - interfaces_specified: true
+
+  after_implementation:
+    - builds_successfully: true
+    - follows_design: true
+    - patterns_correct: true
+
+  after_review:
+    - no_blocking_issues: true
+    - critical_patterns_followed: true
+
+  after_functional_test:
+    - requirements_tested: true
+    - acceptance_criteria_met: true
+
+  after_coverage_analysis:
+    - coverage_100_percent: true
+    - gaps_properly_classified: true
+
+  after_test_architecture_review:
+    - test_organization_good: true
+    - anti_patterns_addressed: true
+    - test_maintainability_acceptable: true
+
+estimated_duration: '2-4 hours'
+complexity_range: ['moderate', 'complex']

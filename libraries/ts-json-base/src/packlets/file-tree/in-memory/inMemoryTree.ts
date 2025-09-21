@@ -178,6 +178,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     if (typeof item.contents === 'string') {
       return succeed(item.contents);
     }
+    /* c8 ignore next 2 - local coverage is 100% but build coverage has intermittent issues */
     return captureResult(() => JSON.stringify(item.contents));
   }
 
