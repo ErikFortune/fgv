@@ -31,6 +31,7 @@ import {
   LanguageSubtags,
   LanguageTagExtensions
 } from '../../../packlets/iana';
+import { CORE_REGISTRY_COUNTS } from './testConstants';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -63,12 +64,12 @@ describe('languageRegistriesLoader module', () => {
         expect(registries.extensions).toBeDefined();
 
         // Verify expected data structure from known test data
-        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8787);
-        expect(registries.subtags.scripts.getAllKeys()).toHaveLength(274);
-        expect(registries.subtags.regions.getAllKeys()).toHaveLength(343);
+        expect(registries.subtags.languages.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.languages);
+        expect(registries.subtags.scripts.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.scripts);
+        expect(registries.subtags.regions.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.regions);
 
         // Verify extensions registry
-        expect(registries.extensions.extensions.getAllKeys()).toHaveLength(2);
+        expect(registries.extensions.extensions.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.extensions);
       });
     });
 
@@ -119,8 +120,8 @@ describe('languageRegistriesLoader module', () => {
         expect(registries.extensions).toBeDefined();
 
         // Verify expected data structure
-        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8787);
-        expect(registries.extensions.extensions.getAllKeys()).toHaveLength(2);
+        expect(registries.subtags.languages.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.languages);
+        expect(registries.extensions.extensions.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.extensions);
       });
     });
 
@@ -145,8 +146,8 @@ describe('languageRegistriesLoader module', () => {
       );
 
       expect(result).toSucceedAndSatisfy((registries) => {
-        expect(registries.subtags.languages.getAllKeys()).toHaveLength(8787);
-        expect(registries.extensions.extensions.getAllKeys()).toHaveLength(2);
+        expect(registries.subtags.languages.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.languages);
+        expect(registries.extensions.extensions.getAllKeys()).toHaveLength(CORE_REGISTRY_COUNTS.extensions);
       });
     });
 
@@ -337,6 +338,12 @@ describe('languageRegistriesLoader module', () => {
         expect(fsRegistries.extensions.extensions.getAllKeys().length).toBe(
           ftRegistries.extensions.extensions.getAllKeys().length
         );
+
+        // Also verify against expected counts
+        expect(fsRegistries.subtags.languages.getAllKeys().length).toBe(CORE_REGISTRY_COUNTS.languages);
+        expect(fsRegistries.subtags.scripts.getAllKeys().length).toBe(CORE_REGISTRY_COUNTS.scripts);
+        expect(fsRegistries.subtags.regions.getAllKeys().length).toBe(CORE_REGISTRY_COUNTS.regions);
+        expect(fsRegistries.extensions.extensions.getAllKeys().length).toBe(CORE_REGISTRY_COUNTS.extensions);
       }
     });
 

@@ -6,6 +6,7 @@
     "bval",
     "dflt",
     "editability",
+    "extlang",
     "hashable",
     "lcov",
     "luxon",
@@ -26,8 +27,10 @@
     "topstring",
     "tsdoc",
     "TSRC",
+    "TSUBTAG",
     "TTAG",
     "TTOELEM",
+    "TTYPE",
     "xval",
     "xyzzy",
     "zval"
