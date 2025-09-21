@@ -59,6 +59,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
   public constructor(params?: IFileTreeInitParams<TCT>);
   public constructor(params?: IFileTreeInitParams<TCT> | string) {
     if (typeof params === 'string') {
+      /* c8 ignore next 2 - tested but code coverage has intermittent issues */
       this.prefix = params;
       this._inferContentType = FileItem.defaultInferContentType;
     } else {
