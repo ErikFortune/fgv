@@ -22,8 +22,8 @@
 
 import '@fgv/ts-utils-jest';
 import { zipSync, Zippable } from 'fflate';
-import { Validators, fail } from '@fgv/ts-utils';
-import { ZipFileTreeAccessors } from '../../packlets/zip-file-tree';
+import { Validators, fail, succeed, Result } from '@fgv/ts-utils';
+import { ZipFileTreeAccessors, ZipFileItem } from '../../packlets/zip-file-tree';
 
 describe('ZipFileTreeAccessors', () => {
   const createTestZip = (): Buffer => {
@@ -1019,6 +1019,296 @@ describe('ZipFileTreeAccessors', () => {
         const emptyPathChildren = accessors.getChildren('');
         expect(emptyPathChildren).toSucceedAndSatisfy((children) => {
           expect(children.length).toBe(rootChildren.value!.length);
+        });
+      });
+    });
+  });
+
+  describe('contentType functionality', () => {
+    // Helper function for tests that need special character files
+    const createSpecialCharZip = (): Buffer => {
+      const files: Zippable = {};
+
+      // Files with special characters in names
+      files['special chars/file with spaces.txt'] = new TextEncoder().encode('spaces in path');
+      files['unicode/résumé.txt'] = new TextEncoder().encode('unicode filename');
+      files['symbols/file-with-dashes_and_underscores.json'] = new TextEncoder().encode(
+        JSON.stringify({ special: true })
+      );
+
+      return Buffer.from(zipSync(files));
+    };
+
+    it('should support contentType via provided parameter', () => {
+      const zipBuffer = createTestZip();
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer);
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        // Test getFileContentType with provided parameter (highest priority)
+        const providedResult = accessors.getFileContentType('/manifest.json', 'application/custom');
+        expect(providedResult).toSucceedWith('application/custom');
+
+        // Test without provided parameter (should use inference function)
+        const inferredResult = accessors.getFileContentType('/manifest.json');
+        expect(inferredResult).toSucceedWith(undefined); // Default inference returns undefined
+      });
+    });
+
+    it('should support contentType via custom inference function', () => {
+      const zipBuffer = createTestZip();
+
+      // Create accessor with custom inference function
+      const customInferenceFunction = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return succeed('application/json' as string);
+        }
+        if (filePath.endsWith('.md')) {
+          return succeed('text/markdown' as string);
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer, {
+        inferContentType: customInferenceFunction
+      });
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        // Test JSON file inference
+        const jsonResult = accessors.getFileContentType('/manifest.json');
+        expect(jsonResult).toSucceedWith('application/json');
+
+        // Test markdown file inference
+        const mdResult = accessors.getFileContentType('/docs/guide.md');
+        expect(mdResult).toSucceedWith('text/markdown');
+
+        // Test unknown file type
+        const unknownResult = accessors.getFileContentType('/README');
+        expect(unknownResult).toSucceedWith(undefined);
+
+        // Test provided parameter overrides inference
+        const overrideResult = accessors.getFileContentType('/manifest.json', 'custom/type');
+        expect(overrideResult).toSucceedWith('custom/type');
+      });
+    });
+
+    it('should have lazy-loaded contentType on file items', () => {
+      const zipBuffer = createTestZip();
+
+      const customInference = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return succeed('application/json' as string);
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer, {
+        inferContentType: customInference
+      });
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        const fileResult = accessors.getItem('/manifest.json');
+        expect(fileResult).toSucceedAndSatisfy((item) => {
+          if (item.type === 'file') {
+            // Access contentType - should trigger lazy loading
+            expect(item.contentType).toBe('application/json');
+
+            // Access again - should return cached value
+            expect(item.contentType).toBe('application/json');
+          }
+        });
+      });
+    });
+
+    it('should allow setting contentType on file items', () => {
+      const zipBuffer = createTestZip();
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer);
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        const fileResult = accessors.getItem('/manifest.json');
+        expect(fileResult).toSucceedAndSatisfy((item) => {
+          if (item.type === 'file') {
+            // Initially undefined (default inference)
+            expect(item.contentType).toBeUndefined();
+
+            // Cast to concrete type to access setContentType
+            const zipFileItem = item as ZipFileItem;
+
+            // Set contentType
+            zipFileItem.setContentType('custom/type');
+            expect(item.contentType).toBe('custom/type');
+
+            // Set to undefined
+            zipFileItem.setContentType(undefined);
+            expect(item.contentType).toBeUndefined();
+          }
+        });
+      });
+    });
+
+    it('should handle contentType with all factory methods', () => {
+      const zipBuffer = createTestZip();
+
+      const customInference = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return succeed('application/json' as string);
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      // Test fromBuffer with params object
+      const bufferResult = ZipFileTreeAccessors.fromBuffer(zipBuffer, {
+        prefix: 'test-prefix',
+        inferContentType: customInference
+      });
+
+      expect(bufferResult).toSucceedAndSatisfy((accessors) => {
+        const contentTypeResult = accessors.getFileContentType('/manifest.json');
+        expect(contentTypeResult).toSucceedWith('application/json');
+      });
+    });
+
+    it('should handle async factory methods with contentType', async () => {
+      const zipBuffer = createTestZip();
+
+      const customInference = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return succeed('application/json' as string);
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      // Test fromBufferAsync with params object
+      const asyncResult = await ZipFileTreeAccessors.fromBufferAsync(zipBuffer, {
+        prefix: 'async-prefix',
+        inferContentType: customInference
+      });
+
+      expect(asyncResult).toSucceedAndSatisfy((accessors) => {
+        const contentTypeResult = accessors.getFileContentType('/manifest.json');
+        expect(contentTypeResult).toSucceedWith('application/json');
+      });
+    });
+
+    it('should handle file factory method with contentType', async () => {
+      const zipBuffer = createTestZip();
+      const file = new File([zipBuffer], 'test.zip', { type: 'application/zip' });
+
+      const customInference = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return succeed('application/json' as string);
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      // Test fromFile with params object
+      const fileResult = await ZipFileTreeAccessors.fromFile(file, {
+        prefix: 'file-prefix',
+        inferContentType: customInference
+      });
+
+      expect(fileResult).toSucceedAndSatisfy((accessors) => {
+        const contentTypeResult = accessors.getFileContentType('/manifest.json');
+        expect(contentTypeResult).toSucceedWith('application/json');
+      });
+    });
+
+    it('should handle contentType with special characters and edge cases', () => {
+      const zipBuffer = createSpecialCharZip();
+
+      const customInference = (filePath: string): Result<string | undefined> => {
+        if (filePath.includes('résumé')) {
+          return succeed('text/unicode' as string);
+        }
+        if (filePath.includes('spaces')) {
+          return succeed('text/spaced' as string);
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer, {
+        inferContentType: customInference
+      });
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        // Test unicode filename
+        const unicodeResult = accessors.getFileContentType('/unicode/résumé.txt');
+        expect(unicodeResult).toSucceedWith('text/unicode');
+
+        // Test filename with spaces
+        const spacesResult = accessors.getFileContentType('/special chars/file with spaces.txt');
+        expect(spacesResult).toSucceedWith('text/spaced');
+
+        // Test provided parameter overrides inference even with special characters
+        const overrideResult = accessors.getFileContentType('/unicode/résumé.txt', 'override/type');
+        expect(overrideResult).toSucceedWith('override/type');
+      });
+    });
+
+    it('should prevent inference after explicit contentType setting', () => {
+      const zipBuffer = createTestZip();
+
+      const customInference = jest.fn((filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return succeed('application/json' as string);
+        }
+        return succeed(undefined as string | undefined);
+      });
+
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer, {
+        inferContentType: customInference
+      });
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        const fileResult = accessors.getItem('/manifest.json');
+        expect(fileResult).toSucceedAndSatisfy((item) => {
+          if (item.type === 'file') {
+            // First access should trigger inference
+            expect(item.contentType).toBe('application/json');
+            expect(customInference).toHaveBeenCalledTimes(1);
+
+            // Set explicit contentType
+            const zipFileItem = item as ZipFileItem;
+            zipFileItem.setContentType('custom/type');
+            expect(item.contentType).toBe('custom/type');
+
+            // Access again - should not trigger inference again
+            expect(item.contentType).toBe('custom/type');
+            expect(customInference).toHaveBeenCalledTimes(1); // Still only called once
+          }
+        });
+      });
+    });
+
+    it('should handle inference function errors gracefully', () => {
+      const zipBuffer = createTestZip();
+
+      const failingInference = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.json')) {
+          return fail<string | undefined>('Inference error');
+        }
+        return succeed(undefined as string | undefined);
+      };
+
+      const result = ZipFileTreeAccessors.fromBuffer(zipBuffer, {
+        inferContentType: failingInference
+      });
+
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        // Test direct inference call
+        const inferenceResult = accessors.getFileContentType('/manifest.json');
+        expect(inferenceResult).toFailWith('Inference error');
+
+        // Test with provided parameter (should bypass failing inference)
+        const providedResult = accessors.getFileContentType('/manifest.json', 'override/type');
+        expect(providedResult).toSucceedWith('override/type');
+
+        // Test file item contentType getter with failing inference
+        const fileResult = accessors.getItem('/manifest.json');
+        expect(fileResult).toSucceedAndSatisfy((item) => {
+          if (item.type === 'file') {
+            // Should get undefined since inference failed and orDefault() returns undefined
+            expect(item.contentType).toBeUndefined();
+          }
         });
       });
     });

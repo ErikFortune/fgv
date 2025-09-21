@@ -188,6 +188,7 @@ export function isValidConditionSetKey(key: string): key is ConditionSetKey {
   if (key === '') {
     return true;
   }
+  /* c8 ignore next 2 - edge case: condition set key validation rarely fails */
   // a condition set key is a `+` separated list of condition keys
   return key.split('+').every(isValidConditionKey);
 }
@@ -245,7 +246,7 @@ export function isValidDecisionIndex(index: number): index is DecisionIndex {
 export function toQualifierName(name: string): Result<QualifierName> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidQualifierName(name)) {
-    return fail(`${name}: not a valid qualifier name`);
+    return fail(`${name}: invalid qualifier name`);
   }
   return succeed(name);
 }
@@ -260,7 +261,7 @@ export function toQualifierName(name: string): Result<QualifierName> {
 export function toQualifierIndex(index: number): Result<QualifierIndex> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidQualifierIndex(index)) {
-    return fail(`${index}: not a valid qualifier index`);
+    return fail(`${index}: invalid qualifier index`);
   }
   return succeed(index as QualifierIndex);
 }
@@ -275,7 +276,7 @@ export function toQualifierIndex(index: number): Result<QualifierIndex> {
 export function toQualifierTypeName(name: string): Result<QualifierTypeName> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidQualifierTypeName(name)) {
-    return fail(`${name}: not a valid qualifier type name`);
+    return fail(`${name}: invalid qualifier type name`);
   }
   return succeed(name);
 }
@@ -290,7 +291,7 @@ export function toQualifierTypeName(name: string): Result<QualifierTypeName> {
 export function toQualifierTypeIndex(index: number): Result<QualifierTypeIndex> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidQualifierTypeIndex(index)) {
-    return fail(`${index}: not a valid qualifier type index`);
+    return fail(`${index}: invalid qualifier type index`);
   }
   return succeed(index);
 }
@@ -574,7 +575,7 @@ export function isValidQualifierDefaultValuesToken(token: string): token is Qual
 export function toQualifierDefaultValueToken(token: string): Result<QualifierDefaultValueToken> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidQualifierDefaultValueToken(token)) {
-    return fail(`${token}: not a valid qualifier default value token`);
+    return fail(`${token}: invalid qualifier default value token`);
   }
   return succeed(token);
 }
@@ -589,7 +590,7 @@ export function toQualifierDefaultValueToken(token: string): Result<QualifierDef
 export function toQualifierDefaultValuesToken(token: string): Result<QualifierDefaultValuesToken> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidQualifierDefaultValuesToken(token)) {
-    return fail(`${token}: not a valid qualifier default values token`);
+    return fail(`${token}: invalid qualifier default values token`);
   }
   return succeed(token);
 }

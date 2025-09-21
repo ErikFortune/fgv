@@ -9,9 +9,9 @@ Implementation of `IFileTreeDirectoryItem` for directories in a ZIP archive.
 **Signature:**
 
 ```typescript
-export declare class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem 
+export declare class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTreeDirectoryItem<TCT> 
 ```
-**Implements:** FileTree.IFileTreeDirectoryItem
+**Implements:** FileTree.IFileTreeDirectoryItem&lt;TCT&gt;
 
 ## Constructors
 

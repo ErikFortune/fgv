@@ -168,6 +168,15 @@ Description
 </td></tr>
 <tr><td>
 
+[FileTree](./ts-json-base.filetree.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [JsonFile](./ts-json-base.jsonfile.md)
 
 

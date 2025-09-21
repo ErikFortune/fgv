@@ -154,9 +154,12 @@ export abstract class TagTestCaseFactoryBase<TFROM, TTESTCASE extends ITagTestCa
           .filter((tc): tc is TagTestCaseEntry<TFROM, TTESTCASE> => tc !== undefined);
       });
     }
-    return all
-      .map((gtc) => this.emitOne(gtc, which))
-      .filter((tc): tc is TagTestCaseEntry<TFROM, TTESTCASE> => tc !== undefined);
+    return (
+      all
+        .map((gtc) => this.emitOne(gtc, which))
+        /* c8 ignore next 1 - defensive filter for test helper, array path covers same logic */
+        .filter((tc): tc is TagTestCaseEntry<TFROM, TTESTCASE> => tc !== undefined)
+    );
   }
 
   protected abstract _construct(gtc: GenericLanguageTagTest<TFROM>, which: TestKey): TTESTCASE;

@@ -4,12 +4,12 @@
 
 ## ZipFileTree.ZipFileTreeAccessors.fromBuffer() method
 
-Creates a new ZipFileTreeAccessors instance from a ZIP file buffer.
+Creates a new ZipFileTreeAccessors instance from a ZIP file buffer (synchronous).
 
 **Signature:**
 
 ```typescript
-static fromBuffer(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors>;
+static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors<TCT>>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional prefix to prepend to paths.
 
 **Returns:**
 
-Result&lt;[ZipFileTreeAccessors](./ts-extras.zipfiletree.zipfiletreeaccessors.md)<!-- -->&gt;
+Result&lt;[ZipFileTreeAccessors](./ts-extras.zipfiletree.zipfiletreeaccessors.md)<!-- -->&lt;TCT&gt;&gt;
 
 Result containing the ZipFileTreeAccessors instance.
 

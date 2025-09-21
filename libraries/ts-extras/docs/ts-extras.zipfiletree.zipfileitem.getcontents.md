@@ -9,9 +9,9 @@ Gets the contents of the file as parsed JSON.
 **Signature:**
 
 ```typescript
-getContents(): Result<unknown>;
+getContents(): Result<JsonValue>;
 ```
 **Returns:**
 
-Result&lt;unknown&gt;
+Result&lt;JsonValue&gt;
 

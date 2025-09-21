@@ -23,6 +23,7 @@
 import '@fgv/ts-utils-jest';
 
 import { RecordJar } from '../../index';
+import { FileTree } from '@fgv/ts-json-base';
 
 import fs from 'fs';
 
@@ -403,6 +404,133 @@ describe('record-jar helpers', () => {
 
       expect(RecordJar.readRecordJarFileSync(path)).toFailWith(/mock error/i);
       spy.mockRestore();
+    });
+  });
+
+  describe('readRecordJarFromTree method', () => {
+    test('reads record-jar file from in-memory tree', () => {
+      const jarContent = ['Field1 : Value1', 'Field2: Value2', 'Field3:Value3'].join('\n');
+      const expected = [
+        {
+          Field1: 'Value1',
+          Field2: 'Value2',
+          Field3: 'Value3'
+        }
+      ];
+
+      const files = [{ path: '/test.jar', contents: jarContent }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/test.jar')).toSucceedWith(expected);
+      });
+    });
+
+    test('reads multiple records from tree', () => {
+      const jarContent = [
+        'Field1 : Value1',
+        'Field2: Value2',
+        '%%',
+        'Field1 : value1a',
+        'Field2 : value2a'
+      ].join('\n');
+      const expected = [
+        {
+          Field1: 'Value1',
+          Field2: 'Value2'
+        },
+        {
+          Field1: 'value1a',
+          Field2: 'value2a'
+        }
+      ];
+
+      const files = [{ path: '/multi.jar', contents: jarContent }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/multi.jar')).toSucceedWith(expected);
+      });
+    });
+
+    test('handles parsing options', () => {
+      const jarContent = ['Field1 : Value1', 'Field1: Value2', '%%', 'Field1 : single value'].join('\n');
+      const expected = [
+        {
+          Field1: ['Value1', 'Value2']
+        },
+        {
+          Field1: ['single value']
+        }
+      ];
+
+      const files = [{ path: '/options.jar', contents: jarContent }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(
+          RecordJar.readRecordJarFromTree(tree, '/options.jar', { arrayFields: ['Field1'] })
+        ).toSucceedWith(expected);
+      });
+    });
+
+    test('handles files in nested directories', () => {
+      const jarContent = ['Field1 : Value1', 'Field2: Value2'].join('\n');
+      const expected = [
+        {
+          Field1: 'Value1',
+          Field2: 'Value2'
+        }
+      ];
+
+      const files = [{ path: '/data/nested/file.jar', contents: jarContent }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/data/nested/file.jar')).toSucceedWith(expected);
+      });
+    });
+
+    test('fails for non-existent file', () => {
+      const files = [{ path: '/exists.jar', contents: 'Field1: Value1' }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/missing.jar')).toFailWith(/not found/i);
+      });
+    });
+
+    test('fails for directory instead of file', () => {
+      const files = [{ path: '/directory/file.jar', contents: 'Field1: Value1' }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/directory')).toFailWith(/not a file/i);
+      });
+    });
+
+    test('propagates parsing errors', () => {
+      const invalidJarContent = 'invalid line without colon';
+      const files = [{ path: '/invalid.jar', contents: invalidJarContent }];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/invalid.jar')).toFailWith(/malformed line/i);
+      });
+    });
+
+    test('handles files with different line endings', () => {
+      const jarContentCRLF = ['Field1 : Value1', 'Field2: Value2'].join('\r\n');
+      const jarContentLF = ['Field1 : Value1', 'Field2: Value2'].join('\n');
+      const expected = [
+        {
+          Field1: 'Value1',
+          Field2: 'Value2'
+        }
+      ];
+
+      const files = [
+        { path: '/crlf.jar', contents: jarContentCRLF },
+        { path: '/lf.jar', contents: jarContentLF }
+      ];
+      const treeResult = FileTree.inMemory(files);
+      expect(treeResult).toSucceedAndSatisfy((tree) => {
+        expect(RecordJar.readRecordJarFromTree(tree, '/crlf.jar')).toSucceedWith(expected);
+        expect(RecordJar.readRecordJarFromTree(tree, '/lf.jar')).toSucceedWith(expected);
+      });
     });
   });
 });

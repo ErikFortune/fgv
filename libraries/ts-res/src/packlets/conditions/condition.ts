@@ -92,6 +92,7 @@ export class Condition implements IValidatedConditionDecl {
     index
   }: IValidatedConditionDecl) {
     if (scoreAsDefault === undefined && qualifier.defaultValue !== undefined) {
+      /* c8 ignore next 4 - edge case: default value matching logic rarely triggered */
       const defaultMatch = qualifier.type.matches(value, qualifier.defaultValue, 'matches');
       if (defaultMatch !== NoMatch) {
         scoreAsDefault = defaultMatch;

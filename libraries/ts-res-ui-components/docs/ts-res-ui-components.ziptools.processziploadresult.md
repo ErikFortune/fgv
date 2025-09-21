@@ -10,8 +10,7 @@ Helper function to process resources from a ZIP load result
 
 ```typescript
 export declare function processZipLoadResult(zipResult: {
-    files: IImportedFile[];
-    directory?: IImportedDirectory;
+    fileTree: FileTree.FileTree;
     config?: Config.Model.ISystemConfiguration;
 }, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools.IObservabilityContext): Promise<Result<IProcessedResources>>;
 ```
@@ -41,7 +40,7 @@ zipResult
 
 </td><td>
 
-{ files: [IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)<!-- -->\[\]; directory?: [IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md)<!-- -->; config?: Config.Model.ISystemConfiguration; }
+{ fileTree: FileTree.FileTree; config?: Config.Model.ISystemConfiguration; }
 
 
 </td><td>

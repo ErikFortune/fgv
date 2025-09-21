@@ -417,6 +417,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-web-extras",
+      "projectFolder": "libraries/ts-web-extras",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-json",
       "projectFolder": "libraries/ts-json",
       "shouldPublish": true,

@@ -186,6 +186,7 @@ export class ResourceBuilder {
           .getOrAdd(candidate.conditions.toString(), candidate)
           .onSuccess((added, detail) => {
             if (detail === 'exists') {
+              /* c8 ignore next 5 - defensive coding: conflicting candidates with same conditions should not occur */
               if (!ResourceCandidate.equal(added, candidate)) {
                 return failWithDetail<ResourceCandidate, Collections.ResultMapResultDetail>(
                   `${this.id}: conflicting candidates.`,

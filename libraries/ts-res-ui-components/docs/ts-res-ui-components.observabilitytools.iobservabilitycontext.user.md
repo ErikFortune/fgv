@@ -9,5 +9,5 @@ User logger for user-facing messages and feedback.
 **Signature:**
 
 ```typescript
-readonly user: IUserLogger;
+readonly user: IUserLogReporter;
 ```

@@ -22,7 +22,8 @@
 
 import { Model as ConfigModel } from '../config';
 import * as Json from './json';
-import { FileTree } from '@fgv/ts-utils';
+import {} from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 
 /**
  * Options for creating a ZIP archive buffer

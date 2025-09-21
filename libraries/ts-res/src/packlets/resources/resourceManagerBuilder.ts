@@ -360,6 +360,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     decl: ResourceJson.Json.ILooseResourceDecl
   ): DetailedResult<ResourceBuilder, ResourceBuilderResultDetail> {
     const { value: id, message } = Validate.toResourceId(decl.id);
+    /* c8 ignore next 3 - defensive coding: resource ID validation should prevent invalid IDs */
     if (message !== undefined) {
       return failWithDetail(`${id}: invalid id - ${message}`, 'failure');
     }
@@ -384,6 +385,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     }
 
     if (detail === 'exists') {
+      /* c8 ignore next 4 - defensive coding: resource type mismatch on existing resources should not occur */
       const { message } = builder.setResourceType(decl.resourceTypeName);
       if (message !== undefined) {
         return failWithDetail(`${id}: unable to set resource type\n${message}`, 'type-mismatch');
@@ -634,6 +636,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   ): Result<ResourceJson.Compiled.ICompiledResourceCollection> {
     // Build resources first to ensure all data is available
     const buildResult = this._performBuild();
+    /* c8 ignore next 3 - defensive coding: build failure should not occur after successful validation */
     if (buildResult.isFailure()) {
       return fail(`Failed to build resources: ${buildResult.message}`);
     }

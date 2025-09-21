@@ -21,8 +21,9 @@
  */
 
 import * as Converters from './packlets/converters';
+import * as FileTree from './packlets/file-tree';
 import * as JsonFile from './packlets/json-file';
 import * as Validators from './packlets/validators';
 
 export * from './packlets/json';
-export { Converters, JsonFile, Validators };
+export { Converters, FileTree, JsonFile, Validators };

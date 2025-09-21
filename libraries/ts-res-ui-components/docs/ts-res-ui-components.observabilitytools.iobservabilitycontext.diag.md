@@ -9,5 +9,5 @@ Diagnostic logger for internal system diagnostics.
 **Signature:**
 
 ```typescript
-readonly diag: Logging.ILogger;
+readonly diag: Logging.LogReporter<unknown>;
 ```

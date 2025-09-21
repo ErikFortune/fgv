@@ -78,7 +78,7 @@ describe('LanguageQualifierType', () => {
         TsRes.QualifierTypes.LanguageQualifierType.create({
           name: 'not a valid name'
         })
-      ).toFailWith(/not a valid qualifier type name/i);
+      ).toFailWith(/invalid qualifier type name/i);
     });
   });
 
@@ -231,7 +231,7 @@ describe('LanguageQualifierType', () => {
         };
 
       expect(TsRes.QualifierTypes.LanguageQualifierType.createFromConfig(config)).toFailWith(
-        /not a valid qualifier type name/i
+        /invalid qualifier type name/i
       );
     });
   });

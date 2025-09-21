@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import type { IObservabilityContext } from '../../../utils/observability';
 import {
   DocumentArrowUpIcon,
   CheckCircleIcon,
@@ -6,10 +7,22 @@ import {
   ArchiveBoxIcon,
   FolderOpenIcon
 } from '@heroicons/react/24/outline';
-import { IImportViewProps, IImportedFile, IImportedDirectory } from '../../../types';
-import { Bundle, ZipArchive } from '@fgv/ts-res';
+import { IImportViewProps } from '../../../types';
+import { FileTree } from '@fgv/ts-json-base';
+import { Bundle, Config } from '@fgv/ts-res';
 import { isZipFile } from '../../../utils/zipLoader';
 import { useSmartObservability } from '../../../hooks/useSmartObservability';
+import {
+  supportsFileSystemAccess,
+  safeShowDirectoryPicker,
+  safeShowOpenFilePicker,
+  FileSystemDirectoryHandle,
+  isFileHandle,
+  isDirectoryHandle,
+  FileTreeHelpers
+} from '@fgv/ts-web-extras';
+import { ZipFileTree } from '@fgv/ts-extras';
+import { succeed } from '@fgv/ts-utils';
 
 /**
  * ImportView component for importing resource files, directories, and bundles.
@@ -32,16 +45,16 @@ import { useSmartObservability } from '../../../hooks/useSmartObservability';
  * import { ImportView } from '@fgv/ts-res-ui-components';
  *
  * function MyImportTool() {
- *   const handleFileImport = (files, directory) => {
- *     console.log('Importing files:', files, directory);
+ *   const handleFileImport = (fileTree) => {
+ *     console.log('Importing files:', fileTree);
  *   };
  *
  *   const handleBundleImport = (bundle) => {
  *     console.log('Importing bundle:', bundle);
  *   };
  *
- *   const handleZipImport = (zipData) => {
- *     console.log('Importing ZIP:', zipData);
+ *   const handleZipImport = (zipData, config) => {
+ *     console.log('Importing ZIP:', zipData, config);
  *   };
  *
  *   return (
@@ -86,50 +99,68 @@ export const ImportView: React.FC<IImportViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dirInputRef = useRef<HTMLInputElement>(null);
 
-  // Type for browsers with guaranteed File System Access API support
-  type WindowWithFileSystemAccess = Window & {
-    showDirectoryPicker: NonNullable<Window['showDirectoryPicker']>;
-    showOpenFilePicker: NonNullable<Window['showOpenFilePicker']>;
-  };
-
-  // Type guard to check if browser supports File System Access API
-  function hasFileSystemAccess(w: Window): w is WindowWithFileSystemAccess {
-    return 'showDirectoryPicker' in w && 'showOpenFilePicker' in w;
-  }
-
-  // Helper function to process ZIP files using zip-archive packlet
+  // Helper function to process ZIP files using ZipFileTree directly
   const processZipFile = useCallback(
     async (file: File) => {
       o11y.diag.info(`[ImportView] Processing ZIP file: ${file.name}`);
       o11y.user.info(`Processing ZIP file: ${file.name}`);
 
-      const loader = new ZipArchive.ZipArchiveLoader();
-      const loadResult = await loader.loadFromFile(file, {
-        strictManifestValidation: false // Be lenient with manifests
-      });
+      try {
+        // Read file as ArrayBuffer
+        const buffer = await file.arrayBuffer();
 
-      if (loadResult.isFailure()) {
-        throw new Error(`Failed to load ZIP: ${loadResult.message}`);
-      }
-
-      const zipData = loadResult.value;
-      o11y.diag.info(`[ImportView] ZIP loaded successfully:`, zipData);
-
-      // Pass the ZIP data to the appropriate handler
-      if (onZipImport) {
-        // Pass both the directory/files and any configuration found
-        if (zipData.directory) {
-          onZipImport(zipData.directory, zipData.config);
-        } else if (zipData.files.length > 0) {
-          onZipImport(zipData.files, zipData.config);
-        } else {
-          throw new Error('No files found in ZIP archive');
+        // Create FileTree directly from ZIP buffer
+        const zipAccessorsResult = ZipFileTree.ZipFileTreeAccessors.fromBuffer(buffer);
+        if (zipAccessorsResult.isFailure()) {
+          throw new Error(`Failed to parse ZIP: ${zipAccessorsResult.message}`);
         }
-      } else {
-        throw new Error('No ZIP import handler configured');
-      }
 
-      return zipData;
+        const zipAccessors = zipAccessorsResult.value;
+
+        // Create FileTree from ZIP accessors
+        const fileTreeResult = FileTree.FileTree.create(zipAccessors);
+        if (fileTreeResult.isFailure()) {
+          throw new Error(`Failed to create FileTree from ZIP: ${fileTreeResult.message}`);
+        }
+
+        const fileTree = fileTreeResult.value;
+        o11y.diag.info(`[ImportView] ZIP FileTree created successfully`);
+
+        // For configuration, try to find a config file in the ZIP
+        // This is optional - if no config is found, we pass undefined
+        const config = fileTree
+          .getFile('/config.json')
+          .onFailure((message) => {
+            o11y.diag.info(`[ImportView] No config.json found in ZIP:`);
+            return fail(message);
+          })
+          .onSuccess((file) => {
+            return file
+              .getContents()
+              .onSuccess((contents) => Config.Convert.systemConfiguration.convert(contents))
+              .onSuccess((config) => {
+                o11y.diag.info(`[ImportView] Found config.json in ZIP`);
+                return succeed(config);
+              })
+              .onFailure((error) => {
+                throw new Error(`Failed to convert config.json from ZIP: ${error}`);
+              });
+          })
+          .orDefault();
+
+        // Pass the FileTree and any configuration found
+        if (onZipImport) {
+          onZipImport(fileTree, config);
+        } else {
+          throw new Error('No ZIP import handler configured');
+        }
+
+        return { fileTree, config };
+      } catch (error) {
+        throw new Error(
+          `Failed to process ZIP file: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     },
     [onZipImport, o11y]
   );
@@ -154,15 +185,18 @@ export const ImportView: React.FC<IImportViewProps> = ({
 
             const zipData = await processZipFile(file);
 
+            // Count files in the FileTree
+            const fileCount = countFilesInTree(zipData.fileTree);
+
             setImportStatus({
               hasImported: true,
-              fileCount: zipData.files.length,
+              fileCount,
               isDirectory: false,
               isBundle: false,
               isZip: true
             });
 
-            o11y.user.success(`ZIP file processed: ${file.name} (${zipData.files.length} files)`);
+            o11y.user.success(`ZIP file processed: ${file.name} (${fileCount} files)`);
             setIsLoading(false);
             return;
           } else {
@@ -170,58 +204,22 @@ export const ImportView: React.FC<IImportViewProps> = ({
           }
         }
 
-        // Handle regular files (non-ZIP)
-        const importedFiles: IImportedFile[] = [];
-        let bundleFile: (IImportedFile & { bundle?: Bundle.IBundle }) | undefined;
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const content = await readFileContent(file);
-
-          const importedFile: IImportedFile = {
-            name: file.name,
-            path: file.webkitRelativePath ?? file.name,
-            content,
-            type: file.type
-          };
-
-          // Check if it's a bundle file using proper detection
-          let isCurrentFileBundle = false;
-          try {
-            const parsedData = JSON.parse(content);
-
-            o11y.diag.info(`[ImportView] Checking if ${file.name} is a bundle...`);
-
-            // Use BundleUtils for proper bundle detection
-            if (Bundle.BundleUtils.isBundleFile(parsedData)) {
-              o11y.diag.info(`[ImportView] ✅ ${file.name} detected as bundle file`);
-              bundleFile = { ...importedFile, bundle: parsedData };
-              isCurrentFileBundle = true;
-            } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
-              // File name suggests it's a bundle, but content doesn't match - log a warning
-              o11y.diag.warn(
-                `[ImportView] ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
-              );
-              o11y.user.warn(`${file.name}: Malformed bundle file.`);
-            } else {
-              o11y.diag.info(`[ImportView] ❌ ${file.name} is not a bundle file`);
-              o11y.user.info(`${file.name}: Not a bundle file.`);
-            }
-          } catch (parseError) {
-            o11y.diag.info(`[ImportView] ❌ ${file.name} failed JSON parsing:`, parseError);
-            o11y.user.error(`${file.name}: Failed JSON parsing: ${parseError}`);
-            // Not valid JSON or not a bundle, treat as regular file
-          }
-
-          // Only add to regular files if this specific file is not a bundle
-          if (!isCurrentFileBundle) {
-            importedFiles.push(importedFile);
-          }
+        // Use FileTreeHelpers to create FileTree from files
+        const fileTreeResult = await FileTreeHelpers.fromFileList(files);
+        if (fileTreeResult.isFailure()) {
+          throw new Error(fileTreeResult.message);
         }
 
-        // Process results
-        if (bundleFile) {
-          o11y.diag.info(`[ImportView] Processing bundle file: ${bundleFile.name}`, bundleFile.bundle);
+        const fileTree = fileTreeResult.value;
+
+        // Check for bundles in the FileTree
+        const bundleResult = await checkForBundleInTree(fileTree, o11y);
+
+        if (bundleResult.isBundle && bundleResult.bundle) {
+          o11y.diag.info(
+            `[ImportView] Processing bundle file: ${bundleResult.fileName}`,
+            bundleResult.bundle
+          );
 
           setImportStatus({
             hasImported: true,
@@ -230,23 +228,24 @@ export const ImportView: React.FC<IImportViewProps> = ({
             isBundle: true,
             isZip: false
           });
-          o11y.user.info(`Bundle file detected: ${bundleFile.name}`);
-          if (onBundleImport && bundleFile.bundle) {
+          o11y.user.info(`Bundle file detected: ${bundleResult.fileName}`);
+          if (onBundleImport) {
             o11y.diag.info(`[ImportView] Calling onBundleImport with bundle data`);
-            onBundleImport(bundleFile.bundle);
+            onBundleImport(bundleResult.bundle);
           } else {
-            o11y.diag.warn(`[ImportView] No bundle import handler or bundle data missing`);
+            o11y.diag.warn(`[ImportView] No bundle import handler configured`);
           }
-        } else if (importedFiles.length > 0) {
+        } else {
+          const fileCount = countFilesInTree(fileTree);
           setImportStatus({
             hasImported: true,
-            fileCount: importedFiles.length,
+            fileCount,
             isDirectory: false,
             isBundle: false,
             isZip: false
           });
-          o11y.user.success(`Imported ${importedFiles.length} file(s)`);
-          onImport?.(importedFiles);
+          o11y.user.success(`Imported ${fileCount} file(s)`);
+          onImport?.(fileTree);
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
@@ -263,7 +262,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
     [onImport, onBundleImport, o11y]
   );
 
-  // Handle directory selection (for browsers with webkitdirectory support)
+  // Handle directory selection
   const handleDirectorySelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = event.target.files;
@@ -273,80 +272,25 @@ export const ImportView: React.FC<IImportViewProps> = ({
       setError(null);
 
       try {
-        const filesByPath = new Map<string, IImportedFile[]>();
-        const dirPaths = new Set<string>();
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const content = await readFileContent(file);
-          const path = file.webkitRelativePath;
-
-          if (path) {
-            const parts = path.split('/');
-            const dirPath = parts.slice(0, -1).join('/');
-            dirPaths.add(dirPath);
-
-            if (!filesByPath.has(dirPath)) {
-              filesByPath.set(dirPath, []);
-            }
-
-            filesByPath.get(dirPath)!.push({
-              name: parts[parts.length - 1],
-              path: path,
-              content,
-              type: file.type
-            });
-          }
+        // Use FileTreeHelpers for directory upload
+        const fileTreeResult = await FileTreeHelpers.fromDirectoryUpload(files);
+        if (fileTreeResult.isFailure()) {
+          throw new Error(fileTreeResult.message);
         }
 
-        // Build directory structure
-        const rootDir: IImportedDirectory = {
-          name: 'imported',
-          files: filesByPath.get('') || [],
-          subdirectories: []
-        };
-
-        // Create subdirectories
-        const sortedPaths = Array.from(dirPaths).sort();
-        for (const dirPath of sortedPaths) {
-          if (dirPath && dirPath !== '') {
-            const parts = dirPath.split('/');
-            let currentLevel = rootDir;
-
-            for (let i = 0; i < parts.length; i++) {
-              const part = parts[i];
-              const currentPath = parts.slice(0, i + 1).join('/');
-
-              if (!currentLevel.subdirectories) {
-                currentLevel.subdirectories = [];
-              }
-
-              let subdir = currentLevel.subdirectories.find((d) => d.name === part);
-              if (!subdir) {
-                subdir = {
-                  name: part,
-                  path: currentPath,
-                  files: filesByPath.get(currentPath) || [],
-                  subdirectories: []
-                };
-                currentLevel.subdirectories.push(subdir);
-              }
-
-              currentLevel = subdir;
-            }
-          }
-        }
+        const fileTree = fileTreeResult.value;
+        const fileCount = countFilesInTree(fileTree);
 
         setImportStatus({
           hasImported: true,
-          fileCount: files.length,
+          fileCount,
           isDirectory: true,
           isBundle: false,
           isZip: false
         });
 
-        o11y.user.success(`Imported directory with ${files.length} file(s)`);
-        onImport?.(rootDir);
+        o11y.user.success(`Imported directory with ${fileCount} file(s)`);
+        onImport?.(fileTree);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         setError(errorMsg);
@@ -364,7 +308,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
 
   // Modern File System Access API handlers
   const handleModernDirectoryPick = useCallback(async () => {
-    if (!hasFileSystemAccess(window)) {
+    if (!supportsFileSystemAccess(window)) {
       o11y.user.error('Directory picker not supported in this browser');
       return;
     }
@@ -373,10 +317,46 @@ export const ImportView: React.FC<IImportViewProps> = ({
     setError(null);
 
     try {
-      const dirHandle = await window.showDirectoryPicker();
-      const rootDir = await processDirectoryHandle(dirHandle);
+      const dirHandle = await safeShowDirectoryPicker(window);
 
-      const fileCount = countFiles(rootDir);
+      if (!dirHandle) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Create FileTree from directory handle using readDirectoryFromInput
+      // For now, we'll need to convert the directory handle to files
+      // This is a limitation of the current FileTree integration
+      const files: File[] = [];
+
+      async function collectFiles(dirHandle: FileSystemDirectoryHandle, path: string = ''): Promise<void> {
+        for await (const [name, handle] of dirHandle.entries()) {
+          if (isFileHandle(handle)) {
+            const file = await handle.getFile();
+            // Add path information
+            Object.defineProperty(file, 'webkitRelativePath', {
+              value: path ? `${path}/${name}` : name,
+              writable: false
+            });
+            files.push(file);
+          } else if (isDirectoryHandle(handle)) {
+            await collectFiles(handle, path ? `${path}/${name}` : name);
+          }
+        }
+      }
+
+      await collectFiles(dirHandle);
+
+      // Convert File array to FileList-like object and create FileTree
+      const fileList = createFileListFromArray(files);
+      const fileTreeResult = await FileTreeHelpers.fromDirectoryUpload(fileList);
+      if (fileTreeResult.isFailure()) {
+        throw new Error(fileTreeResult.message);
+      }
+
+      const fileTree = fileTreeResult.value;
+      const fileCount = countFilesInTree(fileTree);
+
       setImportStatus({
         hasImported: true,
         fileCount,
@@ -385,8 +365,8 @@ export const ImportView: React.FC<IImportViewProps> = ({
         isZip: false
       });
 
-      o11y.user.success(`Imported directory "${rootDir.name}" with ${fileCount} file(s)`);
-      onImport?.(rootDir);
+      o11y.user.success(`Imported directory "${dirHandle.name}" with ${fileCount} file(s)`);
+      onImport?.(fileTree);
     } catch (err: unknown) {
       if (!(err instanceof Error && err.name === 'AbortError')) {
         const errorMsg = err instanceof Error ? err.message : String(err);
@@ -399,7 +379,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
   }, [onImport, o11y]);
 
   const handleModernFilePick = useCallback(async () => {
-    if (!('showOpenFilePicker' in window)) {
+    if (!supportsFileSystemAccess(window)) {
       o11y.user.error('File picker not supported in this browser');
       return;
     }
@@ -408,7 +388,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
     setError(null);
 
     try {
-      const fileHandles = await window.showOpenFilePicker({
+      const fileHandles = await safeShowOpenFilePicker(window, {
         multiple: true,
         types: [
           {
@@ -421,6 +401,11 @@ export const ImportView: React.FC<IImportViewProps> = ({
         ]
       });
 
+      if (!fileHandles) {
+        setIsLoading(false);
+        return;
+      }
+
       // Check if we have a single ZIP file first
       if (fileHandles.length === 1) {
         const file = await fileHandles[0].getFile();
@@ -430,71 +415,58 @@ export const ImportView: React.FC<IImportViewProps> = ({
 
           const zipData = await processZipFile(file);
 
+          const fileCount = countFilesInTree(zipData.fileTree);
+
           setImportStatus({
             hasImported: true,
-            fileCount: zipData.files.length,
+            fileCount,
             isDirectory: false,
             isBundle: false,
             isZip: true
           });
 
-          o11y.user.success(`ZIP file processed: ${file.name} (${zipData.files.length} files)`);
+          o11y.user.success(`ZIP file processed: ${file.name} (${fileCount} files)`);
           setIsLoading(false);
           return;
         }
       }
 
-      const importedFiles: IImportedFile[] = [];
-      let bundleFile: (IImportedFile & { bundle?: Bundle.IBundle }) | undefined;
-
+      // Filter out ZIP files from multi-file selection
+      const nonZipHandles = [];
       for (const fileHandle of fileHandles) {
         const file = await fileHandle.getFile();
-
-        // Skip ZIP files in multi-file selection
         if (isZipFile(file.name)) {
           o11y.user.warn(`Skipping ZIP file ${file.name} - select it individually to import`);
           continue;
         }
-
-        const content = await file.text();
-
-        const importedFile: IImportedFile = {
-          name: file.name,
-          content,
-          type: file.type
-        };
-
-        // Check for bundle using proper detection
-        let isCurrentFileBundle = false;
-        try {
-          const parsedData = JSON.parse(content);
-
-          o11y.diag.info(`[ImportView] Modern API - Checking if ${file.name} is a bundle...`);
-
-          // Use BundleUtils for proper bundle detection
-          if (Bundle.BundleUtils.isBundleFile(parsedData)) {
-            o11y.diag.info(`[ImportView] Modern API - ✅ ${file.name} detected as bundle file`);
-            bundleFile = { ...importedFile, bundle: parsedData };
-            isCurrentFileBundle = true;
-          } else if (Bundle.BundleUtils.isBundleFileName(file.name)) {
-            o11y.diag.warn(
-              `[ImportView] Modern API - ⚠️ File ${file.name} appears to be a bundle by name but content doesn't match bundle structure`
-            );
-          } else {
-            o11y.diag.info(`[ImportView] Modern API - ❌ ${file.name} is not a bundle file`);
-          }
-        } catch (parseError) {
-          o11y.diag.info(`[ImportView] Modern API - ❌ ${file.name} failed JSON parsing:`, parseError);
-        }
-
-        // Only add to regular files if this specific file is not a bundle
-        if (!isCurrentFileBundle) {
-          importedFiles.push(importedFile);
-        }
+        nonZipHandles.push(fileHandle);
       }
 
-      // Process results
-      if (bundleFile) {
+      if (nonZipHandles.length === 0) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Convert file handles to FileList for processing
+      const files: File[] = [];
+      for (const fileHandle of nonZipHandles) {
+        const file = await fileHandle.getFile();
+        files.push(file);
+      }
+
+      // Convert File array to FileList-like object and create FileTree
+      const fileList = createFileListFromArray(files);
+      const fileTreeResult = await FileTreeHelpers.fromFileList(fileList);
+      if (fileTreeResult.isFailure()) {
+        throw new Error(fileTreeResult.message);
+      }
+
+      const fileTree = fileTreeResult.value;
+
+      // Check for bundles in the FileTree
+      const bundleResult = await checkForBundleInTree(fileTree, o11y);
+
+      if (bundleResult.isBundle && bundleResult.bundle) {
         setImportStatus({
           hasImported: true,
           fileCount: 1,
@@ -502,20 +474,21 @@ export const ImportView: React.FC<IImportViewProps> = ({
           isBundle: true,
           isZip: false
         });
-        o11y.user.info(`Bundle file detected: ${bundleFile.name}`);
-        if (onBundleImport && bundleFile.bundle) {
-          onBundleImport(bundleFile.bundle);
+        o11y.user.info(`Bundle file detected: ${bundleResult.fileName}`);
+        if (onBundleImport) {
+          onBundleImport(bundleResult.bundle);
         }
-      } else if (importedFiles.length > 0) {
+      } else {
+        const fileCount = countFilesInTree(fileTree);
         setImportStatus({
           hasImported: true,
-          fileCount: importedFiles.length,
+          fileCount,
           isDirectory: false,
           isBundle: false,
           isZip: false
         });
-        o11y.user.success(`Imported ${importedFiles.length} file(s)`);
-        onImport?.(importedFiles);
+        o11y.user.success(`Imported ${fileCount} file(s)`);
+        onImport?.(fileTree);
       }
     } catch (err: unknown) {
       if (!(err instanceof Error && err.name === 'AbortError')) {
@@ -526,7 +499,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [onImport, onBundleImport, o11y, acceptedFileTypes]);
+  }, [onImport, onBundleImport, o11y]);
 
   const handleReset = useCallback(() => {
     setImportStatus({
@@ -555,7 +528,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
           <div className="space-y-4">
             {/* API Support Status */}
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              {hasFileSystemAccess(window) ? (
+              {supportsFileSystemAccess(window) ? (
                 <>
                   <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                   <span>Modern File System API available</span>
@@ -570,7 +543,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
 
             {/* Import Buttons */}
             <div className="flex flex-col space-y-3">
-              {hasFileSystemAccess(window) ? (
+              {supportsFileSystemAccess(window) ? (
                 <>
                   <button
                     onClick={handleModernDirectoryPick}
@@ -596,9 +569,7 @@ export const ImportView: React.FC<IImportViewProps> = ({
                   <input
                     ref={dirInputRef}
                     type="file"
-                    // @ts-ignore - webkitdirectory is not in types
-                    webkitdirectory=""
-                    directory=""
+                    {...({ webkitdirectory: '', directory: '' } as Record<string, string>)}
                     multiple
                     onChange={handleDirectorySelect}
                     className="hidden"
@@ -746,65 +717,123 @@ export const ImportView: React.FC<IImportViewProps> = ({
 };
 
 // Helper functions
-async function readFileContent(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target?.result as string);
-    reader.onerror = (e) => reject(new Error(`Failed to read file: ${file.name}`));
-    reader.readAsText(file);
+
+/**
+ * Creates a FileList-like object from a File array
+ * FileList is a readonly object, so we create a compatible object
+ */
+function createFileListFromArray(files: File[]): FileList {
+  const fileList = Object.create(FileList.prototype);
+  Object.defineProperty(fileList, 'length', {
+    value: files.length,
+    writable: false
   });
+
+  files.forEach((file, index) => {
+    Object.defineProperty(fileList, index, {
+      value: file,
+      writable: false
+    });
+  });
+
+  // Add item method
+  Object.defineProperty(fileList, 'item', {
+    value: (index: number) => (index >= 0 && index < files.length ? files[index] : null),
+    writable: false
+  });
+
+  // Add iterator support
+  Object.defineProperty(fileList, Symbol.iterator, {
+    value: function* () {
+      for (const file of files) {
+        yield file;
+      }
+    },
+    writable: false
+  });
+
+  return fileList;
 }
 
-function isFileSystemDirectoryHandle(handle: FileSystemHandle): handle is FileSystemDirectoryHandle {
-  return handle.kind === 'directory';
-}
+function countFilesInTree(fileTree: FileTree.FileTree): number {
+  let count = 0;
 
-function isFileSystemFileHandle(handle: FileSystemHandle): handle is FileSystemFileHandle {
-  return handle.kind === 'file';
-}
+  function walkTree(path: string): void {
+    const itemResult = fileTree.getItem(path);
+    if (itemResult.isFailure()) return;
 
-async function processDirectoryHandle(
-  dirHandle: FileSystemDirectoryHandle,
-  parentPath: string = ''
-): Promise<IImportedDirectory> {
-  const files: IImportedFile[] = [];
-  const subdirectories: IImportedDirectory[] = [];
+    const item = itemResult.value;
 
-  for await (const entry of dirHandle.values()) {
-    if (isFileSystemFileHandle(entry)) {
-      const file = await entry.getFile();
-      const content = await file.text();
-      files.push({
-        name: file.name,
-        path: parentPath ? `${parentPath}/${file.name}` : file.name,
-        content,
-        type: file.type
-      });
-    } else if (isFileSystemDirectoryHandle(entry)) {
-      const subdir = await processDirectoryHandle(
-        entry,
-        parentPath ? `${parentPath}/${entry.name}` : entry.name
-      );
-      subdirectories.push(subdir);
+    if (item.type === 'file') {
+      count++;
+    } else if (item.type === 'directory') {
+      const childrenResult = item.getChildren();
+      if (childrenResult.isSuccess()) {
+        for (const child of childrenResult.value) {
+          walkTree(child.absolutePath);
+        }
+      }
     }
   }
 
-  return {
-    name: dirHandle.name,
-    path: parentPath,
-    files,
-    subdirectories: subdirectories.length > 0 ? subdirectories : undefined
-  };
-}
-
-function countFiles(dir: IImportedDirectory): number {
-  let count = dir.files?.length || 0;
-  if (dir.subdirectories) {
-    for (const subdir of dir.subdirectories) {
-      count += countFiles(subdir);
-    }
-  }
+  // Start from root
+  walkTree('/');
   return count;
+}
+
+async function checkForBundleInTree(
+  fileTree: FileTree.FileTree,
+  o11y: IObservabilityContext
+): Promise<{ isBundle: boolean; bundle?: Bundle.IBundle; fileName?: string }> {
+  function walkTree(path: string): { isBundle: boolean; bundle?: Bundle.IBundle; fileName?: string } {
+    const itemResult = fileTree.getItem(path);
+    if (itemResult.isFailure()) return { isBundle: false };
+
+    const item = itemResult.value;
+
+    if (item.type === 'file') {
+      const contentResult = item.getRawContents();
+      if (contentResult.isSuccess()) {
+        const fileName = item.name;
+        const content = contentResult.value;
+
+        try {
+          const parsedData = JSON.parse(content);
+
+          o11y.diag.info(`[ImportView] Checking if ${fileName} is a bundle...`);
+
+          if (Bundle.BundleUtils.isBundleFile(parsedData)) {
+            o11y.diag.info(`[ImportView] ✅ ${fileName} detected as bundle file`);
+            return { isBundle: true, bundle: parsedData, fileName };
+          } else if (Bundle.BundleUtils.isBundleFileName(fileName)) {
+            o11y.diag.warn(
+              `[ImportView] ⚠️ File ${fileName} appears to be a bundle by name but content doesn't match bundle structure`
+            );
+            o11y.user.warn(`${fileName}: Malformed bundle file.`);
+          } else {
+            o11y.diag.info(`[ImportView] ❌ ${fileName} is not a bundle file`);
+          }
+        } catch (parseError) {
+          o11y.diag.info(`[ImportView] ❌ ${fileName} failed JSON parsing:`, parseError);
+        }
+      }
+    } else if (item.type === 'directory') {
+      const childrenResult = item.getChildren();
+      if (childrenResult.isSuccess()) {
+        for (const child of childrenResult.value) {
+          const result = walkTree(child.absolutePath);
+          if (result.isBundle) {
+            return result;
+          }
+        }
+      }
+    }
+
+    return { isBundle: false };
+  }
+
+  // Start from root and return first bundle found
+  return walkTree('/');
 }
 
 export default ImportView;

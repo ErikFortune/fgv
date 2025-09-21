@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { IProcessedResources, IQualifierControlOptions } from '../../types';
 import { useObservability } from '../../contexts';
+import { Converters } from '@fgv/ts-utils';
 
 /**
  * Props for the QualifierContextControl component.
@@ -178,25 +179,56 @@ export const QualifierContextControl: React.FC<IQualifierContextControlProps> = 
       // Access the instantiated qualifier type
       if (qualifier.type) {
         const qualifierType = qualifier.type;
-        // Use type assertion to access properties that may exist on specific subtypes
-        const qtAny = qualifierType as unknown as Record<string, unknown>;
-        const config = (qtAny.configuration || {}) as Record<string, unknown>;
 
-        // Look for enumerated values in different possible locations
-        const enumeratedValues =
-          config.enumeratedValues ||
-          config.allowedTerritories ||
-          qtAny.enumeratedValues ||
-          qtAny.allowedTerritories ||
-          [];
+        // Get configuration JSON safely
+        const configResult = qualifierType.getConfigurationJson();
+        if (configResult.isSuccess()) {
+          const config = configResult.value;
 
-        if (enumeratedValues && Array.isArray(enumeratedValues) && enumeratedValues.length > 0) {
-          return {
-            hasEnumeratedValues: true,
-            enumeratedValues: enumeratedValues as string[],
-            systemType: (qtAny.systemType as string) || 'literal',
-            caseSensitive: config.caseSensitive !== false
-          };
+          // Extract enumerated values based on system type
+          let enumeratedValues: string[] = [];
+          let caseSensitive = true;
+
+          if (config.systemType === 'literal' && config.configuration) {
+            // Type-safe access to literal configuration
+            const literalConfig = config.configuration;
+            if (typeof literalConfig === 'object' && literalConfig !== null) {
+              const literalConverter = Converters.object({
+                enumeratedValues: Converters.arrayOf(Converters.string).optional(),
+                caseSensitive: Converters.boolean.optional()
+              });
+
+              const conversionResult = literalConverter.convert(literalConfig);
+              if (conversionResult.isSuccess()) {
+                const convertedConfig = conversionResult.value;
+                enumeratedValues = convertedConfig.enumeratedValues || [];
+                caseSensitive = convertedConfig.caseSensitive !== false;
+              }
+            }
+          } else if (config.systemType === 'territory' && config.configuration) {
+            // Type-safe access to territory configuration
+            const territoryConfig = config.configuration;
+            if (typeof territoryConfig === 'object' && territoryConfig !== null) {
+              const territoryConverter = Converters.object({
+                allowedTerritories: Converters.arrayOf(Converters.string).optional()
+              });
+
+              const conversionResult = territoryConverter.convert(territoryConfig);
+              if (conversionResult.isSuccess()) {
+                const convertedConfig = conversionResult.value;
+                enumeratedValues = convertedConfig.allowedTerritories || [];
+              }
+            }
+          }
+
+          if (enumeratedValues.length > 0) {
+            return {
+              hasEnumeratedValues: true,
+              enumeratedValues,
+              systemType: config.systemType || 'literal',
+              caseSensitive
+            };
+          }
         }
       }
 

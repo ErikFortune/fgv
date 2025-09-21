@@ -9,7 +9,7 @@ Gets the children of a directory in the file tree.
 **Signature:**
 
 ```typescript
-getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem>>;
+getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;
 ```
 
 ## Parameters
@@ -48,5 +48,5 @@ string
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;FileTree.FileTreeItem&gt;&gt;
+Result&lt;ReadonlyArray&lt;FileTree.FileTreeItem&lt;TCT&gt;&gt;&gt;
 

@@ -9,9 +9,9 @@ Gets the children of the directory.
 **Signature:**
 
 ```typescript
-getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>>;
+getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;
 ```
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;FileTree.FileTreeItem&gt;&gt;
+Result&lt;ReadonlyArray&lt;FileTree.FileTreeItem&lt;TCT&gt;&gt;&gt;
 

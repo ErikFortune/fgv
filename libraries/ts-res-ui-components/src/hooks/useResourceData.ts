@@ -1,15 +1,10 @@
 import { useState, useCallback } from 'react';
 import { Result, succeed, fail, mapResults } from '@fgv/ts-utils';
-import {
-  IResourceManagerState,
-  IProcessedResources,
-  IExtendedProcessedResources,
-  IImportedDirectory,
-  IImportedFile,
-  JsonValue
-} from '../types';
+import { IResourceManagerState, IProcessedResources, IExtendedProcessedResources, JsonValue } from '../types';
+import { Converters } from '@fgv/ts-json-base';
 import { Config, Bundle, Runtime, Resources, Import, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
-import { processImportedFiles, processImportedDirectory } from '../utils/tsResIntegration';
+import { FileTree } from '@fgv/ts-json-base';
+import { processFileTree } from '../utils/tsResIntegration';
 import { createResolverWithContext, resolveResourceDetailed } from '../utils/resolutionUtils';
 import * as ObservabilityTools from '../utils/observability';
 
@@ -45,15 +40,13 @@ export interface IUseResourceDataReturn {
   state: IResourceManagerState;
   /** Available actions for processing and managing resources */
   actions: {
-    /** Process an imported directory structure into a resource system */
-    processDirectory: (directory: IImportedDirectory) => Promise<Result<void>>;
-    /** Process a directory with an explicit configuration */
-    processDirectoryWithConfig: (
-      directory: IImportedDirectory,
+    /** Process a FileTree into a resource system */
+    processFileTree: (fileTree: FileTree.FileTree) => Promise<Result<void>>;
+    /** Process a FileTree with an explicit configuration */
+    processFileTreeWithConfig: (
+      fileTree: FileTree.FileTree,
       config: Config.Model.ISystemConfiguration
     ) => Promise<Result<void>>;
-    /** Process an array of imported files into a resource system */
-    processFiles: (files: IImportedFile[]) => Promise<Result<void>>;
     /** Process a pre-compiled bundle file */
     processBundleFile: (bundle: Bundle.IBundle) => Promise<void>;
     /** Clear any current error state */
@@ -95,8 +88,8 @@ const initialState: IResourceManagerState = {
  * ```typescript
  * const { state, actions } = useResourceData();
  *
- * // Process imported files
- * await actions.processFiles(importedFiles);
+ * // Process a FileTree
+ * await actions.processFileTree(fileTree);
  *
  * // Resolve a resource with context
  * const result = await actions.resolveResource('my.resource', {
@@ -120,13 +113,13 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
   const [state, setState] = useState<IResourceManagerState>(initialState);
   const o11y = params?.o11y ?? ObservabilityTools.DefaultObservabilityContext;
 
-  const processDirectory = useCallback(
-    async (directory: IImportedDirectory): Promise<Result<void>> => {
+  const processFileTreeAction = useCallback(
+    async (fileTree: FileTree.FileTree): Promise<Result<void>> => {
       setState((prev) => ({ ...prev, isProcessing: true, error: null }));
 
       try {
-        return processImportedDirectory({
-          directory,
+        return processFileTree({
+          fileTree,
           systemConfig: state.activeConfiguration || undefined,
           qualifierTypeFactory: params?.qualifierTypeFactory,
           resourceTypeFactory: params?.resourceTypeFactory,
@@ -134,7 +127,7 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
         })
           .onSuccess((value) => {
             o11y.diag.info(
-              `[useResourceData] Directory processing succeeded, resources found: ${
+              `[useResourceData] FileTree processing succeeded, resources found: ${
                 value.summary?.totalResources || 0
               }`
             );
@@ -156,8 +149,8 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
             return succeed(undefined);
           })
           .onFailure((errorMessage) => {
-            o11y.diag.error(`[useResourceData] Directory processing failed: ${errorMessage}`);
-            o11y.user.error(`Directory import failed: ${errorMessage}`);
+            o11y.diag.error(`[useResourceData] FileTree processing failed: ${errorMessage}`);
+            o11y.user.error(`FileTree import failed: ${errorMessage}`);
 
             setState((prev) => ({
               ...prev,
@@ -168,8 +161,8 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
           });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        o11y.diag.error(`[useResourceData] Exception during directory processing: ${errorMessage}`);
-        o11y.user.error(`Directory import failed: ${errorMessage}`);
+        o11y.diag.error(`[useResourceData] Exception during FileTree processing: ${errorMessage}`);
+        o11y.user.error(`FileTree import failed: ${errorMessage}`);
 
         setState((prev) => ({
           ...prev,
@@ -182,16 +175,13 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
     [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
   );
 
-  const processDirectoryWithConfig = useCallback(
-    async (
-      directory: IImportedDirectory,
-      config: Config.Model.ISystemConfiguration
-    ): Promise<Result<void>> => {
+  const processFileTreeWithConfigAction = useCallback(
+    async (fileTree: FileTree.FileTree, config: Config.Model.ISystemConfiguration): Promise<Result<void>> => {
       setState((prev) => ({ ...prev, isProcessing: true, error: null, activeConfiguration: config }));
 
       try {
-        return processImportedDirectory({
-          directory,
+        return processFileTree({
+          fileTree,
           systemConfig: config,
           qualifierTypeFactory: params?.qualifierTypeFactory,
           resourceTypeFactory: params?.resourceTypeFactory,
@@ -210,7 +200,7 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
             return succeed(undefined);
           })
           .onFailure((errorMessage) => {
-            o11y.user.error(`Directory import with config failed: ${errorMessage}`);
+            o11y.user.error(`FileTree import with config failed: ${errorMessage}`);
             setState((prev) => ({
               ...prev,
               isProcessing: false,
@@ -220,7 +210,7 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
           });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        o11y.user.error(`Directory import with config failed: ${errorMessage}`);
+        o11y.user.error(`FileTree import with config failed: ${errorMessage}`);
         setState((prev) => ({
           ...prev,
           isProcessing: false,
@@ -230,52 +220,6 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
       }
     },
     [params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
-  );
-
-  const processFiles = useCallback(
-    async (files: IImportedFile[]): Promise<Result<void>> => {
-      setState((prev) => ({ ...prev, isProcessing: true, error: null }));
-
-      try {
-        return processImportedFiles({
-          files,
-          systemConfig: state.activeConfiguration || undefined,
-          qualifierTypeFactory: params?.qualifierTypeFactory,
-          resourceTypeFactory: params?.resourceTypeFactory,
-          o11y
-        })
-          .onSuccess((value) => {
-            setState((prev) => ({
-              ...prev,
-              isProcessing: false,
-              processedResources: value,
-              hasProcessedData: true,
-              isLoadedFromBundle: false,
-              bundleMetadata: null
-            }));
-            return succeed(undefined);
-          })
-          .onFailure((errorMessage) => {
-            o11y.user.error(`Files import failed: ${errorMessage}`);
-            setState((prev) => ({
-              ...prev,
-              isProcessing: false,
-              error: errorMessage
-            }));
-            return fail(errorMessage);
-          });
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        o11y.user.error(`Files import failed: ${errorMessage}`);
-        setState((prev) => ({
-          ...prev,
-          isProcessing: false,
-          error: errorMessage
-        }));
-        return fail(errorMessage);
-      }
-    },
-    [state.activeConfiguration, params?.qualifierTypeFactory, params?.resourceTypeFactory, o11y]
   );
 
   const processBundleFile = useCallback(
@@ -528,7 +472,8 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
               error: resolutionResult.error
             };
 
-            return succeed(detailedJson as unknown as JsonValue);
+            // Convert to JsonValue using proper converter
+            return Converters.jsonValue.convert(detailedJson);
           });
       } catch (error) {
         return fail(`Failed to resolve resource: ${error instanceof Error ? error.message : String(error)}`);
@@ -583,9 +528,8 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
   return {
     state,
     actions: {
-      processDirectory,
-      processDirectoryWithConfig,
-      processFiles,
+      processFileTree: processFileTreeAction,
+      processFileTreeWithConfig: processFileTreeWithConfigAction,
       processBundleFile,
       clearError,
       reset,

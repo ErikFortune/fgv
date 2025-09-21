@@ -21,7 +21,13 @@
  */
 
 import { Result, ResultMap, captureResult, succeed, fail, succeedWithDetail } from '@fgv/ts-utils';
-import { QualifierName, QualifierContextValue, QualifierIndex, Validate } from '../../common';
+import {
+  QualifierName,
+  QualifierContextValue,
+  QualifierIndex,
+  Validate,
+  Convert as CommonConverters
+} from '../../common';
 import { IReadOnlyQualifierCollector, Qualifier } from '../../qualifiers';
 import { ContextQualifierProvider } from './contextQualifierProvider';
 
@@ -96,12 +102,9 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
   public get(
     nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
   ): Result<QualifierContextValue> {
-    const qualifierName = this._resolveQualifierName(nameOrIndexOrQualifier);
-    /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
-    if (qualifierName.isFailure()) {
-      return fail(qualifierName.message);
-    }
-    return this._qualifierValues.get(qualifierName.value);
+    return this._resolveQualifierName(nameOrIndexOrQualifier).onSuccess((qualifierName) => {
+      return this._qualifierValues.get(qualifierName);
+    });
   }
 
   /**
@@ -114,12 +117,9 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
   public getValidated(
     nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
   ): Result<QualifierContextValue> {
-    const qualifierName = this._resolveQualifierName(nameOrIndexOrQualifier);
-    if (qualifierName.isFailure()) {
-      return fail(qualifierName.message);
-    }
-    // TODO: Implement validation logic
-    return fail(`getValidated not yet implemented for qualifier "${qualifierName.value}"`);
+    return this._resolveQualifierName(nameOrIndexOrQualifier).onSuccess((qualifierName) => {
+      return fail(`getValidated not yet implemented for qualifier "${qualifierName}"`);
+    });
   }
 
   /**
@@ -198,7 +198,7 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
     // If it's already a QualifierName (string type with brand)
     if (typeof nameOrIndexOrQualifier === 'string') {
       /* c8 ignore next 1 - functional code path tested but coverage intermittently missed */
-      return succeed(nameOrIndexOrQualifier as QualifierName);
+      return CommonConverters.qualifierName.convert(nameOrIndexOrQualifier);
     }
 
     // If it's a Qualifier object

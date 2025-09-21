@@ -37,13 +37,29 @@ import { useSmartObservability } from './hooks/useSmartObservability';
 
 export { useSmartObservability, ObservabilityProvider, useObservability, type IObservabilityProviderProps };
 
+// Export React hooks
+export * from './hooks';
+
 // Export common components (likely to be used by consumers)
 import { ResourceTreeView } from './components/common/ResourceTreeView';
 import { ResourceListView } from './components/common/ResourceListView';
 import { SourceResourceDetail } from './components/common/SourceResourceDetail';
 import { ResolutionResults } from './components/common/ResolutionResults';
+import NavigationWarningModal from './components/common/NavigationWarningModal';
+import AppLayout from './components/common/AppLayout';
+import AppHeader from './components/common/AppHeader';
+import AppSidebar from './components/common/AppSidebar';
 
-export { ResourceTreeView, ResourceListView, SourceResourceDetail, ResolutionResults };
+export {
+  ResourceTreeView,
+  ResourceListView,
+  SourceResourceDetail,
+  ResolutionResults,
+  NavigationWarningModal,
+  AppLayout,
+  AppHeader,
+  AppSidebar
+};
 
 // Form components are now available through ConfigurationTools namespace:
 // - ConfigurationTools.QualifierTypeEditForm

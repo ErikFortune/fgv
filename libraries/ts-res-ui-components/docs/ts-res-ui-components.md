@@ -19,6 +19,38 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AppLayout({ children, selectedTool, onToolSelect, messages, onClearMessages, header: headerComponent, sidebar: sidebarComponent })](./ts-res-ui-components.applayout.md)
+
+
+</td><td>
+
+Generic app layout component with header, sidebar, main content area, and messages window
+
+
+</td></tr>
+<tr><td>
+
+[AppSidebar({ selectedTool, onToolSelect, tools, title })](./ts-res-ui-components.appsidebar.md)
+
+
+</td><td>
+
+Generic app sidebar component with configurable tools list
+
+
+</td></tr>
+<tr><td>
+
+[useNavigationWarning()](./ts-res-ui-components.usenavigationwarning.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [useObservability()](./ts-res-ui-components.useobservability.md)
 
 
@@ -43,6 +75,17 @@ This hook detects the current observability context type and: - Uses ViewState-c
 
 
 </td></tr>
+<tr><td>
+
+[useUrlParams()](./ts-res-ui-components.useurlparams.md)
+
+
+</td><td>
+
+Hook to parse and provide URL parameters for initial app configuration
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -59,6 +102,26 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[INavigationWarningActions](./ts-res-ui-components.inavigationwarningactions.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[INavigationWarningState](./ts-res-ui-components.inavigationwarningstate.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
 
 [IObservabilityProviderProps](./ts-res-ui-components.iobservabilityproviderprops.md)
 
@@ -246,6 +309,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AppHeader](./ts-res-ui-components.appheader.md)
+
+
+</td><td>
+
+Generic app header component with configurable icon, title, and description
+
+
+</td></tr>
+<tr><td>
+
 [CompiledView](./ts-res-ui-components.compiledview.md)
 
 
@@ -346,6 +420,17 @@ MultiGridView component for managing multiple grid instances with shared context
 Provides a comprehensive interface for displaying multiple related grids that share the same resolution context and batch operations. Perfect for administrative workflows where users need to configure related data across multiple resource types.
 
 \*\*Key Features:\*\* - \*\*Multiple Grids\*\*: Display multiple grid configurations with different resource selections - \*\*Shared Context\*\*: Single context management that applies to all grids simultaneously - \*\*Unified Changes\*\*: Batch operations work across all grids and resource types - \*\*Flexible Presentation\*\*: Support for tabs, cards, accordion, and dropdown grid selection - \*\*Validation Integration\*\*: Prevents batch operations when validation errors exist
+
+
+</td></tr>
+<tr><td>
+
+[NavigationWarningModal](./ts-res-ui-components.navigationwarningmodal.md)
+
+
+</td><td>
+
+Modal component for warning users about unsaved changes before navigation
 
 
 </td></tr>
@@ -454,6 +539,39 @@ SourceView component for browsing and managing source resource collections.
 Provides an interface for browsing source resources in their original form, viewing resource details including candidates and conditions, and exporting the complete source resource collection.
 
 \*\*Key Features:\*\* - \*\*Resource browsing\*\*: Navigate through all resources with search and filtering - \*\*Detailed resource view\*\*: See resource structure, candidates, conditions, and values - \*\*Export functionality\*\*: Export the complete source resource collection as JSON - \*\*Source-specific details\*\*: View resources in their original source form - \*\*Candidate analysis\*\*: Examine resource candidates and their conditions
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[NavigationWarningActions](./ts-res-ui-components.navigationwarningactions.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[NavigationWarningState](./ts-res-ui-components.navigationwarningstate.md)
+
+
+</td><td>
 
 
 </td></tr>

@@ -10,7 +10,9 @@ import {
   ResourceTypes,
   Import
 } from '@fgv/ts-res';
-import { JsonCompatible, JsonValue } from '@fgv/ts-json-base';
+import { JsonCompatible, JsonValue, FileTree } from '@fgv/ts-json-base';
+// Import File System Access API types
+import '@fgv/ts-web-extras';
 // IIResourcePickerOptions import removed - unused
 import type { IObservabilityContext } from '../utils/observability';
 import type { IResourcePickerOptions } from '../components/pickers/ResourcePicker/types';
@@ -174,39 +176,7 @@ export interface IResourceManagerState {
   bundleMetadata: Bundle.IBundleMetadata | null;
 }
 
-/**
- * Represents a file imported into the system.
- * Used for handling individual resource files and configurations.
- *
- * @public
- */
-export interface IImportedFile {
-  /** Name of the file */
-  name: string;
-  /** Optional file path within the import structure */
-  path?: string;
-  /** Text content of the file */
-  content: string;
-  /** MIME type or file type identifier */
-  type?: string;
-}
-
-/**
- * Represents a directory structure imported into the system.
- * Supports nested directory hierarchies with files and subdirectories.
- *
- * @public
- */
-export interface IImportedDirectory {
-  /** Name of the directory */
-  name: string;
-  /** Optional directory path within the import structure */
-  path?: string;
-  /** Files contained in this directory */
-  files: IImportedFile[];
-  /** Nested subdirectories */
-  subdirectories?: IImportedDirectory[];
-}
+// IImportedFile and IImportedDirectory interfaces removed - replaced with FileTree
 
 /**
  * Base properties shared by all view components.
@@ -229,14 +199,11 @@ export interface IViewBaseProps {
  */
 export interface IImportViewProps extends IViewBaseProps {
   /** Callback when resource files/directories are imported */
-  onImport?: (data: IImportedDirectory | IImportedFile[]) => void;
+  onImport?: (data: FileTree.FileTree) => void;
   /** Callback when a bundle file is imported */
   onBundleImport?: (bundle: Bundle.IBundle) => void;
   /** Callback when a ZIP file is imported with optional configuration */
-  onZipImport?: (
-    zipData: IImportedDirectory | IImportedFile[],
-    config?: Config.Model.ISystemConfiguration
-  ) => void;
+  onZipImport?: (zipData: FileTree.FileTree, config?: Config.Model.ISystemConfiguration) => void;
   /** File types accepted for import */
   acceptedFileTypes?: string[];
   /** External error state to override local import status */
@@ -1304,12 +1271,11 @@ export interface IOrchestratorState {
  */
 export interface IOrchestratorActions {
   // Resource management
-  importDirectory: (directory: IImportedDirectory) => Promise<void>;
-  importDirectoryWithConfig: (
-    directory: IImportedDirectory,
+  importFileTree: (fileTree: FileTree.FileTree) => Promise<void>;
+  importFileTreeWithConfig: (
+    fileTree: FileTree.FileTree,
     config: Config.Model.ISystemConfiguration
   ) => Promise<void>;
-  importFiles: (files: IImportedFile[]) => Promise<void>;
   importBundle: (bundle: Bundle.IBundle) => Promise<void>;
   clearResources: () => void;
 

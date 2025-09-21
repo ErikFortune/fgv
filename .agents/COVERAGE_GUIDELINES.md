@@ -14,7 +14,7 @@ This document provides comprehensive guidance for achieving and maintaining 100%
    - Exact error message
    - What functionality is broken
    - Steps to reproduce the issue
-3. **Fix the underlying issue**: Only proceed with test implementation after the underlying bug is fixed
+3. **Fix the underlying issue**: Only proceed with test implementation after the user confirms the behavior and the underlying bug is fixed
 4. **Never use workarounds**: Do not use mocking, stubbing, or test modifications to bypass legitimate failures
 
 #### Examples of Legitimate Failures That Should NOT Be Hidden:
@@ -194,6 +194,7 @@ expect(converter.convert('input')).toSucceedWith(expectedOutput);
 - **`toSucceedAndSatisfy(callback)`** - When testing complex objects or multiple properties
 
 ### TypeScript Standards in Tests
+Maintain code quality guidelines in test code.  Avoid use of `any` and unsafe casts unless absolutely unavoidable.  When testing e.g. malformed data, prefer use of `// ts-expect-error` to generalization which might obscure intent.
 
 ```typescript
 // ✅ Good - Proper type assertions for branded types

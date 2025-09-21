@@ -11,10 +11,11 @@ import {
   IOrchestratorState,
   IOrchestratorActions
 } from '@fgv/ts-res-ui-components';
-import NavigationWarningModal from './components/common/NavigationWarningModal';
+import { FileTree } from '@fgv/ts-json-base';
+import { NavigationWarningModal } from '@fgv/ts-res-ui-components';
 import { useNavigationWarning } from './hooks/useNavigationWarning';
-import { useUrlParams } from './hooks/useUrlParams';
-import { parseContextFilter } from './utils/urlParams';
+import { useUrlParams } from '@fgv/ts-res-ui-components';
+import { parseContextFilter } from '@fgv/ts-web-extras';
 import { Tool } from './types/app';
 import * as TsRes from '@fgv/ts-res';
 
@@ -181,17 +182,13 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             importError={state.error}
-            onImport={(data) => {
-              if (Array.isArray(data)) {
-                actions.importFiles(data);
-              } else {
-                actions.importDirectory(data);
-              }
+            onImport={async (data: FileTree.FileTree) => {
+              await actions.importFileTree(data);
             }}
             onBundleImport={actions.importBundle}
-            onZipImport={async (zipData, config) => {
+            onZipImport={async (zipData: FileTree.FileTree, config) => {
               // The ImportView has already processed the ZIP file and extracted the data
-              // zipData is either IImportedDirectory or IImportedFile[]
+              // zipData is now a FileTree.FileTree
 
               // Load configuration FIRST, before processing resources
               if (config) {
@@ -205,16 +202,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
               }
 
-              // Process the ZIP data (already extracted by ImportView)
-              if (Array.isArray(zipData)) {
-                // It's an array of IImportedFile[]
-                actions.importFiles(zipData);
-                actions.addMessage('success', `${zipData.length} files imported from ZIP`);
-              } else {
-                // It's an IImportedDirectory
-                actions.importDirectory(zipData);
-                actions.addMessage('success', 'ZIP directory structure imported successfully');
-              }
+              // Process the ZIP data (now a FileTree)
+              await actions.importFileTree(zipData);
+              actions.addMessage('success', 'ZIP directory structure imported successfully');
             }}
           />
         );
@@ -350,12 +340,8 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             importError={state.error}
-            onImport={(data) => {
-              if (Array.isArray(data)) {
-                actions.importFiles(data);
-              } else {
-                actions.importDirectory(data);
-              }
+            onImport={async (data: FileTree.FileTree) => {
+              await actions.importFileTree(data);
             }}
             onBundleImport={actions.importBundle}
           />

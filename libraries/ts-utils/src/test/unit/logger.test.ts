@@ -152,6 +152,109 @@ describe('Logger class', () => {
       expect(logger.logged).toEqual(['This is a string with an embedded 2 and a boolean true']);
     });
 
+    describe('stringifyLogValue integration in _format method', () => {
+      test('should format objects using stringifyLogValue', () => {
+        const logger = new InMemoryLogger();
+        const obj = { key: 'value', num: 42 };
+
+        logger.info('Object: ', obj);
+
+        expect(logger.logged).toEqual(['Object: {"key":"value","num":42}']);
+      });
+
+      test('should handle mixed parameters with objects and primitives', () => {
+        const logger = new InMemoryLogger();
+        const obj = { id: 1, name: 'test' };
+
+        logger.info('Processing ', obj, ' with count ', 5);
+
+        expect(logger.logged).toEqual(['Processing {"id":1,"name":"test"} with count 5']);
+      });
+
+      test('should truncate long object representations', () => {
+        const logger = new InMemoryLogger();
+        const longObj = {
+          veryLongPropertyNameThatExceedsFortyCharacters: 'valueWithVeryLongContent'
+        };
+
+        logger.info('Long object: ', longObj);
+
+        const result = logger.logged[0];
+        expect(result).toMatch(/^Long object: /);
+        expect(result.length).toBeLessThanOrEqual(53); // "Long object: " (13) + max 40 for object
+        expect(result).toMatch(/\.\.\.$/); // Should end with ...
+      });
+
+      test('should handle circular references using fallback', () => {
+        const logger = new InMemoryLogger();
+        const obj: Record<string, unknown> = { name: 'test' };
+        obj.self = obj; // Create circular reference
+
+        logger.info('Circular: ', obj);
+
+        expect(logger.logged).toEqual(['Circular: [object Object]']);
+      });
+
+      test('should handle arrays in log messages', () => {
+        const logger = new InMemoryLogger();
+        const arr = [1, 2, 3, 'text'];
+
+        logger.info('Array: ', arr);
+
+        expect(logger.logged).toEqual(['Array: 1,2,3,text']);
+      });
+
+      test('should handle null and undefined parameters', () => {
+        const logger = new InMemoryLogger();
+
+        logger.info('Values: ', null, ' and ', undefined, ' end');
+
+        // undefined parameters are filtered out by _format
+        expect(logger.logged).toEqual(['Values: null and  end']);
+      });
+
+      test('should handle Date objects', () => {
+        const logger = new InMemoryLogger();
+        const date = new Date('2023-01-01T00:00:00.000Z');
+
+        logger.info('Date: ', date);
+
+        expect(logger.logged).toEqual([`Date: ${date.toString()}`]);
+      });
+
+      test('should filter out undefined parameters', () => {
+        const logger = new InMemoryLogger();
+
+        // undefined parameters should be filtered out
+        logger.info('Start', undefined, 'middle', undefined, 'end');
+
+        expect(logger.logged).toEqual(['Startmiddleend']);
+      });
+
+      test('should handle objects with functions (functions omitted)', () => {
+        const logger = new InMemoryLogger();
+        const obj = {
+          data: 'value',
+          method: function () {
+            return 'test';
+          }
+        };
+
+        logger.info('Object with function: ', obj);
+
+        expect(logger.logged).toEqual(['Object with function: {"data":"value"}']);
+      });
+
+      test('should handle empty objects and arrays', () => {
+        const logger = new InMemoryLogger();
+
+        logger.info('Empty object: ', {}, ' and empty array: ', []);
+
+        // Empty arrays stringify to empty string via String()
+        expect(logger.logged).toEqual(['Empty object: {} and empty array: ']);
+      });
+    });
+
     describe('clear method', () => {
       test('clears both logged and suppressed messages', () => {
         const logger = new InMemoryLogger();
@@ -362,6 +465,133 @@ describe('Logger class', () => {
           reporter.reportSuccess('info', obj);
 
           expect(logger.logged).toEqual(['[object Object]']);
+        });
+
+        test('should use stringifyLogValue for object truncation with default formatter', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+          const longObj = {
+            veryLongPropertyNameThatExceedsFortyCharacters: 'valueWithVeryLongContent'
+          };
+
+          reporter.reportSuccess('info', longObj);
+
+          const result = logger.logged[0];
+          expect(result.length).toBeLessThanOrEqual(40);
+          expect(result).toMatch(/\.\.\.$/); // Should end with ...
+        });
+
+        test('should handle arrays in default value formatter', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+
+          reporter.reportSuccess('info', [1, 2, 3, 'text']);
+
+          expect(logger.logged).toEqual(['1,2,3,text']);
+        });
+
+        test('should handle nested objects in default value formatter', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+          const nestedObj = {
+            user: { id: 1, name: 'John' },
+            settings: { theme: 'dark', notifications: true }
+          };
+
+          reporter.reportSuccess('info', nestedObj);
+
+          // This will be truncated due to length > 40 chars
+          const result = logger.logged[0];
+          expect(result.length).toBeLessThanOrEqual(40);
+          expect(result).toMatch(/\.\.\.$/);
+        });
+
+        test('should handle Date objects in default value formatter', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+          const date = new Date('2023-01-01T00:00:00.000Z');
+
+          reporter.reportSuccess('info', date);
+
+          expect(logger.logged).toEqual([date.toString()]);
+        });
+
+        test('should handle null and undefined in default value formatter', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+
+          reporter.reportSuccess('info', null);
+          reporter.reportSuccess('info', undefined);
+
+          expect(logger.logged).toEqual(['null', 'undefined']);
+        });
+
+        test('should handle objects with function properties (functions omitted)', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+          const objWithFunc = {
+            data: 'important',
+            method: function () {
+              return 'test';
+            },
+            calculate: () => 42
+          };
+
+          reporter.reportSuccess('info', objWithFunc);
+
+          expect(logger.logged).toEqual(['{"data":"important"}']);
+        });
+
+        test('should handle objects that throw in getters', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+          const objWithThrowingGetter = {
+            normal: 'value',
+            get problematic() {
+              throw new Error('Cannot access');
+            }
+          };
+
+          reporter.reportSuccess('info', objWithThrowingGetter);
+
+          expect(logger.logged).toEqual(['[object Object]']);
+        });
+
+        test('should handle empty objects and arrays', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+
+          reporter.reportSuccess('info', {});
+          reporter.reportSuccess('info', []);
+
+          // Empty arrays stringify to empty string via String()
+          expect(logger.logged).toEqual(['{}', '']);
+        });
+
+        test('should handle complex object types that stringify to [object Object]', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+
+          // Test various object types - Set/Map don't stringify to [object Object]
+          reporter.reportSuccess('info', new Set([1, 2, 3]));
+          reporter.reportSuccess('info', new Map([['key', 'value']]));
+          reporter.reportSuccess('info', /regex/gi);
+
+          expect(logger.logged).toEqual(['[object Set]', '[object Map]', '/regex/gi']);
+        });
+
+        test('should respect custom maxLength parameter through stringifyLogValue', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<unknown>({ logger });
+
+          // Create object that will be longer than default 40 chars
+          const obj = { key: 'This is a long value that exceeds forty characters easily' };
+
+          reporter.reportSuccess('info', obj);
+
+          const result = logger.logged[0];
+          expect(result.length).toBeLessThanOrEqual(40);
+          expect(result).toMatch(/\.\.\.$/);
         });
 
         test('should report success with custom value formatter', () => {

@@ -166,8 +166,8 @@ describe('ConsoleLogger', () => {
     test('handles complex objects', () => {
       const obj = { key: 'value' };
       const result = logger.info('Object: ', obj);
-      expect(result).toSucceedWith('Object: [object Object]');
-      expect(consoleInfoSpy).toHaveBeenCalledWith('Object: [object Object]');
+      expect(result).toSucceedWith('Object: {"key":"value"}');
+      expect(consoleInfoSpy).toHaveBeenCalledWith('Object: {"key":"value"}');
     });
   });
 });

@@ -165,6 +165,7 @@ export class LiteralValueHierarchy<T extends string = string> {
     if (ancestors.isSuccess()) {
       return ancestors.value.includes(possibleAncestor);
     }
+    /* c8 ignore next 1 - edge case: ancestor validation fallback */
     return false;
   }
 

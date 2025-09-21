@@ -22,15 +22,8 @@
 
 import '@fgv/ts-utils-jest';
 import { fail } from '@fgv/ts-utils';
-import {
-  getDefaultSystemConfiguration,
-  createTsResSystemFromConfig,
-  processImportedFiles,
-  processImportedDirectory,
-  convertImportedDirectoryToFileTree
-} from '../../../utils/tsResIntegration';
-import { IImportedDirectory, IImportedFile } from '../../../types';
-import { loadTestConfiguration, loadTestResources } from '../../helpers/testDataLoader';
+import { getDefaultSystemConfiguration, createTsResSystemFromConfig } from '../../../utils/tsResIntegration';
+import { loadTestConfiguration } from '../../helpers/testDataLoader';
 import * as TsRes from '@fgv/ts-res';
 import { ObservabilityTools } from '../../../namespaces';
 
@@ -179,255 +172,29 @@ describe('tsResIntegration', () => {
     });
   });
 
-  describe('convertImportedDirectoryToFileTree', () => {
-    test('converts simple directory structure', () => {
-      const directory: IImportedDirectory = {
-        name: 'test-resources',
-        path: '/test/path',
-        files: [
-          {
-            name: 'resource1.json',
-            path: '/test/path/resource1.json',
-            content: '{"message": "Hello"}',
-            type: 'application/json'
-          }
-        ],
-        subdirectories: []
-      };
-
-      const result = convertImportedDirectoryToFileTree(
-        directory,
-        ObservabilityTools.TestObservabilityContext
+  describe.skip('legacy function removal - OBSOLETE after FileTree migration', () => {
+    test('convertImportedDirectoryToFileTree was removed', () => {
+      const removedFunctionResult = fail(
+        'convertImportedDirectoryToFileTree was removed in favor of FileTree migration'
       );
-
-      expect(result).toBeDefined();
+      expect(removedFunctionResult).toFail();
     });
 
-    test('converts directory with subdirectories', () => {
-      const directory: IImportedDirectory = {
-        name: 'root',
-        path: '/test',
-        files: [
-          {
-            name: 'root.json',
-            path: '/test/root.json',
-            content: '{"root": true}',
-            type: 'application/json'
-          }
-        ],
-        subdirectories: [
-          {
-            name: 'subdir',
-            path: '/test/subdir',
-            files: [
-              {
-                name: 'sub.json',
-                path: '/test/subdir/sub.json',
-                content: '{"sub": true}',
-                type: 'application/json'
-              }
-            ],
-            subdirectories: []
-          }
-        ]
-      };
+    test('processImportedFiles was removed', () => {
+      const removedFunctionResult = fail('processImportedFiles was removed in favor of processFileTree');
+      expect(removedFunctionResult).toFail();
+    });
 
-      const result = convertImportedDirectoryToFileTree(
-        directory,
-        ObservabilityTools.TestObservabilityContext
+    test('processImportedDirectory was removed', () => {
+      const removedFunctionResult = fail('processImportedDirectory was removed in favor of processFileTree');
+      expect(removedFunctionResult).toFail();
+    });
+
+    test('createCompiledResourceCollectionManager was removed', () => {
+      const removedFunctionResult = fail(
+        'createCompiledResourceCollectionManager was removed as part of refactoring'
       );
-
-      expect(result).toBeDefined();
-    });
-
-    test('handles empty directory', () => {
-      const directory: IImportedDirectory = {
-        name: 'empty',
-        path: '/empty',
-        files: [],
-        subdirectories: []
-      };
-
-      const result = convertImportedDirectoryToFileTree(
-        directory,
-        ObservabilityTools.TestObservabilityContext
-      );
-
-      expect(result).toBeDefined();
-    });
-  });
-
-  describe('processImportedFiles', () => {
-    test('handles empty file list', () => {
-      const result = processImportedFiles({ files: [], o11y: ObservabilityTools.TestObservabilityContext });
-
-      expect(result).toFail();
-      expect(result.message).toContain('No files provided');
-    });
-
-    test('processes real test resource files', () => {
-      const resourcesResult = loadTestResources('default');
-      if (resourcesResult.isSuccess()) {
-        const testFiles: IImportedFile[] = resourcesResult.value.map((file) => ({
-          name: file.path.split('/').pop() || file.path,
-          path: file.path,
-          content: file.content,
-          type: 'application/json'
-        }));
-
-        if (testFiles.length > 0) {
-          const result = processImportedFiles({
-            files: testFiles,
-            o11y: ObservabilityTools.TestObservabilityContext
-          });
-
-          if (result.isSuccess()) {
-            expect(result.value.system).toBeDefined();
-            expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
-            expect(result.value.summary).toBeDefined();
-          } else {
-            ObservabilityTools.TestObservabilityContext.diag.warn(
-              'Processing failed but this may be expected:',
-              result.message
-            );
-            expect(result.message).toBeDefined();
-          }
-        } else {
-          ObservabilityTools.TestObservabilityContext.diag.warn(
-            'No test files available for processing test'
-          );
-          expect(true).toBe(true);
-        }
-      } else {
-        ObservabilityTools.TestObservabilityContext.diag.warn(
-          'Skipping test - test resources not available:',
-          resourcesResult.message
-        );
-        expect(true).toBe(true);
-      }
-    });
-
-    test('handles invalid JSON files gracefully', () => {
-      const invalidFiles: IImportedFile[] = [
-        {
-          name: 'invalid.json',
-          path: '/invalid.json',
-          content: 'invalid json {',
-          type: 'application/json'
-        }
-      ];
-
-      const result = processImportedFiles({
-        files: invalidFiles,
-        o11y: ObservabilityTools.TestObservabilityContext
-      });
-      expect(result).toFail();
-    });
-  });
-
-  describe('processImportedDirectory', () => {
-    test('handles empty directory', () => {
-      const directory: IImportedDirectory = {
-        name: 'empty-dir',
-        path: '/empty',
-        files: [],
-        subdirectories: []
-      };
-
-      const result = processImportedDirectory({
-        directory,
-        o11y: ObservabilityTools.TestObservabilityContext
-      });
-
-      if (result.isSuccess()) {
-        expect(result.value.system).toBeDefined();
-        expect(result.value.resourceCount).toBe(0);
-      } else {
-        expect(result.message).toBeDefined();
-      }
-    });
-
-    test('processes directory with real test resources', () => {
-      const resourcesResult = loadTestResources('default');
-      if (resourcesResult.isSuccess() && resourcesResult.value.length > 0) {
-        const directory: IImportedDirectory = {
-          name: 'test-resources',
-          path: '/test',
-          files: resourcesResult.value.map((file) => ({
-            name: file.path.split('/').pop() || file.path,
-            path: `/test/${file.path}`,
-            content: file.content,
-            type: 'application/json'
-          })),
-          subdirectories: []
-        };
-
-        const result = processImportedDirectory({
-          directory,
-          o11y: ObservabilityTools.TestObservabilityContext
-        });
-
-        if (result.isSuccess()) {
-          expect(result.value.system).toBeDefined();
-          expect(result.value.resourceCount).toBeGreaterThanOrEqual(0);
-        } else {
-          ObservabilityTools.TestObservabilityContext.diag.warn(
-            'Directory processing failed but this may be expected:',
-            result.message
-          );
-          expect(result.message).toBeDefined();
-        }
-      } else {
-        ObservabilityTools.TestObservabilityContext.diag.warn(
-          'Skipping test - test resources not available for directory test'
-        );
-        expect(true).toBe(true);
-      }
-    });
-  });
-
-  describe.skip('createCompiledResourceCollectionManager - OBSOLETE after refactoring', () => {
-    test('creates manager from real compiled collection', () => {
-      const configResult = loadTestConfiguration('default');
-      if (configResult.isSuccess()) {
-        const systemResult = createTsResSystemFromConfig(configResult.value);
-        expect(systemResult).toSucceed();
-
-        const system = systemResult.orThrow();
-
-        const compiledResult = system.resourceManager.getCompiledResourceCollection({
-          includeMetadata: true
-        });
-        expect(compiledResult).toSucceed();
-
-        // Function removed in refactoring - test that the removal was successful
-        const removedFunctionResult = fail(
-          'createCompiledResourceCollectionManager was removed as part of refactoring'
-        );
-
-        expect(removedFunctionResult).toFail();
-      } else {
-        ObservabilityTools.TestObservabilityContext.diag.warn(
-          'Skipping test - test configuration not available:',
-          configResult.message
-        );
-        expect(true).toBe(true);
-      }
-    });
-
-    test('handles invalid compiled collection gracefully', () => {
-      const systemResult = createTsResSystemFromConfig();
-      expect(systemResult).toSucceed();
-
-      // Function removed in refactoring - variables removed as they were unused
-      const result = fail('createCompiledResourceCollectionManager was removed');
-      /* createCompiledResourceCollectionManager(
-        invalidCompiledCollection,
-        system.qualifierTypes,
-        system.resourceTypes
-      ); */
-
-      expect(result).toFail();
+      expect(removedFunctionResult).toFail();
     });
   });
 

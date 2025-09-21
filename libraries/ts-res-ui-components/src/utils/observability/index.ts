@@ -21,13 +21,19 @@
  */
 
 // Export interfaces
-export type { IUserLogger, IObservabilityContext } from './interfaces';
+export type {
+  IUserLogger,
+  IUserLogReporter,
+  IObservabilityContext,
+  IObservabilityPolicy
+} from './interfaces';
 
 // Export implementations and utilities
 export {
   ConsoleUserLogger,
   NoOpUserLogger,
   ViewStateUserLogger,
+  UserLogReporter,
   ObservabilityContext,
   detectObservabilityContextType,
   isViewStateConnected,
@@ -39,6 +45,7 @@ export type { ObservabilityContextType } from './implementations';
 export {
   createConsoleObservabilityContext,
   createNoOpObservabilityContext,
+  createTestObservabilityContext,
   createViewStateObservabilityContext,
   DefaultObservabilityContext,
   TestObservabilityContext

@@ -156,12 +156,15 @@ describe('SimpleContextQualifierProvider class', () => {
     });
 
     test('fails with invalid parameter types', () => {
-      expect(provider.get({} as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
-      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
-      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
-        /Invalid qualifier parameter/
+      expect(provider.get('this is an invalid qualifier name' as TsRes.QualifierName)).toFailWith(
+        /invalid qualifier name/i
       );
-      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+      expect(provider.get({} as unknown as TsRes.QualifierName)).toFailWith(/invalid qualifier parameter/i);
+      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(/invalid qualifier parameter/i);
+      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
+        /invalid qualifier parameter/i
+      );
+      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(/invalid qualifier parameter/i);
     });
 
     test('handles _resolveQualifierName failure in get method', () => {

@@ -49,3 +49,9 @@ docs/
 *.md
 !README.md
 !LICENSE.md
+
+# Exclude IANA data files from package (using embedded compressed data instead)
+lib/data/iana/language-subtags.json
+lib/data/iana/language-tag-extensions.json
+lib/data/iana/iana-data.zip
+lib/data/iana/iana-data.base64

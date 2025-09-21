@@ -125,6 +125,20 @@ Description
 </td></tr>
 <tr><td>
 
+[createFromTxtContent(content)](./ts-bcp47.iana.languagetagextensions.languagetagextensionregistry.createfromtxtcontent.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [load(path)](./ts-bcp47.iana.languagetagextensions.languagetagextensionregistry.load.md)
 
 

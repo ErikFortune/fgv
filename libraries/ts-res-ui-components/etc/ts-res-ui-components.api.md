@@ -6,8 +6,12 @@
 
 import { Bundle } from '@fgv/ts-res';
 import { Config } from '@fgv/ts-res';
-import { FileTree } from '@fgv/ts-utils';
+import { exportAsJson } from '@fgv/ts-web-extras';
+import { exportUsingFileSystemAPI } from '@fgv/ts-web-extras';
+import { FileTree } from '@fgv/ts-json-base';
 import { Import } from '@fgv/ts-res';
+import type { IResultReporter } from '@fgv/ts-utils';
+import { IUrlConfigOptions } from '@fgv/ts-web-extras';
 import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
@@ -26,6 +30,21 @@ import { Success } from '@fgv/ts-utils';
 
 // @public
 function analyzeFilteredResources(originalResourceIds: string[], filteredProcessedResources: IProcessedResources, originalProcessedResources: IProcessedResources): IFilterResult;
+
+// Warning: (ae-forgotten-export) The symbol "IAppHeaderProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const AppHeader: React_2.FC<IAppHeaderProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IAppLayoutProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const AppLayout: <TTool = unknown>({ children, selectedTool, onToolSelect, messages, onClearMessages, header: headerComponent, sidebar: sidebarComponent }: IAppLayoutProps<TTool>) => React_2.ReactElement;
+
+// Warning: (ae-forgotten-export) The symbol "IAppSidebarProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const AppSidebar: <TTool = unknown>({ selectedTool, onToolSelect, tools, title }: IAppSidebarProps<TTool>) => React_2.ReactElement;
 
 // Warning: (ae-forgotten-export) The symbol "IBooleanCellProps" needs to be exported by the entry point index.d.ts
 //
@@ -71,11 +90,6 @@ class ConsoleUserLogger extends Logging.LoggerBase implements IUserLogger {
     // (undocumented)
     success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
 }
-
-// Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
-//
-// @internal (undocumented)
-function convertImportedDirectoryToFileTree(directory: IImportedDirectory, o11y?: ObservabilityTools_2.IObservabilityContext): FileTree.FileTree;
 
 // @public
 function createConsoleObservabilityContext(diagLogLevel?: Logging.ReporterLogLevel, userLogLevel?: Logging.ReporterLogLevel): IObservabilityContext;
@@ -180,19 +194,10 @@ const EditableJsonView: React_2.FC<IEditableJsonViewProps>;
 // @public
 function evaluateConditionsForCandidate(resolver: Runtime.ResourceResolver, candidateIndex: number, compiledResource: ResourceJson.Compiled.ICompiledResource, compiledCollection: ResourceJson.Compiled.ICompiledResourceCollection): IConditionEvaluationResult[];
 
-// @internal (undocumented)
-function exportAsJson(data: JsonValue, filename: string): void;
-
 // Warning: (ae-forgotten-export) The symbol "IConfigurationExportOptions" needs to be exported by the entry point index.d.ts
 //
 // @public
 function exportConfiguration(config: Config.Model.ISystemConfiguration, options?: IConfigurationExportOptions): Result<string>;
-
-// @internal (undocumented)
-function exportUsingFileSystemAPI(data: JsonValue, suggestedName: string, description?: string): Promise<boolean>;
-
-// @internal (undocumented)
-function filesToDirectory(files: IImportedFile[]): IImportedDirectory;
 
 declare namespace FilterTools {
     export {
@@ -590,28 +595,12 @@ interface IGridViewProps extends IViewBaseProps {
 }
 
 // @public
-interface IImportedDirectory {
-    files: IImportedFile[];
-    name: string;
-    path?: string;
-    subdirectories?: IImportedDirectory[];
-}
-
-// @public
-interface IImportedFile {
-    content: string;
-    name: string;
-    path?: string;
-    type?: string;
-}
-
-// @public
 interface IImportViewProps extends IViewBaseProps {
     acceptedFileTypes?: string[];
     importError?: string | null;
     onBundleImport?: (bundle: Bundle.IBundle) => void;
-    onImport?: (data: IImportedDirectory | IImportedFile[]) => void;
-    onZipImport?: (zipData: IImportedDirectory | IImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
+    onImport?: (data: FileTree.FileTree) => void;
+    onZipImport?: (zipData: FileTree.FileTree, config?: Config.Model.ISystemConfiguration) => void;
 }
 
 // @public
@@ -635,12 +624,8 @@ function importConfiguration(data: string): Result<Config.Model.ISystemConfigura
 declare namespace ImportTools {
     export {
         ImportView,
-        readFilesFromInput,
-        filesToDirectory,
         exportAsJson,
         exportUsingFileSystemAPI,
-        IImportedFile,
-        IImportedDirectory,
         IImportViewProps
     }
 }
@@ -664,15 +649,41 @@ interface IMultiGridViewProps extends IViewBaseProps {
     tabsPresentation?: 'tabs' | 'cards' | 'accordion' | 'dropdown';
 }
 
+// @public (undocumented)
+export interface INavigationWarningActions<T = unknown> {
+    // (undocumented)
+    confirmNavigation: () => T | null;
+    // (undocumented)
+    hideWarning: () => void;
+    // (undocumented)
+    setHasUnsavedChanges: (hasChanges: boolean) => void;
+    // (undocumented)
+    showWarning: (pendingTool: T) => void;
+}
+
+// @public (undocumented)
+export interface INavigationWarningState<T = unknown> {
+    // (undocumented)
+    hasUnsavedChanges: boolean;
+    // (undocumented)
+    isWarningOpen: boolean;
+    // (undocumented)
+    pendingTool: T | null;
+}
+
 // @public
 interface IObservabilityContext {
-    readonly diag: Logging.ILogger;
-    readonly user: IUserLogger;
+    readonly diag: Logging.LogReporter<unknown>;
+    // Warning: (ae-forgotten-export) The symbol "IObservabilityPolicy" needs to be exported by the entry point index.d.ts
+    readonly policy?: IObservabilityPolicy;
+    // Warning: (ae-forgotten-export) The symbol "IUserLogReporter" needs to be exported by the entry point index.d.ts
+    readonly user: IUserLogReporter;
 }
 
 // @public
 export interface IObservabilityProviderProps {
     children: ReactNode;
+    // Warning: (ae-forgotten-export) The symbol "ObservabilityTools_2" needs to be exported by the entry point index.d.ts
     observabilityContext?: ObservabilityTools_2.IObservabilityContext;
 }
 
@@ -725,11 +736,9 @@ export interface IOrchestratorActions {
     // (undocumented)
     importBundle: (bundle: Bundle.IBundle) => Promise<void>;
     // (undocumented)
-    importDirectory: (directory: IImportedDirectory) => Promise<void>;
+    importFileTree: (fileTree: FileTree.FileTree) => Promise<void>;
     // (undocumented)
-    importDirectoryWithConfig: (directory: IImportedDirectory, config: Config.Model.ISystemConfiguration) => Promise<void>;
-    // (undocumented)
-    importFiles: (files: IImportedFile[]) => Promise<void>;
+    importFileTreeWithConfig: (fileTree: FileTree.FileTree, config: Config.Model.ISystemConfiguration) => Promise<void>;
     // (undocumented)
     markResourceForDeletion: (resourceId: string) => void;
     // (undocumented)
@@ -1140,6 +1149,17 @@ export const MessagesWindow: React_2.FC<IMessagesWindowProps>;
 // @public
 export const MultiGridView: React_2.FC<IMultiGridViewProps>;
 
+// @public @deprecated (undocumented)
+export type NavigationWarningActions<T = unknown> = INavigationWarningActions<T>;
+
+// Warning: (ae-forgotten-export) The symbol "INavigationWarningModalProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const NavigationWarningModal: React_2.FC<INavigationWarningModalProps>;
+
+// @public @deprecated (undocumented)
+export type NavigationWarningState<T = unknown> = INavigationWarningState<T>;
+
 // @public
 class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
     constructor(logLevel?: Logging.ReporterLogLevel);
@@ -1152,15 +1172,19 @@ class NoOpUserLogger extends Logging.LoggerBase implements IUserLogger {
 
 // @public
 class ObservabilityContext implements IObservabilityContext {
-    constructor(diag: Logging.ILogger, user: IUserLogger);
+    constructor(diag: Logging.ILogger, user: IUserLogger, policy?: IObservabilityPolicy);
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly diag: Logging.ILogger;
+    readonly diag: Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    readonly user: IUserLogger;
+    readonly policy?: IObservabilityPolicy;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly user: IUserLogReporter;
 }
 
 // @public
@@ -1205,25 +1229,19 @@ declare namespace PickerTools {
 }
 export { PickerTools }
 
-// Warning: (ae-forgotten-export) The symbol "ICreateProcessImportedDirectoryParams" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "ICreateProcessFileTreeParams" needs to be exported by the entry point index.d.ts
 //
 // @internal (undocumented)
-function processImportedDirectory(params: ICreateProcessImportedDirectoryParams): Result<IExtendedProcessedResources>;
-
-// Warning: (ae-forgotten-export) The symbol "ICreateProcessImportedFilesParams" needs to be exported by the entry point index.d.ts
-//
-// @internal (undocumented)
-function processImportedFiles(params: ICreateProcessImportedFilesParams): Result<IExtendedProcessedResources>;
+function processFileTree(params: ICreateProcessFileTreeParams): Result<IExtendedProcessedResources>;
 
 // @public
 function processZipLoadResult(zipResult: {
-    files: IImportedFile[];
-    directory?: IImportedDirectory;
+    fileTree: FileTree.FileTree;
     config?: Config.Model.ISystemConfiguration;
 }, overrideConfig?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
 
 // @public
-function processZipResources(files: IImportedFile[], directory: IImportedDirectory | undefined, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
+function processZipResources(fileTree: FileTree.FileTree, config?: Config.Model.ISystemConfiguration, o11y?: ObservabilityTools_2.IObservabilityContext): Promise<Result<IProcessedResources>>;
 
 // Warning: (ae-forgotten-export) The symbol "IQualifierContextControlProps" needs to be exported by the entry point index.d.ts
 //
@@ -1239,9 +1257,6 @@ const QualifierEditForm: React_2.FC<IQualifierEditFormProps>;
 //
 // @public
 const QualifierTypeEditForm: React_2.FC<IQualifierTypeEditFormProps>;
-
-// @internal (undocumented)
-function readFilesFromInput(files: FileList): Promise<IImportedFile[]>;
 
 // @public
 const ResolutionContextOptionsControl: React_2.FC<IResolutionContextOptionsControlProps>;
@@ -1394,10 +1409,8 @@ declare namespace TsResTools {
         CompiledView,
         getDefaultSystemConfiguration,
         createSimpleContext,
-        convertImportedDirectoryToFileTree,
         createTsResSystemFromConfig,
-        processImportedFiles,
-        processImportedDirectory,
+        processFileTree,
         ISourceViewProps,
         ICompiledViewProps
     }
@@ -1419,6 +1432,12 @@ function useFilterState(initialState?: Partial<IFilterState>): IUseFilterStateRe
 // @public
 function useIConfigurationState(initialConfiguration?: Config.Model.ISystemConfiguration, onConfigurationChange?: (config: Config.Model.ISystemConfiguration) => void, onUnsavedChanges?: (hasChanges: boolean) => void): IUseIConfigurationStateReturn;
 
+// @public (undocumented)
+export const useNavigationWarning: <T = unknown>() => {
+    state: INavigationWarningState<T>;
+    actions: INavigationWarningActions<T>;
+};
+
 // @public
 export const useObservability: () => ObservabilityTools_2.IObservabilityContext;
 
@@ -1435,6 +1454,12 @@ function useResourceData(params?: IUseResourceDataParams): IUseResourceDataRetur
 
 // @public
 export function useSmartObservability(): IObservabilityContext;
+
+// @public
+export function useUrlParams(): {
+    urlParams: IUrlConfigOptions;
+    hasUrlParams: boolean;
+};
 
 // Warning: (ae-forgotten-export) The symbol "IUseViewStateReturn" needs to be exported by the entry point index.d.ts
 //

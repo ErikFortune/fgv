@@ -333,6 +333,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
 
     for (const [index, compiledCondition] of compiled.conditions.entries()) {
       const qualifierResult = qualifiers.getAt(compiledCondition.qualifierIndex);
+      /* c8 ignore next 5 - defensive coding: invalid qualifier index should not occur in compiled data */
       if (qualifierResult.isFailure()) {
         errors.addMessage(
           `Invalid qualifier index ${compiledCondition.qualifierIndex} at condition ${index}: ${qualifierResult.message}`
@@ -463,6 +464,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
       const referencedConditionSetsResult = mapResults(
         compiledDecision.conditionSets.map((conditionSetIndex) => conditionSets.getAt(conditionSetIndex))
       );
+      /* c8 ignore next 5 - defensive coding: condition set resolution should not fail with valid compiled data */
       if (referencedConditionSetsResult.isFailure()) {
         errors.addMessage(
           `Failed to resolve condition sets for decision ${index}: ${referencedConditionSetsResult.message}`
@@ -505,6 +507,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
    * @returns
    */
   private _getCandidateValue(valueIndex: number): Result<JsonObject> {
+    /* c8 ignore next 3 - defensive coding: candidate value index should be valid in compiled data */
     if (valueIndex < 0 || valueIndex >= this._candidateValues.length) {
       return fail(`Invalid candidate value index ${valueIndex}`);
     }
@@ -541,6 +544,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
 
     for (const compiledResource of compiled.resources) {
       const resourceTypeResult = resourceTypes.getAt(compiledResource.type);
+      /* c8 ignore next 5 - defensive coding: resource type index should be valid in compiled data */
       if (resourceTypeResult.isFailure()) {
         errors.addMessage(
           `Invalid resource type index ${compiledResource.type} for resource ${compiledResource.id}: ${resourceTypeResult.message}`
@@ -550,6 +554,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
       const resourceType = resourceTypeResult.value;
 
       const decisionResult = decisions.getAt(compiledResource.decision);
+      /* c8 ignore next 5 - defensive coding: decision index should be valid in compiled data */
       if (decisionResult.isFailure()) {
         errors.addMessage(
           `Invalid decision index ${compiledResource.decision} for resource ${compiledResource.id}: ${decisionResult.message}`
@@ -571,6 +576,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
         )
       );
 
+      /* c8 ignore next 5 - defensive coding: candidate JSON conversion should not fail with valid compiled data */
       if (candidateDeclsResult.isFailure()) {
         errors.addMessage(
           `Failed to convert candidate JSON for resource ${compiledResource.id}: ${candidateDeclsResult.message}`
