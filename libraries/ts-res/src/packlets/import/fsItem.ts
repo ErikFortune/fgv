@@ -23,13 +23,13 @@
 import {
   captureResult,
   DetailedResult,
-  FileTree,
   mapResults,
   Result,
   fail,
   succeed,
   useOrInitialize
 } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Helpers as CommonHelpers, Validate } from '../common';
 import * as Conditions from '../conditions';
 import { IReadOnlyQualifierCollector } from '../qualifiers';

@@ -6,8 +6,9 @@
 
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Hash as Hash_2 } from '@fgv/ts-utils';
+import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
@@ -24,8 +25,10 @@ export { Converters }
 
 declare namespace Csv {
     export {
+        parseCsvString,
+        CsvOptions,
         readCsvFileSync,
-        CsvOptions
+        readCsvFromTree
     }
 }
 export { Csv }
@@ -153,6 +156,9 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
     static md5Hash(parts: string[]): string;
 }
 
+// @beta
+function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
+
 // @public
 function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]>;
 
@@ -218,16 +224,23 @@ function rangeTypeOf<T, RT extends RangeOf<T>, TC = unknown>(converter: Converte
 // @beta
 function readCsvFileSync(srcPath: string, options?: CsvOptions): Result<unknown>;
 
+// @beta
+function readCsvFromTree(fileTree: FileTree.FileTree, filePath: string, options?: CsvOptions): Result<unknown>;
+
 // @public
 function readRecordJarFileSync(srcPath: string, options?: JarRecordParserOptions): Result<JarRecord[]>;
+
+// @public
+function readRecordJarFromTree(fileTree: FileTree.FileTree, filePath: string, options?: JarRecordParserOptions): Result<JarRecord[]>;
 
 declare namespace RecordJar {
     export {
         parseRecordJarLines,
-        readRecordJarFileSync,
         JarRecord,
         JarFieldPicker,
-        JarRecordParserOptions
+        JarRecordParserOptions,
+        readRecordJarFileSync,
+        readRecordJarFromTree
     }
 }
 export { RecordJar }
@@ -236,25 +249,27 @@ export { RecordJar }
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
 
 // @public
-class ZipDirectoryItem implements FileTree.IFileTreeDirectoryItem {
-    constructor(directoryPath: string, accessors: ZipFileTreeAccessors);
+class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTreeDirectoryItem<TCT> {
+    constructor(directoryPath: string, accessors: ZipFileTreeAccessors<TCT>);
     readonly absolutePath: string;
-    getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>>;
+    getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;
     readonly name: string;
     readonly type: 'directory';
 }
 
 // @public
-class ZipFileItem implements FileTree.IFileTreeFileItem {
-    constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors);
+class ZipFileItem<TCT extends string = string> implements FileTree.IFileTreeFileItem<TCT> {
+    constructor(zipFilePath: string, contents: string, accessors: ZipFileTreeAccessors<TCT>);
     readonly absolutePath: string;
     readonly baseName: string;
+    get contentType(): TCT | undefined;
     readonly extension: string;
-    getContents(): Result<unknown>;
+    getContents(): Result<JsonValue>;
     // (undocumented)
     getContents<T>(converter: Validator<T> | Converter<T>): Result<T>;
     getRawContents(): Result<string>;
     readonly name: string;
+    setContentType(contentType: TCT | undefined): void;
     readonly type: 'file';
 }
 
@@ -268,15 +283,19 @@ declare namespace ZipFileTree {
 export { ZipFileTree }
 
 // @public
-class ZipFileTreeAccessors implements FileTree.IFileTreeAccessors {
-    static fromBuffer(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors>;
-    static fromBufferAsync(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Promise<Result<ZipFileTreeAccessors>>;
-    static fromFile(file: File, prefix?: string): Promise<Result<ZipFileTreeAccessors>>;
+class ZipFileTreeAccessors<TCT extends string = string> implements FileTree.IFileTreeAccessors<TCT> {
+    static defaultInferContentType<TCT extends string = string>(__filePath: string, __provided?: string): Result<TCT | undefined>;
+    static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Result<ZipFileTreeAccessors<TCT>>;
+    static fromBuffer<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Result<ZipFileTreeAccessors<TCT>>;
+    static fromBufferAsync<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, prefix?: string): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+    static fromBufferAsync<TCT extends string = string>(zipBuffer: ArrayBuffer | Uint8Array, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<ZipFileTreeAccessors<TCT>>>;
+    static fromFile<TCT extends string = string>(file: File, params?: FileTree.IFileTreeInitParams<TCT>): Promise<Result<ZipFileTreeAccessors<TCT>>>;
     getBaseName(path: string, suffix?: string): string;
-    getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem>>;
+    getChildren(path: string): Result<ReadonlyArray<FileTree.FileTreeItem<TCT>>>;
     getExtension(path: string): string;
     getFileContents(path: string): Result<string>;
-    getItem(path: string): Result<FileTree.FileTreeItem>;
+    getFileContentType(path: string, provided?: string): Result<TCT | undefined>;
+    getItem(path: string): Result<FileTree.FileTreeItem<TCT>>;
     joinPaths(...paths: string[]): string;
     resolveAbsolutePath(...paths: string[]): string;
 }

@@ -63,6 +63,17 @@ export function createNoOpObservabilityContext(
 }
 
 /**
+ * Creates a test observability context with no-op loggers and non-upgrade policy.
+ * @returns A new observability context configured for testing.
+ * @public
+ */
+export function createTestObservabilityContext(): IObservabilityContext {
+  const diag = new Logging.NoOpLogger('silent');
+  const user = new NoOpUserLogger('silent');
+  return new ObservabilityContext(diag, user, { doNotUpgrade: true });
+}
+
+/**
  * Default console-only observability context for general use.
  * @public
  */
@@ -75,7 +86,7 @@ export const DefaultObservabilityContext: IObservabilityContext = createConsoleO
  * Test observability context with no-op loggers.
  * @public
  */
-export const TestObservabilityContext: IObservabilityContext = createNoOpObservabilityContext();
+export const TestObservabilityContext: IObservabilityContext = createTestObservabilityContext();
 
 /**
  * Creates an observability context that forwards user messages to viewState.addMessage().

@@ -315,6 +315,20 @@ Description
 </td></tr>
 <tr><td>
 
+[createFromTxtContent(content)](./ts-bcp47.iana.languagesubtags.languagesubtagregistry.createfromtxtcontent.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [load(root)](./ts-bcp47.iana.languagesubtags.languagesubtagregistry.load.md)
 
 

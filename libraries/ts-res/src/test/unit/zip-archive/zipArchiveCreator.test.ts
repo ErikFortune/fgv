@@ -22,7 +22,8 @@
 
 import '@fgv/ts-utils-jest';
 import path from 'path';
-import { FileTree, fail } from '@fgv/ts-utils';
+import { fail } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { ZipArchiveCreator } from '../../../packlets/zip-archive';
 
 describe('ZipArchiveCreator', () => {

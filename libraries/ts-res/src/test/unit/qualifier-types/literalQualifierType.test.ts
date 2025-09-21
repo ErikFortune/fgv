@@ -115,7 +115,7 @@ describe('LiteralQualifierType', () => {
       const name = 'not a valid name';
       expect(TsRes.QualifierTypes.QualifierType.isValidName(name)).toBe(false);
       expect(TsRes.QualifierTypes.LiteralQualifierType.create({ name })).toFailWith(
-        /not a valid qualifier type name/i
+        /invalid qualifier type name/i
       );
     });
 
@@ -123,7 +123,7 @@ describe('LiteralQualifierType', () => {
       const index = -1;
       expect(TsRes.QualifierTypes.QualifierType.isValidIndex(index)).toBe(false);
       expect(TsRes.QualifierTypes.LiteralQualifierType.create({ index })).toFailWith(
-        /not a valid qualifier type index/i
+        /invalid qualifier type index/i
       );
     });
 
@@ -531,7 +531,7 @@ describe('LiteralQualifierType', () => {
     });
 
     test('fails if the index is not valid', () => {
-      expect(qt.setIndex(-1)).toFailWith(/not a valid qualifier type index/i);
+      expect(qt.setIndex(-1)).toFailWith(/invalid qualifier type index/i);
     });
 
     test('fails if the index is already set', () => {
@@ -826,7 +826,7 @@ describe('LiteralQualifierType', () => {
         };
 
       expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toFailWith(
-        /not a valid qualifier type name/i
+        /invalid qualifier type name/i
       );
     });
 

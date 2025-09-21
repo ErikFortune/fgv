@@ -3,7 +3,8 @@
     "language": "en",
     "defaultAffinity": "GB",
     "affinity": {
-      "us": ["GU", "PH", "PR", "UM", "US", "VI"]
+      "us": ["AS", "GU", "MP", "PH", "PR", "UM", "US", "VI"],
+      "au": ["NZ"]
     }
   },
   {

@@ -20,7 +20,8 @@
  * SOFTWARE.
  */
 
-import { captureResult, FileTree, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { captureResult, MessageAggregator, Result, succeed } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { ResourceManagerBuilder } from '../resources';
 import { ImportContext } from './importContext';
 import { IImportable, IImportablePath } from './importable';

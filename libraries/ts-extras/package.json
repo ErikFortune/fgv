@@ -64,7 +64,8 @@
     "luxon": "^3.7.2",
     "mustache": "^4.2.0",
     "papaparse": "^5.4.1",
-    "fflate": "~0.8.2"
+    "fflate": "~0.8.2",
+    "@fgv/ts-json-base": "workspace:*"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

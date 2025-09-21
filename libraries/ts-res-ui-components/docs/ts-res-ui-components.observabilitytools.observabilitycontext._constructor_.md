@@ -9,7 +9,7 @@ Creates a new observability context.
 **Signature:**
 
 ```typescript
-constructor(diag: Logging.ILogger, user: IUserLogger);
+constructor(diag: Logging.ILogger, user: IUserLogger, policy?: IObservabilityPolicy);
 ```
 
 ## Parameters
@@ -59,6 +59,22 @@ user
 </td><td>
 
 The user logger.
+
+
+</td></tr>
+<tr><td>
+
+policy
+
+
+</td><td>
+
+IObservabilityPolicy
+
+
+</td><td>
+
+_(Optional)_ Optional policy configuration.
 
 
 </td></tr>

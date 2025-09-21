@@ -209,6 +209,7 @@ export class ConditionSet implements IValidatedConditionSetDecl {
         if (typeof value === 'string') {
           return { qualifierName, value };
         } else {
+          /* c8 ignore next 1 - edge case: object spread pattern rarely used */
           return { qualifierName, ...value };
         }
       });

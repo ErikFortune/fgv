@@ -20,7 +20,19 @@
  * SOFTWARE.
  */
 
-import type { Logging, Success } from '@fgv/ts-utils';
+import type { Logging, Success, IResultReporter } from '@fgv/ts-utils';
+
+/**
+ * Policy configuration for observability context behavior.
+ * @public
+ */
+export interface IObservabilityPolicy {
+  /**
+   * If true, prevents automatic upgrade of the context (e.g., in tests).
+   * Default (undefined or false) allows upgrade.
+   */
+  doNotUpgrade?: boolean;
+}
 
 /**
  * User logger interface that extends ILogger with success method for UI feedback.
@@ -38,6 +50,12 @@ export interface IUserLogger extends Logging.ILogger {
 }
 
 /**
+ * User log reporter interface that combines IUserLogger with IResultReporter.
+ * @public
+ */
+export interface IUserLogReporter extends IUserLogger, IResultReporter<unknown> {}
+
+/**
  * Observability context that provides both diagnostic and user logging capabilities.
  * @public
  */
@@ -45,10 +63,15 @@ export interface IObservabilityContext {
   /**
    * Diagnostic logger for internal system diagnostics.
    */
-  readonly diag: Logging.ILogger;
+  readonly diag: Logging.LogReporter<unknown>;
 
   /**
    * User logger for user-facing messages and feedback.
    */
-  readonly user: IUserLogger;
+  readonly user: IUserLogReporter;
+
+  /**
+   * Optional policy configuration for context behavior.
+   */
+  readonly policy?: IObservabilityPolicy;
 }

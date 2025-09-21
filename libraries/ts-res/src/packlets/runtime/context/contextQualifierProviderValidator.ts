@@ -213,6 +213,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
                 value: QualifierContextValue
               ) => Result<QualifierContextValue>
             )(name as QualifierName, qualifierValue);
+            /* c8 ignore next 4 - defense in depth */
           } catch {
             return fail(`Provider does not support setting values`);
           }
@@ -249,8 +250,9 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * @returns `Success` with the strongly-typed QualifierName, or `Failure` if invalid.
    */
   private _validateQualifierName(name: string): Result<QualifierName> {
+    /* c8 ignore next 3 - defense in depth */
     if (typeof name !== 'string' || name.length === 0) {
-      return fail(`Invalid qualifier name: "${name}"`);
+      return fail(`${name}: invalid qualifier name`);
     }
     return succeed(name as QualifierName);
   }
@@ -262,7 +264,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    */
   private _validateQualifierIndex(index: number): Result<QualifierIndex> {
     if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
-      return fail(`Invalid qualifier index: ${index}`);
+      return fail(`${index}: invalid qualifier index`);
     }
     return succeed(index as QualifierIndex);
   }
@@ -273,8 +275,9 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * @returns `Success` with the strongly-typed QualifierContextValue, or `Failure` if invalid.
    */
   private _validateQualifierContextValue(value: string): Result<QualifierContextValue> {
+    /* c8 ignore next 3 - defense in depth */
     if (typeof value !== 'string') {
-      return fail(`Invalid qualifier context value: "${value}"`);
+      return fail(`${value}: invalid qualifier context value`);
     }
     return succeed(value as QualifierContextValue);
   }

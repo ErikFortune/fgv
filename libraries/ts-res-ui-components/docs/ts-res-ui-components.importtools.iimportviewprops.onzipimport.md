@@ -9,5 +9,5 @@ Callback when a ZIP file is imported with optional configuration
 **Signature:**
 
 ```typescript
-onZipImport?: (zipData: IImportedDirectory | IImportedFile[], config?: Config.Model.ISystemConfiguration) => void;
+onZipImport?: (zipData: FileTree.FileTree, config?: Config.Model.ISystemConfiguration) => void;
 ```

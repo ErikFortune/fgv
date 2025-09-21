@@ -51,8 +51,8 @@ describe('common conditions', () => {
   test.each(invalidIdentifiers)('%s is not a valid qualifierName and qualifierTypeName', (identifier) => {
     expect(TsRes.Validate.isValidQualifierName(identifier)).toBe(false);
     expect(TsRes.Validate.isValidQualifierTypeName(identifier)).toBe(false);
-    expect(TsRes.Validate.toQualifierName(identifier)).toFailWith(/not a valid qualifier name/i);
-    expect(TsRes.Validate.toQualifierTypeName(identifier)).toFailWith(/not a valid qualifier type name/i);
+    expect(TsRes.Validate.toQualifierName(identifier)).toFailWith(/invalid qualifier name/i);
+    expect(TsRes.Validate.toQualifierTypeName(identifier)).toFailWith(/invalid qualifier type name/i);
   });
 
   test.each([0, 1, 10, 100])('%s is a valid index for various condition collectibles', (index) => {
@@ -74,8 +74,8 @@ describe('common conditions', () => {
     expect(TsRes.Validate.isValidConditionIndex(index)).toBe(false);
     expect(TsRes.Validate.isValidConditionSetIndex(index)).toBe(false);
     expect(TsRes.Validate.isValidDecisionIndex(index)).toBe(false);
-    expect(TsRes.Validate.toQualifierIndex(index)).toFailWith(/not a valid qualifier index/i);
-    expect(TsRes.Validate.toQualifierTypeIndex(index)).toFailWith(/not a valid qualifier type index/i);
+    expect(TsRes.Validate.toQualifierIndex(index)).toFailWith(/invalid qualifier index/i);
+    expect(TsRes.Validate.toQualifierTypeIndex(index)).toFailWith(/invalid qualifier type index/i);
     expect(TsRes.Validate.toConditionIndex(index)).toFailWith(/not a valid condition index/i);
     expect(TsRes.Validate.toConditionSetIndex(index)).toFailWith(/not a valid condition set index/i);
     expect(TsRes.Validate.toDecisionIndex(index)).toFailWith(/not a valid decision index/i);
@@ -289,7 +289,7 @@ describe('common conditions', () => {
   ])('%s is not a valid qualifier default value token', (token) => {
     expect(TsRes.Validate.isValidQualifierDefaultValueToken(token)).toBe(false);
     expect(TsRes.Validate.toQualifierDefaultValueToken(token)).toFailWith(
-      /not a valid qualifier default value token/i
+      /invalid qualifier default value token/i
     );
   });
 
@@ -319,7 +319,7 @@ describe('common conditions', () => {
   ])('%s is not a valid qualifier default values token', (token) => {
     expect(TsRes.Validate.isValidQualifierDefaultValuesToken(token)).toBe(false);
     expect(TsRes.Validate.toQualifierDefaultValuesToken(token)).toFailWith(
-      /not a valid qualifier default value/i
+      /invalid qualifier default value/i
     );
   });
 });

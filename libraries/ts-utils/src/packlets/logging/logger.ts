@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { MessageLogLevel, Success, succeed } from '../base';
+import { MessageLogLevel, Success, captureResult, succeed } from '../base';
 
 /**
  * The level of logging to be used.
@@ -53,6 +53,29 @@ export function shouldLog(message: MessageLogLevel, reporter: ReporterLogLevel):
       return message !== 'detail';
   }
   return true;
+}
+
+/**
+ * Stringifies an arbitrary value for logging.
+ * @param value - The value to stringify.
+ * @returns The stringified value.
+ * @param maxLength - The maximum length of the stringified value.
+ * @public
+ */
+export function stringifyLogValue(value: unknown, maxLength?: number): string {
+  maxLength = maxLength ?? 40;
+  if (typeof value === 'string') {
+    return value;
+  }
+  const str = String(value);
+  if (str === '[object Object]') {
+    return captureResult(() => JSON.stringify(value))
+      .onSuccess((s) => {
+        return succeed(s.length < maxLength ? s : s.substring(0, maxLength - 3) + '...');
+      })
+      .orDefault(str);
+  }
+  return str;
 }
 
 /**
@@ -179,7 +202,7 @@ export abstract class LoggerBase implements ILogger {
   protected _format(message?: unknown, ...parameters: unknown[]): string {
     const raw = [message, ...parameters];
     const filtered = raw.filter((m): m is string => m !== undefined);
-    const strings = filtered.map((m) => m.toString());
+    const strings = filtered.map((m) => stringifyLogValue(m));
     const joined = strings.join('');
     return joined;
   }

@@ -81,7 +81,7 @@ describe('QualifierTypeCollector', () => {
 
     test('fails if the type name is invalid', () => {
       expect(collector.validating.getOrAdd("this simply won't do", qt)).toFailWith(
-        /not a valid qualifier type name/i
+        /invalid qualifier type name/i
       );
     });
 

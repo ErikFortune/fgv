@@ -9,7 +9,7 @@ import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { Converters } from '@fgv/ts-json-base';
 import { DetailedResult } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Hash } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
 import { IReadOnlyResultMap } from '@fgv/ts-utils';

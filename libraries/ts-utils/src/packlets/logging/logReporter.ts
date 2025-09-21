@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-import { ILogger, ReporterLogLevel, NoOpLogger } from './logger';
+import { ILogger, ReporterLogLevel, NoOpLogger, stringifyLogValue } from './logger';
 import { IResultReporter, MessageLogLevel, Success } from '../base';
 
 /**
@@ -149,14 +149,6 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
    * @returns
    */
   public static tryFormatObject<T = unknown, TD = unknown>(value: T, detail?: TD): string {
-    const message = String(value);
-    if (message === '[object Object]') {
-      try {
-        return JSON.stringify(value);
-      } catch (error) {
-        return message;
-      }
-    }
-    return message;
+    return stringifyLogValue(value);
   }
 }

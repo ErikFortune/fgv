@@ -21,7 +21,12 @@
  */
 
 import { Logging, MessageLogLevel, Success, succeed } from '@fgv/ts-utils';
-import type { IUserLogger, IObservabilityContext } from './interfaces';
+import type {
+  IUserLogger,
+  IUserLogReporter,
+  IObservabilityContext,
+  IObservabilityPolicy
+} from './interfaces';
 import type { IMessage } from '../../types';
 
 /**
@@ -174,6 +179,46 @@ export class ViewStateUserLogger extends Logging.LoggerBase implements IUserLogg
 }
 
 /**
+ * User logger that extends LogReporter to provide Result reporting capabilities.
+ * Wraps an existing IUserLogger to add IResultReporter functionality.
+ * @public
+ */
+export class UserLogReporter extends Logging.LogReporter<unknown> implements IUserLogReporter {
+  private readonly _userLogger: IUserLogger;
+
+  /**
+   * Creates a new UserLogReporter.
+   * @param userLogger - The user logger to wrap.
+   */
+  public constructor(userLogger: IUserLogger) {
+    super({ logger: userLogger }); // LogReporter wraps the ILogger part
+    this._userLogger = userLogger;
+  }
+
+  /**
+   * {@inheritDoc ObservabilityTools.IUserLogger.success}
+   */
+  public success(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
+    return this._userLogger.success(message, ...parameters);
+  }
+
+  /**
+   * Override reportSuccess to use the success method for user-friendly reporting.
+   * @param level - The log level.
+   * @param value - The value to report.
+   * @param detail - Optional detail.
+   */
+  public reportSuccess(level: MessageLogLevel, value: unknown, detail?: unknown): void {
+    if (!Logging.shouldLog(level, this.logLevel)) {
+      return;
+    }
+    // Use success method for user-friendly success reporting
+    const message = typeof value === 'string' ? value : JSON.stringify(value);
+    this.success(message);
+  }
+}
+
+/**
  * Observability context that provides both diagnostic and user logging capabilities.
  * @public
  */
@@ -181,21 +226,29 @@ export class ObservabilityContext implements IObservabilityContext {
   /**
    * {@inheritDoc ObservabilityTools.IObservabilityContext.diag}
    */
-  public readonly diag: Logging.ILogger;
+  public readonly diag: Logging.LogReporter<unknown>;
 
   /**
    * {@inheritDoc ObservabilityTools.IObservabilityContext.user}
    */
-  public readonly user: IUserLogger;
+  public readonly user: IUserLogReporter;
+
+  /**
+   * {@inheritDoc ObservabilityTools.IObservabilityContext.policy}
+   */
+  public readonly policy?: IObservabilityPolicy;
 
   /**
    * Creates a new observability context.
    * @param diag - The diagnostic logger.
    * @param user - The user logger.
+   * @param policy - Optional policy configuration.
    */
-  public constructor(diag: Logging.ILogger, user: IUserLogger) {
-    this.diag = diag;
-    this.user = user;
+  public constructor(diag: Logging.ILogger, user: IUserLogger, policy?: IObservabilityPolicy) {
+    // Wrap both loggers consistently
+    this.diag = new Logging.LogReporter({ logger: diag });
+    this.user = new UserLogReporter(user);
+    this.policy = policy;
   }
 }
 

@@ -20,6 +20,13 @@
  * SOFTWARE.
  */
 
+// Export core JSON functionality (no filesystem deps)
 export * from './file';
-export * from './jsonFsHelper';
 export * from './jsonLike';
+
+// Export FileTree-based helper (web-compatible)
+export * from './jsonTreeHelper';
+
+// Export filesystem helpers separately for tree-shaking
+// Web apps that don't import JsonFsHelper won't bundle fs/path
+export * from './jsonFsHelper';

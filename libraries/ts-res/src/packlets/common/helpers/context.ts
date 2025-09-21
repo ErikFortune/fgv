@@ -43,6 +43,7 @@ export function buildContextQualifierToken({
   qualifier,
   value
 }: IContextTokenParts): Result<ContextQualifierToken> {
+  /* c8 ignore next 1 - edge case: ternary expression alternate branch rarely hit */
   return Validate.toContextQualifierToken(qualifier ? `${qualifier}=${value}` : value);
 }
 

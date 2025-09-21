@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
-import { JsonObject } from '@fgv/ts-json-base';
+import { Result, succeed, fail } from '@fgv/ts-utils';
+import { JsonObject, FileTree } from '@fgv/ts-json-base';
 import * as TsRes from '@fgv/ts-res';
 import { ICompileOptions } from './options';
 import { DEFAULT_SYSTEM_CONFIGURATION } from './defaultConfiguration';

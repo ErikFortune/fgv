@@ -85,7 +85,7 @@ describe('QualifierDefaultValueTokens', () => {
 
     test('fails with invalid syntax (missing equals)', () => {
       expect(tokens.parseQualifierDefaultValueToken('language')).toFailWith(
-        /not a valid qualifier default value token/i
+        /invalid qualifier default value token/i
       );
     });
 

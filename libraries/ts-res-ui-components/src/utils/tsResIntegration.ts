@@ -1,4 +1,5 @@
-import { Result, succeed, fail, FileTree } from '@fgv/ts-utils';
+import { Result, succeed, fail } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import {
   QualifierTypes,
   Qualifiers,
@@ -9,7 +10,7 @@ import {
   ResourceJson,
   Config
 } from '@fgv/ts-res';
-import { IImportedDirectory, IImportedFile, IExtendedProcessedResources } from '../types';
+import { IExtendedProcessedResources } from '../types';
 import * as ObservabilityTools from '../utils/observability';
 
 /**
@@ -74,58 +75,6 @@ export function createSimpleContext(
 }
 
 /**
- * Convert ImportedDirectory to FileTree format
- */
-/** @internal */
-export function convertImportedDirectoryToFileTree(
-  directory: IImportedDirectory,
-  o11y: ObservabilityTools.IObservabilityContext = ObservabilityTools.DefaultObservabilityContext
-): FileTree.FileTree {
-  // Convert files to IInMemoryFile format and flatten the directory structure
-  const flattenFiles = (
-    dir: IImportedDirectory,
-    parentPath: string = ''
-  ): Array<{ path: string; contents: string }> => {
-    const files: Array<{ path: string; contents: string }> = [];
-
-    // Add files from current directory
-    if (dir.files) {
-      dir.files.forEach((file) => {
-        const filePath = parentPath ? `${parentPath}/${file.name}` : file.name;
-        files.push({
-          path: filePath,
-          contents: file.content
-        });
-      });
-    }
-
-    // Recursively process subdirectories
-    if (dir.subdirectories) {
-      dir.subdirectories.forEach((subdir) => {
-        const subdirPath = parentPath ? `${parentPath}/${subdir.name}` : subdir.name;
-        files.push(...flattenFiles(subdir, subdirPath));
-      });
-    }
-
-    return files;
-  };
-
-  const inMemoryFiles = flattenFiles(directory);
-
-  o11y.diag.info('[convertImportedDirectoryToFileTree] Converting directory to FileTree:', {
-    directoryName: directory.name,
-    directoryPath: directory.path,
-    numFiles: directory.files?.length || 0,
-    numSubdirs: directory.subdirectories?.length || 0,
-    totalFlattenedFiles: inMemoryFiles.length,
-    sampleFiles: inMemoryFiles.slice(0, 3).map((f) => f.path)
-  });
-
-  // Use ts-res's inMemory FileTree utility
-  return FileTree.inMemory(inMemoryFiles).orThrow((msg) => `Failed to create file tree: ${msg}`);
-}
-
-/**
  * Create ts-res system from configuration
  */
 /** @internal */
@@ -186,77 +135,11 @@ export function createTsResSystemFromConfig(
 }
 
 /**
- * Process imported files using the ts-res system
+ * Parameters for processFileTree
  */
 /** @internal */
-export interface ICreateProcessImportedFilesParams {
-  files: IImportedFile[];
-  systemConfig?: Config.Model.ISystemConfiguration;
-  qualifierTypeFactory?: Config.IConfigInitFactory<
-    QualifierTypes.Config.IAnyQualifierTypeConfig,
-    QualifierTypes.QualifierType
-  >;
-  resourceTypeFactory?: Config.IConfigInitFactory<
-    ResourceTypes.Config.IResourceTypeConfig,
-    ResourceTypes.ResourceType
-  >;
-  o11y?: ObservabilityTools.IObservabilityContext;
-}
-
-/** @internal */
-export function processImportedFiles(
-  params: ICreateProcessImportedFilesParams
-): Result<IExtendedProcessedResources> {
-  if (params.files.length === 0) {
-    return fail('No files provided for processing');
-  }
-
-  return createTsResSystemFromConfig(
-    params.systemConfig,
-    params.qualifierTypeFactory,
-    params.resourceTypeFactory
-  )
-    .onSuccess<IExtendedProcessedResources>((tsResSystem) => {
-      // Convert ImportedFile[] to IInMemoryFile[] format
-      const inMemoryFiles = params.files.map((file) => ({
-        path: file.path || file.name,
-        contents: file.content
-      }));
-
-      return FileTree.inMemory(inMemoryFiles)
-        .onSuccess((fileTree) => {
-          return Import.ImportManager.create({
-            fileTree,
-            resources: tsResSystem.resourceManager
-          });
-        })
-        .onSuccess((importManager) => {
-          // Import each file using its filesystem path
-          for (const file of params.files) {
-            const importResult = importManager.importFromFileSystem(file.path || file.name);
-            if (importResult.isFailure()) {
-              return fail(`Failed to import file ${file.path || file.name}: ${importResult.message}`);
-            }
-          }
-
-          // Finalize processing
-          const updatedSystem = {
-            ...tsResSystem,
-            importManager
-          };
-          const configToUse = params.systemConfig ?? getDefaultSystemConfiguration();
-          return finalizeProcessing(updatedSystem, configToUse);
-        });
-    })
-    .withErrorFormat((message) => `processImportedFiles failed: ${message}`);
-}
-
-/**
- * Parameters for processImportedDirectory
- */
-/** @internal */
-export interface ICreateProcessImportedDirectoryParams {
-  directory: IImportedDirectory;
+export interface ICreateProcessFileTreeParams {
+  fileTree: FileTree.FileTree;
   systemConfig?: Config.Model.ISystemConfiguration;
   qualifierTypeFactory?: Config.IConfigInitFactory<
     QualifierTypes.Config.IAnyQualifierTypeConfig,
@@ -270,12 +153,11 @@ export interface ICreateProcessImportedDirectoryParams {
 }
 
 /**
- * Process imported directory using the ts-res system
+ * Process FileTree using the ts-res system
+ * Unified function that replaces both processImportedFiles and processImportedDirectory
  */
 /** @internal */
-export function processImportedDirectory(
-  params: ICreateProcessImportedDirectoryParams
-): Result<IExtendedProcessedResources> {
+export function processFileTree(params: ICreateProcessFileTreeParams): Result<IExtendedProcessedResources> {
   const o11y = params.o11y ?? ObservabilityTools.DefaultObservabilityContext;
 
   return createTsResSystemFromConfig(
@@ -284,11 +166,8 @@ export function processImportedDirectory(
     params.resourceTypeFactory
   )
     .onSuccess<IExtendedProcessedResources>((tsResSystem) => {
-      // Convert directory to file tree
-      const fileTree = convertImportedDirectoryToFileTree(params.directory, o11y);
-
       return Import.ImportManager.create({
-        fileTree,
+        fileTree: params.fileTree,
         resources: tsResSystem.resourceManager
       }).onSuccess((importManager) => {
         // Simply try to import from the filesystem root
@@ -305,7 +184,7 @@ export function processImportedDirectory(
           const failedImports: Array<{ file: string; error: string }> = [];
 
           const importDirectory = (dirPath: string): void => {
-            const dirResult = fileTree.getDirectory(dirPath);
+            const dirResult = params.fileTree.getDirectory(dirPath);
             if (dirResult.isSuccess()) {
               const dir = dirResult.value;
               const childrenResult = dir.getChildren();
@@ -360,7 +239,7 @@ export function processImportedDirectory(
 
             return fail(errorMessage);
           } else if (importedCount === 0) {
-            return fail(`No resource files found in ${params.directory.name}`);
+            return fail(`No resource files found in FileTree`);
           }
         } else {
           o11y.diag.info('[tsResIntegration] Successfully imported resources from root');
@@ -375,7 +254,7 @@ export function processImportedDirectory(
         return finalizeProcessing(updatedSystem, configToUse);
       });
     })
-    .withErrorFormat((message) => `processImportedDirectory failed: ${message}`);
+    .withErrorFormat((message) => `processFileTree failed: ${message}`);
 }
 
 /**
@@ -423,5 +302,5 @@ function finalizeProcessing(
     .withErrorFormat((message) => `Failed to finalize processing: ${message}`);
 }
 
-// Note: createCompiledResourceCollectionManager was removed as part of the refactoring
-// We now always use ResourceManagerBuilder as the primary data structure
+// Note: convertImportedDirectoryToFileTree was removed - we work directly with FileTree now
+// Note: processImportedFiles and processImportedDirectory were replaced with processFileTree

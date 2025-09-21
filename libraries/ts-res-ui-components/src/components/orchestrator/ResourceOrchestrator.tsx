@@ -1,11 +1,10 @@
 import React, { ReactNode, useCallback, useMemo, useState } from 'react';
 import { ObservabilityProvider, useObservability } from '../../contexts';
 import { Config, Bundle, QualifierTypes, ResourceTypes } from '@fgv/ts-res';
+import { FileTree } from '@fgv/ts-json-base';
 import {
   IOrchestratorState,
   IOrchestratorActions,
-  IImportedDirectory,
-  IImportedFile,
   IProcessedResources,
   IFilterState,
   IFilterResult,
@@ -322,32 +321,25 @@ const ResourceOrchestratorInternal: React.FC<
   const actions: IOrchestratorActions = useMemo(
     () => ({
       // Resource management
-      importDirectory: async (directory: IImportedDirectory) => {
-        o11y.user.info('Importing directory...');
-        const result = await resourceData.actions.processDirectory(directory);
+      importFileTree: async (fileTree: FileTree.FileTree) => {
+        o11y.user.info('Importing FileTree...');
+        const result = await resourceData.actions.processFileTree(fileTree);
         if (result.isSuccess()) {
-          o11y.user.success('Directory imported successfully');
+          o11y.user.success('FileTree imported successfully');
         } else {
           o11y.user.error(result.message);
         }
       },
-      importDirectoryWithConfig: async (
-        directory: IImportedDirectory,
+      importFileTreeWithConfig: async (
+        fileTree: FileTree.FileTree,
         config: Config.Model.ISystemConfiguration
       ) => {
-        o11y.user.info('Importing directory with configuration...');
-        await resourceData.actions.processDirectoryWithConfig(directory, config);
+        o11y.user.info('Importing FileTree with configuration...');
+        await resourceData.actions.processFileTreeWithConfig(fileTree, config);
         if (!resourceData.state.error) {
-          o11y.user.success('Directory imported successfully');
+          o11y.user.success('FileTree imported successfully');
         } else {
           o11y.user.error(resourceData.state.error);
-        }
-      },
-      importFiles: async (files: IImportedFile[]) => {
-        o11y.user.info('Importing files...');
-        await resourceData.actions.processFiles(files);
-        if (!resourceData.state.error) {
-          o11y.user.success('Files imported successfully');
         }
       },
       importBundle: async (bundle: Bundle.IBundle) => {

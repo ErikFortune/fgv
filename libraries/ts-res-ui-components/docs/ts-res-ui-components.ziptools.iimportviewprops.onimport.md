@@ -9,5 +9,5 @@ Callback when resource files/directories are imported
 **Signature:**
 
 ```typescript
-onImport?: (data: IImportedDirectory | IImportedFile[]) => void;
+onImport?: (data: FileTree.FileTree) => void;
 ```

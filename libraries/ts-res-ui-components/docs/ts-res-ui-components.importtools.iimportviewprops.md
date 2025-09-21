@@ -103,7 +103,7 @@ _(Optional)_ Callback when a bundle file is imported
 
 </td><td>
 
-(data: [IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md) \| [IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)<!-- -->\[\]) =&gt; void
+(data: FileTree.FileTree) =&gt; void
 
 
 </td><td>
@@ -122,7 +122,7 @@ _(Optional)_ Callback when resource files/directories are imported
 
 </td><td>
 
-(zipData: [IImportedDirectory](./ts-res-ui-components.importtools.iimporteddirectory.md) \| [IImportedFile](./ts-res-ui-components.importtools.iimportedfile.md)<!-- -->\[\], config?: Config.Model.ISystemConfiguration) =&gt; void
+(zipData: FileTree.FileTree, config?: Config.Model.ISystemConfiguration) =&gt; void
 
 
 </td><td>

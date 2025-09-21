@@ -1,0 +1,139 @@
+# Documentation Workflow
+# Used for creating or updating documentation
+
+name: 'documentation'
+description: 'Workflow for creating comprehensive documentation'
+
+triggers:
+  - task_type: 'docs'
+  - user_request_type: 'documentation_update'
+  - scope: ['api_docs', 'user_guides', 'architecture_docs']
+
+phases:
+  - phase: requirements_confirmation
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    type: gate
+    dependencies: []
+    description: 'Confirm documentation scope and audience'
+
+  - phase: requirements_analysis
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    dependencies: [requirements_confirmation]
+    max_iterations: 1
+    description: 'Document what needs to be documented and for whom'
+
+  - phase: design
+    agent: senior-developer
+    mode: workflow
+    required: true
+    dependencies: [requirements_analysis]
+    max_iterations: 2
+    description: 'Plan documentation structure and content organization'
+
+  - phase: implementation
+    agent: code-monkey
+    mode: workflow
+    required: true
+    dependencies: [design]
+    max_iterations: 2
+    description: 'Write documentation content and code examples'
+
+  - phase: review
+    agent: code-reviewer
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    max_iterations: 2
+    description: 'Review documentation for accuracy and completeness'
+
+  - phase: validation_test
+    agent: sdet-functional
+    mode: workflow
+    required: false
+    dependencies: [implementation]
+    condition: 'if_code_examples_included'
+    description: 'Test code examples and ensure they work'
+
+  - phase: test_architecture_review
+    agent: senior-sdet
+    mode: workflow
+    required: false
+    dependencies: [validation_test]
+    condition: 'if_tutorial_content AND test_examples_complex'
+    description: 'Review test examples in documentation for clarity and best practices'
+
+success_criteria:
+  - documentation_complete: true
+  - code_examples_working: true
+  - clear_and_accurate: true
+  - properly_organized: true
+
+escalation_rules:
+  - trigger: 'technical_accuracy_questions'
+    action: 'escalate_to_domain_expert'
+  - trigger: 'scope_significantly_larger_than_expected'
+    action: 're_evaluate_requirements'
+
+quality_gates:
+  after_requirements_analysis:
+    - audience_clearly_defined: true
+    - scope_well_bounded: true
+    - success_criteria_clear: true
+
+  after_design:
+    - information_architecture_logical: true
+    - content_organization_clear: true
+    - examples_planned: true
+
+  after_implementation:
+    - content_complete: true
+    - examples_included: true
+    - formatting_consistent: true
+
+  after_review:
+    - technical_accuracy_verified: true
+    - writing_quality_acceptable: true
+    - navigation_clear: true
+
+  after_validation_test:
+    - all_code_examples_work: true
+    - instructions_followable: true
+
+documentation_types:
+  api_documentation:
+    special_requirements:
+      - auto_generated_preferred: true
+      - examples_for_all_public_methods: true
+      - error_conditions_documented: true
+
+  user_guides:
+    special_requirements:
+      - step_by_step_instructions: true
+      - screenshots_where_helpful: true
+      - troubleshooting_section: true
+
+  architecture_documentation:
+    special_requirements:
+      - diagrams_recommended: true
+      - decision_rationale: true
+      - patterns_explained: true
+
+  tutorial_content:
+    special_requirements:
+      - progressive_complexity: true
+      - working_examples: true
+      - validation_tests_required: true
+
+estimated_duration: '1-3 hours'
+complexity_range: ['simple', 'moderate']
+
+maintenance_plan:
+  review_frequency: 'quarterly'
+  update_triggers:
+    - api_changes: true
+    - architecture_changes: true
+    - user_feedback: true

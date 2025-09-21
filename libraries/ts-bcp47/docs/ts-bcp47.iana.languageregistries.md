@@ -94,7 +94,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[load(root)](./ts-bcp47.iana.languageregistries.load.md)
+[create(subtags, extensions)](./ts-bcp47.iana.languageregistries.create.md)
 
 
 </td><td>
@@ -117,6 +117,86 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[loadDefaultCompressed()](./ts-bcp47.iana.languageregistries.loaddefaultcompressed.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from embedded compressed data. This method uses embedded compressed ZIP data that works in both Node.js and browser environments without requiring polyfills. This is the preferred loading method for published packages.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromIanaOrg()](./ts-bcp47.iana.languageregistries.loadfromianaorg.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from the IANA.org online registries.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromUrls(subtagsUrl, extensionsUrl)](./ts-bcp47.iana.languageregistries.loadfromurls.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from custom URLs.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromZip(zipPath)](./ts-bcp47.iana.languageregistries.loadfromzip.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from a compressed ZIP file.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromZipBuffer(zipBuffer)](./ts-bcp47.iana.languageregistries.loadfromzipbuffer.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Loads language registries from a compressed ZIP buffer (web-compatible).
 
 
 </td></tr>

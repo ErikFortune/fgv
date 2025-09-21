@@ -21,7 +21,8 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { FileTree } from '@fgv/ts-utils';
+import {} from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import * as TsRes from '../../../index';
 import { ImportManager } from '../../../packlets/import';
 

@@ -335,6 +335,67 @@ describe('CompiledResourceCollection class', () => {
       );
     });
 
+    test('should fail with corrupted compiled data - out of bounds candidate value index', () => {
+      // Create a corrupted collection with candidate referencing non-existent value index
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        resources: [
+          {
+            id: 'test' as TsRes.ResourceId,
+            type: 0 as TsRes.ResourceTypeIndex,
+            decision: 0 as TsRes.DecisionIndex,
+            candidates: [
+              {
+                valueIndex: 999 as TsRes.CandidateValueIndex, // Out of bounds index
+                isPartial: false,
+                mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
+              }
+            ]
+          }
+        ]
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /Invalid candidate value index/
+      );
+    });
+
+    test('should fail with corrupted compiled data - non-JSON object candidate value', () => {
+      // Create a corrupted collection with candidate value that is not a JSON object
+      const corruptedCollection = {
+        ...validCompiledCollection,
+        resources: [
+          {
+            id: 'test' as TsRes.ResourceId,
+            type: 0 as TsRes.ResourceTypeIndex,
+            decision: 0 as TsRes.DecisionIndex,
+            candidates: [
+              {
+                valueIndex: 0 as TsRes.CandidateValueIndex,
+                isPartial: false,
+                mergeMethod: 'replace' as TsRes.ResourceValueMergeMethod
+              }
+            ]
+          }
+        ],
+        candidateValues: ['not an object'] // String instead of object
+      };
+
+      const corruptedParams = {
+        ...createParams,
+        compiledCollection: corruptedCollection
+      };
+
+      expect(TsRes.Runtime.CompiledResourceCollection.create(corruptedParams)).toFailWith(
+        /candidate value not a JSON object/
+      );
+    });
+
     test('should fail when condition collector creation fails', () => {
       // This test is designed to cover the condition collector failure path
       // Create a collection with no qualifiers to make condition collector fail
@@ -450,6 +511,16 @@ describe('CompiledResourceCollection class', () => {
   });
 
   describe('property getters', () => {
+    test('should return correct candidateValues', () => {
+      expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
+        (collection) => {
+          expect(collection.candidateValues).toBeDefined();
+          expect(Array.isArray(collection.candidateValues)).toBe(true);
+          expect(collection.candidateValues.length).toBeGreaterThan(0);
+        }
+      );
+    });
+
     test('should return correct qualifierTypes', () => {
       expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toSucceedAndSatisfy(
         (collection) => {
