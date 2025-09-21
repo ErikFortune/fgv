@@ -128,8 +128,8 @@ function runPrettierOnGeneratedFiles() {
   const jsonFiles = [SUBTAGS_FILE, EXTENSIONS_FILE, TEST_SUBTAGS_JSON, TEST_EXTENSIONS_JSON];
 
   try {
-    const relativePaths = jsonFiles.map((f) => path.relative(process.cwd(), f)).join(' ');
-    execSync(`npx prettier --write ${relativePaths}`, {
+    const relativePathsArray = jsonFiles.map((f) => path.relative(process.cwd(), f));
+    execFileSync('npx', ['prettier', '--write', ...relativePathsArray], {
       stdio: 'pipe',
       cwd: path.join(__dirname, '..')
     });
