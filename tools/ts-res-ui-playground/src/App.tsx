@@ -22,6 +22,7 @@ import {
   GridTools,
   ObservabilityTools
 } from '@fgv/ts-res-ui-components';
+import { FileTree } from '@fgv/ts-json-base';
 import { NavigationWarningModal } from '@fgv/ts-res-ui-components';
 import ResourcePickerTool from './components/tools/ResourcePickerTool';
 import { playgroundResourceEditorFactory } from './utils/resourceEditorFactory';
@@ -344,27 +345,21 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             importError={state.error}
-            onImport={async (data) => {
+            onImport={async (data: FileTree.FileTree) => {
               logImportStage(o11y, 'start');
               try {
-                if (Array.isArray(data)) {
-                  logImportStage(o11y, 'resource-load', { fileCount: data.length });
-                  await actions.importFiles(data);
-                  logImportStage(o11y, 'complete', { filesImported: data.length });
-                } else {
-                  logImportStage(o11y, 'resource-load', { type: 'directory' });
-                  await actions.importDirectory(data);
-                  logImportStage(o11y, 'complete', { type: 'directory' });
-                }
+                logImportStage(o11y, 'resource-load', { type: 'FileTree' });
+                await actions.importFileTree(data);
+                logImportStage(o11y, 'complete', { type: 'FileTree' });
               } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 logImportStage(o11y, 'error', { error: errorMessage });
               }
             }}
             onBundleImport={actions.importBundle}
-            onZipImport={async (zipData, config) => {
+            onZipImport={async (zipData: FileTree.FileTree, config) => {
               // The ImportView has already processed the ZIP file and extracted the data
-              // zipData is either IImportedDirectory or IImportedFile[]
+              // zipData is now a FileTree.FileTree
 
               // Load configuration FIRST, before processing resources
               if (config) {
@@ -384,16 +379,9 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
                 actions.addMessage('warning', 'No configuration found in ZIP - using default configuration');
               }
 
-              // Process the ZIP data (already extracted by ImportView)
-              if (Array.isArray(zipData)) {
-                // It's an array of IImportedFile[]
-                actions.importFiles(zipData);
-                actions.addMessage('success', `${zipData.length} files imported from ZIP`);
-              } else {
-                // It's an IImportedDirectory
-                actions.importDirectory(zipData);
-                actions.addMessage('success', 'ZIP directory structure imported successfully');
-              }
+              // Process the ZIP data (now a FileTree)
+              await actions.importFileTree(zipData);
+              actions.addMessage('success', 'ZIP directory structure imported successfully');
             }}
           />
         );
@@ -895,18 +883,12 @@ const AppContent: React.FC<AppContentProps> = ({ orchestrator }) => {
         return (
           <ImportView
             importError={state.error}
-            onImport={async (data) => {
+            onImport={async (data: FileTree.FileTree) => {
               logImportStage(o11y, 'start');
               try {
-                if (Array.isArray(data)) {
-                  logImportStage(o11y, 'resource-load', { fileCount: data.length });
-                  await actions.importFiles(data);
-                  logImportStage(o11y, 'complete', { filesImported: data.length });
-                } else {
-                  logImportStage(o11y, 'resource-load', { type: 'directory' });
-                  await actions.importDirectory(data);
-                  logImportStage(o11y, 'complete', { type: 'directory' });
-                }
+                logImportStage(o11y, 'resource-load', { type: 'FileTree' });
+                await actions.importFileTree(data);
+                logImportStage(o11y, 'complete', { type: 'FileTree' });
               } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 logImportStage(o11y, 'error', { error: errorMessage });
