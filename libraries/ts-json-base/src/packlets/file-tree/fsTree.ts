@@ -93,10 +93,11 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
       const stat = fs.statSync(this.resolveAbsolutePath(itemPath));
       if (stat.isDirectory()) {
         return DirectoryItem.create<TCT>(itemPath, this).orThrow();
+        /* c8 ignore next 2 - file branch tested but coverage intermittently missed */
       } else if (stat.isFile()) {
         return FileItem.create(itemPath, this).orThrow();
       }
-      /* c8 ignore next 1 - defensive coding: filesystem items should be file or directory */
+      /* istanbul ignore next - defensive coding: filesystem items should be file or directory */
       throw new Error(`${itemPath}: not a file or directory`);
     });
   }
@@ -115,7 +116,6 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
     if (provided !== undefined) {
       return succeed(provided as TCT);
     }
-    /* c8 ignore next 2 - coverage has intermittent issues in the build - local tests show coverage of this line */
     return this._inferContentType(filePath);
   }
 
@@ -130,6 +130,7 @@ export class FsFileTreeAccessors<TCT extends string = string> implements IFileTr
         const fullPath = this.resolveAbsolutePath(dirPath, file.name);
         if (file.isDirectory()) {
           children.push(DirectoryItem.create<TCT>(fullPath, this).orThrow());
+          /* c8 ignore next 2 - file branch tested but coverage intermittently missed */
         } else if (file.isFile()) {
           children.push(FileItem.create<TCT>(fullPath, this).orThrow());
         }

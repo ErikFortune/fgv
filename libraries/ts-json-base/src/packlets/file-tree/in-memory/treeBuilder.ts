@@ -164,7 +164,6 @@ export class TreeBuilder<TCT extends string = string> {
     }
 
     // Normalize the prefix to remove trailing slashes (except for root)
-    /* c8 ignore next 3 - tested but code coverage has intermittent issues */
     if (this.prefix !== '/' && this.prefix.endsWith('/')) {
       this.prefix = this.prefix.slice(0, -1);
     }

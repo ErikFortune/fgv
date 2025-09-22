@@ -5,9 +5,10 @@
   "main": "lib/index.js",
   "types": "dist/ts-json-base.d.ts",
   "scripts": {
-    "build": "heft test --clean",
+    "build": "heft build --clean",
     "clean": "heft clean",
-    "test": "heft test --clean",
+    "test": "jest --no-cache",
+    "test-heft": "heft test --clean",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
     "build-all": "rushx build; rushx build-docs",
     "test-handles": "jest --runInBand --detectOpenHandles",
@@ -53,7 +54,12 @@
     "@rushstack/eslint-patch": "~1.12.0",
     "@rushstack/eslint-config": "4.4.0",
     "eslint-plugin-tsdoc": "~0.4.0",
-    "@types/luxon": "^3.7.1"
+    "@types/luxon": "^3.7.1",
+    "@babel/core": "~7.28.3",
+    "@babel/preset-env": "~7.28.3",
+    "@babel/preset-typescript": "~7.27.1",
+    "babel-jest": "~30.1.2",
+    "babel-plugin-istanbul": "~7.0.1"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

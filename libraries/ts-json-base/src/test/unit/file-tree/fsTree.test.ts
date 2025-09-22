@@ -543,6 +543,47 @@ describe('FsFileTreeAccessors', () => {
     });
   });
 
+  // Additional tests for specific coverage gaps
+  describe('Additional coverage gap tests', () => {
+    test('joinPaths method is properly covered', () => {
+      const accessors = new FsFileTreeAccessors();
+
+      // Ensure this specific line (85) is covered
+      expect(accessors.joinPaths('path', 'to', 'file.txt')).toBe(path.join('path', 'to', 'file.txt'));
+      expect(accessors.joinPaths('/root', 'sub')).toBe(path.join('/root', 'sub'));
+      expect(accessors.joinPaths('single')).toBe(path.join('single'));
+      expect(accessors.joinPaths('')).toBe(path.join(''));
+      expect(accessors.joinPaths('a', '', 'b')).toBe(path.join('a', '', 'b'));
+    });
+
+    test('getFileContentType without provided parameter uses inference function', () => {
+      const customInfer = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.custom')) return succeed('custom/type');
+        return succeed(undefined);
+      };
+
+      const accessors = new FsFileTreeAccessors({ inferContentType: customInfer });
+
+      // This should hit line 119: return this._inferContentType(filePath);
+      expect(accessors.getFileContentType('/test.custom')).toSucceedWith('custom/type');
+      expect(accessors.getFileContentType('/test.other')).toSucceedWith(undefined);
+
+      // Explicitly test with undefined parameter (should follow same path)
+      expect(accessors.getFileContentType('/test.custom', undefined)).toSucceedWith('custom/type');
+    });
+
+    test('import statements are loaded by using the module', () => {
+      // This test ensures imports like line 24 are covered by simply using the class
+      const accessors = new FsFileTreeAccessors();
+
+      // Use path-related functionality to ensure path import is covered
+      expect(accessors.resolveAbsolutePath('test')).toBeDefined();
+      expect(accessors.getExtension('file.txt')).toBe('.txt');
+      expect(accessors.getBaseName('file.txt')).toBe('file.txt');
+      expect(accessors.joinPaths('a', 'b')).toBe('a/b');
+    });
+  });
+
   // Phase 2: Functional Integration Tests with Real Filesystem Operations
   describe('Phase 2: Real filesystem integration with custom inferContentType', () => {
     describe('extension-based content type inference with real files', () => {

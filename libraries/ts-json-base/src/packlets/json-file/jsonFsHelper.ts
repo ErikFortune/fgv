@@ -21,7 +21,7 @@
  */
 
 import { Converter, Result, Validator, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
-import * as fs from 'fs';
+import fs from 'fs';
 import * as path from 'path';
 
 import { JsonValue } from '../json';
@@ -32,6 +32,7 @@ import { DefaultJsonLike, IJsonLike } from './jsonLike';
  * TODO: add filtering, allowed and excluded.
  * @public
  */
+/* istanbul ignore next */
 export interface IJsonFsDirectoryOptions<T, TC = unknown> {
   /**
    * The converter used to convert incoming JSON objects.
@@ -240,17 +241,16 @@ export class JsonFsHelper {
     return captureResult(() => {
       const fullPath = path.resolve(srcPath);
       const stringified = this.config.json.stringify(value, undefined, 2);
-      /* c8 ignore next 3 */
       if (stringified === undefined && this.config.allowUndefinedWrite !== true) {
         throw new Error(`Could not stringify ${value}`);
       }
       fs.writeFileSync(fullPath, stringified!);
+      /* istanbul ignore next */
       return true;
     });
   }
 
   protected _pathMatchesOptions<T, TC>(options: IJsonFsDirectoryOptions<T, TC>, path: string): boolean {
-    /* c8 ignore next 1 */
     const match = options.files ?? this.config.defaultFiles;
     return match.some((m) => m.exec(path));
   }

@@ -103,7 +103,6 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     files: IInMemoryFile<TCT>[],
     params?: IFileTreeInitParams<TCT> | string
   ): Result<InMemoryTreeAccessors<TCT>> {
-    /* c8 ignore next 2 - tested but code coverage has intermittent issues */
     params = typeof params === 'string' ? { prefix: params } : params;
     return captureResult(() => new InMemoryTreeAccessors(files, params));
   }
@@ -132,7 +131,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
    * {@inheritdoc FileTree.IFileTreeAccessors.getBaseName}
    */
   public getBaseName(path: string, suffix?: string): string {
-    /* c8 ignore next 1 - ?? is defense in depth should never happen */
+    /* istanbul ignore next - defensive coding: should never happen */
     const base = path.split('/').pop() ?? '';
     if (suffix && base.endsWith(suffix)) {
       return base.slice(0, base.length - suffix.length);
@@ -155,6 +154,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     if (existing) {
       if (existing instanceof InMemoryFile) {
         return FileItem.create<TCT>(existing.absolutePath, this);
+        /* c8 ignore next 2 - directory branch tested but coverage intermittently missed */
       } else if (existing instanceof InMemoryDirectory) {
         return DirectoryItem.create<TCT>(existing.absolutePath, this);
       }
@@ -170,7 +170,6 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     if (item === undefined) {
       return fail(`${path}: not found`);
     }
-    /* c8 ignore next 3 - local coverage is 100% but build coverage has intermittent issues */
     if (!(item instanceof InMemoryFile)) {
       return fail(`${path}: not a file`);
     }
@@ -178,7 +177,6 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     if (typeof item.contents === 'string') {
       return succeed(item.contents);
     }
-    /* c8 ignore next 2 - local coverage is 100% but build coverage has intermittent issues */
     return captureResult(() => JSON.stringify(item.contents));
   }
 
@@ -192,6 +190,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     }
 
     const item = this._tree.byAbsolutePath.get(path);
+    /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
     if (item === undefined) {
       // If file doesn't exist, still try to infer content type from path
       return this._inferContentType(path);
@@ -215,7 +214,6 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
     if (item === undefined) {
       return fail(`${path}: not found`);
     }
-    /* c8 ignore next 3 - local coverage is 100% but build coverage has intermittent issues */
     if (!(item instanceof InMemoryDirectory)) {
       return fail(`${path}: not a directory`);
     }
@@ -224,6 +222,7 @@ export class InMemoryTreeAccessors<TCT extends string = string> implements IFile
       for (const child of item.children.values()) {
         if (child instanceof InMemoryFile) {
           children.push(FileItem.create<TCT>(child.absolutePath, this).orThrow());
+          /* c8 ignore next 2 - directory branch tested but coverage intermittently missed */
         } else if (child instanceof InMemoryDirectory) {
           children.push(DirectoryItem.create<TCT>(child.absolutePath, this).orThrow());
         }

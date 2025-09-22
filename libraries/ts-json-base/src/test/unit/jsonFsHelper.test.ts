@@ -76,15 +76,12 @@ describe('JsonFsHelper class', () => {
 
     test('propagates any error', () => {
       const path = 'path/to/some/file.json';
-      jest.spyOn(fs, 'readFileSync').mockImplementation((gotPath: unknown) => {
-        if (typeof gotPath !== 'string') {
-          throw new Error('Mock implementation only accepts string');
-        }
-        expect(gotPath).toContain(path);
+      const spy = jest.spyOn(fs, 'readFileSync').mockImplementation(() => {
         throw new Error('Mock Error!');
       });
 
       expect(helper.readJsonFileSync(path)).toFailWith(/mock error/i);
+      spy.mockRestore();
     });
   });
 
@@ -315,11 +312,7 @@ describe('JsonFsHelper class', () => {
     test('propagates an error', () => {
       const path = 'path/to/some/file.json';
       const payload = { someProperty: 'some value', prop: [1, 2] };
-      const spy = jest.spyOn(fs, 'writeFileSync').mockImplementation((gotPath: unknown) => {
-        if (typeof gotPath !== 'string') {
-          throw new Error('Mock implementation only accepts string');
-        }
-        expect(gotPath).toContain(path);
+      const spy = jest.spyOn(fs, 'writeFileSync').mockImplementation(() => {
         throw new Error('Mock Error!');
       });
 

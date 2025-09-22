@@ -1,5 +1,4 @@
 {
-  "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
   "coveragePathIgnorePatterns": ["index.js", "public.js"],
   "coverageThreshold": {
     "global": {
@@ -10,5 +9,15 @@
     }
   },
   "collectCoverage": true,
-  "coverageReporters": ["text", "lcov", "html"]
+  "collectCoverageFrom": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/index.ts",
+    "!src/**/*.test.ts",
+    "!src/**/*.spec.ts"
+  ],
+  "coverageReporters": ["text", "lcov", "html"],
+  "coverageProvider": "babel",
+  "testMatch": ["**/src/**/?(*.)+(spec|test).[tj]s?(x)"],
+  "testPathIgnorePatterns": ["/node_modules/", "/lib/", "/dist/"]
 }

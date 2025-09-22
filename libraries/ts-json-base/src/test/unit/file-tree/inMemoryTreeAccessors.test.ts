@@ -21,9 +21,62 @@
  */
 
 import '@fgv/ts-utils-jest';
+import { Result } from '@fgv/ts-utils';
 import { InMemoryTreeAccessors, IInMemoryFile } from '../../../packlets/file-tree';
 
 describe('InMemoryTreeAccessors', () => {
+  // Tests for specific coverage gaps
+  describe('coverage gap tests', () => {
+    test('creates with string prefix parameter (line 105-106 coverage)', () => {
+      const files: IInMemoryFile[] = [{ path: '/test.json', contents: '{"key": "value"}' }];
+
+      // This should hit line 105: params = typeof params === 'string' ? { prefix: params } : params;
+      const result = InMemoryTreeAccessors.create(files, '/myprefix');
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        expect(accessors).toBeInstanceOf(InMemoryTreeAccessors);
+        expect(accessors.resolveAbsolutePath('test.json')).toBe('/myprefix/test.json');
+      });
+    });
+
+    test('creates with IFileTreeInitParams object parameter (line 105-106 coverage)', () => {
+      const files: IInMemoryFile[] = [{ path: '/test.json', contents: '{"key": "value"}' }];
+
+      // This should hit line 106: params = typeof params === 'string' ? { prefix: params } : params;
+      const result = InMemoryTreeAccessors.create(files, { prefix: '/objectprefix' });
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        expect(accessors).toBeInstanceOf(InMemoryTreeAccessors);
+        expect(accessors.resolveAbsolutePath('test.json')).toBe('/objectprefix/test.json');
+      });
+    });
+
+    test('getFileContents for non-existent file (line 168 coverage)', () => {
+      const files: IInMemoryFile[] = [{ path: '/existing.json', contents: '{"exists": true}' }];
+
+      const result = InMemoryTreeAccessors.create(files);
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        // This should hit line 168: if (item === undefined) { return fail(`${path}: not found`); }
+        expect(accessors.getFileContents('/nonexistent.json')).toFailWith(/not found/i);
+      });
+    });
+
+    test('getFileContentType for non-existent file still tries inference (line 192-194 coverage)', () => {
+      const { succeed } = require('@fgv/ts-utils');
+      const customInfer = (filePath: string): Result<string | undefined> => {
+        if (filePath.endsWith('.custom')) return succeed('custom/type');
+        return succeed(undefined);
+      };
+
+      const files: IInMemoryFile[] = [{ path: '/existing.json', contents: '{"exists": true}' }];
+
+      const result = InMemoryTreeAccessors.create(files, { inferContentType: customInfer });
+      expect(result).toSucceedAndSatisfy((accessors) => {
+        // This should hit lines 192-194 when file doesn't exist
+        expect(accessors.getFileContentType('/nonexistent.custom')).toSucceedWith('custom/type');
+        expect(accessors.getFileContentType('/nonexistent.other')).toSucceedWith(undefined);
+      });
+    });
+  });
+
   describe('create static method', () => {
     test('creates from empty file array', () => {
       const result = InMemoryTreeAccessors.create([]);
