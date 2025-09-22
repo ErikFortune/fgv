@@ -394,13 +394,14 @@ describe('Resolution Core Workflows', () => {
 
       expect(result.current.state.pendingContextValues.language).toBe('');
 
-      // Apply should work without errors
+      // Apply should now fail with proper validation error for empty string (invalid language)
       act(() => {
         const applyResult = result.current.actions.applyContext();
-        expect(applyResult).toSucceed();
+        expect(applyResult).toFailWith(/invalid context value for qualifierType language/i);
       });
 
-      expect(result.current.state.contextValues.language).toBe('');
+      // Context value should remain unchanged since apply failed
+      expect(result.current.state.contextValues.language).toBeUndefined();
     });
 
     test('handles invalid qualifier names', () => {

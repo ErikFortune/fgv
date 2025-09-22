@@ -61,7 +61,12 @@ describe('resolutionUtils', () => {
         } as unknown as Resources.ResourceManagerBuilder,
         qualifiers: {
           validating: {
-            get: jest.fn()
+            get: jest.fn().mockImplementation((name: string) => ({
+              asResult: succeed({
+                name,
+                validateContextValue: jest.fn().mockImplementation((value: string) => succeed(value))
+              })
+            }))
           }
         } as unknown as Qualifiers.IReadOnlyQualifierCollector,
         qualifierTypes: {} as unknown as QualifierTypes.ReadOnlyQualifierTypeCollector,
