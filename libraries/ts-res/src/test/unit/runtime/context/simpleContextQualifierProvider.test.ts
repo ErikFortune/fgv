@@ -142,7 +142,9 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.get(0 as TsRes.QualifierIndex)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
       expect(provider.get(1 as TsRes.QualifierIndex)).toSucceedWith('US' as TsRes.QualifierContextValue);
       expect(provider.get(2 as TsRes.QualifierIndex)).toSucceedWith('high' as TsRes.QualifierContextValue);
-      expect(provider.get(99 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
+      expect(provider.get(99 as TsRes.QualifierIndex)).toFailWith(
+        /99: not a valid Qualifier, name or index/i
+      );
     });
 
     test('accepts Qualifier object parameter', () => {
@@ -159,12 +161,18 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.get('this is an invalid qualifier name' as TsRes.QualifierName)).toFailWith(
         /invalid qualifier name/i
       );
-      expect(provider.get({} as unknown as TsRes.QualifierName)).toFailWith(/invalid qualifier parameter/i);
-      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(/invalid qualifier parameter/i);
-      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
-        /invalid qualifier parameter/i
+      expect(provider.get({} as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
       );
-      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(/invalid qualifier parameter/i);
+      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
+      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
+      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
     });
 
     test('handles _resolveQualifierName failure in get method', () => {
@@ -209,9 +217,11 @@ describe('SimpleContextQualifierProvider class', () => {
 
     test('fails with invalid parameter types', () => {
       expect(provider.getValidated({} as unknown as TsRes.QualifierName)).toFailWith(
-        /Invalid qualifier parameter/
+        /not a valid Qualifier, name or index/i
       );
-      expect(provider.getValidated(99 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
+      expect(provider.getValidated(99 as TsRes.QualifierIndex)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
     });
 
     test('handles _resolveQualifierName failure in getValidated method', () => {
@@ -418,15 +428,19 @@ describe('SimpleContextQualifierProvider class', () => {
 
     test('fails with invalid parameter that falls through to final error', () => {
       // This tests the final error case in _resolveQualifierName (line 220)
-      expect(provider.get(true as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+      expect(provider.get(true as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
       expect(provider.get(function () {} as unknown as TsRes.QualifierName)).toFailWith(
-        /Invalid qualifier parameter/
+        /not a valid Qualifier, name or index/i
       );
     });
 
     test('fails with number parameter for non-existent index', () => {
       // This tests the number branch failure case in _resolveQualifierName (line 217)
-      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
+      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(
+        /999: not a valid Qualifier, name or index/i
+      );
     });
 
     test('covers successful paths in _resolveQualifierName', () => {
@@ -473,7 +487,9 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.get(1 as TsRes.QualifierIndex)).toSucceedWith('US' as TsRes.QualifierContextValue);
 
       // Test failed number parameter resolution - covers lines 101-102 via line 217
-      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
+      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(
+        /999: not a valid Qualifier, name or index/i
+      );
     });
 
     test('handles object parameter (Qualifier) - covers lines 203-208', () => {
@@ -484,12 +500,18 @@ describe('SimpleContextQualifierProvider class', () => {
 
     test('handles invalid parameter types - covers lines 101-102 via line 220', () => {
       // Test with invalid parameter types that cause _resolveQualifierName to fail
-      expect(provider.get(true as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
-      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
-      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
-        /Invalid qualifier parameter/
+      expect(provider.get(true as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
       );
-      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(/Invalid qualifier parameter/);
+      expect(provider.get(null as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
+      expect(provider.get(undefined as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
+      expect(provider.get([] as unknown as TsRes.QualifierName)).toFailWith(
+        /not a valid Qualifier, name or index/i
+      );
     });
   });
 

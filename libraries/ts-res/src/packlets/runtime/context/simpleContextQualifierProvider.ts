@@ -27,7 +27,7 @@ import {
   succeed,
   fail,
   succeedWithDetail,
-  Validators
+  Converters
 } from '@fgv/ts-utils';
 import {
   QualifierName,
@@ -212,32 +212,40 @@ export class SimpleContextQualifierProvider
   private _resolveQualifierName(
     nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
   ): Result<QualifierName> {
-    // Try as string (QualifierName)
-    const nameResult = CommonConverters.qualifierName.convert(nameOrIndexOrQualifier);
-    if (nameResult.isSuccess()) {
-      return nameResult;
-    }
+    return CommonConverters.qualifierName
+      .convert(nameOrIndexOrQualifier)
+      .onFailure(() => this._qualifierNameFromQualifierIndex(nameOrIndexOrQualifier))
+      .onFailure(() =>
+        nameOrIndexOrQualifier instanceof Qualifier
+          ? succeed(nameOrIndexOrQualifier.name)
+          : fail(`not a Qualifier`)
+      )
+      .onFailure(() => SimpleContextQualifierProvider._qualifierNameFromQualifierLike(nameOrIndexOrQualifier))
+      .withErrorFormat((__error) => `${nameOrIndexOrQualifier}: not a valid Qualifier, name or index`);
+  }
 
-    // Try as number (QualifierIndex)
-    const indexResult = CommonConverters.qualifierIndex.convert(nameOrIndexOrQualifier);
-    if (indexResult.isSuccess()) {
-      return this.qualifiers.getAt(indexResult.value).onSuccess((qualifier) => succeed(qualifier.name));
-    }
-
-    // Try as Qualifier-like object (duck typing for objects with name property)
-    const qualifierLikeValidator = Validators.isA(
+  // Try as Qualifier-like object (duck typing for objects with name property)
+  private static _qualifierNameFromQualifierLike(
+    nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
+  ): Result<QualifierName> {
+    return Converters.isA(
       'Qualifier-like object',
       (v): v is { name: QualifierName } =>
         typeof v === 'object' &&
         v !== null &&
         'name' in v &&
         typeof (v as Record<string, unknown>).name === 'string'
-    );
-    const qualifierLikeResult = qualifierLikeValidator.validate(nameOrIndexOrQualifier);
-    if (qualifierLikeResult.isSuccess()) {
-      return succeed(qualifierLikeResult.value.name);
-    }
+    )
+      .map((v) => CommonConverters.qualifierName.convert(v.name))
+      .convert(nameOrIndexOrQualifier);
+  }
 
-    return fail(`Invalid qualifier parameter: ${nameOrIndexOrQualifier}`);
+  private _qualifierNameFromQualifierIndex(
+    nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
+  ): Result<QualifierName> {
+    return CommonConverters.qualifierIndex
+      .convert(nameOrIndexOrQualifier)
+      .onSuccess((index) => this.qualifiers.getAt(index).onSuccess((qualifier) => succeed(qualifier.name)))
+      .withErrorFormat((error) => `${nameOrIndexOrQualifier}: invalid qualifier index (${error})`);
   }
 }
