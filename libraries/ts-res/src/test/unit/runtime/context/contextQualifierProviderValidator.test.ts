@@ -140,14 +140,18 @@ describe('ContextQualifierProviderValidator classes', () => {
     }).orThrow();
 
     mockProvider = new MockContextQualifierProvider(qualifiers);
-    mutableValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createMutable(mockProvider);
-    readOnlyValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createReadOnly({
-      mutable: false as const,
-      qualifiers,
-      get: mockProvider.get.bind(mockProvider),
-      getValidated: mockProvider.getValidated.bind(mockProvider),
-      has: mockProvider.has.bind(mockProvider),
-      getNames: mockProvider.getNames.bind(mockProvider)
+    mutableValidator = new TsRes.Runtime.Context.MutableContextQualifierProviderValidator({
+      provider: mockProvider
+    });
+    readOnlyValidator = new TsRes.Runtime.Context.ReadOnlyContextQualifierProviderValidator({
+      provider: {
+        mutable: false as const,
+        qualifiers,
+        get: mockProvider.get.bind(mockProvider),
+        getValidated: mockProvider.getValidated.bind(mockProvider),
+        has: mockProvider.has.bind(mockProvider),
+        getNames: mockProvider.getNames.bind(mockProvider)
+      }
     });
   });
 
@@ -486,9 +490,9 @@ describe('ContextQualifierProviderValidator classes', () => {
         has: mockProvider.has.bind(mockProvider),
         getNames: mockProvider.getNames.bind(mockProvider)
       };
-      const readOnlyValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createReadOnly(
-        readOnlyProvider as TsRes.Runtime.Context.IReadOnlyContextQualifierProvider
-      );
+      const readOnlyValidator = new TsRes.Runtime.Context.ReadOnlyContextQualifierProviderValidator({
+        provider: readOnlyProvider
+      });
       // ReadOnlyContextQualifierProviderValidator doesn't have a set method at compile time
       // This is now a compile-time type safety feature, not a runtime check
       expect('set' in readOnlyValidator).toBe(false);
@@ -513,9 +517,9 @@ describe('ContextQualifierProviderValidator classes', () => {
           throw new Error('Clear operation failed');
         }
       };
-      const throwingValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createMutable(
-        throwingProvider as TsRes.Runtime.Context.IMutableContextQualifierProvider
-      );
+      const throwingValidator = new TsRes.Runtime.Context.MutableContextQualifierProviderValidator({
+        provider: throwingProvider as TsRes.Runtime.Context.IMutableContextQualifierProvider
+      });
       // The validator should catch the exception and return a failure
       expect(throwingValidator.set('language', 'fr-FR')).toFailWith(/Set operation failed/);
     });
@@ -545,9 +549,9 @@ describe('ContextQualifierProviderValidator classes', () => {
         has: mockProvider.has.bind(mockProvider),
         getNames: mockProvider.getNames.bind(mockProvider)
       };
-      const readOnlyValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createReadOnly(
-        readOnlyProvider as TsRes.Runtime.Context.IReadOnlyContextQualifierProvider
-      );
+      const readOnlyValidator = new TsRes.Runtime.Context.ReadOnlyContextQualifierProviderValidator({
+        provider: readOnlyProvider
+      });
       // ReadOnlyContextQualifierProviderValidator doesn't have a remove method at compile time
       // This is now a compile-time type safety feature, not a runtime check
       expect('remove' in readOnlyValidator).toBe(false);
@@ -572,9 +576,9 @@ describe('ContextQualifierProviderValidator classes', () => {
           throw new Error('Clear operation failed');
         }
       };
-      const throwingValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createMutable(
-        throwingProvider as TsRes.Runtime.Context.IMutableContextQualifierProvider
-      );
+      const throwingValidator = new TsRes.Runtime.Context.MutableContextQualifierProviderValidator({
+        provider: throwingProvider
+      });
       // The validator should catch the exception and return a failure
       expect(throwingValidator.remove('language')).toFailWith(/Remove operation failed/);
     });

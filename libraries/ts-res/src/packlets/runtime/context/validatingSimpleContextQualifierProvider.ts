@@ -25,8 +25,8 @@ import { QualifierContextValue } from '../../common';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
 import { SimpleContextQualifierProvider } from './simpleContextQualifierProvider';
 import {
-  ContextQualifierProviderValidators,
-  IMutableContextQualifierProviderValidator
+  IMutableContextQualifierProviderValidator,
+  MutableContextQualifierProviderValidator
 } from './contextQualifierProviderValidator';
 
 /**
@@ -78,7 +78,7 @@ export class ValidatingSimpleContextQualifierProvider extends SimpleContextQuali
       qualifierValues: convertedValues
     });
 
-    this.validating = ContextQualifierProviderValidators.createMutable(this);
+    this.validating = new MutableContextQualifierProviderValidator({ provider: this });
   }
 
   /**

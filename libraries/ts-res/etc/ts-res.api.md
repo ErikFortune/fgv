@@ -899,7 +899,6 @@ declare namespace Context_2 {
         IContextQualifierProviderValidatorCreateParams,
         ReadOnlyContextQualifierProviderValidator,
         MutableContextQualifierProviderValidator,
-        ContextQualifierProviderValidators,
         ISimpleContextQualifierProviderCreateParams,
         SimpleContextQualifierProvider,
         IValidatingSimpleContextQualifierProviderCreateParams,
@@ -921,13 +920,6 @@ abstract class ContextQualifierProvider implements IContextQualifierProviderBase
     abstract getValidated(nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier): Result<QualifierContextValue>;
     abstract has(name: QualifierName): Result<boolean>;
     abstract readonly qualifiers: IReadOnlyQualifierCollector;
-}
-
-// @public
-class ContextQualifierProviderValidators {
-    static create<T extends IContextQualifierProvider>(provider: T): T extends IMutableContextQualifierProvider ? MutableContextQualifierProviderValidator : ReadOnlyContextQualifierProviderValidator;
-    static createMutable(provider: IMutableContextQualifierProvider): MutableContextQualifierProviderValidator;
-    static createReadOnly(provider: IReadOnlyContextQualifierProvider): ReadOnlyContextQualifierProviderValidator;
 }
 
 // @public
