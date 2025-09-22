@@ -606,11 +606,15 @@ interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD,
 const defaultValidatorTraits: ValidatorTraitValues;
 
 // @public
+export type DeferredResult<T> = () => Result<T>;
+
+// @public
 function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Converter<string[], string>;
 
 // @public
 export class DetailedFailure<T, TD> extends Failure<T> {
     constructor(message: string, detail?: TD);
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this;
     get asResult(): Result<T>;
     get detail(): TD | undefined;
     // @internal (undocumented)
@@ -697,7 +701,7 @@ export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFa
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
-    aggregateError(errors: IMessageAggregator): this;
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -763,6 +767,9 @@ type FieldTransformers<TSRC, TDEST, TC = unknown> = {
 type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
+
+// @public
+export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>): Result<T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1178,7 +1185,7 @@ interface IRecordOfValidatorOptions<TK extends string = string, TC = unknown> {
 
 // @public
 export interface IResult<T> {
-    aggregateError(errors: IMessageAggregator): this;
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -1251,6 +1258,9 @@ function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T
 //
 // @public
 function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
+
+// @public
+export function isDeferredResult<T>(result: Result<T> | DeferredResult<T>): result is DeferredResult<T>;
 
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;
@@ -2036,7 +2046,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
-    aggregateError(__errors: IMessageAggregator): this;
+    aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated

@@ -178,9 +178,21 @@ export class Collector<
    * {@inheritdoc Collections.IReadOnlyCollector.getAt}
    */
   public getAt(index: number): Result<TITEM> {
-    if (index < 0 || index >= this._byIndex.length) {
-      return fail(`${index}: out of range.`);
+    if (typeof index !== 'number') {
+      // Handle Symbol conversion safely
+      const indexStr = typeof index === 'symbol' ? (index as symbol).toString() : String(index);
+      return fail(`${indexStr}: collector index must be a number.`);
     }
+
+    // Check that the number is a finite integer (handles NaN, Infinity, and non-integers)
+    if (!Number.isFinite(index) || !Number.isInteger(index)) {
+      return fail(`${index}: collector index must be a finite integer.`);
+    }
+
+    if (index < 0 || index >= this._byIndex.length) {
+      return fail(`${index}: collector index out of range.`);
+    }
+
     return succeed(this._byIndex[index]);
   }
 

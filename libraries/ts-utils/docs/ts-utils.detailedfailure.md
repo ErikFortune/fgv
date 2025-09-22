@@ -134,6 +134,20 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[aggregateError(errors, formatter)](./ts-utils.detailedfailure.aggregateerror.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Propagates interior result, appending any error message to the supplied errors array.
+
+
+</td></tr>
+<tr><td>
+
 [isFailure()](./ts-utils.detailedfailure.isfailure.md)
 
 

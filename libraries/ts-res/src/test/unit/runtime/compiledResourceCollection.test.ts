@@ -727,7 +727,7 @@ describe('CompiledResourceCollection class', () => {
 
       // Should fail during construction when validating the incomplete resource
       expect(TsRes.Runtime.CompiledResourceCollection.create(createParams)).toFailWith(
-        /Cannot read properties of undefined|Field not found|Missing.*property|Invalid.*decision|Invalid.*candidates/
+        /Invalid resource type index undefined for resource incomplete-resource: undefined: collector index must be a number/i
       );
     });
   });

@@ -21,7 +21,7 @@
  */
 
 import fs from 'fs';
-import * as path from 'path';
+import path from 'path';
 
 /**
  * @public
@@ -165,15 +165,18 @@ export class MockFileSystem {
     this._extraWrites.splice(0, this._extraWrites.length);
   }
 
-  public startSpies(): ReadWriteSpies {
+  public startSpies(fsModule?: typeof fs): ReadWriteSpies {
+    // Dynamic import of fs at runtime to avoid babel instrumentation timing issues
+    const fsToMock = fsModule || require('fs');
+
     return new ReadWriteSpies(
-      jest.spyOn(fs, 'readFileSync').mockImplementation((wanted: unknown) => {
+      jest.spyOn(fsToMock, 'readFileSync').mockImplementation((wanted: unknown) => {
         if (typeof wanted !== 'string') {
           throw new Error('readFileSync mock supports only string parameters');
         }
         return this.readMockFileSync(wanted);
       }),
-      jest.spyOn(fs, 'writeFileSync').mockImplementation((wanted: unknown, payload: unknown) => {
+      jest.spyOn(fsToMock, 'writeFileSync').mockImplementation((wanted: unknown, payload: unknown) => {
         if (typeof wanted !== 'string' || typeof payload !== 'string') {
           throw new Error('writeFileSync mock supports only string parameters');
         }

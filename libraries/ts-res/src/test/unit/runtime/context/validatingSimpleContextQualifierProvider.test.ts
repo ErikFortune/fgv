@@ -129,13 +129,67 @@ describe('ValidatingSimpleContextQualifierProvider class', () => {
     });
 
     test('provides string-based validated access', () => {
-      expect(provider.validating.getValidated('language')).toFailWith(/getValidated not yet implemented/);
-      expect(provider.validating.getValidated('nonexistent')).toFail();
+      expect(provider.validating.getValidated('language')).toSucceedWith(
+        'en-US' as TsRes.QualifierContextValue
+      );
+      expect(provider.validating.getValidated('territory')).toSucceedWith(
+        'US' as TsRes.QualifierContextValue
+      );
+      expect(provider.validating.getValidated('priority')).toSucceedWith(
+        'high' as TsRes.QualifierContextValue
+      );
+      expect(provider.validating.getValidated('nonexistent')).toFailWith(/Not a valid qualifier name/);
     });
 
     test('provides index-based validated access', () => {
-      expect(provider.validating.getValidatedByIndex(0)).toFailWith(/getValidated not yet implemented/);
-      expect(provider.validating.getValidatedByIndex(99)).toFail();
+      expect(provider.validating.getValidatedByIndex(0)).toSucceedWith(
+        'en-US' as TsRes.QualifierContextValue
+      );
+      expect(provider.validating.getValidatedByIndex(1)).toSucceedWith('US' as TsRes.QualifierContextValue);
+      expect(provider.validating.getValidatedByIndex(2)).toSucceedWith('high' as TsRes.QualifierContextValue);
+      expect(provider.validating.getValidatedByIndex(99)).toFailWith(/Not a valid qualifier index/);
+    });
+
+    test('validates values using qualifier type-specific validation', () => {
+      // Create provider with invalid values that would pass get() but fail validation
+      const providerWithInvalidValues = TsRes.Runtime.ValidatingSimpleContextQualifierProvider.create({
+        qualifiers,
+        qualifierValues: {
+          language: 'invalid-language-tag', // Invalid BCP47 tag
+          territory: 'INVALID_TERRITORY', // Invalid territory
+          priority: 'invalid-priority' // Invalid literal value
+        }
+      }).orThrow();
+
+      // Regular get operations should succeed
+      expect(providerWithInvalidValues.validating.get('language')).toSucceedWith(
+        'invalid-language-tag' as TsRes.QualifierContextValue
+      );
+      expect(providerWithInvalidValues.validating.get('territory')).toSucceedWith(
+        'INVALID_TERRITORY' as TsRes.QualifierContextValue
+      );
+      expect(providerWithInvalidValues.validating.get('priority')).toSucceedWith(
+        'invalid-priority' as TsRes.QualifierContextValue
+      );
+
+      // But validation should fail
+      expect(providerWithInvalidValues.validating.getValidated('language')).toFail();
+      expect(providerWithInvalidValues.validating.getValidated('territory')).toFail();
+      expect(providerWithInvalidValues.validating.getValidated('priority')).toFail();
+    });
+
+    test('validates literal values against enumerated options', () => {
+      // Test all valid enumerated values for priority
+      const validValues = ['high', 'medium', 'low'];
+      for (const value of validValues) {
+        provider.validating.set('priority', value).orThrow();
+        expect(provider.validating.getValidated('priority')).toSucceedWith(
+          value as TsRes.QualifierContextValue
+        );
+      }
+
+      // Test that setting an invalid enumerated value fails in the validator
+      expect(provider.validating.set('priority', 'invalid')).toFail();
     });
 
     test('provides string-based has method', () => {

@@ -2,118 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [Runtime](./ts-res.runtime.md) &gt; [Context](./ts-res.runtime.context.md) &gt; [IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md)
 
-## Runtime.Context.IContextQualifierProvider interface
+## Runtime.Context.IContextQualifierProvider type
 
-Abstract interface for providing qualifier values in an optimized runtime context. Acts as a property bag using the Result pattern for qualifier value lookups.
+Union type for context qualifier providers that can be either read-only or mutable. Provides compile-time type discrimination via the `mutable` property.
 
 **Signature:**
 
 ```typescript
-export interface IContextQualifierProvider 
+export type IContextQualifierProvider = IReadOnlyContextQualifierProvider | IMutableContextQualifierProvider;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[qualifiers](./ts-res.runtime.context.icontextqualifierprovider.qualifiers.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
-
-
-</td><td>
-
-The readonly qualifier collector that defines and validates the qualifiers for this context.
-
-
-</td></tr>
-</tbody></table>
-
-## Methods
-
-<table><thead><tr><th>
-
-Method
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[get(nameOrIndexOrQualifier)](./ts-res.runtime.context.icontextqualifierprovider.get.md)
-
-
-</td><td>
-
-Gets a qualifier value by its name, index, or qualifier object.
-
-
-</td></tr>
-<tr><td>
-
-[getNames()](./ts-res.runtime.context.icontextqualifierprovider.getnames.md)
-
-
-</td><td>
-
-Gets all available qualifier names in this context.
-
-
-</td></tr>
-<tr><td>
-
-[getValidated(nameOrIndexOrQualifier)](./ts-res.runtime.context.icontextqualifierprovider.getvalidated.md)
-
-
-</td><td>
-
-Gets a validated qualifier context value by its name, index, or qualifier object.
-
-
-</td></tr>
-<tr><td>
-
-[has(name)](./ts-res.runtime.context.icontextqualifierprovider.has.md)
-
-
-</td><td>
-
-Checks if a qualifier value exists with the given name.
-
-
-</td></tr>
-</tbody></table>
-

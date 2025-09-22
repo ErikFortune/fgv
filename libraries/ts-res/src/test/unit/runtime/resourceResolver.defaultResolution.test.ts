@@ -191,7 +191,7 @@ describe('ResourceResolver Default Resolution Tests', () => {
     test('resolves condition that does not match', () => {
       expect(resourceManager.conditions.getAt(0)).toSucceedAndSatisfy((condition) => {
         // Change context to something unlikely to match
-        expect(contextProvider.validating.set('language', 'zz')).toSucceed();
+        expect(contextProvider.validating.set('language', 'chr')).toSucceed();
         expect(resolver.clearConditionCache()).toBeUndefined();
 
         expect(resolver.resolveCondition(condition)).toSucceedAndSatisfy((result) => {

@@ -114,7 +114,7 @@ Simple concrete implementation of [IContextQualifierProvider](./ts-res.runtime.c
 
 </td><td>
 
-A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.context.contextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
+A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.context.mutablecontextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
 
 
 </td></tr>

@@ -24,9 +24,11 @@ import '../helpers/jest';
 
 import {
   MessageAggregator,
+  Result,
   allSucceed,
   fail,
   failWithDetail,
+  firstSuccess,
   isKeyOf,
   mapDetailedResults,
   mapFailures,
@@ -451,6 +453,255 @@ describe('mapResults module', () => {
           expect(isKeyOf('field2', thing)).toBe(false);
           expect(isKeyOf('field3', thing)).toBe(true);
         });
+      });
+    });
+  });
+
+  describe('firstSuccess function', () => {
+    describe('with all successful results', () => {
+      test('should return the first successful result when all are successful', () => {
+        const results = [succeed('first'), succeed('second'), succeed('third')];
+        expect(firstSuccess(results)).toSucceedWith('first');
+      });
+
+      test('should return the first result from a single successful result', () => {
+        const results = [succeed('only')];
+        expect(firstSuccess(results)).toSucceedWith('only');
+      });
+
+      test('should work with different result types', () => {
+        const results = [succeed(42), succeed(100), succeed(0)];
+        expect(firstSuccess(results)).toSucceedWith(42);
+      });
+    });
+
+    describe('with mixed success and failure results', () => {
+      test('should return the first successful result when it comes first', () => {
+        const results = [succeed('success'), fail('error1'), fail('error2')];
+        expect(firstSuccess(results)).toSucceedWith('success');
+      });
+
+      test('should return the first successful result when it comes in the middle', () => {
+        const results = [fail('error1'), succeed('success'), fail('error2')];
+        expect(firstSuccess(results)).toSucceedWith('success');
+      });
+
+      test('should return the first successful result when it comes last', () => {
+        const results = [fail('error1'), fail('error2'), succeed('success')];
+        expect(firstSuccess(results)).toSucceedWith('success');
+      });
+
+      test('should skip all failures before finding success', () => {
+        const results = [
+          fail('error1'),
+          fail('error2'),
+          fail('error3'),
+          succeed('found'),
+          succeed('not-used')
+        ];
+        expect(firstSuccess(results)).toSucceedWith('found');
+      });
+    });
+
+    describe('with all failed results', () => {
+      test('should fail with aggregated error messages when all results fail', () => {
+        const results = [fail('error1'), fail('error2'), fail('error3')];
+        const result = firstSuccess(results);
+        expect(result).toFail();
+        if (result.isFailure()) {
+          expect(result.message).toContain('error1');
+          expect(result.message).toContain('error2');
+          expect(result.message).toContain('error3');
+        }
+      });
+
+      test('should fail with single error message for single failed result', () => {
+        const results = [fail('single error')];
+        expect(firstSuccess(results)).toFailWith(/single error/);
+      });
+
+      test('should aggregate multiple error messages in order', () => {
+        const results = [fail('first error'), fail('second error')];
+        const result = firstSuccess(results);
+        expect(result).toFail();
+        if (result.isFailure()) {
+          // Should contain both error messages
+          expect(result.message).toContain('first error');
+          expect(result.message).toContain('second error');
+        }
+      });
+    });
+
+    describe('with deferred results', () => {
+      test('should handle deferred results that succeed', () => {
+        const deferredSuccess = (): Result<string> => succeed('deferred success');
+        const deferredFailure = (): Result<string> => fail('deferred error');
+        const results = [deferredFailure, deferredSuccess, succeed('not used')];
+        expect(firstSuccess(results)).toSucceedWith('deferred success');
+      });
+
+      test('should handle all deferred results that fail', () => {
+        const deferredFailure1 = (): Result<string> => fail('deferred error 1');
+        const deferredFailure2 = (): Result<string> => fail('deferred error 2');
+        const results = [deferredFailure1, deferredFailure2];
+        const result = firstSuccess(results);
+        expect(result).toFail();
+        if (result.isFailure()) {
+          expect(result.message).toContain('deferred error 1');
+          expect(result.message).toContain('deferred error 2');
+        }
+      });
+
+      test('should handle mixed regular and deferred results', () => {
+        const deferredFailure = (): Result<string> => fail('deferred error');
+        const deferredSuccess = (): Result<string> => succeed('deferred success');
+        const results = [fail('regular error'), deferredFailure, deferredSuccess];
+        expect(firstSuccess(results)).toSucceedWith('deferred success');
+      });
+
+      test('should call deferred functions only until first success', () => {
+        const mockDeferred1 = jest.fn(() => fail('error1'));
+        const mockDeferred2 = jest.fn(() => succeed('success'));
+        const mockDeferred3 = jest.fn(() => succeed('not called'));
+        const results = [mockDeferred1, mockDeferred2, mockDeferred3];
+
+        expect(firstSuccess(results)).toSucceedWith('success');
+        expect(mockDeferred1).toHaveBeenCalledTimes(1);
+        expect(mockDeferred2).toHaveBeenCalledTimes(1);
+        expect(mockDeferred3).not.toHaveBeenCalled();
+      });
+
+      test('should handle deferred results with complex types', () => {
+        interface TestData {
+          id: number;
+          name: string;
+        }
+        const deferredSuccess = (): Result<TestData> => succeed<TestData>({ id: 1, name: 'test' });
+        const results = [(): Result<TestData> => fail<TestData>('error'), deferredSuccess];
+        expect(firstSuccess(results)).toSucceedAndSatisfy((data: TestData) => {
+          expect(data.id).toBe(1);
+          expect(data.name).toBe('test');
+        });
+      });
+    });
+
+    describe('with edge cases', () => {
+      test('should handle empty iterable', () => {
+        const results: never[] = [];
+        expect(firstSuccess(results)).toFailWith(/no results found/);
+      });
+
+      test('should handle results with undefined values', () => {
+        const results = [succeed(undefined), fail('error')];
+        expect(firstSuccess(results)).toSucceedWith(undefined);
+      });
+
+      test('should handle results with null values', () => {
+        const results = [fail('error'), succeed(null)];
+        expect(firstSuccess(results)).toSucceedWith(null);
+      });
+
+      test('should handle results with empty string values', () => {
+        const results = [fail('error'), succeed('')];
+        expect(firstSuccess(results)).toSucceedWith('');
+      });
+
+      test('should handle results with zero values', () => {
+        const results = [fail('error'), succeed(0)];
+        expect(firstSuccess(results)).toSucceedWith(0);
+      });
+
+      test('should handle results with false values', () => {
+        const results = [fail('error'), succeed(false)];
+        expect(firstSuccess(results)).toSucceedWith(false);
+      });
+    });
+
+    describe('with error message formatting', () => {
+      test('should format error messages consistently when no successes found', () => {
+        const results = [fail('Error 1'), fail('Error 2')];
+        const result = firstSuccess(results);
+        expect(result).toFail();
+        if (result.isFailure()) {
+          // Should either contain the aggregated errors or the fallback message
+          const hasAggregatedErrors =
+            result.message.includes('Error 1') && result.message.includes('Error 2');
+          const hasFallbackMessage = result.message.includes('no results found');
+          expect(hasAggregatedErrors || hasFallbackMessage).toBe(true);
+        }
+      });
+
+      test('should handle very long error messages', () => {
+        const longError =
+          'This is a very long error message that might exceed normal length expectations and should still be handled properly by the error aggregation mechanism';
+        const results = [fail(longError), fail('Short error')];
+        const result = firstSuccess(results);
+        expect(result).toFail();
+        if (result.isFailure()) {
+          expect(result.message.length).toBeGreaterThan(longError.length);
+        }
+      });
+
+      test('should handle error messages with special characters', () => {
+        const specialError = 'Error with "quotes", newlines\n, and symbols: @#$%^&*()';
+        const results = [fail(specialError)];
+        // Should contain the error message with special characters
+        const result = firstSuccess(results);
+        expect(result).toFail();
+        if (result.isFailure()) {
+          expect(result.message).toContain('Error with "quotes"');
+          expect(result.message).toContain('symbols: @#$%^&*()');
+        }
+      });
+    });
+
+    describe('integration with Result pattern', () => {
+      test('should work with chained Result operations', () => {
+        const parseNumber = (s: string): Result<number> => {
+          const num = parseInt(s, 10);
+          return isNaN(num) ? fail(`Invalid number: ${s}`) : succeed(num);
+        };
+
+        const results = ['abc', '123', '456'].map(parseNumber);
+        expect(firstSuccess(results)).toSucceedWith(123);
+      });
+
+      test('should work with Result transformations', () => {
+        const processString = (s: string): Result<string> =>
+          s.length > 0 ? succeed(s.toUpperCase()) : fail('Empty string');
+
+        const results = ['', 'hello', 'world'].map(processString);
+        expect(firstSuccess(results)).toSucceedWith('HELLO');
+      });
+
+      test('should maintain type safety with generic types', () => {
+        // Demonstrate type safety with same-type results
+        const stringResults = [succeed('hello'), succeed('world')];
+        expect(firstSuccess(stringResults)).toSucceedWith('hello');
+
+        const numberResults = [succeed(42), succeed(100)];
+        expect(firstSuccess(numberResults)).toSucceedWith(42);
+      });
+    });
+
+    describe('performance considerations', () => {
+      test('should stop evaluation at first success with large number of results', () => {
+        const mockResults = Array.from({ length: 1000 }, (_, i) =>
+          i === 2 ? succeed('found') : fail(`error ${i}`)
+        );
+
+        expect(firstSuccess(mockResults)).toSucceedWith('found');
+      });
+
+      test('should handle large arrays of all failures efficiently', () => {
+        const largeFailureSet = Array.from({ length: 100 }, (_, i) => fail(`error ${i}`));
+        const result = firstSuccess(largeFailureSet);
+        expect(result).toFail();
+        // Should aggregate all errors
+        if (result.isFailure()) {
+          expect(result.message).toContain('error 0');
+          expect(result.message).toContain('error 99');
+        }
       });
     });
   });

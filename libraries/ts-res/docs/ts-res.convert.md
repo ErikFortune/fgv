@@ -184,6 +184,17 @@ Description
 </td></tr>
 <tr><td>
 
+[qualifierContextValue](./ts-res.convert.qualifiercontextvalue.md)
+
+
+</td><td>
+
+`Converter` which validates an `unknown` value as a [QualifierContextValue](./ts-res.qualifiercontextvalue.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [qualifierDefaultValuesToken](./ts-res.convert.qualifierdefaultvaluestoken.md)
 
 

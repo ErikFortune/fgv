@@ -543,47 +543,61 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
     });
 
     for (const compiledResource of compiled.resources) {
-      const resourceTypeResult = resourceTypes.getAt(compiledResource.type);
-      /* c8 ignore next 5 - defensive coding: resource type index should be valid in compiled data */
-      if (resourceTypeResult.isFailure()) {
-        errors.addMessage(
-          `Invalid resource type index ${compiledResource.type} for resource ${compiledResource.id}: ${resourceTypeResult.message}`
-        );
-        continue;
-      }
-      const resourceType = resourceTypeResult.value;
+      const resourceType = resourceTypes
+        .getAt(compiledResource.type)
+        .aggregateError(
+          errors,
+          (message) =>
+            `Invalid resource type index ${compiledResource.type} for resource ${compiledResource.id}: ${message}`
+        )
+        .orDefault();
 
-      const decisionResult = decisions.getAt(compiledResource.decision);
-      /* c8 ignore next 5 - defensive coding: decision index should be valid in compiled data */
-      if (decisionResult.isFailure()) {
-        errors.addMessage(
-          `Invalid decision index ${compiledResource.decision} for resource ${compiledResource.id}: ${decisionResult.message}`
-        );
+      /* c8 ignore next 3 - defensive coding: resource type index should be valid in compiled data */
+      if (resourceType === undefined) {
         continue;
       }
-      const decision = decisionResult.value;
+
+      const decision = decisions
+        .getAt(compiledResource.decision)
+        .aggregateError(
+          errors,
+          (message) =>
+            `Invalid decision index ${compiledResource.decision} for resource ${compiledResource.id}: ${message}`
+        )
+        .orDefault();
+
+      /* c8 ignore next 3 - defensive coding: decision index should be valid in compiled data */
+      if (decision === undefined) {
+        continue;
+      }
 
       // Build candidates from compiled data
-      const candidateDeclsResult = mapResults(
+      const candidateDecls = mapResults(
         compiledResource.candidates.map((compiledCandidate) =>
-          this._getCandidateValue(compiledCandidate.valueIndex).onSuccess((json) => {
-            return succeed({
-              json,
-              isPartial: compiledCandidate.isPartial,
-              mergeMethod: compiledCandidate.mergeMethod
-            });
-          })
+          this._getCandidateValue(compiledCandidate.valueIndex)
+            .aggregateError(
+              errors,
+              (message) => `Failed to convert candidate JSON for resource ${compiledResource.id}: ${message}`
+            )
+            .onSuccess((json) => {
+              return succeed({
+                json,
+                isPartial: compiledCandidate.isPartial,
+                mergeMethod: compiledCandidate.mergeMethod
+              });
+            })
         )
-      );
+      )
+        .aggregateError(
+          errors,
+          (message) => `Failed to convert candidate JSON for resource ${compiledResource.id}: ${message}`
+        )
+        .orDefault();
 
-      /* c8 ignore next 5 - defensive coding: candidate JSON conversion should not fail with valid compiled data */
-      if (candidateDeclsResult.isFailure()) {
-        errors.addMessage(
-          `Failed to convert candidate JSON for resource ${compiledResource.id}: ${candidateDeclsResult.message}`
-        );
+      /* c8 ignore next 3 - defensive coding: candidate JSON conversion should not fail with valid compiled data */
+      if (candidateDecls === undefined) {
         continue;
       }
-      const candidateDecls = candidateDeclsResult.value;
 
       // Create minimal candidates that implement IResourceCandidate
       const candidates: IResourceCandidate[] = candidateDecls.map((candidateDecl) => ({
@@ -597,23 +611,30 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
         value: candidates[idx].json
       }));
 
-      const concreteDecisionResult = ConcreteDecision.create({
+      const concreteDecision = ConcreteDecision.create({
         decisions,
         candidates: candidatesWithConditionSets
-      });
-      /* c8 ignore next 6 - defensive coding for ConcreteDecision creation failure */
-      if (concreteDecisionResult.isFailure()) {
-        errors.addMessage(
-          `Failed to create concrete decision for resource ${compiledResource.id}: ${concreteDecisionResult.message}`
-        );
+      })
+        .aggregateError(
+          errors,
+          (message) => `Failed to create concrete decision for resource ${compiledResource.id}: ${message}`
+        )
+        .orDefault();
+
+      /* c8 ignore next 3 - defensive coding for ConcreteDecision creation failure */
+      if (concreteDecision === undefined) {
         continue;
       }
-      const concreteDecision = concreteDecisionResult.value;
 
-      const { value: name, message: nameError } = Helpers.getNameForResourceId(compiledResource.id);
-      /* c8 ignore next 4 - defense in depth nearly impossible to reproduce */
-      if (nameError !== undefined) {
-        errors.addMessage(`Failed to get name for resource ${compiledResource.id}: ${nameError}`);
+      const name = Helpers.getNameForResourceId(compiledResource.id)
+        .aggregateError(
+          errors,
+          (message) => `Failed to get name for resource ${compiledResource.id}: ${message}`
+        )
+        .orDefault();
+
+      /* c8 ignore next 3 - defensive coding: name should be valid in compiled data */
+      if (name === undefined) {
         continue;
       }
 
@@ -626,13 +647,11 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
         candidates
       };
 
-      const setResult = resourceMap.set(compiledResource.id, resource);
-      /* c8 ignore next 3 - defensive coding for resource map set failure */
-      if (setResult.isFailure()) {
-        errors.addMessage(`Failed to add resource ${compiledResource.id}: ${setResult.message}`);
-      }
+      resourceMap
+        .set(compiledResource.id, resource)
+        .aggregateError(errors, (message) => `Failed to add resource ${compiledResource.id}: ${message}`);
     }
 
-    return errors.hasMessages ? fail(errors.toString()) : succeed(resourceMap);
+    return errors.returnOrReport(succeed(resourceMap));
   }
 }

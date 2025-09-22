@@ -19,12 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md)
+[MutableContextQualifierProviderValidator](./ts-res.runtime.context.mutablecontextqualifierprovidervalidator.md)
 
 
 </td><td>
 
-A wrapper for [IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md) that accepts string inputs and converts them to strongly-typed values before calling the wrapped provider. This eliminates the need for type casting in consumer code while maintaining type safety.
+A validator for mutable context qualifier providers that accepts string inputs and converts them to strongly-typed values before calling the wrapped provider. Provides both read and mutation operations.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyContextQualifierProviderValidator](./ts-res.runtime.context.readonlycontextqualifierprovidervalidator.md)
+
+
+</td><td>
+
+A validator for read-only context qualifier providers that accepts string inputs and converts them to strongly-typed values before calling the wrapped provider. Only provides read operations for compile-time type safety.
 
 
 </td></tr>
@@ -46,7 +57,7 @@ Simple concrete implementation of [IContextQualifierProvider](./ts-res.runtime.c
 
 </td><td>
 
-A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.context.contextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
+A [SimpleContextQualifierProvider](./ts-res.runtime.simplecontextqualifierprovider.md) with a [validator](./ts-res.runtime.context.mutablecontextqualifierprovidervalidator.md) property that enables validated use of the underlying provider with string keys and values. This eliminates the need for type casting in consumer code.
 
 
 </td></tr>
@@ -93,23 +104,67 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md)
+[IContextQualifierProviderBase](./ts-res.runtime.context.icontextqualifierproviderbase.md)
 
 
 </td><td>
 
-Abstract interface for providing qualifier values in an optimized runtime context. Acts as a property bag using the Result pattern for qualifier value lookups.
+Base interface for providing qualifier values in an optimized runtime context. Contains common read-only operations shared by both mutable and immutable providers. Acts as a property bag using the Result pattern for qualifier value lookups.
 
 
 </td></tr>
 <tr><td>
 
-[IContextQualifierProviderValidatorCreateParams](./ts-res.runtime.context.icontextqualifierprovidervalidatorcreateparams.md)
+[IContextQualifierProviderValidatorBase](./ts-res.runtime.context.icontextqualifierprovidervalidatorbase.md)
 
 
 </td><td>
 
-Parameters for constructing a [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md)<!-- -->.
+Base interface for shared operations between read-only and mutable context qualifier provider validators. Contains common methods that don't depend on provider mutability.
+
+
+</td></tr>
+<tr><td>
+
+[IMutableContextQualifierProvider](./ts-res.runtime.context.imutablecontextqualifierprovider.md)
+
+
+</td><td>
+
+Mutable interface for providing qualifier values in an optimized runtime context. Extends the base interface with mutation operations and explicit mutability marker.
+
+
+</td></tr>
+<tr><td>
+
+[IMutableContextQualifierProviderValidator](./ts-res.runtime.context.imutablecontextqualifierprovidervalidator.md)
+
+
+</td><td>
+
+A mutable interface for validators wrapping mutable context qualifier providers. Extends the base interface with mutation operations and provides compile-time type safety.
+
+
+</td></tr>
+<tr><td>
+
+[IMutableContextQualifierProviderValidatorCreateParams](./ts-res.runtime.context.imutablecontextqualifierprovidervalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a mutable context qualifier provider validator.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyContextQualifierProvider](./ts-res.runtime.context.ireadonlycontextqualifierprovider.md)
+
+
+</td><td>
+
+Read-only interface for providing qualifier values in an optimized runtime context. Explicitly marked as immutable with compile-time type discrimination.
 
 
 </td></tr>
@@ -120,7 +175,18 @@ Parameters for constructing a [ContextQualifierProviderValidator](./ts-res.runti
 
 </td><td>
 
-A read-only interface exposing non-mutating methods of a [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md)<!-- -->.
+A read-only interface for validators wrapping read-only context qualifier providers. Only exposes read operations, providing compile-time type safety by excluding mutation methods.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyContextQualifierProviderValidatorCreateParams](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a read-only context qualifier provider validator.
 
 
 </td></tr>
@@ -143,6 +209,43 @@ Parameters for creating a [SimpleContextQualifierProvider](./ts-res.runtime.simp
 </td><td>
 
 Parameters for creating a [ValidatingSimpleContextQualifierProvider](./ts-res.runtime.validatingsimplecontextqualifierprovider.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md)
+
+
+</td><td>
+
+Union type for context qualifier providers that can be either read-only or mutable. Provides compile-time type discrimination via the `mutable` property.
+
+
+</td></tr>
+<tr><td>
+
+[IContextQualifierProviderValidatorCreateParams](./ts-res.runtime.context.icontextqualifierprovidervalidatorcreateparams.md)
+
+
+</td><td>
+
+Union type for validator constructor parameters.
 
 
 </td></tr>

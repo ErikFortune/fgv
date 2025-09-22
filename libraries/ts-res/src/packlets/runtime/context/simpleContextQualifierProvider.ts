@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, ResultMap, captureResult, succeed, fail, succeedWithDetail } from '@fgv/ts-utils';
+import { Result, ResultMap, captureResult, succeed, succeedWithDetail, Converters } from '@fgv/ts-utils';
 import {
   QualifierName,
   QualifierContextValue,
@@ -29,7 +29,7 @@ import {
   Convert as CommonConverters
 } from '../../common';
 import { IReadOnlyQualifierCollector, Qualifier } from '../../qualifiers';
-import { ContextQualifierProvider } from './contextQualifierProvider';
+import { ContextQualifierProvider, IMutableContextQualifierProvider } from './contextQualifierProvider';
 
 /**
  * Parameters for creating a {@link Runtime.SimpleContextQualifierProvider | SimpleContextQualifierProvider}.
@@ -52,7 +52,16 @@ export interface ISimpleContextQualifierProviderCreateParams {
  * using a `ResultMap` for qualifier value storage.
  * @public
  */
-export class SimpleContextQualifierProvider extends ContextQualifierProvider {
+export class SimpleContextQualifierProvider
+  extends ContextQualifierProvider
+  implements IMutableContextQualifierProvider
+{
+  /**
+   * Explicit mutability marker for compile-time type discrimination.
+   * Always `true` for mutable providers.
+   */
+  public readonly mutable: true = true as const;
+
   /**
    * The readonly qualifier collector that defines and validates the qualifiers for this context.
    */
@@ -117,8 +126,10 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
   public getValidated(
     nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
   ): Result<QualifierContextValue> {
-    return this._resolveQualifierName(nameOrIndexOrQualifier).onSuccess((qualifierName) => {
-      return fail(`getValidated not yet implemented for qualifier "${qualifierName}"`);
+    return this._resolveQualifier(nameOrIndexOrQualifier).onSuccess((qualifier) => {
+      return this._qualifierValues.get(qualifier.name).asResult.onSuccess((value) => {
+        return qualifier.validateContextValue(value);
+      });
     });
   }
 
@@ -186,6 +197,36 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
   }
 
   /**
+   * Resolves a qualifier from a name, index, or qualifier object.
+   * @param nameOrIndexOrQualifier - The input to resolve.
+   * @returns `Success` with the {@link Qualifier | qualifier} if successful,
+   * or `Failure` with an error message if not found or invalid.
+   * @internal
+   */
+  private _resolveQualifier(
+    nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
+  ): Result<Qualifier> {
+    if (nameOrIndexOrQualifier instanceof Qualifier) {
+      return succeed(nameOrIndexOrQualifier);
+    }
+    if (typeof nameOrIndexOrQualifier === 'string') {
+      return this.qualifiers.validating
+        .get(nameOrIndexOrQualifier)
+        .withErrorFormat((error) => `${nameOrIndexOrQualifier}: Not a valid qualifier name.`);
+    }
+
+    if (typeof nameOrIndexOrQualifier === 'number') {
+      return this.qualifiers
+        .getAt(nameOrIndexOrQualifier)
+        .withErrorFormat((error) => `${nameOrIndexOrQualifier}: Not a valid qualifier index.`);
+    }
+
+    return SimpleContextQualifierProvider._qualifierNameFromQualifierLike(nameOrIndexOrQualifier)
+      .onSuccess((qualifierName) => this.qualifiers.validating.get(qualifierName))
+      .withErrorFormat((error) => `${nameOrIndexOrQualifier}: Not a valid Qualifier, name or index.`);
+  }
+
+  /**
    * Resolves a qualifier name from a name, index, or qualifier object.
    * @param nameOrIndexOrQualifier - The input to resolve.
    * @returns `Success` with the {@link QualifierName | qualifier name} if successful,
@@ -195,31 +236,28 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
   private _resolveQualifierName(
     nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
   ): Result<QualifierName> {
-    // If it's already a QualifierName (string type with brand)
-    if (typeof nameOrIndexOrQualifier === 'string') {
-      /* c8 ignore next 1 - functional code path tested but coverage intermittently missed */
-      return CommonConverters.qualifierName.convert(nameOrIndexOrQualifier);
-    }
+    return this._resolveQualifier(nameOrIndexOrQualifier).onSuccess((qualifier) => succeed(qualifier.name));
+  }
 
-    // If it's a Qualifier object
-    if (
-      typeof nameOrIndexOrQualifier === 'object' &&
-      nameOrIndexOrQualifier !== null &&
-      'name' in nameOrIndexOrQualifier
-    ) {
-      return succeed(nameOrIndexOrQualifier.name);
-    }
-
-    // If it's a QualifierIndex (number type with brand)
-    /* c8 ignore next 8 - functional code path tested but coverage intermittently missed */
-    if (typeof nameOrIndexOrQualifier === 'number') {
-      const qualifier = this.qualifiers.getAt(nameOrIndexOrQualifier as QualifierIndex);
-      if (qualifier.isSuccess()) {
-        return succeed(qualifier.value.name);
-      }
-      return fail(`Qualifier not found at index ${nameOrIndexOrQualifier}`);
-    }
-
-    return fail(`Invalid qualifier parameter: ${nameOrIndexOrQualifier}`);
+  /**
+   * Resolves a qualifier name from a qualifier-like object.
+   * @param nameOrIndexOrQualifier - The input to resolve.
+   * @returns `Success` with the {@link QualifierName | qualifier name} if successful,
+   * or `Failure` with an error message if not found or invalid.
+   * @internal
+   */
+  private static _qualifierNameFromQualifierLike(
+    nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
+  ): Result<QualifierName> {
+    return Converters.isA(
+      'Qualifier-like object',
+      (v): v is { name: QualifierName } =>
+        typeof v === 'object' &&
+        v !== null &&
+        'name' in v &&
+        typeof (v as Record<string, unknown>).name === 'string'
+    )
+      .map((v) => CommonConverters.qualifierName.convert(v.name))
+      .convert(nameOrIndexOrQualifier);
   }
 }

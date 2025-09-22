@@ -267,6 +267,34 @@ describe('QualifierDefaultValueTokens', () => {
     });
   });
 
+  describe('validateQualifierDefaultValueTokenParts instance method', () => {
+    test('validates parts with valid qualifier and value', () => {
+      const parts = { qualifier: 'language', value: 'en-US' };
+      expect(tokens.validateQualifierDefaultValueTokenParts(parts)).toSucceedAndSatisfy((result) => {
+        expect(result.qualifier.name).toBe('language');
+        expect(result.value).toBe('en-US');
+      });
+    });
+
+    test('validates parts with empty value', () => {
+      const parts = { qualifier: 'language', value: '' };
+      expect(tokens.validateQualifierDefaultValueTokenParts(parts)).toSucceedAndSatisfy((result) => {
+        expect(result.qualifier.name).toBe('language');
+        expect(result.value).toBe('');
+      });
+    });
+
+    test('fails with invalid qualifier name', () => {
+      const parts = { qualifier: 'invalid', value: 'en-US' };
+      expect(tokens.validateQualifierDefaultValueTokenParts(parts)).toFailWith(/not found/i);
+    });
+
+    test('fails with invalid value for qualifier type', () => {
+      const parts = { qualifier: 'language', value: 'invalid-tag' };
+      expect(tokens.validateQualifierDefaultValueTokenParts(parts)).toFailWith(/invalid.*context.*value/i);
+    });
+  });
+
   describe('static methods', () => {
     test('parseQualifierDefaultValueToken static method works', () => {
       expect(

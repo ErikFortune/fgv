@@ -9,9 +9,11 @@ Simple concrete implementation of [IContextQualifierProvider](./ts-res.runtime.c
 **Signature:**
 
 ```typescript
-export declare class SimpleContextQualifierProvider extends ContextQualifierProvider 
+export declare class SimpleContextQualifierProvider extends ContextQualifierProvider implements IMutableContextQualifierProvider 
 ```
 **Extends:** ContextQualifierProvider
+
+**Implements:** IMutableContextQualifierProvider
 
 ## Constructors
 
@@ -73,6 +75,27 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[mutable](./ts-res.runtime.simplecontextqualifierprovider.mutable.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+true
+
+
+</td><td>
+
+Explicit mutability marker for compile-time type discrimination. Always `true` for mutable providers.
+
+
+</td></tr>
+<tr><td>
 
 [qualifiers](./ts-res.runtime.simplecontextqualifierprovider.qualifiers.md)
 
