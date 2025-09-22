@@ -1089,4 +1089,151 @@ describe('ResourceTreeResolver', () => {
       expect(explicitResult).toSucceedWith({});
     });
   });
+
+  describe('tree property tests', () => {
+    test('should return the built resource tree', () => {
+      const tree = treeResolver.tree;
+      expect(tree).toBeDefined();
+      expect(tree.isRoot).toBe(true);
+      expect(tree.isBranch).toBe(false);
+      expect(tree.isLeaf).toBe(false);
+      expect(tree.children).toBeDefined();
+    });
+
+    test('should return expected tree structure', () => {
+      const tree = treeResolver.tree;
+
+      // Check root structure
+      expect(tree.children.validating.getById('app')).toBeDefined();
+      expect(tree.children.validating.getById('simple')).toBeDefined();
+      expect(tree.children.validating.getById('complex')).toBeDefined();
+      expect(tree.children.validating.getById('broken')).toBeDefined();
+
+      // Check app subtree
+      const appNode = tree.children.validating.getById('app').orThrow();
+      expect(appNode.isBranch).toBe(true);
+      if (appNode.isBranch) {
+        expect(appNode.children.validating.getById('messages')).toBeDefined();
+        expect(appNode.children.validating.getById('config')).toBeDefined();
+
+        // Check messages subtree
+        const messagesNode = appNode.children.validating.getById('messages').orThrow();
+        expect(messagesNode.isBranch).toBe(true);
+        if (messagesNode.isBranch) {
+          expect(messagesNode.children.validating.getById('greeting')).toBeDefined();
+          expect(messagesNode.children.validating.getById('farewell')).toBeDefined();
+        }
+      }
+    });
+
+    test('should return the same tree on multiple accesses', () => {
+      const tree1 = treeResolver.tree;
+      const tree2 = treeResolver.tree;
+
+      // Should be the same object reference (cached)
+      expect(tree1).toBe(tree2);
+
+      // Verify structure is consistent
+      expect(tree1.children.validating.size).toBe(tree2.children.validating.size);
+    });
+
+    test('should contain resources accessible via resolveComposedResourceTree', () => {
+      const tree = treeResolver.tree;
+
+      // Get a specific resource from the tree
+      const simpleNode = tree.children.validating.getById('simple').orThrow();
+      expect(simpleNode.isLeaf).toBe(true);
+      if (simpleNode.isLeaf) {
+        expect(simpleNode.resource).toBeDefined();
+        expect(simpleNode.resource.id).toBe('simple');
+      }
+
+      // Verify it resolves to the same value as resolveComposedResourceTree
+      const treeResult = treeResolver.resolveComposedResourceTree('simple');
+      expect(treeResult).toSucceedWith({ value: 'simple value' });
+    });
+
+    test('should throw error when tree building fails', () => {
+      // Create a mock resolver with a broken resource manager
+      const mockResourceManager = {
+        getBuiltResourceTree: jest.fn().mockReturnValue(fail('Tree building failed'))
+      } as unknown as TsRes.Resources.ResourceManagerBuilder;
+
+      const mockResolver = {
+        resourceManager: mockResourceManager
+      } as unknown as TsRes.Runtime.ResourceResolver;
+
+      const brokenTreeResolver = new TsRes.Runtime.ResourceTreeResolver(mockResolver);
+
+      // Accessing tree property should throw since it uses .orThrow()
+      expect(() => brokenTreeResolver.tree).toThrow('Tree building failed');
+    });
+
+    test('should provide tree that can be traversed programmatically', () => {
+      const tree = treeResolver.tree;
+
+      // Traverse the tree to collect all leaf nodes
+      const leafNodes: string[] = [];
+
+      function traverse(
+        node: TsRes.Runtime.ResourceTree.IReadOnlyResourceTreeNode<TsRes.Runtime.IResource>,
+        path: string = ''
+      ): void {
+        const currentPath = path ? `${path}.${node.name}` : node.name || '';
+
+        if (node.isLeaf) {
+          leafNodes.push(currentPath || node.resource.id);
+        } else if (node.isBranch) {
+          for (const child of node.children.values()) {
+            traverse(child, currentPath);
+          }
+        }
+      }
+
+      // Start traversal from root's children
+      for (const child of tree.children.values()) {
+        traverse(child, '');
+      }
+
+      // Verify we found all expected leaf nodes
+      expect(leafNodes).toContain('app.messages.greeting');
+      expect(leafNodes).toContain('app.messages.farewell');
+      expect(leafNodes).toContain('app.config.timeout');
+      expect(leafNodes).toContain('simple');
+      expect(leafNodes).toContain('complex');
+      expect(leafNodes).toContain('broken');
+      expect(leafNodes).toContain('missing-in-tree');
+    });
+
+    test('should build tree lazily on first access', () => {
+      // Create a new resolver with a mock that tracks calls
+      const mockGetBuiltResourceTree = jest
+        .fn()
+        .mockReturnValue(succeed(resourceManager.getBuiltResourceTree().orThrow()));
+      const mockResourceManager = {
+        ...resourceManager,
+        getBuiltResourceTree: mockGetBuiltResourceTree
+      } as unknown as TsRes.Resources.ResourceManagerBuilder;
+
+      const mockResolver = {
+        resourceManager: mockResourceManager,
+        resolveComposedResourceValue: resourceResolver.resolveComposedResourceValue.bind(resourceResolver)
+      } as unknown as TsRes.Runtime.ResourceResolver;
+
+      const lazyTreeResolver = new TsRes.Runtime.ResourceTreeResolver(mockResolver);
+
+      // Tree should not be built yet
+      expect(mockGetBuiltResourceTree).not.toHaveBeenCalled();
+
+      // First access should trigger build
+      const tree1 = lazyTreeResolver.tree;
+      expect(mockGetBuiltResourceTree).toHaveBeenCalledTimes(1);
+      expect(tree1).toBeDefined();
+
+      // Second access should not trigger another build
+      const tree2 = lazyTreeResolver.tree;
+      expect(mockGetBuiltResourceTree).toHaveBeenCalledTimes(1);
+      expect(tree2).toBe(tree1);
+    });
+  });
 });

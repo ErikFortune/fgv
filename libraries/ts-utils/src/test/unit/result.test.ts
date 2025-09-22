@@ -272,6 +272,32 @@ describe('Result module', () => {
         expect(aggregated).toBe(success); // explicit test for identity
         expect(aggregatedErrors.messages).toEqual(['earlier error']);
       });
+
+      describe('with formatter parameter', () => {
+        test('ignores formatter and does not update aggregator', () => {
+          const aggregatedErrors = new MessageAggregator(['earlier error']);
+          const success = succeed('hello');
+          const mockFormatter = jest.fn((msg: string) => `formatted: ${msg}`);
+
+          const aggregated = success.aggregateError(aggregatedErrors, mockFormatter);
+
+          expect(aggregated).toBe(success); // explicit test for identity
+          expect(aggregatedErrors.messages).toEqual(['earlier error']); // unchanged
+          expect(mockFormatter).not.toHaveBeenCalled(); // formatter not called for success
+        });
+
+        test('preserves success value regardless of formatter', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const successValue = 'success value';
+          const success = succeed(successValue);
+          const formatter = (): string => 'this should not matter';
+
+          const result = success.aggregateError(aggregatedErrors, formatter);
+
+          expect(result).toSucceedWith(successValue);
+          expect(aggregatedErrors.messages).toEqual([]); // no messages added
+        });
+      });
     });
 
     describe('report method', () => {
@@ -496,6 +522,104 @@ describe('Result module', () => {
           expect(aggregated).toBe(failure); // explicit test for identity
           expect(aggregated).toFailWith('new error');
           expect(aggregatedErrors.messages).toEqual(['earlier error', 'new error']);
+        });
+
+        describe('with formatter parameter', () => {
+          test('applies formatter to error message before adding to aggregator', () => {
+            const aggregatedErrors = new MessageAggregator(['earlier error']);
+            const failure = fail('test error');
+            const formatter = (msg: string): string => `[ERROR] ${msg.toUpperCase()}`;
+
+            const aggregated = failure.aggregateError(aggregatedErrors, formatter);
+
+            expect(aggregated).toBe(failure); // explicit test for identity
+            expect(aggregated).toFailWith('test error'); // original message unchanged
+            expect(aggregatedErrors.messages).toEqual(['earlier error', '[ERROR] TEST ERROR']);
+          });
+
+          test('works with complex formatter functions', () => {
+            const aggregatedErrors = new MessageAggregator();
+            const failure = fail('validation failed');
+            const formatter = (msg: string): string => `Component: ${msg} (timestamp: ${Date.now()})`;
+
+            failure.aggregateError(aggregatedErrors, formatter);
+
+            expect(aggregatedErrors.messages).toHaveLength(1);
+            expect(aggregatedErrors.messages[0]).toMatch(/^Component: validation failed \(timestamp: \d+\)$/);
+          });
+
+          test('handles formatter that returns empty string', () => {
+            const aggregatedErrors = new MessageAggregator(['existing']);
+            const failure = fail('some error');
+            const formatter = (): string => '';
+
+            failure.aggregateError(aggregatedErrors, formatter);
+
+            // Empty string should not be added to messages (MessageAggregator ignores empty strings)
+            expect(aggregatedErrors.messages).toEqual(['existing']);
+          });
+
+          test('handles formatter that returns undefined', () => {
+            const aggregatedErrors = new MessageAggregator(['existing']);
+            const failure = fail('some error');
+            const formatter = (): string => undefined as unknown as string;
+
+            failure.aggregateError(aggregatedErrors, formatter);
+
+            // undefined should not be added to messages
+            expect(aggregatedErrors.messages).toEqual(['existing']);
+          });
+
+          test('preserves original error message in failure result', () => {
+            const aggregatedErrors = new MessageAggregator();
+            const originalMessage = 'original error';
+            const failure = fail(originalMessage);
+            const formatter = (msg: string): string => `formatted: ${msg}`;
+
+            const result = failure.aggregateError(aggregatedErrors, formatter);
+
+            expect(result.message).toBe(originalMessage);
+            expect(aggregatedErrors.messages).toEqual(['formatted: original error']);
+          });
+
+          test('allows method chaining', () => {
+            const aggregatedErrors = new MessageAggregator();
+            const failure = fail('error');
+            const formatter = (msg: string): string => `prefix: ${msg}`;
+
+            const result = failure
+              .aggregateError(aggregatedErrors, formatter)
+              .onFailure(() => succeed('recovered'));
+
+            expect(result).toSucceedWith('recovered');
+            expect(aggregatedErrors.messages).toEqual(['prefix: error']);
+          });
+
+          test('works with multiple failures and different formatters', () => {
+            const aggregatedErrors = new MessageAggregator();
+            const failure1 = fail('first error');
+            const failure2 = fail('second error');
+            const upperFormatter = (msg: string): string => msg.toUpperCase();
+            const prefixFormatter = (msg: string): string => `[WARN] ${msg}`;
+
+            failure1.aggregateError(aggregatedErrors, upperFormatter);
+            failure2.aggregateError(aggregatedErrors, prefixFormatter);
+
+            expect(aggregatedErrors.messages).toEqual(['FIRST ERROR', '[WARN] second error']);
+          });
+
+          test('formatter is called with exact message string', () => {
+            const aggregatedErrors = new MessageAggregator();
+            const testMessage = 'precise test message';
+            const failure = fail(testMessage);
+            const mockFormatter = jest.fn((msg: string): string => `formatted: ${msg}`);
+
+            failure.aggregateError(aggregatedErrors, mockFormatter);
+
+            expect(mockFormatter).toHaveBeenCalledTimes(1);
+            expect(mockFormatter).toHaveBeenCalledWith(testMessage);
+            expect(aggregatedErrors.messages).toEqual(['formatted: precise test message']);
+          });
         });
       });
     });
@@ -946,6 +1070,153 @@ describe('Result module', () => {
       });
     });
 
+    describe('aggregateError method', () => {
+      test('appends the error to the supplied aggregated error array without formatter', () => {
+        const aggregatedErrors = new MessageAggregator(['earlier error']);
+        const detailedFailure = failWithDetail('new error', 'error detail');
+        const aggregated = detailedFailure.aggregateError(aggregatedErrors);
+        expect(aggregated).toBe(detailedFailure); // explicit test for identity
+        expect(aggregated).toFailWith('new error');
+        expect(aggregatedErrors.messages).toEqual(['earlier error', 'new error']);
+      });
+
+      describe('with formatter parameter', () => {
+        test('applies formatter with both message and detail before adding to aggregator', () => {
+          const aggregatedErrors = new MessageAggregator(['earlier error']);
+          const detailedFailure = failWithDetail('test error', 'error context');
+          const formatter = (msg: string, detail?: string): string => `[${detail}] ${msg.toUpperCase()}`;
+
+          const aggregated = detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          expect(aggregated).toBe(detailedFailure); // explicit test for identity
+          expect(aggregated).toFailWith('test error'); // original message unchanged
+          expect(aggregatedErrors.messages).toEqual(['earlier error', '[error context] TEST ERROR']);
+        });
+
+        test('works with complex formatter functions using detail', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const detailedFailure = failWithDetail('validation failed', { code: 400, field: 'email' });
+          const formatter = (msg: string, detail?: { code: number; field: string }): string =>
+            `${detail?.field}: ${msg} (HTTP ${detail?.code})`;
+
+          detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          expect(aggregatedErrors.messages).toEqual(['email: validation failed (HTTP 400)']);
+        });
+
+        test('handles formatter when detail is undefined', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const detailedFailure = failWithDetail('error message', undefined);
+          const formatter = (msg: string, detail?: string): string =>
+            detail ? `${detail}: ${msg}` : `no detail: ${msg}`;
+
+          detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          expect(aggregatedErrors.messages).toEqual(['no detail: error message']);
+        });
+
+        test('handles formatter that returns empty string', () => {
+          const aggregatedErrors = new MessageAggregator(['existing']);
+          const detailedFailure = failWithDetail('some error', 'some detail');
+          const formatter = (): string => '';
+
+          detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          // Empty string should not be added to messages
+          expect(aggregatedErrors.messages).toEqual(['existing']);
+        });
+
+        test('handles formatter that returns undefined', () => {
+          const aggregatedErrors = new MessageAggregator(['existing']);
+          const detailedFailure = failWithDetail('some error', 'some detail');
+          const formatter = (): string => undefined as unknown as string;
+
+          detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          // undefined should not be added to messages
+          expect(aggregatedErrors.messages).toEqual(['existing']);
+        });
+
+        test('preserves original error message and detail in failure result', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const originalMessage = 'original error';
+          const originalDetail = 'original detail';
+          const detailedFailure = failWithDetail(originalMessage, originalDetail);
+          const formatter = (msg: string, detail?: string): string => `formatted: ${msg} with ${detail}`;
+
+          const result = detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          expect(result.message).toBe(originalMessage);
+          expect(result.detail).toBe(originalDetail);
+          expect(aggregatedErrors.messages).toEqual(['formatted: original error with original detail']);
+        });
+
+        test('allows method chaining', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const detailedFailure = failWithDetail('error', 'detail');
+          const formatter = (msg: string, detail?: string): string => `${detail}: ${msg}`;
+
+          const result = detailedFailure
+            .aggregateError(aggregatedErrors, formatter)
+            .onFailure(() => succeedWithDetail('recovered', 'recovery detail'));
+
+          expect(result).toSucceedWith('recovered');
+          expect(aggregatedErrors.messages).toEqual(['detail: error']);
+        });
+
+        test('works with multiple detailed failures and different formatters', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const failure1 = failWithDetail('first error', 'context1');
+          const failure2 = failWithDetail('second error', { type: 'validation' });
+          const upperFormatter = (msg: string, detail?: string): string => `${detail?.toUpperCase()}: ${msg}`;
+          const prefixFormatter = (msg: string, detail?: { type: string }): string =>
+            `[${detail?.type}] ${msg}`;
+
+          failure1.aggregateError(aggregatedErrors, upperFormatter);
+          failure2.aggregateError(aggregatedErrors, prefixFormatter);
+
+          expect(aggregatedErrors.messages).toEqual(['CONTEXT1: first error', '[validation] second error']);
+        });
+
+        test('formatter is called with exact message and detail', () => {
+          const aggregatedErrors = new MessageAggregator();
+          const testMessage = 'precise test message';
+          const testDetail = { id: 123, type: 'test' };
+          const detailedFailure = failWithDetail(testMessage, testDetail);
+          const mockFormatter = jest.fn(
+            (msg: string, detail?: typeof testDetail): string => `${detail?.type}-${detail?.id}: ${msg}`
+          );
+
+          detailedFailure.aggregateError(aggregatedErrors, mockFormatter);
+
+          expect(mockFormatter).toHaveBeenCalledTimes(1);
+          expect(mockFormatter).toHaveBeenCalledWith(testMessage, testDetail);
+          expect(aggregatedErrors.messages).toEqual(['test-123: precise test message']);
+        });
+
+        test('formatter receives detail as second parameter with proper typing', () => {
+          const aggregatedErrors = new MessageAggregator();
+          interface ErrorDetail {
+            code: number;
+            severity: 'low' | 'medium' | 'high';
+          }
+          const detail: ErrorDetail = { code: 500, severity: 'high' };
+          const detailedFailure = failWithDetail('server error', detail);
+
+          const formatter = (msg: string, detail?: ErrorDetail): string => {
+            if (detail) {
+              return `[${detail.severity.toUpperCase()}-${detail.code}] ${msg}`;
+            }
+            return msg;
+          };
+
+          detailedFailure.aggregateError(aggregatedErrors, formatter);
+
+          expect(aggregatedErrors.messages).toEqual(['[HIGH-500] server error']);
+        });
+      });
+    });
+
     describe('report method', () => {
       test('calls reportFailure with default error level and includes detail when no options provided', () => {
         const reporter = {
@@ -1358,6 +1629,206 @@ describe('Result module', () => {
 
         expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
         expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test');
+      });
+    });
+  });
+
+  describe('aggregateError formatter integration tests', () => {
+    describe('mixed Result types with formatters', () => {
+      test('Success, Failure, and DetailedFailure with different formatters', () => {
+        const aggregator = new MessageAggregator(['initial error']);
+        const success = succeed('success value');
+        const failure = fail('simple error');
+        const detailedFailure = failWithDetail('detailed error', { context: 'test', id: 42 });
+
+        const successFormatter = (): string => 'this should not be called';
+        const failureFormatter = (msg: string): string => `[SIMPLE] ${msg}`;
+        const detailedFormatter = (msg: string, detail?: { context: string; id: number }): string =>
+          `[${detail?.context?.toUpperCase()}-${detail?.id}] ${msg}`;
+
+        // Apply aggregateError with formatters
+        success.aggregateError(aggregator, successFormatter);
+        failure.aggregateError(aggregator, failureFormatter);
+        detailedFailure.aggregateError(aggregator, detailedFormatter);
+
+        expect(aggregator.messages).toEqual([
+          'initial error',
+          '[SIMPLE] simple error',
+          '[TEST-42] detailed error'
+        ]);
+      });
+
+      test('multiple failures with consistent formatting pattern', () => {
+        const aggregator = new MessageAggregator();
+        const errors = [
+          fail('authentication failed'),
+          fail('authorization denied'),
+          fail('resource not found')
+        ];
+
+        const timestampFormatter = (msg: string): string => `[${new Date().getFullYear()}] ${msg}`;
+
+        errors.forEach((error) => error.aggregateError(aggregator, timestampFormatter));
+
+        expect(aggregator.messages).toHaveLength(3);
+        aggregator.messages.forEach((message) => {
+          expect(message).toMatch(/^\[\d{4}\] .+/);
+        });
+      });
+
+      test('conditional formatting based on error content', () => {
+        const aggregator = new MessageAggregator();
+        const errors = [
+          fail('validation error: email required'),
+          fail('network error: timeout'),
+          fail('unknown error')
+        ];
+
+        const categoryFormatter = (msg: string): string => {
+          if (msg.includes('validation')) return `[VALIDATION] ${msg}`;
+          if (msg.includes('network')) return `[NETWORK] ${msg}`;
+          return `[GENERAL] ${msg}`;
+        };
+
+        errors.forEach((error) => error.aggregateError(aggregator, categoryFormatter));
+
+        expect(aggregator.messages).toEqual([
+          '[VALIDATION] validation error: email required',
+          '[NETWORK] network error: timeout',
+          '[GENERAL] unknown error'
+        ]);
+      });
+    });
+
+    describe('MessageAggregator interaction', () => {
+      test('aggregator toString works with formatted messages', () => {
+        const aggregator = new MessageAggregator();
+        const failures = [fail('error 1'), fail('error 2'), fail('error 3')];
+
+        // const indexFormatter = (msg: string, index = failures.findIndex(f => f.message === msg) + 1): string =>
+        //   `${index}. ${msg}`;
+
+        let index = 1;
+        failures.forEach((failure) => {
+          failure.aggregateError(aggregator, (msg): string => `${index++}. ${msg}`);
+        });
+
+        expect(aggregator.toString()).toBe('1. error 1\n2. error 2\n3. error 3');
+        expect(aggregator.toString(' | ')).toBe('1. error 1 | 2. error 2 | 3. error 3');
+      });
+
+      test('aggregator returnOrReport with formatted errors', () => {
+        const aggregator = new MessageAggregator();
+        const failure1 = fail('first error');
+        const failure2 = fail('second error');
+        const formatter = (msg: string): string => `FORMATTED: ${msg}`;
+
+        failure1.aggregateError(aggregator, formatter);
+        failure2.aggregateError(aggregator, formatter);
+
+        const finalResult = aggregator.returnOrReport(succeed('should not be used'));
+        expect(finalResult).toFailWith('FORMATTED: first error\nFORMATTED: second error');
+      });
+
+      test('empty string and undefined handling by MessageAggregator', () => {
+        const aggregator = new MessageAggregator(['valid error']);
+        const failure1 = fail('error 1');
+        const failure2 = fail('error 2');
+        const failure3 = fail('error 3');
+
+        // These formatters return empty/undefined
+        failure1.aggregateError(aggregator, () => '');
+        failure2.aggregateError(aggregator, () => undefined as unknown as string);
+        failure3.aggregateError(aggregator, (msg) => (msg ? `valid: ${msg}` : ''));
+
+        expect(aggregator.messages).toEqual(['valid error', 'valid: error 3']);
+        expect(aggregator.numMessages).toBe(2);
+      });
+    });
+
+    describe('real-world scenarios', () => {
+      test('validation error aggregation with field-specific formatting', () => {
+        const validationErrors = new MessageAggregator();
+
+        interface ValidationDetail {
+          field: string;
+          rule: string;
+          value?: unknown;
+        }
+
+        const emailError = failWithDetail('Invalid email format', { field: 'email', rule: 'format' });
+        const passwordError = failWithDetail('Password too weak', { field: 'password', rule: 'strength' });
+        const ageError = failWithDetail('Must be 18 or older', { field: 'age', rule: 'minimum', value: 16 });
+
+        const validationFormatter = (msg: string, detail?: ValidationDetail): string =>
+          `${detail?.field}: ${msg} (rule: ${detail?.rule})${
+            detail?.value !== undefined ? ` (got: ${detail.value})` : ''
+          }`;
+
+        emailError.aggregateError(validationErrors, validationFormatter);
+        passwordError.aggregateError(validationErrors, validationFormatter);
+        ageError.aggregateError(validationErrors, validationFormatter);
+
+        expect(validationErrors.messages).toEqual([
+          'email: Invalid email format (rule: format)',
+          'password: Password too weak (rule: strength)',
+          'age: Must be 18 or older (rule: minimum) (got: 16)'
+        ]);
+
+        const summary = validationErrors.toString('; ');
+        expect(summary).toContain('email:');
+        expect(summary).toContain('password:');
+        expect(summary).toContain('age:');
+      });
+
+      test('error processing pipeline with transformation', () => {
+        const processingErrors = new MessageAggregator();
+
+        // Simulate a processing pipeline with different error types
+        const parseError = fail('JSON parse error at line 5');
+        const validationError = failWithDetail('Required field missing', {
+          stage: 'validation',
+          field: 'name'
+        });
+        const businessError = failWithDetail('Insufficient funds', {
+          stage: 'business',
+          code: 'INSUFFICIENT_FUNDS'
+        });
+
+        const pipelineFormatter = (
+          msg: string,
+          detail?: { stage: string; [key: string]: unknown }
+        ): string => {
+          const stage = detail?.stage || 'parsing';
+          return `[${stage.toUpperCase()}] ${msg}`;
+        };
+
+        parseError.aggregateError(processingErrors, (msg): string => `[PARSING] ${msg}`);
+        validationError.aggregateError(processingErrors, pipelineFormatter);
+        businessError.aggregateError(processingErrors, pipelineFormatter);
+
+        expect(processingErrors.messages).toEqual([
+          '[PARSING] JSON parse error at line 5',
+          '[VALIDATION] Required field missing',
+          '[BUSINESS] Insufficient funds'
+        ]);
+
+        expect(processingErrors.numMessages).toBe(3);
+        expect(processingErrors.hasMessages).toBe(true);
+      });
+
+      test('method chaining with aggregateError in complex flow', () => {
+        const errors = new MessageAggregator();
+        const formatter = (msg: string): string => `PROCESSED: ${msg}`;
+
+        const result = fail('initial error')
+          .aggregateError(errors, formatter)
+          .onFailure((msg) => fail(`cascade: ${msg}`))
+          .aggregateError(errors, (msg): string => `CASCADED: ${msg}`)
+          .onFailure(() => succeed('recovery successful'));
+
+        expect(result).toSucceedWith('recovery successful');
+        expect(errors.messages).toEqual(['PROCESSED: initial error', 'CASCADED: cascade: initial error']);
       });
     });
   });

@@ -320,8 +320,9 @@ export interface IResult<T> {
    * supplied errors array.
    * @param errors - {@link IMessageAggregator | Error aggregator} in which
    * errors will be aggregated.
+   * @param formatter - An optional {@link ErrorFormatter | error formatter} to be used to format the error message.
    */
-  aggregateError(errors: IMessageAggregator): this;
+  aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
 
   /**
    * Reports the result to the supplied reporter
@@ -460,7 +461,7 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.aggregateError}
    */
-  public aggregateError(__errors: IMessageAggregator): this {
+  public aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this {
     return this;
   }
 
@@ -621,8 +622,9 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.aggregateError}
    */
-  public aggregateError(errors: IMessageAggregator): this {
-    errors.addMessage(this._message);
+  public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this {
+    const message = formatter ? formatter(this._message) : this._message;
+    errors.addMessage(message);
     return this;
   }
 
@@ -896,6 +898,15 @@ export class DetailedFailure<T, TD> extends Failure<T> {
    */
   public withErrorFormat(cb: ErrorFormatter<TD>): DetailedResult<T, TD> {
     return failWithDetail(cb(this._message, this._detail), this._detail);
+  }
+
+  /**
+   * {@inheritdoc IResult.aggregateError}
+   */
+  public aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this {
+    const message = formatter ? formatter(this._message, this._detail) : this._message;
+    errors.addMessage(message);
+    return this;
   }
 
   /**

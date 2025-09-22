@@ -611,6 +611,7 @@ function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Conve
 // @public
 export class DetailedFailure<T, TD> extends Failure<T> {
     constructor(message: string, detail?: TD);
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this;
     get asResult(): Result<T>;
     get detail(): TD | undefined;
     // @internal (undocumented)
@@ -697,7 +698,7 @@ export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFa
 // @public
 export class Failure<T> implements IResult<T> {
     constructor(message: string);
-    aggregateError(errors: IMessageAggregator): this;
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -1178,7 +1179,7 @@ interface IRecordOfValidatorOptions<TK extends string = string, TC = unknown> {
 
 // @public
 export interface IResult<T> {
-    aggregateError(errors: IMessageAggregator): this;
+    aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated
@@ -2036,7 +2037,7 @@ export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess
 // @public
 export class Success<T> implements IResult<T> {
     constructor(value: T);
-    aggregateError(__errors: IMessageAggregator): this;
+    aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this;
     // @deprecated
     getValueOrDefault(dflt?: T): T | undefined;
     // @deprecated

@@ -119,7 +119,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[aggregateError(errors)](./ts-utils.iresult.aggregateerror.md)
+[aggregateError(errors, formatter)](./ts-utils.iresult.aggregateerror.md)
 
 
 </td><td>

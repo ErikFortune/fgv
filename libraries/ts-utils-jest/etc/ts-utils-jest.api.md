@@ -4,6 +4,8 @@
 
 ```ts
 
+import fs from 'fs';
+
 // @public (undocumented)
 interface IMockFileConfig {
     // (undocumented)
@@ -46,7 +48,7 @@ class MockFileSystem {
     // (undocumented)
     reset(): void;
     // (undocumented)
-    startSpies(): ReadWriteSpies;
+    startSpies(fsModule?: typeof fs): ReadWriteSpies;
     // (undocumented)
     tryGetPayload(want: string): string | undefined;
     // (undocumented)
