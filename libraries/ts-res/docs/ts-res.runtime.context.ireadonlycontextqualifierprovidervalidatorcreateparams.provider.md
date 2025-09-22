@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-provider: IReadOnlyContextQualifierProvider;
+provider: T;
 ```

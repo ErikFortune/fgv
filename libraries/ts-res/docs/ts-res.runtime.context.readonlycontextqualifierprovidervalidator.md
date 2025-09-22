@@ -9,11 +9,11 @@ A validator for read-only context qualifier providers that accepts string inputs
 **Signature:**
 
 ```typescript
-export declare class ReadOnlyContextQualifierProviderValidator extends BaseContextQualifierProviderValidator implements IReadOnlyContextQualifierProviderValidator 
+export declare class ReadOnlyContextQualifierProviderValidator<T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider> extends BaseContextQualifierProviderValidator<T> implements IReadOnlyContextQualifierProviderValidator<T> 
 ```
-**Extends:** BaseContextQualifierProviderValidator
+**Extends:** BaseContextQualifierProviderValidator&lt;T&gt;
 
-**Implements:** IReadOnlyContextQualifierProviderValidator
+**Implements:** IReadOnlyContextQualifierProviderValidator&lt;T&gt;
 
 ## Constructors
 
@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-IReadOnlyContextQualifierProvider
+T
 
 
 </td><td>

@@ -9,5 +9,5 @@ The wrapped read-only context qualifier provider.
 **Signature:**
 
 ```typescript
-readonly provider: IReadOnlyContextQualifierProvider;
+readonly provider: T;
 ```

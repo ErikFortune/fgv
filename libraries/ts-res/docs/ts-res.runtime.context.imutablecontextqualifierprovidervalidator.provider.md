@@ -9,5 +9,5 @@ The wrapped mutable context qualifier provider.
 **Signature:**
 
 ```typescript
-readonly provider: IMutableContextQualifierProvider;
+readonly provider: T;
 ```

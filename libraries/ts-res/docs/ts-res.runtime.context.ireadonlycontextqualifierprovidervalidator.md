@@ -9,9 +9,8 @@ A read-only interface for validators wrapping read-only context qualifier provid
 **Signature:**
 
 ```typescript
-export interface IReadOnlyContextQualifierProviderValidator extends IContextQualifierProviderValidatorBase 
+export interface IReadOnlyContextQualifierProviderValidator<T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider> 
 ```
-**Extends:** IContextQualifierProviderValidatorBase
 
 ## Properties
 
@@ -48,7 +47,7 @@ Description
 
 </td><td>
 
-IReadOnlyContextQualifierProvider
+T
 
 
 </td><td>

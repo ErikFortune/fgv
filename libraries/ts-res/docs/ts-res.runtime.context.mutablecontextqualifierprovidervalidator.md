@@ -9,11 +9,11 @@ A validator for mutable context qualifier providers that accepts string inputs a
 **Signature:**
 
 ```typescript
-export declare class MutableContextQualifierProviderValidator extends BaseContextQualifierProviderValidator implements IMutableContextQualifierProviderValidator 
+export declare class MutableContextQualifierProviderValidator<T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider> extends BaseContextQualifierProviderValidator<T> implements IMutableContextQualifierProviderValidator<T> 
 ```
-**Extends:** BaseContextQualifierProviderValidator
+**Extends:** BaseContextQualifierProviderValidator&lt;T&gt;
 
-**Implements:** IMutableContextQualifierProviderValidator
+**Implements:** IMutableContextQualifierProviderValidator&lt;T&gt;
 
 ## Constructors
 
@@ -84,7 +84,7 @@ Description
 
 </td><td>
 
-IMutableContextQualifierProvider
+T
 
 
 </td><td>

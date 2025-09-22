@@ -9,7 +9,7 @@ Base interface for shared operations between read-only and mutable context quali
 **Signature:**
 
 ```typescript
-export interface IContextQualifierProviderValidatorBase 
+export interface IContextQualifierProviderValidatorBase<T extends IContextQualifierProvider = IContextQualifierProvider> 
 ```
 
 ## Properties
@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-IContextQualifierProvider
+T
 
 
 </td><td>

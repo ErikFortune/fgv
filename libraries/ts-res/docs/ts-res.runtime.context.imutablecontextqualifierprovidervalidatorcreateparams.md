@@ -9,7 +9,7 @@ Parameters for constructing a mutable context qualifier provider validator.
 **Signature:**
 
 ```typescript
-export interface IMutableContextQualifierProviderValidatorCreateParams 
+export interface IMutableContextQualifierProviderValidatorCreateParams<T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider> 
 ```
 
 ## Properties
@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-IMutableContextQualifierProvider
+T
 
 
 </td><td>

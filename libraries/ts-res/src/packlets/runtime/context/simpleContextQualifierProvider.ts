@@ -20,7 +20,15 @@
  * SOFTWARE.
  */
 
-import { Result, ResultMap, captureResult, succeed, fail, succeedWithDetail } from '@fgv/ts-utils';
+import {
+  Result,
+  ResultMap,
+  captureResult,
+  succeed,
+  fail,
+  succeedWithDetail,
+  Validators
+} from '@fgv/ts-utils';
 import {
   QualifierName,
   QualifierContextValue,
@@ -216,13 +224,18 @@ export class SimpleContextQualifierProvider
       return this.qualifiers.getAt(indexResult.value).onSuccess((qualifier) => succeed(qualifier.name));
     }
 
-    // Try as Qualifier object
-    if (
-      typeof nameOrIndexOrQualifier === 'object' &&
-      nameOrIndexOrQualifier !== null &&
-      'name' in nameOrIndexOrQualifier
-    ) {
-      return succeed((nameOrIndexOrQualifier as Qualifier).name);
+    // Try as Qualifier-like object (duck typing for objects with name property)
+    const qualifierLikeValidator = Validators.isA(
+      'Qualifier-like object',
+      (v): v is { name: QualifierName } =>
+        typeof v === 'object' &&
+        v !== null &&
+        'name' in v &&
+        typeof (v as Record<string, unknown>).name === 'string'
+    );
+    const qualifierLikeResult = qualifierLikeValidator.validate(nameOrIndexOrQualifier);
+    if (qualifierLikeResult.isSuccess()) {
+      return succeed(qualifierLikeResult.value.name);
     }
 
     return fail(`Invalid qualifier parameter: ${nameOrIndexOrQualifier}`);

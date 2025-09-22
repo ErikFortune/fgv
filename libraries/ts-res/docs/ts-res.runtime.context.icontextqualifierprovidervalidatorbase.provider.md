@@ -9,5 +9,5 @@ The wrapped context qualifier provider.
 **Signature:**
 
 ```typescript
-readonly provider: IContextQualifierProvider;
+readonly provider: T;
 ```

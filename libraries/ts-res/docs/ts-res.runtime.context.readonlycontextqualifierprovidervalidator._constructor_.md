@@ -9,7 +9,7 @@ Constructs a new [ReadOnlyContextQualifierProviderValidator](./ts-res.runtime.co
 **Signature:**
 
 ```typescript
-constructor(params: IReadOnlyContextQualifierProviderValidatorCreateParams);
+constructor(params: IReadOnlyContextQualifierProviderValidatorCreateParams<T>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-IReadOnlyContextQualifierProviderValidatorCreateParams
+IReadOnlyContextQualifierProviderValidatorCreateParams&lt;T&gt;
 
 
 </td><td>

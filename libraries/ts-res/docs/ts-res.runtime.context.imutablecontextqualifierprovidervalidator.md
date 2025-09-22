@@ -9,9 +9,9 @@ A mutable interface for validators wrapping mutable context qualifier providers.
 **Signature:**
 
 ```typescript
-export interface IMutableContextQualifierProviderValidator extends IContextQualifierProviderValidatorBase 
+export interface IMutableContextQualifierProviderValidator<T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider> extends IContextQualifierProviderValidatorBase<T> 
 ```
-**Extends:** IContextQualifierProviderValidatorBase
+**Extends:** IContextQualifierProviderValidatorBase&lt;T&gt;
 
 ## Properties
 
@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-IMutableContextQualifierProvider
+T
 
 
 </td><td>

@@ -9,7 +9,7 @@ Constructs a new [MutableContextQualifierProviderValidator](./ts-res.runtime.con
 **Signature:**
 
 ```typescript
-constructor(params: IMutableContextQualifierProviderValidatorCreateParams);
+constructor(params: IMutableContextQualifierProviderValidatorCreateParams<T>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-IMutableContextQualifierProviderValidatorCreateParams
+IMutableContextQualifierProviderValidatorCreateParams&lt;T&gt;
 
 
 </td><td>

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-provider: IMutableContextQualifierProvider;
+provider: T;
 ```

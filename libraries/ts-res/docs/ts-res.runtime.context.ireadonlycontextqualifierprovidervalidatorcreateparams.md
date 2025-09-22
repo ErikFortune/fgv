@@ -9,7 +9,7 @@ Parameters for constructing a read-only context qualifier provider validator.
 **Signature:**
 
 ```typescript
-export interface IReadOnlyContextQualifierProviderValidatorCreateParams 
+export interface IReadOnlyContextQualifierProviderValidatorCreateParams<T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider> 
 ```
 
 ## Properties
@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-IReadOnlyContextQualifierProvider
+T
 
 
 </td><td>

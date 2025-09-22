@@ -34,11 +34,13 @@ import {
  * Contains common methods that don't depend on provider mutability.
  * @public
  */
-export interface IContextQualifierProviderValidatorBase {
+export interface IContextQualifierProviderValidatorBase<
+  T extends IContextQualifierProvider = IContextQualifierProvider
+> {
   /**
    * The wrapped context qualifier provider.
    */
-  readonly provider: IContextQualifierProvider;
+  readonly provider: T;
 
   /**
    * The readonly qualifier collector that defines and validates the qualifiers for this context.
@@ -91,11 +93,13 @@ export interface IContextQualifierProviderValidatorBase {
  * Only exposes read operations, providing compile-time type safety by excluding mutation methods.
  * @public
  */
-export interface IReadOnlyContextQualifierProviderValidator extends IContextQualifierProviderValidatorBase {
+export interface IReadOnlyContextQualifierProviderValidator<
+  T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider
+> {
   /**
    * The wrapped read-only context qualifier provider.
    */
-  readonly provider: IReadOnlyContextQualifierProvider;
+  readonly provider: T;
 }
 
 /**
@@ -103,11 +107,13 @@ export interface IReadOnlyContextQualifierProviderValidator extends IContextQual
  * Extends the base interface with mutation operations and provides compile-time type safety.
  * @public
  */
-export interface IMutableContextQualifierProviderValidator extends IContextQualifierProviderValidatorBase {
+export interface IMutableContextQualifierProviderValidator<
+  T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider
+> extends IContextQualifierProviderValidatorBase<T> {
   /**
    * The wrapped mutable context qualifier provider.
    */
-  readonly provider: IMutableContextQualifierProvider;
+  readonly provider: T;
 
   /**
    * Sets a qualifier value using string inputs, converting to strongly-typed values.
@@ -131,16 +137,20 @@ export interface IMutableContextQualifierProviderValidator extends IContextQuali
  * Parameters for constructing a read-only context qualifier provider validator.
  * @public
  */
-export interface IReadOnlyContextQualifierProviderValidatorCreateParams {
-  provider: IReadOnlyContextQualifierProvider;
+export interface IReadOnlyContextQualifierProviderValidatorCreateParams<
+  T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider
+> {
+  provider: T;
 }
 
 /**
  * Parameters for constructing a mutable context qualifier provider validator.
  * @public
  */
-export interface IMutableContextQualifierProviderValidatorCreateParams {
-  provider: IMutableContextQualifierProvider;
+export interface IMutableContextQualifierProviderValidatorCreateParams<
+  T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider
+> {
+  provider: T;
 }
 
 /**
@@ -155,11 +165,14 @@ export type IContextQualifierProviderValidatorCreateParams =
  * Base implementation class containing shared validation logic for both read-only and mutable validators.
  * @internal
  */
-abstract class BaseContextQualifierProviderValidator implements IContextQualifierProviderValidatorBase {
+abstract class BaseContextQualifierProviderValidator<
+  T extends IContextQualifierProvider = IContextQualifierProvider
+> implements IContextQualifierProviderValidatorBase<T>
+{
   /**
    * The wrapped context qualifier provider.
    */
-  public abstract readonly provider: IContextQualifierProvider;
+  public abstract readonly provider: T;
 
   /**
    * The readonly qualifier collector that defines and validates the qualifiers for this context.
@@ -235,20 +248,22 @@ abstract class BaseContextQualifierProviderValidator implements IContextQualifie
  * Only provides read operations for compile-time type safety.
  * @public
  */
-export class ReadOnlyContextQualifierProviderValidator
-  extends BaseContextQualifierProviderValidator
-  implements IReadOnlyContextQualifierProviderValidator
+export class ReadOnlyContextQualifierProviderValidator<
+    T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider
+  >
+  extends BaseContextQualifierProviderValidator<T>
+  implements IReadOnlyContextQualifierProviderValidator<T>
 {
   /**
    * The wrapped read-only context qualifier provider.
    */
-  public readonly provider: IReadOnlyContextQualifierProvider;
+  public readonly provider: T;
 
   /**
    * Constructs a new {@link Runtime.Context.ReadOnlyContextQualifierProviderValidator | ReadOnlyContextQualifierProviderValidator}.
    * @param params - Required parameters for constructing the validator.
    */
-  public constructor(params: IReadOnlyContextQualifierProviderValidatorCreateParams) {
+  public constructor(params: IReadOnlyContextQualifierProviderValidatorCreateParams<T>) {
     super();
     this.provider = params.provider;
   }
@@ -260,20 +275,22 @@ export class ReadOnlyContextQualifierProviderValidator
  * Provides both read and mutation operations.
  * @public
  */
-export class MutableContextQualifierProviderValidator
-  extends BaseContextQualifierProviderValidator
-  implements IMutableContextQualifierProviderValidator
+export class MutableContextQualifierProviderValidator<
+    T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider
+  >
+  extends BaseContextQualifierProviderValidator<T>
+  implements IMutableContextQualifierProviderValidator<T>
 {
   /**
    * The wrapped mutable context qualifier provider.
    */
-  public readonly provider: IMutableContextQualifierProvider;
+  public readonly provider: T;
 
   /**
    * Constructs a new {@link Runtime.Context.MutableContextQualifierProviderValidator | MutableContextQualifierProviderValidator}.
    * @param params - Required parameters for constructing the validator.
    */
-  public constructor(params: IMutableContextQualifierProviderValidatorCreateParams) {
+  public constructor(params: IMutableContextQualifierProviderValidatorCreateParams<T>) {
     super();
     this.provider = params.provider;
   }
