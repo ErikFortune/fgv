@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult } from '@fgv/ts-utils';
+import { Result, captureResult, Converters } from '@fgv/ts-utils';
 import { QualifierContextValue, Convert as CommonConverters } from '../../common';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
 import {
@@ -304,11 +304,15 @@ export class MutableContextQualifierProviderValidator<
    */
   public set(name: string, value: string): Result<QualifierContextValue> {
     return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) =>
-      CommonConverters.qualifierContextValue.convert(value).onSuccess((qualifierValue) => {
-        return captureResult(() => this.provider.set(qualifierName, qualifierValue)).onSuccess(
-          (result) => result
-        );
-      })
+      this.provider.qualifiers.validating.get(name).asResult.onSuccess((qualifier) =>
+        Converters.string.convert(value).onSuccess((stringValue) =>
+          qualifier.validateContextValue(stringValue).onSuccess((qualifierValue) => {
+            return captureResult(() => this.provider.set(qualifierName, qualifierValue)).onSuccess(
+              (result) => result
+            );
+          })
+        )
+      )
     );
   }
 

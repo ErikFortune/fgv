@@ -124,7 +124,8 @@ describe('ContextQualifierProviderValidator classes', () => {
         TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow(),
         TsRes.QualifierTypes.LiteralQualifierType.create({
           name: 'priority',
-          enumeratedValues: ['high', 'medium', 'low']
+          enumeratedValues: ['high', 'medium', 'low'],
+          allowContextList: false // Disable context lists for clearer testing
         }).orThrow()
       ]
     }).orThrow();
@@ -236,6 +237,231 @@ describe('ContextQualifierProviderValidator classes', () => {
     test('successfully sets qualifier values using string inputs', () => {
       expect(mutableValidator.set('language', 'fr-FR')).toSucceedWith('fr-FR' as TsRes.QualifierContextValue);
       expect(mutableValidator.get('language')).toSucceedWith('fr-FR' as TsRes.QualifierContextValue);
+    });
+
+    describe('type-specific validation', () => {
+      describe('language qualifier validation', () => {
+        test('accepts valid BCP47 language tags', () => {
+          const validLanguageTags = [
+            'en', // Basic language
+            'en-US', // Language with region
+            'fr-FR', // French in France
+            'es-ES', // Spanish in Spain
+            'zh-CN', // Chinese in China
+            'pt-BR', // Portuguese in Brazil
+            'sr-Cyrl-RS', // Serbian in Cyrillic script in Serbia
+            'ca-valencia' // Catalan Valencia variant
+          ];
+
+          validLanguageTags.forEach((tag) => {
+            expect(mutableValidator.set('language', tag)).toSucceedWith(tag as TsRes.QualifierContextValue);
+            expect(mutableValidator.get('language')).toSucceedWith(tag as TsRes.QualifierContextValue);
+          });
+        });
+
+        test('rejects invalid language codes', () => {
+          const invalidLanguageTags = [
+            'en_US', // Underscore instead of hyphen
+            'fr-', // Trailing hyphen
+            'invalid-lang', // Invalid language code
+            'sr-Cyrl_RS', // Mixed separators
+            'cmn-Hans_CN', // Mixed separators
+            'es-', // Trailing hyphen
+            'ca-valencia-', // Trailing hyphen
+            '', // Empty string
+            'ZZ-ZZ' // Invalid language-region combination
+          ];
+
+          invalidLanguageTags.forEach((tag) => {
+            expect(mutableValidator.set('language', tag)).toFailWith(/invalid context value.*language/i);
+          });
+        });
+      });
+
+      describe('territory qualifier validation', () => {
+        test('accepts valid territory codes', () => {
+          const validTerritoryCodes = [
+            'US', // United States
+            'FR', // France
+            'ES', // Spain
+            'CN', // China
+            'BR', // Brazil
+            'DE', // Germany
+            'JP', // Japan
+            'GB' // Great Britain
+          ];
+
+          validTerritoryCodes.forEach((code) => {
+            expect(mutableValidator.set('territory', code)).toSucceedWith(
+              code as TsRes.QualifierContextValue
+            );
+            expect(mutableValidator.get('territory')).toSucceedWith(code as TsRes.QualifierContextValue);
+          });
+        });
+
+        test('rejects invalid territory codes', () => {
+          const invalidTerritoryCodes = [
+            '419', // Numeric region code (not valid for territory)
+            'invalid-territory', // Invalid format
+            'USA', // Three-letter code (should be two)
+            'mexico', // Lowercase country name
+            'united-states', // Country name instead of code
+            '', // Empty string
+            'XX-invalid' // Invalid format with hyphen
+          ];
+
+          invalidTerritoryCodes.forEach((code) => {
+            expect(mutableValidator.set('territory', code)).toFailWith(/invalid context value.*territory/i);
+          });
+        });
+      });
+
+      describe('literal qualifier validation with enumerated values', () => {
+        test('accepts valid enumerated values for priority qualifier', () => {
+          const validPriorityValues = ['high', 'medium', 'low'];
+
+          validPriorityValues.forEach((value) => {
+            expect(mutableValidator.set('priority', value)).toSucceedWith(
+              value as TsRes.QualifierContextValue
+            );
+            expect(mutableValidator.get('priority')).toSucceedWith(value as TsRes.QualifierContextValue);
+          });
+        });
+
+        test('rejects invalid literal values for priority qualifier', () => {
+          const invalidPriorityValues = [
+            'critical', // Not in enumerated list
+            'urgent', // Not in enumerated list
+            'normal', // Not in enumerated list
+            'low-priority', // Contains hyphen
+            '', // Empty string
+            'invalid-priority', // Not in enumerated list
+            '1', // Numeric value
+            'high,medium' // Multiple values (not allowed when allowContextList: false)
+          ];
+
+          invalidPriorityValues.forEach((value) => {
+            expect(mutableValidator.set('priority', value)).toFailWith(/invalid context value.*priority/i);
+          });
+        });
+
+        test('accepts case-insensitive enumerated values for priority qualifier', () => {
+          const caseVariations = ['High', 'MEDIUM', 'Low', 'HIGH', 'medium', 'LOW'];
+
+          caseVariations.forEach((value) => {
+            expect(mutableValidator.set('priority', value)).toSucceedWith(
+              value as TsRes.QualifierContextValue
+            );
+          });
+        });
+      });
+
+      describe('error message quality', () => {
+        test('provides informative error messages for language validation failures', () => {
+          expect(mutableValidator.set('language', 'en_US')).toFailWith(/invalid.*context.*value.*language/i);
+          expect(mutableValidator.set('language', 'invalid_lang')).toFailWith(
+            /invalid.*context.*value.*language/i
+          );
+        });
+
+        test('provides informative error messages for territory validation failures', () => {
+          expect(mutableValidator.set('territory', '419')).toFailWith(/invalid.*context.*value.*territory/i);
+          expect(mutableValidator.set('territory', 'mexico')).toFailWith(
+            /invalid.*context.*value.*territory/i
+          );
+        });
+
+        test('provides informative error messages for literal validation failures', () => {
+          expect(mutableValidator.set('priority', 'urgent')).toFailWith(/invalid.*context.*value.*priority/i);
+        });
+
+        test('includes qualifier name in error messages', () => {
+          expect(mutableValidator.set('language', 'bad_tag')).toFailWith(/language/i);
+          expect(mutableValidator.set('territory', 'bad-territory')).toFailWith(/territory/i);
+          expect(mutableValidator.set('priority', 'bad-value')).toFailWith(/priority/i);
+        });
+      });
+
+      describe('type-specific validation vs generic validation', () => {
+        test('demonstrates type-specific validation is more restrictive than generic validation', () => {
+          // These would pass a simple string check but fail type-specific validation
+          expect(mutableValidator.set('language', 'not-a-language-tag')).toFailWith(
+            /invalid.*context.*value/i
+          );
+          expect(mutableValidator.set('territory', 'not-a-territory')).toFailWith(/invalid.*context.*value/i);
+          expect(mutableValidator.set('priority', 'not-a-priority')).toFailWith(/invalid.*context.*value/i);
+        });
+
+        test('validates using BCP47 language tag rules', () => {
+          // Valid BCP47 tags should succeed
+          expect(mutableValidator.set('language', 'en')).toSucceed();
+          expect(mutableValidator.set('language', 'fr-FR')).toSucceed();
+          expect(mutableValidator.set('language', 'zh-Hans-CN')).toSucceed();
+
+          // Invalid BCP47 patterns should fail
+          expect(mutableValidator.set('language', 'en_US')).toFailWith(/invalid.*context.*value/i); // underscore instead of hyphen
+          expect(mutableValidator.set('language', 'fr-')).toFailWith(/invalid.*context.*value/i); // trailing hyphen
+          expect(mutableValidator.set('language', 'invalid-123')).toFailWith(/invalid.*context.*value/i); // invalid pattern
+        });
+
+        test('validates using ISO territory code rules', () => {
+          // Valid territory codes should succeed (including ZZ which is valid)
+          expect(mutableValidator.set('territory', 'US')).toSucceed();
+          expect(mutableValidator.set('territory', 'FR')).toSucceed();
+          expect(mutableValidator.set('territory', 'ZZ')).toSucceed(); // ZZ is a valid ISO code
+
+          // Invalid territory patterns should fail
+          expect(mutableValidator.set('territory', '419')).toFailWith(/invalid.*context.*value/i); // numeric codes not valid for territory
+          expect(mutableValidator.set('territory', 'mexico')).toFailWith(/invalid.*context.*value/i); // country names not valid
+          expect(mutableValidator.set('territory', 'USA')).toFailWith(/invalid.*context.*value/i); // three-letter codes not valid
+        });
+
+        test('validates each qualifier according to its specific type requirements', () => {
+          // Valid for identifier but invalid for language
+          expect(mutableValidator.set('language', 'valid-identifier')).toFailWith(
+            /invalid.*context.*value.*language/i
+          );
+
+          // Valid for identifier but invalid for territory
+          expect(mutableValidator.set('territory', 'valid-identifier')).toFailWith(
+            /invalid.*context.*value.*territory/i
+          );
+
+          // Valid identifier but not in enumerated values for priority
+          expect(mutableValidator.set('priority', 'valid-identifier')).toFailWith(
+            /invalid.*context.*value.*priority/i
+          );
+        });
+
+        test('enforces enumerated value restrictions for literal qualifiers', () => {
+          // Only values in the enumerated list should be accepted
+          expect(mutableValidator.set('priority', 'high')).toSucceed();
+          expect(mutableValidator.set('priority', 'medium')).toSucceed();
+          expect(mutableValidator.set('priority', 'low')).toSucceed();
+
+          // Values not in the enumerated list should be rejected
+          expect(mutableValidator.set('priority', 'critical')).toFailWith(
+            /invalid.*context.*value.*priority/i
+          );
+          expect(mutableValidator.set('priority', 'normal')).toFailWith(/invalid.*context.*value.*priority/i);
+          expect(mutableValidator.set('priority', 'urgent')).toFailWith(/invalid.*context.*value.*priority/i);
+        });
+
+        test('demonstrates context list behavior with allowContextList setting', () => {
+          // Priority qualifier was created with allowContextList: false, so lists should be rejected
+          expect(mutableValidator.set('priority', 'high,medium')).toFailWith(
+            /invalid.*context.*value.*priority/i
+          );
+          expect(mutableValidator.set('priority', 'high, low')).toFailWith(
+            /invalid.*context.*value.*priority/i
+          );
+
+          // But individual valid values should still work
+          expect(mutableValidator.set('priority', 'high')).toSucceed();
+          expect(mutableValidator.set('priority', 'medium')).toSucceed();
+          expect(mutableValidator.set('priority', 'low')).toSucceed();
+        });
+      });
     });
 
     test('fails with invalid qualifier names', () => {
