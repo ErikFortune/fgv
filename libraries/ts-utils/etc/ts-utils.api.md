@@ -606,6 +606,9 @@ interface DefaultingConverter<T, TD = T, TC = unknown> extends Converter<T | TD,
 const defaultValidatorTraits: ValidatorTraitValues;
 
 // @public
+export type DeferredResult<T> = () => Result<T>;
+
+// @public
 function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Converter<string[], string>;
 
 // @public
@@ -764,6 +767,9 @@ type FieldTransformers<TSRC, TDEST, TC = unknown> = {
 type FieldValidators<T, TC = unknown> = {
     [key in keyof T]: Validator<T[key], TC>;
 };
+
+// @public
+export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>): Result<T>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1252,6 +1258,9 @@ function isA<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T
 //
 // @public
 function isA_2<T, TC = unknown>(description: string, guard: TypeGuardWithContext<T, TC>, params?: Omit<TypeGuardValidatorConstructorParams<T, TC>, 'description' | 'guard'>): TypeGuardValidator<T, TC>;
+
+// @public
+export function isDeferredResult<T>(result: Result<T> | DeferredResult<T>): result is DeferredResult<T>;
 
 // @public
 function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = unknown>(value: TI | TO): value is TI;

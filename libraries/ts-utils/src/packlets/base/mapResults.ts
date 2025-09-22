@@ -20,7 +20,16 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, IMessageAggregator, Result, fail, succeed } from './result';
+import { MessageAggregator } from './messageAggregator';
+import {
+  DeferredResult,
+  DetailedResult,
+  IMessageAggregator,
+  Result,
+  fail,
+  isDeferredResult,
+  succeed
+} from './result';
 
 /**
  * Aggregates successful result values from a collection of {@link Result | Result<T>}.
@@ -179,6 +188,24 @@ export function allSucceed<T>(
     return fail(errors.join('\n'));
   }
   return succeed(successValue);
+}
+
+/**
+ * Returns the first successful result from a collection of {@link Result | Result<T>} or {@link DeferredResult | DeferredResult<T>}.
+ * @param results - The collection of {@link Result | Result<T>} or {@link DeferredResult | DeferredResult<T>} to be tested.
+ * @returns The first successful result, or {@link Failure} with a concatenated summary of all error messages.
+ * @public
+ */
+export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>): Result<T> {
+  const errors: MessageAggregator = new MessageAggregator();
+  for (const r of results) {
+    const result = isDeferredResult(r) ? r() : r;
+    if (result.isSuccess()) {
+      return result;
+    }
+    errors.addMessage(result.message);
+  }
+  return errors.returnOrReport(fail('no results found'));
 }
 
 /**

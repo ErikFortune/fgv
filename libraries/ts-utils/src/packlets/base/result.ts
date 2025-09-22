@@ -28,6 +28,23 @@
  * @public
  */
 export type Result<T> = Success<T> | Failure<T>;
+
+/**
+ * Represents a deferred result that will be evaluated if needed.
+ * @public
+ */
+export type DeferredResult<T> = () => Result<T>;
+
+/**
+ * Checks if a result is a deferred result.
+ * @param result - The result to check.
+ * @returns `true` if the result is a deferred result, `false` otherwise.
+ * @public
+ */
+export function isDeferredResult<T>(result: Result<T> | DeferredResult<T>): result is DeferredResult<T> {
+  return typeof result === 'function';
+}
+
 /**
  * Continuation callback to be called in the event that an
  * {@link Result} is successful.

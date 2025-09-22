@@ -256,6 +256,17 @@ Returns [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) with a sup
 </td></tr>
 <tr><td>
 
+[firstSuccess(results)](./ts-utils.firstsuccess.md)
+
+
+</td><td>
+
+Returns the first successful result from a collection of [Result&lt;T&gt;](./ts-utils.result.md) or [DeferredResult&lt;T&gt;](./ts-utils.deferredresult.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [getTypeOfProperty(key, item)](./ts-utils.gettypeofproperty.md)
 
 
@@ -273,6 +284,17 @@ Gets the type of a property specified by key from an arbitrary object.
 </td><td>
 
 Gets the value of a property specified by key from an arbitrary object, or a default value if the property does not exist.
+
+
+</td></tr>
+<tr><td>
+
+[isDeferredResult(result)](./ts-utils.isdeferredresult.md)
+
+
+</td><td>
+
+Checks if a result is a deferred result.
 
 
 </td></tr>
@@ -733,6 +755,17 @@ Description
 </td><td>
 
 Helper type to brand a simple type to prevent inappropriate use
+
+
+</td></tr>
+<tr><td>
+
+[DeferredResult](./ts-utils.deferredresult.md)
+
+
+</td><td>
+
+Represents a deferred result that will be evaluated if needed.
 
 
 </td></tr>
