@@ -24,7 +24,16 @@ import '@fgv/ts-utils-jest';
 import * as TsRes from '../../../../index';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 
-class TestContextQualifierProvider extends TsRes.Runtime.Context.ContextQualifierProvider {
+class TestContextQualifierProvider
+  extends TsRes.Runtime.Context.ContextQualifierProvider
+  implements TsRes.Runtime.Context.IReadOnlyContextQualifierProvider
+{
+  /**
+   * Explicit mutability marker for compile-time type discrimination.
+   * Always `false` for read-only test providers.
+   */
+  public readonly mutable: false = false as const;
+
   public readonly qualifiers: TsRes.Qualifiers.IReadOnlyQualifierCollector;
   private readonly _values: Map<TsRes.QualifierName, TsRes.QualifierContextValue> = new Map<
     TsRes.QualifierName,

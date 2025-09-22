@@ -9,9 +9,9 @@ Abstract base class for implementing context qualifier providers. Provides commo
 **Signature:**
 
 ```typescript
-export declare abstract class ContextQualifierProvider implements IContextQualifierProvider 
+export declare abstract class ContextQualifierProvider implements IContextQualifierProviderBase 
 ```
-**Implements:** IContextQualifierProvider
+**Implements:** IContextQualifierProviderBase
 
 ## Properties
 

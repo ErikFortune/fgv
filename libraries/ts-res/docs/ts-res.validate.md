@@ -184,6 +184,17 @@ Determines whether a string is a valid decision key.
 </td></tr>
 <tr><td>
 
+[isValidQualifierContextValue(value)](./ts-res.validate.isvalidqualifiercontextvalue.md)
+
+
+</td><td>
+
+Determines whether a string is a valid qualifier context value. For now, any non-empty string is considered a valid context value.
+
+
+</td></tr>
+<tr><td>
+
 [isValidQualifierDefaultValuesToken(token)](./ts-res.validate.isvalidqualifierdefaultvaluestoken.md)
 
 
@@ -487,6 +498,17 @@ Converts a number to a [DecisionIndex](./ts-res.decisionindex.md) if it is a val
 </td><td>
 
 Converts an optional string to an optional [resource ID](./ts-res.resourceid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toQualifierContextValue(value)](./ts-res.validate.toqualifiercontextvalue.md)
+
+
+</td><td>
+
+Converts a string to a [QualifierContextValue](./ts-res.qualifiercontextvalue.md) if it is a valid qualifier context value.
 
 
 </td></tr>

@@ -2,55 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-res](./ts-res.md) &gt; [Runtime](./ts-res.runtime.md) &gt; [Context](./ts-res.runtime.context.md) &gt; [IContextQualifierProviderValidatorCreateParams](./ts-res.runtime.context.icontextqualifierprovidervalidatorcreateparams.md)
 
-## Runtime.Context.IContextQualifierProviderValidatorCreateParams interface
+## Runtime.Context.IContextQualifierProviderValidatorCreateParams type
 
-Parameters for constructing a [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md)<!-- -->.
+Union type for validator constructor parameters.
 
 **Signature:**
 
 ```typescript
-export interface IContextQualifierProviderValidatorCreateParams 
+export type IContextQualifierProviderValidatorCreateParams = IReadOnlyContextQualifierProviderValidatorCreateParams | IMutableContextQualifierProviderValidatorCreateParams;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[provider](./ts-res.runtime.context.icontextqualifierprovidervalidatorcreateparams.provider.md)
-
-
-</td><td>
-
-
-</td><td>
-
-IContextQualifierProvider
-
-
-</td><td>
-
-
-</td></tr>
-</tbody></table>
-

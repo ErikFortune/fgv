@@ -366,15 +366,14 @@ export function useResolutionState(
         } else {
           // When called without arguments (from Apply button), apply pending user values
           o11y.diag.info('context-apply: Applying pending user values', pendingUserValues);
-          setAppliedUserValues(pendingUserValues);
 
-          // Create resolver with the new effective context
+          // Create resolver with the new effective context to validate first
           const newEffectiveContext = {
             ...pendingUserValues,
             ...hostManagedValues
           };
 
-          // Create resolver with effective context
+          // Create resolver with effective context to validate the context values
           const resolverResult = createResolverWithContext(processedResources, newEffectiveContext, {
             enableCaching: true,
             enableDebugLogging: false
@@ -386,6 +385,8 @@ export function useResolutionState(
             return fail(error);
           }
 
+          // Only set applied values if validation succeeded
+          setAppliedUserValues(pendingUserValues);
           setCurrentResolver(resolverResult.value);
 
           // If a resource is selected, resolve it with the new context (skip pending resources)

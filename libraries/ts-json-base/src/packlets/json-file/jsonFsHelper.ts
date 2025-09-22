@@ -21,8 +21,8 @@
  */
 
 import { Converter, Result, Validator, captureResult, fail, mapResults, succeed } from '@fgv/ts-utils';
-import * as fs from 'fs';
-import * as path from 'path';
+import fs from 'fs';
+import path from 'path';
 
 import { JsonValue } from '../json';
 import { DefaultJsonLike, IJsonLike } from './jsonLike';

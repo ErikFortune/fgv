@@ -20,23 +20,30 @@
  * SOFTWARE.
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-import { QualifierName, QualifierContextValue, QualifierIndex } from '../../common';
+import { Result, captureResult, Converters } from '@fgv/ts-utils';
+import { QualifierContextValue, Convert as CommonConverters } from '../../common';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
-import { IContextQualifierProvider } from './contextQualifierProvider';
+import {
+  IContextQualifierProvider,
+  IReadOnlyContextQualifierProvider,
+  IMutableContextQualifierProvider
+} from './contextQualifierProvider';
 
 /**
- * A read-only interface exposing non-mutating methods of a {@link Runtime.Context.ContextQualifierProviderValidator | ContextQualifierProviderValidator}.
+ * Base interface for shared operations between read-only and mutable context qualifier provider validators.
+ * Contains common methods that don't depend on provider mutability.
  * @public
  */
-export interface IReadOnlyContextQualifierProviderValidator {
+export interface IContextQualifierProviderValidatorBase<
+  T extends IContextQualifierProvider = IContextQualifierProvider
+> {
   /**
-   * {@inheritdoc Runtime.Context.ContextQualifierProviderValidator.provider}
+   * The wrapped context qualifier provider.
    */
-  readonly provider: IContextQualifierProvider;
+  readonly provider: T;
 
   /**
-   * {@inheritdoc Runtime.Context.ContextQualifierProviderValidator.qualifiers}
+   * The readonly qualifier collector that defines and validates the qualifiers for this context.
    */
   readonly qualifiers: IReadOnlyQualifierCollector;
 
@@ -79,6 +86,34 @@ export interface IReadOnlyContextQualifierProviderValidator {
    * or `Failure` with an error message if an error occurs during the check.
    */
   has(name: string): Result<boolean>;
+}
+
+/**
+ * A read-only interface for validators wrapping read-only context qualifier providers.
+ * Only exposes read operations, providing compile-time type safety by excluding mutation methods.
+ * @public
+ */
+export interface IReadOnlyContextQualifierProviderValidator<
+  T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider
+> {
+  /**
+   * The wrapped read-only context qualifier provider.
+   */
+  readonly provider: T;
+}
+
+/**
+ * A mutable interface for validators wrapping mutable context qualifier providers.
+ * Extends the base interface with mutation operations and provides compile-time type safety.
+ * @public
+ */
+export interface IMutableContextQualifierProviderValidator<
+  T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider
+> extends IContextQualifierProviderValidatorBase<T> {
+  /**
+   * The wrapped mutable context qualifier provider.
+   */
+  readonly provider: T;
 
   /**
    * Sets a qualifier value using string inputs, converting to strongly-typed values.
@@ -99,24 +134,45 @@ export interface IReadOnlyContextQualifierProviderValidator {
 }
 
 /**
- * Parameters for constructing a {@link Runtime.Context.ContextQualifierProviderValidator | ContextQualifierProviderValidator}.
+ * Parameters for constructing a read-only context qualifier provider validator.
  * @public
  */
-export interface IContextQualifierProviderValidatorCreateParams {
-  provider: IContextQualifierProvider;
+export interface IReadOnlyContextQualifierProviderValidatorCreateParams<
+  T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider
+> {
+  provider: T;
 }
 
 /**
- * A wrapper for {@link Runtime.Context.IContextQualifierProvider | IContextQualifierProvider} that accepts
- * string inputs and converts them to strongly-typed values before calling the wrapped provider.
- * This eliminates the need for type casting in consumer code while maintaining type safety.
+ * Parameters for constructing a mutable context qualifier provider validator.
  * @public
  */
-export class ContextQualifierProviderValidator implements IReadOnlyContextQualifierProviderValidator {
+export interface IMutableContextQualifierProviderValidatorCreateParams<
+  T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider
+> {
+  provider: T;
+}
+
+/**
+ * Union type for validator constructor parameters.
+ * @public
+ */
+export type IContextQualifierProviderValidatorCreateParams =
+  | IReadOnlyContextQualifierProviderValidatorCreateParams
+  | IMutableContextQualifierProviderValidatorCreateParams;
+
+/**
+ * Base implementation class containing shared validation logic for both read-only and mutable validators.
+ * @internal
+ */
+abstract class BaseContextQualifierProviderValidator<
+  T extends IContextQualifierProvider = IContextQualifierProvider
+> implements IContextQualifierProviderValidatorBase<T>
+{
   /**
    * The wrapped context qualifier provider.
    */
-  public readonly provider: IContextQualifierProvider;
+  public abstract readonly provider: T;
 
   /**
    * The readonly qualifier collector that defines and validates the qualifiers for this context.
@@ -126,21 +182,13 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
   }
 
   /**
-   * Constructs a new {@link Runtime.Context.ContextQualifierProviderValidator | ContextQualifierProviderValidator}.
-   * @param params - Required parameters for constructing the validator.
-   */
-  public constructor(params: IContextQualifierProviderValidatorCreateParams) {
-    this.provider = params.provider;
-  }
-
-  /**
    * Gets a qualifier value by its string name, converting to strongly-typed QualifierName.
    * @param name - The string name to convert and look up.
    * @returns `Success` with the {@link QualifierContextValue | qualifier context value} if found,
    * or `Failure` with an error message if not found or an error occurs.
    */
   public get(name: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
       return this.provider.get(qualifierName);
     });
   }
@@ -152,7 +200,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found or an error occurs.
    */
   public getByIndex(index: number): Result<QualifierContextValue> {
-    return this._validateQualifierIndex(index).onSuccess((qualifierIndex) => {
+    return CommonConverters.qualifierIndex.convert(index).onSuccess((qualifierIndex) => {
       return this.provider.get(qualifierIndex);
     });
   }
@@ -164,7 +212,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found, invalid, or an error occurs.
    */
   public getValidated(name: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
       return this.provider.getValidated(qualifierName);
     });
   }
@@ -176,7 +224,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found, invalid, or an error occurs.
    */
   public getValidatedByIndex(index: number): Result<QualifierContextValue> {
-    return this._validateQualifierIndex(index).onSuccess((qualifierIndex) => {
+    return CommonConverters.qualifierIndex.convert(index).onSuccess((qualifierIndex) => {
       return this.provider.getValidated(qualifierIndex);
     });
   }
@@ -188,9 +236,63 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if an error occurs during the check.
    */
   public has(name: string): Result<boolean> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
       return this.provider.has(qualifierName);
     });
+  }
+}
+
+/**
+ * A validator for read-only context qualifier providers that accepts string inputs
+ * and converts them to strongly-typed values before calling the wrapped provider.
+ * Only provides read operations for compile-time type safety.
+ * @public
+ */
+export class ReadOnlyContextQualifierProviderValidator<
+    T extends IReadOnlyContextQualifierProvider = IReadOnlyContextQualifierProvider
+  >
+  extends BaseContextQualifierProviderValidator<T>
+  implements IReadOnlyContextQualifierProviderValidator<T>
+{
+  /**
+   * The wrapped read-only context qualifier provider.
+   */
+  public readonly provider: T;
+
+  /**
+   * Constructs a new {@link Runtime.Context.ReadOnlyContextQualifierProviderValidator | ReadOnlyContextQualifierProviderValidator}.
+   * @param params - Required parameters for constructing the validator.
+   */
+  public constructor(params: IReadOnlyContextQualifierProviderValidatorCreateParams<T>) {
+    super();
+    this.provider = params.provider;
+  }
+}
+
+/**
+ * A validator for mutable context qualifier providers that accepts string inputs
+ * and converts them to strongly-typed values before calling the wrapped provider.
+ * Provides both read and mutation operations.
+ * @public
+ */
+export class MutableContextQualifierProviderValidator<
+    T extends IMutableContextQualifierProvider = IMutableContextQualifierProvider
+  >
+  extends BaseContextQualifierProviderValidator<T>
+  implements IMutableContextQualifierProviderValidator<T>
+{
+  /**
+   * The wrapped mutable context qualifier provider.
+   */
+  public readonly provider: T;
+
+  /**
+   * Constructs a new {@link Runtime.Context.MutableContextQualifierProviderValidator | MutableContextQualifierProviderValidator}.
+   * @param params - Required parameters for constructing the validator.
+   */
+  public constructor(params: IMutableContextQualifierProviderValidatorCreateParams<T>) {
+    super();
+    this.provider = params.provider;
   }
 
   /**
@@ -201,25 +303,17 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if an error occurs.
    */
   public set(name: string, value: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name)
-      .onSuccess((qualifierName) => this._validateQualifierContextValue(value))
-      .onSuccess((qualifierValue) => {
-        // Check if the provider has a set method (only available on mutable providers)
-        if ('set' in this.provider && typeof this.provider.set === 'function') {
-          try {
-            return (
-              this.provider.set as (
-                name: QualifierName,
-                value: QualifierContextValue
-              ) => Result<QualifierContextValue>
-            )(name as QualifierName, qualifierValue);
-            /* c8 ignore next 4 - defense in depth */
-          } catch {
-            return fail(`Provider does not support setting values`);
-          }
-        }
-        return fail(`Provider does not support setting values`);
-      });
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) =>
+      this.provider.qualifiers.validating.get(name).asResult.onSuccess((qualifier) =>
+        Converters.string.convert(value).onSuccess((stringValue) =>
+          qualifier.validateContextValue(stringValue).onSuccess((qualifierValue) => {
+            return captureResult(() => this.provider.set(qualifierName, qualifierValue)).onSuccess(
+              (result) => result
+            );
+          })
+        )
+      )
+    );
   }
 
   /**
@@ -229,56 +323,8 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if an error occurs.
    */
   public remove(name: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
-      // Check if the provider has a remove method (only available on mutable providers)
-      if ('remove' in this.provider && typeof this.provider.remove === 'function') {
-        try {
-          return (this.provider.remove as (name: QualifierName) => Result<QualifierContextValue>)(
-            qualifierName
-          );
-        } catch {
-          return fail(`Provider does not support removing values`);
-        }
-      }
-      return fail(`Provider does not support removing values`);
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
+      return captureResult(() => this.provider.remove(qualifierName)).onSuccess((result) => result);
     });
-  }
-
-  /**
-   * Validates a string as a QualifierName.
-   * @param name - The string to validate.
-   * @returns `Success` with the strongly-typed QualifierName, or `Failure` if invalid.
-   */
-  private _validateQualifierName(name: string): Result<QualifierName> {
-    /* c8 ignore next 3 - defense in depth */
-    if (typeof name !== 'string' || name.length === 0) {
-      return fail(`${name}: invalid qualifier name`);
-    }
-    return succeed(name as QualifierName);
-  }
-
-  /**
-   * Validates a number as a QualifierIndex.
-   * @param index - The number to validate.
-   * @returns `Success` with the strongly-typed QualifierIndex, or `Failure` if invalid.
-   */
-  private _validateQualifierIndex(index: number): Result<QualifierIndex> {
-    if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
-      return fail(`${index}: invalid qualifier index`);
-    }
-    return succeed(index as QualifierIndex);
-  }
-
-  /**
-   * Validates a string as a QualifierContextValue.
-   * @param value - The string to validate.
-   * @returns `Success` with the strongly-typed QualifierContextValue, or `Failure` if invalid.
-   */
-  private _validateQualifierContextValue(value: string): Result<QualifierContextValue> {
-    /* c8 ignore next 3 - defense in depth */
-    if (typeof value !== 'string') {
-      return fail(`${value}: invalid qualifier context value`);
-    }
-    return succeed(value as QualifierContextValue);
   }
 }

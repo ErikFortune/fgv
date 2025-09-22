@@ -155,7 +155,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[aggregateError(\_\_errors)](./ts-utils.success.aggregateerror.md)
+[aggregateError(\_\_errors, \_\_formatter)](./ts-utils.success.aggregateerror.md)
 
 
 </td><td>

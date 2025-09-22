@@ -9,7 +9,7 @@ Propagates interior result, appending any error message to the supplied errors a
 **Signature:**
 
 ```typescript
-aggregateError(__errors: IMessageAggregator): this;
+aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this;
 ```
 
 ## Parameters
@@ -41,6 +41,22 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+\_\_formatter
+
+
+</td><td>
+
+[ErrorFormatter](./ts-utils.errorformatter.md)
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>
