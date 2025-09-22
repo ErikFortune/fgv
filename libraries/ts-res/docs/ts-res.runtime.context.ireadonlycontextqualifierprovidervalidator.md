@@ -4,13 +4,14 @@
 
 ## Runtime.Context.IReadOnlyContextQualifierProviderValidator interface
 
-A read-only interface exposing non-mutating methods of a [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md)<!-- -->.
+A read-only interface for validators wrapping read-only context qualifier providers. Only exposes read operations, providing compile-time type safety by excluding mutation methods.
 
 **Signature:**
 
 ```typescript
-export interface IReadOnlyContextQualifierProviderValidator 
+export interface IReadOnlyContextQualifierProviderValidator extends IContextQualifierProviderValidatorBase 
 ```
+**Extends:** IContextQualifierProviderValidatorBase
 
 ## Properties
 
@@ -47,125 +48,12 @@ Description
 
 </td><td>
 
-IContextQualifierProvider
+IReadOnlyContextQualifierProvider
 
 
 </td><td>
 
-The wrapped context qualifier provider.
-
-
-</td></tr>
-<tr><td>
-
-[qualifiers](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.qualifiers.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyQualifierCollector](./ts-res.qualifiers.ireadonlyqualifiercollector.md)
-
-
-</td><td>
-
-The readonly qualifier collector that defines and validates the qualifiers for this context.
-
-
-</td></tr>
-</tbody></table>
-
-## Methods
-
-<table><thead><tr><th>
-
-Method
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[get(name)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.get.md)
-
-
-</td><td>
-
-Gets a qualifier value by its string name, converting to strongly-typed QualifierName.
-
-
-</td></tr>
-<tr><td>
-
-[getByIndex(index)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.getbyindex.md)
-
-
-</td><td>
-
-Gets a qualifier value by its number index, converting to strongly-typed QualifierIndex.
-
-
-</td></tr>
-<tr><td>
-
-[getValidated(name)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.getvalidated.md)
-
-
-</td><td>
-
-Gets a validated qualifier context value by its string name.
-
-
-</td></tr>
-<tr><td>
-
-[getValidatedByIndex(index)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.getvalidatedbyindex.md)
-
-
-</td><td>
-
-Gets a validated qualifier context value by its number index.
-
-
-</td></tr>
-<tr><td>
-
-[has(name)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.has.md)
-
-
-</td><td>
-
-Checks if a qualifier value exists with the given string name.
-
-
-</td></tr>
-<tr><td>
-
-[remove(name)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.remove.md)
-
-
-</td><td>
-
-Removes a qualifier value using string input, converting to strongly-typed QualifierName.
-
-
-</td></tr>
-<tr><td>
-
-[set(name, value)](./ts-res.runtime.context.ireadonlycontextqualifierprovidervalidator.set.md)
-
-
-</td><td>
-
-Sets a qualifier value using string inputs, converting to strongly-typed values.
+The wrapped read-only context qualifier provider.
 
 
 </td></tr>

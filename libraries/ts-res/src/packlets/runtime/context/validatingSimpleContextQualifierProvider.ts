@@ -25,8 +25,8 @@ import { QualifierContextValue } from '../../common';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
 import { SimpleContextQualifierProvider } from './simpleContextQualifierProvider';
 import {
-  ContextQualifierProviderValidator,
-  IReadOnlyContextQualifierProviderValidator
+  ContextQualifierProviderValidators,
+  IMutableContextQualifierProviderValidator
 } from './contextQualifierProviderValidator';
 
 /**
@@ -48,17 +48,17 @@ export interface IValidatingSimpleContextQualifierProviderCreateParams {
 
 /**
  * A {@link Runtime.SimpleContextQualifierProvider | SimpleContextQualifierProvider} with a
- * {@link Runtime.Context.ContextQualifierProviderValidator | validator} property that enables
+ * {@link Runtime.Context.MutableContextQualifierProviderValidator | validator} property that enables
  * validated use of the underlying provider with string keys and values.
  * This eliminates the need for type casting in consumer code.
  * @public
  */
 export class ValidatingSimpleContextQualifierProvider extends SimpleContextQualifierProvider {
   /**
-   * A {@link Runtime.Context.ContextQualifierProviderValidator | ContextQualifierProviderValidator} which validates
+   * A {@link Runtime.Context.MutableContextQualifierProviderValidator | MutableContextQualifierProviderValidator} which validates
    * string inputs before passing them to this provider.
    */
-  public readonly validating: IReadOnlyContextQualifierProviderValidator;
+  public readonly validating: IMutableContextQualifierProviderValidator;
 
   /**
    * Constructor for a {@link Runtime.ValidatingSimpleContextQualifierProvider | ValidatingSimpleContextQualifierProvider} object.
@@ -78,7 +78,7 @@ export class ValidatingSimpleContextQualifierProvider extends SimpleContextQuali
       qualifierValues: convertedValues
     });
 
-    this.validating = new ContextQualifierProviderValidator({ provider: this });
+    this.validating = ContextQualifierProviderValidators.createMutable(this);
   }
 
   /**

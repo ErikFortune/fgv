@@ -110,11 +110,12 @@ class MockContextQualifierProvider implements TsRes.Runtime.Context.IMutableCont
   }
 }
 
-describe('ContextQualifierProviderValidator class', () => {
+describe('ContextQualifierProviderValidator classes', () => {
   let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
   let qualifiers: TsRes.Qualifiers.QualifierCollector;
   let mockProvider: MockContextQualifierProvider;
-  let validator: TsRes.Runtime.Context.ContextQualifierProviderValidator;
+  let mutableValidator: TsRes.Runtime.Context.MutableContextQualifierProviderValidator;
+  let readOnlyValidator: TsRes.Runtime.Context.ReadOnlyContextQualifierProviderValidator;
 
   beforeEach(() => {
     qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
@@ -138,110 +139,118 @@ describe('ContextQualifierProviderValidator class', () => {
     }).orThrow();
 
     mockProvider = new MockContextQualifierProvider(qualifiers);
-    validator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({ provider: mockProvider });
+    mutableValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createMutable(mockProvider);
+    readOnlyValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createReadOnly({
+      mutable: false as const,
+      qualifiers,
+      get: mockProvider.get.bind(mockProvider),
+      getValidated: mockProvider.getValidated.bind(mockProvider),
+      has: mockProvider.has.bind(mockProvider),
+      getNames: mockProvider.getNames.bind(mockProvider)
+    });
   });
 
   describe('constructor', () => {
     test('creates validator with wrapped provider', () => {
-      expect(validator.provider).toBe(mockProvider);
-      expect(validator.qualifiers).toBe(qualifiers);
+      expect(mutableValidator.provider).toBe(mockProvider);
+      expect(mutableValidator.qualifiers).toBe(qualifiers);
     });
   });
 
   describe('get method', () => {
     test('successfully gets values using string names', () => {
-      expect(validator.get('language')).toSucceedWith('en-US' as TsRes.QualifierContextValue);
-      expect(validator.get('territory')).toSucceedWith('US' as TsRes.QualifierContextValue);
-      expect(validator.get('priority')).toSucceedWith('high' as TsRes.QualifierContextValue);
+      expect(mutableValidator.get('language')).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.get('territory')).toSucceedWith('US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.get('priority')).toSucceedWith('high' as TsRes.QualifierContextValue);
     });
 
     test('fails for non-existent qualifier names', () => {
-      expect(validator.get('nonexistent')).toFailWith(/Not found:/);
+      expect(mutableValidator.get('nonexistent')).toFailWith(/Not found:/);
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.get('')).toFailWith(/invalid qualifier name/i);
+      expect(mutableValidator.get('')).toFailWith(/invalid qualifier name/i);
     });
   });
 
   describe('getByIndex method', () => {
     test('successfully gets values using number indices', () => {
-      expect(validator.getByIndex(0)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
-      expect(validator.getByIndex(1)).toSucceedWith('US' as TsRes.QualifierContextValue);
-      expect(validator.getByIndex(2)).toSucceedWith('high' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getByIndex(0)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getByIndex(1)).toSucceedWith('US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getByIndex(2)).toSucceedWith('high' as TsRes.QualifierContextValue);
     });
 
     test('fails for invalid indices', () => {
-      expect(validator.getByIndex(99)).toFailWith(/Index not found:/);
-      expect(validator.getByIndex(-1)).toFailWith(/invalid qualifier index/i);
-      expect(validator.getByIndex(1.5)).toFailWith(/Index not found:/i);
+      expect(mutableValidator.getByIndex(99)).toFailWith(/Index not found:/);
+      expect(mutableValidator.getByIndex(-1)).toFailWith(/invalid qualifier index/i);
+      expect(mutableValidator.getByIndex(1.5)).toFailWith(/Index not found:/i);
     });
   });
 
   describe('getValidated method', () => {
     test('successfully gets validated values using string names', () => {
-      expect(validator.getValidated('language')).toSucceedWith('en-US' as TsRes.QualifierContextValue);
-      expect(validator.getValidated('territory')).toSucceedWith('US' as TsRes.QualifierContextValue);
-      expect(validator.getValidated('priority')).toSucceedWith('high' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getValidated('language')).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getValidated('territory')).toSucceedWith('US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getValidated('priority')).toSucceedWith('high' as TsRes.QualifierContextValue);
     });
 
     test('fails for non-existent qualifier names', () => {
-      expect(validator.getValidated('nonexistent')).toFailWith(/Not found:/);
+      expect(mutableValidator.getValidated('nonexistent')).toFailWith(/Not found:/);
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.getValidated('')).toFailWith(/invalid qualifier name/i);
+      expect(mutableValidator.getValidated('')).toFailWith(/invalid qualifier name/i);
     });
   });
 
   describe('getValidatedByIndex method', () => {
     test('successfully gets validated values using number indices', () => {
-      expect(validator.getValidatedByIndex(0)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
-      expect(validator.getValidatedByIndex(1)).toSucceedWith('US' as TsRes.QualifierContextValue);
-      expect(validator.getValidatedByIndex(2)).toSucceedWith('high' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getValidatedByIndex(0)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getValidatedByIndex(1)).toSucceedWith('US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.getValidatedByIndex(2)).toSucceedWith('high' as TsRes.QualifierContextValue);
     });
 
     test('fails for invalid indices', () => {
-      expect(validator.getValidatedByIndex(99)).toFailWith(/Index not found:/);
-      expect(validator.getValidatedByIndex(-1)).toFailWith(/invalid qualifier index/i);
+      expect(mutableValidator.getValidatedByIndex(99)).toFailWith(/Index not found:/);
+      expect(mutableValidator.getValidatedByIndex(-1)).toFailWith(/invalid qualifier index/i);
     });
   });
 
   describe('has method', () => {
     test('returns true for existing qualifiers', () => {
-      expect(validator.has('language')).toSucceedWith(true);
-      expect(validator.has('territory')).toSucceedWith(true);
-      expect(validator.has('priority')).toSucceedWith(true);
+      expect(mutableValidator.has('language')).toSucceedWith(true);
+      expect(mutableValidator.has('territory')).toSucceedWith(true);
+      expect(mutableValidator.has('priority')).toSucceedWith(true);
     });
 
     test('returns false for non-existing qualifiers', () => {
-      expect(validator.has('nonexistent')).toSucceedWith(false);
+      expect(mutableValidator.has('nonexistent')).toSucceedWith(false);
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.has('')).toFailWith(/invalid qualifier name/i);
+      expect(mutableValidator.has('')).toFailWith(/invalid qualifier name/i);
     });
   });
 
   describe('set method', () => {
     test('successfully sets qualifier values using string inputs', () => {
-      expect(validator.set('language', 'fr-FR')).toSucceedWith('fr-FR' as TsRes.QualifierContextValue);
-      expect(validator.get('language')).toSucceedWith('fr-FR' as TsRes.QualifierContextValue);
+      expect(mutableValidator.set('language', 'fr-FR')).toSucceedWith('fr-FR' as TsRes.QualifierContextValue);
+      expect(mutableValidator.get('language')).toSucceedWith('fr-FR' as TsRes.QualifierContextValue);
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.set('', 'value')).toFailWith(/invalid qualifier name/i);
+      expect(mutableValidator.set('', 'value')).toFailWith(/invalid qualifier name/i);
     });
 
     test('fails with invalid qualifier context value type', () => {
       // Create a validator and try to set with a non-string value (edge case coverage)
-      const invalidValidator = validator as unknown as {
+      const invalidValidator = mutableValidator as unknown as {
         set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
       };
       expect(invalidValidator.set('language', 123)).toFailWith(/Not a string:/i);
     });
 
-    test('fails with provider that does not support setting', () => {
+    test('read-only validators do not have set method at compile time', () => {
       // Create a provider without set method
       const readOnlyProvider = {
         mutable: false as const,
@@ -251,12 +260,12 @@ describe('ContextQualifierProviderValidator class', () => {
         has: mockProvider.has.bind(mockProvider),
         getNames: mockProvider.getNames.bind(mockProvider)
       };
-      const readOnlyValidator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({
-        provider: readOnlyProvider
-      });
-      expect(readOnlyValidator.set('language', 'fr-FR')).toFailWith(
-        /Provider does not support setting values/
+      const readOnlyValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createReadOnly(
+        readOnlyProvider as TsRes.Runtime.Context.IReadOnlyContextQualifierProvider
       );
+      // ReadOnlyContextQualifierProviderValidator doesn't have a set method at compile time
+      // This is now a compile-time type safety feature, not a runtime check
+      expect('set' in readOnlyValidator).toBe(false);
     });
 
     test('handles provider that throws during setting', () => {
@@ -278,9 +287,9 @@ describe('ContextQualifierProviderValidator class', () => {
           throw new Error('Clear operation failed');
         }
       };
-      const throwingValidator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({
-        provider: throwingProvider
-      });
+      const throwingValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createMutable(
+        throwingProvider as TsRes.Runtime.Context.IMutableContextQualifierProvider
+      );
       // The validator should catch the exception and return a failure
       expect(throwingValidator.set('language', 'fr-FR')).toFailWith(/Set operation failed/);
     });
@@ -288,19 +297,19 @@ describe('ContextQualifierProviderValidator class', () => {
 
   describe('remove method', () => {
     test('successfully removes qualifier values using string inputs', () => {
-      expect(validator.remove('language')).toSucceedWith('en-US' as TsRes.QualifierContextValue);
-      expect(validator.get('language')).toFail();
+      expect(mutableValidator.remove('language')).toSucceedWith('en-US' as TsRes.QualifierContextValue);
+      expect(mutableValidator.get('language')).toFail();
     });
 
     test('fails for non-existent qualifiers', () => {
-      expect(validator.remove('nonexistent')).toFailWith(/Not found:/);
+      expect(mutableValidator.remove('nonexistent')).toFailWith(/Not found:/);
     });
 
     test('fails with invalid qualifier names', () => {
-      expect(validator.remove('')).toFailWith(/invalid qualifier name/i);
+      expect(mutableValidator.remove('')).toFailWith(/invalid qualifier name/i);
     });
 
-    test('fails with provider that does not support removing', () => {
+    test('read-only validators do not have remove method at compile time', () => {
       // Create a provider without remove method
       const readOnlyProvider = {
         mutable: false as const,
@@ -310,10 +319,12 @@ describe('ContextQualifierProviderValidator class', () => {
         has: mockProvider.has.bind(mockProvider),
         getNames: mockProvider.getNames.bind(mockProvider)
       };
-      const readOnlyValidator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({
-        provider: readOnlyProvider
-      });
-      expect(readOnlyValidator.remove('language')).toFailWith(/Provider does not support removing values/);
+      const readOnlyValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createReadOnly(
+        readOnlyProvider as TsRes.Runtime.Context.IReadOnlyContextQualifierProvider
+      );
+      // ReadOnlyContextQualifierProviderValidator doesn't have a remove method at compile time
+      // This is now a compile-time type safety feature, not a runtime check
+      expect('remove' in readOnlyValidator).toBe(false);
     });
 
     test('handles provider that throws during removal', () => {
@@ -335,30 +346,45 @@ describe('ContextQualifierProviderValidator class', () => {
           throw new Error('Clear operation failed');
         }
       };
-      const throwingValidator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({
-        provider: throwingProvider
-      });
+      const throwingValidator = TsRes.Runtime.Context.ContextQualifierProviderValidators.createMutable(
+        throwingProvider as TsRes.Runtime.Context.IMutableContextQualifierProvider
+      );
       // The validator should catch the exception and return a failure
       expect(throwingValidator.remove('language')).toFailWith(/Remove operation failed/);
     });
   });
 
-  describe('private validation methods coverage', () => {
-    test('covers _validateQualifierName with non-string input', () => {
-      // Test with non-string input to cover validation failure (lines 253-254)
-      expect(validator.get(123 as unknown as string)).toFailWith(/Not a string:/i);
+  // Test type safety - these should be compile-time errors
+  describe('Type safety tests', () => {
+    test('ReadOnlyContextQualifierProviderValidator does not have mutation methods at runtime', () => {
+      // TypeScript should prevent accessing these methods, but test runtime behavior
+      const readOnlyAsUnknown = readOnlyValidator as unknown as Record<string, unknown>;
+      expect(readOnlyAsUnknown.set).toBeUndefined();
+      expect(readOnlyAsUnknown.remove).toBeUndefined();
     });
 
-    test('covers _validateQualifierIndex with invalid numbers', () => {
-      // Test with invalid number inputs to cover validation failure (lines 265-266)
-      expect(validator.getByIndex(-1 as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
-      expect(validator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/Index not found:/i);
-      expect(validator.getByIndex(NaN as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
+    test('MutableContextQualifierProviderValidator has mutation methods', () => {
+      expect(typeof mutableValidator.set).toBe('function');
+      expect(typeof mutableValidator.remove).toBe('function');
+    });
+  });
+
+  describe('Coverage for validation methods', () => {
+    test('covers validation with non-string input', () => {
+      // Test with non-string input to cover validation failure
+      expect(mutableValidator.get(123 as unknown as string)).toFailWith(/Not a string:/i);
     });
 
-    test('covers _validateQualifierContextValue with non-string input', () => {
-      // Test with non-string input to cover validation failure (lines 277-278)
-      const invalidValidator = validator as unknown as {
+    test('covers validation with invalid numbers', () => {
+      // Test with invalid number inputs to cover validation failure
+      expect(mutableValidator.getByIndex(-1 as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
+      expect(mutableValidator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/Index not found:/i);
+      expect(mutableValidator.getByIndex(NaN as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
+    });
+
+    test('covers validation with non-string value input', () => {
+      // Test with non-string input to cover validation failure
+      const invalidValidator = mutableValidator as unknown as {
         set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
       };
       expect(invalidValidator.set('language', null)).toFailWith(/Not a string:/i);

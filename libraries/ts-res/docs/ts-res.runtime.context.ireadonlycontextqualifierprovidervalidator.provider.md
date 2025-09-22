@@ -4,10 +4,10 @@
 
 ## Runtime.Context.IReadOnlyContextQualifierProviderValidator.provider property
 
-The wrapped context qualifier provider.
+The wrapped read-only context qualifier provider.
 
 **Signature:**
 
 ```typescript
-readonly provider: IContextQualifierProvider;
+readonly provider: IReadOnlyContextQualifierProvider;
 ```
