@@ -167,4 +167,37 @@ describe('QualifierType base class', () => {
       expect(qt.isValidContextValue('a, b, c')).toBe(false);
     });
   });
+
+  describe('isPotentialMatch', () => {
+    let qt: BaseQualifierTypeTest;
+
+    beforeEach(() => {
+      qt = BaseQualifierTypeTest.create(['valid', 'test'], false, false).orThrow();
+    });
+
+    test('returns true for valid condition and context values that match', () => {
+      expect(qt.isPotentialMatch('valid', 'valid')).toBe(true);
+      expect(qt.isPotentialMatch('test', 'test')).toBe(true);
+    });
+
+    test('returns false for valid condition and context values that do not match', () => {
+      expect(qt.isPotentialMatch('valid', 'test')).toBe(false);
+      expect(qt.isPotentialMatch('test', 'valid')).toBe(false);
+    });
+
+    test('returns false when condition value is invalid', () => {
+      expect(qt.isPotentialMatch('invalid', 'valid')).toBe(false);
+      expect(qt.isPotentialMatch('notvalid', 'test')).toBe(false);
+    });
+
+    test('returns false when context value is invalid', () => {
+      expect(qt.isPotentialMatch('valid', 'invalid')).toBe(false);
+      expect(qt.isPotentialMatch('test', 'notvalid')).toBe(false);
+    });
+
+    test('returns false when both condition and context values are invalid', () => {
+      expect(qt.isPotentialMatch('invalid', 'notvalid')).toBe(false);
+      expect(qt.isPotentialMatch('notvalid', 'invalid')).toBe(false);
+    });
+  });
 });

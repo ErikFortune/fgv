@@ -25,11 +25,12 @@ import { QualifierName, QualifierContextValue, QualifierIndex } from '../../comm
 import { IReadOnlyQualifierCollector, Qualifier } from '../../qualifiers';
 
 /**
- * Abstract interface for providing qualifier values in an optimized runtime context.
+ * Base interface for providing qualifier values in an optimized runtime context.
+ * Contains common read-only operations shared by both mutable and immutable providers.
  * Acts as a property bag using the Result pattern for qualifier value lookups.
  * @public
  */
-export interface IContextQualifierProvider {
+export interface IContextQualifierProviderBase {
   /**
    * Gets a qualifier value by its name, index, or qualifier object.
    * @param nameOrIndexOrQualifier - The {@link QualifierName | qualifier name}, {@link QualifierIndex | index}, or {@link Qualifiers.Qualifier | qualifier object} to look up.
@@ -70,11 +71,65 @@ export interface IContextQualifierProvider {
 }
 
 /**
+ * Read-only interface for providing qualifier values in an optimized runtime context.
+ * Explicitly marked as immutable with compile-time type discrimination.
+ * @public
+ */
+export interface IReadOnlyContextQualifierProvider extends IContextQualifierProviderBase {
+  /**
+   * Explicit mutability marker for compile-time type discrimination.
+   * Always `false` for read-only providers.
+   */
+  readonly mutable: false;
+}
+
+/**
+ * Mutable interface for providing qualifier values in an optimized runtime context.
+ * Extends the base interface with mutation operations and explicit mutability marker.
+ * @public
+ */
+export interface IMutableContextQualifierProvider extends IContextQualifierProviderBase {
+  /**
+   * Explicit mutability marker for compile-time type discrimination.
+   * Always `true` for mutable providers.
+   */
+  readonly mutable: true;
+  /**
+   * Sets a qualifier value in this provider.
+   * @param name - The {@link QualifierName | qualifier name} to set.
+   * @param value - The {@link QualifierContextValue | qualifier context value} to set.
+   * @returns `Success` with the set {@link QualifierContextValue | qualifier context value} if successful,
+   * or `Failure` with an error message if not.
+   */
+  set(name: QualifierName, value: QualifierContextValue): Result<QualifierContextValue>;
+
+  /**
+   * Removes a qualifier value from this provider.
+   * @param name - The {@link QualifierName | qualifier name} to remove.
+   * @returns `Success` with the removed {@link QualifierContextValue | qualifier context value} if successful,
+   * or `Failure` with an error message if not found or an error occurs.
+   */
+  remove(name: QualifierName): Result<QualifierContextValue>;
+
+  /**
+   * Clears all qualifier values from this provider.
+   */
+  clear(): void;
+}
+
+/**
+ * Union type for context qualifier providers that can be either read-only or mutable.
+ * Provides compile-time type discrimination via the `mutable` property.
+ * @public
+ */
+export type IContextQualifierProvider = IReadOnlyContextQualifierProvider | IMutableContextQualifierProvider;
+
+/**
  * Abstract base class for implementing context qualifier providers.
  * Provides common functionality and enforces the contract for derived classes.
  * @public
  */
-export abstract class ContextQualifierProvider implements IContextQualifierProvider {
+export abstract class ContextQualifierProvider implements IContextQualifierProviderBase {
   /**
    * The readonly qualifier collector that defines and validates the qualifiers for this context.
    */

@@ -328,4 +328,78 @@ describe('Config Convert', () => {
       });
     });
   });
+
+  describe('validateSystemConfiguration', () => {
+    test('should validate valid system configuration', () => {
+      const data = {
+        name: 'Valid Configuration',
+        description: 'A valid test configuration',
+        qualifierTypes: [
+          {
+            name: 'language',
+            systemType: 'language',
+            configuration: {}
+          }
+        ],
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 100
+          }
+        ],
+        resourceTypes: [
+          {
+            name: 'json',
+            typeName: 'json'
+          }
+        ]
+      };
+
+      expect(Convert.validateSystemConfiguration(data)).toSucceedAndSatisfy((config) => {
+        expect(config.name).toBe('Valid Configuration');
+        expect(config.description).toBe('A valid test configuration');
+        expect(config.qualifierTypes).toHaveLength(1);
+        expect(config.qualifiers).toHaveLength(1);
+        expect(config.resourceTypes).toHaveLength(1);
+      });
+    });
+
+    test('should fail validation with invalid system configuration', () => {
+      const invalidData = {
+        name: 123, // invalid type
+        qualifierTypes: [
+          {
+            name: 'language',
+            systemType: 'language',
+            configuration: {}
+          }
+        ],
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 100
+          }
+        ],
+        resourceTypes: [
+          {
+            name: 'json',
+            typeName: 'json'
+          }
+        ]
+      };
+
+      expect(Convert.validateSystemConfiguration(invalidData)).toFailWith(/not a string/i);
+    });
+
+    test('should fail validation with missing required fields', () => {
+      const incompleteData = {
+        name: 'Incomplete Configuration'
+        // Missing required fields
+      };
+
+      expect(Convert.validateSystemConfiguration(incompleteData)).toFailWith(/not found/i);
+    });
+  });
 });

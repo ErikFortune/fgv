@@ -93,12 +93,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md)
+[IContextQualifierProviderBase](./ts-res.runtime.context.icontextqualifierproviderbase.md)
 
 
 </td><td>
 
-Abstract interface for providing qualifier values in an optimized runtime context. Acts as a property bag using the Result pattern for qualifier value lookups.
+Base interface for providing qualifier values in an optimized runtime context. Contains common read-only operations shared by both mutable and immutable providers. Acts as a property bag using the Result pattern for qualifier value lookups.
 
 
 </td></tr>
@@ -110,6 +110,28 @@ Abstract interface for providing qualifier values in an optimized runtime contex
 </td><td>
 
 Parameters for constructing a [ContextQualifierProviderValidator](./ts-res.runtime.context.contextqualifierprovidervalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IMutableContextQualifierProvider](./ts-res.runtime.context.imutablecontextqualifierprovider.md)
+
+
+</td><td>
+
+Mutable interface for providing qualifier values in an optimized runtime context. Extends the base interface with mutation operations and explicit mutability marker.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyContextQualifierProvider](./ts-res.runtime.context.ireadonlycontextqualifierprovider.md)
+
+
+</td><td>
+
+Read-only interface for providing qualifier values in an optimized runtime context. Explicitly marked as immutable with compile-time type discrimination.
 
 
 </td></tr>
@@ -143,6 +165,32 @@ Parameters for creating a [SimpleContextQualifierProvider](./ts-res.runtime.simp
 </td><td>
 
 Parameters for creating a [ValidatingSimpleContextQualifierProvider](./ts-res.runtime.validatingsimplecontextqualifierprovider.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IContextQualifierProvider](./ts-res.runtime.context.icontextqualifierprovider.md)
+
+
+</td><td>
+
+Union type for context qualifier providers that can be either read-only or mutable. Provides compile-time type discrimination via the `mutable` property.
 
 
 </td></tr>

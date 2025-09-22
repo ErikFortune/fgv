@@ -25,7 +25,13 @@ import * as TsRes from '../../../../index';
 import { Result, succeed, fail } from '@fgv/ts-utils';
 
 // Mock provider for testing the validator
-class MockContextQualifierProvider implements TsRes.Runtime.Context.IContextQualifierProvider {
+class MockContextQualifierProvider implements TsRes.Runtime.Context.IMutableContextQualifierProvider {
+  /**
+   * Explicit mutability marker for compile-time type discrimination.
+   * Always `true` for mutable test providers.
+   */
+  public readonly mutable: true = true as const;
+
   private _values: Map<string, string> = new Map<string, string>();
   public qualifiers: TsRes.Qualifiers.QualifierCollector;
 
@@ -98,6 +104,10 @@ class MockContextQualifierProvider implements TsRes.Runtime.Context.IContextQual
     }
     return fail(`Not found: ${name}`);
   }
+
+  public clear(): void {
+    this._values.clear();
+  }
 }
 
 describe('ContextQualifierProviderValidator class', () => {
@@ -164,7 +174,7 @@ describe('ContextQualifierProviderValidator class', () => {
     test('fails for invalid indices', () => {
       expect(validator.getByIndex(99)).toFailWith(/Index not found:/);
       expect(validator.getByIndex(-1)).toFailWith(/invalid qualifier index/i);
-      expect(validator.getByIndex(1.5)).toFailWith(/invalid qualifier index/i);
+      expect(validator.getByIndex(1.5)).toFailWith(/Index not found:/i);
     });
   });
 
@@ -228,12 +238,13 @@ describe('ContextQualifierProviderValidator class', () => {
       const invalidValidator = validator as unknown as {
         set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
       };
-      expect(invalidValidator.set('language', 123)).toFailWith(/invalid qualifier context value/i);
+      expect(invalidValidator.set('language', 123)).toFailWith(/Not a string:/i);
     });
 
     test('fails with provider that does not support setting', () => {
       // Create a provider without set method
       const readOnlyProvider = {
+        mutable: false as const,
         qualifiers,
         get: mockProvider.get.bind(mockProvider),
         getValidated: mockProvider.getValidated.bind(mockProvider),
@@ -251,6 +262,7 @@ describe('ContextQualifierProviderValidator class', () => {
     test('handles provider that throws during setting', () => {
       // Create a provider that throws during set operation to test error handling
       const throwingProvider = {
+        mutable: true as const,
         qualifiers,
         get: mockProvider.get.bind(mockProvider),
         getValidated: mockProvider.getValidated.bind(mockProvider),
@@ -258,15 +270,19 @@ describe('ContextQualifierProviderValidator class', () => {
         getNames: mockProvider.getNames.bind(mockProvider),
         set: () => {
           throw new Error('Set operation failed');
+        },
+        remove: () => {
+          throw new Error('Remove operation failed');
+        },
+        clear: () => {
+          throw new Error('Clear operation failed');
         }
       };
       const throwingValidator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({
         provider: throwingProvider
       });
       // The validator should catch the exception and return a failure
-      expect(throwingValidator.set('language', 'fr-FR')).toFailWith(
-        /Provider does not support setting values/
-      );
+      expect(throwingValidator.set('language', 'fr-FR')).toFailWith(/Set operation failed/);
     });
   });
 
@@ -287,6 +303,7 @@ describe('ContextQualifierProviderValidator class', () => {
     test('fails with provider that does not support removing', () => {
       // Create a provider without remove method
       const readOnlyProvider = {
+        mutable: false as const,
         qualifiers,
         get: mockProvider.get.bind(mockProvider),
         getValidated: mockProvider.getValidated.bind(mockProvider),
@@ -302,33 +319,40 @@ describe('ContextQualifierProviderValidator class', () => {
     test('handles provider that throws during removal', () => {
       // Create a provider that throws during remove operation to test error handling
       const throwingProvider = {
+        mutable: true as const,
         qualifiers,
         get: mockProvider.get.bind(mockProvider),
         getValidated: mockProvider.getValidated.bind(mockProvider),
         has: mockProvider.has.bind(mockProvider),
         getNames: mockProvider.getNames.bind(mockProvider),
+        set: () => {
+          throw new Error('Set operation failed');
+        },
         remove: () => {
           throw new Error('Remove operation failed');
+        },
+        clear: () => {
+          throw new Error('Clear operation failed');
         }
       };
       const throwingValidator = new TsRes.Runtime.Context.ContextQualifierProviderValidator({
         provider: throwingProvider
       });
       // The validator should catch the exception and return a failure
-      expect(throwingValidator.remove('language')).toFailWith(/Provider does not support removing values/);
+      expect(throwingValidator.remove('language')).toFailWith(/Remove operation failed/);
     });
   });
 
   describe('private validation methods coverage', () => {
     test('covers _validateQualifierName with non-string input', () => {
       // Test with non-string input to cover validation failure (lines 253-254)
-      expect(validator.get(123 as unknown as string)).toFailWith(/invalid qualifier name/i);
+      expect(validator.get(123 as unknown as string)).toFailWith(/Not a string:/i);
     });
 
     test('covers _validateQualifierIndex with invalid numbers', () => {
       // Test with invalid number inputs to cover validation failure (lines 265-266)
       expect(validator.getByIndex(-1 as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
-      expect(validator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
+      expect(validator.getByIndex(1.5 as TsRes.QualifierIndex)).toFailWith(/Index not found:/i);
       expect(validator.getByIndex(NaN as TsRes.QualifierIndex)).toFailWith(/invalid qualifier index/i);
     });
 
@@ -337,9 +361,9 @@ describe('ContextQualifierProviderValidator class', () => {
       const invalidValidator = validator as unknown as {
         set: (name: string, value: unknown) => Result<TsRes.QualifierContextValue>;
       };
-      expect(invalidValidator.set('language', null)).toFailWith(/invalid qualifier context value/i);
-      expect(invalidValidator.set('language', undefined)).toFailWith(/invalid qualifier context value/i);
-      expect(invalidValidator.set('language', 123)).toFailWith(/invalid qualifier context value/i);
+      expect(invalidValidator.set('language', null)).toFailWith(/Not a string:/i);
+      expect(invalidValidator.set('language', undefined)).toFailWith(/Not a string:/i);
+      expect(invalidValidator.set('language', 123)).toFailWith(/Not a string:/i);
     });
   });
 });

@@ -29,7 +29,7 @@ import {
   Convert as CommonConverters
 } from '../../common';
 import { IReadOnlyQualifierCollector, Qualifier } from '../../qualifiers';
-import { ContextQualifierProvider } from './contextQualifierProvider';
+import { ContextQualifierProvider, IMutableContextQualifierProvider } from './contextQualifierProvider';
 
 /**
  * Parameters for creating a {@link Runtime.SimpleContextQualifierProvider | SimpleContextQualifierProvider}.
@@ -52,7 +52,16 @@ export interface ISimpleContextQualifierProviderCreateParams {
  * using a `ResultMap` for qualifier value storage.
  * @public
  */
-export class SimpleContextQualifierProvider extends ContextQualifierProvider {
+export class SimpleContextQualifierProvider
+  extends ContextQualifierProvider
+  implements IMutableContextQualifierProvider
+{
+  /**
+   * Explicit mutability marker for compile-time type discrimination.
+   * Always `true` for mutable providers.
+   */
+  public readonly mutable: true = true as const;
+
   /**
    * The readonly qualifier collector that defines and validates the qualifiers for this context.
    */
@@ -195,29 +204,25 @@ export class SimpleContextQualifierProvider extends ContextQualifierProvider {
   private _resolveQualifierName(
     nameOrIndexOrQualifier: QualifierName | QualifierIndex | Qualifier
   ): Result<QualifierName> {
-    // If it's already a QualifierName (string type with brand)
-    if (typeof nameOrIndexOrQualifier === 'string') {
-      /* c8 ignore next 1 - functional code path tested but coverage intermittently missed */
-      return CommonConverters.qualifierName.convert(nameOrIndexOrQualifier);
+    // Try as string (QualifierName)
+    const nameResult = CommonConverters.qualifierName.convert(nameOrIndexOrQualifier);
+    if (nameResult.isSuccess()) {
+      return nameResult;
     }
 
-    // If it's a Qualifier object
+    // Try as number (QualifierIndex)
+    const indexResult = CommonConverters.qualifierIndex.convert(nameOrIndexOrQualifier);
+    if (indexResult.isSuccess()) {
+      return this.qualifiers.getAt(indexResult.value).onSuccess((qualifier) => succeed(qualifier.name));
+    }
+
+    // Try as Qualifier object
     if (
       typeof nameOrIndexOrQualifier === 'object' &&
       nameOrIndexOrQualifier !== null &&
       'name' in nameOrIndexOrQualifier
     ) {
-      return succeed(nameOrIndexOrQualifier.name);
-    }
-
-    // If it's a QualifierIndex (number type with brand)
-    /* c8 ignore next 8 - functional code path tested but coverage intermittently missed */
-    if (typeof nameOrIndexOrQualifier === 'number') {
-      const qualifier = this.qualifiers.getAt(nameOrIndexOrQualifier as QualifierIndex);
-      if (qualifier.isSuccess()) {
-        return succeed(qualifier.value.name);
-      }
-      return fail(`Qualifier not found at index ${nameOrIndexOrQualifier}`);
+      return succeed((nameOrIndexOrQualifier as Qualifier).name);
     }
 
     return fail(`Invalid qualifier parameter: ${nameOrIndexOrQualifier}`);

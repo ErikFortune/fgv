@@ -30,6 +30,7 @@ import {
   ConditionIndex,
   ConditionSetIndex,
   QualifierMatchScore,
+  QualifierContextValue,
   ConditionKey,
   ConditionSetKey,
   DecisionKey,
@@ -237,6 +238,17 @@ export function isValidDecisionIndex(index: number): index is DecisionIndex {
 }
 
 /**
+ * Determines whether a string is a valid qualifier context value.
+ * For now, any non-empty string is considered a valid context value.
+ * @param value - the string to validate
+ * @returns true if the string is a valid qualifier context value, false otherwise.
+ * @public
+ */
+export function isValidQualifierContextValue(value: string): value is QualifierContextValue {
+  return typeof value === 'string' && value.length > 0;
+}
+
+/**
  * Converts a string to a {@link QualifierName} if it is a valid qualifier name.
  * @param name - the string to convert
  * @returns `Success` with the converted {@link QualifierName} if successful, or `Failure` with an
@@ -249,6 +261,20 @@ export function toQualifierName(name: string): Result<QualifierName> {
     return fail(`${name}: invalid qualifier name`);
   }
   return succeed(name);
+}
+
+/**
+ * Converts a string to a {@link QualifierContextValue} if it is a valid qualifier context value.
+ * @param value - the string to convert
+ * @returns `Success` with the converted {@link QualifierContextValue} if successful, or `Failure` with an
+ * error message if not.
+ * @public
+ */
+export function toQualifierContextValue(value: string): Result<QualifierContextValue> {
+  if (!isValidQualifierContextValue(value)) {
+    return fail(`${value}: invalid qualifier context value`);
+  }
+  return succeed(value);
 }
 
 /**

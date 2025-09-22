@@ -20,10 +20,10 @@
  * SOFTWARE.
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-import { QualifierName, QualifierContextValue, QualifierIndex } from '../../common';
+import { Result, fail, captureResult } from '@fgv/ts-utils';
+import { QualifierContextValue, Convert as CommonConverters } from '../../common';
 import { IReadOnlyQualifierCollector } from '../../qualifiers';
-import { IContextQualifierProvider } from './contextQualifierProvider';
+import { IContextQualifierProvider, IMutableContextQualifierProvider } from './contextQualifierProvider';
 
 /**
  * A read-only interface exposing non-mutating methods of a {@link Runtime.Context.ContextQualifierProviderValidator | ContextQualifierProviderValidator}.
@@ -140,7 +140,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found or an error occurs.
    */
   public get(name: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
       return this.provider.get(qualifierName);
     });
   }
@@ -152,7 +152,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found or an error occurs.
    */
   public getByIndex(index: number): Result<QualifierContextValue> {
-    return this._validateQualifierIndex(index).onSuccess((qualifierIndex) => {
+    return CommonConverters.qualifierIndex.convert(index).onSuccess((qualifierIndex) => {
       return this.provider.get(qualifierIndex);
     });
   }
@@ -164,7 +164,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found, invalid, or an error occurs.
    */
   public getValidated(name: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
       return this.provider.getValidated(qualifierName);
     });
   }
@@ -176,7 +176,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if not found, invalid, or an error occurs.
    */
   public getValidatedByIndex(index: number): Result<QualifierContextValue> {
-    return this._validateQualifierIndex(index).onSuccess((qualifierIndex) => {
+    return CommonConverters.qualifierIndex.convert(index).onSuccess((qualifierIndex) => {
       return this.provider.getValidated(qualifierIndex);
     });
   }
@@ -188,7 +188,7 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if an error occurs during the check.
    */
   public has(name: string): Result<boolean> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
       return this.provider.has(qualifierName);
     });
   }
@@ -201,25 +201,18 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if an error occurs.
    */
   public set(name: string, value: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name)
-      .onSuccess((qualifierName) => this._validateQualifierContextValue(value))
-      .onSuccess((qualifierValue) => {
-        // Check if the provider has a set method (only available on mutable providers)
-        if ('set' in this.provider && typeof this.provider.set === 'function') {
-          try {
-            return (
-              this.provider.set as (
-                name: QualifierName,
-                value: QualifierContextValue
-              ) => Result<QualifierContextValue>
-            )(name as QualifierName, qualifierValue);
-            /* c8 ignore next 4 - defense in depth */
-          } catch {
-            return fail(`Provider does not support setting values`);
-          }
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) =>
+      CommonConverters.qualifierContextValue.convert(value).onSuccess((qualifierValue) => {
+        // Type-safe check using interface type guard
+        if (this._isMutableProvider(this.provider)) {
+          const mutableProvider = this.provider;
+          return captureResult(() => mutableProvider.set(qualifierName, qualifierValue)).onSuccess(
+            (result) => result
+          );
         }
         return fail(`Provider does not support setting values`);
-      });
+      })
+    );
   }
 
   /**
@@ -229,56 +222,24 @@ export class ContextQualifierProviderValidator implements IReadOnlyContextQualif
    * or `Failure` with an error message if an error occurs.
    */
   public remove(name: string): Result<QualifierContextValue> {
-    return this._validateQualifierName(name).onSuccess((qualifierName) => {
-      // Check if the provider has a remove method (only available on mutable providers)
-      if ('remove' in this.provider && typeof this.provider.remove === 'function') {
-        try {
-          return (this.provider.remove as (name: QualifierName) => Result<QualifierContextValue>)(
-            qualifierName
-          );
-        } catch {
-          return fail(`Provider does not support removing values`);
-        }
+    return CommonConverters.qualifierName.convert(name).onSuccess((qualifierName) => {
+      // Type-safe check using interface type guard
+      if (this._isMutableProvider(this.provider)) {
+        const mutableProvider = this.provider;
+        return captureResult(() => mutableProvider.remove(qualifierName)).onSuccess((result) => result);
       }
       return fail(`Provider does not support removing values`);
     });
   }
 
   /**
-   * Validates a string as a QualifierName.
-   * @param name - The string to validate.
-   * @returns `Success` with the strongly-typed QualifierName, or `Failure` if invalid.
+   * Type guard to check if a provider supports mutation operations.
+   * @param provider - The provider to check.
+   * @returns `true` if the provider supports mutation, `false` otherwise.
    */
-  private _validateQualifierName(name: string): Result<QualifierName> {
-    /* c8 ignore next 3 - defense in depth */
-    if (typeof name !== 'string' || name.length === 0) {
-      return fail(`${name}: invalid qualifier name`);
-    }
-    return succeed(name as QualifierName);
-  }
-
-  /**
-   * Validates a number as a QualifierIndex.
-   * @param index - The number to validate.
-   * @returns `Success` with the strongly-typed QualifierIndex, or `Failure` if invalid.
-   */
-  private _validateQualifierIndex(index: number): Result<QualifierIndex> {
-    if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) {
-      return fail(`${index}: invalid qualifier index`);
-    }
-    return succeed(index as QualifierIndex);
-  }
-
-  /**
-   * Validates a string as a QualifierContextValue.
-   * @param value - The string to validate.
-   * @returns `Success` with the strongly-typed QualifierContextValue, or `Failure` if invalid.
-   */
-  private _validateQualifierContextValue(value: string): Result<QualifierContextValue> {
-    /* c8 ignore next 3 - defense in depth */
-    if (typeof value !== 'string') {
-      return fail(`${value}: invalid qualifier context value`);
-    }
-    return succeed(value as QualifierContextValue);
+  private _isMutableProvider(
+    provider: IContextQualifierProvider
+  ): provider is IMutableContextQualifierProvider {
+    return provider.mutable === true;
   }
 }

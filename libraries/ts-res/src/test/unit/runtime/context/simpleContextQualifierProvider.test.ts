@@ -142,7 +142,7 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.get(0 as TsRes.QualifierIndex)).toSucceedWith('en-US' as TsRes.QualifierContextValue);
       expect(provider.get(1 as TsRes.QualifierIndex)).toSucceedWith('US' as TsRes.QualifierContextValue);
       expect(provider.get(2 as TsRes.QualifierIndex)).toSucceedWith('high' as TsRes.QualifierContextValue);
-      expect(provider.get(99 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+      expect(provider.get(99 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
     });
 
     test('accepts Qualifier object parameter', () => {
@@ -211,7 +211,7 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.getValidated({} as unknown as TsRes.QualifierName)).toFailWith(
         /Invalid qualifier parameter/
       );
-      expect(provider.getValidated(99 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+      expect(provider.getValidated(99 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
     });
 
     test('handles _resolveQualifierName failure in getValidated method', () => {
@@ -426,7 +426,7 @@ describe('SimpleContextQualifierProvider class', () => {
 
     test('fails with number parameter for non-existent index', () => {
       // This tests the number branch failure case in _resolveQualifierName (line 217)
-      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
     });
 
     test('covers successful paths in _resolveQualifierName', () => {
@@ -473,7 +473,7 @@ describe('SimpleContextQualifierProvider class', () => {
       expect(provider.get(1 as TsRes.QualifierIndex)).toSucceedWith('US' as TsRes.QualifierContextValue);
 
       // Test failed number parameter resolution - covers lines 101-102 via line 217
-      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/Qualifier not found at index/);
+      expect(provider.get(999 as TsRes.QualifierIndex)).toFailWith(/collector index out of range/i);
     });
 
     test('handles object parameter (Qualifier) - covers lines 203-208', () => {
