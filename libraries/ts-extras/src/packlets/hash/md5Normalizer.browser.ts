@@ -23,36 +23,15 @@
 import { Hash } from '@fgv/ts-utils';
 
 /**
- * Simple deterministic hash implementation for browser environments.
- * Uses a basic string hash algorithm for consistent results.
- * Note: This is not cryptographically secure and does not produce MD5 hashes,
- * but provides deterministic hashing for resource normalization purposes.
+ * Browser-compatible MD5 normalizer that uses CRC32 hashing for cross-platform compatibility.
+ * This provides the same interface as the Node.js MD5 version but uses CRC32 algorithm
+ * which works consistently across both Node.js and browser environments.
+ *
+ * Note: While this is named Md5Normalizer for API compatibility, it actually uses CRC32
+ * hashing to ensure cross-platform compatibility between Node.js and browser environments.
  * @public
  */
-export class SimpleHashNormalizer extends Hash.HashingNormalizer {
-  public constructor() {
-    super(SimpleHashNormalizer.simpleHash);
-  }
-
-  public static simpleHash(parts: string[]): string {
-    // Simple hash implementation for browser compatibility
-    // This provides consistent hashing without requiring Node.js crypto
-    const input = parts.join('|');
-    let hash = 0;
-
-    if (input.length === 0) return '0';
-
-    for (let i = 0; i < input.length; i++) {
-      const char = input.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      // eslint-disable-next-line no-bitwise
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-
-    // Convert to positive hex string, padded to consistent length
-    const result = Math.abs(hash).toString(16).padStart(8, '0');
-
-    // Extend to 32 character length for consistency
-    return result + result + result + result;
-  }
+export class Md5Normalizer extends Hash.Crc32Normalizer {
+  // CRC32 normalizer is already cross-platform compatible
+  // No additional implementation needed - inherits everything from Crc32Normalizer
 }
