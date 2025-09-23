@@ -4,6 +4,19 @@
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-bcp47.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "./dist/ts-bcp47.d.ts"
+    }
+  },
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",

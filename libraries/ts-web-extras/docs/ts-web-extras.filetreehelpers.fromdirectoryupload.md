@@ -72,5 +72,5 @@ Promise resolving to a successful Result with the new FileTree instance if succe
 
 ## Remarks
 
-The content type of the files is always `string` and the default accept contentType<!-- -->} function (`FileTree.FileItem.defaultAcceptContentType`<!-- -->) is is used, so content type is derived from the mime type of the file, when available.
+The content type of the files is always `string` and the default accept contentType function (`FileTree.FileItem.defaultAcceptContentType`<!-- -->) is is used, so content type is derived from the mime type of the file, when available.
 

@@ -4,8 +4,31 @@
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "./dist/ts-extras.d.ts"
+    },
+    "./hash": {
+      "node": {
+        "import": "./lib/packlets/hash/index.node.js",
+        "require": "./lib/packlets/hash/index.node.js"
+      },
+      "default": {
+        "import": "./lib/packlets/hash/index.browser.js",
+        "require": "./lib/packlets/hash/index.browser.js"
+      }
+    }
+  },
   "scripts": {
-    "build": "heft test --clean",
+    "build": "heft build --clean",
     "clean": "heft clean",
     "test": "heft test --clean",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
