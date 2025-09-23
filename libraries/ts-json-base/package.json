@@ -4,6 +4,19 @@
   "description": "Typescript types and basic functions for working with json",
   "main": "lib/index.js",
   "types": "dist/ts-json-base.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "./dist/ts-json-base.d.ts"
+    }
+  },
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",

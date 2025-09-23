@@ -22,6 +22,7 @@
 
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+// ZipFileTree is browser-safe - doesn't depend on Node.js crypto/fs modules
 import { ZipFileTree } from '@fgv/ts-extras';
 import type {
   IZipArchiveLoadOptions,
