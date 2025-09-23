@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-cli",
-  "version": "5.0.0-31",
+  "version": "5.0.1",
   "description": "Command-line interface for ts-res resource compilation and management",
   "main": "lib/index.js",
   "bin": {

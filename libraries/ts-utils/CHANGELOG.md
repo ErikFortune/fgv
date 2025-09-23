@@ -1,6 +1,20 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Wed, 02 Jul 2025 05:48:16 GMT and should not be manually modified.
+This log was last generated on Tue, 23 Sep 2025 03:13:55 GMT and should not be manually modified.
+
+## 5.0.1
+Tue, 23 Sep 2025 03:13:55 GMT
+
+_Version update only_
+
+## 5.0.0
+Tue, 23 Sep 2025 02:54:20 GMT
+
+### Updates
+
+- various collection and result improvements
+- logging improvements (breaking)
+- update rushstack
 
 ## 4.6.0
 Wed, 02 Jul 2025 05:48:16 GMT
