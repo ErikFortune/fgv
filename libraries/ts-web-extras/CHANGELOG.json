@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/ts-web-extras",
+  "entries": [
+    {
+      "version": "5.0.0",
+      "tag": "@fgv/ts-web-extras_v5.0.0",
+      "date": "Tue, 23 Sep 2025 02:52:31 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "initial checkin"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -4,6 +4,21 @@
     {
       "version": "5.0.0",
       "tag": "@fgv/ts-res_v5.0.0",
+      "date": "Tue, 23 Sep 2025 02:54:20 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "Added ResourceTreeResolver"
+          },
+          {
+            "comment": "multidimensional resource loader - initial checkin"
+          }
+        ]
+      }
+    },
+    {
+      "version": "5.0.0",
+      "tag": "@fgv/ts-res_v5.0.0",
       "date": "Thu, 17 Jul 2025 00:13:24 GMT",
       "comments": {
         "none": [
