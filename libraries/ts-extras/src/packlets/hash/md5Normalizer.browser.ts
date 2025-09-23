@@ -23,18 +23,18 @@
 import { Hash } from '@fgv/ts-utils';
 
 /**
- * Simple hash implementation for browser environments that don't support MD5.
- * Uses a basic string hash algorithm for consistent results across platforms.
- * Note: This is not cryptographically secure but provides deterministic hashing
- * for resource normalization purposes.
+ * Simple deterministic hash implementation for browser environments.
+ * Uses a basic string hash algorithm for consistent results.
+ * Note: This is not cryptographically secure and does not produce MD5 hashes,
+ * but provides deterministic hashing for resource normalization purposes.
  * @public
  */
-export class Md5Normalizer extends Hash.HashingNormalizer {
+export class SimpleHashNormalizer extends Hash.HashingNormalizer {
   public constructor() {
-    super(Md5Normalizer.md5Hash);
+    super(SimpleHashNormalizer.simpleHash);
   }
 
-  public static md5Hash(parts: string[]): string {
+  public static simpleHash(parts: string[]): string {
     // Simple hash implementation for browser compatibility
     // This provides consistent hashing without requiring Node.js crypto
     const input = parts.join('|');
@@ -52,7 +52,7 @@ export class Md5Normalizer extends Hash.HashingNormalizer {
     // Convert to positive hex string, padded to consistent length
     const result = Math.abs(hash).toString(16).padStart(8, '0');
 
-    // Extend to MD5-like length for consistency
+    // Extend to 32 character length for consistency
     return result + result + result + result;
   }
 }
