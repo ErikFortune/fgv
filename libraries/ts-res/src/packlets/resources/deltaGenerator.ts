@@ -26,7 +26,7 @@ import { Diff } from '@fgv/ts-json';
 import { ResourceId } from '../common';
 import { IResourceResolver } from '../common';
 import { ResourceManagerBuilder } from './resourceManagerBuilder';
-import { ResourceResolver } from '../runtime/resourceResolver';
+import { ResourceResolver } from '../runtime';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 

@@ -230,10 +230,24 @@ standard_feature:
       required: true
       dependencies: [functional_test, implementation]
 
+    - phase: requirements_validation
+      agent: tpm-agent
+      required: true
+      type: validation_gate
+      dependencies: [functional_test]
+      validates: tests_express_requirements
+
+    - phase: test_requirements_alignment
+      agent: senior-sdet
+      required: true
+      type: validation_gate
+      dependencies: [requirements_validation, coverage_analysis]
+      validates: test_coverage_matches_requirements
+
     - phase: test_architecture_review
       agent: senior-sdet
       required: true
-      dependencies: [coverage_analysis, functional_test]
+      dependencies: [test_requirements_alignment]
 
     - phase: exit_criteria_validation
       agent: senior-sdet
@@ -752,6 +766,12 @@ phase_gates:
 
   coverage_analysis:
     criteria: ["100_percent_coverage", "gaps_classified", "directives_justified"]
+
+  requirements_validation:
+    criteria: ["tests_express_all_requirements", "no_missing_functionality", "tpm_approval"]
+
+  test_requirements_alignment:
+    criteria: ["complete_requirement_coverage", "no_over_testing", "senior_sdet_approval"]
 
   test_architecture_review:
     criteria: ["test_quality_acceptable", "anti_patterns_addressed", "manual_validation_planned"]
