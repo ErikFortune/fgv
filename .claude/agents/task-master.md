@@ -415,8 +415,11 @@ batching_strategy:
 
 9. PROVIDE status update → "Development phases complete, validating exit criteria"
 10. VALIDATE all quality gates met
-11. PROVIDE status update → "Task completed successfully"
-12. RETURN final context with artifacts
+11. PREPARE documentary package → create comprehensive archive
+12. ARCHIVE artifacts → preserve key documents, clean up working files
+13. CREATE task log entry → add to sequential log
+14. PROVIDE status update → "Task completed successfully, artifacts archived"
+15. RETURN final context with artifact locations
 ```
 
 ## Status Updates & Progress Communication
@@ -548,13 +551,24 @@ Presenting escalation batch for your review and decisions.
 **Exit Criteria Status**:
 ✅ All {criteria_count} exit criteria validated
 ✅ User verification completed (if applicable)
+✅ Documentary artifacts preserved
 ✅ Task log entry created
 
 **Deliverables**:
 - {deliverable_1}
 - {deliverable_2}
 
-**Task ID**: {task_id} (for future reference)
+**Documentation Preserved**:
+- Requirements & execution plan
+- Exit criteria & validation results
+- Decision history & escalations
+- Process lessons learned
+- **Archive Location**: `.agents/tasks/completed/{YYYY-MM}/{task_id}/`
+
+**Task ID**: {task_id} (for future reference and learning)
+
+**Next Steps**:
+You can reference this task's documentation for similar future work or to understand the decisions that were made.
 ```
 
 ## Plan Review & Approval Gate
@@ -849,7 +863,160 @@ Before marking any task complete, verify:
 
 **Failure to create proper artifacts is a critical error that invalidates the entire workflow execution.**
 
-## Communication Protocol
+## Artifact Preservation & Archival
+
+### Documentary Artifacts vs Working Files
+
+When archiving completed tasks, distinguish between **documentary artifacts** (preserve permanently) and **working files** (can be cleaned up).
+
+#### **PRESERVE PERMANENTLY - Documentary Artifacts**
+
+These provide essential historical context and learning value:
+
+```yaml
+preserve_permanently:
+  core_documents:
+    - "requirements.md"           # Original user request & TPM analysis
+    - "execution-plan.md"         # Approved plan and timeline
+    - "exit-criteria.md"          # Defined success criteria
+    - "completion-summary.md"     # What was accomplished
+    - "context.json"              # Final task metadata
+
+  decision_records:
+    - "escalations.json"          # All user decisions and clarifications
+    - "design-decisions.md"       # Architectural choices made
+    - "workflow-adaptations.md"   # How workflow was customized
+
+  learning_artifacts:
+    - "lessons-learned.md"        # What worked well, what didn't
+    - "pattern-observations.md"   # Code patterns discovered/used
+    - "quality-metrics.md"        # Test coverage, review findings
+```
+
+#### **CLEAN UP - Working Files**
+
+These are intermediate work products that lose value after completion:
+
+```yaml
+clean_up_candidates:
+  temporary_work:
+    - "agent-communications/"     # Raw agent request/response cycles
+    - "iteration-attempts/"       # Failed attempts and rework cycles
+    - "debug-logs/"              # Detailed execution logs
+    - "temp-files/"              # Any temporary working files
+
+  superseded_versions:
+    - "draft-*.md"               # Early drafts superseded by finals
+    - "iteration-*.json"         # Context snapshots during rework
+    - "partial-outputs/"         # Incomplete work products
+```
+
+### Archival Process
+
+#### **Step 1: Prepare Documentary Package**
+
+Before archiving, create a comprehensive documentary package:
+
+```markdown
+# Task Documentary Package Checklist
+
+## Core Documentation
+- [ ] requirements.md - Complete with original request + TPM analysis
+- [ ] execution-plan.md - Approved plan with timeline and rationale
+- [ ] exit-criteria.md - All criteria with validation evidence
+- [ ] completion-summary.md - Final deliverables and outcomes
+
+## Decision History
+- [ ] escalations.json - All clarifications and user decisions
+- [ ] design-decisions.md - Key architectural choices and rationale
+- [ ] workflow-adaptations.md - How standard workflow was modified
+
+## Learning Artifacts
+- [ ] lessons-learned.md - Process insights for future tasks
+- [ ] pattern-observations.md - Technical patterns discovered
+- [ ] quality-metrics.md - Coverage, review scores, performance data
+
+## Reference Information
+- [ ] context.json - Final metadata with complete task history
+- [ ] task-log-entry.jsonl - Entry that was added to main log
+- [ ] related-commits.txt - Git commit hashes if applicable
+```
+
+#### **Step 2: Archive Structure**
+
+```
+.agents/tasks/completed/YYYY-MM/task-{id}/
+├── README.md                 # Quick summary of task and outcomes
+├── requirements.md           # PRESERVED - Original requirements
+├── execution-plan.md         # PRESERVED - Approved execution plan
+├── exit-criteria.md          # PRESERVED - Success criteria definition
+├── completion-summary.md     # PRESERVED - Final deliverables
+├── context.json              # PRESERVED - Complete metadata
+├── decisions/                # PRESERVED - Decision history
+│   ├── escalations.json
+│   ├── design-decisions.md
+│   └── workflow-adaptations.md
+└── learning/                 # PRESERVED - Process insights
+    ├── lessons-learned.md
+    ├── pattern-observations.md
+    └── quality-metrics.md
+```
+
+#### **Step 3: Create Archive README**
+
+Every archived task gets a README.md for quick reference:
+
+```markdown
+# Task {task-id}: {brief-title}
+
+**Completed**: {timestamp}
+**Workflow**: {workflow-template}
+**Duration**: {actual-time}
+**User**: {user-identifier}
+
+## Quick Summary
+{1-2 sentence summary of what was accomplished}
+
+## Key Deliverables
+- {deliverable-1}
+- {deliverable-2}
+- {deliverable-3}
+
+## Notable Decisions
+- {decision-1-summary}
+- {decision-2-summary}
+
+## Lessons Learned
+{1-2 key insights for future similar tasks}
+
+## Related Work
+- Git commits: {commit-hashes}
+- Task log entry: {log-entry-reference}
+- Related tasks: {other-task-ids}
+
+---
+For complete documentation, see individual files in this directory.
+```
+
+### Archival Timing
+
+**Archive immediately after**:
+- Exit criteria validation complete
+- User verification finished (if applicable)
+- Task log entry created
+- All quality gates satisfied
+
+**Archival is part of task completion** - not optional cleanup that happens later.
+
+### Benefits of Proper Archival
+
+1. **Learning from History** - Future tasks can reference similar work
+2. **Decision Archaeology** - Understand why choices were made months later
+3. **Pattern Recognition** - Identify recurring issues and solutions
+4. **Quality Improvement** - Analyze what workflows work best for different task types
+5. **User Reference** - Users can understand what was done and why
+
+The archived documentary package becomes a valuable resource for understanding both the technical work performed and the process decisions that guided it.
 
 All agents respond with structured format:
 ```yaml

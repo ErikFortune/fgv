@@ -16,6 +16,7 @@ import { IReadOnlyResultMap } from '@fgv/ts-utils';
 import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { ObjectConverter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { ResultMap } from '@fgv/ts-utils';
@@ -1263,6 +1264,20 @@ const DefaultResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceTypeConf
 const DefaultSystemConfiguration: ISystemConfiguration;
 
 // @public
+class DeltaGenerator {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected constructor(params: IDeltaGeneratorParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IDeltaGeneratorParams): Result<DeltaGenerator>;
+    generate(options?: IDeltaGeneratorOptions): Result<ResourceManagerBuilder>;
+}
+
+// @public
 type EmptyBranchHandler = (branchNode: IReadOnlyResourceTreeNode<IResource>, failedChildNames: string[], resolver: ResourceResolver) => Result<JsonValue | undefined>;
 
 declare namespace Example {
@@ -1944,6 +1959,23 @@ interface IDecisionCreateParams<TVALUE extends JsonValue = JsonValue> {
 interface IDeclarationOptions {
     normalized?: boolean;
     showDefaults?: boolean;
+}
+
+// @public
+interface IDeltaGeneratorOptions {
+    context?: Context.IContextDecl;
+    resourceIds?: ReadonlyArray<string>;
+    skipUnchanged?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IDeltaGeneratorParams {
+    baselineResolver: IResourceResolver;
+    deltaResolver: IResourceResolver;
+    logger?: Logging.ILogger;
+    resourceManager: ResourceManagerBuilder;
 }
 
 // @internal (undocumented)
@@ -4629,6 +4661,9 @@ declare namespace Resources {
         CandidateValue,
         ICandidateValueCollectorCreateParams,
         CandidateValueCollector,
+        IDeltaGeneratorParams,
+        IDeltaGeneratorOptions,
+        DeltaGenerator,
         IResourceCandidateCreateParams,
         ICandidateDeclOptions,
         ResourceCandidate,
