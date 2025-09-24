@@ -261,17 +261,23 @@ test_architecture_result:
     organization: "needs_improvement"
 
   anti_patterns_detected:
+    - type: "fragile_mock_objects"
+      location: "src/test/unit/userService.test.ts:15-22"
+      description: "Mock object implements only 2 of 6 interface methods"
+      impact: "critical"
+      recommendation: "Use TestableUserRepository class or real object with spies"
+
     - type: "implementation_testing"
       location: "src/test/unit/userService.test.ts:45-52"
       description: "Test checks internal state instead of behavior"
       impact: "high"
       recommendation: "Test public API behavior instead"
 
-    - type: "overly_complex_mock"
+    - type: "mock_contains_business_logic"
       location: "src/test/unit/orderProcessor.test.ts:23-35"
-      description: "Mock contains business logic"
-      impact: "medium"
-      recommendation: "Use test data patterns instead"
+      description: "Mock contains validation logic duplicated from production"
+      impact: "high"
+      recommendation: "Use real objects with spies for one-off scenarios"
 
   improvement_opportunities:
     shared_fixtures:
@@ -379,27 +385,81 @@ test('should reject user with invalid email', () => {
 });
 ```
 
-#### 2. **Overly Complex Mocks (HIGH)**
+#### 2. **Fragile Mock Objects (CRITICAL)**
+
+**Most Common and Dangerous Anti-Pattern**: Hand-crafted mock objects with partial method implementations.
+
 ```typescript
+// ❌ CRITICAL ANTI-PATTERN: Fragile mock that breaks with implementation changes
+const mockUserRepository = {
+  save: jest.fn().mockResolvedValue(Result.succeed(savedUser)),
+  findByEmail: jest.fn().mockResolvedValue(Result.succeed(null)),
+  // Missing methods - if implementation calls validate() or findById(), test fails
+};
+
 // ❌ ANTI-PATTERN: Mock contains business logic
-const mockRepository = {
-  save: jest.fn().mockImplementation((user) => {
-    if (!user.email || !user.name) {
-      return Promise.resolve(Result.fail('Validation failed'));
+const mockEmailService = {
+  sendWelcomeEmail: jest.fn().mockImplementation((user) => {
+    // Mock duplicates production validation logic - fragile!
+    if (!user.email || !user.email.includes('@')) {
+      return Result.fail('Invalid email');
     }
-    if (user.email === 'duplicate@example.com') {
-      return Promise.resolve(Result.fail('User already exists'));
-    }
-    return Promise.resolve(Result.succeed({ ...user, id: 'generated' }));
+    return Result.succeed({ messageId: 'mock-123' });
   })
 };
+```
 
-// ✅ BETTER: Use test data patterns
-const mockRepository = {
-  save: jest.fn().mockResolvedValue(Result.succeed(savedUserFixture))
-};
+**Problems with Fragile Mocks:**
+- **Brittle**: Break when implementation calls new methods
+- **Implementation-coupled**: Know too much about internals
+- **Maintenance burden**: Every code change requires test updates
+- **False confidence**: Tests pass but real integration fails
 
-// Test validation separately in validator tests
+**✅ RECOMMENDED PATTERNS:**
+
+**Pattern 1: Real Objects with Spies (One-off)**
+```typescript
+// ✅ BETTER: Real object with targeted method control
+test('should handle email failure gracefully', () => {
+  const realEmailService = EmailService.create(config).orThrow();
+  jest.spyOn(realEmailService, 'sendWelcomeEmail')
+    .mockResolvedValue(Result.fail('SMTP unavailable'));
+
+  // Test continues with real service behavior except for controlled method
+});
+```
+
+**Pattern 2: Test Classes (Repeated patterns)**
+```typescript
+// ✅ BETTER: Testable class extending real behavior
+class TestableEmailService extends EmailService {
+  private shouldFail = false;
+
+  async sendWelcomeEmail(user: User): Promise<Result<EmailResult>> {
+    if (this.shouldFail) {
+      return Result.fail('Test-induced failure');
+    }
+    return super.sendWelcomeEmail(user);
+  }
+
+  induceFailure(): void { this.shouldFail = true; }
+  resumeNormalOperation(): void { this.shouldFail = false; }
+}
+```
+
+**Pattern 3: Full Interface Implementation**
+```typescript
+// ✅ BETTER: Complete interface compliance
+class InMemoryUserRepository implements UserRepository {
+  private users = new Map<string, User>();
+
+  // Implement ALL interface methods, not just a few
+  async save(user: User): Promise<Result<User>> { ... }
+  async findByEmail(email: string): Promise<Result<User | null>> { ... }
+  async findById(id: string): Promise<Result<User | null>> { ... }
+  async delete(id: string): Promise<Result<void>> { ... }
+  // etc.
+}
 ```
 
 #### 3. **Test Duplication (MEDIUM)**
