@@ -1,0 +1,20 @@
+{
+  "task": {
+    "id": "task-20250123-001",
+    "description": "Implement delta generator feature for ts-res library",
+    "type": "feature",
+    "priority": "high",
+    "complexity": "complex"
+  },
+  "artifacts": {},
+  "state": {
+    "currentPhase": "task_analysis",
+    "completedPhases": [],
+    "iterations": 0,
+    "blockers": [],
+    "decisions": []
+  },
+  "feedback": {},
+  "workflow": "standard-feature",
+  "created": "2025-01-23T00:00:00Z"
+}

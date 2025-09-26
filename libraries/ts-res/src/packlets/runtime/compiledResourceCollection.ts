@@ -103,6 +103,13 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
   }
 
   /**
+   * The resource IDs contained in this compiled resource collection.
+   */
+  public get resourceIds(): ReadonlyArray<ResourceId> {
+    return Array.from(this._builtResources.keys()).sort();
+  }
+
+  /**
    * A {@link ResourceTypes.ResourceTypeCollector | ResourceTypeCollector} which
    * contains the {@link ResourceTypes.ResourceType | resource types} used in this collection.
    */

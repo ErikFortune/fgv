@@ -52,6 +52,17 @@ A `ValidatingCollector` for [CandidateValues](./ts-res.resources.candidatevalue.
 </td></tr>
 <tr><td>
 
+[DeltaGenerator](./ts-res.resources.deltagenerator.md)
+
+
+</td><td>
+
+Class for generating resource deltas between baseline and delta resolvers. Creates partial/augment candidates for updated resources and full/replace candidates for new resources. Uses Diff.jsonThreeWayDiff for efficient delta computation.
+
+
+</td></tr>
+<tr><td>
+
 [Resource](./ts-res.resources.resource.md)
 
 
@@ -172,6 +183,28 @@ Parameters for creating a [CandidateValue](./ts-res.resources.candidatevalue.md)
 </td><td>
 
 Extended compiled resource options that includes context filtering capabilities. This interface combines the standard compilation options with strongly-typed context filtering for resource candidates.
+
+
+</td></tr>
+<tr><td>
+
+[IDeltaGeneratorOptions](./ts-res.resources.ideltageneratoroptions.md)
+
+
+</td><td>
+
+Interface for options controlling delta generation behavior.
+
+
+</td></tr>
+<tr><td>
+
+[IDeltaGeneratorParams](./ts-res.resources.ideltageneratorparams.md)
+
+
+</td><td>
+
+Interface for parameters to create a [DeltaGenerator](./ts-res.resources.deltagenerator.md)<!-- -->.
 
 
 </td></tr>

@@ -162,6 +162,13 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
   }
 
   /**
+   * The resource IDs that this resource manager can resolve.
+   */
+  public get resourceIds(): ReadonlyArray<ResourceId> {
+    return Array.from(this._resources.keys()).sort();
+  }
+
+  /**
    * A {@link Conditions.ConditionSetCollector | ConditionSetCollector} which
    * contains the {@link Conditions.ConditionSet | condition sets} used so far by
    * the {@link Resources.ResourceCandidate | resource candidates} in this manager.

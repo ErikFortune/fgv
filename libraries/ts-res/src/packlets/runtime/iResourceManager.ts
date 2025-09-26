@@ -117,6 +117,11 @@ export interface IResourceManager<TR extends IResource = IResource> {
   readonly numResources: number;
 
   /**
+   * The resource IDs that this resource manager can resolve.
+   */
+  readonly resourceIds: ReadonlyArray<ResourceId>;
+
+  /**
    * The number of candidates in this resource manager.
    */
   readonly numCandidates: number;

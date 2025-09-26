@@ -284,6 +284,27 @@ The readonly qualifier type collector that provides qualifier implementations.
 </td></tr>
 <tr><td>
 
+[resourceIds](./ts-res.runtime.resourceresolver.resourceids.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->&gt;
+
+
+</td><td>
+
+The resource IDs that this resolver can resolve.
+
+
+</td></tr>
+<tr><td>
+
 [resourceManager](./ts-res.runtime.resourceresolver.resourcemanager.md)
 
 

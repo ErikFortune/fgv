@@ -21,7 +21,7 @@
  */
 
 import { Command } from 'commander';
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, succeed, fail, Logging } from '@fgv/ts-utils';
 import { ICompileOptions, OutputFormat } from './options';
 import * as TsRes from '@fgv/ts-res';
 
@@ -95,6 +95,24 @@ interface IArchiveCommandOptions {
   output: string;
   verbose?: boolean;
   quiet?: boolean;
+}
+
+/**
+ * Command-line options for the delta command
+ */
+interface IDeltaCommandOptions {
+  baseline: string;
+  target: string;
+  output: string;
+  config?: string;
+  contextFilter?: string;
+  qualifierDefaults?: string;
+  resourceIds?: string;
+  skipUnchanged?: boolean;
+  format: string;
+  verbose?: boolean;
+  quiet?: boolean;
+  includeMetadata?: boolean;
 }
 
 import { ResourceCompiler } from './compiler';
@@ -243,6 +261,37 @@ export class TsResCliApp {
       .option('-q, --quiet', 'Quiet output', false)
       .action(async (options) => {
         await this._handleArchiveCommand(options);
+      });
+
+    this._program
+      .command('delta')
+      .description('Generate delta between baseline and target resources')
+      .requiredOption('--baseline <path>', 'Baseline resource file or directory path')
+      .requiredOption('--target <path>', 'Target resource file or directory path')
+      .requiredOption('-o, --output <path>', 'Output file path')
+      .option(
+        '--config <name|path>',
+        'Predefined configuration name or system configuration file path (JSON, ISystemConfiguration format)'
+      )
+      .option(
+        '--context-filter <token>',
+        'Context filter token (pipe-separated, e.g., "language=en-US|territory=US")'
+      )
+      .option(
+        '--qualifier-defaults <token>',
+        'Qualifier default values token (pipe-separated, e.g., "language=en-US,en-CA|territory=US")'
+      )
+      .option(
+        '--resource-ids <ids>',
+        'Comma-separated list of specific resource IDs to include in delta generation'
+      )
+      .option('--skip-unchanged', 'Skip resources that have not changed between baseline and target', true)
+      .option('-f, --format <format>', 'Output format (compiled, source, js, ts, binary, bundle)', 'compiled')
+      .option('-v, --verbose', 'Verbose output', false)
+      .option('-q, --quiet', 'Quiet output', false)
+      .option('--include-metadata', 'Include resource metadata in output', false)
+      .action(async (options) => {
+        await this._handleDeltaCommand(options);
       });
   }
 
@@ -581,6 +630,28 @@ export class TsResCliApp {
   }
 
   /**
+   * Handles the delta command
+   */
+  private async _handleDeltaCommand(options: IDeltaCommandOptions): Promise<void> {
+    const deltaOptions = this._parseDeltaOptions(options);
+    if (deltaOptions.isFailure()) {
+      console.error(`Error: ${deltaOptions.message}`);
+      process.exit(1);
+    }
+
+    const result = await this._generateDelta(deltaOptions.value);
+
+    if (result.isFailure()) {
+      console.error(`Error: ${result.message}`);
+      process.exit(1);
+    }
+
+    if (!options.quiet) {
+      console.log(`Successfully generated delta to ${options.output}`);
+    }
+  }
+
+  /**
    * Handles the archive command
    */
   private async _handleArchiveCommand(options: IArchiveCommandOptions): Promise<void> {
@@ -646,6 +717,49 @@ export class TsResCliApp {
   }
 
   /**
+   * Parses and validates delta options
+   */
+  private _parseDeltaOptions(options: IDeltaCommandOptions): Result<IDeltaOptions> {
+    try {
+      const format = options.format as OutputFormat;
+      if (!['compiled', 'source', 'js', 'ts', 'binary', 'bundle'].includes(format)) {
+        return fail(`Invalid format: ${format}`);
+      }
+
+      // Parse resource IDs if provided
+      let resourceIds: string[] | undefined;
+      if (options.resourceIds) {
+        resourceIds = options.resourceIds
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => id.length > 0);
+        if (resourceIds.length === 0) {
+          return fail('Resource IDs list cannot be empty');
+        }
+      }
+
+      const deltaOptions: IDeltaOptions = {
+        baseline: options.baseline,
+        target: options.target,
+        output: options.output,
+        config: options.config,
+        contextFilter: options.contextFilter,
+        qualifierDefaults: options.qualifierDefaults,
+        resourceIds,
+        skipUnchanged: options.skipUnchanged ?? true,
+        format,
+        verbose: options.verbose || false,
+        quiet: options.quiet || false,
+        includeMetadata: options.includeMetadata || false
+      };
+
+      return succeed(deltaOptions);
+    } catch (error) {
+      return fail(`Failed to parse delta options: ${error}`);
+    }
+  }
+
+  /**
    * Parses and validates compile options
    */
   private _parseCompileOptions(options: ICompileCommandOptions): Result<ICompileOptions> {
@@ -692,4 +806,592 @@ export class TsResCliApp {
       return fail(`Failed to parse options: ${error}`);
     }
   }
+
+  /**
+   * Generates delta between baseline and target resources
+   */
+  private async _generateDelta(options: IDeltaOptions): Promise<Result<void>> {
+    try {
+      if (options.verbose) {
+        console.error('Starting delta generation...');
+        console.error(`Baseline: ${options.baseline}`);
+        console.error(`Target: ${options.target}`);
+        console.error(`Output: ${options.output}`);
+      }
+
+      // Load system configuration
+      const config = await this._loadSystemConfiguration(options.config, options.verbose);
+      if (config.isFailure()) {
+        return fail(`Failed to load configuration: ${config.message}`);
+      }
+
+      if (options.verbose) {
+        console.error('Configuration loaded successfully');
+      }
+
+      // Create resource managers for baseline and target
+      const baselineManager = await this._createResourceManager(
+        config.value,
+        options.baseline,
+        options.qualifierDefaults,
+        options.verbose
+      );
+      if (baselineManager.isFailure()) {
+        return fail(`Failed to load baseline resources: ${baselineManager.message}`);
+      }
+
+      const targetManager = await this._createResourceManager(
+        config.value,
+        options.target,
+        options.qualifierDefaults,
+        options.verbose
+      );
+      if (targetManager.isFailure()) {
+        return fail(`Failed to load target resources: ${targetManager.message}`);
+      }
+
+      if (options.verbose) {
+        console.error(
+          `Baseline loaded: ${baselineManager.value.numResources} resources, ${baselineManager.value.numCandidates} candidates`
+        );
+        console.error(
+          `Target loaded: ${targetManager.value.numResources} resources, ${targetManager.value.numCandidates} candidates`
+        );
+      }
+
+      // Create resource resolvers
+      const baselineResolver = await this._createResourceResolver(
+        baselineManager.value,
+        options.contextFilter,
+        options.verbose,
+        config.value
+      );
+      if (baselineResolver.isFailure()) {
+        return fail(`Failed to create baseline resolver: ${baselineResolver.message}`);
+      }
+
+      const targetResolver = await this._createResourceResolver(
+        targetManager.value,
+        options.contextFilter,
+        options.verbose,
+        config.value
+      );
+      if (targetResolver.isFailure()) {
+        return fail(`Failed to create target resolver: ${targetResolver.message}`);
+      }
+
+      // Create delta generator
+      const deltaGenerator = TsRes.Resources.DeltaGenerator.create({
+        baselineResolver: baselineResolver.value,
+        deltaResolver: targetResolver.value,
+        resourceManager: baselineManager.value,
+        logger: options.verbose ? new Logging.ConsoleLogger() : undefined
+      });
+
+      if (deltaGenerator.isFailure()) {
+        return fail(`Failed to create delta generator: ${deltaGenerator.message}`);
+      }
+
+      // Parse context filter for delta generation options
+      let context: TsRes.Context.IContextDecl | undefined;
+      if (options.contextFilter) {
+        const contextTokens = new TsRes.Context.ContextTokens(baselineManager.value.qualifiers);
+        const contextResult = contextTokens.contextTokenToPartialContext(options.contextFilter);
+        if (contextResult.isFailure()) {
+          return fail(`Failed to parse context filter: ${contextResult.message}`);
+        }
+        context = contextResult.value;
+      }
+
+      // Generate delta
+      const deltaOptions: TsRes.Resources.IDeltaGeneratorOptions = {
+        context,
+        resourceIds: options.resourceIds,
+        skipUnchanged: options.skipUnchanged
+      };
+
+      if (options.verbose) {
+        console.error('Generating delta...');
+      }
+
+      const deltaResult = deltaGenerator.value.generate(deltaOptions);
+      if (deltaResult.isFailure()) {
+        return fail(`Delta generation failed: ${deltaResult.message}`);
+      }
+
+      const deltaManager = deltaResult.value;
+      if (options.verbose) {
+        console.error(
+          `Delta generated: ${deltaManager.numResources} resources, ${deltaManager.numCandidates} candidates`
+        );
+      }
+
+      // Generate output blob
+      const blob = await this._generateDeltaBlob(deltaManager, options, config.value);
+      if (blob.isFailure()) {
+        return fail(`Failed to generate output blob: ${blob.message}`);
+      }
+
+      // Write output
+      const writeResult = await this._writeDeltaOutput(blob.value, options);
+      if (writeResult.isFailure()) {
+        return fail(`Failed to write output: ${writeResult.message}`);
+      }
+
+      if (options.verbose) {
+        console.error(`Delta output written to: ${options.output}`);
+      }
+
+      return succeed(undefined);
+    } catch (error) {
+      return fail(`Delta generation failed: ${error}`);
+    }
+  }
+
+  /**
+   * Loads system configuration (reused from ResourceCompiler pattern)
+   */
+  private async _loadSystemConfiguration(
+    configOption: string | undefined,
+    verbose: boolean
+  ): Promise<Result<TsRes.Config.Model.ISystemConfiguration>> {
+    try {
+      if (configOption) {
+        // Check if it's a predefined configuration name
+        const predefinedNames: TsRes.Config.PredefinedSystemConfiguration[] = [
+          'default',
+          'language-priority',
+          'territory-priority',
+          'extended-example'
+        ];
+
+        if (predefinedNames.includes(configOption as TsRes.Config.PredefinedSystemConfiguration)) {
+          const predefinedResult = TsRes.Config.getPredefinedDeclaration(
+            configOption as TsRes.Config.PredefinedSystemConfiguration
+          );
+          if (predefinedResult.isSuccess()) {
+            if (verbose) {
+              console.error(`Using predefined configuration: ${predefinedResult.value.name}`);
+            }
+            return succeed(predefinedResult.value);
+          }
+        }
+
+        // Try to load as file path
+        try {
+          const path = await import('path');
+          const fs = await import('fs').then((m) => m.promises);
+
+          const configPath = path.resolve(configOption);
+          const configContent = await fs.readFile(configPath, 'utf-8');
+          const configData = JSON.parse(configContent);
+
+          const configResult = TsRes.Config.Convert.systemConfiguration.convert(configData);
+          if (configResult.isFailure()) {
+            return fail(`Invalid configuration file: ${configResult.message}`);
+          }
+
+          if (verbose) {
+            console.error(`Using custom configuration: ${configResult.value.name}`);
+          }
+          return succeed(configResult.value);
+        } catch (fileError) {
+          return fail(
+            `Configuration '${configOption}' is not a predefined configuration name and failed to load as file: ${fileError}`
+          );
+        }
+      } else {
+        // Use default configuration
+        const defaultResult = TsRes.Config.getPredefinedDeclaration('default');
+        if (defaultResult.isSuccess()) {
+          if (verbose) {
+            console.error(`Using default configuration: ${defaultResult.value.name}`);
+          }
+          return succeed(defaultResult.value);
+        } else {
+          return fail('Failed to load default configuration');
+        }
+      }
+    } catch (error) {
+      return fail(`Failed to load system configuration: ${error}`);
+    }
+  }
+
+  /**
+   * Creates a resource manager from a path (reused from ResourceCompiler pattern)
+   */
+  private async _createResourceManager(
+    systemConfig: TsRes.Config.Model.ISystemConfiguration,
+    inputPath: string,
+    qualifierDefaults: string | undefined,
+    verbose: boolean
+  ): Promise<Result<TsRes.Resources.ResourceManagerBuilder>> {
+    try {
+      // Parse qualifier defaults if provided
+      let qualifierDefaultValues: Record<string, string | null> | undefined;
+      if (qualifierDefaults) {
+        const tempSystemConfigResult = TsRes.Config.SystemConfiguration.create(systemConfig);
+        if (tempSystemConfigResult.isFailure()) {
+          return fail(`Failed to create temporary system configuration: ${tempSystemConfigResult.message}`);
+        }
+
+        const tokens = new TsRes.Qualifiers.QualifierDefaultValueTokens(
+          tempSystemConfigResult.value.qualifiers
+        );
+        const defaultsResult = tokens.qualifierDefaultValuesTokenToDecl(qualifierDefaults);
+        if (defaultsResult.isFailure()) {
+          return fail(`Failed to parse qualifier defaults: ${defaultsResult.message}`);
+        }
+
+        qualifierDefaultValues = defaultsResult.value;
+      }
+
+      // Create system configuration
+      const systemConfigResult = TsRes.Config.SystemConfiguration.create(
+        systemConfig,
+        qualifierDefaultValues ? { qualifierDefaultValues } : undefined
+      );
+      if (systemConfigResult.isFailure()) {
+        return fail(`Failed to create system configuration: ${systemConfigResult.message}`);
+      }
+
+      const config = systemConfigResult.value;
+
+      // Create resource manager
+      const manager = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers: config.qualifiers,
+        resourceTypes: config.resourceTypes
+      });
+
+      if (manager.isFailure()) {
+        return fail(`Failed to create resource manager: ${manager.message}`);
+      }
+
+      // Import resources from path
+      const importResult = await this._importResourcesFromPath(manager.value, inputPath, verbose);
+      if (importResult.isFailure()) {
+        return fail(`Failed to import resources from ${inputPath}: ${importResult.message}`);
+      }
+
+      return succeed(manager.value);
+    } catch (error) {
+      return fail(`Failed to create resource manager: ${error}`);
+    }
+  }
+
+  /**
+   * Imports resources from a file path (reused from ResourceCompiler pattern)
+   */
+  private async _importResourcesFromPath(
+    manager: TsRes.Resources.ResourceManagerBuilder,
+    inputPath: string,
+    verbose: boolean
+  ): Promise<Result<void>> {
+    try {
+      const path = await import('path');
+      const { FileTree } = await import('@fgv/ts-json-base');
+
+      const resolvedPath = path.resolve(inputPath);
+
+      // Create FileTree for file system operations
+      const fileTree = FileTree.forFilesystem();
+      if (fileTree.isFailure()) {
+        return fail(`Failed to create file tree: ${fileTree.message}`);
+      }
+
+      // Create ImportManager
+      const importManager = TsRes.Import.ImportManager.create({
+        resources: manager,
+        fileTree: fileTree.value
+      });
+
+      if (importManager.isFailure()) {
+        return fail(`Failed to create import manager: ${importManager.message}`);
+      }
+
+      // Import resources
+      if (verbose) {
+        console.error(`Importing resources from: ${resolvedPath}`);
+      }
+
+      const importResult = importManager.value.importFromFileSystem(resolvedPath);
+      if (importResult.isFailure()) {
+        return fail(`Failed to import from ${resolvedPath}: ${importResult.message}`);
+      }
+
+      if (verbose) {
+        console.error(`Successfully imported resources from: ${resolvedPath}`);
+      }
+
+      return succeed(undefined);
+    } catch (error) {
+      return fail(`Failed to import resources: ${error}`);
+    }
+  }
+
+  /**
+   * Creates a resource resolver from a resource manager and system configuration
+   */
+  private async _createResourceResolver(
+    manager: TsRes.Resources.ResourceManagerBuilder,
+    contextFilter: string | undefined,
+    verbose: boolean,
+    systemConfig?: TsRes.Config.Model.ISystemConfiguration
+  ): Promise<Result<TsRes.IResourceResolver>> {
+    try {
+      // Apply context filtering if specified
+      let finalManager = manager;
+      if (contextFilter) {
+        const contextTokens = new TsRes.Context.ContextTokens(manager.qualifiers);
+        const contextResult = contextTokens.contextTokenToPartialContext(contextFilter);
+        if (contextResult.isFailure()) {
+          return fail(`Failed to parse context filter: ${contextResult.message}`);
+        }
+
+        const filteredManagerResult = manager.clone({
+          filterForContext: contextResult.value,
+          reduceQualifiers: false // Don't reduce qualifiers for delta generation
+        });
+        if (filteredManagerResult.isFailure()) {
+          return fail(`Failed to apply context filter: ${filteredManagerResult.message}`);
+        }
+
+        finalManager = filteredManagerResult.value;
+
+        if (verbose) {
+          console.error(
+            `After context filtering: ${finalManager.numResources} resources, ${finalManager.numCandidates} candidates`
+          );
+        }
+      }
+
+      // Build the manager to create the resolver
+      const builtManager = finalManager.build();
+      if (builtManager.isFailure()) {
+        return fail(`Failed to build resource manager: ${builtManager.message}`);
+      }
+
+      // Create qualifier types from system config or use default
+      const qualifierTypesResult = systemConfig
+        ? TsRes.Config.SystemConfiguration.create(systemConfig).onSuccess((config) =>
+            succeed(config.qualifierTypes)
+          )
+        : TsRes.QualifierTypes.QualifierTypeCollector.create({
+            qualifierTypes: [
+              TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
+              TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow()
+            ]
+          });
+
+      if (qualifierTypesResult.isFailure()) {
+        return fail(`Failed to create qualifier types: ${qualifierTypesResult.message}`);
+      }
+
+      // Create context provider - use empty context for default
+      const contextProvider = TsRes.Runtime.ValidatingSimpleContextQualifierProvider.create({
+        qualifiers: finalManager.qualifiers,
+        qualifierValues: {} // Empty context for most general resolution
+      });
+
+      if (contextProvider.isFailure()) {
+        return fail(`Failed to create context provider: ${contextProvider.message}`);
+      }
+
+      // Create resolver with required parameters
+      const resolver = TsRes.Runtime.ResourceResolver.create({
+        resourceManager: builtManager.value,
+        qualifierTypes: qualifierTypesResult.value,
+        contextQualifierProvider: contextProvider.value
+      });
+      if (resolver.isFailure()) {
+        return fail(`Failed to create resource resolver: ${resolver.message}`);
+      }
+
+      return succeed(resolver.value);
+    } catch (error) {
+      return fail(`Failed to create resource resolver: ${error}`);
+    }
+  }
+
+  /**
+   * Generates output blob for delta resources
+   */
+  private async _generateDeltaBlob(
+    deltaManager: TsRes.Resources.ResourceManagerBuilder,
+    options: IDeltaOptions,
+    systemConfig: TsRes.Config.Model.ISystemConfiguration
+  ): Promise<Result<IDeltaBlob>> {
+    try {
+      if (options.format === 'compiled') {
+        return deltaManager.getCompiledResourceCollection().onSuccess((compiled) => {
+          const blob: IDeltaBlob = {
+            compiledCollection: compiled
+          };
+
+          if (options.includeMetadata) {
+            blob.metadata = this._generateDeltaResourceInfo(deltaManager);
+          }
+
+          return succeed(blob);
+        });
+      } else if (options.format === 'bundle') {
+        // Create bundle using BundleBuilder
+        const systemConfigResult = TsRes.Config.SystemConfiguration.create(systemConfig);
+        if (systemConfigResult.isFailure()) {
+          return fail(`Failed to create system configuration for bundle: ${systemConfigResult.message}`);
+        }
+
+        const bundleParams: TsRes.Bundle.IBundleCreateParams = {
+          version: '1.0.0',
+          description: 'Generated delta bundle from ts-res-cli',
+          normalize: true
+        };
+
+        return TsRes.Bundle.BundleBuilder.create(
+          deltaManager,
+          systemConfigResult.value,
+          bundleParams
+        ).onSuccess((bundle) => {
+          const blob: IDeltaBlob = {
+            bundle
+          };
+
+          if (options.includeMetadata) {
+            blob.metadata = this._generateDeltaResourceInfo(deltaManager);
+          }
+
+          return succeed(blob);
+        });
+      } else {
+        // Source format
+        return deltaManager.getResourceCollectionDecl().onSuccess((resources) => {
+          const blob: IDeltaBlob = {
+            resources
+          };
+
+          if (options.includeMetadata) {
+            blob.metadata = this._generateDeltaResourceInfo(deltaManager);
+          }
+
+          return succeed(blob);
+        });
+      }
+    } catch (error) {
+      return fail(`Failed to generate delta blob: ${error}`);
+    }
+  }
+
+  /**
+   * Generates resource information for delta output
+   */
+  private _generateDeltaResourceInfo(
+    deltaManager: TsRes.Resources.ResourceManagerBuilder
+  ): IDeltaResourceInfo {
+    const resourceTypes = Array.from(
+      new Set(
+        deltaManager
+          .getAllCandidates()
+          .map((c) => c.resourceType?.key)
+          .filter(Boolean)
+      )
+    ) as string[];
+
+    const qualifiers = Array.from(deltaManager.qualifiers.keys());
+
+    return {
+      totalResources: deltaManager.numResources,
+      totalCandidates: deltaManager.numCandidates,
+      resourceTypes,
+      qualifiers
+    };
+  }
+
+  /**
+   * Writes delta output to file
+   */
+  private async _writeDeltaOutput(blob: IDeltaBlob, options: IDeltaOptions): Promise<Result<void>> {
+    try {
+      const path = await import('path');
+      const fs = await import('fs').then((m) => m.promises);
+
+      const outputPath = path.resolve(options.output);
+      const outputDir = path.dirname(outputPath);
+
+      // Ensure output directory exists
+      await fs.mkdir(outputDir, { recursive: true });
+
+      let content: string;
+
+      switch (options.format) {
+        case 'compiled':
+          const compiledData = options.includeMetadata ? blob : blob.compiledCollection;
+          content = JSON.stringify(compiledData, null, 2);
+          break;
+        case 'source':
+          content = JSON.stringify(blob, null, 2);
+          break;
+        case 'js':
+          const jsData = blob.compiledCollection || blob;
+          content = `module.exports = ${JSON.stringify(jsData, null, 2)};`;
+          break;
+        case 'ts':
+          const tsData = blob.compiledCollection || blob;
+          content = `export const resources = ${JSON.stringify(tsData, null, 2)} as const;`;
+          break;
+        case 'binary':
+          const binaryData = blob.compiledCollection || blob;
+          content = JSON.stringify(binaryData);
+          break;
+        case 'bundle':
+          const bundleData = options.includeMetadata ? blob : blob.bundle;
+          content = JSON.stringify(bundleData, null, 2);
+          break;
+        default:
+          return fail(`Unsupported output format: ${options.format}`);
+      }
+
+      await fs.writeFile(outputPath, content, 'utf-8');
+      return succeed(undefined);
+    } catch (error) {
+      return fail(`Failed to write delta output: ${error}`);
+    }
+  }
+}
+
+/**
+ * Options for delta generation
+ */
+interface IDeltaOptions {
+  baseline: string;
+  target: string;
+  output: string;
+  config?: string;
+  contextFilter?: string;
+  qualifierDefaults?: string;
+  resourceIds?: string[];
+  skipUnchanged: boolean;
+  format: OutputFormat;
+  verbose: boolean;
+  quiet: boolean;
+  includeMetadata: boolean;
+}
+
+/**
+ * Delta resource blob
+ */
+interface IDeltaBlob {
+  resources?: TsRes.ResourceJson.Json.IResourceCollectionDecl;
+  compiledCollection?: TsRes.ResourceJson.Compiled.ICompiledResourceCollection;
+  bundle?: TsRes.Bundle.IBundle;
+  metadata?: IDeltaResourceInfo;
+}
+
+/**
+ * Information about delta resources
+ */
+interface IDeltaResourceInfo {
+  totalResources: number;
+  totalCandidates: number;
+  resourceTypes: string[];
+  qualifiers: string[];
 }

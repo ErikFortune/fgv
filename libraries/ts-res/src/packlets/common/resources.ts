@@ -100,6 +100,11 @@ export type CandidateValueKey = Brand<string, 'CandidateValueKey'>;
  */
 export interface IResourceResolver {
   /**
+   * The resource IDs that this resolver can resolve.
+   */
+  readonly resourceIds: ReadonlyArray<ResourceId>;
+
+  /**
    * Resolves a resource to a composed value by merging matching candidates according to their merge methods.
    * Starting from the highest priority candidates, finds the first "full" candidate and merges all higher
    * priority "partial" candidates into it in ascending order of priority.

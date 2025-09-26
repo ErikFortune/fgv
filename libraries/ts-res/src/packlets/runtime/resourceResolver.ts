@@ -23,7 +23,7 @@
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue, JsonObject, isJsonObject } from '@fgv/ts-json-base';
 import { JsonEditor } from '@fgv/ts-json';
-import { IResourceResolver, NoMatch } from '../common';
+import { IResourceResolver, NoMatch, ResourceId } from '../common';
 import { Condition, ConditionSet } from '../conditions';
 import { AbstractDecision } from '../decisions';
 import { ReadOnlyQualifierTypeCollector } from '../qualifier-types';
@@ -127,6 +127,13 @@ export class ResourceResolver implements IResourceResolver {
    */
   public get qualifiers(): IReadOnlyQualifierCollector {
     return this.contextQualifierProvider.qualifiers;
+  }
+
+  /**
+   * The resource IDs that this resolver can resolve.
+   */
+  public get resourceIds(): ReadonlyArray<ResourceId> {
+    return this.resourceManager.resourceIds;
   }
 
   /**
