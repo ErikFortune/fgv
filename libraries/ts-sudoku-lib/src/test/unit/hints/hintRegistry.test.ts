@@ -268,6 +268,31 @@ describe('HintRegistry', () => {
       );
     });
 
+    test('should apply maxHints filtering when more hints are available than limit', () => {
+      // Providers are already registered in beforeEach
+
+      // Generate all hints first to see how many we get
+      const allHintsResult = registry.generateAllHints(testPuzzle, testState);
+      expect(allHintsResult).toSucceedAndSatisfy((allHints) => {
+        if (allHints.length > 1) {
+          // Test maxHints filtering when we have more hints than the limit
+          expect(registry.generateAllHints(testPuzzle, testState, { maxHints: 1 })).toSucceedAndSatisfy(
+            (limitedHints) => {
+              expect(limitedHints.length).toBe(1);
+              expect(limitedHints[0]).toEqual(allHints[0]); // Should be the first hint
+            }
+          );
+        } else {
+          // If we only have 1 or fewer hints, test with maxHints: 0 to trigger filtering logic
+          expect(registry.generateAllHints(testPuzzle, testState, { maxHints: 0 })).toSucceedAndSatisfy(
+            (limitedHints) => {
+              expect(limitedHints.length).toBe(0);
+            }
+          );
+        }
+      });
+    });
+
     test('should respect minConfidence option', () => {
       expect(
         registry.generateAllHints(testPuzzle, testState, { minConfidence: ConfidenceLevels.HIGH })
@@ -559,6 +584,27 @@ describe('HintRegistry - Additional Coverage', () => {
       expect(registry.hasProvider(TechniqueIds.HIDDEN_SINGLES)).toBe(false);
     });
 
+    test('should track provider count correctly', () => {
+      // Initially empty
+      expect(registry.providerCount).toBe(0);
+
+      // Add one provider
+      registry.registerProvider(nakedSinglesProvider).orThrow();
+      expect(registry.providerCount).toBe(1);
+
+      // Add another provider
+      registry.registerProvider(hiddenSinglesProvider).orThrow();
+      expect(registry.providerCount).toBe(2);
+
+      // Remove a provider
+      registry.unregisterProvider(TechniqueIds.NAKED_SINGLES).orThrow();
+      expect(registry.providerCount).toBe(1);
+
+      // Clear all providers
+      registry.clear().orThrow();
+      expect(registry.providerCount).toBe(0);
+    });
+
     test('should group providers by difficulty level', () => {
       // Register providers with different difficulties
       registry.registerProvider(nakedSinglesProvider).orThrow(); // beginner
@@ -601,6 +647,18 @@ describe('HintRegistry - Additional Coverage', () => {
         expect(registry.hasProvider(TechniqueIds.NAKED_SINGLES)).toBe(true);
         expect(registry.hasProvider(TechniqueIds.HIDDEN_SINGLES)).toBe(true);
       });
+    });
+
+    test('should fail to create registry when provider registration fails', () => {
+      // Create a provider that will cause duplicate registration failure
+      const duplicateProvider = NakedSinglesProvider.create().orThrow();
+
+      // First provider succeeds, second fails due to duplicate technique ID
+      const providersWithDuplicate = [nakedSinglesProvider, duplicateProvider];
+
+      expect(HintRegistry.create(providersWithDuplicate)).toFailWith(
+        /Failed to register provider.*already registered/
+      );
     });
 
     test('should create empty registry when no providers given', () => {

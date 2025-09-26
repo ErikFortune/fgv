@@ -268,6 +268,32 @@ describe('PuzzleSessionHints', () => {
       // The hint system should continue to work after state changes
       expect(hintsSession.hasHints()).toSucceed();
     });
+
+    test('should handle cache timeout expiration', async () => {
+      // Create a session with very short cache timeout for testing
+      const shortCacheConfig = {
+        enableNakedSingles: true,
+        enableHiddenSingles: true,
+        cacheTimeoutMs: 1 // 1ms timeout to force expiration
+      };
+
+      const shortCacheSession = PuzzleSessionHints.create(session, shortCacheConfig).orThrow();
+
+      // Get hints to populate cache
+      const firstHints = shortCacheSession.getAllHints();
+      expect(firstHints).toSucceed();
+
+      // Wait a bit to ensure cache timeout passes
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 10); // Wait 10ms to ensure 1ms timeout has passed
+      });
+
+      // Get hints again - cache should be expired and regenerated
+      const secondHints = shortCacheSession.getAllHints();
+      expect(secondHints).toSucceed();
+    });
   });
 
   describe('hint system integration', () => {
@@ -404,6 +430,60 @@ describe('PuzzleSessionHints', () => {
       const strings = hintsSession.toStrings();
       expect(Array.isArray(strings)).toBe(true);
       expect(strings.length).toBe(9); // Should be 9 rows
+    });
+
+    test('should delegate cage and structure getters', () => {
+      // Test rows getter
+      const rows = hintsSession.rows;
+      expect(Array.isArray(rows)).toBe(true);
+
+      // Test columns getter
+      const cols = hintsSession.cols;
+      expect(Array.isArray(cols)).toBe(true);
+
+      // Test sections getter
+      const sections = hintsSession.sections;
+      expect(Array.isArray(sections)).toBe(true);
+
+      // Test cages getter
+      const cages = hintsSession.cages;
+      expect(Array.isArray(cages)).toBe(true);
+    });
+
+    test('should delegate step tracking getters', () => {
+      // Test nextStep getter
+      expect(typeof hintsSession.nextStep).toBe('number');
+      expect(hintsSession.nextStep).toBeGreaterThanOrEqual(0);
+
+      // Test numSteps getter
+      expect(typeof hintsSession.numSteps).toBe('number');
+      expect(hintsSession.numSteps).toBeGreaterThanOrEqual(0);
+    });
+
+    test('should delegate cell analysis methods', () => {
+      // Test getEmptyCells
+      const emptyCells = hintsSession.getEmptyCells();
+      expect(Array.isArray(emptyCells)).toBe(true);
+
+      // Test getInvalidCells
+      const invalidCells = hintsSession.getInvalidCells();
+      expect(Array.isArray(invalidCells)).toBe(true);
+    });
+
+    test('should delegate navigation methods', () => {
+      const cell = hintsSession.cells[0];
+
+      // Test getCellNeighbor
+      expect(hintsSession.getCellNeighbor(cell.id, 'right', 'none')).toSucceedAndSatisfy((neighbor) => {
+        expect(neighbor).toBeDefined();
+        expect(neighbor.id).toBeDefined();
+      });
+
+      // Test getCellContents
+      expect(hintsSession.getCellContents(cell.id)).toSucceedAndSatisfy((result) => {
+        expect(result.cell).toBeDefined();
+        expect(result.contents).toBeDefined();
+      });
     });
   });
 
