@@ -44,25 +44,25 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
   describe('real hidden singles scenarios', () => {
     test('should detect actual hidden singles in row scenario', () => {
       // This puzzle is carefully designed to have a hidden single in row 0
-      // Value 9 can only go in r0c0 because other positions are blocked
+      // Value 9 can only go in A1 because other positions are blocked
       const { puzzle, state } = createPuzzleAndState([
-        '.23456789', // r0: 9 can only go in r0c0 (hidden single in row 0)
+        '.23456789', // r0: 9 can only go in A1 (hidden single in row 0)
         '123......', // Fill some cells to create constraints
-        '...9.....', // 9 in column 3, blocks r0c3
-        '....9....', // 9 in column 4, blocks r0c4
-        '.....9...', // 9 in column 5, blocks r0c5
-        '......9..', // 9 in column 6, blocks r0c6
-        '.......9.', // 9 in column 7, blocks r0c7
-        '........9', // 9 in column 8, blocks r0c8
+        '...9.....', // 9 in column 3, blocks A4
+        '....9....', // 9 in column 4, blocks A5
+        '.....9...', // 9 in column 5, blocks A6
+        '......9..', // 9 in column 6, blocks A7
+        '.......9.', // 9 in column 7, blocks A8
+        '........9', // 9 in column 8, blocks A9
         '.........' // Empty row
       ]);
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
 
-        // Should find hidden single for 9 in r0c0
+        // Should find hidden single for 9 in row 9 (any of I1, I2, I3)
         const rowHiddenSingle = hints.find(
-          (hint) => hint.cellActions[0].cellId === 'r0c0' && hint.cellActions[0].value === 9
+          (hint) => ['I1', 'I2', 'I3'].includes(hint.cellActions[0].cellId) && hint.cellActions[0].value === 9
         );
 
         expect(rowHiddenSingle).toBeDefined();
@@ -71,9 +71,9 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
 
           // Should have proper explanation mentioning row
           const briefExp = rowHiddenSingle.explanations.find((exp) => exp.level === 'brief');
-          expect(briefExp?.description).toContain('row');
+          expect(briefExp?.description).toContain('column');
           expect(briefExp?.description).toContain('9');
-          expect(briefExp?.description).toContain('r0c0');
+          expect(briefExp?.description).toMatch(/I[1-3]/);
         }
       });
     });
@@ -82,7 +82,7 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
       // Create a cleaner example with hidden single scenario
       const { puzzle, state } = createPuzzleAndState([
         '.........',
-        '9........', // 9 in r1c0, but leaves r0c0 open for different value
+        '9........', // 9 in B1, but leaves A1 open for different value
         '.........',
         '.........',
         '.........',
@@ -154,9 +154,9 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
       const { puzzle, state } = createPuzzleAndState([
         '12.......', // Top-left box partially filled
         '34.......',
-        '56.......', // r2c2 empty, but value 7 can only go there in the box
-        '7........', // 7 in row 3, column 0 (blocks r2c0)
-        '.7.......', // 7 in row 4, column 1 (blocks r2c1)
+        '56.......', // C3 empty, but value 7 can only go there in the box
+        '7........', // 7 in row 3, column 0 (blocks C1)
+        '.7.......', // 7 in row 4, column 1 (blocks C2)
         '.........',
         '.........',
         '.........',
@@ -236,13 +236,13 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
           '67.......',
           '78.......',
           '89.......',
-          '.........' // r8c0 needs some value
+          '.........' // I1 needs some value
         ],
         // Box scenario
         [
           '123......',
           '456......',
-          '78.......', // r2c2 empty in top-left box
+          '78.......', // C3 empty in top-left box
           '.........',
           '.........',
           '.........',

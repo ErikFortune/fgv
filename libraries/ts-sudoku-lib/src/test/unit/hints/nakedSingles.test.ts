@@ -90,9 +90,9 @@ describe('NakedSinglesProvider', () => {
 
   describe('generateHints - basic naked singles', () => {
     test('should detect single naked single in simple scenario', () => {
-      // Create a puzzle where cell r0c8 can only be 9
+      // Create a puzzle where cell A9 can only be 9
       const { puzzle, state } = createPuzzleAndState([
-        '12345678.', // r0c8 must be 9
+        '12345678.', // A9 must be 9
         '456789123',
         '789123456',
         '234567891',
@@ -100,7 +100,7 @@ describe('NakedSinglesProvider', () => {
         '891234567',
         '345678912',
         '678912345',
-        '91234567.' // r8c8 has multiple candidates
+        '912345678' // Complete row to avoid another naked single
       ]);
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
@@ -112,7 +112,7 @@ describe('NakedSinglesProvider', () => {
         expect(hint.cellActions).toHaveLength(1);
 
         const action = hint.cellActions[0];
-        expect(action.cellId).toBe('r0c8');
+        expect(action.cellId).toBe('A9');
         expect(action.action).toBe('set-value');
         expect(action.value).toBe(9);
         expect(action.reason).toContain('Only possible value');
@@ -122,8 +122,8 @@ describe('NakedSinglesProvider', () => {
     test('should detect multiple naked singles', () => {
       // Create a puzzle where multiple cells have only one candidate
       const { puzzle, state } = createPuzzleAndState([
-        '12345678.', // r0c8 must be 9
-        '45678912.', // r1c8 must be 3
+        '12345678.', // A9 must be 9
+        '45678912.', // B9 must be 3
         '789123456',
         '234567891',
         '567891234',
@@ -152,8 +152,8 @@ describe('NakedSinglesProvider', () => {
           value: h.cellActions[0].value
         }));
 
-        expect(nakedSingles).toContainEqual({ cellId: 'r0c8', value: 9 });
-        expect(nakedSingles).toContainEqual({ cellId: 'r1c8', value: 3 });
+        expect(nakedSingles).toContainEqual({ cellId: 'A9', value: 9 });
+        expect(nakedSingles).toContainEqual({ cellId: 'B9', value: 3 });
       });
     });
 
@@ -180,7 +180,7 @@ describe('NakedSinglesProvider', () => {
   describe('generateHints - constraint scenarios', () => {
     test('should detect naked single constrained by row', () => {
       const { puzzle, state } = createPuzzleAndState([
-        '12345678.', // All values 1-8 in row, only 9 possible in r0c8
+        '12345678.', // All values 1-8 in row, only 9 possible in A9
         '.........',
         '.........',
         '.........',
@@ -192,7 +192,7 @@ describe('NakedSinglesProvider', () => {
       ]);
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
-        const hint = hints.find((h) => h.cellActions[0].cellId === 'r0c8');
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'A9');
         expect(hint).toBeDefined();
         expect(hint!.cellActions[0].value).toBe(9);
       });
@@ -208,11 +208,11 @@ describe('NakedSinglesProvider', () => {
         '6........',
         '7........',
         '8........',
-        '.........' // r8c0 must be 9 (only value not in column)
+        '.........' // I1 must be 9 (only value not in column)
       ]);
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
-        const hint = hints.find((h) => h.cellActions[0].cellId === 'r8c0');
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'I1');
         expect(hint).toBeDefined();
         expect(hint!.cellActions[0].value).toBe(9);
       });
@@ -233,7 +233,7 @@ describe('NakedSinglesProvider', () => {
       ]);
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
-        const hint = hints.find((h) => h.cellActions[0].cellId === 'r2c2');
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'C3');
         expect(hint).toBeDefined();
         expect(hint!.cellActions[0].value).toBe(9);
       });
@@ -274,7 +274,7 @@ describe('NakedSinglesProvider', () => {
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(1);
-        expect(hints[0].cellActions[0].cellId).toBe('r8c8');
+        expect(hints[0].cellActions[0].cellId).toBe('I9');
         expect(hints[0].cellActions[0].value).toBe(8);
       });
     });
@@ -319,12 +319,10 @@ describe('NakedSinglesProvider', () => {
         }
       });
 
-      // No hints should pass a confidence filter higher than maximum
+      // Invalid confidence filter should fail
       expect(
         provider.generateHints(puzzle, state, { minConfidence: 6 as unknown as ConfidenceLevel })
-      ).toSucceedAndSatisfy((hints) => {
-        expect(hints).toHaveLength(0);
-      });
+      ).toFailWith(/minConfidence must be between 1 and 5/);
     });
   });
 
@@ -398,7 +396,7 @@ describe('NakedSinglesProvider', () => {
       ]);
 
       expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
-        const hint = hints.find((h) => h.cellActions[0].cellId === 'r0c8');
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'A9');
         expect(hint).toBeDefined();
 
         // Should include cells from the same row that have values
@@ -407,7 +405,7 @@ describe('NakedSinglesProvider', () => {
 
         // All secondary cells should be in the same row and have values
         for (const cellId of secondaryCells) {
-          expect(cellId).toMatch(/^r0c\d$/); // Same row
+          expect(cellId).toMatch(/^A[1-9]$/); // Same row (A1-A9)
           expect(state.hasValue(cellId)).toBe(true);
         }
       });
@@ -435,7 +433,7 @@ describe('NakedSinglesProvider', () => {
 
         expect(briefExplanation!.title).toBe('Naked Single');
         expect(briefExplanation!.description).toContain('can only contain the value');
-        expect(briefExplanation!.steps).toContain('Set r0c8 = 9');
+        expect(briefExplanation!.steps).toContain('Set A9 = 9');
         expect(briefExplanation!.tips).toContain('Look for cells with only one possible value');
       });
     });

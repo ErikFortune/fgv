@@ -290,7 +290,7 @@ describe('PuzzleSessionHints', () => {
     });
 
     test('should get hints for specific cell', () => {
-      expect(hintsSession.getHintsForCell('r0c0')).toSucceedAndSatisfy((hints) => {
+      expect(hintsSession.getHintsForCell('A1')).toSucceedAndSatisfy((hints) => {
         // May or may not have hints for the specific cell
         expect(Array.isArray(hints)).toBe(true);
       });
@@ -363,12 +363,13 @@ describe('PuzzleSessionHints', () => {
     });
 
     test('should delegate cell value operations', () => {
-      const cell = hintsSession.cells[10]; // Pick a cell
-      const originalValue = hintsSession.state.hasValue(cell.id) ? 1 : undefined; // Simplified
+      // Find an empty cell to test with
+      const emptyCell = hintsSession.cells.find((cell) => !hintsSession.state.hasValue(cell.id));
+      expect(emptyCell).toBeDefined();
 
-      // Test updateCellValue
-      expect(hintsSession.updateCellValue(cell.id, 5)).toSucceed();
-      expect(hintsSession.updateCellValue(cell.id, originalValue)).toSucceed();
+      // Test updateCellValue on empty cell
+      expect(hintsSession.updateCellValue(emptyCell!.id, 5)).toSucceed();
+      expect(hintsSession.updateCellValue(emptyCell!.id, undefined)).toSucceed();
     });
 
     test('should delegate cell notes operations', () => {
@@ -380,9 +381,13 @@ describe('PuzzleSessionHints', () => {
     });
 
     test('should delegate batch cell updates', () => {
+      // Find empty cells for testing
+      const emptyCells = hintsSession.cells.filter((cell) => !hintsSession.state.hasValue(cell.id));
+      expect(emptyCells.length).toBeGreaterThanOrEqual(2);
+
       const updates = [
-        { id: hintsSession.cells[20].id, value: undefined, notes: [1, 2] },
-        { id: hintsSession.cells[21].id, value: undefined, notes: [3, 4] }
+        { id: emptyCells[0].id, value: undefined, notes: [1, 2] },
+        { id: emptyCells[1].id, value: undefined, notes: [3, 4] }
       ];
       expect(hintsSession.updateCells(updates)).toSucceed();
     });
@@ -479,10 +484,8 @@ describe('PuzzleSessionHints', () => {
     });
 
     test('should handle invalid cell specifications', () => {
-      // Test with invalid cell IDs
-      expect(hintsSession.getHintsForCell('invalid-cell')).toSucceedAndSatisfy((hints) => {
-        expect(Array.isArray(hints)).toBe(true);
-      });
+      // Test with invalid cell IDs - should fail with validation error
+      expect(hintsSession.getHintsForCell('invalid-cell')).toFailWith(/malformed cell ID/);
     });
 
     test('should maintain state consistency after multiple operations', () => {

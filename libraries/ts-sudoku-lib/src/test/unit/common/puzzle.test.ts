@@ -79,14 +79,14 @@ describe('Puzzle class', () => {
       expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported type/i);
     });
 
-    test('fails for invalid row count type', () => {
+    test('fails for invalid row count', () => {
       const t = { ...tests[0], rows: 10 };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported row count/i);
+      expect(Puzzles.Sudoku.create(t)).toFailWith(/expected 90 cells, found 81/i);
     });
 
-    test('fails for invalid row count type', () => {
+    test('fails for invalid column count', () => {
       const t = { ...tests[0], cols: 10 };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported column count/i);
+      expect(Puzzles.Sudoku.create(t)).toFailWith(/expected 90 cells, found 81/i);
     });
 
     test('fails for invalid cell definitions', () => {

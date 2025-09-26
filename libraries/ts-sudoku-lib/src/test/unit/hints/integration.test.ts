@@ -66,7 +66,7 @@ describe('Hint System Integration', () => {
 
           // Cell actions should reference valid cells and values
           for (const action of hint.cellActions) {
-            expect(action.cellId).toMatch(/^r[0-8]c[0-8]$/);
+            expect(action.cellId).toMatch(/^[A-I][1-9]$/);
             expect(action.value).toBeGreaterThanOrEqual(1);
             expect(action.value).toBeLessThanOrEqual(9);
           }
@@ -149,7 +149,7 @@ describe('Hint System Integration', () => {
 
       // Easy puzzle - should have many hints available
       const { puzzle: easyPuzzle, state: easyState } = createPuzzleAndState([
-        '1234567.9',
+        '12345678.',
         '567891234',
         '891234567',
         '234567891',
@@ -171,7 +171,7 @@ describe('Hint System Integration', () => {
       // Sparse puzzle - may have fewer obvious hints
       const { puzzle: sparsePuzzle, state: sparseState } = createPuzzleAndState([
         '1........',
-        '.........2',
+        '........2',
         '..3......',
         '.........',
         '....5....',
@@ -242,7 +242,7 @@ describe('Hint System Integration', () => {
       expect(hints1.length).toBe(hints2.length);
 
       // Cache should be invalidated after state change
-      hintsSession.updateCellValue('r1c1', 5).orThrow();
+      hintsSession.updateCellValue('B2', 5).orThrow();
       const hints3 = hintsSession.getAllHints().orThrow();
 
       // Should still work after state change

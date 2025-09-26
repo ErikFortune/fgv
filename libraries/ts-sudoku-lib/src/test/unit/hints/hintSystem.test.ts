@@ -41,7 +41,7 @@ describe('HintSystem', () => {
     hintSystem = HintSystem.create().orThrow();
 
     const result = createPuzzleAndState([
-      '12345678.', // Creates naked single at r0c8 = 9
+      '12345678.', // Creates naked single at A9 = 9
       '.........',
       '.........',
       '.........',
@@ -188,7 +188,7 @@ describe('HintSystem', () => {
       ).orThrow();
 
       // Add some notes to the target cell
-      session.updateCellNotes('r0c8', [1, 2, 9]).orThrow();
+      session.updateCellNotes('A9', [1, 2, 9]).orThrow();
       const stateWithNotes = session.state;
 
       expect(hintSystem.getBestHint(testPuzzle, stateWithNotes)).toSucceedAndSatisfy((hint) => {
@@ -252,7 +252,7 @@ describe('HintSystem', () => {
       expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         const formatted = hintSystem.formatHintExplanation(hint);
         expect(formatted.length).toBeGreaterThan(0);
-        expect(formatted).toContain(hint.techniqueName);
+        expect(formatted).toContain('Naked Single');
       });
     });
 
@@ -521,48 +521,48 @@ describe('DefaultHintApplicator', () => {
 
   describe('validateHint', () => {
     test('should validate valid set-value hint', () => {
-      const validHint = createTestHint('r0c8', 9);
+      const validHint = createTestHint('A9', 9);
       expect(applicator.validateHint(validHint, testPuzzle, testState)).toSucceed();
     });
 
     test('should reject unsupported action types', () => {
-      const invalidHint = createTestHint('r0c8', 9, 'eliminate-candidate');
+      const invalidHint = createTestHint('A9', 9, 'eliminate-candidate');
       expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
         /Unsupported action type/
       );
     });
 
     test('should reject hint for non-existent cell', () => {
-      const invalidHint = createTestHint('r99c99', 9);
+      const invalidHint = createTestHint('Z9', 9); // Invalid cell ID
       expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/Invalid cell/);
     });
 
     test('should reject hint for already filled cell', () => {
-      const invalidHint = createTestHint('r0c0', 5); // r0c0 already has value 1
+      const invalidHint = createTestHint('A1', 5); // A1 already has value 1
       expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
     });
 
     test('should reject hint with invalid value', () => {
-      const invalidHint = createTestHint('r0c8', 10);
+      const invalidHint = createTestHint('A9', 10);
       expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
         /Invalid value.*must be 1-9/
       );
     });
 
     test('should reject hint with missing value', () => {
-      const invalidHint = createTestHint('r0c8', undefined);
+      const invalidHint = createTestHint('A9', undefined);
       expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/No value specified/);
     });
   });
 
   describe('applyHint', () => {
     test('should generate correct cell updates', () => {
-      const hint = createTestHint('r0c8', 9);
+      const hint = createTestHint('A9', 9);
       expect(applicator.applyHint(hint, testPuzzle, testState)).toSucceedAndSatisfy((updates) => {
         expect(updates).toHaveLength(1);
 
         const update = updates[0];
-        expect(update.id).toBe('r0c8');
+        expect(update.id).toBe('A9');
         expect(update.value).toBe(9);
         expect(update.notes).toBeDefined();
       });
@@ -586,10 +586,10 @@ describe('DefaultHintApplicator', () => {
         ).orThrow()
       ).orThrow();
 
-      session.updateCellNotes('r0c8', [1, 2, 9]).orThrow();
+      session.updateCellNotes('A9', [1, 2, 9]).orThrow();
       const stateWithNotes = session.state;
 
-      const hint = createTestHint('r0c8', 9);
+      const hint = createTestHint('A9', 9);
       expect(applicator.applyHint(hint, testPuzzle, stateWithNotes)).toSucceedAndSatisfy((updates) => {
         const update = updates[0];
         expect(update.notes).toEqual([1, 2, 9]);
@@ -597,7 +597,7 @@ describe('DefaultHintApplicator', () => {
     });
 
     test('should fail validation before applying', () => {
-      const invalidHint = createTestHint('r0c0', 5); // Already filled cell
+      const invalidHint = createTestHint('A1', 5); // Already filled cell
       expect(applicator.applyHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
     });
   });
@@ -675,7 +675,7 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
     hintSystem = HintSystem.create().orThrow();
 
     const result = createPuzzleAndState([
-      '12345678.', // Creates naked single at r0c8 = 9
+      '12345678.', // Creates naked single at A9 = 9
       '.........',
       '.........',
       '.........',
@@ -691,29 +691,31 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
 
   describe('hint validation error scenarios', () => {
     test('should handle invalid value in set-value action', () => {
-      const invalidHint = createTestHint('r0c8', 0); // Invalid value
+      const invalidHint = createTestHint('A9', 0); // Invalid value
       expect(hintSystem.validateHint(invalidHint, puzzle, state)).toFailWith(/invalid value/i);
 
-      const invalidHint2 = createTestHint('r0c8', 10); // Invalid value
+      const invalidHint2 = createTestHint('A9', 10); // Invalid value
       expect(hintSystem.validateHint(invalidHint2, puzzle, state)).toFailWith(/invalid value/i);
     });
 
     test('should handle missing value in set-value action', () => {
-      const hintWithoutValue = createTestHint('r0c8', undefined);
+      const hintWithoutValue = createTestHint('A9', undefined);
       expect(hintSystem.validateHint(hintWithoutValue, puzzle, state)).toFailWith(/no value specified/i);
     });
 
     test('should handle invalid cell ID in hint application', () => {
       const invalidCellHint = createTestHint('invalid-cell', 5);
-      expect(hintSystem.applyHint(invalidCellHint, puzzle, state)).toFailWith(/failed to get cell contents/i);
+      expect(hintSystem.applyHint(invalidCellHint, puzzle, state)).toFailWith(
+        /Invalid cell|cell.*not found/i
+      );
     });
   });
 
   describe('hint application edge cases', () => {
     test('should handle cell contents retrieval failure', () => {
       // Create a hint with an invalid cell ID to trigger getCellContents failure
-      const badHint = createTestHint('r99c99', 5);
-      expect(hintSystem.applyHint(badHint, puzzle, state)).toFailWith(/failed to get cell contents/i);
+      const badHint = createTestHint('Z9', 5);
+      expect(hintSystem.applyHint(badHint, puzzle, state)).toFailWith(/Invalid cell|cell.*not found/i);
     });
 
     test('should handle multiple cell actions with mixed validity', () => {
@@ -724,7 +726,7 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
         confidence: ConfidenceLevels.HIGH,
         cellActions: [
           {
-            cellId: 'r0c8' as CellId,
+            cellId: 'A9' as CellId,
             action: 'set-value' as const,
             value: 9,
             reason: 'Valid action'
@@ -737,7 +739,7 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
           }
         ],
         relevantCells: {
-          primary: ['r0c8' as CellId],
+          primary: ['A9' as CellId],
           secondary: [],
           affected: []
         },
@@ -752,7 +754,7 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
       };
 
       expect(hintSystem.applyHint(mixedValidityHint, puzzle, state)).toFailWith(
-        /failed to get cell contents/i
+        /Invalid cell|cell.*not found/i
       );
     });
   });

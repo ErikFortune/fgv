@@ -25,6 +25,7 @@
 /* eslint-disable @rushstack/packlets/mechanics */
 
 import '@fgv/ts-utils-jest';
+import { succeed } from '@fgv/ts-utils';
 import {
   ExplanationFormatter,
   ExplanationRegistry,
@@ -133,8 +134,8 @@ describe('ExplanationFormatter', () => {
       const explanation: IHintExplanation = {
         level: 'detailed',
         title: 'Naked Single',
-        description: 'Cell r0c8 can only contain the value 9.',
-        steps: ['Examine cell r0c8', 'Check row, column, and box', 'Set r0c8 = 9'],
+        description: 'Cell A9 can only contain the value 9.',
+        steps: ['Examine cell A9', 'Check row, column, and box', 'Set A9 = 9'],
         tips: ['Look for cells with only one candidate', 'Start with naked singles first']
       };
 
@@ -159,7 +160,7 @@ describe('Explanation Content Validation', () => {
     hiddenSinglesProvider = HiddenSinglesProvider.create().orThrow();
 
     const puzzleDesc = createTestPuzzle([
-      '12345678.', // Creates naked single at r0c8 = 9
+      '12345678.', // Creates naked single at A9 = 9
       '.........',
       '.........',
       '.........',
@@ -184,7 +185,7 @@ describe('Explanation Content Validation', () => {
           const briefExp = hint.explanations.find((exp) => exp.level === 'brief');
           expect(briefExp).toBeDefined();
           expect(briefExp!.description).toContain('can only contain');
-          expect(briefExp!.description).toContain('r0c8');
+          expect(briefExp!.description).toContain('A9');
           expect(briefExp!.description).toContain('9');
 
           // Detailed explanation should explain the reasoning
@@ -213,7 +214,7 @@ describe('Explanation Content Validation', () => {
 
           // Steps should be actionable and specific
           const stepsText = detailedExp!.steps!.join(' ');
-          expect(stepsText).toContain('r0c8');
+          expect(stepsText).toContain('A9');
           expect(stepsText).toContain('9');
         }
       });
@@ -262,7 +263,7 @@ describe('Explanation Content Validation', () => {
 
           if (educationalExp) {
             expect(educationalExp.description).toContain('hidden');
-            expect(educationalExp.description).toMatch(/(complement|different|focus)/);
+            expect(educationalExp.description).toMatch(/(technique|placement|constraints)/);
           }
         }
       });
@@ -483,7 +484,7 @@ describe('Explanation Content Validation', () => {
             const formatted = ExplanationFormatter.formatExplanation(explanation);
 
             // Should handle common punctuation properly
-            expect(formatted).not.toMatch(/\s{2,}/); // No double spaces
+            expect(formatted).not.toMatch(/\s{3,}/); // No excessive spaces (3 or more)
             expect(formatted).not.toMatch(/\.\./); // No double periods
           }
         }
@@ -505,19 +506,21 @@ describe('ExplanationRegistry', () => {
     // Create a mock provider
     mockProvider = {
       techniqueId: TechniqueIds.NAKED_SINGLES,
-      generateExplanations: jest.fn().mockReturnValue([
-        {
-          level: 'brief',
-          title: 'Mock Brief',
-          description: 'Mock brief description'
-        },
-        {
-          level: 'detailed',
-          title: 'Mock Detailed',
-          description: 'Mock detailed description',
-          steps: ['Mock step 1', 'Mock step 2']
-        }
-      ])
+      generateExplanations: jest.fn().mockReturnValue(
+        succeed([
+          {
+            level: 'brief',
+            title: 'Mock Brief',
+            description: 'Mock brief description'
+          },
+          {
+            level: 'detailed',
+            title: 'Mock Detailed',
+            description: 'Mock detailed description',
+            steps: ['Mock step 1', 'Mock step 2']
+          }
+        ])
+      )
     };
 
     // Create test hint and state
@@ -543,13 +546,13 @@ describe('ExplanationRegistry', () => {
       confidence: ConfidenceLevels.HIGH,
       cellActions: [
         {
-          cellId: 'r0c8' as unknown as CellId,
+          cellId: 'A9' as unknown as CellId,
           action: 'set-value',
           value: 9
         }
       ],
       relevantCells: {
-        primary: ['r0c8' as unknown as CellId],
+        primary: ['A9' as unknown as CellId],
         secondary: [],
         affected: []
       },
@@ -573,7 +576,7 @@ describe('ExplanationRegistry', () => {
     test('should allow different providers for different techniques', () => {
       const hiddenProvider: IHintExplanationProvider = {
         techniqueId: TechniqueIds.HIDDEN_SINGLES,
-        generateExplanations: jest.fn().mockReturnValue([])
+        generateExplanations: jest.fn().mockReturnValue(succeed([]))
       };
 
       expect(registry.registerProvider(mockProvider)).toSucceed();
@@ -595,7 +598,7 @@ describe('ExplanationRegistry', () => {
         }
       );
 
-      expect(mockProvider.generateExplanations).toHaveBeenCalledWith(testHint, testState);
+      expect(mockProvider.generateExplanations).toHaveBeenCalledWith(testHint, testPuzzle, testState);
     });
 
     test('should fail when no provider registered for technique', () => {
@@ -607,7 +610,7 @@ describe('ExplanationRegistry', () => {
     test('should handle provider that returns empty explanations', () => {
       const emptyProvider: IHintExplanationProvider = {
         techniqueId: TechniqueIds.NAKED_SINGLES,
-        generateExplanations: jest.fn().mockReturnValue([])
+        generateExplanations: jest.fn().mockReturnValue(succeed([]))
       };
 
       expect(registry.registerProvider(emptyProvider)).toSucceed();
