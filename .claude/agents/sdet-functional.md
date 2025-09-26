@@ -285,6 +285,196 @@ describe('UserService integration', () => {
 - [ ] Tests are maintainable and not brittle
 - [ ] No `any` type usage
 - [ ] Proper setup/teardown
+- [ ] **No fragile mock objects** - Use real objects with spies or test classes
+
+### Anti-Pattern: Fragile Mock Objects (CRITICAL TO AVOID)
+
+**❌ CRITICAL ANTI-PATTERN: Hand-crafted Mock Objects**
+
+Creating mock objects by manually implementing a handful of methods is inherently fragile and tightly coupled to implementation details.
+
+```typescript
+// ❌ ANTI-PATTERN: Fragile mock that will break if implementation changes
+const mockUserRepository = {
+  save: jest.fn().mockResolvedValue(Result.succeed(savedUser)),
+  findByEmail: jest.fn().mockResolvedValue(Result.succeed(null)),
+  // Missing methods that implementation might call later
+  // If code starts calling validate() or findById(), test breaks
+};
+
+// ❌ ANTI-PATTERN: Overly specific mock implementation
+const mockEmailService = {
+  sendWelcomeEmail: jest.fn().mockImplementation((user) => {
+    // Mock contains business logic - fragile!
+    if (!user.email || !user.email.includes('@')) {
+      return Result.fail('Invalid email');
+    }
+    return Result.succeed({ messageId: 'mock-123' });
+  })
+};
+```
+
+**Why This Is Problematic:**
+- **Brittle**: Breaks when implementation calls new methods
+- **Implementation-coupled**: Test knows too much about internal behavior
+- **Maintenance burden**: Every implementation change requires test updates
+- **False confidence**: Tests pass but real integration might fail
+
+### ✅ BETTER PATTERNS: Resilient Test Objects
+
+#### **Pattern 1: Real Objects with Spies (One-off scenarios)**
+
+For occasional testing needs, use real objects and spy on specific methods:
+
+```typescript
+// ✅ BETTER: Real object with targeted spying
+test('should handle email service failure gracefully', () => {
+  const realEmailService = EmailService.create(config).orThrow();
+
+  // Spy on just the method you need to control
+  jest.spyOn(realEmailService, 'sendWelcomeEmail')
+    .mockResolvedValue(Result.fail('SMTP server unavailable'));
+
+  const userService = UserService.create({ emailService: realEmailService }).orThrow();
+
+  expect(userService.registerUser(userData)).toSucceedAndSatisfy((result) => {
+    expect(result.user).toBeDefined();
+    expect(result.emailSent).toBe(false);
+    expect(result.warnings).toContain('Welcome email could not be sent');
+  });
+});
+```
+
+#### **Pattern 2: Test Classes (Repeated patterns)**
+
+For repeated testing scenarios, create test classes that extend or wrap real classes:
+
+```typescript
+// ✅ BETTER: Test class that extends real behavior
+class TestableEmailService extends EmailService {
+  private shouldFail: boolean = false;
+  private failureMessage: string = 'Test-induced failure';
+
+  constructor(config: EmailConfig) {
+    super(config);
+  }
+
+  // Override just what you need for testing
+  async sendWelcomeEmail(user: User): Promise<Result<EmailResult>> {
+    if (this.shouldFail) {
+      return Result.fail(this.failureMessage);
+    }
+    return super.sendWelcomeEmail(user);
+  }
+
+  // Test control methods
+  induceFailure(message: string = 'Test-induced failure'): void {
+    this.shouldFail = true;
+    this.failureMessage = message;
+  }
+
+  resumeNormalOperation(): void {
+    this.shouldFail = false;
+  }
+}
+
+// Usage in tests
+describe('UserService with email failures', () => {
+  let emailService: TestableEmailService;
+  let userService: UserService;
+
+  beforeEach(() => {
+    emailService = new TestableEmailService(testConfig);
+    userService = UserService.create({ emailService }).orThrow();
+  });
+
+  test('should handle email service failure', () => {
+    emailService.induceFailure('SMTP timeout');
+
+    expect(userService.registerUser(userData)).toSucceedAndSatisfy((result) => {
+      expect(result.emailSent).toBe(false);
+      expect(result.warnings).toContain('SMTP timeout');
+    });
+  });
+
+  test('should work normally when email service recovers', () => {
+    // First induce failure
+    emailService.induceFailure();
+    expect(userService.registerUser(userData1)).toSucceedAndSatisfy((result) => {
+      expect(result.emailSent).toBe(false);
+    });
+
+    // Then resume normal operation
+    emailService.resumeNormalOperation();
+    expect(userService.registerUser(userData2)).toSucceedAndSatisfy((result) => {
+      expect(result.emailSent).toBe(true);
+    });
+  });
+});
+```
+
+#### **Pattern 3: Interface-Based Test Doubles**
+
+For complex scenarios, implement the interface properly:
+
+```typescript
+// ✅ BETTER: Full interface implementation for complex scenarios
+class InMemoryUserRepository implements UserRepository {
+  private users: Map<string, User> = new Map();
+  private shouldFail: boolean = false;
+
+  async save(user: User): Promise<Result<User>> {
+    if (this.shouldFail) {
+      return Result.fail('Database unavailable');
+    }
+    this.users.set(user.id, { ...user });
+    return Result.succeed(user);
+  }
+
+  async findByEmail(email: string): Promise<Result<User | null>> {
+    if (this.shouldFail) {
+      return Result.fail('Database unavailable');
+    }
+    const user = Array.from(this.users.values()).find(u => u.email === email);
+    return Result.succeed(user || null);
+  }
+
+  async findById(id: string): Promise<Result<User | null>> {
+    if (this.shouldFail) {
+      return Result.fail('Database unavailable');
+    }
+    return Result.succeed(this.users.get(id) || null);
+  }
+
+  // Test control methods
+  induceFailure(): void { this.shouldFail = true; }
+  resumeOperation(): void { this.shouldFail = false; }
+  clear(): void { this.users.clear(); }
+}
+```
+
+### Benefits of Better Patterns
+
+1. **Resilient**: Tests survive implementation changes
+2. **Realistic**: Behavior closely matches real objects
+3. **Maintainable**: Less coupling to implementation details
+4. **Reusable**: Test classes can be shared across test files
+5. **Comprehensive**: Full interface compliance prevents surprises
+
+### Detection and Migration
+
+**Red Flags for Fragile Mocks:**
+- Mock objects with only 2-3 methods implemented
+- Mock implementations that contain business logic
+- Tests that break when new methods are called
+- Mock setup that duplicates production logic
+
+**Migration Strategy:**
+1. **Identify fragile mocks** in existing tests
+2. **Assess usage patterns** - one-off vs repeated
+3. **Choose appropriate pattern** - spies, test classes, or full implementations
+4. **Refactor incrementally** to maintain test coverage
+5. **Document test class patterns** for team consistency
 
 ### Test Naming Convention
 ```typescript

@@ -12,6 +12,52 @@ Minimal resource resolver
 export interface IResourceResolver 
 ```
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[resourceIds](./ts-res.iresourceresolver.resourceids.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->&gt;
+
+
+</td><td>
+
+The resource IDs that this resolver can resolve.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>

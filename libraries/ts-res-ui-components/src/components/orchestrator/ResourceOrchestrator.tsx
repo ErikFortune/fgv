@@ -269,29 +269,6 @@ const ResourceOrchestratorInternal: React.FC<
     o11y.user.info('Filter reset');
   }, [filterState.actions, o11y.user]);
 
-  // Automatically apply filter when applied filter values change
-  // TEMPORARILY DISABLED to fix responsiveness issue
-  // React.useEffect(() => {
-  //   if (!resourceData.state.processedResources || !filterState.state.enabled) {
-  //     setFilterResult(null);
-  //     return;
-  //   }
-
-  //   const hasAppliedFilterValues = hasFilterValues(filterState.state.appliedValues);
-  //   if (!hasAppliedFilterValues) {
-  //     setFilterResult(null);
-  //     return;
-  //   }
-
-  //   // Apply filter automatically when appliedValues change using the applied values
-  //   performFiltering(filterState.state.appliedValues);
-  // }, [
-  //   filterState.state.appliedValues,
-  //   filterState.state.enabled,
-  //   resourceData.state.processedResources,
-  //   performFiltering
-  // ]);
-
   // Combined state
   const state: IOrchestratorState = useMemo(
     () => ({

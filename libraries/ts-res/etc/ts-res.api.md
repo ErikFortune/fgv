@@ -16,6 +16,7 @@ import { IReadOnlyResultMap } from '@fgv/ts-utils';
 import { JsonCompatible } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { ObjectConverter } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { ResultMap } from '@fgv/ts-utils';
@@ -471,6 +472,7 @@ class CompiledResourceCollection implements IResourceManager<IResource> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get qualifierTypes(): ReadOnlyQualifierTypeCollector;
+    get resourceIds(): ReadonlyArray<ResourceId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get resourceTypes(): ReadOnlyResourceTypeCollector;
@@ -1263,6 +1265,20 @@ const DefaultResourceTypes: ReadonlyArray<ResourceTypes.Config.IResourceTypeConf
 const DefaultSystemConfiguration: ISystemConfiguration;
 
 // @public
+class DeltaGenerator {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    protected constructor(params: IDeltaGeneratorParams);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params: IDeltaGeneratorParams): Result<DeltaGenerator>;
+    generate(options?: IDeltaGeneratorOptions): Result<ResourceManagerBuilder>;
+}
+
+// @public
 type EmptyBranchHandler = (branchNode: IReadOnlyResourceTreeNode<IResource>, failedChildNames: string[], resolver: ResourceResolver) => Result<JsonValue | undefined>;
 
 declare namespace Example {
@@ -1944,6 +1960,23 @@ interface IDecisionCreateParams<TVALUE extends JsonValue = JsonValue> {
 interface IDeclarationOptions {
     normalized?: boolean;
     showDefaults?: boolean;
+}
+
+// @public
+interface IDeltaGeneratorOptions {
+    context?: Context.IContextDecl;
+    resourceIds?: ReadonlyArray<string>;
+    skipUnchanged?: boolean;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IDeltaGeneratorParams {
+    baselineResolver: IResourceResolver;
+    deltaResolver: IResourceResolver;
+    logger?: Logging.ILogger;
+    resourceManager: ResourceManagerBuilder;
 }
 
 // @internal (undocumented)
@@ -2796,6 +2829,7 @@ export interface IResourceManager<TR extends IResource = IResource> {
     getBuiltResourceTree(): Result<IReadOnlyResourceTreeRoot<TR>>;
     readonly numCandidates: number;
     readonly numResources: number;
+    readonly resourceIds: ReadonlyArray<ResourceId>;
     validateContext(context: IContextDecl): Result<IValidatedContextDecl>;
 }
 
@@ -2819,6 +2853,7 @@ interface IResourceManagerCloneOptions extends IResourceDeclarationOptions {
 // @public
 export interface IResourceResolver {
     resolveComposedResourceValue(resource: string): Result<JsonValue>;
+    readonly resourceIds: ReadonlyArray<ResourceId>;
     withContext(context: Record<string, string>): Result<IResourceResolver>;
 }
 
@@ -4510,6 +4545,7 @@ export class ResourceManagerBuilder implements IResourceManager<Resource> {
     readonly qualifiers: IReadOnlyQualifierCollector;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get qualifierTypes(): ReadOnlyQualifierTypeCollector;
+    get resourceIds(): ReadonlyArray<ResourceId>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get resources(): Collections.IReadOnlyValidatingResultMap<ResourceId, ResourceBuilder>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4572,6 +4608,7 @@ export class ResourceResolver implements IResourceResolver {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     resolveResource(resource: IResource): Result<IResourceCandidate>;
     resolveResource(resource: string): Result<IResourceCandidate>;
+    get resourceIds(): ReadonlyArray<ResourceId>;
     readonly resourceManager: IResourceManager;
     withContext(context: Record<string, string>): Result<ResourceResolver>;
 }
@@ -4629,6 +4666,9 @@ declare namespace Resources {
         CandidateValue,
         ICandidateValueCollectorCreateParams,
         CandidateValueCollector,
+        IDeltaGeneratorParams,
+        IDeltaGeneratorOptions,
+        DeltaGenerator,
         IResourceCandidateCreateParams,
         ICandidateDeclOptions,
         ResourceCandidate,
@@ -5330,7 +5370,7 @@ details: string) => void;
 // src/packlets/resources/resource.ts:265:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/resources/resourceCandidate.ts:281:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/conditionSetResolutionResult.ts:56:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// src/packlets/runtime/resourceResolver.ts:178:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/runtime/resourceResolver.ts:185:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // src/packlets/runtime/resourceTreeResolver.ts:103:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 // (No @packageDocumentation comment for this package)

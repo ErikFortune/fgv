@@ -263,6 +263,27 @@ The [qualifier types](./ts-res.qualifiertypes.readonlyqualifiertypecollector.md)
 </td></tr>
 <tr><td>
 
+[resourceIds](./ts-res.resources.resourcemanagerbuilder.resourceids.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->&gt;
+
+
+</td><td>
+
+The resource IDs that this resource manager can resolve.
+
+
+</td></tr>
+<tr><td>
+
 [resources](./ts-res.resources.resourcemanagerbuilder.resources.md)
 
 

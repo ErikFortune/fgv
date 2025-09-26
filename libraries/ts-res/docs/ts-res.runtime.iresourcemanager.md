@@ -161,6 +161,27 @@ The number of resources in this resource manager.
 
 
 </td></tr>
+<tr><td>
+
+[resourceIds](./ts-res.runtime.iresourcemanager.resourceids.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->&gt;
+
+
+</td><td>
+
+The resource IDs that this resource manager can resolve.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

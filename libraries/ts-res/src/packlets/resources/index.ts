@@ -23,6 +23,7 @@
 export * from './candidateReducer';
 export * from './candidateValue';
 export * from './candidateValueCollector';
+export * from './deltaGenerator';
 export * from './resourceCandidate';
 export * from './resource';
 export * from './resourceBuilder';
