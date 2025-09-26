@@ -246,6 +246,27 @@ A [ReadOnlyQualifierTypeCollector](./ts-res.qualifiertypes.readonlyqualifiertype
 </td></tr>
 <tr><td>
 
+[resourceIds](./ts-res.runtime.compiledresourcecollection.resourceids.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ResourceId](./ts-res.resourceid.md)<!-- -->&gt;
+
+
+</td><td>
+
+The resource IDs contained in this compiled resource collection.
+
+
+</td></tr>
+<tr><td>
+
 [resourceTypes](./ts-res.runtime.compiledresourcecollection.resourcetypes.md)
 
 

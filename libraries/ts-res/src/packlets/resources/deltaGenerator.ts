@@ -26,7 +26,6 @@ import { Diff } from '@fgv/ts-json';
 import { ResourceId } from '../common';
 import { IResourceResolver } from '../common';
 import { ResourceManagerBuilder } from './resourceManagerBuilder';
-import { ResourceResolver } from '../runtime';
 import * as ResourceJson from '../resource-json';
 import * as Context from '../context';
 
@@ -229,8 +228,8 @@ export class DeltaGenerator {
 
   /**
    * Discovers all unique resource IDs from both baseline and delta resolvers.
-   * Creates a union of resource IDs from the baseline resource manager and delta resolver's
-   * resource manager to ensure comprehensive coverage of all resources.
+   * Creates a union of resource IDs from the baseline resource manager and delta resolver
+   * to ensure comprehensive coverage of all resources.
    *
    * @returns `Success` with array of unique resource IDs if successful, `Failure` otherwise.
    * @internal
@@ -241,20 +240,8 @@ export class DeltaGenerator {
       const baselineResourceIds = baselineResources.map((r) => r.id);
       this._logger.detail(`Found ${baselineResourceIds.length} resources in baseline`);
 
-      // Extract the delta resolver's resource manager to get its resource IDs
-      // Note: We need to cast to access the resourceManager property since IResourceResolver
-      // interface doesn't expose it, but the concrete ResourceResolver implementation does
-      const deltaResolverResourceManager = (this._deltaResolver as unknown as ResourceResolver)
-        .resourceManager;
-
-      if (!deltaResolverResourceManager || !deltaResolverResourceManager.builtResources) {
-        // Fallback: just use baseline resources if delta resolver doesn't expose resource manager
-        this._logger.warn('Delta resolver does not expose resource manager, using baseline resources only');
-        return succeed(baselineResourceIds);
-      }
-
-      // Get resource IDs from delta resolver's resource manager using the builtResources keys
-      const deltaResourceIds = Array.from(deltaResolverResourceManager.builtResources.keys());
+      // Get resource IDs from delta resolver using the public interface
+      const deltaResourceIds = this._deltaResolver.resourceIds;
       this._logger.detail(`Found ${deltaResourceIds.length} resources in delta`);
 
       // Create a union of resource IDs from both sources
@@ -392,8 +379,8 @@ export class DeltaGenerator {
 
     // Both resolvers have the resource - check for changes
     // At this point, both results are successful so values are guaranteed to exist
-    const baselineValue = baselineResult.value!;
-    const deltaValue = deltaResult.value!;
+    const baselineValue = baselineResult.value!; // Safe: baselineExists is true
+    const deltaValue = deltaResult.value!; // Safe: deltaExists is true
 
     // Check if values are identical
     if (skipUnchanged && this._areValuesIdentical(baselineValue, deltaValue)) {

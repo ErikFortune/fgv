@@ -40,6 +40,10 @@ class MockResourceResolver implements TsRes.IResourceResolver {
     this._context = context ?? {};
   }
 
+  public get resourceIds(): ReadonlyArray<TsRes.ResourceId> {
+    return Array.from(this._resources.keys()).sort() as TsRes.ResourceId[];
+  }
+
   public resolveComposedResourceValue(resource: string): Result<JsonValue> {
     const value = this._resources.get(resource);
     if (value === undefined) {
