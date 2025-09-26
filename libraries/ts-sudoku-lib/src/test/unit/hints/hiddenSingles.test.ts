@@ -22,12 +22,17 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
+import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
 import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
 import { ConfidenceLevels, TechniqueIds } from '../../../packlets/hints/types';
+
+/* eslint-enable @rushstack/packlets/mechanics */
 
 describe('HiddenSinglesProvider', () => {
   let provider: HiddenSinglesProvider;
@@ -51,7 +56,7 @@ describe('HiddenSinglesProvider', () => {
 
   describe('canProvideHints', () => {
     test('should return true for puzzle with empty cells', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1........',
         '.........',
         '.........',
@@ -62,13 +67,12 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.canProvideHints(state)).toBe(true);
+      expect(provider.canProvideHints(puzzle, state)).toBe(true);
     });
 
     test('should return false for completely filled puzzle', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -79,9 +83,8 @@ describe('HiddenSinglesProvider', () => {
         '678912345',
         '912345678'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.canProvideHints(state)).toBe(false);
+      expect(provider.canProvideHints(puzzle, state)).toBe(false);
     });
   });
 
@@ -89,7 +92,7 @@ describe('HiddenSinglesProvider', () => {
     test('should detect hidden single where value can only go in one cell in row', () => {
       // Create a scenario where 9 can only go in r0c8 in row 0
       // All other positions in row 0 are blocked by other 9s or filled
-      const rowPuzzle = createTestPuzzle([
+      const { puzzle: rowPuzzle, state: rowState } = createPuzzleAndState([
         '12345678.', // r0c8 is the only empty cell that can take 9
         '..9......', // 9 blocks column 2
         '...9.....', // 9 blocks column 3
@@ -100,9 +103,8 @@ describe('HiddenSinglesProvider', () => {
         '.........', // Empty row
         '.........' // Empty row
       ]);
-      const state = createPuzzleState(rowPuzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(rowPuzzle, rowState)).toSucceedAndSatisfy((hints) => {
         // Look for a hidden single where 9 goes in cell r0c8
         const hiddenSingleHint = hints.find(
           (hint) => hint.cellActions[0].cellId === 'r0c8' && hint.cellActions[0].value === 9
@@ -118,7 +120,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should create proper explanations for row-based hidden singles', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // r0c8 needs 9
         '..9......', // Blocks column 2
         '...9.....', // Blocks column 3
@@ -129,9 +131,8 @@ describe('HiddenSinglesProvider', () => {
         '.........', // Empty
         '.........' // Empty
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints.find((h) => h.cellActions[0].value === 9);
         if (hint) {
           const briefExplanation = hint.explanations.find((exp) => exp.level === 'brief');
@@ -142,7 +143,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should detect multiple hidden singles in different rows', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // r0c8 needs 9
         '91234567.', // r1c8 needs 8
         '..9......', // Blocks 9 in column 2
@@ -153,9 +154,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
 
         // Should find multiple hidden singles
@@ -174,22 +174,9 @@ describe('HiddenSinglesProvider', () => {
 
   describe('generateHints - hidden singles in columns', () => {
     test('should detect hidden single where value can only go in one cell in column', () => {
-      // Create a scenario where 8 can only go in one cell in column 0
-      const puzzle = createTestPuzzle([
-        '8........', // 8 in row 0
-        '.8.......', // 8 in row 1
-        '..8......', // 8 in row 2
-        '...8.....', // 8 in row 3
-        '....8....', // 8 in row 4
-        '.....8...', // 8 in row 5
-        '......8..', // 8 in row 6
-        '.......8.', // 8 in row 7
-        '.........' // Only row 8 missing 8, so r8c0 must contain 8
-      ]);
-
       // But we need to make sure 8 can only go in one cell in column 0
       // Add constraints so that only r8c0 can contain 8 in column 0
-      const modifiedPuzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1........', // Different value in r0c0
         '2........', // Different value in r1c0
         '3........', // Different value in r2c0
@@ -201,9 +188,7 @@ describe('HiddenSinglesProvider', () => {
         '.8.......' // r8c0 is empty, r8c1 has 8
       ]);
 
-      const state = createPuzzleState(modifiedPuzzle);
-
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hiddenSingle = hints.find(
           (hint) => hint.cellActions[0].cellId === 'r8c0' && hint.cellActions[0].value === 8
         );
@@ -217,7 +202,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should handle multiple values needing placement in same column', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1........', // Column 0 has 1
         '2.8......', // Column 0 has 2, row has 8
         '3..8.....', // Column 0 has 3, row has 8
@@ -228,9 +213,8 @@ describe('HiddenSinglesProvider', () => {
         '9.......8', // Column 0 has 9, row has 8
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // Should find at least one hidden single
         const columnHiddenSingles = hints.filter(
           (h) =>
@@ -242,7 +226,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should provide step-by-step column explanations', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1.8......',
         '2..8.....',
         '3...8....',
@@ -253,9 +237,8 @@ describe('HiddenSinglesProvider', () => {
         '9........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const columnHint = hints.find((h) =>
           h.explanations.some((exp) => exp.description.includes('column'))
         );
@@ -272,7 +255,7 @@ describe('HiddenSinglesProvider', () => {
   describe('generateHints - hidden singles in boxes', () => {
     test('should detect hidden single where value can only go in one cell in 3x3 box', () => {
       // Create a scenario where 7 can only go in one cell in the top-left box
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '123......', // Top-left box has 1,2,3
         '456......', // Top-left box has 4,5,6
         '78.......', // Top-left box has 7,8, leaving only r2c2 for 9
@@ -283,9 +266,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const boxHiddenSingle = hints.find(
           (hint) => hint.cellActions[0].cellId === 'r2c2' && hint.cellActions[0].value === 9
         );
@@ -300,7 +282,7 @@ describe('HiddenSinglesProvider', () => {
 
     test('should correctly identify different 3x3 boxes', () => {
       // Test middle box (box index 4)
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '.........',
         '.........',
         '.........',
@@ -311,9 +293,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const boxHiddenSingle = hints.find(
           (hint) => hint.cellActions[0].cellId === 'r5c5' && hint.cellActions[0].value === 9
         );
@@ -331,7 +312,7 @@ describe('HiddenSinglesProvider', () => {
     test('should remove duplicate hidden singles found in multiple units', () => {
       // Create a scenario where the same cell+value combination
       // might be found as hidden single in multiple units
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // r0c8 is constrained
         '.........',
         '.........',
@@ -342,9 +323,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '........9' // This creates constraints that might lead to duplicates
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // Check for duplicates by cell+value combination
         const cellValuePairs = hints.map(
           (hint) => `${hint.cellActions[0].cellId}-${hint.cellActions[0].value}`
@@ -359,7 +339,7 @@ describe('HiddenSinglesProvider', () => {
   describe('generateHints - complex scenarios', () => {
     test('should find multiple hidden singles in different units', () => {
       // Create a more complex puzzle with multiple hidden singles
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // Row constraint creates hidden single
         '.........',
         '.........',
@@ -370,9 +350,8 @@ describe('HiddenSinglesProvider', () => {
         '5........', // Column constraint
         '6........' // This leaves hidden singles in column 0
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
 
         // All should be valid hidden singles
@@ -387,7 +366,7 @@ describe('HiddenSinglesProvider', () => {
 
     test('should handle case where no hidden singles exist', () => {
       // Create a minimal puzzle where no hidden singles are obvious
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1........',
         '.........',
         '.........',
@@ -398,9 +377,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // May or may not find hidden singles depending on puzzle state
         // This is not an error case - just validates the method doesn't crash
         expect(Array.isArray(hints)).toBe(true);
@@ -410,7 +388,7 @@ describe('HiddenSinglesProvider', () => {
 
   describe('hint structure validation', () => {
     test('should create well-formed hidden single hints', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -421,9 +399,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -457,7 +434,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should include other candidate cells in relevant cells', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -468,9 +445,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -488,7 +464,7 @@ describe('HiddenSinglesProvider', () => {
 
   describe('explanation content validation', () => {
     test('should provide accurate brief explanations with unit information', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -499,9 +475,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
           const briefExplanation = hint.explanations.find((exp) => exp.level === 'brief');
@@ -520,7 +495,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should provide detailed explanations with analysis steps', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -531,9 +506,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
           const detailedExplanation = hint.explanations.find((exp) => exp.level === 'detailed');
@@ -549,7 +523,7 @@ describe('HiddenSinglesProvider', () => {
     });
 
     test('should provide educational explanations with learning context', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -560,9 +534,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
           const educationalExplanation = hint.explanations.find((exp) => exp.level === 'educational');
@@ -581,7 +554,7 @@ describe('HiddenSinglesProvider', () => {
 
   describe('option handling', () => {
     test('should respect maxHints option', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -592,15 +565,14 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state, { maxHints: 1 })).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state, { maxHints: 1 })).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeLessThanOrEqual(1);
       });
     });
 
     test('should respect minConfidence option', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -611,19 +583,18 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state, { minConfidence: ConfidenceLevels.HIGH })).toSucceedAndSatisfy(
-        (hints) => {
-          for (const hint of hints) {
-            expect(hint.confidence).toBeGreaterThanOrEqual(ConfidenceLevels.HIGH);
-          }
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: ConfidenceLevels.HIGH })
+      ).toSucceedAndSatisfy((hints) => {
+        for (const hint of hints) {
+          expect(hint.confidence).toBeGreaterThanOrEqual(ConfidenceLevels.HIGH);
         }
-      );
+      });
     });
 
     test('should filter by enabled techniques', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -634,11 +605,10 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
       // Should return hints when technique is enabled
       expect(
-        provider.generateHints(state, { enabledTechniques: [TechniqueIds.HIDDEN_SINGLES] })
+        provider.generateHints(puzzle, state, { enabledTechniques: [TechniqueIds.HIDDEN_SINGLES] })
       ).toSucceedAndSatisfy((hints) => {
         for (const hint of hints) {
           expect(hint.techniqueId).toBe(TechniqueIds.HIDDEN_SINGLES);
@@ -647,7 +617,7 @@ describe('HiddenSinglesProvider', () => {
 
       // Should return no hints when technique is not enabled
       expect(
-        provider.generateHints(state, { enabledTechniques: [TechniqueIds.NAKED_SINGLES] })
+        provider.generateHints(puzzle, state, { enabledTechniques: [TechniqueIds.NAKED_SINGLES] })
       ).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(0);
       });
@@ -657,7 +627,7 @@ describe('HiddenSinglesProvider', () => {
   describe('comprehensive detection scenarios', () => {
     test('should detect actual hidden singles with correct puzzle setup', () => {
       // Create a puzzle with a clear hidden single - 9 can only go in r0c8 in row 0
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // r0: missing 9, only r0c8 can take it
         '........9', // r1: 9 in column 8 (doesn't block r0c8)
         '.......9.', // r2: 9 in column 7
@@ -668,9 +638,8 @@ describe('HiddenSinglesProvider', () => {
         '..9......', // r7: 9 in column 2
         '.9.......' // r8: 9 in column 1
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hiddenSingles = hints.filter((h) => h.techniqueId === TechniqueIds.HIDDEN_SINGLES);
         expect(hiddenSingles.length).toBeGreaterThan(0);
 
@@ -684,7 +653,7 @@ describe('HiddenSinglesProvider', () => {
 
     test('should detect hidden singles in multiple unit types', () => {
       // Create a puzzle with hidden singles in rows, columns, and boxes
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // Row 0: 9 hidden single in r0c8
         '1......8.', // Row 1: column 0 has 1, can create column hidden single
         '2......7.', // Row 2: column 0 has 2
@@ -695,9 +664,8 @@ describe('HiddenSinglesProvider', () => {
         '7......2.', // Row 7: column 0 has 7
         '.......1.' // Row 8: missing 9 in column 0 (hidden single)
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hiddenSingles = hints.filter((h) => h.techniqueId === TechniqueIds.HIDDEN_SINGLES);
         expect(hiddenSingles.length).toBeGreaterThan(0);
 
@@ -714,7 +682,7 @@ describe('HiddenSinglesProvider', () => {
 
     test('should handle complex box scenarios', () => {
       // Create a scenario with hidden single in a 3x3 box
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '123......', // Top-left box: positions filled
         '456......', // Top-left box: more positions filled
         '78.......', // Top-left box: r2c2 is only empty spot, need to find what can go there
@@ -725,9 +693,8 @@ describe('HiddenSinglesProvider', () => {
         '..5......', // 5 in column 2, blocks r2c2 from having 5
         '..4......' // 4 in column 2, blocks r2c2 from having 4
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // The top-left box is nearly full, should create some hidden singles
         const boxHints = hints.filter(
           (h) =>
@@ -744,7 +711,7 @@ describe('HiddenSinglesProvider', () => {
   describe('helper method coverage', () => {
     test('should exercise candidate cell helper methods', () => {
       // Create puzzle that will trigger the helper methods for finding other candidate cells
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // Clear row scenario
         '.........',
         '.........',
@@ -755,16 +722,15 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // Even if no hints found, the methods should be exercised
         expect(Array.isArray(hints)).toBe(true);
       });
     });
 
     test('should create hints with relevant cells populated', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -775,9 +741,8 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         for (const hint of hints) {
           // Each hint should have relevant cells structure
           expect(hint.relevantCells).toBeDefined();
@@ -795,7 +760,7 @@ describe('HiddenSinglesProvider', () => {
   describe('error handling and edge cases', () => {
     test('should handle no hidden singles scenario gracefully', () => {
       // Create a puzzle with no clear hidden singles
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '.........',
         '.........',
         '.........',
@@ -806,16 +771,15 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // Should not crash, might return empty array
         expect(Array.isArray(hints)).toBe(true);
       });
     });
 
     test('should validate options correctly', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -826,20 +790,19 @@ describe('HiddenSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
       // Test various option combinations
-      expect(provider.generateHints(state, undefined)).toSucceed();
-      expect(provider.generateHints(state, {})).toSucceed();
-      expect(provider.generateHints(state, { maxHints: 5 })).toSucceed();
-      expect(provider.generateHints(state, { enabledTechniques: [] })).toSucceed();
+      expect(provider.generateHints(puzzle, state, undefined)).toSucceed();
+      expect(provider.generateHints(puzzle, state, {})).toSucceed();
+      expect(provider.generateHints(puzzle, state, { maxHints: 5 })).toSucceed();
+      expect(provider.generateHints(puzzle, state, { enabledTechniques: [] })).toSucceed();
     });
   });
 });
 
 // Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
+function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
+  const puzzleDesc: IPuzzleDescription = {
     id: 'test-puzzle',
     description: 'Test puzzle for hidden singles',
     type: 'sudoku' as PuzzleType,
@@ -848,10 +811,7 @@ function createTestPuzzle(rows: string[]): IPuzzleDescription {
     cols: 9,
     cells: rows.join('')
   };
-}
-
-function createPuzzleState(puzzleDesc: IPuzzleDescription): PuzzleState {
   const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
-  return session.state;
+  return { puzzle, state: session.state };
 }

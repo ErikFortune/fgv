@@ -23,14 +23,15 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { CellId, Ids, PuzzleState } from '../common';
+import { CellId, ICage, Puzzle, PuzzleState } from '../common';
 import { BaseHintProvider } from './baseHintProvider';
 import { ConfidenceLevels, IHint, IHintGenerationOptions, TechniqueIds } from './types';
 
 /**
- * Represents a unit type (row, column, or box) for hidden single analysis.
+ * Represents a unit type for hidden single analysis.
+ * Supports any cage type including standard constraints and variants.
  */
-type UnitType = 'row' | 'column' | 'box';
+type UnitType = string;
 
 /**
  * Information about a hidden single found in a specific unit.
@@ -66,28 +67,34 @@ export class HiddenSinglesProvider extends BaseHintProvider {
   }
 
   /**
-   * Determines if this provider can potentially generate hints for the given puzzle state.
+   * Determines if this provider can potentially generate hints for the given puzzle.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns true if there are empty cells that might have hidden singles
    */
-  public canProvideHints(state: PuzzleState): boolean {
-    const emptyCells = this.getEmptyCells(state);
+  public canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean {
+    const emptyCells = this.getEmptyCells(puzzle, state);
     return emptyCells.length > 0;
   }
 
   /**
-   * Generates all hidden single hints for the given puzzle state.
+   * Generates all hidden single hints for the given puzzle.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing array of hidden single hints
    */
-  public generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]> {
+  public generateHints(
+    puzzle: Puzzle,
+    state: PuzzleState,
+    options?: IHintGenerationOptions
+  ): Result<readonly IHint[]> {
     return this.validateOptions(options).onSuccess(() => {
       const hints: IHint[] = [];
-      const hiddenSingles = this._findAllHiddenSingles(state);
+      const hiddenSingles = this._findAllHiddenSingles(puzzle, state);
 
       for (const hiddenSingle of hiddenSingles) {
-        const hint = this._createHiddenSingleHint(hiddenSingle, state);
+        const hint = this._createHiddenSingleHint(hiddenSingle, puzzle, state);
         hints.push(hint);
       }
 
@@ -96,69 +103,55 @@ export class HiddenSinglesProvider extends BaseHintProvider {
   }
 
   /**
-   * Finds all hidden singles in the puzzle state.
+   * Finds all hidden singles in the puzzle using cage-based analysis.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Array of hidden single information
    */
-  private _findAllHiddenSingles(state: PuzzleState): IHiddenSingleInfo[] {
+  private _findAllHiddenSingles(puzzle: Puzzle, state: PuzzleState): IHiddenSingleInfo[] {
     const hiddenSingles: IHiddenSingleInfo[] = [];
 
-    // Check rows
-    for (let row = 0; row < 9; row++) {
-      hiddenSingles.push(...this._findHiddenSinglesInRow(row, state));
+    // Check all cages for hidden singles
+    for (const cage of puzzle.cages) {
+      hiddenSingles.push(...this._findHiddenSinglesInCage(cage, puzzle, state));
     }
 
-    // Check columns
-    for (let col = 0; col < 9; col++) {
-      hiddenSingles.push(...this._findHiddenSinglesInColumn(col, state));
-    }
-
-    // Check 3x3 boxes
-    for (let boxRow = 0; boxRow < 3; boxRow++) {
-      for (let boxCol = 0; boxCol < 3; boxCol++) {
-        hiddenSingles.push(...this._findHiddenSinglesInBox(boxRow, boxCol, state));
-      }
-    }
-
-    // Remove duplicates (a cell might be found as hidden single in multiple units)
+    // Remove duplicates (a cell might be found as hidden single in multiple cages)
     return this._removeDuplicateHiddenSingles(hiddenSingles);
   }
 
   /**
-   * Finds hidden singles in a specific row.
-   * @param row - The row index (0-8)
+   * Finds hidden singles in a specific cage using dynamic value analysis.
+   * @param cage - The cage to analyze
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
-   * @returns Array of hidden singles in this row
+   * @returns Array of hidden singles in this cage
    */
-  private _findHiddenSinglesInRow(row: number, state: PuzzleState): IHiddenSingleInfo[] {
+  private _findHiddenSinglesInCage(cage: ICage, puzzle: Puzzle, state: PuzzleState): IHiddenSingleInfo[] {
     const hiddenSingles: IHiddenSingleInfo[] = [];
+    const maxValue = Math.sqrt(puzzle.numRows * puzzle.numColumns);
 
-    // For each value 1-9, check if it can only go in one cell in this row
-    for (let value = 1; value <= 9; value++) {
+    // For each possible value, check if it can only go in one cell in this cage
+    for (let value = 1; value <= maxValue; value++) {
       const possibleCells: CellId[] = [];
 
-      for (let col = 0; col < 9; col++) {
-        const cellIdResult = Ids.cellId({ row, col });
-        if (cellIdResult.isSuccess()) {
-          const cellId = cellIdResult.value;
-          const candidates = this.getCandidates(cellId, state);
-
-          if (candidates.includes(value)) {
-            possibleCells.push(cellId);
-          }
+      for (const cellId of cage.cellIds) {
+        const candidates = this.getCandidates(cellId, puzzle, state);
+        if (candidates.includes(value)) {
+          possibleCells.push(cellId);
         }
       }
 
       // Hidden single: exactly one cell can contain this value
       if (possibleCells.length === 1) {
         const cellId = possibleCells[0];
-        const otherCandidateCells = this._getOtherCandidateCellsInRow(row, cellId, state);
+        const otherCandidateCells = cage.cellIds.filter((id: CellId) => id !== cellId && !state.hasValue(id));
 
         hiddenSingles.push({
           cellId,
           value,
-          unitType: 'row',
-          unitIndex: row,
+          unitType: cage.cageType as UnitType,
+          unitIndex: this._getCageDisplayIndex(cage),
           otherCandidateCells
         });
       }
@@ -168,166 +161,14 @@ export class HiddenSinglesProvider extends BaseHintProvider {
   }
 
   /**
-   * Finds hidden singles in a specific column.
-   * @param col - The column index (0-8)
-   * @param state - The current puzzle state
-   * @returns Array of hidden singles in this column
+   * Gets a display-friendly index for a cage.
+   * @param cage - The cage to get index for
+   * @returns Display index for the cage
    */
-  private _findHiddenSinglesInColumn(col: number, state: PuzzleState): IHiddenSingleInfo[] {
-    const hiddenSingles: IHiddenSingleInfo[] = [];
-
-    for (let value = 1; value <= 9; value++) {
-      const possibleCells: CellId[] = [];
-
-      for (let row = 0; row < 9; row++) {
-        const cellIdResult = Ids.cellId({ row, col });
-        if (cellIdResult.isSuccess()) {
-          const cellId = cellIdResult.value;
-          const candidates = this.getCandidates(cellId, state);
-
-          if (candidates.includes(value)) {
-            possibleCells.push(cellId);
-          }
-        }
-      }
-
-      if (possibleCells.length === 1) {
-        const cellId = possibleCells[0];
-        const otherCandidateCells = this._getOtherCandidateCellsInColumn(col, cellId, state);
-
-        hiddenSingles.push({
-          cellId,
-          value,
-          unitType: 'column',
-          unitIndex: col,
-          otherCandidateCells
-        });
-      }
-    }
-
-    return hiddenSingles;
-  }
-
-  /**
-   * Finds hidden singles in a specific 3x3 box.
-   * @param boxRow - The box row (0-2)
-   * @param boxCol - The box column (0-2)
-   * @param state - The current puzzle state
-   * @returns Array of hidden singles in this box
-   */
-  private _findHiddenSinglesInBox(boxRow: number, boxCol: number, state: PuzzleState): IHiddenSingleInfo[] {
-    const hiddenSingles: IHiddenSingleInfo[] = [];
-    const boxIndex = boxRow * 3 + boxCol;
-
-    for (let value = 1; value <= 9; value++) {
-      const possibleCells: CellId[] = [];
-
-      for (let r = boxRow * 3; r < (boxRow + 1) * 3; r++) {
-        for (let c = boxCol * 3; c < (boxCol + 1) * 3; c++) {
-          const cellIdResult = Ids.cellId({ row: r, col: c });
-          if (cellIdResult.isSuccess()) {
-            const cellId = cellIdResult.value;
-            const candidates = this.getCandidates(cellId, state);
-
-            if (candidates.includes(value)) {
-              possibleCells.push(cellId);
-            }
-          }
-        }
-      }
-
-      if (possibleCells.length === 1) {
-        const cellId = possibleCells[0];
-        const otherCandidateCells = this._getOtherCandidateCellsInBox(boxRow, boxCol, cellId, state);
-
-        hiddenSingles.push({
-          cellId,
-          value,
-          unitType: 'box',
-          unitIndex: boxIndex,
-          otherCandidateCells
-        });
-      }
-    }
-
-    return hiddenSingles;
-  }
-
-  /**
-   * Gets other cells in the same row that have candidates.
-   * @param row - The row index
-   * @param excludeCell - The cell to exclude from results
-   * @param state - The current puzzle state
-   * @returns Array of cell IDs with candidates in the same row
-   */
-  private _getOtherCandidateCellsInRow(row: number, excludeCell: CellId, state: PuzzleState): CellId[] {
-    const cells: CellId[] = [];
-
-    for (let col = 0; col < 9; col++) {
-      const cellIdResult = Ids.cellId({ row, col });
-      if (cellIdResult.isSuccess()) {
-        const cellId = cellIdResult.value;
-        if (cellId !== excludeCell && !state.hasValue(cellId)) {
-          cells.push(cellId);
-        }
-      }
-    }
-
-    return cells;
-  }
-
-  /**
-   * Gets other cells in the same column that have candidates.
-   * @param col - The column index
-   * @param excludeCell - The cell to exclude from results
-   * @param state - The current puzzle state
-   * @returns Array of cell IDs with candidates in the same column
-   */
-  private _getOtherCandidateCellsInColumn(col: number, excludeCell: CellId, state: PuzzleState): CellId[] {
-    const cells: CellId[] = [];
-
-    for (let row = 0; row < 9; row++) {
-      const cellIdResult = Ids.cellId({ row, col });
-      if (cellIdResult.isSuccess()) {
-        const cellId = cellIdResult.value;
-        if (cellId !== excludeCell && !state.hasValue(cellId)) {
-          cells.push(cellId);
-        }
-      }
-    }
-
-    return cells;
-  }
-
-  /**
-   * Gets other cells in the same box that have candidates.
-   * @param boxRow - The box row (0-2)
-   * @param boxCol - The box column (0-2)
-   * @param excludeCell - The cell to exclude from results
-   * @param state - The current puzzle state
-   * @returns Array of cell IDs with candidates in the same box
-   */
-  private _getOtherCandidateCellsInBox(
-    boxRow: number,
-    boxCol: number,
-    excludeCell: CellId,
-    state: PuzzleState
-  ): CellId[] {
-    const cells: CellId[] = [];
-
-    for (let r = boxRow * 3; r < (boxRow + 1) * 3; r++) {
-      for (let c = boxCol * 3; c < (boxCol + 1) * 3; c++) {
-        const cellIdResult = Ids.cellId({ row: r, col: c });
-        if (cellIdResult.isSuccess()) {
-          const cellId = cellIdResult.value;
-          if (cellId !== excludeCell && !state.hasValue(cellId)) {
-            cells.push(cellId);
-          }
-        }
-      }
-    }
-
-    return cells;
+  private _getCageDisplayIndex(cage: ICage): number {
+    // Extract numeric part from cage ID if available
+    const match = cage.id.match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
   }
 
   /**
@@ -353,10 +194,15 @@ export class HiddenSinglesProvider extends BaseHintProvider {
   /**
    * Creates a hint for a specific hidden single.
    * @param hiddenSingle - The hidden single information
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns A complete hint for this hidden single
    */
-  private _createHiddenSingleHint(hiddenSingle: IHiddenSingleInfo, state: PuzzleState): IHint {
+  private _createHiddenSingleHint(
+    hiddenSingle: IHiddenSingleInfo,
+    __puzzle: Puzzle,
+    __state: PuzzleState
+  ): IHint {
     const { cellId, value, unitType, unitIndex } = hiddenSingle;
 
     // Create cell action to set the value

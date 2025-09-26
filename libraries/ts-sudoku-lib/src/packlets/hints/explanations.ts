@@ -23,7 +23,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { PuzzleState } from '../common';
+import { Puzzle, PuzzleState } from '../common';
 import { IHintExplanationProvider } from './interfaces';
 import { ExplanationLevel, IHint, IHintExplanation, TechniqueId, TechniqueIds } from './types';
 
@@ -58,16 +58,21 @@ export class ExplanationRegistry {
   /**
    * Gets explanations for a specific hint.
    * @param hint - The hint to explain
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The puzzle state context
    * @returns Result containing the explanations
    */
-  public getExplanations(hint: IHint, state: PuzzleState): Result<readonly IHintExplanation[]> {
+  public getExplanations(
+    hint: IHint,
+    puzzle: Puzzle,
+    state: PuzzleState
+  ): Result<readonly IHintExplanation[]> {
     const provider = this._providers.get(hint.techniqueId);
     if (!provider) {
       return fail(`No explanation provider found for technique ${hint.techniqueId}`);
     }
 
-    return provider.generateExplanations(hint, state);
+    return provider.generateExplanations(hint, puzzle, state);
   }
 
   /**
@@ -80,9 +85,10 @@ export class ExplanationRegistry {
   public getExplanationAtLevel(
     hint: IHint,
     level: ExplanationLevel,
+    puzzle: Puzzle,
     state: PuzzleState
   ): Result<IHintExplanation> {
-    return this.getExplanations(hint, state).onSuccess((explanations) => {
+    return this.getExplanations(hint, puzzle, state).onSuccess((explanations) => {
       const explanation = explanations.find((exp) => exp.level === level);
       return explanation
         ? succeed(explanation)

@@ -23,7 +23,7 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { CellId, Ids, PuzzleState } from '../common';
+import { CellId, Ids, Puzzle, PuzzleState } from '../common';
 import { BaseHintProvider } from './baseHintProvider';
 import { ConfidenceLevels, IHint, IHintGenerationOptions, TechniqueIds } from './types';
 
@@ -50,30 +50,36 @@ export class NakedSinglesProvider extends BaseHintProvider {
   }
 
   /**
-   * Determines if this provider can potentially generate hints for the given puzzle state.
+   * Determines if this provider can potentially generate hints for the given puzzle.
    * Always returns true since naked singles can potentially exist in any incomplete puzzle.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns true if there are empty cells that might have naked singles
    */
-  public canProvideHints(state: PuzzleState): boolean {
+  public canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean {
     // Quick check: if there are empty cells, there might be naked singles
-    const emptyCells = this.getEmptyCells(state);
+    const emptyCells = this.getEmptyCells(puzzle, state);
     return emptyCells.length > 0;
   }
 
   /**
-   * Generates all naked single hints for the given puzzle state.
+   * Generates all naked single hints for the given puzzle.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing array of naked single hints
    */
-  public generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]> {
+  public generateHints(
+    puzzle: Puzzle,
+    state: PuzzleState,
+    options?: IHintGenerationOptions
+  ): Result<readonly IHint[]> {
     return this.validateOptions(options).onSuccess(() => {
       const hints: IHint[] = [];
-      const emptyCells = this.getEmptyCells(state);
+      const emptyCells = this.getEmptyCells(puzzle, state);
 
       for (const cellId of emptyCells) {
-        const candidates = this.getCandidates(cellId, state);
+        const candidates = this.getCandidates(cellId, puzzle, state);
 
         // A naked single has exactly one candidate
         if (candidates.length === 1) {

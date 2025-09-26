@@ -22,12 +22,15 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import { PuzzleSessionHints } from '../../../packlets/hints';
 import { PuzzleSession } from '../../../packlets/common';
 import { IPuzzleDescription, PuzzleType, Puzzles } from '../../../index';
 import { TechniqueIds } from '../../../packlets/hints/types';
 
+/* eslint-enable @rushstack/packlets/mechanics */
 describe('PuzzleSessionHints', () => {
   let session: PuzzleSession;
   let hintsSession: PuzzleSessionHints;
@@ -401,8 +404,6 @@ describe('PuzzleSessionHints', () => {
 
   describe('cage-related delegation', () => {
     test('should delegate cage operations for compatible puzzles', () => {
-      const cell = hintsSession.cells[0];
-
       // These methods should work even if there are no cages
       expect(typeof hintsSession.cageContainsValue('fake-cage', 5)).toBe('boolean');
 

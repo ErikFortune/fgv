@@ -267,7 +267,7 @@ export class PuzzleSessionHints {
    * @returns Result containing the best hint
    */
   public getHint(options?: IHintGenerationOptions): Result<IHint> {
-    return this._hintSystem.getBestHint(this._session.state, options);
+    return this._hintSystem.getBestHint(this._session.puzzle, this._session.state, options);
   }
 
   /**
@@ -283,10 +283,12 @@ export class PuzzleSessionHints {
     }
 
     // Generate new hints
-    return this._hintSystem.generateHints(this._session.state, options).onSuccess((hints) => {
-      this._updateCache(hints, options);
-      return succeed(hints);
-    });
+    return this._hintSystem
+      .generateHints(this._session.puzzle, this._session.state, options)
+      .onSuccess((hints) => {
+        this._updateCache(hints, options);
+        return succeed(hints);
+      });
   }
 
   /**
@@ -295,14 +297,16 @@ export class PuzzleSessionHints {
    * @returns Result with this instance if successful
    */
   public applyHint(hint: IHint): Result<this> {
-    return this._hintSystem.applyHint(hint, this._session.state).onSuccess((updates) => {
-      // Convert readonly array to mutable array for PuzzleSession.updateCells
-      const mutableUpdates: ICellState[] = [...updates];
-      return this._session.updateCells(mutableUpdates).onSuccess(() => {
-        this._invalidateCache();
-        return succeed(this);
+    return this._hintSystem
+      .applyHint(hint, this._session.puzzle, this._session.state)
+      .onSuccess((updates) => {
+        // Convert readonly array to mutable array for PuzzleSession.updateCells
+        const mutableUpdates: ICellState[] = [...updates];
+        return this._session.updateCells(mutableUpdates).onSuccess(() => {
+          this._invalidateCache();
+          return succeed(this);
+        });
       });
-    });
   }
 
   /**
@@ -348,7 +352,7 @@ export class PuzzleSessionHints {
    * @returns Result indicating validation success or failure
    */
   public validateHint(hint: IHint): Result<void> {
-    return this._hintSystem.validateHint(hint, this._session.state);
+    return this._hintSystem.validateHint(hint, this._session.puzzle, this._session.state);
   }
 
   /**
@@ -357,7 +361,7 @@ export class PuzzleSessionHints {
    * @returns Result containing boolean indicating availability
    */
   public hasHints(options?: IHintGenerationOptions): Result<boolean> {
-    return this._hintSystem.hasHints(this._session.state);
+    return this._hintSystem.hasHints(this._session.puzzle, this._session.state);
   }
 
   /**
@@ -370,7 +374,7 @@ export class PuzzleSessionHints {
     hintsByTechnique: Map<string, number>;
     hintsByDifficulty: Map<string, number>;
   }> {
-    return this._hintSystem.getHintStatistics(this._session.state);
+    return this._hintSystem.getHintStatistics(this._session.puzzle, this._session.state);
   }
 
   /**

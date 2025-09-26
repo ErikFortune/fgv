@@ -23,7 +23,7 @@
  */
 
 import { Result } from '@fgv/ts-utils';
-import { PuzzleState } from '../common';
+import { Puzzle, PuzzleState } from '../common';
 import { DifficultyLevel, IHint, IHintGenerationOptions, TechniqueId } from './types';
 
 /**
@@ -37,20 +37,26 @@ export interface IHintProvider {
   readonly priority: number;
 
   /**
-   * Determines if this provider can potentially generate hints for the given puzzle state.
+   * Determines if this provider can potentially generate hints for the given puzzle.
    * This should be a fast check to avoid expensive hint generation when not applicable.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns true if this provider might be able to generate hints
    */
-  canProvideHints(state: PuzzleState): boolean;
+  canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
 
   /**
-   * Generates all possible hints using this technique for the given puzzle state.
+   * Generates all possible hints using this technique for the given puzzle.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing array of hints, or failure if generation fails
    */
-  generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+  generateHints(
+    puzzle: Puzzle,
+    state: PuzzleState,
+    options?: IHintGenerationOptions
+  ): Result<readonly IHint[]>;
 }
 
 /**
@@ -88,19 +94,25 @@ export interface IHintRegistry {
 
   /**
    * Generates hints using all applicable providers.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing array of hints from all providers
    */
-  generateAllHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+  generateAllHints(
+    puzzle: Puzzle,
+    state: PuzzleState,
+    options?: IHintGenerationOptions
+  ): Result<readonly IHint[]>;
 
   /**
    * Gets the best available hint based on difficulty and confidence.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing the best hint, or failure if no hints available
    */
-  getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+  getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
 
   /**
    * Gets all registered technique IDs.
@@ -122,11 +134,13 @@ export interface IHintExplanationProvider {
   /**
    * Generates explanations for a specific hint.
    * @param hint - The hint to explain
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The puzzle state context
    * @returns Result containing array of explanations at different levels
    */
   generateExplanations(
     hint: IHint,
+    puzzle: Puzzle,
     state: PuzzleState
   ): Result<readonly import('./types').IHintExplanation[]>;
 }
@@ -139,16 +153,22 @@ export interface IHintApplicator {
   /**
    * Validates that a hint can be safely applied to the given state.
    * @param hint - The hint to validate
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result indicating validation success or failure with details
    */
-  validateHint(hint: IHint, state: PuzzleState): Result<void>;
+  validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
 
   /**
    * Applies a hint to the puzzle state, generating the necessary cell updates.
    * @param hint - The hint to apply
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result containing the cell state updates needed to apply the hint
    */
-  applyHint(hint: IHint, state: PuzzleState): Result<readonly import('../common').ICellState[]>;
+  applyHint(
+    hint: IHint,
+    puzzle: Puzzle,
+    state: PuzzleState
+  ): Result<readonly import('../common').ICellState[]>;
 }

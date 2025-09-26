@@ -23,7 +23,7 @@
  */
 
 import { Result, fail, succeed, mapResults } from '@fgv/ts-utils';
-import { PuzzleState } from '../common';
+import { Puzzle, PuzzleState } from '../common';
 import { IHintProvider, IHintRegistry } from './interfaces';
 import { DifficultyLevel, IHint, IHintGenerationOptions, TechniqueId } from './types';
 
@@ -128,13 +128,18 @@ export class HintRegistry implements IHintRegistry {
 
   /**
    * Generates hints using all applicable providers.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing array of hints from all providers
    */
-  public generateAllHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]> {
+  public generateAllHints(
+    puzzle: Puzzle,
+    state: PuzzleState,
+    options?: IHintGenerationOptions
+  ): Result<readonly IHint[]> {
     const applicableProviders = this.getProviders(options).filter((provider) =>
-      provider.canProvideHints(state)
+      provider.canProvideHints(puzzle, state)
     );
 
     if (applicableProviders.length === 0) {
@@ -142,7 +147,7 @@ export class HintRegistry implements IHintRegistry {
     }
 
     // Generate hints from all applicable providers
-    const hintResults = applicableProviders.map((provider) => provider.generateHints(state, options));
+    const hintResults = applicableProviders.map((provider) => provider.generateHints(puzzle, state, options));
 
     return mapResults(hintResults).onSuccess((allHints) => {
       // Flatten the array of hint arrays
@@ -163,12 +168,13 @@ export class HintRegistry implements IHintRegistry {
 
   /**
    * Gets the best available hint based on difficulty and confidence.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing the best hint, or failure if no hints available
    */
-  public getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint> {
-    return this.generateAllHints(state, options).onSuccess((hints) => {
+  public getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint> {
+    return this.generateAllHints(puzzle, state, options).onSuccess((hints) => {
       if (hints.length === 0) {
         return fail('No hints available for the current puzzle state');
       }

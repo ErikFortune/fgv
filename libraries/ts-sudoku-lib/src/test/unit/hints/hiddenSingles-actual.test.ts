@@ -22,12 +22,17 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
+import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
 import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
-import { ConfidenceLevels, TechniqueIds } from '../../../packlets/hints/types';
+import { TechniqueIds } from '../../../packlets/hints/types';
+
+/* eslint-enable @rushstack/packlets/mechanics */
 
 describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
   let provider: HiddenSinglesProvider;
@@ -40,7 +45,7 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
     test('should detect actual hidden singles in row scenario', () => {
       // This puzzle is carefully designed to have a hidden single in row 0
       // Value 9 can only go in r0c0 because other positions are blocked
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '.23456789', // r0: 9 can only go in r0c0 (hidden single in row 0)
         '123......', // Fill some cells to create constraints
         '...9.....', // 9 in column 3, blocks r0c3
@@ -51,9 +56,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
         '........9', // 9 in column 8, blocks r0c8
         '.........' // Empty row
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
 
         // Should find hidden single for 9 in r0c0
@@ -75,21 +79,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
     });
 
     test('should detect actual hidden singles in column scenario', () => {
-      // Create a puzzle with a hidden single in column 0
-      const puzzle = createTestPuzzle([
-        '12......9', // Column 0 starts with 1
-        '23.......', // Column 0 has 2
-        '34.......',
-        '45.......',
-        '56.......',
-        '67.......',
-        '78.......',
-        '.9.......', // 9 in row 7, not in column 0
-        '.........' // r8c0 is only place for 9 in column 0 (hidden single)
-      ]);
-
-      // Actually, let me create a cleaner example
-      const cleanPuzzle = createTestPuzzle([
+      // Create a cleaner example with hidden single scenario
+      const { puzzle, state } = createPuzzleAndState([
         '.........',
         '9........', // 9 in r1c0, but leaves r0c0 open for different value
         '.........',
@@ -100,9 +91,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
         '.........',
         '.......89' // Constrain some values to create a hidden single scenario
       ]);
-      const state = createPuzzleState(cleanPuzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // Should find some hidden singles in this scenario
         const hiddenSingles = hints.filter((h) => h.techniqueId === TechniqueIds.HIDDEN_SINGLES);
         expect(hiddenSingles.length).toBeGreaterThanOrEqual(0); // May be 0 in this simple case
@@ -119,7 +109,7 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
 
     test('should generate comprehensive explanations when hidden singles found', () => {
       // Use a puzzle that definitely has hidden singles
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '123456789', // Complete row to create constraints
         '456......', // Partial row
         '789......',
@@ -130,9 +120,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hiddenSingles = hints.filter((h) => h.techniqueId === TechniqueIds.HIDDEN_SINGLES);
 
         for (const hint of hiddenSingles) {
@@ -162,7 +151,7 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
 
     test('should handle box-based hidden singles', () => {
       // Create puzzle with hidden single in a 3x3 box
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12.......', // Top-left box partially filled
         '34.......',
         '56.......', // r2c2 empty, but value 7 can only go there in the box
@@ -173,9 +162,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const boxHints = hints.filter(
           (h) =>
             h.techniqueId === TechniqueIds.HIDDEN_SINGLES &&
@@ -192,7 +180,7 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
   describe('unit name generation', () => {
     test('should create hints with proper unit names in explanations', () => {
       // Create any puzzle that might have hidden singles
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -203,9 +191,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         for (const hint of hints) {
           // Check that explanations contain proper unit references
           const descriptions = hint.explanations.map((exp) => exp.description);
@@ -266,10 +253,9 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
       ];
 
       for (const scenario of scenarios) {
-        const puzzle = createTestPuzzle(scenario);
-        const state = createPuzzleState(puzzle);
+        const { puzzle, state } = createPuzzleAndState(scenario);
 
-        expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+        expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
           // Just verify that we can process each scenario without errors
           expect(Array.isArray(hints)).toBe(true);
 
@@ -289,8 +275,8 @@ describe('HiddenSinglesProvider - Actual Hidden Singles Detection', () => {
 });
 
 // Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
+function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
+  const puzzleDesc: IPuzzleDescription = {
     id: 'test-puzzle',
     description: 'Test puzzle for hidden singles',
     type: 'sudoku' as PuzzleType,
@@ -299,10 +285,7 @@ function createTestPuzzle(rows: string[]): IPuzzleDescription {
     cols: 9,
     cells: rows.join('')
   };
-}
-
-function createPuzzleState(puzzleDesc: IPuzzleDescription): PuzzleState {
   const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
-  return session.state;
+  return { puzzle, state: session.state };
 }

@@ -23,7 +23,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { CellId, Ids, PuzzleState } from '../common';
+import { CellId, Puzzle, PuzzleState } from '../common';
 import { IHintProvider } from './interfaces';
 import {
   ConfidenceLevel,
@@ -39,7 +39,7 @@ import {
 } from './types';
 
 /**
- * Configuration for a BaseHintProvider instance.
+ * Configuration for a {@link BaseHintProvider | BaseHintProvider} instance.
  * @public
  */
 export interface IBaseHintProviderConfig {
@@ -72,15 +72,16 @@ export abstract class BaseHintProvider implements IHintProvider {
 
   /**
    * Abstract method to be implemented by concrete providers.
-   * Determines if this provider can potentially generate hints for the given puzzle state.
+   * Determines if this provider can potentially generate hints for the given puzzle.
    */
-  public abstract canProvideHints(state: PuzzleState): boolean;
+  public abstract canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
 
   /**
    * Abstract method to be implemented by concrete providers.
-   * Generates all possible hints using this technique for the given puzzle state.
+   * Generates all possible hints using this technique for the given puzzle.
    */
   public abstract generateHints(
+    puzzle: Puzzle,
     state: PuzzleState,
     options?: IHintGenerationOptions
   ): Result<readonly IHint[]>;
@@ -237,103 +238,45 @@ export abstract class BaseHintProvider implements IHintProvider {
   }
 
   /**
-   * Gets all empty cells in the puzzle state.
+   * Gets all empty cells in the puzzle.
+   * @param puzzle - The puzzle structure
    * @param state - The puzzle state to analyze
    * @returns Array of cell IDs that are empty
    */
-  protected getEmptyCells(state: PuzzleState): CellId[] {
-    const emptyCells: CellId[] = [];
-
-    // Iterate through all possible cell positions (assuming 9x9 grid)
-    for (let row = 0; row < 9; row++) {
-      for (let col = 0; col < 9; col++) {
-        const cellIdResult = Ids.cellId({ row, col });
-        if (cellIdResult.isSuccess() && !state.hasValue(cellIdResult.value)) {
-          emptyCells.push(cellIdResult.value);
-        }
-      }
-    }
-
-    return emptyCells;
+  protected getEmptyCells(puzzle: Puzzle, state: PuzzleState): CellId[] {
+    return puzzle.getEmptyCells(state).map((cell) => cell.id);
   }
 
   /**
-   * Gets the possible candidate values for a specific cell.
-   * This is a basic implementation that can be overridden by subclasses.
+   * Gets the possible candidate values for a specific cell using cage-based constraints.
+   * This implementation works with any puzzle variant by checking all applicable cages.
    * @param cellId - The cell to analyze
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
-   * @returns Array of possible values (1-9) for the cell
+   * @returns Array of possible values for the cell
    */
-  protected getCandidates(cellId: CellId, state: PuzzleState): number[] {
+  protected getCandidates(cellId: CellId, puzzle: Puzzle, state: PuzzleState): number[] {
     if (state.hasValue(cellId)) {
       return [];
     }
 
-    const candidates: number[] = [];
+    // Get maximum value based on grid size (typically sqrt of total cells)
+    const maxValue = Math.sqrt(puzzle.numRows * puzzle.numColumns);
+
+    // Find all cages that contain this cell
+    const applicableCages = puzzle.cages.filter((cage) => cage.containsCell(cellId));
+
+    // Collect all values that are forbidden due to cage constraints
     const usedValues = new Set<number>();
 
-    // Extract row and column from cellId (format "[A-Z][0-9]", e.g., "A1", "B2")
-    const cellStr = cellId.toString();
-    if (cellStr.length !== 2) {
-      return [];
+    for (const cage of applicableCages) {
+      const cageValues = cage.containedValues(state);
+      cageValues.forEach((value) => usedValues.add(value));
     }
 
-    const rowChar = cellStr.charCodeAt(0);
-    const colChar = cellStr.charCodeAt(1);
-
-    // Validate format and extract coordinates
-    if (
-      rowChar < 'A'.charCodeAt(0) ||
-      rowChar > 'I'.charCodeAt(0) ||
-      colChar < '1'.charCodeAt(0) ||
-      colChar > '9'.charCodeAt(0)
-    ) {
-      return [];
-    }
-
-    const row = rowChar - 'A'.charCodeAt(0); // A=0, B=1, ..., I=8
-    const col = colChar - '1'.charCodeAt(0); // 1=0, 2=1, ..., 9=8
-
-    // Check row for used values
-    for (let c = 0; c < 9; c++) {
-      const checkIdResult = Ids.cellId({ row, col: c });
-      if (checkIdResult.isSuccess()) {
-        const contents = state.getCellContents(checkIdResult.value).orDefault();
-        if (contents?.value) {
-          usedValues.add(contents.value);
-        }
-      }
-    }
-
-    // Check column for used values
-    for (let r = 0; r < 9; r++) {
-      const checkIdResult = Ids.cellId({ row: r, col });
-      if (checkIdResult.isSuccess()) {
-        const contents = state.getCellContents(checkIdResult.value).orDefault();
-        if (contents?.value) {
-          usedValues.add(contents.value);
-        }
-      }
-    }
-
-    // Check 3x3 box for used values
-    const boxStartRow = Math.floor(row / 3) * 3;
-    const boxStartCol = Math.floor(col / 3) * 3;
-
-    for (let r = boxStartRow; r < boxStartRow + 3; r++) {
-      for (let c = boxStartCol; c < boxStartCol + 3; c++) {
-        const checkIdResult = Ids.cellId({ row: r, col: c });
-        if (checkIdResult.isSuccess()) {
-          const contents = state.getCellContents(checkIdResult.value).orDefault();
-          if (contents?.value) {
-            usedValues.add(contents.value);
-          }
-        }
-      }
-    }
-
-    // Generate candidates (values not used in row, column, or box)
-    for (let value = 1; value <= 9; value++) {
+    // Generate candidates (values not used in any applicable cage)
+    const candidates: number[] = [];
+    for (let value = 1; value <= maxValue; value++) {
       if (!usedValues.has(value)) {
         candidates.push(value);
       }

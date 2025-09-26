@@ -22,12 +22,17 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import { NakedSinglesProvider } from '../../../packlets/hints/nakedSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
+import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
 import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
 import { ConfidenceLevels, TechniqueIds, ConfidenceLevel } from '../../../packlets/hints/types';
+
+/* eslint-enable @rushstack/packlets/mechanics */
 
 describe('NakedSinglesProvider', () => {
   let provider: NakedSinglesProvider;
@@ -51,7 +56,7 @@ describe('NakedSinglesProvider', () => {
 
   describe('canProvideHints', () => {
     test('should return true for puzzle with empty cells', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -62,13 +67,12 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.canProvideHints(state)).toBe(true);
+      expect(provider.canProvideHints(puzzle, state)).toBe(true);
     });
 
     test('should return false for completely filled puzzle', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -79,16 +83,15 @@ describe('NakedSinglesProvider', () => {
         '678912345',
         '912345678'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.canProvideHints(state)).toBe(false);
+      expect(provider.canProvideHints(puzzle, state)).toBe(false);
     });
   });
 
   describe('generateHints - basic naked singles', () => {
     test('should detect single naked single in simple scenario', () => {
       // Create a puzzle where cell r0c8 can only be 9
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // r0c8 must be 9
         '456789123',
         '789123456',
@@ -99,9 +102,8 @@ describe('NakedSinglesProvider', () => {
         '678912345',
         '91234567.' // r8c8 has multiple candidates
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(1);
 
         const hint = hints[0];
@@ -119,7 +121,7 @@ describe('NakedSinglesProvider', () => {
 
     test('should detect multiple naked singles', () => {
       // Create a puzzle where multiple cells have only one candidate
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // r0c8 must be 9
         '45678912.', // r1c8 must be 3
         '789123456',
@@ -130,9 +132,8 @@ describe('NakedSinglesProvider', () => {
         '678912345',
         '912345678'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThanOrEqual(2);
 
         // Check that all hints are naked singles with high confidence
@@ -158,7 +159,7 @@ describe('NakedSinglesProvider', () => {
 
     test('should not generate hints when no naked singles exist', () => {
       // Create a puzzle where all empty cells have multiple candidates
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1........',
         '.........',
         '.........',
@@ -169,9 +170,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(0);
       });
     });
@@ -179,7 +179,7 @@ describe('NakedSinglesProvider', () => {
 
   describe('generateHints - constraint scenarios', () => {
     test('should detect naked single constrained by row', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // All values 1-8 in row, only 9 possible in r0c8
         '.........',
         '.........',
@@ -190,9 +190,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints.find((h) => h.cellActions[0].cellId === 'r0c8');
         expect(hint).toBeDefined();
         expect(hint!.cellActions[0].value).toBe(9);
@@ -200,7 +199,7 @@ describe('NakedSinglesProvider', () => {
     });
 
     test('should detect naked single constrained by column', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '1........',
         '2........',
         '3........',
@@ -211,9 +210,8 @@ describe('NakedSinglesProvider', () => {
         '8........',
         '.........' // r8c0 must be 9 (only value not in column)
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints.find((h) => h.cellActions[0].cellId === 'r8c0');
         expect(hint).toBeDefined();
         expect(hint!.cellActions[0].value).toBe(9);
@@ -222,7 +220,7 @@ describe('NakedSinglesProvider', () => {
 
     test('should detect naked single constrained by 3x3 box', () => {
       // Add 7, 8 to complete constraints for a naked single
-      const finalCells = [
+      const { puzzle, state } = createPuzzleAndState([
         '127......',
         '348......',
         '56.......',
@@ -232,12 +230,9 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........',
         '.........'
-      ];
+      ]);
 
-      const boxPuzzle = createTestPuzzle(finalCells);
-      const state = createPuzzleState(boxPuzzle);
-
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints.find((h) => h.cellActions[0].cellId === 'r2c2');
         expect(hint).toBeDefined();
         expect(hint!.cellActions[0].value).toBe(9);
@@ -247,7 +242,7 @@ describe('NakedSinglesProvider', () => {
 
   describe('generateHints - edge cases', () => {
     test('should handle empty puzzle gracefully', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '.........',
         '.........',
         '.........',
@@ -258,15 +253,14 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(0);
       });
     });
 
     test('should handle nearly complete puzzle', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -277,9 +271,8 @@ describe('NakedSinglesProvider', () => {
         '678912345',
         '91234567.' // Only one empty cell
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(1);
         expect(hints[0].cellActions[0].cellId).toBe('r8c8');
         expect(hints[0].cellActions[0].value).toBe(8);
@@ -287,7 +280,7 @@ describe('NakedSinglesProvider', () => {
     });
 
     test('should respect maxHints option', () => {
-      const multiHintPuzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // Multiple naked singles possible
         '45678912.',
         '78912345.',
@@ -298,15 +291,14 @@ describe('NakedSinglesProvider', () => {
         '678912345',
         '912345678'
       ]);
-      const state = createPuzzleState(multiHintPuzzle);
 
-      expect(provider.generateHints(state, { maxHints: 2 })).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state, { maxHints: 2 })).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeLessThanOrEqual(2);
       });
     });
 
     test('should respect minConfidence option', () => {
-      const confidencePuzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -317,20 +309,19 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(confidencePuzzle);
 
       // All naked singles should have high confidence, so this should work
-      expect(provider.generateHints(state, { minConfidence: ConfidenceLevels.HIGH })).toSucceedAndSatisfy(
-        (hints) => {
-          for (const hint of hints) {
-            expect(hint.confidence).toBeGreaterThanOrEqual(ConfidenceLevels.HIGH);
-          }
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: ConfidenceLevels.HIGH })
+      ).toSucceedAndSatisfy((hints) => {
+        for (const hint of hints) {
+          expect(hint.confidence).toBeGreaterThanOrEqual(ConfidenceLevels.HIGH);
         }
-      );
+      });
 
       // No hints should pass a confidence filter higher than maximum
       expect(
-        provider.generateHints(state, { minConfidence: 6 as unknown as ConfidenceLevel })
+        provider.generateHints(puzzle, state, { minConfidence: 6 as unknown as ConfidenceLevel })
       ).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(0);
       });
@@ -339,7 +330,7 @@ describe('NakedSinglesProvider', () => {
 
   describe('hint structure validation', () => {
     test('should create well-formed hints', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -350,9 +341,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
 
         const hint = hints[0];
@@ -395,7 +385,7 @@ describe('NakedSinglesProvider', () => {
     });
 
     test('should include relevant cells that constrain the naked single', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.', // All constraints in same row
         '.........',
         '.........',
@@ -406,9 +396,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints.find((h) => h.cellActions[0].cellId === 'r0c8');
         expect(hint).toBeDefined();
 
@@ -427,7 +416,7 @@ describe('NakedSinglesProvider', () => {
 
   describe('explanation content validation', () => {
     test('should provide accurate brief explanations', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -438,9 +427,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints[0];
         const briefExplanation = hint.explanations.find((exp) => exp.level === 'brief');
         expect(briefExplanation).toBeDefined();
@@ -453,7 +441,7 @@ describe('NakedSinglesProvider', () => {
     });
 
     test('should provide detailed explanations with step-by-step instructions', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -464,9 +452,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints[0];
         const detailedExplanation = hint.explanations.find((exp) => exp.level === 'detailed');
         expect(detailedExplanation).toBeDefined();
@@ -479,7 +466,7 @@ describe('NakedSinglesProvider', () => {
     });
 
     test('should provide educational explanations with learning context', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -490,9 +477,8 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         const hint = hints[0];
         const educationalExplanation = hint.explanations.find((exp) => exp.level === 'educational');
         expect(educationalExplanation).toBeDefined();
@@ -509,7 +495,7 @@ describe('NakedSinglesProvider', () => {
 
   describe('option validation', () => {
     test('should validate invalid maxHints option', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -520,13 +506,14 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state, { maxHints: -1 })).toFailWith(/maxHints cannot be negative/);
+      expect(provider.generateHints(puzzle, state, { maxHints: -1 })).toFailWith(
+        /maxHints cannot be negative/
+      );
     });
 
     test('should validate invalid minConfidence option', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -537,21 +524,20 @@ describe('NakedSinglesProvider', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(provider.generateHints(state, { minConfidence: 0 as unknown as ConfidenceLevel })).toFailWith(
-        /minConfidence must be between 1 and 5/
-      );
-      expect(provider.generateHints(state, { minConfidence: 6 as unknown as ConfidenceLevel })).toFailWith(
-        /minConfidence must be between 1 and 5/
-      );
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: 0 as unknown as ConfidenceLevel })
+      ).toFailWith(/minConfidence must be between 1 and 5/);
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: 6 as unknown as ConfidenceLevel })
+      ).toFailWith(/minConfidence must be between 1 and 5/);
     });
   });
 });
 
 // Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
+function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
+  const puzzleDesc: IPuzzleDescription = {
     id: 'test-puzzle',
     description: 'Test puzzle for naked singles',
     type: 'sudoku' as PuzzleType,
@@ -560,10 +546,7 @@ function createTestPuzzle(rows: string[]): IPuzzleDescription {
     cols: 9,
     cells: rows.join('')
   };
-}
-
-function createPuzzleState(puzzleDesc: IPuzzleDescription): PuzzleState {
   const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
-  return session.state;
+  return { puzzle, state: session.state };
 }

@@ -23,7 +23,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { ICellState, PuzzleState } from '../common';
+import { ICellState, Puzzle, PuzzleState } from '../common';
 import { ExplanationFormatter } from './explanations';
 import { HintRegistry } from './hintRegistry';
 import { HiddenSinglesProvider } from './hiddenSingles';
@@ -49,10 +49,11 @@ export class DefaultHintApplicator implements IHintApplicator {
   /**
    * Validates that a hint can be safely applied to the given state.
    * @param hint - The hint to validate
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result indicating validation success or failure with details
    */
-  public validateHint(hint: IHint, state: PuzzleState): Result<void> {
+  public validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void> {
     // Check that all cell actions are valid
     for (const action of hint.cellActions) {
       // Only support set-value actions for now
@@ -76,8 +77,9 @@ export class DefaultHintApplicator implements IHintApplicator {
         return fail(`No value specified for set-value action on cell ${action.cellId}`);
       }
 
-      if (action.value < 1 || action.value > 9) {
-        return fail(`Invalid value ${action.value} for cell ${action.cellId} (must be 1-9)`);
+      const maxValue = Math.sqrt(puzzle.numRows * puzzle.numColumns);
+      if (action.value < 1 || action.value > maxValue) {
+        return fail(`Invalid value ${action.value} for cell ${action.cellId} (must be 1-${maxValue})`);
       }
     }
 
@@ -87,11 +89,12 @@ export class DefaultHintApplicator implements IHintApplicator {
   /**
    * Applies a hint to the puzzle state, generating the necessary cell updates.
    * @param hint - The hint to apply
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result containing the cell state updates needed to apply the hint
    */
-  public applyHint(hint: IHint, state: PuzzleState): Result<readonly ICellState[]> {
-    return this.validateHint(hint, state).onSuccess(() => {
+  public applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]> {
+    return this.validateHint(hint, puzzle, state).onSuccess(() => {
       const updates: ICellState[] = [];
 
       for (const action of hint.cellActions) {
@@ -211,42 +214,50 @@ export class HintSystem {
 
   /**
    * Generates all available hints for the current puzzle state.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing array of hints
    */
-  public generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]> {
-    return this._registry.generateAllHints(state, options);
+  public generateHints(
+    puzzle: Puzzle,
+    state: PuzzleState,
+    options?: IHintGenerationOptions
+  ): Result<readonly IHint[]> {
+    return this._registry.generateAllHints(puzzle, state, options);
   }
 
   /**
    * Gets the best available hint for the current puzzle state.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @param options - Optional generation options
    * @returns Result containing the best hint
    */
-  public getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint> {
-    return this._registry.getBestHint(state, options);
+  public getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint> {
+    return this._registry.getBestHint(puzzle, state, options);
   }
 
   /**
    * Applies a hint to generate cell state updates.
    * @param hint - The hint to apply
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result containing the cell updates
    */
-  public applyHint(hint: IHint, state: PuzzleState): Result<readonly ICellState[]> {
-    return this._applicator.applyHint(hint, state);
+  public applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]> {
+    return this._applicator.applyHint(hint, puzzle, state);
   }
 
   /**
    * Validates that a hint can be applied to the current state.
    * @param hint - The hint to validate
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result indicating validation success or failure
    */
-  public validateHint(hint: IHint, state: PuzzleState): Result<void> {
-    return this._applicator.validateHint(hint, state);
+  public validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void> {
+    return this._applicator.validateHint(hint, puzzle, state);
   }
 
   /**
@@ -289,26 +300,31 @@ export class HintSystem {
 
   /**
    * Checks if the puzzle state has any available hints.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result containing boolean indicating if hints are available
    */
-  public hasHints(state: PuzzleState): Result<boolean> {
-    return this.generateHints(state, { maxHints: 1 }).onSuccess((hints) => {
+  public hasHints(puzzle: Puzzle, state: PuzzleState): Result<boolean> {
+    return this.generateHints(puzzle, state, { maxHints: 1 }).onSuccess((hints) => {
       return succeed(hints.length > 0);
     });
   }
 
   /**
    * Gets statistics about available hints for the current state.
+   * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
    * @returns Result containing hint statistics
    */
-  public getHintStatistics(state: PuzzleState): Result<{
+  public getHintStatistics(
+    puzzle: Puzzle,
+    state: PuzzleState
+  ): Result<{
     totalHints: number;
     hintsByTechnique: Map<string, number>;
     hintsByDifficulty: Map<string, number>;
   }> {
-    return this.generateHints(state).onSuccess((hints) => {
+    return this.generateHints(puzzle, state).onSuccess((hints) => {
       const hintsByTechnique = new Map<string, number>();
       const hintsByDifficulty = new Map<string, number>();
 

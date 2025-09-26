@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import {
   ExplanationFormatter,
@@ -31,6 +33,7 @@ import {
 import { NakedSinglesProvider } from '../../../packlets/hints/nakedSingles';
 import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
+import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
 import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
 import {
@@ -43,6 +46,8 @@ import {
 } from '../../../packlets/hints/types';
 import { IHintExplanationProvider } from '../../../packlets/hints/interfaces';
 import { CellId } from '../../../packlets/common/common';
+
+/* eslint-enable @rushstack/packlets/mechanics */
 
 describe('ExplanationFormatter', () => {
   describe('formatExplanation', () => {
@@ -147,12 +152,13 @@ describe('Explanation Content Validation', () => {
   let nakedSinglesProvider: NakedSinglesProvider;
   let hiddenSinglesProvider: HiddenSinglesProvider;
   let testState: PuzzleState;
+  let testPuzzle: Puzzle;
 
   beforeEach(() => {
     nakedSinglesProvider = NakedSinglesProvider.create().orThrow();
     hiddenSinglesProvider = HiddenSinglesProvider.create().orThrow();
 
-    const puzzle = createTestPuzzle([
+    const puzzleDesc = createTestPuzzle([
       '12345678.', // Creates naked single at r0c8 = 9
       '.........',
       '.........',
@@ -163,12 +169,14 @@ describe('Explanation Content Validation', () => {
       '.........',
       '.........'
     ]);
-    testState = createPuzzleState(puzzle);
+    const result = createPuzzleAndState(puzzleDesc);
+    testPuzzle = result.puzzle;
+    testState = result.state;
   });
 
   describe('naked singles explanations', () => {
     test('should provide contextually accurate explanations', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -195,7 +203,7 @@ describe('Explanation Content Validation', () => {
     });
 
     test('should provide step-by-step instructions', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
           const detailedExp = hint.explanations.find((exp) => exp.level === 'detailed');
@@ -212,7 +220,7 @@ describe('Explanation Content Validation', () => {
     });
 
     test('should provide helpful tips', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -232,7 +240,7 @@ describe('Explanation Content Validation', () => {
 
   describe('hidden singles explanations', () => {
     test('should explain unit-based reasoning', () => {
-      expect(hiddenSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(hiddenSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -247,7 +255,7 @@ describe('Explanation Content Validation', () => {
     });
 
     test('should differentiate from naked singles in explanations', () => {
-      expect(hiddenSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(hiddenSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
           const educationalExp = hint.explanations.find((exp) => exp.level === 'educational');
@@ -266,7 +274,7 @@ describe('Explanation Content Validation', () => {
       const providers = [nakedSinglesProvider, hiddenSinglesProvider];
 
       for (const provider of providers) {
-        expect(provider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+        expect(provider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
           if (hints.length > 0) {
             const hint = hints[0];
 
@@ -289,7 +297,7 @@ describe('Explanation Content Validation', () => {
     });
 
     test('should provide meaningful content at each level', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -317,7 +325,7 @@ describe('Explanation Content Validation', () => {
 
   describe('explanation accuracy', () => {
     test('should reference correct cell and value in explanations', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
           const cellId = hint.cellActions[0].cellId;
@@ -343,7 +351,7 @@ describe('Explanation Content Validation', () => {
       const providers = [nakedSinglesProvider, hiddenSinglesProvider];
 
       for (const provider of providers) {
-        expect(provider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+        expect(provider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
           if (hints.length > 0) {
             const hint = hints[0];
 
@@ -449,7 +457,7 @@ describe('Explanation Content Validation', () => {
 
   describe('formatting quality', () => {
     test('should produce well-formatted text for all explanation levels', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -467,7 +475,7 @@ describe('Explanation Content Validation', () => {
     });
 
     test('should handle special characters and formatting in explanations', () => {
-      expect(nakedSinglesProvider.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedSinglesProvider.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -489,6 +497,7 @@ describe('ExplanationRegistry', () => {
   let mockProvider: IHintExplanationProvider;
   let testHint: IHint;
   let testState: PuzzleState;
+  let testPuzzle: Puzzle;
 
   beforeEach(() => {
     registry = new ExplanationRegistry();
@@ -512,7 +521,7 @@ describe('ExplanationRegistry', () => {
     };
 
     // Create test hint and state
-    const puzzle = createTestPuzzle([
+    const puzzleDesc = createTestPuzzle([
       '12345678.',
       '.........',
       '.........',
@@ -523,7 +532,9 @@ describe('ExplanationRegistry', () => {
       '.........',
       '.........'
     ]);
-    testState = createPuzzleState(puzzle);
+    const result = createPuzzleAndState(puzzleDesc);
+    testPuzzle = result.puzzle;
+    testState = result.state;
 
     testHint = {
       techniqueId: TechniqueIds.NAKED_SINGLES,
@@ -574,19 +585,21 @@ describe('ExplanationRegistry', () => {
     test('should return explanations from registered provider', () => {
       expect(registry.registerProvider(mockProvider)).toSucceed();
 
-      expect(registry.getExplanations(testHint, testState)).toSucceedAndSatisfy((explanations) => {
-        expect(explanations).toHaveLength(2);
-        expect(explanations[0].level).toBe('brief');
-        expect(explanations[0].title).toBe('Mock Brief');
-        expect(explanations[1].level).toBe('detailed');
-        expect(explanations[1].title).toBe('Mock Detailed');
-      });
+      expect(registry.getExplanations(testHint, testPuzzle, testState)).toSucceedAndSatisfy(
+        (explanations) => {
+          expect(explanations).toHaveLength(2);
+          expect(explanations[0].level).toBe('brief');
+          expect(explanations[0].title).toBe('Mock Brief');
+          expect(explanations[1].level).toBe('detailed');
+          expect(explanations[1].title).toBe('Mock Detailed');
+        }
+      );
 
       expect(mockProvider.generateExplanations).toHaveBeenCalledWith(testHint, testState);
     });
 
     test('should fail when no provider registered for technique', () => {
-      expect(registry.getExplanations(testHint, testState)).toFailWith(
+      expect(registry.getExplanations(testHint, testPuzzle, testState)).toFailWith(
         /no explanation provider found.*naked-singles/i
       );
     });
@@ -598,9 +611,11 @@ describe('ExplanationRegistry', () => {
       };
 
       expect(registry.registerProvider(emptyProvider)).toSucceed();
-      expect(registry.getExplanations(testHint, testState)).toSucceedAndSatisfy((explanations) => {
-        expect(explanations).toHaveLength(0);
-      });
+      expect(registry.getExplanations(testHint, testPuzzle, testState)).toSucceedAndSatisfy(
+        (explanations) => {
+          expect(explanations).toHaveLength(0);
+        }
+      );
     });
   });
 
@@ -610,14 +625,14 @@ describe('ExplanationRegistry', () => {
     });
 
     test('should return explanation at requested level', () => {
-      expect(registry.getExplanationAtLevel(testHint, 'brief', testState)).toSucceedAndSatisfy(
+      expect(registry.getExplanationAtLevel(testHint, 'brief', testPuzzle, testState)).toSucceedAndSatisfy(
         (explanation) => {
           expect(explanation.level).toBe('brief');
           expect(explanation.title).toBe('Mock Brief');
         }
       );
 
-      expect(registry.getExplanationAtLevel(testHint, 'detailed', testState)).toSucceedAndSatisfy(
+      expect(registry.getExplanationAtLevel(testHint, 'detailed', testPuzzle, testState)).toSucceedAndSatisfy(
         (explanation) => {
           expect(explanation.level).toBe('detailed');
           expect(explanation.title).toBe('Mock Detailed');
@@ -626,14 +641,14 @@ describe('ExplanationRegistry', () => {
     });
 
     test('should fail when requested level not available', () => {
-      expect(registry.getExplanationAtLevel(testHint, 'educational', testState)).toFailWith(
+      expect(registry.getExplanationAtLevel(testHint, 'educational', testPuzzle, testState)).toFailWith(
         /no explanation available.*educational.*naked-singles/i
       );
     });
 
     test('should fail when no provider registered', () => {
       const registry2 = new ExplanationRegistry();
-      expect(registry2.getExplanationAtLevel(testHint, 'brief', testState)).toFailWith(
+      expect(registry2.getExplanationAtLevel(testHint, 'brief', testPuzzle, testState)).toFailWith(
         /no explanation provider found.*naked-singles/i
       );
     });
@@ -824,8 +839,8 @@ function createTestPuzzle(rows: string[]): IPuzzleDescription {
   };
 }
 
-function createPuzzleState(puzzleDesc: IPuzzleDescription): PuzzleState {
+function createPuzzleAndState(puzzleDesc: IPuzzleDescription): { puzzle: Puzzle; state: PuzzleState } {
   const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
-  return session.state;
+  return { puzzle, state: session.state };
 }

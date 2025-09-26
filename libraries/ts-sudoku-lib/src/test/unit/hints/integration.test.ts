@@ -22,19 +22,24 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import { HintSystem } from '../../../packlets/hints/hints';
 import { PuzzleSessionHints } from '../../../packlets/hints';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
+import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
 import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
 import { ConfidenceLevels } from '../../../packlets/hints/types';
+
+/* eslint-enable @rushstack/packlets/mechanics */
 
 describe('Hint System Integration', () => {
   describe('real puzzle scenarios', () => {
     test('should work with classic beginner Sudoku puzzle', () => {
       // A well-known beginner puzzle with naked and hidden singles
-      const beginnerPuzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -47,9 +52,8 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(beginnerPuzzle);
 
-      expect(hintSystem.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         // Should find multiple hints in a beginner puzzle
         expect(hints.length).toBeGreaterThan(0);
 
@@ -75,7 +79,7 @@ describe('Hint System Integration', () => {
     });
 
     test('should handle puzzle progression through hint application', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle } = createPuzzleAndState([
         '12345678.', // Simple case with one naked single
         '.........',
         '.........',
@@ -87,20 +91,20 @@ describe('Hint System Integration', () => {
         '.........'
       ]);
 
-      const session = PuzzleSession.create(Puzzles.Any.create(puzzle).orThrow()).orThrow();
+      const session = PuzzleSession.create(puzzle).orThrow();
       const hintSystem = HintSystem.create().orThrow();
 
       // Get initial hints
-      const initialHints = hintSystem.generateHints(session.state).orThrow();
+      const initialHints = hintSystem.generateHints(puzzle, session.state).orThrow();
       expect(initialHints.length).toBeGreaterThan(0);
 
       // Apply first hint
       const firstHint = initialHints[0];
-      const updates = hintSystem.applyHint(firstHint, session.state).orThrow();
+      const updates = hintSystem.applyHint(firstHint, puzzle, session.state).orThrow();
       session.updateCells([...updates]).orThrow(); // Convert readonly to mutable
 
       // Should be able to get hints for the new state
-      const newHints = hintSystem.generateHints(session.state).orThrow();
+      const newHints = hintSystem.generateHints(puzzle, session.state).orThrow();
 
       // The number of available hints should change (may increase or decrease)
       expect(Array.isArray(newHints)).toBe(true);
@@ -115,7 +119,7 @@ describe('Hint System Integration', () => {
     });
 
     test('should find no hints in completed puzzle', () => {
-      const completedPuzzle = createTestPuzzle([
+      const { puzzle: completedPuzzle, state: completedState } = createPuzzleAndState([
         '534678912',
         '672195348',
         '198342567',
@@ -128,24 +132,23 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(completedPuzzle);
 
-      expect(hintSystem.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(completedPuzzle, completedState)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(0);
       });
 
-      expect(hintSystem.hasHints(state)).toSucceedAndSatisfy((hasHints) => {
+      expect(hintSystem.hasHints(completedPuzzle, completedState)).toSucceedAndSatisfy((hasHints) => {
         expect(hasHints).toBe(false);
       });
 
-      expect(hintSystem.getBestHint(state)).toFailWith(/No hints available/);
+      expect(hintSystem.getBestHint(completedPuzzle, completedState)).toFailWith(/No hints available/);
     });
 
     test('should work with different puzzle difficulties', () => {
       const hintSystem = HintSystem.create().orThrow();
 
       // Easy puzzle - should have many hints available
-      const easyPuzzle = createTestPuzzle([
+      const { puzzle: easyPuzzle, state: easyState } = createPuzzleAndState([
         '1234567.9',
         '567891234',
         '891234567',
@@ -156,9 +159,8 @@ describe('Hint System Integration', () => {
         '456789123',
         '789123456'
       ]);
-      const easyState = createPuzzleState(easyPuzzle);
 
-      expect(hintSystem.generateHints(easyState)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(easyPuzzle, easyState)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
         // Easy puzzles should have high-confidence hints
         for (const hint of hints) {
@@ -167,7 +169,7 @@ describe('Hint System Integration', () => {
       });
 
       // Sparse puzzle - may have fewer obvious hints
-      const sparsePuzzle = createTestPuzzle([
+      const { puzzle: sparsePuzzle, state: sparseState } = createPuzzleAndState([
         '1........',
         '.........2',
         '..3......',
@@ -178,9 +180,8 @@ describe('Hint System Integration', () => {
         '7........',
         '........8'
       ]);
-      const sparseState = createPuzzleState(sparsePuzzle);
 
-      expect(hintSystem.generateHints(sparseState)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(sparsePuzzle, sparseState)).toSucceedAndSatisfy((hints) => {
         // May have few or no obvious hints
         expect(hints.length).toBeGreaterThanOrEqual(0);
       });
@@ -189,7 +190,7 @@ describe('Hint System Integration', () => {
 
   describe('PuzzleSessionHints integration', () => {
     test('should integrate seamlessly with PuzzleSessionHints wrapper', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle } = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -201,7 +202,7 @@ describe('Hint System Integration', () => {
         '....8..79'
       ]);
 
-      const session = PuzzleSession.create(Puzzles.Any.create(puzzle).orThrow()).orThrow();
+      const session = PuzzleSession.create(puzzle).orThrow();
       const hintsSession = PuzzleSessionHints.create(session).orThrow();
 
       // Should be able to get hints through wrapper
@@ -219,7 +220,7 @@ describe('Hint System Integration', () => {
     });
 
     test('should cache hints appropriately in PuzzleSessionHints', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -231,7 +232,7 @@ describe('Hint System Integration', () => {
         '.........'
       ]);
 
-      const session = PuzzleSession.create(Puzzles.Any.create(puzzle).orThrow()).orThrow();
+      const session = PuzzleSession.create(puzzle).orThrow();
       const hintsSession = PuzzleSessionHints.create(session).orThrow();
 
       // Multiple calls should be efficient (testing caching indirectly)
@@ -249,7 +250,7 @@ describe('Hint System Integration', () => {
     });
 
     test('should support hint application through wrapper', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -261,7 +262,7 @@ describe('Hint System Integration', () => {
         '.........'
       ]);
 
-      const session = PuzzleSession.create(Puzzles.Any.create(puzzle).orThrow()).orThrow();
+      const session = PuzzleSession.create(puzzle).orThrow();
       const hintsSession = PuzzleSessionHints.create(session).orThrow();
 
       const hints = hintsSession.getAllHints().orThrow();
@@ -285,7 +286,7 @@ describe('Hint System Integration', () => {
   describe('error handling and edge cases', () => {
     test('should handle invalid puzzle states gracefully', () => {
       // Create a puzzle with contradictory values (shouldn't be possible in normal usage)
-      const invalidPuzzle = createTestPuzzle([
+      const { puzzle: invalidPuzzle, state: invalidState } = createPuzzleAndState([
         '11.......', // Invalid: two 1s in same row
         '.........',
         '.........',
@@ -298,16 +299,15 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(invalidPuzzle);
 
       // System should not crash, even with invalid state
-      expect(hintSystem.generateHints(state)).toSucceed();
-      expect(hintSystem.hasHints(state)).toSucceed();
-      expect(hintSystem.getHintStatistics(state)).toSucceed();
+      expect(hintSystem.generateHints(invalidPuzzle, invalidState)).toSucceed();
+      expect(hintSystem.hasHints(invalidPuzzle, invalidState)).toSucceed();
+      expect(hintSystem.getHintStatistics(invalidPuzzle, invalidState)).toSucceed();
     });
 
     test('should handle empty puzzle gracefully', () => {
-      const emptyPuzzle = createTestPuzzle([
+      const { puzzle: emptyPuzzle, state: emptyState } = createPuzzleAndState([
         '.........',
         '.........',
         '.........',
@@ -320,20 +320,19 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(emptyPuzzle);
 
-      expect(hintSystem.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(emptyPuzzle, emptyState)).toSucceedAndSatisfy((hints) => {
         // Empty puzzle should have no obvious hints
         expect(hints).toHaveLength(0);
       });
 
-      expect(hintSystem.hasHints(state)).toSucceedAndSatisfy((hasHints) => {
+      expect(hintSystem.hasHints(emptyPuzzle, emptyState)).toSucceedAndSatisfy((hasHints) => {
         expect(hasHints).toBe(false);
       });
     });
 
     test('should handle puzzles with minimal clues', () => {
-      const minimalPuzzle = createTestPuzzle([
+      const { puzzle: minimalPuzzle, state: minimalState } = createPuzzleAndState([
         '1........',
         '.........',
         '.........',
@@ -346,12 +345,11 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(minimalPuzzle);
 
       // Should not crash with minimal input
-      expect(hintSystem.generateHints(state)).toSucceed();
-      expect(hintSystem.hasHints(state)).toSucceed();
-      expect(hintSystem.getHintStatistics(state)).toSucceed();
+      expect(hintSystem.generateHints(minimalPuzzle, minimalState)).toSucceed();
+      expect(hintSystem.hasHints(minimalPuzzle, minimalState)).toSucceed();
+      expect(hintSystem.getHintStatistics(minimalPuzzle, minimalState)).toSucceed();
     });
 
     test('should handle configuration edge cases', () => {
@@ -361,7 +359,7 @@ describe('Hint System Integration', () => {
         enableHiddenSingles: false
       }).orThrow();
 
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -372,17 +370,16 @@ describe('Hint System Integration', () => {
         '.........',
         '.........'
       ]);
-      const state = createPuzzleState(puzzle);
 
-      expect(emptySystem.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(emptySystem.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         expect(hints).toHaveLength(0);
       });
 
-      expect(emptySystem.getBestHint(state)).toFailWith(/No hints available/);
+      expect(emptySystem.getBestHint(puzzle, state)).toFailWith(/No hints available/);
     });
 
     test('should validate hint system consistency across multiple calls', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -395,14 +392,13 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(puzzle);
 
       // Multiple calls should produce consistent results
       const calls = 5;
       const allHints = [];
 
       for (let i = 0; i < calls; i++) {
-        const hints = hintSystem.generateHints(state).orThrow();
+        const hints = hintSystem.generateHints(puzzle, state).orThrow();
         allHints.push(hints);
       }
 
@@ -415,7 +411,7 @@ describe('Hint System Integration', () => {
       // Best hints should be consistent
       for (let i = 0; i < calls; i++) {
         if (allHints[i].length > 0) {
-          const bestHint = hintSystem.getBestHint(state).orThrow();
+          const bestHint = hintSystem.getBestHint(puzzle, state).orThrow();
           expect(bestHint.cellActions[0].cellId).toBeDefined();
           expect(bestHint.cellActions[0].value).toBeDefined();
         }
@@ -425,7 +421,7 @@ describe('Hint System Integration', () => {
 
   describe('performance and scalability', () => {
     test('should handle hint generation efficiently', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -438,11 +434,10 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(puzzle);
 
       // Measure hint generation time (should be reasonable)
       const startTime = Date.now();
-      const hints = hintSystem.generateHints(state).orThrow();
+      const hints = hintSystem.generateHints(puzzle, state).orThrow();
       const endTime = Date.now();
 
       expect(hints.length).toBeGreaterThanOrEqual(0);
@@ -453,7 +448,7 @@ describe('Hint System Integration', () => {
     });
 
     test('should handle multiple hint requests efficiently', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -466,15 +461,14 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(puzzle);
 
       // Multiple rapid hint requests should all succeed
       const requests = 10;
       const startTime = Date.now();
 
       for (let i = 0; i < requests; i++) {
-        expect(hintSystem.generateHints(state)).toSucceed();
-        expect(hintSystem.hasHints(state)).toSucceed();
+        expect(hintSystem.generateHints(puzzle, state)).toSucceed();
+        expect(hintSystem.hasHints(puzzle, state)).toSucceed();
       }
 
       const endTime = Date.now();
@@ -487,7 +481,7 @@ describe('Hint System Integration', () => {
 
   describe('educational content quality', () => {
     test('should provide educational value in explanations', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -500,9 +494,8 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(puzzle);
 
-      expect(hintSystem.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -526,7 +519,7 @@ describe('Hint System Integration', () => {
     });
 
     test('should provide progressive learning from brief to educational', () => {
-      const puzzle = createTestPuzzle([
+      const { puzzle, state } = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -539,9 +532,8 @@ describe('Hint System Integration', () => {
       ]);
 
       const hintSystem = HintSystem.create().orThrow();
-      const state = createPuzzleState(puzzle);
 
-      expect(hintSystem.generateHints(state)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
         if (hints.length > 0) {
           const hint = hints[0];
 
@@ -565,8 +557,8 @@ describe('Hint System Integration', () => {
 });
 
 // Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
+function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
+  const puzzleDesc: IPuzzleDescription = {
     id: 'integration-test-puzzle',
     description: 'Integration test puzzle for hint system',
     type: 'sudoku' as PuzzleType,
@@ -575,10 +567,7 @@ function createTestPuzzle(rows: string[]): IPuzzleDescription {
     cols: 9,
     cells: rows.join('')
   };
-}
-
-function createPuzzleState(puzzleDesc: IPuzzleDescription): PuzzleState {
   const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
-  return session.state;
+  return { puzzle, state: session.state };
 }

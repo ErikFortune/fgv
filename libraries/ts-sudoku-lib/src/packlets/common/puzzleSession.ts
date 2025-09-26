@@ -125,6 +125,13 @@ export class PuzzleSession {
   }
 
   /**
+   * The puzzle structure for this session.
+   */
+  public get puzzle(): Puzzle {
+    return this._puzzle;
+  }
+
+  /**
    * Index of the next step in this puzzle session.
    */
   public get nextStep(): number {

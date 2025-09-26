@@ -101,12 +101,7 @@ export class Puzzle {
     /* c8 ignore next - ?? is defense in depth */
     extraCages = extraCages ?? [];
 
-    if (puzzle.rows !== 9) {
-      throw new Error(`Puzzle '${puzzle.description}' unsupported row count ${puzzle.rows}`);
-    }
-    if (puzzle.cols !== 9) {
-      throw new Error(`Puzzle '${puzzle.description}' unsupported column count ${puzzle.cols}`);
-    }
+    // Support any grid size - remove hardcoded 9x9 restriction
     if (puzzle.cells.length !== puzzle.rows * puzzle.cols) {
       throw new Error(
         `Puzzle '${puzzle.description}" expected ${puzzle.rows * puzzle.cols} cells, found ${

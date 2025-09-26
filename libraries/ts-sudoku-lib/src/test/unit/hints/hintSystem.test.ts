@@ -22,20 +22,25 @@
  * SOFTWARE.
  */
 
+/* eslint-disable @rushstack/packlets/mechanics */
+
 import '@fgv/ts-utils-jest';
 import { HintSystem, DefaultHintApplicator } from '../../../packlets/hints/hints';
-import { PuzzleState, CellId, PuzzleSession } from '../../../packlets/common';
+import { Puzzle, PuzzleState, CellId, PuzzleSession } from '../../../packlets/common';
 import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
-import { TechniqueIds, ConfidenceLevels } from '../../../packlets/hints/types';
+import { TechniqueIds, ConfidenceLevels, IHint } from '../../../packlets/hints/types';
+
+/* eslint-enable @rushstack/packlets/mechanics */
 
 describe('HintSystem', () => {
   let hintSystem: HintSystem;
   let testState: PuzzleState;
+  let testPuzzle: Puzzle;
 
   beforeEach(() => {
     hintSystem = HintSystem.create().orThrow();
 
-    const puzzle = createTestPuzzle([
+    const result = createPuzzleAndState([
       '12345678.', // Creates naked single at r0c8 = 9
       '.........',
       '.........',
@@ -46,7 +51,8 @@ describe('HintSystem', () => {
       '.........',
       '.........'
     ]);
-    testState = createPuzzleState(puzzle);
+    testPuzzle = result.puzzle;
+    testState = result.state;
   });
 
   describe('creation', () => {
@@ -81,7 +87,7 @@ describe('HintSystem', () => {
 
   describe('generateHints', () => {
     test('should generate hints for puzzle state', () => {
-      expect(hintSystem.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThan(0);
 
         for (const hint of hints) {
@@ -100,7 +106,7 @@ describe('HintSystem', () => {
         enabledTechniques: [TechniqueIds.NAKED_SINGLES]
       };
 
-      expect(hintSystem.generateHints(testState, options)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(testPuzzle, testState, options)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeLessThanOrEqual(1);
 
         for (const hint of hints) {
@@ -113,7 +119,7 @@ describe('HintSystem', () => {
 
   describe('getBestHint', () => {
     test('should return single best hint', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         expect(hint.cellActions.length).toBeGreaterThan(0);
         expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
 
@@ -123,7 +129,7 @@ describe('HintSystem', () => {
     });
 
     test('should fail when no hints available', () => {
-      const completePuzzle = createTestPuzzle([
+      const { puzzle: completePuzzle, state: completeState } = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -134,14 +140,13 @@ describe('HintSystem', () => {
         '678912345',
         '912345678'
       ]);
-      const completeState = createPuzzleState(completePuzzle);
 
-      expect(hintSystem.getBestHint(completeState)).toFailWith(/No hints available/);
+      expect(hintSystem.getBestHint(completePuzzle, completeState)).toFailWith(/No hints available/);
     });
 
     test('should respect filtering options', () => {
       expect(
-        hintSystem.getBestHint(testState, {
+        hintSystem.getBestHint(testPuzzle, testState, {
           enabledTechniques: [TechniqueIds.HIDDEN_SINGLES]
         })
       ).toSucceedAndSatisfy((hint) => {
@@ -152,8 +157,8 @@ describe('HintSystem', () => {
 
   describe('applyHint', () => {
     test('should generate cell updates from hint', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
-        expect(hintSystem.applyHint(hint, testState)).toSucceedAndSatisfy((updates) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        expect(hintSystem.applyHint(hint, testPuzzle, testState)).toSucceedAndSatisfy((updates) => {
           expect(updates.length).toBeGreaterThan(0);
 
           const update = updates[0];
@@ -186,8 +191,8 @@ describe('HintSystem', () => {
       session.updateCellNotes('r0c8', [1, 2, 9]).orThrow();
       const stateWithNotes = session.state;
 
-      expect(hintSystem.getBestHint(stateWithNotes)).toSucceedAndSatisfy((hint) => {
-        expect(hintSystem.applyHint(hint, stateWithNotes)).toSucceedAndSatisfy((updates) => {
+      expect(hintSystem.getBestHint(testPuzzle, stateWithNotes)).toSucceedAndSatisfy((hint) => {
+        expect(hintSystem.applyHint(hint, testPuzzle, stateWithNotes)).toSucceedAndSatisfy((updates) => {
           const update = updates[0];
           expect(update.notes).toEqual([1, 2, 9]);
           expect(update.value).toBe(9);
@@ -198,15 +203,15 @@ describe('HintSystem', () => {
 
   describe('validateHint', () => {
     test('should validate correct hint', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
-        expect(hintSystem.validateHint(hint, testState)).toSucceed();
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        expect(hintSystem.validateHint(hint, testPuzzle, testState)).toSucceed();
       });
     });
 
     test('should reject hint for already filled cell', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         // Create a modified state where the target cell is already filled
-        const filledPuzzle = createTestPuzzle([
+        const { puzzle: filledPuzzle, state: filledState } = createPuzzleAndState([
           '123456789', // All cells filled
           '.........',
           '.........',
@@ -217,14 +222,13 @@ describe('HintSystem', () => {
           '.........',
           '.........'
         ]);
-        const filledState = createPuzzleState(filledPuzzle);
 
-        expect(hintSystem.validateHint(hint, filledState)).toFailWith(/already has value/);
+        expect(hintSystem.validateHint(hint, filledPuzzle, filledState)).toFailWith(/already has value/);
       });
     });
 
     test('should reject hint with invalid value', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         // Create a modified hint with invalid value
         const invalidHint = {
           ...hint,
@@ -236,14 +240,16 @@ describe('HintSystem', () => {
           ]
         };
 
-        expect(hintSystem.validateHint(invalidHint, testState)).toFailWith(/Invalid value.*must be 1-9/);
+        expect(hintSystem.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
+          /Invalid value.*must be 1-9/
+        );
       });
     });
   });
 
   describe('formatHintExplanation', () => {
     test('should format explanation at default level', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         const formatted = hintSystem.formatHintExplanation(hint);
         expect(formatted.length).toBeGreaterThan(0);
         expect(formatted).toContain(hint.techniqueName);
@@ -251,7 +257,7 @@ describe('HintSystem', () => {
     });
 
     test('should format explanation at specified level', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         const briefFormatted = hintSystem.formatHintExplanation(hint, 'brief');
         const educationalFormatted = hintSystem.formatHintExplanation(hint, 'educational');
 
@@ -262,7 +268,7 @@ describe('HintSystem', () => {
     });
 
     test('should handle missing explanation level gracefully', () => {
-      expect(hintSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         // Create hint with limited explanations
         const limitedHint = {
           ...hint,
@@ -277,13 +283,13 @@ describe('HintSystem', () => {
 
   describe('hasHints', () => {
     test('should return true when hints are available', () => {
-      expect(hintSystem.hasHints(testState)).toSucceedAndSatisfy((hasHints) => {
+      expect(hintSystem.hasHints(testPuzzle, testState)).toSucceedAndSatisfy((hasHints) => {
         expect(hasHints).toBe(true);
       });
     });
 
     test('should return false when no hints are available', () => {
-      const completePuzzle = createTestPuzzle([
+      const { puzzle: completePuzzle2, state: completeState } = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -294,9 +300,8 @@ describe('HintSystem', () => {
         '678912345',
         '912345678'
       ]);
-      const completeState = createPuzzleState(completePuzzle);
 
-      expect(hintSystem.hasHints(completeState)).toSucceedAndSatisfy((hasHints) => {
+      expect(hintSystem.hasHints(completePuzzle2, completeState)).toSucceedAndSatisfy((hasHints) => {
         expect(hasHints).toBe(false);
       });
     });
@@ -304,7 +309,7 @@ describe('HintSystem', () => {
 
   describe('getHintStatistics', () => {
     test('should provide statistics about available hints', () => {
-      expect(hintSystem.getHintStatistics(testState)).toSucceedAndSatisfy((stats) => {
+      expect(hintSystem.getHintStatistics(testPuzzle, testState)).toSucceedAndSatisfy((stats) => {
         expect(stats.totalHints).toBeGreaterThan(0);
         expect(stats.hintsByTechnique).toBeInstanceOf(Map);
         expect(stats.hintsByDifficulty).toBeInstanceOf(Map);
@@ -323,7 +328,7 @@ describe('HintSystem', () => {
     });
 
     test('should return zero statistics for complete puzzle', () => {
-      const completePuzzle = createTestPuzzle([
+      const { puzzle: completePuzzle, state: completeState } = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -334,9 +339,8 @@ describe('HintSystem', () => {
         '678912345',
         '912345678'
       ]);
-      const completeState = createPuzzleState(completePuzzle);
 
-      expect(hintSystem.getHintStatistics(completeState)).toSucceedAndSatisfy((stats) => {
+      expect(hintSystem.getHintStatistics(completePuzzle, completeState)).toSucceedAndSatisfy((stats) => {
         expect(stats.totalHints).toBe(0);
         expect(stats.hintsByTechnique.size).toBe(0);
         expect(stats.hintsByDifficulty.size).toBe(0);
@@ -368,7 +372,7 @@ describe('HintSystem', () => {
   describe('integration scenarios', () => {
     test('should work with realistic puzzle progression', () => {
       // Start with a more complex puzzle
-      const realPuzzle = createTestPuzzle([
+      const { puzzle: realPuzzle2, state: realState } = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -379,20 +383,19 @@ describe('HintSystem', () => {
         '...419..5',
         '....8..79'
       ]);
-      const realState = createPuzzleState(realPuzzle);
 
       // Should be able to generate hints
-      expect(hintSystem.generateHints(realState)).toSucceedAndSatisfy((hints) => {
+      expect(hintSystem.generateHints(realPuzzle2, realState)).toSucceedAndSatisfy((hints) => {
         expect(hints.length).toBeGreaterThanOrEqual(0);
 
         if (hints.length > 0) {
           // Should be able to get best hint
-          expect(hintSystem.getBestHint(realState)).toSucceed();
+          expect(hintSystem.getBestHint(realPuzzle2, realState)).toSucceed();
 
           // Should be able to validate and apply hints
           const hint = hints[0];
-          expect(hintSystem.validateHint(hint, realState)).toSucceed();
-          expect(hintSystem.applyHint(hint, realState)).toSucceed();
+          expect(hintSystem.validateHint(hint, realPuzzle2, realState)).toSucceed();
+          expect(hintSystem.applyHint(hint, realPuzzle2, realState)).toSucceed();
 
           // Should be able to format explanations
           const explanation = hintSystem.formatHintExplanation(hint);
@@ -403,7 +406,7 @@ describe('HintSystem', () => {
 
     test('should handle edge case puzzles gracefully', () => {
       // Empty puzzle
-      const emptyPuzzle = createTestPuzzle([
+      const { puzzle: emptyPuzzle2, state: emptyState } = createPuzzleAndState([
         '.........',
         '.........',
         '.........',
@@ -414,14 +417,13 @@ describe('HintSystem', () => {
         '.........',
         '.........'
       ]);
-      const emptyState = createPuzzleState(emptyPuzzle);
 
-      expect(hintSystem.generateHints(emptyState)).toSucceed();
-      expect(hintSystem.hasHints(emptyState)).toSucceed();
-      expect(hintSystem.getHintStatistics(emptyState)).toSucceed();
+      expect(hintSystem.generateHints(emptyPuzzle2, emptyState)).toSucceed();
+      expect(hintSystem.hasHints(emptyPuzzle2, emptyState)).toSucceed();
+      expect(hintSystem.getHintStatistics(emptyPuzzle2, emptyState)).toSucceed();
 
       // Minimal puzzle
-      const minimalPuzzle = createTestPuzzle([
+      const { puzzle: minimalPuzzle2, state: minimalState } = createPuzzleAndState([
         '1........',
         '.........',
         '.........',
@@ -432,22 +434,21 @@ describe('HintSystem', () => {
         '.........',
         '.........'
       ]);
-      const minimalState = createPuzzleState(minimalPuzzle);
 
-      expect(hintSystem.generateHints(minimalState)).toSucceed();
-      expect(hintSystem.hasHints(minimalState)).toSucceed();
+      expect(hintSystem.generateHints(minimalPuzzle2, minimalState)).toSucceed();
+      expect(hintSystem.hasHints(minimalPuzzle2, minimalState)).toSucceed();
     });
 
     test('should maintain consistency across multiple operations', () => {
       // Multiple calls should produce consistent results
-      const hints1 = hintSystem.generateHints(testState).orThrow();
-      const hints2 = hintSystem.generateHints(testState).orThrow();
+      const hints1 = hintSystem.generateHints(testPuzzle, testState).orThrow();
+      const hints2 = hintSystem.generateHints(testPuzzle, testState).orThrow();
 
       expect(hints1.length).toBe(hints2.length);
 
       // Best hint should be consistent
-      const best1 = hintSystem.getBestHint(testState).orThrow();
-      const best2 = hintSystem.getBestHint(testState).orThrow();
+      const best1 = hintSystem.getBestHint(testPuzzle, testState).orThrow();
+      const best2 = hintSystem.getBestHint(testPuzzle, testState).orThrow();
 
       expect(best1.cellActions[0].cellId).toBe(best2.cellActions[0].cellId);
       expect(best1.cellActions[0].value).toBe(best2.cellActions[0].value);
@@ -461,7 +462,7 @@ describe('HintSystem', () => {
         enableHiddenSingles: false
       }).orThrow();
 
-      expect(nakedOnlySystem.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(nakedOnlySystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         for (const hint of hints) {
           expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
         }
@@ -472,7 +473,7 @@ describe('HintSystem', () => {
         enableHiddenSingles: true
       }).orThrow();
 
-      expect(hiddenOnlySystem.generateHints(testState)).toSucceedAndSatisfy((hints) => {
+      expect(hiddenOnlySystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
         for (const hint of hints) {
           expect(hint.techniqueId).toBe(TechniqueIds.HIDDEN_SINGLES);
         }
@@ -484,7 +485,7 @@ describe('HintSystem', () => {
         defaultExplanationLevel: 'brief'
       }).orThrow();
 
-      expect(briefSystem.getBestHint(testState)).toSucceedAndSatisfy((hint) => {
+      expect(briefSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
         const formatted = briefSystem.formatHintExplanation(hint);
 
         // Should use brief explanation by default
@@ -498,11 +499,12 @@ describe('HintSystem', () => {
 describe('DefaultHintApplicator', () => {
   let applicator: DefaultHintApplicator;
   let testState: PuzzleState;
+  let testPuzzle: Puzzle;
 
   beforeEach(() => {
     applicator = new DefaultHintApplicator();
 
-    const puzzle = createTestPuzzle([
+    const result = createPuzzleAndState([
       '12345678.',
       '.........',
       '.........',
@@ -513,45 +515,50 @@ describe('DefaultHintApplicator', () => {
       '.........',
       '.........'
     ]);
-    testState = createPuzzleState(puzzle);
+    testPuzzle = result.puzzle;
+    testState = result.state;
   });
 
   describe('validateHint', () => {
     test('should validate valid set-value hint', () => {
       const validHint = createTestHint('r0c8', 9);
-      expect(applicator.validateHint(validHint, testState)).toSucceed();
+      expect(applicator.validateHint(validHint, testPuzzle, testState)).toSucceed();
     });
 
     test('should reject unsupported action types', () => {
       const invalidHint = createTestHint('r0c8', 9, 'eliminate-candidate');
-      expect(applicator.validateHint(invalidHint, testState)).toFailWith(/Unsupported action type/);
+      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
+        /Unsupported action type/
+      );
     });
 
     test('should reject hint for non-existent cell', () => {
       const invalidHint = createTestHint('r99c99', 9);
-      expect(applicator.validateHint(invalidHint, testState)).toFailWith(/Invalid cell/);
+      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/Invalid cell/);
     });
 
     test('should reject hint for already filled cell', () => {
       const invalidHint = createTestHint('r0c0', 5); // r0c0 already has value 1
-      expect(applicator.validateHint(invalidHint, testState)).toFailWith(/already has value/);
+      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
     });
 
     test('should reject hint with invalid value', () => {
       const invalidHint = createTestHint('r0c8', 10);
-      expect(applicator.validateHint(invalidHint, testState)).toFailWith(/Invalid value.*must be 1-9/);
+      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
+        /Invalid value.*must be 1-9/
+      );
     });
 
     test('should reject hint with missing value', () => {
       const invalidHint = createTestHint('r0c8', undefined);
-      expect(applicator.validateHint(invalidHint, testState)).toFailWith(/No value specified/);
+      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/No value specified/);
     });
   });
 
   describe('applyHint', () => {
     test('should generate correct cell updates', () => {
       const hint = createTestHint('r0c8', 9);
-      expect(applicator.applyHint(hint, testState)).toSucceedAndSatisfy((updates) => {
+      expect(applicator.applyHint(hint, testPuzzle, testState)).toSucceedAndSatisfy((updates) => {
         expect(updates).toHaveLength(1);
 
         const update = updates[0];
@@ -583,7 +590,7 @@ describe('DefaultHintApplicator', () => {
       const stateWithNotes = session.state;
 
       const hint = createTestHint('r0c8', 9);
-      expect(applicator.applyHint(hint, stateWithNotes)).toSucceedAndSatisfy((updates) => {
+      expect(applicator.applyHint(hint, testPuzzle, stateWithNotes)).toSucceedAndSatisfy((updates) => {
         const update = updates[0];
         expect(update.notes).toEqual([1, 2, 9]);
       });
@@ -591,7 +598,7 @@ describe('DefaultHintApplicator', () => {
 
     test('should fail validation before applying', () => {
       const invalidHint = createTestHint('r0c0', 5); // Already filled cell
-      expect(applicator.applyHint(invalidHint, testState)).toFailWith(/already has value/);
+      expect(applicator.applyHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
     });
   });
 });
@@ -609,17 +616,26 @@ function createTestPuzzle(rows: string[]): IPuzzleDescription {
   };
 }
 
-function createPuzzleState(puzzleDesc: IPuzzleDescription): PuzzleState {
+function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
+  const puzzleDesc: IPuzzleDescription = {
+    id: 'test-puzzle',
+    description: 'Test puzzle for hint system',
+    type: 'sudoku' as PuzzleType,
+    level: 1,
+    rows: 9,
+    cols: 9,
+    cells: rows.join('')
+  };
   const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
-  return session.state;
+  return { puzzle, state: session.state };
 }
 
 function createTestHint(
   cellId: string,
   value: number | undefined,
   action: 'set-value' | 'eliminate-candidate' = 'set-value'
-): any {
+): IHint {
   return {
     techniqueId: TechniqueIds.NAKED_SINGLES,
     techniqueName: 'Test Technique',
@@ -652,12 +668,13 @@ function createTestHint(
 // Additional tests for error scenarios to improve coverage
 describe('HintSystem - Error Scenarios for Coverage', () => {
   let hintSystem: HintSystem;
+  let puzzle: Puzzle;
   let state: PuzzleState;
 
   beforeEach(() => {
     hintSystem = HintSystem.create().orThrow();
 
-    const puzzleDesc = createTestPuzzle([
+    const result = createPuzzleAndState([
       '12345678.', // Creates naked single at r0c8 = 9
       '.........',
       '.........',
@@ -668,28 +685,27 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
       '.........',
       '.........'
     ]);
-    const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
-    const session = PuzzleSession.create(puzzle).orThrow();
-    state = session.state;
+    puzzle = result.puzzle;
+    state = result.state;
   });
 
   describe('hint validation error scenarios', () => {
     test('should handle invalid value in set-value action', () => {
-      const invalidHint = createTestHint('r0c0', 0); // Invalid value
-      expect(hintSystem.validateHint(invalidHint, state)).toFailWith(/invalid value/i);
+      const invalidHint = createTestHint('r0c8', 0); // Invalid value
+      expect(hintSystem.validateHint(invalidHint, puzzle, state)).toFailWith(/invalid value/i);
 
-      const invalidHint2 = createTestHint('r0c0', 10); // Invalid value
-      expect(hintSystem.validateHint(invalidHint2, state)).toFailWith(/invalid value/i);
+      const invalidHint2 = createTestHint('r0c8', 10); // Invalid value
+      expect(hintSystem.validateHint(invalidHint2, puzzle, state)).toFailWith(/invalid value/i);
     });
 
     test('should handle missing value in set-value action', () => {
-      const hintWithoutValue = createTestHint('r0c0', undefined);
-      expect(hintSystem.validateHint(hintWithoutValue, state)).toFailWith(/no value specified/i);
+      const hintWithoutValue = createTestHint('r0c8', undefined);
+      expect(hintSystem.validateHint(hintWithoutValue, puzzle, state)).toFailWith(/no value specified/i);
     });
 
     test('should handle invalid cell ID in hint application', () => {
       const invalidCellHint = createTestHint('invalid-cell', 5);
-      expect(hintSystem.applyHint(invalidCellHint, state)).toFailWith(/failed to get cell contents/i);
+      expect(hintSystem.applyHint(invalidCellHint, puzzle, state)).toFailWith(/failed to get cell contents/i);
     });
   });
 
@@ -697,7 +713,7 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
     test('should handle cell contents retrieval failure', () => {
       // Create a hint with an invalid cell ID to trigger getCellContents failure
       const badHint = createTestHint('r99c99', 5);
-      expect(hintSystem.applyHint(badHint, state)).toFailWith(/failed to get cell contents/i);
+      expect(hintSystem.applyHint(badHint, puzzle, state)).toFailWith(/failed to get cell contents/i);
     });
 
     test('should handle multiple cell actions with mixed validity', () => {
@@ -708,9 +724,9 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
         confidence: ConfidenceLevels.HIGH,
         cellActions: [
           {
-            cellId: 'r0c0' as CellId,
+            cellId: 'r0c8' as CellId,
             action: 'set-value' as const,
-            value: 5,
+            value: 9,
             reason: 'Valid action'
           },
           {
@@ -721,7 +737,7 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
           }
         ],
         relevantCells: {
-          primary: ['r0c0' as CellId],
+          primary: ['r0c8' as CellId],
           secondary: [],
           affected: []
         },
@@ -735,7 +751,9 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
         priority: 1
       };
 
-      expect(hintSystem.applyHint(mixedValidityHint, state)).toFailWith(/failed to get cell contents/i);
+      expect(hintSystem.applyHint(mixedValidityHint, puzzle, state)).toFailWith(
+        /failed to get cell contents/i
+      );
     });
   });
 });
