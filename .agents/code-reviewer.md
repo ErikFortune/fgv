@@ -89,6 +89,10 @@ const validator = Validators.object<ComplexType>({
 - Any use of `any` type (will fail linting anyway)
 - Should use `unknown` with proper type guards
 
+### inline import or requires
+- importing types inline instead of at the top of the file
+- multiple imports from the same file
+
 ## Priority 3 - Standard Issues
 
 ### Code Organization

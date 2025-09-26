@@ -123,7 +123,8 @@ Reference the detailed guidelines in `/.agents/code-reviewer.md` for complete de
 
 2. **Result Pattern Violations**
 3. **Any Type Usage**
-4. **Security Vulnerabilities**
+4. **Inline import or requires**
+5. **Security Vulnerabilities**
 
 For complete anti-pattern detection rules, see `/.agents/code-reviewer.md`.
 
