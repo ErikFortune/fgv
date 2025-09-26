@@ -19,6 +19,31 @@ class AnyPuzzle {
     static create(puzzle: IPuzzleDescription): Result<Puzzle>;
 }
 
+// @public
+abstract class BaseHintProvider implements IHintProvider {
+    protected constructor(config: IBaseHintProviderConfig);
+    abstract canProvideHints(state: PuzzleState): boolean;
+    protected createCellAction(cellId: CellId, action: ICellAction['action'], value?: number, reason?: string): ICellAction;
+    protected createExplanation(level: ExplanationLevel, title: string, description: string, steps?: readonly string[], tips?: readonly string[]): IHintExplanation;
+    protected createHint(cellActions: readonly ICellAction[], relevantCells: IRelevantCells, explanations: readonly IHintExplanation[], confidence?: ConfidenceLevel): IHint;
+    protected createRelevantCells(primary: readonly CellId[], secondary?: readonly CellId[], affected?: readonly CellId[]): IRelevantCells;
+    // (undocumented)
+    protected readonly defaultConfidence: ConfidenceLevel;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    protected filterHints(hints: readonly IHint[], options?: IHintGenerationOptions): readonly IHint[];
+    abstract generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    protected getCandidates(cellId: CellId, state: PuzzleState): number[];
+    protected getEmptyCells(state: PuzzleState): CellId[];
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+    protected validateOptions(options?: IHintGenerationOptions): Result<void>;
+}
+
 // Warning: (ae-internal-missing-underscore) The name "Cage" should be prefixed with an underscore because the declaration is marked as @internal
 //
 // @internal (undocumented)
@@ -90,10 +115,25 @@ export class Cell implements ICellInit, ICell {
 }
 
 // @public
+type CellAction = 'set-value' | 'eliminate-candidate' | 'add-candidate' | 'highlight';
+
+// @public
 export type CellId = Brand<string, 'CellId'>;
 
 // @public
 const cellId: Converter<CellId>;
+
+// @public
+type ConfidenceLevel = Brand<1 | 2 | 3 | 4 | 5, 'ConfidenceLevel'>;
+
+// @public
+const ConfidenceLevels: {
+    readonly LOW: ConfidenceLevel;
+    readonly MEDIUM_LOW: ConfidenceLevel;
+    readonly MEDIUM: ConfidenceLevel;
+    readonly MEDIUM_HIGH: ConfidenceLevel;
+    readonly HIGH: ConfidenceLevel;
+};
 
 declare namespace Converters {
     export {
@@ -112,6 +152,43 @@ declare namespace Converters_2 {
     }
 }
 
+// @public
+class DefaultHintApplicator implements IHintApplicator {
+    applyHint(hint: IHint, state: PuzzleState): Result<readonly ICellState[]>;
+    validateHint(hint: IHint, state: PuzzleState): Result<void>;
+}
+
+// @public
+type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+// @public
+class EducationalContent {
+    static createBeginnerGuide(): string;
+    static getDifficultyProgression(): readonly string[];
+    static getGeneralSolvingTips(): readonly string[];
+    static getTechniqueIntroduction(techniqueId: TechniqueId): Result<string>;
+    static getTechniqueOverview(techniqueId: TechniqueId): Result<string>;
+    static getTechniqueRelationships(techniqueId: TechniqueId): Result<readonly string[]>;
+}
+
+// @public
+class ExplanationFormatter {
+    static createLevelSummary(explanations: readonly IHintExplanation[]): string;
+    static formatAllExplanations(explanations: readonly IHintExplanation[]): string;
+    static formatExplanation(explanation: IHintExplanation, includeSteps?: boolean, includeTips?: boolean): string;
+}
+
+// @public
+type ExplanationLevel = 'brief' | 'detailed' | 'educational';
+
+// @public
+class ExplanationRegistry {
+    constructor();
+    getExplanationAtLevel(hint: IHint, level: ExplanationLevel, state: PuzzleState): Result<IHintExplanation>;
+    getExplanations(hint: IHint, state: PuzzleState): Result<readonly IHintExplanation[]>;
+    registerProvider(provider: IHintExplanationProvider): Result<void>;
+}
+
 declare namespace File_2 {
     export {
         Converters_2 as Converters,
@@ -119,6 +196,101 @@ declare namespace File_2 {
     }
 }
 export { File_2 as File }
+
+// @public
+class HiddenSinglesProvider extends BaseHintProvider {
+    constructor();
+    canProvideHints(state: PuzzleState): boolean;
+    static create(): Result<HiddenSinglesProvider>;
+    generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+}
+
+// @public
+class HintRegistry implements IHintRegistry {
+    constructor();
+    clear(): Result<void>;
+    static create(providers?: readonly IHintProvider[]): Result<HintRegistry>;
+    generateAllHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+    getProvider(techniqueId: TechniqueId): Result<IHintProvider>;
+    getProviders(options?: IHintGenerationOptions): readonly IHintProvider[];
+    getProvidersByDifficulty(): Map<DifficultyLevel, readonly IHintProvider[]>;
+    getRegisteredTechniques(): readonly TechniqueId[];
+    hasProvider(techniqueId: TechniqueId): boolean;
+    get providerCount(): number;
+    registerProvider(provider: IHintProvider): Result<void>;
+    unregisterProvider(techniqueId: TechniqueId): Result<void>;
+}
+
+declare namespace Hints {
+    export {
+        TechniqueId,
+        ConfidenceLevel,
+        CellAction,
+        ExplanationLevel,
+        DifficultyLevel,
+        ICellAction,
+        IRelevantCells,
+        IHintExplanation,
+        IHint,
+        IHintGenerationOptions,
+        TechniqueIds,
+        ConfidenceLevels,
+        IHintProvider,
+        IHintRegistry,
+        IHintExplanationProvider,
+        IHintApplicator,
+        IBaseHintProviderConfig,
+        BaseHintProvider,
+        HintRegistry,
+        NakedSinglesProvider,
+        HiddenSinglesProvider,
+        ExplanationRegistry,
+        ExplanationFormatter,
+        EducationalContent,
+        IHintSystemConfig,
+        DefaultHintApplicator,
+        HintSystem,
+        IPuzzleSessionHintsConfig,
+        PuzzleSessionHints
+    }
+}
+export { Hints }
+
+// @public
+class HintSystem {
+    constructor(registry: IHintRegistry, applicator: IHintApplicator, config: IHintSystemConfig);
+    get applicator(): IHintApplicator;
+    applyHint(hint: IHint, state: PuzzleState): Result<readonly ICellState[]>;
+    get config(): IHintSystemConfig;
+    static create(config?: IHintSystemConfig): Result<HintSystem>;
+    formatHintExplanation(hint: IHint, level?: ExplanationLevel): string;
+    generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+    getHintStatistics(state: PuzzleState): Result<{
+        totalHints: number;
+        hintsByTechnique: Map<string, number>;
+        hintsByDifficulty: Map<string, number>;
+    }>;
+    getSystemSummary(): string;
+    hasHints(state: PuzzleState): Result<boolean>;
+    get registry(): IHintRegistry;
+    validateHint(hint: IHint, state: PuzzleState): Result<void>;
+}
+
+// @public
+interface IBaseHintProviderConfig {
+    // (undocumented)
+    readonly defaultConfidence?: ConfidenceLevel;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+}
 
 // @public
 export interface ICage {
@@ -138,6 +310,18 @@ export interface ICell {
     readonly immutable: boolean;
     readonly immutableValue?: number;
     readonly row: number;
+}
+
+// @public
+interface ICellAction {
+    // (undocumented)
+    readonly action: CellAction;
+    // (undocumented)
+    readonly cellId: CellId;
+    // (undocumented)
+    readonly reason?: string;
+    // (undocumented)
+    readonly value?: number;
 }
 
 // @public
@@ -193,6 +377,101 @@ export class Ids {
 }
 
 // @public
+interface IHint {
+    // (undocumented)
+    readonly cellActions: readonly ICellAction[];
+    // (undocumented)
+    readonly confidence: ConfidenceLevel;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    // (undocumented)
+    readonly explanations: readonly IHintExplanation[];
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly relevantCells: IRelevantCells;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+}
+
+// @public
+interface IHintApplicator {
+    applyHint(hint: IHint, state: PuzzleState): Result<readonly ICellState[]>;
+    validateHint(hint: IHint, state: PuzzleState): Result<void>;
+}
+
+// @public
+interface IHintExplanation {
+    // (undocumented)
+    readonly description: string;
+    // (undocumented)
+    readonly level: ExplanationLevel;
+    // (undocumented)
+    readonly steps?: readonly string[];
+    // (undocumented)
+    readonly tips?: readonly string[];
+    // (undocumented)
+    readonly title: string;
+}
+
+// @public
+interface IHintExplanationProvider {
+    generateExplanations(hint: IHint, state: PuzzleState): Result<readonly IHintExplanation[]>;
+    readonly techniqueId: TechniqueId;
+}
+
+// @public
+interface IHintGenerationOptions {
+    // (undocumented)
+    readonly enabledTechniques?: readonly TechniqueId[];
+    // (undocumented)
+    readonly explanationLevel?: ExplanationLevel;
+    // (undocumented)
+    readonly maxHints?: number;
+    // (undocumented)
+    readonly minConfidence?: ConfidenceLevel;
+    // (undocumented)
+    readonly preferredDifficulty?: DifficultyLevel;
+}
+
+// @public
+interface IHintProvider {
+    canProvideHints(state: PuzzleState): boolean;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+}
+
+// @public
+interface IHintRegistry {
+    generateAllHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+    getProvider(techniqueId: TechniqueId): Result<IHintProvider>;
+    getProviders(options?: IHintGenerationOptions): readonly IHintProvider[];
+    getRegisteredTechniques(): readonly TechniqueId[];
+    registerProvider(provider: IHintProvider): Result<void>;
+    unregisterProvider(techniqueId: TechniqueId): Result<void>;
+}
+
+// @public
+interface IHintSystemConfig {
+    // (undocumented)
+    readonly defaultExplanationLevel?: ExplanationLevel;
+    // (undocumented)
+    readonly enableHiddenSingles?: boolean;
+    // (undocumented)
+    readonly enableNakedSingles?: boolean;
+}
+
+// @public
 export interface IPuzzleDescription {
     // (undocumented)
     cells: string;
@@ -211,6 +490,14 @@ export interface IPuzzleDescription {
 }
 
 // @public
+interface IPuzzleSessionHintsConfig extends IHintSystemConfig {
+    // (undocumented)
+    readonly cacheTimeoutMs?: number;
+    // (undocumented)
+    readonly maxCacheEntries?: number;
+}
+
+// @public
 interface IPuzzlesFile {
     // (undocumented)
     puzzles: IPuzzleDescription[];
@@ -226,6 +513,16 @@ export interface IPuzzleUpdate {
     from: PuzzleState;
     // (undocumented)
     to: PuzzleState;
+}
+
+// @public
+interface IRelevantCells {
+    // (undocumented)
+    readonly affected: readonly CellId[];
+    // (undocumented)
+    readonly primary: readonly CellId[];
+    // (undocumented)
+    readonly secondary: readonly CellId[];
 }
 
 // @public
@@ -254,6 +551,14 @@ declare namespace Model {
     export {
         IPuzzlesFile
     }
+}
+
+// @public
+class NakedSinglesProvider extends BaseHintProvider {
+    constructor();
+    canProvideHints(state: PuzzleState): boolean;
+    static create(): Result<NakedSinglesProvider>;
+    generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
 }
 
 // @public
@@ -425,6 +730,61 @@ export class PuzzleSession {
     updateCellValue(spec: string | IRowColumn | ICell, value: number | undefined): Result<this>;
 }
 
+// @public
+class PuzzleSessionHints {
+    applyHint(hint: IHint): Result<this>;
+    cageContainedValues(spec: string | ICage): Set<number>;
+    cageContainsValue(spec: string | ICage, value: number): boolean;
+    get cages(): ICage[];
+    get canRedo(): boolean;
+    get canUndo(): boolean;
+    cellHasValue(spec: string | IRowColumn | ICell): boolean;
+    cellIsValid(spec: string | IRowColumn | ICell): boolean;
+    get cells(): ICell[];
+    checkIsSolved(): boolean;
+    checkIsValid(): boolean;
+    get cols(): ICage[];
+    get config(): IPuzzleSessionHintsConfig;
+    static create(session: PuzzleSession, config?: IPuzzleSessionHintsConfig): Result<PuzzleSessionHints>;
+    get description(): string;
+    getAllHints(options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getCellContents(spec: string | IRowColumn): Result<{
+        cell: ICell;
+        contents: ICellContents;
+    }>;
+    getCellNeighbor(spec: string | IRowColumn | ICell, direction: NavigationDirection, wrap: NavigationWrap): Result<ICell>;
+    getEmptyCells(): ICell[];
+    getExplanation(hint: IHint, level?: ExplanationLevel): string;
+    getHint(options?: IHintGenerationOptions): Result<IHint>;
+    getHintsForCell(spec: string | IRowColumn | ICell, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getHintStatistics(options?: IHintGenerationOptions): Result<{
+        totalHints: number;
+        hintsByTechnique: Map<string, number>;
+        hintsByDifficulty: Map<string, number>;
+    }>;
+    getInvalidCells(): ICell[];
+    getSystemSummary(): string;
+    hasHints(options?: IHintGenerationOptions): Result<boolean>;
+    get hintSystem(): HintSystem;
+    get id(): string | undefined;
+    isValidForCell(spec: string | IRowColumn | ICell, value: number): boolean;
+    get nextStep(): number;
+    get numColumns(): number;
+    get numRows(): number;
+    get numSteps(): number;
+    redo(): Result<this>;
+    get rows(): ICage[];
+    get sections(): ICage[];
+    get session(): PuzzleSession;
+    get state(): PuzzleState;
+    toStrings(): string[];
+    undo(): Result<this>;
+    updateCellNotes(spec: string | IRowColumn | ICell, notes: number[]): Result<this>;
+    updateCells(updates: ICellState[]): Result<this>;
+    updateCellValue(spec: string | IRowColumn | ICell, value: number | undefined): Result<this>;
+    validateHint(hint: IHint): Result<void>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -467,6 +827,15 @@ class SudokuXPuzzle extends Puzzle {
     // (undocumented)
     static create(puzzle: IPuzzleDescription): Result<Puzzle>;
 }
+
+// @public
+type TechniqueId = Brand<string, 'TechniqueId'>;
+
+// @public
+const TechniqueIds: {
+    readonly NAKED_SINGLES: TechniqueId;
+    readonly HIDDEN_SINGLES: TechniqueId;
+};
 
 // @public
 export const totalsByCageSize: readonly {

@@ -185,6 +185,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Hints](./ts-sudoku-lib.hints.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Puzzles](./ts-sudoku-lib.puzzles.md)
 
 

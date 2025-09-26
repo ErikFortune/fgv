@@ -22,10 +22,23 @@
  * SOFTWARE.
  */
 
-import * as File from './packlets/file';
-import * as Hints from './packlets/hints';
-import * as Puzzles from './packlets/puzzles';
+// Core types and interfaces
+export * from './types';
+export * from './interfaces';
 
-export * from './packlets/collections';
-export * from './packlets/common';
-export { File, Hints, Puzzles };
+// Base classes and utilities
+export * from './baseHintProvider';
+export * from './hintRegistry';
+
+// Technique implementations
+export * from './nakedSingles';
+export * from './hiddenSingles';
+
+// Educational framework
+export * from './explanations';
+
+// Main hint system
+export * from './hints';
+
+// PuzzleSession integration
+export * from './puzzleSessionHints';
