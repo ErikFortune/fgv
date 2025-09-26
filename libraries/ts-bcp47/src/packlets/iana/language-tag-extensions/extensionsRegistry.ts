@@ -25,9 +25,9 @@ import * as Converters from './converters';
 import * as JarConverters from './jarConverters';
 
 import { Result, captureResult } from '@fgv/ts-utils';
+import { getIanaDataBuffer } from '../iana-data-embedded';
+import { loadLanguageRegistriesFromZipBuffer } from '../languageRegistriesLoader';
 
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import defaultExtensions from '../../../data/iana/language-tag-extensions.json';
 import { YearMonthDaySpec } from '../model';
 import { TagExtensionsScope } from './extensionsScope';
 /**
@@ -66,7 +66,11 @@ export class LanguageTagExtensionRegistry {
   }
 
   public static loadDefault(): Result<LanguageTagExtensionRegistry> {
-    return this.createFromJson(defaultExtensions);
+    return captureResult(() => {
+      const zipBuffer = getIanaDataBuffer();
+      const registries = loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
+      return registries.extensions;
+    });
   }
 
   public static load(path: string): Result<LanguageTagExtensionRegistry> {
@@ -88,5 +92,11 @@ export class LanguageTagExtensionRegistry {
       const registry = JarConverters.loadTxtLanguageTagExtensionsRegistryFileSync(path).orThrow();
       return new LanguageTagExtensionRegistry(registry);
     });
+  }
+
+  public static createFromTxtContent(content: string): Result<LanguageTagExtensionRegistry> {
+    return JarConverters.loadTxtLanguageTagExtensionsRegistryFromString(content).onSuccess(
+      LanguageTagExtensionRegistry.create
+    );
   }
 }

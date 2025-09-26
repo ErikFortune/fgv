@@ -23,7 +23,7 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { Result, succeed } from '../../packlets/base';
+import { omit, Result, succeed } from '../../packlets/base';
 import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
 
 describe('Converters module', () => {
@@ -88,6 +88,12 @@ describe('Converters module', () => {
     test('uses a context for expected values if supplied', () => {
       expect(pie.convert('apple', ['cherry'])).toFailWith(/invalid enumerated/i);
       expect(pie.convert('apple', ['apple'])).toSucceedWith('apple');
+    });
+
+    test('fails for non-string values', () => {
+      [1, true, {}, (): string => 'hello', ['true']].forEach((v) => {
+        expect(pie.convert(v)).toFailWith(/invalid enumerated/i);
+      });
     });
   });
 
@@ -430,6 +436,8 @@ describe('Converters module', () => {
     expect(narr).toBeDefined();
     expect(objc).toBeDefined();
     expect(objt).toBeDefined();
+    expect(narc).toBeDefined();
+    expect(objc).toBeDefined();
     // cSpell: enable
   });
 
@@ -464,7 +472,7 @@ describe('Converters module', () => {
         p4: number;
         base1: number;
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       const BaseObjectFunc = function (this: IBaseObject): void {
         this.p1 = 's1';
         this.p2 = 's2';
@@ -473,7 +481,6 @@ describe('Converters module', () => {
       };
       BaseObjectFunc.prototype.base1 = 100;
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const BaseObject = BaseObjectFunc as unknown as { new (): IBaseObject };
 
       const srcObject = new BaseObject();
@@ -650,7 +657,7 @@ describe('Converters module', () => {
         p4: number;
         base1: number;
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
+
       const BaseObjectFunc = function (this: IBaseObject): void {
         this.p1 = 's1';
         this.p2 = 's2';
@@ -659,7 +666,6 @@ describe('Converters module', () => {
       };
       BaseObjectFunc.prototype.base1 = 100;
 
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const BaseObject = BaseObjectFunc as unknown as { new (): IBaseObject };
 
       const srcObject = new BaseObject();
@@ -1139,6 +1145,84 @@ describe('Converters module', () => {
       test('includes description in error message if present', () => {
         const converter = Converters.object(wantConverters, { description: 'xyzzy' });
         expect(converter.convert({ invalid: 'totally unexpected' })).toFailWith(/xyzzy/i);
+      });
+    });
+
+    describe('with partial modifier', () => {
+      test('succeeds even if required fields are missing', () => {
+        expect(Converters.object<IWant>(wantConverters, { modifier: 'partial' }).convert({})).toSucceedWith(
+          {} as IWant
+        );
+
+        expect(Converters.object<IWant>(wantConverters).partial().convert({})).toSucceedWith({} as IWant);
+
+        expect(Converters.object<IWant>(wantConverters).convertPartial({})).toSucceedWith({} as IWant);
+      });
+
+      test('addPartial appends to existing optional fields', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { optionalFields })
+            .addPartial(['stringField'])
+            .convert(omit(required, ['stringField']))
+        ).toSucceedWith(omit(required, ['stringField']) as IWant);
+      });
+
+      test('partial steps on existing optional fields', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { optionalFields })
+            .partial(['stringField'])
+            .convert(omit(required, ['stringField']))
+        ).toFailWith(/optionalStringField not found/i);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { optionalFields })
+            .partial({ optionalFields: ['stringField'] })
+            .convert(omit(required, ['stringField']))
+        ).toFailWith(/optionalStringField not found/i);
+      });
+
+      test('respects strict property', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { modifier: 'partial' }).convert({ bogus: 10 })
+        ).toSucceedWith({} as IWant);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { modifier: 'partial', strict: true }).convert({
+            bogus: 10
+          })
+        ).toFailWith(/unexpected property/i);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { strict: true }).partial().convert({ bogus: 10 })
+        ).toFailWith(/unexpected property/i);
+
+        expect(
+          Converters.object<IWant>(wantConverters, { strict: true }).convertPartial({ bogus: 10 })
+        ).toFailWith(/unexpected property/i);
+
+        expect(
+          Converters.strictObject<IWant>(wantConverters, { modifier: 'partial' }).convert({ bogus: 10 })
+        ).toFailWith(/unexpected property/i);
+
+        expect(Converters.strictObject<IWant>(wantConverters).convertPartial({ bogus: 10 })).toFailWith(
+          /unexpected property/i
+        );
+      });
+    });
+
+    describe('with required modifier', () => {
+      test('fails if otherwise optional fields are missing', () => {
+        expect(
+          Converters.object<IWant>(wantConverters, { modifier: 'required' }).convert(required)
+        ).toFailWith(/optionalStringField not found/i);
+
+        expect(Converters.object<IWant>(wantConverters).required().convert(required)).toFailWith(
+          /optionalStringField not found/i
+        );
+
+        expect(Converters.object<IWant>(wantConverters).convertRequired(required)).toFailWith(
+          /optionalStringField not found/i
+        );
       });
     });
 

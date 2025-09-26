@@ -56,6 +56,25 @@ _(Optional)_ Optional description to be included in error messages.
 </td></tr>
 <tr><td>
 
+[modifier?](./ts-utils.conversion.objectconverteroptions.modifier.md)
+
+
+</td><td>
+
+
+</td><td>
+
+'partial' \| 'required'
+
+
+</td><td>
+
+_(Optional)_ Optional modifier to apply to the converter.
+
+
+</td></tr>
+<tr><td>
+
 [optionalFields?](./ts-utils.conversion.objectconverteroptions.optionalfields.md)
 
 
@@ -93,3 +112,4 @@ _(Optional)_ If true, unrecognized fields yield an error. If false or undefined 
 
 </td></tr>
 </tbody></table>
+

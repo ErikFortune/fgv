@@ -54,6 +54,7 @@ Note that `getValueOrDefault` is being superseded by `orDefault` and will eventu
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 T \| undefined

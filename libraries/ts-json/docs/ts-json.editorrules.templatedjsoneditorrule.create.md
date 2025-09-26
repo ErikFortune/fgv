@@ -47,6 +47,7 @@ _(Optional)_ Optional [configuration options](./ts-json.editorrules.itemplatedjs
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[TemplatedJsonEditorRule](./ts-json.editorrules.templatedjsoneditorrule.md)<!-- -->&gt;

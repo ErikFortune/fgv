@@ -65,3 +65,9 @@ export interface ILanguageTagExtension {
  * @internal
  */
 export type LanguageTagExtensions = IDatedRegistry<ILanguageTagExtension>;
+
+/**
+ * Raw JAR format registry file for language tag extensions (with original field names like "Contact_Email")
+ * @internal
+ */
+export type LanguageTagExtensionRegistryFile = IDatedRegistry<LanguageTagExtensionRegistryEntry>;

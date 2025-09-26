@@ -4,3 +4,51 @@
 
 ## Iana.LanguageTagExtensions.JarConverters namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[loadRawLanguageTagExtensionsRegistryFileSync(path)](./ts-bcp47.iana.languagetagextensions.jarconverters.loadrawlanguagetagextensionsregistryfilesync.md)
+
+
+</td><td>
+
+Loads a text (JAR) format language tag extensions registry file and returns the registry format with field names matching legacy test JSON format ("Contact\_Email", "Mailing\_List") suitable for creating test JSON files that work with JAR converters.
+
+
+</td></tr>
+<tr><td>
+
+[loadRawLanguageTagExtensionsRegistryFromString(content)](./ts-bcp47.iana.languagetagextensions.jarconverters.loadrawlanguagetagextensionsregistryfromstring.md)
+
+
+</td><td>
+
+Parses a text (JAR) format language tag extensions registry from string content and returns the registry format with field names matching legacy test JSON format ("Contact\_Email", "Mailing\_List").
+
+
+</td></tr>
+<tr><td>
+
+[loadTxtLanguageTagExtensionsRegistryFromString(content)](./ts-bcp47.iana.languagetagextensions.jarconverters.loadtxtlanguagetagextensionsregistryfromstring.md)
+
+
+</td><td>
+
+Parses language tag extensions registry data from string content.
+
+
+</td></tr>
+</tbody></table>
+

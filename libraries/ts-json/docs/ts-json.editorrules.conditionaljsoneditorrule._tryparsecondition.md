@@ -61,6 +61,7 @@ The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;[IConditionalJsonKeyResult](./ts-json.editorrules.iconditionaljsonkeyresult.md)<!-- -->, [JsonPropertyEditFailureReason](./ts-json.jsonpropertyeditfailurereason.md)<!-- -->&gt;

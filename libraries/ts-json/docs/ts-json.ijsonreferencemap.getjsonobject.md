@@ -63,6 +63,7 @@ _(Optional)_ Optional [IJsonContext](./ts-json.ijsoncontext.md) used to construc
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;JsonObject, [JsonReferenceMapFailureReason](./ts-json.jsonreferencemapfailurereason.md)<!-- -->&gt;

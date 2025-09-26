@@ -24,7 +24,7 @@ import '@fgv/ts-utils-jest';
 import * as Iana from '../../../../packlets/iana';
 
 describe('IANA tag registry scope', () => {
-  const iana = Iana.LanguageRegistries.load('src/data/iana').orThrow();
+  const iana = Iana.LanguageRegistries.loadDefault().orThrow();
   const languages = iana.subtags.languages;
 
   describe('getAll and getAllKeys', () => {

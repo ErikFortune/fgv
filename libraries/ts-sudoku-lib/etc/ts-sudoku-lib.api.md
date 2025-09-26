@@ -448,7 +448,7 @@ export class PuzzleState {
 export type PuzzleType = 'killer-sudoku' | 'sudoku' | 'sudoku-x';
 
 // @public
-const puzzleType: Converter<PuzzleType, PuzzleType[]>;
+const puzzleType: Converter<PuzzleType, ReadonlyArray<PuzzleType>>;
 
 // Warning: (ae-incompatible-release-tags) The symbol "SudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "SudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal

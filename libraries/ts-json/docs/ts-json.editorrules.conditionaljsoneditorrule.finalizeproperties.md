@@ -63,6 +63,7 @@ The [editor state](./ts-json.jsoneditorstate.md) for the object being edited.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 DetailedResult&lt;JsonObject\[\], [JsonEditFailureReason](./ts-json.jsoneditfailurereason.md)<!-- -->&gt;

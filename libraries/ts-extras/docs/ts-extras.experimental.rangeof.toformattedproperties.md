@@ -47,6 +47,7 @@ A format function used to format the values.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [RangeOfProperties](./ts-extras.experimental.rangeofproperties.md)<!-- -->&lt;string&gt;

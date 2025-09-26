@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars,no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Result, captureResult, fail, succeed } from '../../ts-utils';
 
 export const matcherName: string = 'toFailTestAndMatchSnapshot';

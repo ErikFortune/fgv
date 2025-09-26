@@ -43,7 +43,6 @@ interface IParserState {
  * @public
  */
 export class LanguageTagParser {
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   /* c8 ignore next */
   private constructor() {}
 

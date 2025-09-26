@@ -1,0 +1,40 @@
+{
+  "name": "language-priority",
+  "description": "Language priority system configuration",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": false
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "token": "lang",
+      "typeName": "language",
+      "defaultPriority": 850
+    },
+    {
+      "name": "currentTerritory",
+      "token": "geo",
+      "typeName": "territory",
+      "defaultPriority": 800
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

@@ -63,6 +63,7 @@ The keys of the properties to be excluded from the returned object.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Omit&lt;T, K&gt;

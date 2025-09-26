@@ -33,12 +33,7 @@ describe('JAR converters', () => {
     const converter = Iana.Jar.Converters.datedRegistryFromJarRecords(entry);
 
     test('succeeds for a well-formed JAR format dated registry', () => {
-      const t = [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        { 'File-Date': '2023-01-01' },
-        { value: 'v1' },
-        { value: 'v2' }
-      ];
+      const t = [{ 'File-Date': '2023-01-01' }, { value: 'v1' }, { value: 'v2' }];
       expect(converter.convert(t)).toSucceedWith({
         fileDate: '2023-01-01' as Iana.Model.YearMonthDaySpec,
         entries: [{ value: 'v1' }, { value: 'v2' }]
@@ -51,22 +46,12 @@ describe('JAR converters', () => {
     });
 
     test('fails for an invalid file date', () => {
-      const t = [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        { 'File-Date': 'xyzzy' },
-        { value: 'v1' },
-        { value: 'v2' }
-      ];
+      const t = [{ 'File-Date': 'xyzzy' }, { value: 'v1' }, { value: 'v2' }];
       expect(converter.convert(t)).toFailWith(/invalid year-month-date/i);
     });
 
     test('fails for an invalid entry', () => {
-      const t = [
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        { 'File-Date': '2023-01-01' },
-        { value: 'v1' },
-        { value: ['v1', 'v2'] }
-      ];
+      const t = [{ 'File-Date': '2023-01-01' }, { value: 'v1' }, { value: ['v1', 'v2'] }];
       expect(converter.convert(t)).toFailWith(/not a string/i);
     });
 

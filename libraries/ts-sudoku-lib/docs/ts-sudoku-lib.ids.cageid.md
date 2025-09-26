@@ -43,6 +43,7 @@ string \| [ICage](./ts-sudoku-lib.icage.md)
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[CageId](./ts-sudoku-lib.cageid.md)<!-- -->&gt;

@@ -132,6 +132,26 @@ describe('validators', () => {
       });
     });
 
+    test('fails for objects with symbol keys', () => {
+      const sym1 = Symbol('test');
+      const sym2 = Symbol('another');
+
+      const objectsWithSymbolKeys = [
+        { [sym1]: 'value1' },
+        { normal: 'value', [sym1]: 'symbolValue' },
+        {
+          [Symbol.iterator]: function* () {
+            yield 1;
+          }
+        },
+        { valid: 'data', [sym1]: 'symbol1', [sym2]: 'symbol2' }
+      ];
+
+      objectsWithSymbolKeys.forEach((obj) => {
+        expect(validator.validate(obj)).toFailWith(/not a valid json object/i);
+      });
+    });
+
     test.each([
       ...invalidJsonTests,
       ...jsonObjectWithUndefinedTests,

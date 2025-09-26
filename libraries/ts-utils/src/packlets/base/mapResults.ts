@@ -20,7 +20,16 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, IMessageAggregator, Result, fail, succeed } from './result';
+import { MessageAggregator } from './messageAggregator';
+import {
+  DeferredResult,
+  DetailedResult,
+  IMessageAggregator,
+  Result,
+  fail,
+  isDeferredResult,
+  succeed
+} from './result';
 
 /**
  * Aggregates successful result values from a collection of {@link Result | Result<T>}.
@@ -78,7 +87,7 @@ export function mapDetailedResults<T, TD>(
   for (const result of results) {
     if (result.isSuccess()) {
       elements.push(result.value);
-    } else if (!ignore.includes(result.detail)) {
+    } else if (result.detail && !ignore.includes(result.detail)) {
       errors.push(result.message);
     }
   }
@@ -182,6 +191,24 @@ export function allSucceed<T>(
 }
 
 /**
+ * Returns the first successful result from a collection of {@link Result | Result<T>} or {@link DeferredResult | DeferredResult<T>}.
+ * @param results - The collection of {@link Result | Result<T>} or {@link DeferredResult | DeferredResult<T>} to be tested.
+ * @returns The first successful result, or {@link Failure} with a concatenated summary of all error messages.
+ * @public
+ */
+export function firstSuccess<T>(results: Iterable<Result<T> | DeferredResult<T>>): Result<T> {
+  const errors: MessageAggregator = new MessageAggregator();
+  for (const r of results) {
+    const result = isDeferredResult(r) ? r() : r;
+    if (result.isSuccess()) {
+      return result;
+    }
+    errors.addMessage(result.message);
+  }
+  return errors.returnOrReport(fail('no results found'));
+}
+
+/**
  * String-keyed record of initialization functions to be passed to {@link (populateObject:1)}
  * or {@link (populateObject:2)}.
  * @public
@@ -192,7 +219,7 @@ export type FieldInitializers<T> = { [key in keyof T]: (state: Partial<T>) => Re
  * Options for the {@link (populateObject:1)} function.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface PopulateObjectOptions<T> {
   /**
    * If present, specifies the order in which property values should

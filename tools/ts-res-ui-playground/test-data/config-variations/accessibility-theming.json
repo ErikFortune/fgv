@@ -1,0 +1,79 @@
+{
+  "name": "Accessibility Theming Configuration",
+  "description": "Configuration showcasing custom contrast qualifier type for accessibility theming with theme color resources",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language"
+    },
+    {
+      "name": "contrast",
+      "systemType": "contrast",
+      "configuration": {
+        "allowContextList": false,
+        "highContrastValues": ["high", "black", "white"],
+        "defaultValue": "standard"
+      }
+    },
+    {
+      "name": "theme",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["light", "dark", "auto"]
+      }
+    },
+    {
+      "name": "component",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["button", "input", "card", "navigation", "background", "text"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 950,
+      "token": "lang",
+      "tokenIsOptional": false,
+      "defaultValue": "en-US"
+    },
+    {
+      "name": "contrast",
+      "typeName": "contrast",
+      "defaultPriority": 850,
+      "token": "contrast",
+      "tokenIsOptional": false,
+      "defaultValue": "standard"
+    },
+    {
+      "name": "theme",
+      "typeName": "theme",
+      "defaultPriority": 800,
+      "token": "theme",
+      "tokenIsOptional": false,
+      "defaultValue": "auto"
+    },
+    {
+      "name": "component",
+      "typeName": "component",
+      "defaultPriority": 700,
+      "token": "comp"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "color",
+      "typeName": "color"
+    },
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

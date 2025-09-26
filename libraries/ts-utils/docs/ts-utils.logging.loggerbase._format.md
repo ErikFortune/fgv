@@ -4,6 +4,8 @@
 
 ## Logging.LoggerBase.\_format() method
 
+Formats a message and parameters into a string.
+
 **Signature:**
 
 ```typescript
@@ -40,7 +42,7 @@ unknown
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ The message to format.
 
 
 </td></tr>
@@ -56,10 +58,15 @@ unknown\[\]
 
 </td><td>
 
+The parameters to format.
+
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 string
+
+The formatted message.
 

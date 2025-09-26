@@ -1,0 +1,197 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Task Log Entry Schema",
+  "description": "Schema for sequential task log entries to support debugging and system understanding",
+  "type": "object",
+  "required": [
+    "task_id",
+    "timestamp",
+    "type",
+    "summary",
+    "business_rationale",
+    "components_affected",
+    "risk_assessment",
+    "artifacts_path"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Unique task identifier",
+      "pattern": "^task-\\d{8}-\\d{3}$",
+      "example": "task-20240101-001"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Task completion timestamp in ISO 8601 format"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["feature", "bugfix", "refactor", "hotfix", "documentation"],
+      "description": "Type of task completed"
+    },
+    "workflow": {
+      "type": "string",
+      "description": "Workflow template used",
+      "examples": ["standard-feature", "bugfix-fast", "hotfix-emergency"]
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 120,
+      "description": "Concise one-line summary of what was accomplished"
+    },
+    "business_rationale": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "Why this change was needed from business perspective"
+    },
+    "user_impact": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high"],
+      "description": "Level of impact on end users"
+    },
+    "components_affected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of major components/services/files that were modified",
+      "maxItems": 10
+    },
+    "api_changes": {
+      "type": "object",
+      "properties": {
+        "breaking": {
+          "type": "boolean",
+          "description": "Whether changes are backwards incompatible"
+        },
+        "new_endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "New API endpoints added"
+        },
+        "modified_endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Existing endpoints that were modified"
+        },
+        "deprecated_endpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Endpoints marked for deprecation"
+        }
+      },
+      "additionalProperties": false
+    },
+    "database_changes": {
+      "type": "object",
+      "properties": {
+        "migrations": {
+          "type": "boolean",
+          "description": "Whether database migrations were required"
+        },
+        "schema_changes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tables/collections modified"
+        },
+        "data_migration": {
+          "type": "boolean",
+          "description": "Whether existing data required migration"
+        }
+      },
+      "additionalProperties": false
+    },
+    "risk_assessment": {
+      "type": "object",
+      "required": ["level"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "description": "Overall risk level of the change"
+        },
+        "factors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Specific risk factors identified",
+          "examples": [
+            "new_external_dependency",
+            "authentication_changes",
+            "data_migration_required",
+            "performance_impact",
+            "security_sensitive"
+          ]
+        },
+        "mitigation": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Risk mitigation measures taken"
+        }
+      },
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "automated_tests": {
+          "type": "boolean",
+          "description": "Whether comprehensive automated tests were added"
+        },
+        "manual_validation_completed": {
+          "type": "boolean",
+          "description": "Whether required manual validation was performed"
+        },
+        "performance_validated": {
+          "type": "boolean",
+          "description": "Whether performance impact was validated"
+        }
+      },
+      "additionalProperties": false
+    },
+    "artifacts_path": {
+      "type": "string",
+      "description": "Path to full task artifacts for detailed investigation",
+      "pattern": "^\\.agents/tasks/completed/\\d{4}-\\d{2}/task-\\d{8}-\\d{3}/$"
+    },
+    "related_commits": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-f0-9]{7,40}$"
+      },
+      "description": "Git commit hashes related to this task",
+      "maxItems": 20
+    },
+    "related_issues": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Issue tracker references (e.g., #123, PROJ-456)",
+      "maxItems": 10
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Searchable tags for categorization",
+      "examples": ["authentication", "performance", "ui", "api", "database"],
+      "maxItems": 10
+    }
+  },
+  "additionalProperties": false
+}
