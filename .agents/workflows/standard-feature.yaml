@@ -27,11 +27,22 @@ phases:
     max_iterations: 2
     description: 'Analyze and document detailed requirements'
 
+  - phase: ux_design
+    agent: ux-designer
+    mode: workflow
+    required: false
+    condition: 'if_ui_component OR user_interface_changes'
+    dependencies: [requirements_analysis]
+    max_iterations: 2
+    description: 'Design user experience and interface specifications'
+
   - phase: design
     agent: senior-developer
     mode: workflow
     required: true
-    dependencies: [requirements_analysis]
+    type: gate
+    dependencies: [requirements_analysis, ux_design]
+    condition_dependencies: 'ux_design_if_applicable'
     max_iterations: 2
     description: 'Create architectural design and implementation plan'
 
@@ -81,6 +92,7 @@ phases:
 
 success_criteria:
   - all_requirements_implemented: true
+  - ux_design_complete: true # if applicable
   - design_followed: true
   - code_quality_acceptable: true
   - tests_comprehensive: true
@@ -99,6 +111,11 @@ quality_gates:
   after_requirements_analysis:
     - requirements_complete: true
     - ambiguities_resolved: true
+
+  after_ux_design:
+    - user_flows_defined: true
+    - accessibility_considered: true
+    - mobile_responsiveness_planned: true
 
   after_design:
     - architecture_defined: true

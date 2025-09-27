@@ -1,0 +1,32 @@
+# Build outputs
+dist/
+lib/
+lib-commonjs/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Test outputs
+coverage/
+*.lcov
+
+# Temporary files
+temp/
+.rushstack/
+
+# Documentation
+docs/
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+rush-logs/

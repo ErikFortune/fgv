@@ -1,0 +1,62 @@
+{
+  "name": "@fgv/sudoku-app",
+  "version": "1.0.0",
+  "description": "Interactive Sudoku puzzle application using @fgv/ts-sudoku-ui components",
+  "private": true,
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack serve --mode development",
+    "clean": "rimraf dist",
+    "test": "echo 'No tests configured for sudoku app - this is a React frontend' && exit 0"
+  },
+  "keywords": [
+    "sudoku",
+    "puzzle",
+    "react",
+    "typescript",
+    "app",
+    "game"
+  ],
+  "author": "Erik Fortune",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@fgv/ts-sudoku-ui": "workspace:*",
+    "@fgv/ts-sudoku-lib": "workspace:*",
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/ts-json-base": "workspace:*",
+    "react": "~19.1.1",
+    "react-dom": "~19.1.1",
+    "react-router-dom": "^7.1.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "@types/react-dom": "~19.1.7",
+    "@types/node": "^20.14.9",
+    "typescript": "5.8.3",
+    "webpack": "~5.101.2",
+    "webpack-cli": "~6.0.1",
+    "webpack-dev-server": "~5.2.2",
+    "@babel/core": "~7.28.3",
+    "@babel/preset-env": "~7.28.3",
+    "@babel/preset-react": "~7.27.1",
+    "@babel/preset-typescript": "~7.27.1",
+    "babel-loader": "~10.0.0",
+    "css-loader": "~7.1.2",
+    "style-loader": "~4.0.0",
+    "postcss-loader": "~8.1.1",
+    "postcss": "~8.5.6",
+    "autoprefixer": "~10.4.21",
+    "tailwindcss": "^3.4.0",
+    "html-webpack-plugin": "~5.6.4",
+    "rimraf": "^6.0.1",
+    "core-js": "~3.45.0",
+    "whatwg-fetch": "~3.6.20",
+    "stream-browserify": "~3.0.0",
+    "util": "~0.12.5",
+    "buffer": "~6.0.3",
+    "process": "~0.11.10"
+  }
+}
