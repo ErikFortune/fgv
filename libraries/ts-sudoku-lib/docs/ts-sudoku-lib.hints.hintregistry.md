@@ -143,7 +143,7 @@ Creates a new HintRegistry with the specified providers pre-registered.
 </td></tr>
 <tr><td>
 
-[generateAllHints(state, options)](./ts-sudoku-lib.hints.hintregistry.generateallhints.md)
+[generateAllHints(puzzle, state, options)](./ts-sudoku-lib.hints.hintregistry.generateallhints.md)
 
 
 </td><td>
@@ -157,7 +157,7 @@ Generates hints using all applicable providers.
 </td></tr>
 <tr><td>
 
-[getBestHint(state, options)](./ts-sudoku-lib.hints.hintregistry.getbesthint.md)
+[getBestHint(puzzle, state, options)](./ts-sudoku-lib.hints.hintregistry.getbesthint.md)
 
 
 </td><td>

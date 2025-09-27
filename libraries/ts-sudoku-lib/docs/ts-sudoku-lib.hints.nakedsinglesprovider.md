@@ -69,7 +69,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[canProvideHints(state)](./ts-sudoku-lib.hints.nakedsinglesprovider.canprovidehints.md)
+[canProvideHints(puzzle, state)](./ts-sudoku-lib.hints.nakedsinglesprovider.canprovidehints.md)
 
 
 </td><td>
@@ -77,7 +77,7 @@ Description
 
 </td><td>
 
-Determines if this provider can potentially generate hints for the given puzzle state. Always returns true since naked singles can potentially exist in any incomplete puzzle.
+Determines if this provider can potentially generate hints for the given puzzle. Always returns true since naked singles can potentially exist in any incomplete puzzle.
 
 
 </td></tr>
@@ -99,7 +99,7 @@ Static factory method to create a new NakedSinglesProvider.
 </td></tr>
 <tr><td>
 
-[generateHints(state, options)](./ts-sudoku-lib.hints.nakedsinglesprovider.generatehints.md)
+[generateHints(puzzle, state, options)](./ts-sudoku-lib.hints.nakedsinglesprovider.generatehints.md)
 
 
 </td><td>
@@ -107,7 +107,7 @@ Static factory method to create a new NakedSinglesProvider.
 
 </td><td>
 
-Generates all naked single hints for the given puzzle state.
+Generates all naked single hints for the given puzzle.
 
 
 </td></tr>

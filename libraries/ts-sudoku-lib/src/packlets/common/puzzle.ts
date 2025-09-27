@@ -43,7 +43,8 @@ import { PuzzleState } from './puzzleState';
 const basicCageTotal: number = 45;
 
 /**
- * @internal
+ * Describes a single cell update.
+ * @public
  */
 export interface ICellUpdate {
   from: ICellState;
@@ -51,7 +52,8 @@ export interface ICellUpdate {
 }
 
 /**
- * @internal
+ * Describes a single puzzle update.
+ * @public
  */
 export interface IPuzzleUpdate {
   from: PuzzleState;
@@ -60,7 +62,8 @@ export interface IPuzzleUpdate {
 }
 
 /**
- * @internal
+ * Abstract base class for all puzzles.
+ * @public
  */
 export class Puzzle {
   public readonly id?: string;
@@ -68,27 +71,27 @@ export class Puzzle {
   public readonly initialState: PuzzleState;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _rows: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _columns: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _sections: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _cages: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _cells: Map<CellId, Cell>;
 

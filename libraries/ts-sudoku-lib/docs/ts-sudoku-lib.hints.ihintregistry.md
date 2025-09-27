@@ -27,7 +27,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[generateAllHints(state, options)](./ts-sudoku-lib.hints.ihintregistry.generateallhints.md)
+[generateAllHints(puzzle, state, options)](./ts-sudoku-lib.hints.ihintregistry.generateallhints.md)
 
 
 </td><td>
@@ -38,7 +38,7 @@ Generates hints using all applicable providers.
 </td></tr>
 <tr><td>
 
-[getBestHint(state, options)](./ts-sudoku-lib.hints.ihintregistry.getbesthint.md)
+[getBestHint(puzzle, state, options)](./ts-sudoku-lib.hints.ihintregistry.getbesthint.md)
 
 
 </td><td>

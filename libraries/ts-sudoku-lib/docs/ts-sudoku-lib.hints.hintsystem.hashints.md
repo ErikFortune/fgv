@@ -9,7 +9,7 @@ Checks if the puzzle state has any available hints.
 **Signature:**
 
 ```typescript
-hasHints(state: PuzzleState): Result<boolean>;
+hasHints(puzzle: Puzzle, state: PuzzleState): Result<boolean>;
 ```
 
 ## Parameters
@@ -31,6 +31,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
+
+
+</td></tr>
+<tr><td>
 
 state
 

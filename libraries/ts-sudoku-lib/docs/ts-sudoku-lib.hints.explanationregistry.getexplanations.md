@@ -9,7 +9,7 @@ Gets explanations for a specific hint.
 **Signature:**
 
 ```typescript
-getExplanations(hint: IHint, state: PuzzleState): Result<readonly IHintExplanation[]>;
+getExplanations(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly IHintExplanation[]>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ hint
 </td><td>
 
 The hint to explain
+
+
+</td></tr>
+<tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
 
 
 </td></tr>

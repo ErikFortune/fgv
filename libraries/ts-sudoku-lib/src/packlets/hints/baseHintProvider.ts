@@ -39,7 +39,7 @@ import {
 } from './types';
 
 /**
- * Configuration for a {@link BaseHintProvider | BaseHintProvider} instance.
+ * Configuration for a {@link Hints.BaseHintProvider | BaseHintProvider} instance.
  * @public
  */
 export interface IBaseHintProviderConfig {

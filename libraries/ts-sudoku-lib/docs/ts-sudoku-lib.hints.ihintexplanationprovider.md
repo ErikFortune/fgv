@@ -73,7 +73,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[generateExplanations(hint, state)](./ts-sudoku-lib.hints.ihintexplanationprovider.generateexplanations.md)
+[generateExplanations(hint, puzzle, state)](./ts-sudoku-lib.hints.ihintexplanationprovider.generateexplanations.md)
 
 
 </td><td>

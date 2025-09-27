@@ -128,23 +128,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[canProvideHints(state)](./ts-sudoku-lib.hints.ihintprovider.canprovidehints.md)
+[canProvideHints(puzzle, state)](./ts-sudoku-lib.hints.ihintprovider.canprovidehints.md)
 
 
 </td><td>
 
-Determines if this provider can potentially generate hints for the given puzzle state. This should be a fast check to avoid expensive hint generation when not applicable.
+Determines if this provider can potentially generate hints for the given puzzle. This should be a fast check to avoid expensive hint generation when not applicable.
 
 
 </td></tr>
 <tr><td>
 
-[generateHints(state, options)](./ts-sudoku-lib.hints.ihintprovider.generatehints.md)
+[generateHints(puzzle, state, options)](./ts-sudoku-lib.hints.ihintprovider.generatehints.md)
 
 
 </td><td>
 
-Generates all possible hints using this technique for the given puzzle state.
+Generates all possible hints using this technique for the given puzzle.
 
 
 </td></tr>

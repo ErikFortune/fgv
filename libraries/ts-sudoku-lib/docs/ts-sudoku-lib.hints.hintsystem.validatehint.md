@@ -9,7 +9,7 @@ Validates that a hint can be applied to the current state.
 **Signature:**
 
 ```typescript
-validateHint(hint: IHint, state: PuzzleState): Result<void>;
+validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ hint
 </td><td>
 
 The hint to validate
+
+
+</td></tr>
+<tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
 
 
 </td></tr>

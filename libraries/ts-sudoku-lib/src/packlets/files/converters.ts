@@ -24,12 +24,12 @@
 
 import { Converter, Converters, Result } from '@fgv/ts-utils';
 import { IPuzzlesFile } from './model';
+import { FileTree } from '@fgv/ts-json-base';
 
-import { JsonFile } from '@fgv/ts-json-base';
 import { Converters as CommonConverters } from '../common';
 
 /**
- * Converts an arbitrary object to a {@link File.Model.IPuzzlesFile | IPuzzlesFile}.
+ * Converts an arbitrary object to a {@link Files.Model.IPuzzlesFile | IPuzzlesFile}.
  * @public
  */
 export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuzzlesFile>({
@@ -37,13 +37,12 @@ export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuz
 });
 
 /**
- * Loads an arbitrary JSON file and parses it to return a validated
- * {@link File.Model.IPuzzlesFile | IPuzzlesFile}.
- * @param path - String path to the file
- * @returns `Success` with the resulting file, or `Failure` with details if an
- * error occurs.
+ * Loads a puzzles file from a `IFileTreeFileItem`.
+ * @param file - The `IFileTreeFileItem` to load.
+ * @returns `Success` with the resulting {@link Files.Model.IPuzzlesFile | IPuzzlesFile}, or `Failure` with
+ * details if an error occurs.
  * @public
  */
-export function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile> {
-  return JsonFile.convertJsonFileSync(path, puzzlesFile);
+export function loadPuzzlesFile(file: FileTree.IFileTreeFileItem): Result<IPuzzlesFile> {
+  return file.getContents(puzzlesFile);
 }

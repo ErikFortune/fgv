@@ -191,7 +191,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[canProvideHints(state)](./ts-sudoku-lib.hints.basehintprovider.canprovidehints.md)
+[canProvideHints(puzzle, state)](./ts-sudoku-lib.hints.basehintprovider.canprovidehints.md)
 
 
 </td><td>
@@ -201,7 +201,7 @@ Description
 
 </td><td>
 
-Abstract method to be implemented by concrete providers. Determines if this provider can potentially generate hints for the given puzzle state.
+Abstract method to be implemented by concrete providers. Determines if this provider can potentially generate hints for the given puzzle.
 
 
 </td></tr>
@@ -287,7 +287,7 @@ Filters hints based on generation options.
 </td></tr>
 <tr><td>
 
-[generateHints(state, options)](./ts-sudoku-lib.hints.basehintprovider.generatehints.md)
+[generateHints(puzzle, state, options)](./ts-sudoku-lib.hints.basehintprovider.generatehints.md)
 
 
 </td><td>
@@ -297,13 +297,13 @@ Filters hints based on generation options.
 
 </td><td>
 
-Abstract method to be implemented by concrete providers. Generates all possible hints using this technique for the given puzzle state.
+Abstract method to be implemented by concrete providers. Generates all possible hints using this technique for the given puzzle.
 
 
 </td></tr>
 <tr><td>
 
-[getCandidates(cellId, state)](./ts-sudoku-lib.hints.basehintprovider.getcandidates.md)
+[getCandidates(cellId, puzzle, state)](./ts-sudoku-lib.hints.basehintprovider.getcandidates.md)
 
 
 </td><td>
@@ -313,13 +313,13 @@ Abstract method to be implemented by concrete providers. Generates all possible 
 
 </td><td>
 
-Gets the possible candidate values for a specific cell. This is a basic implementation that can be overridden by subclasses.
+Gets the possible candidate values for a specific cell using cage-based constraints. This implementation works with any puzzle variant by checking all applicable cages.
 
 
 </td></tr>
 <tr><td>
 
-[getEmptyCells(state)](./ts-sudoku-lib.hints.basehintprovider.getemptycells.md)
+[getEmptyCells(puzzle, state)](./ts-sudoku-lib.hints.basehintprovider.getemptycells.md)
 
 
 </td><td>
@@ -329,7 +329,7 @@ Gets the possible candidate values for a specific cell. This is a basic implemen
 
 </td><td>
 
-Gets all empty cells in the puzzle state.
+Gets all empty cells in the puzzle.
 
 
 </td></tr>

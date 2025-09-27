@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Erik Fortune
+ * Copyright (c) 2025 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,19 @@
  * SOFTWARE.
  */
 
-import * as Converters from './converters';
-import * as Model from './model';
+import { Result } from '@fgv/ts-utils';
+import { IPuzzlesFile } from './model';
+import { puzzlesFile } from './converters';
+import { JsonFile } from '@fgv/ts-json-base';
 
-export { Converters, Model };
+/**
+ * Loads an arbitrary JSON file and parses it to return a validated
+ * {@link Files.Model.IPuzzlesFile | IPuzzlesFile}.
+ * @param path - String path to the file
+ * @returns `Success` with the resulting file, or `Failure` with details if an
+ * error occurs.
+ * @public
+ */
+export function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile> {
+  return JsonFile.convertJsonFileSync(path, puzzlesFile);
+}

@@ -4,12 +4,12 @@
 
 ## Hints.BaseHintProvider.canProvideHints() method
 
-Abstract method to be implemented by concrete providers. Determines if this provider can potentially generate hints for the given puzzle state.
+Abstract method to be implemented by concrete providers. Determines if this provider can potentially generate hints for the given puzzle.
 
 **Signature:**
 
 ```typescript
-abstract canProvideHints(state: PuzzleState): boolean;
+abstract canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
 ```
 
 ## Parameters
@@ -31,6 +31,20 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 state
 

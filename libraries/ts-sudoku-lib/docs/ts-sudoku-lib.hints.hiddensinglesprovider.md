@@ -69,7 +69,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[canProvideHints(state)](./ts-sudoku-lib.hints.hiddensinglesprovider.canprovidehints.md)
+[canProvideHints(puzzle, state)](./ts-sudoku-lib.hints.hiddensinglesprovider.canprovidehints.md)
 
 
 </td><td>
@@ -77,7 +77,7 @@ Description
 
 </td><td>
 
-Determines if this provider can potentially generate hints for the given puzzle state.
+Determines if this provider can potentially generate hints for the given puzzle.
 
 
 </td></tr>
@@ -99,7 +99,7 @@ Static factory method to create a new HiddenSinglesProvider.
 </td></tr>
 <tr><td>
 
-[generateHints(state, options)](./ts-sudoku-lib.hints.hiddensinglesprovider.generatehints.md)
+[generateHints(puzzle, state, options)](./ts-sudoku-lib.hints.hiddensinglesprovider.generatehints.md)
 
 
 </td><td>
@@ -107,7 +107,7 @@ Static factory method to create a new HiddenSinglesProvider.
 
 </td><td>
 
-Generates all hidden single hints for the given puzzle state.
+Generates all hidden single hints for the given puzzle.
 
 
 </td></tr>

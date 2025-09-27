@@ -46,5 +46,5 @@ puzzle
 
 **Returns:**
 
-Result&lt;Puzzle&gt;
+Result&lt;[Puzzle](./ts-sudoku-lib.puzzle.md)<!-- -->&gt;
 

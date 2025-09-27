@@ -24,21 +24,25 @@
 
 import '@fgv/ts-utils-jest';
 import { PuzzleCollection, PuzzleCollections, Puzzles } from '../..';
+import { FileTree } from '@fgv/ts-json-base';
 
 describe('PuzzleCollection tests', () => {
+  let file: FileTree.IFileTreeFileItem<string>;
+
+  beforeEach(() => {
+    file = FileTree.forFilesystem()
+      .onSuccess((tree) => tree.getFile('src/packlets/collections/data/puzzles.json'))
+      .orThrow();
+  });
   describe('PuzzleCollection class', () => {
     test('load correctly loads a file', () => {
-      expect(PuzzleCollection.load('src/packlets/collections/data/puzzles.json')).toSucceedAndSatisfy(
-        (puzzles) => {
-          expect(puzzles.puzzles.find((p) => p.id === 'hidden-pair')).toBeDefined();
-        }
-      );
+      expect(PuzzleCollection.load(file)).toSucceedAndSatisfy((puzzles) => {
+        expect(puzzles.puzzles.find((p) => p.id === 'hidden-pair')).toBeDefined();
+      });
     });
 
     describe('getPuzzle method', () => {
-      const puzzles: PuzzleCollection = PuzzleCollection.load(
-        'src/packlets/collections/data/puzzles.json'
-      ).orThrow();
+      const puzzles: PuzzleCollection = PuzzleCollection.load(file).orThrow();
 
       test('succeeds for a puzzle that exists', () => {
         expect(puzzles.getPuzzle('almost-done')).toSucceedAndSatisfy((puzzle) => {

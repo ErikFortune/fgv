@@ -66,7 +66,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[getExplanationAtLevel(hint, level, state)](./ts-sudoku-lib.hints.explanationregistry.getexplanationatlevel.md)
+[getExplanationAtLevel(hint, level, puzzle, state)](./ts-sudoku-lib.hints.explanationregistry.getexplanationatlevel.md)
 
 
 </td><td>
@@ -80,7 +80,7 @@ Gets a specific explanation at the requested level.
 </td></tr>
 <tr><td>
 
-[getExplanations(hint, state)](./ts-sudoku-lib.hints.explanationregistry.getexplanations.md)
+[getExplanations(hint, puzzle, state)](./ts-sudoku-lib.hints.explanationregistry.getexplanations.md)
 
 
 </td><td>

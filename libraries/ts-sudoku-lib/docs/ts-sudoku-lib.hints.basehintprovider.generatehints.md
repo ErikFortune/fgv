@@ -4,12 +4,12 @@
 
 ## Hints.BaseHintProvider.generateHints() method
 
-Abstract method to be implemented by concrete providers. Generates all possible hints using this technique for the given puzzle state.
+Abstract method to be implemented by concrete providers. Generates all possible hints using this technique for the given puzzle.
 
 **Signature:**
 
 ```typescript
-abstract generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+abstract generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
 ```
 
 ## Parameters
@@ -31,6 +31,20 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 state
 

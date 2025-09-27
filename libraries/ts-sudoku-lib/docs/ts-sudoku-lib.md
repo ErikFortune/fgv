@@ -29,6 +29,17 @@ Description
 </td></tr>
 <tr><td>
 
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+Abstract base class for all puzzles.
+
+
+</td></tr>
+<tr><td>
+
 [PuzzleCollection](./ts-sudoku-lib.puzzlecollection.md)
 
 
@@ -130,12 +141,34 @@ Describes the state of or a state update for a single [cell](./ts-sudoku-lib.ice
 </td></tr>
 <tr><td>
 
+[ICellUpdate](./ts-sudoku-lib.icellupdate.md)
+
+
+</td><td>
+
+Describes a single cell update.
+
+
+</td></tr>
+<tr><td>
+
 [IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)
 
 
 </td><td>
 
 Description of a single puzzle.
+
+
+</td></tr>
+<tr><td>
+
+[IPuzzleUpdate](./ts-sudoku-lib.ipuzzleupdate.md)
+
+
+</td><td>
+
+Describes a single puzzle update.
 
 
 </td></tr>
@@ -176,7 +209,7 @@ Description
 </td></tr>
 <tr><td>
 
-[File\_2](./ts-sudoku-lib.file_2.md)
+[Files](./ts-sudoku-lib.files.md)
 
 
 </td><td>

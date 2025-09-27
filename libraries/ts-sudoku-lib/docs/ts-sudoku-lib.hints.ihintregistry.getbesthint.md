@@ -9,7 +9,7 @@ Gets the best available hint based on difficulty and confidence.
 **Signature:**
 
 ```typescript
-getBestHint(state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
 ```
 
 ## Parameters
@@ -31,6 +31,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
+
+
+</td></tr>
+<tr><td>
 
 state
 

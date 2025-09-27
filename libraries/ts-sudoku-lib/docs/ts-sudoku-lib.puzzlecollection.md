@@ -88,7 +88,7 @@ Description
 
 </td><td>
 
-Creates a new puzzle from a loaded 
+Creates a new puzzle from a loaded [PuzzlesFile](./ts-sudoku-lib.files.model.ipuzzlesfile.md)
 
 
 </td></tr>
@@ -122,7 +122,7 @@ Gets a puzzle by id from this collection.
 </td></tr>
 <tr><td>
 
-[load(path)](./ts-sudoku-lib.puzzlecollection.load.md)
+[load(file)](./ts-sudoku-lib.puzzlecollection.load.md)
 
 
 </td><td>

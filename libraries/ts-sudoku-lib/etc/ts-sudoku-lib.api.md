@@ -6,6 +6,7 @@
 
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 
 // @public
@@ -22,8 +23,6 @@ class AnyPuzzle {
 // @public
 abstract class BaseHintProvider implements IHintProvider {
     protected constructor(config: IBaseHintProviderConfig);
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     abstract canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
     protected createCellAction(cellId: CellId, action: ICellAction['action'], value?: number, reason?: string): ICellAction;
     protected createExplanation(level: ExplanationLevel, title: string, description: string, steps?: readonly string[], tips?: readonly string[]): IHintExplanation;
@@ -34,14 +33,8 @@ abstract class BaseHintProvider implements IHintProvider {
     // (undocumented)
     readonly difficulty: DifficultyLevel;
     protected filterHints(hints: readonly IHint[], options?: IHintGenerationOptions): readonly IHint[];
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     abstract generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getCandidates" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getCandidates" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     protected getCandidates(cellId: CellId, puzzle: Puzzle, state: PuzzleState): number[];
-    // Warning: (ae-incompatible-release-tags) The symbol "getEmptyCells" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getEmptyCells" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     protected getEmptyCells(puzzle: Puzzle, state: PuzzleState): CellId[];
     // (undocumented)
     readonly priority: number;
@@ -155,18 +148,14 @@ export { Converters }
 
 declare namespace Converters_2 {
     export {
-        loadJsonPuzzlesFileSync,
+        loadPuzzlesFile,
         puzzlesFile
     }
 }
 
 // @public
 class DefaultHintApplicator implements IHintApplicator {
-    // Warning: (ae-incompatible-release-tags) The symbol "applyHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "applyHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "validateHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "validateHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
 }
 
@@ -196,32 +185,31 @@ type ExplanationLevel = 'brief' | 'detailed' | 'educational';
 // @public
 class ExplanationRegistry {
     constructor();
-    // Warning: (ae-incompatible-release-tags) The symbol "getExplanationAtLevel" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getExplanationAtLevel" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     getExplanationAtLevel(hint: IHint, level: ExplanationLevel, puzzle: Puzzle, state: PuzzleState): Result<IHintExplanation>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getExplanations" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getExplanations" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     getExplanations(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly IHintExplanation[]>;
     registerProvider(provider: IHintExplanationProvider): Result<void>;
 }
 
-declare namespace File_2 {
+declare namespace Files {
     export {
         Converters_2 as Converters,
-        Model
+        Model,
+        FileSystem_2 as FileSystem
     }
 }
-export { File_2 as File }
+export { Files }
+
+declare namespace FileSystem_2 {
+    export {
+        loadJsonPuzzlesFileSync
+    }
+}
 
 // @public
 class HiddenSinglesProvider extends BaseHintProvider {
     constructor();
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
     static create(): Result<HiddenSinglesProvider>;
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
 }
 
@@ -230,11 +218,7 @@ class HintRegistry implements IHintRegistry {
     constructor();
     clear(): Result<void>;
     static create(providers?: readonly IHintProvider[]): Result<HintRegistry>;
-    // Warning: (ae-incompatible-release-tags) The symbol "generateAllHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateAllHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateAllHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getBestHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getBestHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
     getProvider(techniqueId: TechniqueId): Result<IHintProvider>;
     getProviders(options?: IHintGenerationOptions): readonly IHintProvider[];
@@ -285,36 +269,24 @@ export { Hints }
 class HintSystem {
     constructor(registry: IHintRegistry, applicator: IHintApplicator, config: IHintSystemConfig);
     get applicator(): IHintApplicator;
-    // Warning: (ae-incompatible-release-tags) The symbol "applyHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "applyHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
     get config(): IHintSystemConfig;
     static create(config?: IHintSystemConfig): Result<HintSystem>;
     formatHintExplanation(hint: IHint, level?: ExplanationLevel): string;
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getBestHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getBestHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getHintStatistics" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getHintStatistics" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     getHintStatistics(puzzle: Puzzle, state: PuzzleState): Result<{
         totalHints: number;
         hintsByTechnique: Map<string, number>;
         hintsByDifficulty: Map<string, number>;
     }>;
     getSystemSummary(): string;
-    // Warning: (ae-incompatible-release-tags) The symbol "hasHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "hasHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     hasHints(puzzle: Puzzle, state: PuzzleState): Result<boolean>;
     get registry(): IHintRegistry;
-    // Warning: (ae-incompatible-release-tags) The symbol "validateHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "validateHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
 }
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "BaseHintProvider"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface IBaseHintProviderConfig {
@@ -388,9 +360,7 @@ export interface ICellState extends ICellContents {
     readonly id: CellId;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ICellUpdate" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
+// @public
 export interface ICellUpdate {
     // (undocumented)
     from: ICellState;
@@ -436,11 +406,7 @@ interface IHint {
 
 // @public
 interface IHintApplicator {
-    // Warning: (ae-incompatible-release-tags) The symbol "applyHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "applyHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "validateHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "validateHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
 }
 
@@ -460,8 +426,6 @@ interface IHintExplanation {
 
 // @public
 interface IHintExplanationProvider {
-    // Warning: (ae-incompatible-release-tags) The symbol "generateExplanations" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateExplanations" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateExplanations(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly IHintExplanation[]>;
     readonly techniqueId: TechniqueId;
 }
@@ -482,13 +446,9 @@ interface IHintGenerationOptions {
 
 // @public
 interface IHintProvider {
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
     // (undocumented)
     readonly difficulty: DifficultyLevel;
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
     // (undocumented)
     readonly priority: number;
@@ -500,11 +460,7 @@ interface IHintProvider {
 
 // @public
 interface IHintRegistry {
-    // Warning: (ae-incompatible-release-tags) The symbol "generateAllHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateAllHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateAllHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getBestHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getBestHint" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
     getProvider(techniqueId: TechniqueId): Result<IHintProvider>;
     getProviders(options?: IHintGenerationOptions): readonly IHintProvider[];
@@ -561,9 +517,7 @@ interface IPuzzlesFile {
     puzzles: IPuzzleDescription[];
 }
 
-// Warning: (ae-internal-missing-underscore) The name "IPuzzleUpdate" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
+// @public
 export interface IPuzzleUpdate {
     // (undocumented)
     cells: ICellUpdate[];
@@ -593,16 +547,11 @@ export interface IRowColumn {
 
 // @public
 class KillerCombinations {
-    // Warning: (ae-incompatible-release-tags) The symbol "getCellPossibilities" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "getCellPossibilities" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     static getCellPossibilities(puzzle: Puzzle, state: PuzzleState, cage: ICage): Result<Map<CellId, number[]>>;
     static getCombinations(cageSize: number, total: number, constraints?: IKillerConstraints): Result<number[][]>;
     static getPossibleTotals(cageSize: number): Result<number[]>;
 }
 
-// Warning: (ae-incompatible-release-tags) The symbol "KillerSudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "KillerSudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-//
 // @public (undocumented)
 class KillerSudokuPuzzle extends Puzzle {
     // (undocumented)
@@ -614,6 +563,11 @@ class KillerSudokuPuzzle extends Puzzle {
 // @public
 function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function loadPuzzlesFile(file: FileTree.IFileTreeFileItem): Result<IPuzzlesFile>;
+
 declare namespace Model {
     export {
         IPuzzlesFile
@@ -623,12 +577,8 @@ declare namespace Model {
 // @public
 class NakedSinglesProvider extends BaseHintProvider {
     constructor();
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "canProvideHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
     static create(): Result<NakedSinglesProvider>;
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    // Warning: (ae-incompatible-release-tags) The symbol "generateHints" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
 }
 
@@ -638,35 +588,50 @@ export type NavigationDirection = 'down' | 'left' | 'right' | 'up';
 // @public
 export type NavigationWrap = 'none' | 'wrap-around' | 'wrap-next';
 
-// Warning: (ae-internal-missing-underscore) The name "Puzzle" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
+// @public
 export class Puzzle {
+    // Warning: (ae-incompatible-release-tags) The symbol "__constructor" is marked as @public, but its signature references "Cage" which is marked as @internal
     protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]);
+    // Warning: (ae-incompatible-release-tags) The symbol "cages" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get cages(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_cages" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _cages: Map<CageId, Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "cells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     get cells(): Cell[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_cells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _cells: Map<CellId, Cell>;
     // (undocumented)
     checkIsSolved(state: PuzzleState): boolean;
     // (undocumented)
     checkIsValid(state: PuzzleState): boolean;
+    // Warning: (ae-incompatible-release-tags) The symbol "cols" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get cols(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_columns" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _columns: Map<CageId, Cage>;
-    // (undocumented)
+    // @internal (undocumented)
     protected static _createColumnCages(numRows: number, numCols: number): Result<[CageId, Cage][]>;
-    // (undocumented)
+    // @internal (undocumented)
     protected static _createRowCages(numRows: number, numCols: number): Result<[CageId, Cage][]>;
     // (undocumented)
     readonly description: string;
+    // Warning: (ae-incompatible-release-tags) The symbol "getCage" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getCage(id: CageId): Result<Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getCell" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     getCell(spec: string | IRowColumn | ICell): Result<Cell>;
     // (undocumented)
@@ -676,14 +641,24 @@ export class Puzzle {
     }>;
     // (undocumented)
     getCellNeighbor(spec: string | IRowColumn | ICell, direction: NavigationDirection, wrap: NavigationWrap): Result<ICell>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getColumn" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getColumn(col: CageId | number): Result<Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getEmptyCells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     getEmptyCells(state: PuzzleState): Cell[];
+    // Warning: (ae-incompatible-release-tags) The symbol "getInvalidCells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     getInvalidCells(state: PuzzleState): Cell[];
+    // Warning: (ae-incompatible-release-tags) The symbol "getRow" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getRow(row: CageId | number): Result<Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getSection" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getSection(spec: CageId | IRowColumn): Result<Cage>;
     // (undocumented)
@@ -694,12 +669,20 @@ export class Puzzle {
     get numColumns(): number;
     // (undocumented)
     get numRows(): number;
+    // Warning: (ae-incompatible-release-tags) The symbol "rows" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get rows(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_rows" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _rows: Map<CageId, Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "sections" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get sections(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_sections" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _sections: Map<CageId, Cage>;
     // (undocumented)
@@ -722,10 +705,10 @@ export class Puzzle {
 export class PuzzleCollection {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(from: File_2.Model.IPuzzlesFile): Result<PuzzleCollection>;
+    static create(from: Files.Model.IPuzzlesFile): Result<PuzzleCollection>;
     getDescription(id: string): Result<IPuzzleDescription>;
     getPuzzle(id: string): Result<PuzzleSession>;
-    static load(path: string): Result<PuzzleCollection>;
+    static load(file: FileTree.IFileTreeFileItem): Result<PuzzleCollection>;
     readonly puzzles: readonly IPuzzleDescription[];
 }
 
@@ -764,7 +747,6 @@ export class PuzzleSession {
     checkIsSolved(): boolean;
     checkIsValid(): boolean;
     get cols(): ICage[];
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     static create(puzzle: Puzzle): Result<PuzzleSession>;
     get description(): string;
     getCellContents(spec: string | IRowColumn): Result<{
@@ -784,10 +766,7 @@ export class PuzzleSession {
     get numSteps(): number;
     // (undocumented)
     protected _numSteps: number;
-    // Warning: (ae-incompatible-release-tags) The symbol "puzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     get puzzle(): Puzzle;
-    // Warning: (ae-incompatible-release-tags) The symbol "_puzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    //
     // (undocumented)
     protected readonly _puzzle: Puzzle;
     redo(): Result<this>;
@@ -885,18 +864,12 @@ export type PuzzleType = 'killer-sudoku' | 'sudoku' | 'sudoku-x';
 // @public
 const puzzleType: Converter<PuzzleType, ReadonlyArray<PuzzleType>>;
 
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-//
 // @public (undocumented)
 class SudokuPuzzle extends Puzzle {
     // (undocumented)
     static create(puzzle: IPuzzleDescription): Result<Puzzle>;
 }
 
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuXPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuXPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-//
 // @public (undocumented)
 class SudokuXPuzzle extends Puzzle {
     // (undocumented)
@@ -917,6 +890,10 @@ export const totalsByCageSize: readonly {
     min: number;
     max: number;
 }[];
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/common/puzzle.ts:299:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
 
 // (No @packageDocumentation comment for this package)
 

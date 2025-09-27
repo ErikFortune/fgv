@@ -22,13 +22,14 @@
  * SOFTWARE.
  */
 
-import * as FileData from '../file';
+import * as Files from '../files';
 import * as Puzzles from '../puzzles';
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
 import { IPuzzleDescription, PuzzleSession } from '../common';
 import DefaultPuzzles from './data/puzzles.json';
+import { FileTree } from '@fgv/ts-json-base';
 
 /**
  * A collection of puzzles of various types.
@@ -42,7 +43,7 @@ export class PuzzleCollection {
 
   private readonly _byId: Map<string, IPuzzleDescription>;
 
-  private constructor(puzzles: FileData.Model.IPuzzlesFile) {
+  private constructor(puzzles: Files.Model.IPuzzlesFile) {
     this.puzzles = puzzles.puzzles;
     this._byId = new Map(
       this.puzzles
@@ -52,12 +53,12 @@ export class PuzzleCollection {
   }
 
   /**
-   * Creates a new puzzle from a loaded {@link File.Model.IPuzzlesFile | PuzzlesFile}
-   * @param from - The {@link File.Model.IPuzzlesFile | puzzles file} to be loaded.
+   * Creates a new puzzle from a loaded {@link Files.Model.IPuzzlesFile | PuzzlesFile}
+   * @param from - The {@link Files.Model.IPuzzlesFile | puzzles file} to be loaded.
    * @returns `Success` with the resulting {@link PuzzleCollection | PuzzleCollection}
    * or `Failure` with details if an error occurs.
    */
-  public static create(from: FileData.Model.IPuzzlesFile): Result<PuzzleCollection> {
+  public static create(from: Files.Model.IPuzzlesFile): Result<PuzzleCollection> {
     return captureResult(() => new PuzzleCollection(from));
   }
 
@@ -67,8 +68,8 @@ export class PuzzleCollection {
    * @returns `Success` with the resulting {@link PuzzleCollection | PuzzleCollection}
    * or `Failure` with details if an error occurs.
    */
-  public static load(path: string): Result<PuzzleCollection> {
-    return FileData.Converters.loadJsonPuzzlesFileSync(path).onSuccess(PuzzleCollection.create);
+  public static load(file: FileTree.IFileTreeFileItem): Result<PuzzleCollection> {
+    return Files.Converters.loadPuzzlesFile(file).onSuccess(PuzzleCollection.create);
   }
 
   /**
@@ -114,7 +115,7 @@ export class PuzzleCollections {
    */
   public static get default(): PuzzleCollection {
     if (!PuzzleCollections._default) {
-      PuzzleCollections._default = FileData.Converters.puzzlesFile
+      PuzzleCollections._default = Files.Converters.puzzlesFile
         .convert(DefaultPuzzles)
         .onSuccess(PuzzleCollection.create)
         .orThrow();

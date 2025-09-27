@@ -9,7 +9,7 @@ Gets statistics about available hints for the current state.
 **Signature:**
 
 ```typescript
-getHintStatistics(state: PuzzleState): Result<{
+getHintStatistics(puzzle: Puzzle, state: PuzzleState): Result<{
         totalHints: number;
         hintsByTechnique: Map<string, number>;
         hintsByDifficulty: Map<string, number>;
@@ -35,6 +35,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
+
+
+</td></tr>
+<tr><td>
 
 state
 

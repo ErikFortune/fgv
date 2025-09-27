@@ -4,12 +4,12 @@
 
 ## Hints.HiddenSinglesProvider.generateHints() method
 
-Generates all hidden single hints for the given puzzle state.
+Generates all hidden single hints for the given puzzle.
 
 **Signature:**
 
 ```typescript
-generateHints(state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
 ```
 
 ## Parameters
@@ -31,6 +31,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
+
+
+</td></tr>
+<tr><td>
 
 state
 

@@ -4,7 +4,7 @@
 
 ## Hints.IBaseHintProviderConfig interface
 
-Configuration for a BaseHintProvider instance.
+Configuration for a [BaseHintProvider](./ts-sudoku-lib.hints.basehintprovider.md) instance.
 
 **Signature:**
 

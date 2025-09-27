@@ -4,12 +4,12 @@
 
 ## Hints.BaseHintProvider.getEmptyCells() method
 
-Gets all empty cells in the puzzle state.
+Gets all empty cells in the puzzle.
 
 **Signature:**
 
 ```typescript
-protected getEmptyCells(state: PuzzleState): CellId[];
+protected getEmptyCells(puzzle: Puzzle, state: PuzzleState): CellId[];
 ```
 
 ## Parameters
@@ -31,6 +31,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure
+
+
+</td></tr>
+<tr><td>
 
 state
 

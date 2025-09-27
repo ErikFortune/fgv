@@ -154,7 +154,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[applyHint(hint, state)](./ts-sudoku-lib.hints.hintsystem.applyhint.md)
+[applyHint(hint, puzzle, state)](./ts-sudoku-lib.hints.hintsystem.applyhint.md)
 
 
 </td><td>
@@ -198,7 +198,7 @@ Formats a hint explanation for display.
 </td></tr>
 <tr><td>
 
-[generateHints(state, options)](./ts-sudoku-lib.hints.hintsystem.generatehints.md)
+[generateHints(puzzle, state, options)](./ts-sudoku-lib.hints.hintsystem.generatehints.md)
 
 
 </td><td>
@@ -212,7 +212,7 @@ Generates all available hints for the current puzzle state.
 </td></tr>
 <tr><td>
 
-[getBestHint(state, options)](./ts-sudoku-lib.hints.hintsystem.getbesthint.md)
+[getBestHint(puzzle, state, options)](./ts-sudoku-lib.hints.hintsystem.getbesthint.md)
 
 
 </td><td>
@@ -226,7 +226,7 @@ Gets the best available hint for the current puzzle state.
 </td></tr>
 <tr><td>
 
-[getHintStatistics(state)](./ts-sudoku-lib.hints.hintsystem.gethintstatistics.md)
+[getHintStatistics(puzzle, state)](./ts-sudoku-lib.hints.hintsystem.gethintstatistics.md)
 
 
 </td><td>
@@ -254,7 +254,7 @@ Gets a summary of the hint system capabilities.
 </td></tr>
 <tr><td>
 
-[hasHints(state)](./ts-sudoku-lib.hints.hintsystem.hashints.md)
+[hasHints(puzzle, state)](./ts-sudoku-lib.hints.hintsystem.hashints.md)
 
 
 </td><td>
@@ -268,7 +268,7 @@ Checks if the puzzle state has any available hints.
 </td></tr>
 <tr><td>
 
-[validateHint(hint, state)](./ts-sudoku-lib.hints.hintsystem.validatehint.md)
+[validateHint(hint, puzzle, state)](./ts-sudoku-lib.hints.hintsystem.validatehint.md)
 
 
 </td><td>

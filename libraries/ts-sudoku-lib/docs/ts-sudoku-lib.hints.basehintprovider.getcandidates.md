@@ -4,12 +4,12 @@
 
 ## Hints.BaseHintProvider.getCandidates() method
 
-Gets the possible candidate values for a specific cell. This is a basic implementation that can be overridden by subclasses.
+Gets the possible candidate values for a specific cell using cage-based constraints. This implementation works with any puzzle variant by checking all applicable cages.
 
 **Signature:**
 
 ```typescript
-protected getCandidates(cellId: CellId, state: PuzzleState): number[];
+protected getCandidates(cellId: CellId, puzzle: Puzzle, state: PuzzleState): number[];
 ```
 
 ## Parameters
@@ -48,6 +48,22 @@ The cell to analyze
 </td></tr>
 <tr><td>
 
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
+
+
+</td></tr>
+<tr><td>
+
 state
 
 
@@ -68,5 +84,5 @@ The current puzzle state
 
 number\[\]
 
-Array of possible values (1-9) for the cell
+Array of possible values for the cell
 

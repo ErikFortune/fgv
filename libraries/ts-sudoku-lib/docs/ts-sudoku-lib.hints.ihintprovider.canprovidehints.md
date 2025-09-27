@@ -4,12 +4,12 @@
 
 ## Hints.IHintProvider.canProvideHints() method
 
-Determines if this provider can potentially generate hints for the given puzzle state. This should be a fast check to avoid expensive hint generation when not applicable.
+Determines if this provider can potentially generate hints for the given puzzle. This should be a fast check to avoid expensive hint generation when not applicable.
 
 **Signature:**
 
 ```typescript
-canProvideHints(state: PuzzleState): boolean;
+canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
 ```
 
 ## Parameters
@@ -31,6 +31,22 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
+
+
+</td></tr>
+<tr><td>
 
 state
 

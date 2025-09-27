@@ -9,7 +9,7 @@ Applies a hint to generate cell state updates.
 **Signature:**
 
 ```typescript
-applyHint(hint: IHint, state: PuzzleState): Result<readonly ICellState[]>;
+applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ hint
 </td><td>
 
 The hint to apply
+
+
+</td></tr>
+<tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure containing constraints
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Gets a specific explanation at the requested level.
 **Signature:**
 
 ```typescript
-getExplanationAtLevel(hint: IHint, level: ExplanationLevel, state: PuzzleState): Result<IHintExplanation>;
+getExplanationAtLevel(hint: IHint, level: ExplanationLevel, puzzle: Puzzle, state: PuzzleState): Result<IHintExplanation>;
 ```
 
 ## Parameters
@@ -59,6 +59,20 @@ level
 </td><td>
 
 The desired explanation level
+
+
+</td></tr>
+<tr><td>
+
+puzzle
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
 
 
 </td></tr>
