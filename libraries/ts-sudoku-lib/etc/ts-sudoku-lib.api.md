@@ -524,6 +524,12 @@ interface IHintSystemConfig {
 }
 
 // @public
+interface IKillerConstraints {
+    readonly excludedNumbers?: readonly number[];
+    readonly requiredNumbers?: readonly number[];
+}
+
+// @public
 export interface IPuzzleDescription {
     // (undocumented)
     cells: string;
@@ -583,6 +589,15 @@ export interface IRowColumn {
     col: number;
     // (undocumented)
     row: number;
+}
+
+// @public
+class KillerCombinations {
+    // Warning: (ae-incompatible-release-tags) The symbol "getCellPossibilities" is marked as @public, but its signature references "Puzzle" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "getCellPossibilities" is marked as @public, but its signature references "Puzzle" which is marked as @internal
+    static getCellPossibilities(puzzle: Puzzle, state: PuzzleState, cage: ICage): Result<Map<CellId, number[]>>;
+    static getCombinations(cageSize: number, total: number, constraints?: IKillerConstraints): Result<number[][]>;
+    static getPossibleTotals(cageSize: number): Result<number[]>;
 }
 
 // Warning: (ae-incompatible-release-tags) The symbol "KillerSudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
@@ -727,7 +742,9 @@ declare namespace Puzzles {
         AnyPuzzle as Any,
         KillerSudokuPuzzle as Killer,
         SudokuPuzzle as Sudoku,
-        SudokuXPuzzle as SudokuX
+        SudokuXPuzzle as SudokuX,
+        KillerCombinations,
+        IKillerConstraints
     }
 }
 export { Puzzles }

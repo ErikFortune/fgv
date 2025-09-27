@@ -22,11 +22,20 @@
  * SOFTWARE.
  */
 
-import { AnyPuzzle as Any } from './anyPuzzle';
-import { KillerSudokuPuzzle as Killer } from './killerSudokuPuzzle';
-import { SudokuPuzzle as Sudoku } from './sudokuPuzzle';
-import { SudokuXPuzzle as SudokuX } from './sudokuXPuzzle';
+/**
+ * Constraints that can be applied when generating killer cage combinations.
+ * @public
+ */
+export interface IKillerConstraints {
+  /**
+   * Numbers that cannot be present in the combination.
+   * Must be unique values between 1-9.
+   */
+  readonly excludedNumbers?: readonly number[];
 
-export { Any, Killer, Sudoku, SudokuX };
-export { KillerCombinations } from './killerCombinations';
-export type { IKillerConstraints } from './killerCombinationsTypes';
+  /**
+   * Numbers that must be present in the combination.
+   * Must be unique values between 1-9.
+   */
+  readonly requiredNumbers?: readonly number[];
+}
