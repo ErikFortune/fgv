@@ -42,7 +42,10 @@ describe('PuzzleCollection tests', () => {
     });
 
     describe('getPuzzle method', () => {
-      const puzzles: PuzzleCollection = PuzzleCollection.load(file).orThrow();
+      let puzzles: PuzzleCollection;
+      beforeEach(() => {
+        puzzles = PuzzleCollection.load(file).orThrow();
+      });
 
       test('succeeds for a puzzle that exists', () => {
         expect(puzzles.getPuzzle('almost-done')).toSucceedAndSatisfy((puzzle) => {
