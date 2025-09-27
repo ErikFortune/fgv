@@ -121,7 +121,7 @@ export class KillerCombinations {
 
     if (!Number.isInteger(total) || total < bounds.min || total > bounds.max) {
       return fail(
-        `Total ${total} is invalid for cage size ${cageSize}. ` + `Valid range: ${bounds.min}-${bounds.max}`
+        `Total ${total} is invalid for cage size ${cageSize} - valid range: ${bounds.min}-${bounds.max}`
       );
     }
 

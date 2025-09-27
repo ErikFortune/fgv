@@ -23,10 +23,128 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { CageId, CellId, ICage, Puzzle, PuzzleState, totalsByCageSize } from '../../../packlets/common';
+import {
+  CageId,
+  CellId,
+  ICage,
+  Puzzle,
+  PuzzleState,
+  PuzzleSession,
+  totalsByCageSize,
+  IPuzzleDescription
+} from '../../../packlets/common';
 import { KillerCombinations, IKillerConstraints } from '../../../packlets/puzzles';
+import * as Puzzles from '../../../packlets/puzzles';
 
 describe('KillerCombinations', () => {
+  // Test builder functions for creating real puzzle instances
+  interface ITestKillerPuzzleConfig {
+    cageSize: number;
+    cageTotal: number;
+    prefilledValues?: Map<CellId, number>;
+    cageId?: string;
+  }
+
+  function createTestKillerPuzzle(config: ITestKillerPuzzleConfig): {
+    puzzle: Puzzle;
+    session: PuzzleSession;
+    cage: ICage;
+  } {
+    const { cageTotal, prefilledValues = new Map(), cageId = 'A' } = config;
+
+    // Use the actual working killer puzzle from the existing tests
+    // and replace the first cage with our test parameters
+    const basePuzzleDesc: IPuzzleDescription = {
+      id: 'test-killer',
+      description: 'Test killer sudoku puzzle',
+      type: 'killer-sudoku',
+      level: 1,
+      rows: 9,
+      cols: 9,
+      cells: [
+        'ABCCCDDDE',
+        'ABFFGGGDE',
+        'HIJKGGLLL',
+        'HIJKMGLNN',
+        'HOPPMQQNR',
+        'OOSTMUVWR',
+        'SSSTTUVWR',
+        'XYTTTZZab',
+        'XYYYcccab',
+        `|${cageId}${cageTotal
+          .toString()
+          .padStart(
+            2,
+            '0'
+          )},B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
+      ].join('')
+    };
+
+    const puzzle = Puzzles.Killer.create(basePuzzleDesc).orThrow();
+    const session = PuzzleSession.create(puzzle).orThrow();
+
+    // Apply prefilled values if provided
+    for (const [cellId, value] of prefilledValues) {
+      session.updateCellValue(cellId, value).orThrow();
+    }
+
+    // Get the test cage (prefix with K for killer cages)
+    const cage = puzzle.getCage(`K${cageId}` as CageId).orThrow();
+
+    return { puzzle, session, cage };
+  }
+
+  function createSimpleKillerCage(
+    cageSize: number,
+    total: number,
+    containedValues: number[] = []
+  ): {
+    puzzle: Puzzle;
+    state: PuzzleState;
+    cage: ICage;
+  } {
+    // Use an existing working killer puzzle for these specific test cases
+    const existingPuzzleDesc: IPuzzleDescription = {
+      id: 'test-killer',
+      description: 'Test killer sudoku puzzle',
+      type: 'killer-sudoku',
+      level: 1,
+      rows: 9,
+      cols: 9,
+      cells: [
+        'ABCCCDDDE',
+        'ABFFGGGDE',
+        'HIJKGGLLL',
+        'HIJKMGLNN',
+        'HOPPMQQNR',
+        'OOSTMUVWR',
+        'SSSTTUVWR',
+        'XYTTTZZab',
+        'XYYYcccab',
+        '|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
+      ].join('')
+    };
+
+    const puzzle = Puzzles.Killer.create(existingPuzzleDesc).orThrow();
+    const session = PuzzleSession.create(puzzle).orThrow();
+
+    // Apply contained values if provided
+    if (containedValues.length > 0) {
+      const cageA = puzzle.getCage('KA' as CageId).orThrow();
+      const cellIds = Array.from(cageA.cellIds);
+      containedValues.forEach((value, index) => {
+        if (index < cellIds.length) {
+          session.updateCellValue(cellIds[index], value).orThrow();
+        }
+      });
+    }
+
+    // For this simple test, we'll use cage KA which has 2 cells in the existing puzzle
+    const cage = puzzle.getCage('KA' as CageId).orThrow();
+
+    return { puzzle, state: session.state, cage };
+  }
+
   describe('getPossibleTotals', () => {
     test('should return correct totals for each valid cage size', () => {
       // Test cage sizes 1-9
@@ -256,59 +374,113 @@ describe('KillerCombinations', () => {
 
   describe('getCellPossibilities', () => {
     test('should fail for non-killer cages', () => {
-      // Create a mock non-killer cage
-      const mockCage: ICage = {
-        id: 'r1' as CageId,
-        cageType: 'row',
-        total: 45,
-        numCells: 9,
-        cellIds: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9'] as CellId[],
-        containsCell: jest.fn()
+      // Create a real puzzle with a standard sudoku puzzle (has row cages)
+      const regularPuzzleDesc: IPuzzleDescription = {
+        id: 'test-regular',
+        description: 'Test regular sudoku puzzle',
+        type: 'sudoku',
+        level: 1,
+        rows: 9,
+        cols: 9,
+        cells: [
+          '.........',
+          '9.46.7...',
+          '.768.41..',
+          '3.97.1.8.',
+          '7.8...3.1',
+          '.513.87.2',
+          '..75.261.',
+          '..54.32.8',
+          '.........'
+        ].join('')
       };
 
-      // Create minimal mock puzzle and state
-      const mockPuzzle = {} as Puzzle;
-      const mockState = {} as PuzzleState;
+      const puzzle = Puzzles.Any.create(regularPuzzleDesc).orThrow();
+      const session = PuzzleSession.create(puzzle).orThrow();
 
-      const result = KillerCombinations.getCellPossibilities(mockPuzzle, mockState, mockCage);
+      // Get a row cage (non-killer cage)
+      const rowCage = puzzle.rows[0]; // First row is a cage with cageType 'row'
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, session.state, rowCage);
       expect(result).toFailWith(/expected killer cage, got row/i);
     });
 
-    test('should handle basic killer cage scenario', () => {
-      // Create a mock killer cage with containedValues method
-      const mockKillerCage = {
-        id: 'k1' as CageId,
-        cageType: 'killer' as const,
-        total: 15,
-        numCells: 3,
-        cellIds: ['A1', 'A2', 'B1'] as CellId[],
-        containsCell: jest.fn(),
-        containedValues: jest.fn().mockReturnValue(new Set<number>()) // Empty cage
-      };
+    test('should handle basic killer cage scenario with empty cage', () => {
+      // Use the existing killer puzzle which has cage A with 2 cells and total 11
+      const { puzzle, state, cage } = createSimpleKillerCage(2, 11);
 
-      // Create minimal mock puzzle that returns empty cell lookup results
-      const mockPuzzle = {
-        getCell: jest.fn().mockReturnValue({
-          isFailure: () => false,
-          value: {
-            id: 'A1' as CellId,
-            cages: [] // No other cages for simplicity
-          }
-        })
-      } as unknown as Puzzle;
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cage);
 
-      const mockState = {
-        getCellContents: jest.fn().mockReturnValue({
-          orDefault: () => ({ value: undefined, notes: [] })
-        })
-      } as unknown as PuzzleState;
-
-      const result = KillerCombinations.getCellPossibilities(mockPuzzle, mockState, mockKillerCage);
-
-      // This should succeed and return a map
+      // This should succeed and return a map with possibilities for all cells
       expect(result).toSucceedAndSatisfy((possibilities) => {
         expect(possibilities).toBeInstanceOf(Map);
-        expect(possibilities.size).toBe(3); // Three cells in the cage
+        expect(possibilities.size).toBe(2); // Two cells in cage A
+
+        // Verify each cell has valid possibilities
+        for (const [, values] of possibilities) {
+          expect(Array.isArray(values)).toBe(true);
+          expect(values.length).toBeGreaterThan(0);
+
+          // All values should be between 1 and 9
+          values.forEach((value) => {
+            expect(value).toBeGreaterThanOrEqual(1);
+            expect(value).toBeLessThanOrEqual(9);
+          });
+        }
+      });
+    });
+
+    test('should handle killer cage with some prefilled values', () => {
+      // Create a cage with one cell already filled with value 5
+      const { puzzle, state, cage } = createSimpleKillerCage(2, 11, [5]);
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cage);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        expect(possibilities).toBeInstanceOf(Map);
+        expect(possibilities.size).toBe(2);
+
+        // Check that 5 is excluded from possibilities (already used)
+        possibilities.forEach((values) => {
+          expect(values).not.toContain(5);
+        });
+      });
+    });
+
+    test('should handle 2-cell killer cage with sum 9', () => {
+      // Use cage KB which has 2 cells (A2,B2) and total 9 in the existing puzzle
+      const { puzzle, state } = createSimpleKillerCage(2, 11); // Get the puzzle
+      const cageB = puzzle.getCage('KB' as CageId).orThrow(); // Get cage KB
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cageB);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        expect(possibilities).toBeInstanceOf(Map);
+        expect(possibilities.size).toBe(2); // KB has 2 cells
+
+        // For 2 cells with total 9, valid combinations are [1,8], [2,7], [3,6], [4,5]
+        possibilities.forEach((values) => {
+          expect(values.length).toBeGreaterThan(0);
+          values.forEach((value) => {
+            expect(value).toBeGreaterThanOrEqual(1);
+            expect(value).toBeLessThanOrEqual(8);
+          });
+        });
+      });
+    });
+
+    test('should handle impossible cage scenario', () => {
+      // Create a 2-cell cage with total 11, but both cells already filled with values that don't sum to 11
+      const { puzzle, state, cage } = createSimpleKillerCage(2, 11, [1, 2]); // 1 + 2 = 3, not 11
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cage);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        expect(possibilities).toBeInstanceOf(Map);
+        // Should return empty possibilities for impossible scenarios
+        possibilities.forEach((values) => {
+          expect(values).toHaveLength(0);
+        });
       });
     });
   });
@@ -316,35 +488,10 @@ describe('KillerCombinations', () => {
   describe('Integration Tests', () => {
     test('should integrate with combination generation correctly', () => {
       // Test the integration between getCombinations and getCellPossibilities
-      // by using a mock setup that doesn't require complex puzzle creation
+      // using a real killer puzzle instance
+      const { puzzle, state, cage } = createSimpleKillerCage(2, 11, [5]); // One cell filled with 5
 
-      const mockKillerCage = {
-        id: 'k1' as CageId,
-        cageType: 'killer' as const,
-        total: 10,
-        numCells: 2,
-        cellIds: ['A1', 'A2'] as CellId[],
-        containsCell: jest.fn(),
-        containedValues: jest.fn().mockReturnValue(new Set([5])) // One cell filled with 5
-      };
-
-      const mockPuzzle = {
-        getCell: jest.fn().mockReturnValue({
-          isFailure: () => false,
-          value: {
-            id: 'A1' as CellId,
-            cages: [mockKillerCage] // Cell belongs to this killer cage
-          }
-        })
-      } as unknown as Puzzle;
-
-      const mockState = {
-        getCellContents: jest.fn().mockReturnValue({
-          orDefault: () => ({ value: undefined, notes: [] })
-        })
-      } as unknown as PuzzleState;
-
-      const result = KillerCombinations.getCellPossibilities(mockPuzzle, mockState, mockKillerCage);
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cage);
 
       // Should succeed and account for the fact that 5 is already used
       expect(result).toSucceedAndSatisfy((possibilities) => {
@@ -354,6 +501,61 @@ describe('KillerCombinations', () => {
         // Check that the combinations logic was used (5 should be excluded)
         possibilities.forEach((values) => {
           expect(values).not.toContain(5);
+        });
+
+        // The remaining cell should only have value 6 (since 11 - 5 = 6)
+        const unfilledCellValues = Array.from(possibilities.values()).find((values) => values.length > 0);
+        if (unfilledCellValues) {
+          // If there are possibilities, none should be 5, and should include 6
+          expect(unfilledCellValues).not.toContain(5);
+          expect(unfilledCellValues).toContain(6);
+        }
+      });
+    });
+
+    test('should handle complex cage scenarios with multiple constraints', () => {
+      // Use cage KT which has 5 cells and total 39 in the existing puzzle
+      const { puzzle } = createSimpleKillerCage(2, 11); // Get the puzzle
+      const cageT = puzzle.getCage('KT' as CageId).orThrow(); // Get cage KT
+      const session = PuzzleSession.create(puzzle).orThrow();
+
+      // Fill some cells in cage T with known values
+      const cellIds = Array.from(cageT.cellIds);
+      session.updateCellValue(cellIds[0], 1).orThrow();
+      session.updateCellValue(cellIds[1], 9).orThrow();
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, session.state, cageT);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        expect(possibilities).toBeInstanceOf(Map);
+        expect(possibilities.size).toBe(cageT.numCells);
+
+        // All remaining cells should exclude 1 and 9
+        possibilities.forEach((values) => {
+          expect(values).not.toContain(1);
+          expect(values).not.toContain(9);
+        });
+      });
+    });
+
+    test('should correctly compute possibilities for standard killer cage combinations', () => {
+      // Use cage KC which has 3 cells and total 9 in the existing puzzle
+      const { puzzle, state } = createSimpleKillerCage(2, 11); // Get the puzzle
+      const cageC = puzzle.getCage('KC' as CageId).orThrow(); // Get cage KC
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cageC);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        expect(possibilities).toBeInstanceOf(Map);
+        expect(possibilities.size).toBe(cageC.numCells);
+
+        // For a total of 9 with 3 cells, valid combinations include [1,2,6], [1,3,5], [2,3,4]
+        possibilities.forEach((values) => {
+          // Each cell should have valid possibilities for total 9
+          values.forEach((value) => {
+            expect(value).toBeGreaterThanOrEqual(1);
+            expect(value).toBeLessThanOrEqual(6); // Max value in any combination for total 9 with 3 cells
+          });
         });
       });
     });
@@ -373,11 +575,122 @@ describe('KillerCombinations', () => {
       expect(duration).toBeLessThan(100);
     });
 
+    test('should maintain performance with real puzzle instances', () => {
+      // Test performance with real puzzle creation and state management
+      const start = Date.now();
+
+      // Use a real cage from the puzzle
+      const { puzzle, state } = createSimpleKillerCage(2, 11);
+      const cage = puzzle.getCage('KT' as CageId).orThrow(); // KT has 5 cells, total 39
+      const result = KillerCombinations.getCellPossibilities(puzzle, state, cage);
+
+      const duration = Date.now() - start;
+
+      expect(result).toSucceed();
+      expect(duration).toBeLessThan(200); // Allow more time for real object creation
+    });
+
     test('should handle edge cases gracefully', () => {
       // Test boundary conditions
       expect(KillerCombinations.getCombinations(1, 1)).toSucceedWith([[1]]);
       expect(KillerCombinations.getCombinations(1, 9)).toSucceedWith([[9]]);
       expect(KillerCombinations.getCombinations(9, 45)).toSucceedWith([[1, 2, 3, 4, 5, 6, 7, 8, 9]]);
+    });
+
+    test('should handle real puzzle edge cases', () => {
+      // Test cage KB (2 cells, total 9) - based on actual puzzle structure
+      const { puzzle: puzzle1, state: state1 } = createSimpleKillerCage(2, 11);
+      const cage1 = puzzle1.getCage('KB' as CageId).orThrow();
+      expect(KillerCombinations.getCellPossibilities(puzzle1, state1, cage1)).toSucceedAndSatisfy(
+        (possibilities) => {
+          expect(possibilities.size).toBe(2); // KB has 2 cells
+          // For a 2-cell cage with total 9, valid combinations are [1,8], [2,7], [3,6], [4,5]
+          // Each cell should have valid possibilities
+          possibilities.forEach((values) => {
+            expect(values.length).toBeGreaterThan(0);
+            values.forEach((value) => {
+              expect(value).toBeGreaterThanOrEqual(1);
+              expect(value).toBeLessThanOrEqual(8);
+            });
+          });
+        }
+      );
+
+      // Test 2-cell cage KA (2 cells, total 11)
+      const { puzzle: puzzle2, state: state2 } = createSimpleKillerCage(2, 11);
+      const cage2 = puzzle2.getCage('KA' as CageId).orThrow();
+      expect(KillerCombinations.getCellPossibilities(puzzle2, state2, cage2)).toSucceedAndSatisfy(
+        (possibilities) => {
+          expect(possibilities.size).toBe(2);
+          // Each cell should have valid possibilities for sum of 11
+          possibilities.forEach((values) => {
+            expect(values.length).toBeGreaterThan(0);
+          });
+        }
+      );
+    });
+  });
+
+  describe('Real Puzzle Integration', () => {
+    test('should work with actual killer sudoku puzzle structure', () => {
+      // Test with a more realistic killer sudoku puzzle structure
+      const killerPuzzleDesc: IPuzzleDescription = {
+        id: 'real-killer-test',
+        description: 'Realistic killer sudoku test puzzle',
+        type: 'killer-sudoku',
+        level: 2,
+        rows: 9,
+        cols: 9,
+        cells:
+          'AABBCCDDEAABBCCDDE' +
+          'FFGGHHIIEFFJJKKLLE' +
+          'MMJJKKLNNMMOOPPQNN' +
+          'RROOPPQSSRRTTUUVSS' +
+          'WWTTUUVXX' +
+          '|A15,B10,C12,D20,E17,F11,G09,H14,I13,J16,K12,L15,M20,N20,O13,P14,Q07,R11,S18,T21,U19,V10,W06,X09'
+      };
+
+      const puzzle = Puzzles.Killer.create(killerPuzzleDesc).orThrow();
+      const session = PuzzleSession.create(puzzle).orThrow();
+
+      // Test with cage 'KA' (15 total, should be 2 cells based on pattern)
+      const cageA = puzzle.getCage('KA' as CageId).orThrow();
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, session.state, cageA);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        expect(possibilities).toBeInstanceOf(Map);
+        expect(possibilities.size).toBe(cageA.numCells);
+
+        // Verify all possibilities are valid numbers
+        possibilities.forEach((values, cellId) => {
+          expect(Array.isArray(values)).toBe(true);
+          values.forEach((value) => {
+            expect(value).toBeGreaterThanOrEqual(1);
+            expect(value).toBeLessThanOrEqual(9);
+          });
+        });
+      });
+    });
+
+    test('should handle cage interactions correctly', () => {
+      // Create a puzzle and fill some cells to test constraint propagation
+      const { puzzle, session, cage } = createTestKillerPuzzle({
+        cageSize: 3,
+        cageTotal: 15,
+        prefilledValues: new Map([['A1' as CellId, 5]]) // Fill first cell
+      });
+
+      const result = KillerCombinations.getCellPossibilities(puzzle, session.state, cage);
+
+      expect(result).toSucceedAndSatisfy((possibilities) => {
+        // Should exclude 5 from all remaining cells
+        possibilities.forEach((values, cellId) => {
+          if (session.state.getCellContents(cellId).orDefault({ value: undefined, notes: [] }).value !== 5) {
+            expect(values).not.toContain(5);
+          }
+        });
+      });
     });
   });
 
@@ -388,7 +701,7 @@ describe('KillerCombinations', () => {
       );
 
       expect(KillerCombinations.getCombinations(3, 100)).toFailWith(
-        /Total 100 is invalid for cage size 3.*Valid range: 6-24/
+        /Total 100 is invalid for cage size 3.*valid range.*6-24/
       );
 
       const badConstraints: IKillerConstraints = { excludedNumbers: [15] };

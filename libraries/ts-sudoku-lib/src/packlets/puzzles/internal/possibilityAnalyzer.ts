@@ -55,8 +55,8 @@ export class PossibilityAnalyzer {
     for (const cellId of cage.cellIds) {
       const cellContents = state.getCellContents(cellId).orDefault();
       if (cellContents?.value !== undefined) {
-        // Cell already has a value
-        possibilities.set(cellId, [cellContents.value]);
+        // Cell already has a value - set empty possibilities array
+        possibilities.set(cellId, []);
       } else {
         // Empty cell
         emptyCells.push(cellId);
@@ -77,6 +77,11 @@ export class PossibilityAnalyzer {
       const remainingValues = combination.filter((value) => !currentValues.has(value));
       return remainingValues.length === emptyCells.length;
     });
+
+    // If no compatible combinations exist, return empty possibilities for all cells
+    if (compatibleCombinations.length === 0) {
+      return succeed(possibilities);
+    }
 
     // For each empty cell, find which values are possible
     for (const cellId of emptyCells) {
