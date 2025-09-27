@@ -1,0 +1,189 @@
+/**
+ * SudokuCell Component Styles
+ * Individual cell styling with state management and responsive design
+ */
+
+.cell {
+  width: var(--cell-size-standard);
+  height: var(--cell-size-standard);
+  border: var(--border-width-thin) var(--border-style) var(--border-color);
+  background-color: var(--color-neutral-100);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  user-select: none;
+  touch-action: manipulation;
+  transition: all var(--transition-fast);
+}
+
+/* Cell States */
+.cell--selected {
+  background-color: var(--color-primary-light);
+  outline: var(--border-width-thick) var(--border-style) var(--color-primary-hover);
+}
+
+.cell--multiSelected {
+  background-color: var(--color-multi-select);
+  outline: var(--border-width-thin) var(--border-style) var(--color-multi-select-border);
+}
+
+.cell--error {
+  background-color: var(--color-error-light);
+  color: var(--text-error);
+  border-color: var(--color-error);
+}
+
+.cell--immutable {
+  background-color: var(--color-neutral-300);
+  cursor: default;
+  color: var(--text-primary);
+}
+
+.cell--filled {
+  font-weight: var(--font-weight-bolder);
+}
+
+/* Section borders for 3x3 grid structure */
+.cell--rightSectionBorder {
+  border-right: var(--border-width-thick) var(--border-style) var(--border-color-dark);
+}
+
+.cell--bottomSectionBorder {
+  border-bottom: var(--border-width-thick) var(--border-style) var(--border-color-dark);
+}
+
+/* Cell content */
+.cellValue {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* Notes grid container */
+.notesGrid {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 1px;
+  pointer-events: none;
+}
+
+/* Individual note cell */
+.note {
+  font-size: 7px;
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-normal);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Hover effects for interactive cells */
+.cell:not(.cell--immutable):hover {
+  background-color: var(--color-neutral-200);
+  border-color: var(--color-primary);
+}
+
+.cell--selected:hover {
+  background-color: var(--color-primary-light);
+}
+
+.cell--error:hover {
+  background-color: var(--color-error-light);
+  border-color: var(--color-error-hover);
+}
+
+/* Focus styles for accessibility */
+.cell:focus-visible {
+  outline: var(--border-width-thick) var(--border-style) var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 479px) {
+  .cell {
+    width: var(--cell-size-mobile);
+    height: var(--cell-size-mobile);
+    font-size: var(--font-size-lg);
+  }
+
+  .note {
+    font-size: 6px;
+  }
+}
+
+/* Large screen adjustments */
+@media (min-width: 1024px) {
+  .cell {
+    width: var(--cell-size-large);
+    height: var(--cell-size-large);
+    font-size: var(--font-size-2xl);
+  }
+
+  .note {
+    font-size: var(--font-size-sm);
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .cell {
+    border-width: var(--border-width-thick);
+  }
+
+  .cell--selected {
+    outline-width: 3px;
+    outline-offset: 0;
+  }
+
+  .cell--rightSectionBorder,
+  .cell--bottomSectionBorder {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .cell {
+    border: 1px solid #000;
+    background-color: #fff;
+    color: #000;
+  }
+
+  .cell--selected,
+  .cell--multiSelected,
+  .cell--error {
+    background-color: #fff;
+    outline: none;
+  }
+
+  .cell--rightSectionBorder,
+  .cell--bottomSectionBorder {
+    border-width: 2px;
+    border-color: #000;
+  }
+
+  .note {
+    color: #666;
+  }
+}

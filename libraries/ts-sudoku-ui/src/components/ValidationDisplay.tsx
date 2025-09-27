@@ -37,7 +37,7 @@ export const ValidationDisplay: React.FC<IValidationDisplayProps> = ({
 }) => {
   // Calculate display classes
   const displayClasses = useMemo(() => {
-    const classes = ['validation-display'];
+    const classes = ['w-full max-w-lg mx-auto mt-4 p-3 text-center text-sm'];
     if (className) classes.push(className);
     return classes.join(' ');
   }, [className]);
@@ -67,28 +67,20 @@ export const ValidationDisplay: React.FC<IValidationDisplayProps> = ({
     return `${errors.length} validation error${errors.length === 1 ? '' : 's'}`;
   }, [isValid, isSolved, errors.length]);
 
-  // Get status color
-  const statusColor = useMemo(() => {
-    if (isSolved) return '#4caf50'; // Green
-    if (isValid) return '#2196f3'; // Blue
-    return '#f44336'; // Red
-  }, [isValid, isSolved]);
+  // Calculate status container classes
+  const statusContainerClasses = useMemo(() => {
+    const classes = ['p-2 mb-2 rounded-lg border'];
+    if (isSolved) classes.push('bg-green-50 border-green-500 text-green-800');
+    else if (isValid) classes.push('bg-blue-50 border-blue-500 text-blue-800');
+    else classes.push('bg-red-50 border-red-500 text-red-800');
+    return classes.join(' ');
+  }, [isSolved, isValid, errors.length]);
 
   if (errors.length === 0 && !isSolved) {
     return (
       <div className={displayClasses} data-testid="validation-display">
-        <div
-          style={{
-            padding: '12px',
-            borderRadius: '4px',
-            backgroundColor: '#e3f2fd',
-            border: '1px solid #2196f3',
-            color: statusColor,
-            fontWeight: 'bold',
-            textAlign: 'center'
-          }}
-        >
-          {statusMessage}
+        <div className={statusContainerClasses}>
+          <div className="font-semibold">{statusMessage}</div>
         </div>
       </div>
     );
@@ -96,38 +88,13 @@ export const ValidationDisplay: React.FC<IValidationDisplayProps> = ({
 
   return (
     <div className={displayClasses} data-testid="validation-display">
-      <div
-        style={{
-          padding: '12px',
-          borderRadius: '4px',
-          backgroundColor: isSolved ? '#e8f5e8' : isValid ? '#e3f2fd' : '#ffebee',
-          border: `1px solid ${statusColor}`,
-          marginBottom: errors.length > 0 ? '12px' : '0'
-        }}
-      >
-        <div
-          style={{
-            color: statusColor,
-            fontWeight: 'bold',
-            textAlign: 'center'
-          }}
-        >
-          {statusMessage}
-        </div>
+      <div className={statusContainerClasses}>
+        <div className="font-semibold">{statusMessage}</div>
       </div>
 
       {errors.length > 0 && (
-        <div
-          style={{
-            maxHeight: '200px',
-            overflowY: 'auto',
-            padding: '8px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            backgroundColor: '#fff'
-          }}
-        >
-          <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>Validation Errors:</div>
+        <div className="mt-3 p-3 bg-gray-50 rounded border border-gray-200 text-left">
+          <div className="font-bold mb-2 text-gray-900">Validation Errors:</div>
 
           {Object.entries(errorsByType).map(([type, typeErrors]) => {
             if (typeErrors.length === 0) return null;
@@ -135,21 +102,13 @@ export const ValidationDisplay: React.FC<IValidationDisplayProps> = ({
             const typeLabel = type.replace('duplicate-', '').replace('-', ' ');
 
             return (
-              <div key={type} style={{ marginBottom: '8px' }}>
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    color: '#666',
-                    textTransform: 'capitalize',
-                    marginBottom: '4px'
-                  }}
-                >
+              <div key={type} className="mb-3 last:mb-0">
+                <div className="font-semibold text-gray-700 mb-1 capitalize">
                   {typeLabel} ({typeErrors.length})
                 </div>
-                <ul style={{ margin: '0', paddingLeft: '16px', fontSize: '12px' }}>
+                <ul className="list-disc list-inside space-y-1 text-xs text-gray-600">
                   {typeErrors.map((error, index) => (
-                    <li key={`${error.cellId}-${index}`} style={{ marginBottom: '2px' }}>
+                    <li key={`${error.cellId}-${index}`} className="leading-relaxed">
                       {error.message}
                     </li>
                   ))}

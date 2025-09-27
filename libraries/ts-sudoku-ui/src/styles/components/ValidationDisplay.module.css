@@ -1,0 +1,302 @@
+/**
+ * ValidationDisplay Component Styles
+ * Status and error display styling with state-based theming
+ */
+
+.validationDisplay {
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Status container */
+.statusContainer {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: var(--spacing-md);
+  border: var(--border-width-thin) var(--border-style);
+  transition: all var(--transition-normal);
+}
+
+.statusContainer--valid {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary-hover);
+}
+
+.statusContainer--solved {
+  background-color: var(--color-success-light);
+  border-color: var(--color-success);
+  color: var(--text-success);
+}
+
+.statusContainer--error {
+  background-color: var(--color-error-light);
+  border-color: var(--color-error);
+  color: var(--text-error);
+}
+
+.statusContainer--noErrors {
+  margin-bottom: 0;
+}
+
+/* Status message */
+.statusMessage {
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  font-size: var(--font-size-md);
+}
+
+/* Errors container */
+.errorsContainer {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+  border: var(--border-width-thin) var(--border-style) var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-neutral-100);
+}
+
+/* Errors title */
+.errorsTitle {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+/* Error type sections */
+.errorTypeSection {
+  margin-bottom: var(--spacing-sm);
+}
+
+.errorTypeSection:last-child {
+  margin-bottom: 0;
+}
+
+/* Error type label */
+.errorTypeLabel {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-secondary);
+  text-transform: capitalize;
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Error list */
+.errorList {
+  margin: 0;
+  padding-left: var(--spacing-lg);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}
+
+.errorItem {
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.errorItem:last-child {
+  margin-bottom: 0;
+}
+
+/* Scrollbar styling for webkit browsers */
+.errorsContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.errorsContainer::-webkit-scrollbar-track {
+  background: var(--color-neutral-300);
+  border-radius: var(--border-radius-sm);
+}
+
+.errorsContainer::-webkit-scrollbar-thumb {
+  background: var(--color-neutral-600);
+  border-radius: var(--border-radius-sm);
+}
+
+.errorsContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--color-neutral-800);
+}
+
+/* Celebration animation for solved state */
+@keyframes celebration {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.statusContainer--solved {
+  animation: celebration 0.6s ease-in-out;
+}
+
+/* Pulse animation for errors */
+@keyframes errorPulse {
+  0% {
+    border-color: var(--color-error);
+  }
+  50% {
+    border-color: var(--color-error-hover);
+  }
+  100% {
+    border-color: var(--color-error);
+  }
+}
+
+.statusContainer--error {
+  animation: errorPulse 2s ease-in-out infinite;
+}
+
+/* Focus styles for scrollable content */
+.errorsContainer:focus {
+  outline: var(--border-width-thick) var(--border-style) var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 479px) {
+  .statusContainer {
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .statusMessage {
+    font-size: var(--font-size-base);
+  }
+
+  .errorsContainer {
+    max-height: 150px;
+    padding: var(--spacing-xs);
+  }
+
+  .errorsTitle {
+    font-size: var(--font-size-base);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .errorTypeLabel {
+    font-size: var(--font-size-sm);
+  }
+
+  .errorList {
+    font-size: var(--font-size-sm);
+    padding-left: var(--spacing-md);
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 480px) and (max-width: 767px) {
+  .errorsContainer {
+    max-height: 180px;
+  }
+}
+
+/* Large screen adjustments */
+@media (min-width: 1024px) {
+  .errorsContainer {
+    max-height: 250px;
+  }
+
+  .statusMessage {
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .statusContainer {
+    border-width: var(--border-width-thick);
+  }
+
+  .statusContainer--valid {
+    background-color: var(--color-neutral-100);
+    color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
+
+  .statusContainer--solved {
+    background-color: var(--color-neutral-100);
+    color: var(--text-success);
+    border-color: var(--color-success);
+  }
+
+  .statusContainer--error {
+    background-color: var(--color-neutral-100);
+    color: var(--text-error);
+    border-color: var(--color-error);
+  }
+
+  .errorsContainer {
+    border-width: var(--border-width-thick);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .statusContainer--solved {
+    animation: none;
+  }
+
+  .statusContainer--error {
+    animation: none;
+  }
+
+  .statusContainer,
+  .errorsContainer {
+    transition: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .validationDisplay {
+    color: #000;
+    background: #fff;
+  }
+
+  .statusContainer {
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+    animation: none;
+  }
+
+  .errorsContainer {
+    border: 1px solid #000;
+    background: #fff;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .statusMessage,
+  .errorsTitle,
+  .errorTypeLabel,
+  .errorList {
+    color: #000;
+  }
+
+  /* Hide scrollbar in print */
+  .errorsContainer::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Focus management for keyboard navigation */
+.errorsContainer[tabindex='0'] {
+  cursor: default;
+}
+
+.errorsContainer[tabindex='0']:focus {
+  outline: var(--border-width-thick) var(--border-style) var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Empty state styling */
+.validationDisplay:empty {
+  display: none;
+}

@@ -28,9 +28,12 @@ export { SudokuGrid } from './components/SudokuGrid';
 export { SudokuCell } from './components/SudokuCell';
 export { SudokuControls } from './components/SudokuControls';
 export { ValidationDisplay } from './components/ValidationDisplay';
+export { DualKeypad } from './components/DualKeypad';
+export { NumberKeypad } from './components/NumberKeypad';
 
 // Hooks
 export { usePuzzleSession } from './hooks/usePuzzleSession';
+export { useResponsiveLayout } from './hooks/useResponsiveLayout';
 
 // Types
 export type {
@@ -42,6 +45,18 @@ export type {
   ISudokuControlsProps,
   IValidationDisplayProps
 } from './types';
+
+// Dual keypad types
+export type { INumberKeypadProps } from './components/NumberKeypad';
+export type { IDualKeypadProps } from './components/DualKeypad';
+
+// Responsive layout types
+export type {
+  DeviceType,
+  ScreenOrientation,
+  KeypadLayoutMode,
+  IResponsiveLayoutInfo
+} from './hooks/useResponsiveLayout';
 
 // Re-export commonly used types from ts-sudoku-lib
 export type { IPuzzleDescription } from '@fgv/ts-sudoku-lib';

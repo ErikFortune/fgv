@@ -23,7 +23,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { ICellState, Puzzle, PuzzleState } from '../common';
+import { ICellState, Puzzle, PuzzleState, ISudokuLoggingContext, logIfAvailable } from '../common';
 import { ExplanationFormatter } from './explanations';
 import { HintRegistry } from './hintRegistry';
 import { HiddenSinglesProvider } from './hiddenSingles';
@@ -39,6 +39,7 @@ export interface IHintSystemConfig {
   readonly enableNakedSingles?: boolean;
   readonly enableHiddenSingles?: boolean;
   readonly defaultExplanationLevel?: ExplanationLevel;
+  readonly loggingContext?: ISudokuLoggingContext;
 }
 
 /**
@@ -51,9 +52,15 @@ export class DefaultHintApplicator implements IHintApplicator {
    * @param hint - The hint to validate
    * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
+   * @param loggingContext - Optional logging context for diagnostic output
    * @returns Result indicating validation success or failure with details
    */
-  public validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void> {
+  public validateHint(
+    hint: IHint,
+    puzzle: Puzzle,
+    state: PuzzleState,
+    loggingContext?: ISudokuLoggingContext
+  ): Result<void> {
     // Check that all cell actions are valid
     for (const action of hint.cellActions) {
       // Only support set-value actions for now
@@ -91,10 +98,22 @@ export class DefaultHintApplicator implements IHintApplicator {
    * @param hint - The hint to apply
    * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
+   * @param loggingContext - Optional logging context for diagnostic output
    * @returns Result containing the cell state updates needed to apply the hint
    */
-  public applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]> {
-    return this.validateHint(hint, puzzle, state).onSuccess(() => {
+  public applyHint(
+    hint: IHint,
+    puzzle: Puzzle,
+    state: PuzzleState,
+    loggingContext?: ISudokuLoggingContext
+  ): Result<readonly ICellState[]> {
+    logIfAvailable(
+      loggingContext,
+      'detail',
+      `Applying hint: ${hint.techniqueName} affecting ${hint.cellActions.length} cell(s)`
+    );
+
+    return this.validateHint(hint, puzzle, state, loggingContext).onSuccess(() => {
       const updates: ICellState[] = [];
 
       for (const action of hint.cellActions) {
@@ -113,6 +132,11 @@ export class DefaultHintApplicator implements IHintApplicator {
         }
       }
 
+      logIfAvailable(
+        loggingContext,
+        'info',
+        `Successfully applied hint: ${hint.techniqueName}, updated ${updates.length} cell(s)`
+      );
       return succeed(updates);
     });
   }
@@ -224,7 +248,24 @@ export class HintSystem {
     state: PuzzleState,
     options?: IHintGenerationOptions
   ): Result<readonly IHint[]> {
-    return this._registry.generateAllHints(puzzle, state, options);
+    logIfAvailable(this._config.loggingContext, 'detail', 'Generating hints for puzzle state');
+
+    return this._registry
+      .generateAllHints(puzzle, state, options)
+      .onSuccess((hints) => {
+        logIfAvailable(
+          this._config.loggingContext,
+          'info',
+          `Generated ${hints.length} hint(s) using ${
+            this._registry.getRegisteredTechniques().length
+          } technique(s)`
+        );
+        return succeed(hints);
+      })
+      .onFailure((message) => {
+        logIfAvailable(this._config.loggingContext, 'warn', `Failed to generate hints: ${message}`);
+        return fail(message);
+      });
   }
 
   /**

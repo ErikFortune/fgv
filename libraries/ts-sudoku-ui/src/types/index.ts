@@ -70,8 +70,12 @@ export interface ISudokuGridProps {
   readonly numColumns: number;
   readonly cells: ICellDisplayInfo[];
   readonly selectedCell: CellId | null;
-  readonly onCellSelect: (cellId: CellId) => void;
+  readonly selectedCells: CellId[];
+  readonly inputMode: InputMode;
+  readonly onCellSelect: (cellId: CellId, event?: React.MouseEvent) => void;
   readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;
+  readonly onNoteToggle: (cellId: CellId, note: number) => void;
+  readonly onClearAllNotes: (cellId: CellId) => void;
   readonly onNavigate: (direction: NavigationDirection) => void;
   readonly className?: string;
 }
@@ -90,14 +94,23 @@ export interface ICellDisplayInfo {
 }
 
 /**
+ * Input mode for cell interactions
+ * @public
+ */
+export type InputMode = 'value' | 'notes';
+
+/**
  * Props for the SudokuCell component
  * @public
  */
 export interface ISudokuCellProps {
   readonly cellInfo: ICellDisplayInfo;
   readonly isSelected: boolean;
-  readonly onSelect: () => void;
+  readonly inputMode: InputMode;
+  readonly onSelect: (event?: React.MouseEvent) => void;
   readonly onValueChange: (value: number | undefined) => void;
+  readonly onNoteToggle: (note: number) => void;
+  readonly onClearAllNotes: () => void;
   readonly className?: string;
 }
 

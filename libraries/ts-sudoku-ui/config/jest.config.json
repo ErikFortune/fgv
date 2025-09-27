@@ -12,5 +12,8 @@
   "collectCoverage": true,
   "coverageReporters": ["text", "lcov", "html"],
   "setupFilesAfterEnv": ["<rootDir>/config/jest.setup.js"],
-  "testEnvironment": "jsdom"
+  "testEnvironment": "jsdom",
+  "testEnvironmentOptions": {
+    "url": "http://localhost"
+  }
 }

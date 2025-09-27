@@ -36,8 +36,12 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   numColumns,
   cells,
   selectedCell,
+  selectedCells,
+  inputMode,
   onCellSelect,
   onCellValueChange,
+  onNoteToggle,
+  onClearAllNotes,
   onNavigate,
   className
 }) => {
@@ -77,7 +81,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   // Create cell select handler
   const createCellSelectHandler = useCallback(
     (cellId: CellId) => {
-      return () => onCellSelect(cellId);
+      return (event?: React.MouseEvent) => onCellSelect(cellId, event);
     },
     [onCellSelect]
   );
@@ -88,6 +92,22 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
       return (value: number | undefined) => onCellValueChange(cellId, value);
     },
     [onCellValueChange]
+  );
+
+  // Create note toggle handler
+  const createNoteToggleHandler = useCallback(
+    (cellId: CellId) => {
+      return (note: number) => onNoteToggle(cellId, note);
+    },
+    [onNoteToggle]
+  );
+
+  // Create clear all notes handler
+  const createClearAllNotesHandler = useCallback(
+    (cellId: CellId) => {
+      return () => onClearAllNotes(cellId);
+    },
+    [onClearAllNotes]
   );
 
   // Calculate grid classes
@@ -127,15 +147,24 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
         outline: 'none'
       }}
     >
-      {sortedCells.map((cellInfo) => (
-        <SudokuCell
-          key={cellInfo.id}
-          cellInfo={cellInfo}
-          isSelected={selectedCell === cellInfo.id}
-          onSelect={createCellSelectHandler(cellInfo.id)}
-          onValueChange={createCellValueChangeHandler(cellInfo.id)}
-        />
-      ))}
+      {sortedCells.map((cellInfo) => {
+        const isPrimarySelected = selectedCell === cellInfo.id;
+        const isInMultiSelection = selectedCells.includes(cellInfo.id);
+
+        return (
+          <SudokuCell
+            key={cellInfo.id}
+            cellInfo={cellInfo}
+            isSelected={isPrimarySelected || isInMultiSelection}
+            inputMode={inputMode}
+            onSelect={createCellSelectHandler(cellInfo.id)}
+            onValueChange={createCellValueChangeHandler(cellInfo.id)}
+            onNoteToggle={createNoteToggleHandler(cellInfo.id)}
+            onClearAllNotes={createClearAllNotesHandler(cellInfo.id)}
+            className={isInMultiSelection && !isPrimarySelected ? 'sudoku-cell--multi-selected' : undefined}
+          />
+        );
+      })}
     </div>
   );
 };

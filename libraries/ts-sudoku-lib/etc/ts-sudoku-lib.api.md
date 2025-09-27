@@ -7,6 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import type { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
@@ -155,9 +156,12 @@ declare namespace Converters_2 {
 
 // @public
 class DefaultHintApplicator implements IHintApplicator {
-    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
-    validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState, loggingContext?: ISudokuLoggingContext): Result<readonly ICellState[]>;
+    validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState, loggingContext?: ISudokuLoggingContext): Result<void>;
 }
+
+// @public
+export const DefaultSudokuLoggingContext: ISudokuLoggingContext;
 
 // @public
 type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
@@ -406,8 +410,8 @@ interface IHint {
 
 // @public
 interface IHintApplicator {
-    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
-    validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState, loggingContext?: ISudokuLoggingContext): Result<readonly ICellState[]>;
+    validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState, loggingContext?: ISudokuLoggingContext): Result<void>;
 }
 
 // @public
@@ -477,6 +481,8 @@ interface IHintSystemConfig {
     readonly enableHiddenSingles?: boolean;
     // (undocumented)
     readonly enableNakedSingles?: boolean;
+    // (undocumented)
+    readonly loggingContext?: ISudokuLoggingContext;
 }
 
 // @public
@@ -546,6 +552,11 @@ export interface IRowColumn {
 }
 
 // @public
+export interface ISudokuLoggingContext {
+    readonly logger?: Logging.ILogger;
+}
+
+// @public
 class KillerCombinations {
     static getCellPossibilities(puzzle: Puzzle, state: PuzzleState, cage: ICage): Result<Map<CellId, number[]>>;
     static getCombinations(cageSize: number, total: number, constraints?: IKillerConstraints): Result<number[][]>;
@@ -567,6 +578,11 @@ function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile>;
 //
 // @public
 function loadPuzzlesFile(file: FileTree.IFileTreeFileItem): Result<IPuzzlesFile>;
+
+// Warning: (ae-internal-missing-underscore) The name "logIfAvailable" should be prefixed with an underscore because the declaration is marked as @internal
+//
+// @internal
+export function logIfAvailable(context: ISudokuLoggingContext | undefined, level: 'detail' | 'info' | 'warn' | 'error', message?: unknown, ...parameters: unknown[]): void;
 
 declare namespace Model {
     export {

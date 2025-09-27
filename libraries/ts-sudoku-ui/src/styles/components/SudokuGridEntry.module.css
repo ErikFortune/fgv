@@ -1,0 +1,419 @@
+/**
+ * SudokuGridEntry Component Styles
+ * Main container orchestration with responsive layout management
+ */
+
+.gridEntry {
+  width: 100%;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* Main container with responsive layout */
+.mainContainer {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xl);
+  margin: 0 auto;
+  padding: var(--spacing-xl);
+}
+
+/* Layout modes */
+.mainContainer--vertical {
+  flex-direction: column;
+  align-items: center;
+  max-width: var(--grid-max-width-standard);
+}
+
+.mainContainer--horizontal {
+  flex-direction: row;
+  max-width: var(--grid-max-width-large);
+  justify-content: center;
+}
+
+.mainContainer--landscapeStacked {
+  flex-direction: row;
+  max-width: var(--grid-max-width-large);
+  justify-content: center;
+}
+
+/* Game area container */
+.gameArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.gameArea--flexible {
+  flex: 1;
+}
+
+.gameArea--fixed {
+  flex: 0 0 auto;
+}
+
+/* Puzzle title section */
+.titleSection {
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.title {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.puzzleId {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Input mode toggle section */
+.inputModeSection {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: var(--color-neutral-300);
+  border-radius: var(--border-radius-md);
+  border: var(--border-width-thin) var(--border-style) var(--border-color);
+}
+
+.inputModeLabel {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--text-primary);
+}
+
+.inputModeButton {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: var(--border-width-thin) var(--border-style) var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-neutral-100);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+  transition: all var(--transition-fast);
+  min-height: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.inputModeButton--active {
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary-hover);
+}
+
+.inputModeButton:hover:not(.inputModeButton--active) {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+/* Multi-select hint */
+.multiSelectHint {
+  padding: var(--spacing-xs) var(--spacing-md);
+  background-color: var(--color-multi-select);
+  border-radius: var(--border-radius-sm);
+  border: var(--border-width-thin) var(--border-style) var(--color-multi-select-border);
+  font-size: var(--font-size-base);
+  color: var(--text-success);
+  text-align: center;
+  font-weight: var(--font-weight-normal);
+}
+
+/* Help text section */
+.helpSection {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.4;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.helpTitle {
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-primary);
+}
+
+.helpItem {
+  margin-bottom: 2px;
+}
+
+.helpItem:last-child {
+  margin-bottom: 0;
+}
+
+/* Error state styling */
+.errorContainer {
+  padding: var(--spacing-xl);
+  border: var(--border-width-thin) var(--border-style) var(--color-error);
+  border-radius: var(--border-radius-md);
+  background-color: var(--color-error-light);
+  color: var(--text-error);
+  text-align: center;
+  margin: var(--spacing-xl) auto;
+  max-width: 400px;
+}
+
+.errorTitle {
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-lg);
+}
+
+.errorMessage {
+  font-size: var(--font-size-md);
+  line-height: 1.4;
+}
+
+/* Loading state styling */
+.loadingContainer {
+  padding: var(--spacing-xl);
+  text-align: center;
+  color: var(--text-secondary);
+  margin: var(--spacing-xl) auto;
+  max-width: 400px;
+}
+
+.loadingMessage {
+  font-size: var(--font-size-lg);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 479px) {
+  .mainContainer {
+    padding: var(--spacing-lg);
+    gap: var(--spacing-lg);
+  }
+
+  .gameArea {
+    gap: var(--spacing-lg);
+  }
+
+  .title {
+    font-size: var(--font-size-xl);
+  }
+
+  .puzzleId {
+    font-size: var(--font-size-base);
+  }
+
+  .inputModeSection {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+  }
+
+  .inputModeLabel {
+    font-size: var(--font-size-base);
+  }
+
+  .inputModeButton {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    min-width: 120px;
+  }
+
+  .multiSelectHint {
+    font-size: var(--font-size-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+
+  .helpSection {
+    font-size: var(--font-size-xs);
+    max-width: 320px;
+  }
+
+  .errorContainer,
+  .loadingContainer {
+    padding: var(--spacing-lg);
+    margin: var(--spacing-lg) auto;
+  }
+
+  .errorTitle {
+    font-size: var(--font-size-md);
+  }
+
+  .errorMessage,
+  .loadingMessage {
+    font-size: var(--font-size-base);
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 480px) and (max-width: 767px) {
+  .mainContainer {
+    padding: var(--spacing-xl);
+    gap: var(--spacing-xl);
+  }
+
+  .mainContainer--horizontal {
+    flex-direction: column;
+    align-items: center;
+    max-width: var(--grid-max-width-standard);
+  }
+
+  .inputModeSection {
+    gap: var(--spacing-sm);
+  }
+
+  .inputModeButton {
+    min-width: 140px;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 768px) {
+  .inputModeSection {
+    gap: var(--spacing-lg);
+  }
+
+  .inputModeButton {
+    min-width: 160px;
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .helpSection {
+    max-width: 500px;
+  }
+}
+
+/* Landscape orientation specific */
+@media (orientation: landscape) and (min-width: 768px) {
+  .mainContainer--landscapeStacked {
+    flex-direction: row;
+    max-width: var(--grid-max-width-large);
+    justify-content: center;
+  }
+
+  .gameArea {
+    max-width: 600px;
+  }
+}
+
+/* Portrait orientation specific */
+@media (orientation: portrait) {
+  .mainContainer--horizontal,
+  .mainContainer--landscapeStacked {
+    flex-direction: column;
+    align-items: center;
+    max-width: var(--grid-max-width-standard);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .inputModeButton {
+    min-height: var(--touch-target-min);
+    min-width: var(--touch-target-min);
+  }
+
+  .inputModeButton:active {
+    transform: scale(0.95);
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .inputModeSection {
+    border-width: var(--border-width-thick);
+  }
+
+  .inputModeButton {
+    border-width: var(--border-width-thick);
+  }
+
+  .inputModeButton--active {
+    border-width: 3px;
+  }
+
+  .multiSelectHint {
+    border-width: var(--border-width-thick);
+  }
+
+  .errorContainer {
+    border-width: var(--border-width-thick);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .inputModeButton {
+    transition: none;
+  }
+
+  .inputModeButton:active {
+    transform: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .gridEntry {
+    min-height: auto;
+  }
+
+  .mainContainer {
+    padding: var(--spacing-lg);
+    max-width: none;
+  }
+
+  .inputModeSection,
+  .multiSelectHint,
+  .helpSection {
+    display: none;
+  }
+
+  .title,
+  .puzzleId {
+    color: #000;
+  }
+
+  .errorContainer,
+  .loadingContainer {
+    border: 1px solid #000;
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* Focus management for accessibility */
+.inputModeButton:focus-visible {
+  outline: var(--border-width-thick) var(--border-style) var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Animation for state transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gameArea,
+.errorContainer,
+.loadingContainer {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gameArea,
+  .errorContainer,
+  .loadingContainer {
+    animation: none;
+  }
+}

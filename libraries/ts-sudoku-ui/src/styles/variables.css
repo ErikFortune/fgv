@@ -1,0 +1,156 @@
+/**
+ * Design System Variables for Sudoku UI
+ * Contains all design tokens for consistent styling across components
+ */
+
+:root {
+  /* Colors */
+  --color-primary: #2196f3;
+  --color-primary-hover: #1976d2;
+  --color-primary-light: #e3f2fd;
+  --color-primary-lighter: #f3f9ff;
+
+  --color-success: #4caf50;
+  --color-success-light: #e8f5e8;
+
+  --color-error: #f44336;
+  --color-error-hover: #d32f2f;
+  --color-error-light: #ffebee;
+  --color-error-lighter: #ffcdd2;
+
+  --color-warning: #ff9800;
+  --color-warning-light: #fff3e0;
+
+  --color-neutral-100: #fff;
+  --color-neutral-200: #fafafa;
+  --color-neutral-300: #f5f5f5;
+  --color-neutral-400: #e0e0e0;
+  --color-neutral-500: #ddd;
+  --color-neutral-600: #ccc;
+  --color-neutral-700: #999;
+  --color-neutral-800: #666;
+  --color-neutral-900: #333;
+
+  --color-multi-select: #e8f5e8;
+  --color-multi-select-border: #4caf50;
+
+  /* Text Colors */
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --text-light: #ccc;
+  --text-on-primary: #fff;
+  --text-on-error: #fff;
+  --text-success: #2e7d32;
+  --text-error: #c62828;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 32px;
+
+  /* Font Sizes */
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 24px;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-bold: 600;
+  --font-weight-bolder: 700;
+
+  /* Border Radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-full: 50%;
+
+  /* Borders */
+  --border-width-thin: 1px;
+  --border-width-thick: 2px;
+  --border-style: solid;
+  --border-color: var(--color-neutral-500);
+  --border-color-dark: var(--color-neutral-900);
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  /* Z-Index */
+  --z-index-dropdown: 100;
+  --z-index-overlay: 999;
+  --z-index-modal: 1000;
+  --z-index-tooltip: 1001;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* Cell Sizes */
+  --cell-size-mobile: 36px;
+  --cell-size-standard: 40px;
+  --cell-size-large: 48px;
+
+  /* Keypad Sizes */
+  --keypad-button-size-compact: 36px;
+  --keypad-button-size-standard: 48px;
+
+  /* Breakpoints (for use in media queries) */
+  --breakpoint-mobile: 480px;
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1024px;
+
+  /* Grid Layout */
+  --grid-max-width-mobile: 400px;
+  --grid-max-width-standard: 600px;
+  --grid-max-width-large: 1000px;
+
+  /* Touch Targets */
+  --touch-target-min: 44px;
+
+  /* Overlay */
+  --overlay-backdrop: rgba(0, 0, 0, 0.3);
+}
+
+/* Utility classes for common patterns */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Base styles for buttons */
+.button-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Focus styles for accessibility */
+.focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}

@@ -13,6 +13,12 @@ import { PuzzleSession } from '@fgv/ts-sudoku-lib';
 import { default as React_2 } from 'react';
 
 // @public
+export type DeviceType = 'mobile' | 'tablet' | 'desktop';
+
+// @public
+export const DualKeypad: React_2.FC<IDualKeypadProps>;
+
+// @public
 export interface ICellDisplayInfo {
     // (undocumented)
     readonly column: number;
@@ -28,7 +34,48 @@ export interface ICellDisplayInfo {
     readonly row: number;
 }
 
+// @public
+export interface IDualKeypadProps {
+    readonly className?: string;
+    readonly disabled?: boolean;
+    readonly forceLayoutMode?: KeypadLayoutMode;
+    readonly hasCellSelection: boolean;
+    // Warning: (ae-forgotten-export) The symbol "InputMode" needs to be exported by the entry point index.d.ts
+    readonly inputMode: InputMode;
+    readonly onClearNotes: () => void;
+    readonly onClearValues: () => void;
+    readonly onInputModeChange: (mode: InputMode) => void;
+    readonly onNotePress: (number: number) => void;
+    readonly onValuePress: (number: number) => void;
+    readonly selectedCellCount: number;
+    readonly showOverlayToggle?: boolean;
+}
+
+// @public
+export interface INumberKeypadProps {
+    readonly className?: string;
+    readonly compact?: boolean;
+    readonly disabled?: boolean;
+    readonly inputMode: InputMode;
+    readonly isActive: boolean;
+    readonly keypadType: 'notes' | 'values';
+    readonly onClear: () => void;
+    readonly onNumberPress: (number: number) => void;
+}
+
 export { IPuzzleDescription }
+
+// @public
+export interface IResponsiveLayoutInfo {
+    readonly deviceType: DeviceType;
+    readonly hasSpaceForDualKeypads: boolean;
+    readonly isSmallScreen: boolean;
+    readonly isTouchDevice: boolean;
+    readonly keypadLayoutMode: KeypadLayoutMode;
+    readonly orientation: ScreenOrientation_2;
+    readonly screenHeight: number;
+    readonly screenWidth: number;
+}
 
 // @public
 export interface ISudokuCellProps {
@@ -37,9 +84,15 @@ export interface ISudokuCellProps {
     // (undocumented)
     readonly className?: string;
     // (undocumented)
+    readonly inputMode: InputMode;
+    // (undocumented)
     readonly isSelected: boolean;
     // (undocumented)
-    readonly onSelect: () => void;
+    readonly onClearAllNotes: () => void;
+    // (undocumented)
+    readonly onNoteToggle: (note: number) => void;
+    // (undocumented)
+    readonly onSelect: (event?: React.MouseEvent) => void;
     // (undocumented)
     readonly onValueChange: (value: number | undefined) => void;
 }
@@ -83,17 +136,25 @@ export interface ISudokuGridProps {
     // (undocumented)
     readonly className?: string;
     // (undocumented)
+    readonly inputMode: InputMode;
+    // (undocumented)
     readonly numColumns: number;
     // (undocumented)
     readonly numRows: number;
     // (undocumented)
-    readonly onCellSelect: (cellId: CellId) => void;
+    readonly onCellSelect: (cellId: CellId, event?: React.MouseEvent) => void;
     // (undocumented)
     readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;
     // (undocumented)
+    readonly onClearAllNotes: (cellId: CellId) => void;
+    // (undocumented)
     readonly onNavigate: (direction: NavigationDirection) => void;
     // (undocumented)
+    readonly onNoteToggle: (cellId: CellId, note: number) => void;
+    // (undocumented)
     readonly selectedCell: CellId | null;
+    // (undocumented)
+    readonly selectedCells: CellId[];
 }
 
 // @public
@@ -121,6 +182,16 @@ export interface IValidationError {
 }
 
 // @public
+export type KeypadLayoutMode = 'side-by-side' | 'stacked' | 'overlay' | 'hidden';
+
+// @public
+export const NumberKeypad: React_2.FC<INumberKeypadProps>;
+
+// @public
+type ScreenOrientation_2 = 'portrait' | 'landscape';
+export { ScreenOrientation_2 as ScreenOrientation }
+
+// @public
 export const SudokuCell: React_2.FC<ISudokuCellProps>;
 
 // @public
@@ -136,7 +207,11 @@ export const SudokuGridEntry: React_2.FC<ISudokuGridEntryProps>;
 export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription): {
     session: PuzzleSession | null;
     selectedCell: CellId | null;
+    selectedCells: CellId[];
+    inputMode: InputMode;
     setSelectedCell: (cell: CellId | null) => void;
+    setSelectedCells: (cells: CellId[]) => void;
+    setInputMode: (mode: InputMode) => void;
     cellDisplayInfo: ICellDisplayInfo[];
     validationErrors: IValidationError[];
     isValid: boolean;
@@ -145,12 +220,17 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     canRedo: boolean;
     error: string | null;
     updateCellValue: (cellId: CellId, value: number | undefined) => void;
+    toggleCellNote: (cellId: CellId, note: number) => void;
+    clearCellNotes: (cellId: CellId) => void;
     navigateToCell: (direction: NavigationDirection, wrap?: NavigationWrap) => void;
     undo: () => void;
     redo: () => void;
     reset: () => void;
     exportPuzzle: () => IPuzzleDescription | null;
 };
+
+// @public
+export function useResponsiveLayout(): IResponsiveLayoutInfo;
 
 // @public
 export const ValidationDisplay: React_2.FC<IValidationDisplayProps>;

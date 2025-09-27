@@ -39,7 +39,24 @@ module.exports = (env, argv) => {
           exclude: /node_modules/
         },
         {
+          test: /\.module\.css$/,
+          include: [path.resolve(__dirname, 'src'), path.resolve(__dirname, '../../libraries')],
+          use: [
+            'style-loader',
+            {
+              loader: 'css-loader',
+              options: {
+                modules: {
+                  localIdentName: isProduction ? '[hash:base64:8]' : '[name]__[local]__[hash:base64:5]'
+                }
+              }
+            },
+            'postcss-loader'
+          ]
+        },
+        {
           test: /\.css$/,
+          exclude: /\.module\.css$/,
           use: ['style-loader', 'css-loader', 'postcss-loader']
         }
       ]

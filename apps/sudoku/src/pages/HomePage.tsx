@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { LoggingDemo } from '../components/LoggingDemo';
 
 export const HomePage: React.FC = () => {
   return (
@@ -33,6 +34,9 @@ export const HomePage: React.FC = () => {
           </li>
         </ul>
       </div>
+
+      {/* Logging Implementation Demo */}
+      <LoggingDemo />
     </div>
   );
 };

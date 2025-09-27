@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { ISudokuCellProps } from '../types';
 
 /**
@@ -32,13 +32,20 @@ import { ISudokuCellProps } from '../types';
 export const SudokuCell: React.FC<ISudokuCellProps> = ({
   cellInfo,
   isSelected,
+  inputMode,
   onSelect,
   onValueChange,
+  onNoteToggle,
+  onClearAllNotes,
   className
 }) => {
   const { id, row, column, contents, isImmutable, hasValidationError } = cellInfo;
 
-  // Handle keyboard input
+  // Double-tap detection for clearing all notes
+  const lastClickTimeRef = useRef<number>(0);
+  const DOUBLE_TAP_DELAY = 300; // milliseconds
+
+  // Handle keyboard input with notes-first paradigm
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (isImmutable) return;
@@ -47,34 +54,132 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
 
       if (key >= '1' && key <= '9') {
         const value = parseInt(key, 10);
-        onValueChange(value);
+
+        if (inputMode === 'notes' || (!event.shiftKey && !event.ctrlKey && !event.metaKey)) {
+          // Default to notes mode, or explicit notes mode
+          onNoteToggle(value);
+        } else {
+          // Modifier key held - commit value (shift/ctrl/cmd + number)
+          onValueChange(value);
+        }
         event.preventDefault();
-      } else if (key === 'Delete' || key === 'Backspace' || key === '0') {
-        onValueChange(undefined);
+      } else if (key === 'Delete' || key === 'Backspace') {
+        if (contents.value) {
+          // Clear cell value
+          onValueChange(undefined);
+        } else if (contents.notes.length > 0) {
+          // Clear all notes
+          onClearAllNotes();
+        }
+        event.preventDefault();
+      } else if (key === '0') {
+        // Clear everything
+        if (contents.value) {
+          onValueChange(undefined);
+        }
+        if (contents.notes.length > 0) {
+          onClearAllNotes();
+        }
         event.preventDefault();
       }
       // Arrow key navigation is handled by the parent component
     },
-    [isImmutable, onValueChange]
+    [
+      isImmutable,
+      inputMode,
+      onValueChange,
+      onNoteToggle,
+      onClearAllNotes,
+      contents.value,
+      contents.notes.length
+    ]
   );
 
-  // Handle mouse click
-  const handleClick = useCallback(() => {
-    onSelect();
-  }, [onSelect]);
+  // Handle mouse click with double-tap detection
+  const handleClick = useCallback(
+    (event: React.MouseEvent) => {
+      const currentTime = Date.now();
+      const timeSinceLastClick = currentTime - lastClickTimeRef.current;
+
+      if (timeSinceLastClick < DOUBLE_TAP_DELAY && !isImmutable && contents.notes.length > 0) {
+        // Double-tap detected - clear all notes
+        onClearAllNotes();
+      } else {
+        // Single click - select cell (pass event for multi-select)
+        onSelect(event);
+      }
+
+      lastClickTimeRef.current = currentTime;
+    },
+    [onSelect, onClearAllNotes, isImmutable, contents.notes.length]
+  );
 
   // Calculate CSS classes
   const cellClasses = useMemo(() => {
-    const classes = ['sudoku-cell'];
+    const classes = [
+      // Base cell styles
+      'w-10',
+      'h-10',
+      'lg:w-12',
+      'lg:h-12',
+      'max-sm:w-9',
+      'max-sm:h-9',
+      'border',
+      'border-gray-400',
+      'bg-white',
+      'text-lg',
+      'lg:text-2xl',
+      'max-sm:text-base',
+      'font-bold',
+      'flex',
+      'items-center',
+      'justify-center',
+      'cursor-pointer',
+      'outline-none',
+      'relative',
+      'select-none',
+      'touch-manipulation',
+      'transition-all',
+      'duration-150'
+    ];
 
-    if (isSelected) classes.push('sudoku-cell--selected');
-    if (hasValidationError) classes.push('sudoku-cell--error');
-    if (isImmutable) classes.push('sudoku-cell--immutable');
-    if (contents.value) classes.push('sudoku-cell--filled');
+    // State-based styles
+    if (isSelected) {
+      if (className?.includes('multi-selected')) {
+        classes.push('bg-green-50', 'ring-1', 'ring-green-500');
+      } else {
+        classes.push('bg-blue-100', 'ring-2', 'ring-blue-600');
+      }
+    }
+    if (hasValidationError) {
+      classes.push('bg-red-50', 'text-red-800', 'border-red-500');
+    }
+    if (isImmutable) {
+      classes.push('bg-gray-100', 'cursor-default', 'text-gray-900');
+    }
+    if (contents.value) {
+      classes.push('font-black');
+    }
 
     // Add border classes for 3x3 sections
-    if ((column + 1) % 3 === 0 && column < 8) classes.push('sudoku-cell--right-section-border');
-    if ((row + 1) % 3 === 0 && row < 8) classes.push('sudoku-cell--bottom-section-border');
+    if ((column + 1) % 3 === 0 && column < 8) {
+      classes.push('border-r-2', 'border-r-gray-900');
+    }
+    if ((row + 1) % 3 === 0 && row < 8) {
+      classes.push('border-b-2', 'border-b-gray-900');
+    }
+
+    // Hover effects
+    if (!isImmutable) {
+      classes.push('hover:bg-gray-50', 'hover:border-blue-500');
+    }
+    // Selected state already has bg-blue-100, no need for duplicate hover
+    if (hasValidationError) {
+      classes.push('hover:bg-red-50', 'hover:border-red-600');
+    }
+
+    // Focus styles
+    classes.push('focus-visible:ring-2', 'focus-visible:ring-blue-500', 'focus-visible:ring-offset-1');
 
     if (className) classes.push(className);
 
@@ -84,8 +189,36 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
   // Format display value
   const displayValue = contents.value?.toString() || '';
 
-  // Format notes display (for future enhancement)
-  const notesDisplay = contents.notes.length > 0 ? contents.notes.join(' ') : '';
+  // Render notes in 3x3 grid layout
+  const renderNotesGrid = useCallback(() => {
+    if (contents.value || contents.notes.length === 0) return null;
+
+    // Create a 3x3 grid for notes (positions 1-9)
+    const notesGrid = Array(9)
+      .fill(null)
+      .map((__value, index) => {
+        const noteValue = index + 1;
+        const hasNote = contents.notes.includes(noteValue);
+
+        return (
+          <span
+            key={noteValue}
+            className="text-[7px] max-sm:text-[6px] lg:text-[11px] text-gray-600 font-normal leading-none flex items-center justify-center w-full h-full"
+          >
+            {hasNote ? noteValue : ''}
+          </span>
+        );
+      });
+
+    return (
+      <div
+        className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 grid grid-cols-3 grid-rows-3 gap-px pointer-events-none"
+        aria-hidden="true"
+      >
+        {notesGrid}
+      </div>
+    );
+  }, [contents.value, contents.notes]);
 
   return (
     <button
@@ -97,47 +230,20 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       data-testid={`sudoku-cell-${id}`}
       data-row={row}
       data-column={column}
-      aria-label={`Row ${row + 1}, Column ${column + 1}, ${contents.value || 'empty'}`}
+      data-selected={isSelected}
+      data-error={hasValidationError}
+      data-immutable={isImmutable}
+      data-filled={!!contents.value}
+      aria-label={`Row ${row + 1}, Column ${column + 1}, ${
+        contents.value
+          ? contents.value.toString()
+          : contents.notes.length > 0
+          ? `notes: ${contents.notes.join(', ')}`
+          : 'empty'
+      }`}
       aria-selected={isSelected}
-      style={{
-        // Basic inline styles - in a real app these would be in CSS
-        width: '40px',
-        height: '40px',
-        border: '1px solid #ddd',
-        borderRight: (column + 1) % 3 === 0 && column < 8 ? '2px solid #333' : '1px solid #ddd',
-        borderBottom: (row + 1) % 3 === 0 && row < 8 ? '2px solid #333' : '1px solid #ddd',
-        backgroundColor: hasValidationError
-          ? '#ffebee'
-          : isSelected
-          ? '#e3f2fd'
-          : isImmutable
-          ? '#f5f5f5'
-          : '#fff',
-        fontSize: '18px',
-        fontWeight: 'bold',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: isImmutable ? 'default' : 'pointer',
-        outline: isSelected ? '2px solid #1976d2' : 'none',
-        position: 'relative'
-      }}
     >
-      <span className="sudoku-cell__value">{displayValue}</span>
-      {notesDisplay && (
-        <span
-          className="sudoku-cell__notes"
-          style={{
-            position: 'absolute',
-            top: '2px',
-            right: '2px',
-            fontSize: '8px',
-            color: '#666'
-          }}
-        >
-          {notesDisplay}
-        </span>
-      )}
+      {contents.value ? <span className="text-inherit font-inherit">{displayValue}</span> : renderNotesGrid()}
     </button>
   );
 };

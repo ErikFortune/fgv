@@ -31,7 +31,7 @@ import {
   Puzzles,
   IPuzzleDescription
 } from '@fgv/ts-sudoku-lib';
-import { IValidationError, ICellDisplayInfo } from '../types';
+import { IValidationError, ICellDisplayInfo, InputMode } from '../types';
 
 /**
  * Hook for managing puzzle session state and operations
@@ -40,7 +40,11 @@ import { IValidationError, ICellDisplayInfo } from '../types';
 export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription): {
   session: PuzzleSession | null;
   selectedCell: CellId | null;
+  selectedCells: CellId[];
+  inputMode: InputMode;
   setSelectedCell: (cell: CellId | null) => void;
+  setSelectedCells: (cells: CellId[]) => void;
+  setInputMode: (mode: InputMode) => void;
   cellDisplayInfo: ICellDisplayInfo[];
   validationErrors: IValidationError[];
   isValid: boolean;
@@ -49,6 +53,8 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   canRedo: boolean;
   error: string | null;
   updateCellValue: (cellId: CellId, value: number | undefined) => void;
+  toggleCellNote: (cellId: CellId, note: number) => void;
+  clearCellNotes: (cellId: CellId) => void;
   navigateToCell: (direction: NavigationDirection, wrap?: NavigationWrap) => void;
   undo: () => void;
   redo: () => void;
@@ -57,6 +63,8 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
 } {
   const [session, setSession] = useState<PuzzleSession | null>(null);
   const [selectedCell, setSelectedCell] = useState<CellId | null>(null);
+  const [selectedCells, setSelectedCells] = useState<CellId[]>([]);
+  const [inputMode, setInputMode] = useState<InputMode>('notes'); // Notes-first paradigm
   const [error, setError] = useState<string | null>(null);
   const [updateCounter, setUpdateCounter] = useState(0); // Force re-renders
 
@@ -148,17 +156,101 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     });
   }, [session, validationErrors, updateCounter]);
 
-  // Update cell value
+  // Helper function to remove notes that conflict with a placed value
+  const removeConflictingNotes = useCallback(
+    (placedCellId: CellId, placedValue: number) => {
+      if (!session) return;
+
+      const placedCell = session.cells.find((cell) => cell.id === placedCellId);
+      if (!placedCell) return;
+
+      // Get cells in the same row, column, and section
+      const rowCells = session.rows[placedCell.row].cellIds;
+      const colCells = session.cols[placedCell.col].cellIds;
+      const sectionCells =
+        session.sections[Math.floor(placedCell.row / 3) * 3 + Math.floor(placedCell.col / 3)].cellIds;
+
+      // Combine all affected cells (remove duplicates)
+      const affectedCells = new Set([...rowCells, ...colCells, ...sectionCells]);
+
+      // Remove the placed cell itself from the list
+      affectedCells.delete(placedCellId);
+
+      // Update notes for each affected cell
+      for (const cellId of affectedCells) {
+        const contentsResult = session.state.getCellContents(cellId);
+        if (contentsResult.isSuccess()) {
+          const contents = contentsResult.value;
+
+          // Only update if the cell has notes and contains the placed value
+          if (contents.notes.length > 0 && contents.notes.includes(placedValue) && !contents.value) {
+            const newNotes = contents.notes.filter((note) => note !== placedValue);
+            session.updateCellNotes(cellId, newNotes);
+          }
+        }
+      }
+    },
+    [session]
+  );
+
+  // Update cell value with smart note removal
   const updateCellValue = useCallback(
     (cellId: CellId, value: number | undefined) => {
       if (!session) return;
 
       const result = session.updateCellValue(cellId, value);
       if (result.isSuccess()) {
+        // If a value was placed (not removed), remove conflicting notes
+        if (value !== undefined) {
+          removeConflictingNotes(cellId, value);
+        }
+
         // Force re-render by incrementing update counter
         setUpdateCounter((prev) => prev + 1);
       } else {
         setError(`Failed to update cell: ${result.message}`);
+      }
+    },
+    [session, removeConflictingNotes]
+  );
+
+  // Toggle a note in a cell
+  const toggleCellNote = useCallback(
+    (cellId: CellId, note: number) => {
+      if (!session) return;
+
+      // Get current cell contents
+      const contentsResult = session.state.getCellContents(cellId);
+      if (contentsResult.isFailure()) {
+        setError(`Failed to get cell contents: ${contentsResult.message}`);
+        return;
+      }
+
+      const currentNotes = contentsResult.value.notes;
+      const newNotes = currentNotes.includes(note)
+        ? currentNotes.filter((n) => n !== note) // Remove note if it exists
+        : [...currentNotes, note].sort(); // Add note if it doesn't exist
+
+      const result = session.updateCellNotes(cellId, newNotes);
+      if (result.isSuccess()) {
+        setUpdateCounter((prev) => prev + 1);
+      } else {
+        setError(`Failed to toggle note: ${result.message}`);
+      }
+    },
+    [session]
+  );
+
+  // Clear all notes from a cell
+  const clearCellNotes = useCallback(
+    (cellId: CellId) => {
+      if (!session) return;
+
+      const result = session.updateCellNotes(cellId, []);
+      if (result.isSuccess()) {
+        setUpdateCounter((prev) => prev + 1);
+      } else {
+        setError(`Failed to clear notes: ${result.message}`);
       }
     },
     [session]
@@ -264,7 +356,11 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   return {
     session,
     selectedCell,
+    selectedCells,
+    inputMode,
     setSelectedCell,
+    setSelectedCells,
+    setInputMode,
     cellDisplayInfo,
     validationErrors,
     isValid: session?.checkIsValid() ?? false,
@@ -273,6 +369,8 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     canRedo: session?.canRedo ?? false,
     error,
     updateCellValue,
+    toggleCellNote,
+    clearCellNotes,
     navigateToCell,
     undo,
     redo,

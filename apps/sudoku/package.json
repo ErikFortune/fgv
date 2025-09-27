@@ -29,7 +29,9 @@
     "@fgv/ts-json-base": "workspace:*",
     "react": "~19.1.1",
     "react-dom": "~19.1.1",
-    "react-router-dom": "^7.1.3"
+    "react-router-dom": "^7.1.3",
+    "@rushstack/heft-web-rig": "0.29.9",
+    "@rushstack/heft": "0.74.4"
   },
   "devDependencies": {
     "@types/react": "~19.1.10",

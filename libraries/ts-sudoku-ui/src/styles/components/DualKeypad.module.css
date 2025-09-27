@@ -1,0 +1,378 @@
+/**
+ * DualKeypad Component Styles
+ * Responsive dual keypad layout with overlay support
+ */
+
+.dualKeypad {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+  background-color: var(--color-neutral-200);
+  border-radius: var(--border-radius-lg);
+  border: var(--border-width-thin) var(--border-style) var(--color-neutral-400);
+  transition: all var(--transition-normal);
+}
+
+/* Layout modes */
+.dualKeypad--sideBySide {
+  flex-direction: row;
+  width: 100%;
+  max-width: 500px;
+}
+
+.dualKeypad--stacked {
+  flex-direction: column;
+  width: 250px;
+}
+
+.dualKeypad--overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-index-modal);
+  background-color: var(--color-neutral-100);
+  border: var(--border-width-thick) var(--border-style) var(--color-primary);
+  box-shadow: var(--shadow-lg);
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.dualKeypad--hidden {
+  display: none;
+}
+
+/* Device type modifiers */
+.dualKeypad--mobile {
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.dualKeypad--tablet {
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+}
+
+.dualKeypad--desktop {
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+}
+
+/* Orientation modifiers */
+.dualKeypad--landscape.dualKeypad--overlay {
+  flex-direction: row;
+}
+
+.dualKeypad--portrait.dualKeypad--overlay {
+  flex-direction: column;
+}
+
+/* Compact mode adjustments */
+.dualKeypad--compact {
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.dualKeypad--compact.dualKeypad--sideBySide {
+  max-width: 400px;
+}
+
+.dualKeypad--compact.dualKeypad--stacked {
+  width: 200px;
+}
+
+/* Disabled state */
+.dualKeypad--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* Status text */
+.statusText {
+  width: 100%;
+  text-align: center;
+  font-size: var(--font-size-base);
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+  order: -1; /* Always show at top in stacked mode */
+}
+
+.statusText--stacked {
+  order: -1;
+}
+
+.statusText--sideBySide {
+  order: 0;
+}
+
+/* Mode toggle container */
+.modeToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.modeToggle--column {
+  flex-direction: column;
+}
+
+.modeToggle--row {
+  flex-direction: row;
+}
+
+/* Mode toggle buttons */
+.toggleButton {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: var(--border-width-thin) var(--border-style) var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-neutral-100);
+  color: var(--text-primary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  font-weight: var(--font-weight-bold);
+  transition: all var(--transition-fast);
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggleButton--active {
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+  border-color: var(--color-primary-hover);
+}
+
+.toggleButton--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.toggleButton:not(.toggleButton--disabled):hover {
+  background-color: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+.toggleButton--active:not(.toggleButton--disabled):hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Overlay specific styles */
+.overlayBackdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--overlay-backdrop);
+  z-index: var(--z-index-overlay);
+}
+
+.overlayToggleButton {
+  position: fixed;
+  bottom: var(--spacing-xl);
+  right: var(--spacing-xl);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--border-radius-full);
+  border: var(--border-width-thick) var(--border-style) var(--color-primary);
+  background-color: var(--color-neutral-100);
+  color: var(--color-primary);
+  font-size: var(--spacing-xl);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  z-index: var(--z-index-tooltip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-normal);
+}
+
+.overlayToggleButton--visible {
+  background-color: var(--color-primary);
+  color: var(--text-on-primary);
+}
+
+.overlayToggleButton--disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.overlayToggleButton:not(.overlayToggleButton--disabled):hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Close button for overlay */
+.closeButton {
+  position: absolute;
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  width: var(--spacing-2xl);
+  height: var(--spacing-2xl);
+  border: none;
+  border-radius: var(--border-radius-full);
+  background-color: var(--color-error);
+  color: var(--text-on-error);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.closeButton:hover {
+  background-color: var(--color-error-hover);
+  transform: scale(1.1);
+}
+
+/* Keypad containers */
+.notesKeypad {
+  /* Inherits NumberKeypad styles */
+}
+
+.valuesKeypad {
+  /* Inherits NumberKeypad styles */
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 479px) {
+  .dualKeypad {
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+  }
+
+  .dualKeypad--sideBySide {
+    max-width: 100%;
+  }
+
+  .dualKeypad--stacked {
+    width: 100%;
+    max-width: 200px;
+  }
+
+  .overlayToggleButton {
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    width: 48px;
+    height: 48px;
+    font-size: var(--font-size-lg);
+  }
+
+  .statusText {
+    font-size: var(--font-size-sm);
+  }
+
+  .modeToggle {
+    gap: var(--spacing-xs);
+  }
+
+  .toggleButton {
+    padding: var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 480px) and (max-width: 767px) {
+  .dualKeypad--overlay {
+    flex-direction: row;
+  }
+
+  .dualKeypad--compact.dualKeypad--sideBySide {
+    max-width: 450px;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 768px) {
+  .dualKeypad--overlay {
+    flex-direction: row;
+  }
+
+  .overlayToggleButton:hover {
+    transform: scale(1.1);
+  }
+}
+
+/* Landscape orientation */
+@media (orientation: landscape) {
+  .dualKeypad--overlay {
+    flex-direction: row;
+  }
+}
+
+/* Portrait orientation */
+@media (orientation: portrait) and (max-width: 400px) {
+  .dualKeypad--overlay {
+    flex-direction: column;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .toggleButton,
+  .overlayToggleButton,
+  .closeButton {
+    min-width: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+  }
+
+  .overlayToggleButton:active {
+    transform: scale(0.95);
+  }
+
+  .toggleButton:active {
+    transform: scale(0.95);
+  }
+
+  .closeButton:active {
+    transform: scale(0.9);
+  }
+}
+
+/* High contrast mode adjustments */
+@media (prefers-contrast: high) {
+  .dualKeypad {
+    border-width: var(--border-width-thick);
+  }
+
+  .dualKeypad--overlay {
+    border-width: 3px;
+  }
+
+  .toggleButton,
+  .overlayToggleButton {
+    border-width: var(--border-width-thick);
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .dualKeypad,
+  .toggleButton,
+  .overlayToggleButton,
+  .closeButton {
+    transition: none;
+  }
+
+  .overlayToggleButton:hover,
+  .closeButton:hover {
+    transform: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .dualKeypad,
+  .overlayToggleButton,
+  .overlayBackdrop {
+    display: none;
+  }
+}

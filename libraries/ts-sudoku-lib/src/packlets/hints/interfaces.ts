@@ -23,7 +23,7 @@
  */
 
 import { Result } from '@fgv/ts-utils';
-import { Puzzle, PuzzleState } from '../common';
+import { Puzzle, PuzzleState, ISudokuLoggingContext } from '../common';
 import { DifficultyLevel, IHint, IHintGenerationOptions, TechniqueId } from './types';
 
 /**
@@ -155,20 +155,28 @@ export interface IHintApplicator {
    * @param hint - The hint to validate
    * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
+   * @param loggingContext - Optional logging context for diagnostic output
    * @returns Result indicating validation success or failure with details
    */
-  validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+  validateHint(
+    hint: IHint,
+    puzzle: Puzzle,
+    state: PuzzleState,
+    loggingContext?: ISudokuLoggingContext
+  ): Result<void>;
 
   /**
    * Applies a hint to the puzzle state, generating the necessary cell updates.
    * @param hint - The hint to apply
    * @param puzzle - The puzzle structure containing constraints
    * @param state - The current puzzle state
+   * @param loggingContext - Optional logging context for diagnostic output
    * @returns Result containing the cell state updates needed to apply the hint
    */
   applyHint(
     hint: IHint,
     puzzle: Puzzle,
-    state: PuzzleState
+    state: PuzzleState,
+    loggingContext?: ISudokuLoggingContext
   ): Result<readonly import('../common').ICellState[]>;
 }
