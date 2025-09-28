@@ -22,13 +22,12 @@
  * SOFTWARE.
  */
 
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import { CellId, NavigationDirection } from '@fgv/ts-sudoku-lib';
 import { ISudokuGridEntryProps } from '../types';
 import { usePuzzleSession } from '../hooks/usePuzzleSession';
 import { SudokuGrid } from './SudokuGrid';
-import { SudokuControls } from './SudokuControls';
-import { ValidationDisplay } from './ValidationDisplay';
+import { CompactControlRibbon } from './CompactControlRibbon';
 import { DualKeypad } from './DualKeypad';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 
@@ -66,6 +65,10 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     reset,
     exportPuzzle
   } = usePuzzleSession(initialPuzzleDescription);
+
+  // Drag-to-add multiselect state
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartCellRef = useRef<CellId | null>(null);
 
   // Get responsive layout information
   const responsiveLayout = useResponsiveLayout();
@@ -108,19 +111,48 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     [updateCellValue]
   );
 
-  // Handle note toggle (supports multi-select)
+  // Handle note toggle (supports multi-select with normalize-to-same-state logic)
   const handleNoteToggle = useCallback(
     (cellId: CellId, note: number) => {
-      // If multiple cells are selected and this is one of them, apply to all
+      // If multiple cells are selected and this is one of them, apply normalize logic to all
       if (selectedCells.length > 1 && selectedCells.includes(cellId)) {
-        selectedCells.forEach((id) => {
-          toggleCellNote(id, note);
-        });
+        // Get all selected cell display info to check current note states
+        const selectedCellsInfo = cellDisplayInfo.filter((cell) => selectedCells.includes(cell.id));
+
+        // Count how many selected cells currently have this note
+        const cellsWithNote = selectedCellsInfo.filter((cell) => cell.contents.notes.includes(note));
+        const allSelected = selectedCellsInfo.length;
+        const withNote = cellsWithNote.length;
+
+        // Normalize logic:
+        // - If ALL have note: Remove from all
+        // - If SOME have note: Add to all (normalize to "all have")
+        // - If NONE have note: Add to all
+        if (withNote === allSelected) {
+          // ALL have the note → remove from all
+          selectedCells.forEach((id) => {
+            // Only remove if the cell actually has the note (safety check)
+            const cellInfo = cellDisplayInfo.find((c) => c.id === id);
+            if (cellInfo && cellInfo.contents.notes.includes(note)) {
+              toggleCellNote(id, note);
+            }
+          });
+        } else {
+          // SOME or NONE have the note → add to all
+          selectedCells.forEach((id) => {
+            // Only add if the cell doesn't already have the note
+            const cellInfo = cellDisplayInfo.find((c) => c.id === id);
+            if (cellInfo && !cellInfo.contents.notes.includes(note)) {
+              toggleCellNote(id, note);
+            }
+          });
+        }
       } else {
+        // Single cell selection - normal toggle behavior
         toggleCellNote(cellId, note);
       }
     },
-    [toggleCellNote, selectedCells]
+    [toggleCellNote, selectedCells, cellDisplayInfo]
   );
 
   // Handle clear all notes (supports multi-select)
@@ -164,9 +196,34 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
         setSelectedCells(newSelection);
         setSelectedCell(cellId); // Make this the primary selection
       }
+
+      // Enter drag mode for potential drag-to-add functionality
+      setIsDragging(true);
+      dragStartCellRef.current = cellId;
     },
     [selectedCell, selectedCells, setSelectedCell, setSelectedCells]
   );
+
+  // Handle drag over cell during drag-to-add
+  const handleDragOver = useCallback(
+    (cellId: CellId) => {
+      if (!isDragging || dragStartCellRef.current === null) return;
+
+      // Only add cells to selection during drag (don't toggle/remove)
+      if (!selectedCells.includes(cellId)) {
+        const newSelection = [...selectedCells, cellId];
+        setSelectedCells(newSelection);
+        // Don't change primary selection during drag
+      }
+    },
+    [isDragging, selectedCells, setSelectedCells]
+  );
+
+  // Handle end of drag operation
+  const handleDragEnd = useCallback(() => {
+    setIsDragging(false);
+    dragStartCellRef.current = null;
+  }, []);
 
   // Handle navigation
   const handleNavigate = useCallback(
@@ -433,10 +490,25 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             onNoteToggle={handleNoteToggle}
             onClearAllNotes={handleClearAllNotes}
             onNavigate={handleNavigate}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            isDragging={isDragging}
           />
 
-          {/* Validation display */}
-          <ValidationDisplay errors={validationErrors} isValid={isValid} isSolved={isSolved} />
+          {/* Compact Control Ribbon - positioned between puzzle and keypads */}
+          <CompactControlRibbon
+            canUndo={canUndo}
+            canRedo={canRedo}
+            canReset={true}
+            isValid={isValid}
+            isSolved={isSolved}
+            validationErrors={validationErrors}
+            onUndo={undo}
+            onRedo={redo}
+            onReset={reset}
+            onExport={handleExport}
+            className="mt-3 mb-2"
+          />
 
           {/* Help text - only show if using traditional input and not on mobile with visible keypads */}
           {showTraditionalModeToggle && responsiveLayout.deviceType !== 'mobile' && (
@@ -497,29 +569,6 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
           showOverlayToggle={true}
         />
       )}
-
-      {/* Controls - positioned at the bottom after keypads */}
-      <div
-        className={`w-full flex justify-center ${
-          responsiveLayout.deviceType === 'mobile' &&
-          (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
-            responsiveLayout.keypadLayoutMode === 'stacked')
-            ? 'mt-2'
-            : 'mt-5'
-        }`}
-      >
-        <SudokuControls
-          canUndo={canUndo}
-          canRedo={canRedo}
-          canReset={true}
-          isValid={isValid}
-          isSolved={isSolved}
-          onUndo={undo}
-          onRedo={redo}
-          onReset={reset}
-          onExport={handleExport}
-        />
-      </div>
     </div>
   );
 };

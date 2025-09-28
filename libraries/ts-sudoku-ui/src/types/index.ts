@@ -78,6 +78,9 @@ export interface ISudokuGridProps {
   readonly onNoteToggle: (cellId: CellId, note: number) => void;
   readonly onClearAllNotes: (cellId: CellId) => void;
   readonly onNavigate: (direction: NavigationDirection) => void;
+  readonly onDragOver?: (cellId: CellId) => void;
+  readonly onDragEnd?: () => void;
+  readonly isDragging?: boolean;
   readonly className?: string;
 }
 
@@ -113,6 +116,7 @@ export interface ISudokuCellProps {
   readonly onValueChange: (value: number | undefined) => void;
   readonly onNoteToggle: (note: number) => void;
   readonly onClearAllNotes: () => void;
+  readonly onDragOver?: () => void;
   readonly className?: string;
 }
 

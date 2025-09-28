@@ -13,6 +13,9 @@ import { PuzzleSession } from '@fgv/ts-sudoku-lib';
 import { default as React_2 } from 'react';
 
 // @public
+export const CompactControlRibbon: React_2.FC<ICompactControlRibbonProps>;
+
+// @public
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 // @public
@@ -32,6 +35,25 @@ export interface ICellDisplayInfo {
     readonly isImmutable: boolean;
     // (undocumented)
     readonly row: number;
+}
+
+// @public
+export interface ICompactControlRibbonProps {
+    readonly canRedo: boolean;
+    readonly canReset: boolean;
+    readonly canUndo: boolean;
+    readonly className?: string;
+    readonly isSolved: boolean;
+    readonly isValid: boolean;
+    readonly onExport: () => void;
+    readonly onRedo: () => void;
+    readonly onReset: () => void;
+    readonly onUndo: () => void;
+    readonly validationErrors: ReadonlyArray<{
+        readonly type: string;
+        readonly cellId: string;
+        readonly message: string;
+    }>;
 }
 
 // @public
@@ -90,6 +112,8 @@ export interface ISudokuCellProps {
     // (undocumented)
     readonly onClearAllNotes: () => void;
     // (undocumented)
+    readonly onDragOver?: () => void;
+    // (undocumented)
     readonly onLongPressToggle?: (event: React.TouchEvent | React.MouseEvent) => void;
     // (undocumented)
     readonly onNoteToggle: (note: number) => void;
@@ -140,6 +164,8 @@ export interface ISudokuGridProps {
     // (undocumented)
     readonly inputMode: InputMode;
     // (undocumented)
+    readonly isDragging?: boolean;
+    // (undocumented)
     readonly numColumns: number;
     // (undocumented)
     readonly numRows: number;
@@ -149,6 +175,10 @@ export interface ISudokuGridProps {
     readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;
     // (undocumented)
     readonly onClearAllNotes: (cellId: CellId) => void;
+    // (undocumented)
+    readonly onDragEnd?: () => void;
+    // (undocumented)
+    readonly onDragOver?: (cellId: CellId) => void;
     // (undocumented)
     readonly onLongPressToggle?: (cellId: CellId, event: React.TouchEvent | React.MouseEvent) => void;
     // (undocumented)

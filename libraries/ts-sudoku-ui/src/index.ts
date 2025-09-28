@@ -28,6 +28,7 @@ export { SudokuGrid } from './components/SudokuGrid';
 export { SudokuCell } from './components/SudokuCell';
 export { SudokuControls } from './components/SudokuControls';
 export { ValidationDisplay } from './components/ValidationDisplay';
+export { CompactControlRibbon } from './components/CompactControlRibbon';
 export { DualKeypad } from './components/DualKeypad';
 export { NumberKeypad } from './components/NumberKeypad';
 
@@ -45,6 +46,9 @@ export type {
   ISudokuControlsProps,
   IValidationDisplayProps
 } from './types';
+
+// Compact control ribbon types
+export type { ICompactControlRibbonProps } from './components/CompactControlRibbon';
 
 // Dual keypad types
 export type { INumberKeypadProps } from './components/NumberKeypad';

@@ -44,6 +44,9 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   onNoteToggle,
   onClearAllNotes,
   onNavigate,
+  onDragOver,
+  onDragEnd,
+  isDragging,
   className
 }) => {
   // Handle keyboard navigation
@@ -121,6 +124,14 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     [onLongPressToggle]
   );
 
+  // Create drag over handler
+  const createDragOverHandler = useCallback(
+    (cellId: CellId) => {
+      return onDragOver ? () => onDragOver(cellId) : undefined;
+    },
+    [onDragOver]
+  );
+
   // Calculate grid classes
   const gridClasses = useMemo(() => {
     const classes = ['sudoku-grid'];
@@ -150,6 +161,8 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
         max-w-full
       `}
       onKeyDown={handleKeyDown}
+      onMouseUp={onDragEnd}
+      onTouchEnd={onDragEnd}
       role="grid"
       aria-label="Sudoku puzzle entry grid"
       tabIndex={0}
@@ -170,6 +183,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
             onValueChange={createCellValueChangeHandler(cellInfo.id)}
             onNoteToggle={createNoteToggleHandler(cellInfo.id)}
             onClearAllNotes={createClearAllNotesHandler(cellInfo.id)}
+            onDragOver={createDragOverHandler(cellInfo.id)}
             className={isInMultiSelection && !isPrimarySelected ? 'sudoku-cell--multi-selected' : undefined}
           />
         );

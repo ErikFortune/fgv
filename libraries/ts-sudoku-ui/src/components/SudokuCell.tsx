@@ -39,6 +39,7 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
   onValueChange,
   onNoteToggle,
   onClearAllNotes,
+  onDragOver,
   className
 }) => {
   const { id, row, column, contents, isImmutable, hasValidationError } = cellInfo;
@@ -110,12 +111,11 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
   const handleLongPress = useCallback(
     (event: React.TouchEvent | React.MouseEvent) => {
       if (onLongPressToggle && !isImmutable) {
-        console.log(`Long press detected on cell ${id}, setting flag to true`);
         longPressOccurredRef.current = true;
         onLongPressToggle(event);
       }
     },
-    [onLongPressToggle, isImmutable, id]
+    [onLongPressToggle, isImmutable]
   );
 
   // Set up long press detection
@@ -130,13 +130,10 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
     (event: React.MouseEvent) => {
       // If a long press just occurred, ignore this click event
       if (longPressOccurredRef.current) {
-        console.log(`Click on cell ${id} - IGNORING due to long press flag`);
         longPressOccurredRef.current = false; // Reset for next interaction
         event.preventDefault();
         return;
       }
-
-      console.log(`Click on cell ${id} - processing normally`);
 
       // Prevent default context menu on Ctrl+click
       if (event.ctrlKey || event.metaKey) {
@@ -156,27 +153,24 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
 
       lastClickTimeRef.current = currentTime;
     },
-    [onSelect, onClearAllNotes, isImmutable, contents.notes.length, id]
+    [onSelect, onClearAllNotes, isImmutable, contents.notes.length]
   );
 
   // Handle mouse up - need to check if long press just occurred
   const handleMouseUp = useCallback(
     (event: React.MouseEvent) => {
-      const wasLongPress = longPressProps.onMouseUp(event);
-      console.log(
-        `Mouse up on cell ${id}, wasLongPress: ${wasLongPress}, flag: ${longPressOccurredRef.current}`
-      );
+      longPressProps.onMouseUp(event);
 
       // Don't reset the flag here - let the click handler handle it
       // The flag will be reset in handleClick or handleMouseLeave
     },
-    [longPressProps, id]
+    [longPressProps]
   );
 
   // Handle touch end - need to check if long press just occurred
   const handleTouchEnd = useCallback(
     (event: React.TouchEvent) => {
-      const wasLongPress = longPressProps.onTouchEnd(event);
+      longPressProps.onTouchEnd(event);
 
       // Don't reset the flag here - let the click handler handle it
       // The flag will be reset in handleClick or handleMouseLeave
@@ -202,6 +196,7 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       'border',
       'border-gray-400',
       'bg-white',
+      'text-blue-800',
       'text-base',
       'md:text-lg',
       'lg:text-xl',
@@ -292,7 +287,7 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
 
     return (
       <div
-        className="absolute inset-0 m-[2px] grid grid-cols-3 grid-rows-3 gap-0 pointer-events-none"
+        className="absolute inset-[12.5%] grid grid-cols-3 grid-rows-3 gap-0 pointer-events-none"
         style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)' }}
         aria-hidden="true"
       >
@@ -310,8 +305,10 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       onKeyDown={handleKeyDown}
       onMouseDown={longPressProps.onMouseDown}
       onMouseUp={handleMouseUp}
+      onMouseMove={onDragOver}
       onMouseLeave={handleMouseLeave}
       onTouchStart={longPressProps.onTouchStart}
+      onTouchMove={onDragOver}
       onTouchEnd={handleTouchEnd}
       tabIndex={isSelected ? 0 : -1}
       data-testid={`sudoku-cell-${id}`}

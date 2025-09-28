@@ -229,18 +229,6 @@ export const NumberKeypad: React.FC<INumberKeypadProps> = ({
     return classes.join(' ');
   }, [compact]);
 
-  const statusClasses = useMemo(() => {
-    const classes = ['text-center text-xs font-medium'];
-
-    if (isActive) {
-      classes.push('text-green-600');
-    } else {
-      classes.push('text-gray-500');
-    }
-
-    return classes.join(' ');
-  }, [isActive]);
-
   // Keypad title
   const title = keypadType === 'notes' ? '📝 Notes' : '✏️ Values';
 
@@ -285,9 +273,6 @@ export const NumberKeypad: React.FC<INumberKeypadProps> = ({
           Clear
         </button>
       </div>
-
-      {/* Status indicator */}
-      <div className={statusClasses}>{isActive ? 'Active' : 'Inactive'}</div>
     </div>
   );
 };
