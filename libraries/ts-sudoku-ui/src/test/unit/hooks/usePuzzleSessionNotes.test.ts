@@ -217,7 +217,7 @@ describe('usePuzzleSession - Notes Functionality', () => {
 
   describe('error handling', () => {
     test('should handle note operations gracefully when session is null', () => {
-      const { result } = renderHook(() => usePuzzleSession());
+      renderHook(() => usePuzzleSession());
 
       // Test with invalid puzzle description to get null session
       const { result: nullSessionResult } = renderHook(() =>

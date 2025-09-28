@@ -6,9 +6,11 @@ module.exports = {
     './src/components/**/*.{js,jsx,ts,tsx}',
     './src/hooks/**/*.{js,jsx,ts,tsx}',
     './src/utils/**/*.{js,jsx,ts,tsx}',
-    // Include the ts-sudoku-ui library (compiled output)
+    // Include the ts-sudoku-ui library (both source and compiled)
     './node_modules/@fgv/ts-sudoku-ui/lib/**/*.{js,jsx}',
-    '../../libraries/ts-sudoku-ui/lib/**/*.{js,jsx}'
+    '../../libraries/ts-sudoku-ui/lib/**/*.{js,jsx}',
+    // CRITICAL: Include source files for custom Tailwind classes
+    '../../libraries/ts-sudoku-ui/src/**/*.{js,jsx,ts,tsx}'
   ],
   theme: {
     extend: {

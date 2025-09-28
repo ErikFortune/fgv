@@ -138,6 +138,36 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     [clearCellNotes, selectedCells]
   );
 
+  // Handle long press toggle for multiselect
+  const handleLongPressToggle = useCallback(
+    (cellId: CellId, event: React.TouchEvent | React.MouseEvent) => {
+      event.preventDefault();
+
+      // Toggle cell in selection: if not in selection, add it; if in selection, remove it
+      const currentIndex = selectedCells.indexOf(cellId);
+
+      if (currentIndex >= 0) {
+        // Remove from selection
+        const newSelection = selectedCells.filter((id) => id !== cellId);
+        setSelectedCells(newSelection);
+        // If we removed the primary selected cell, set new primary or clear
+        if (selectedCell === cellId) {
+          if (newSelection.length > 0) {
+            setSelectedCell(newSelection[0]);
+          } else {
+            setSelectedCell(null);
+          }
+        }
+      } else {
+        // Add to selection
+        const newSelection = [...selectedCells, cellId];
+        setSelectedCells(newSelection);
+        setSelectedCell(cellId); // Make this the primary selection
+      }
+    },
+    [selectedCell, selectedCells, setSelectedCell, setSelectedCells]
+  );
+
   // Handle navigation
   const handleNavigate = useCallback(
     (direction: NavigationDirection) => {
@@ -229,30 +259,54 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     return classes.join(' ');
   }, [className]);
 
-  // Determine if we should show traditional input mode toggle - moved before conditionals
+  // Determine if we should show traditional input mode toggle - only when keypads are not visible
   const showTraditionalModeToggle =
-    responsiveLayout.keypadLayoutMode === 'hidden' || !responsiveLayout.isTouchDevice;
+    responsiveLayout.keypadLayoutMode === 'hidden' || responsiveLayout.keypadLayoutMode === 'overlay';
 
-  // Calculate main container classes - moved before conditionals
+  // Calculate main container classes - mobile-optimized spacing
   const mainContainerClasses = useMemo(() => {
-    const classes = ['flex items-start gap-5 mx-auto p-5'];
+    const classes = ['flex items-start mx-auto'];
 
-    // Desktop or landscape tablet with stacked keypad layout
+    // Optimize spacing for mobile with visible keypads
+    if (
+      responsiveLayout.deviceType === 'mobile' &&
+      (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+        responsiveLayout.keypadLayoutMode === 'stacked')
+    ) {
+      classes.push('gap-2 p-2');
+    } else {
+      classes.push('gap-5 p-5');
+    }
+
+    // Layout based on device and orientation
     if (responsiveLayout.keypadLayoutMode === 'stacked' && responsiveLayout.orientation === 'landscape') {
+      // Landscape: keypads beside grid
       classes.push('flex-row max-w-screen-lg justify-center');
     } else if (responsiveLayout.keypadLayoutMode === 'side-by-side') {
-      classes.push('flex-row max-w-screen-lg justify-center');
+      // Portrait mobile: keypads BELOW grid
+      classes.push('flex-col items-center max-w-2xl');
     } else {
       // Default vertical layout
       classes.push('flex-col items-center max-w-2xl');
     }
 
     return classes.join(' ');
-  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation]);
+  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation, responsiveLayout.deviceType]);
 
   // Calculate game area classes
   const gameAreaClasses = useMemo(() => {
-    const classes = ['flex flex-col items-center gap-5'];
+    const classes = ['flex flex-col items-center'];
+
+    // Optimize spacing for mobile with visible keypads
+    if (
+      responsiveLayout.deviceType === 'mobile' &&
+      (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+        responsiveLayout.keypadLayoutMode === 'stacked')
+    ) {
+      classes.push('gap-2');
+    } else {
+      classes.push('gap-5');
+    }
 
     if (responsiveLayout.keypadLayoutMode === 'stacked' && responsiveLayout.orientation === 'landscape') {
       classes.push('flex-none');
@@ -261,7 +315,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     }
 
     return classes.join(' ');
-  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation]);
+  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation, responsiveLayout.deviceType]);
 
   // Show error state if session failed to initialize
   if (error) {
@@ -291,10 +345,40 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
       <div className={mainContainerClasses}>
         {/* Game area container */}
         <div className={gameAreaClasses}>
-          {/* Puzzle title */}
-          <div className="text-center mb-3">
-            <h2 className="m-0 mb-2 text-2xl font-semibold text-gray-900">{session.description}</h2>
-            {session.id && <div className="text-sm text-gray-600 m-0">ID: {session.id}</div>}
+          {/* Puzzle title - compact on mobile */}
+          <div
+            className={`text-center ${
+              responsiveLayout.deviceType === 'mobile' &&
+              (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+                responsiveLayout.keypadLayoutMode === 'stacked')
+                ? 'mb-1'
+                : 'mb-3'
+            }`}
+          >
+            <h2
+              className={`m-0 font-semibold text-gray-900 ${
+                responsiveLayout.deviceType === 'mobile' &&
+                (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+                  responsiveLayout.keypadLayoutMode === 'stacked')
+                  ? 'mb-1 text-lg'
+                  : 'mb-2 text-2xl'
+              }`}
+            >
+              {session.description}
+            </h2>
+            {session.id && (
+              <div
+                className={`text-gray-600 m-0 ${
+                  responsiveLayout.deviceType === 'mobile' &&
+                  (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+                    responsiveLayout.keypadLayoutMode === 'stacked')
+                    ? 'text-xs'
+                    : 'text-sm'
+                }`}
+              >
+                ID: {session.id}
+              </div>
+            )}
           </div>
 
           {/* Traditional input mode toggle - only show if keypads are hidden/overlay */}
@@ -326,12 +410,14 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             </div>
           )}
 
-          {/* Multi-select hint */}
-          {selectedCells.length > 1 && (
-            <div className="px-3 py-1 bg-green-50 rounded border border-green-500 text-xs text-green-800 text-center font-normal">
-              {selectedCells.length} cells selected - Operations will apply to all selected cells
-            </div>
-          )}
+          {/* Multi-select hint - reserve space to prevent layout shift */}
+          <div className="h-6 flex items-center justify-center">
+            {selectedCells.length > 1 && (
+              <div className="px-3 py-1 bg-green-50 rounded border border-green-500 text-xs text-green-800 text-center font-normal">
+                {selectedCells.length} cells selected - Operations will apply to all selected cells
+              </div>
+            )}
+          </div>
 
           {/* Main grid */}
           <SudokuGrid
@@ -342,6 +428,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             selectedCells={selectedCells}
             inputMode={inputMode}
             onCellSelect={handleCellSelect}
+            onLongPressToggle={handleLongPressToggle}
             onCellValueChange={handleCellValueChange}
             onNoteToggle={handleNoteToggle}
             onClearAllNotes={handleClearAllNotes}
@@ -351,21 +438,8 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
           {/* Validation display */}
           <ValidationDisplay errors={validationErrors} isValid={isValid} isSolved={isSolved} />
 
-          {/* Controls */}
-          <SudokuControls
-            canUndo={canUndo}
-            canRedo={canRedo}
-            canReset={true}
-            isValid={isValid}
-            isSolved={isSolved}
-            onUndo={undo}
-            onRedo={redo}
-            onReset={reset}
-            onExport={handleExport}
-          />
-
-          {/* Help text - only show if using traditional input */}
-          {showTraditionalModeToggle && (
+          {/* Help text - only show if using traditional input and not on mobile with visible keypads */}
+          {showTraditionalModeToggle && responsiveLayout.deviceType !== 'mobile' && (
             <div className="text-xs text-gray-600 text-center leading-normal max-w-md mx-auto sm:text-xs text-2xs sm:max-w-lg max-w-80">
               <div className="font-semibold mb-1 text-gray-900">Notes-First Input System:</div>
               <div className="mb-0.5">• Numbers add/remove notes by default</div>
@@ -423,6 +497,29 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
           showOverlayToggle={true}
         />
       )}
+
+      {/* Controls - positioned at the bottom after keypads */}
+      <div
+        className={`w-full flex justify-center ${
+          responsiveLayout.deviceType === 'mobile' &&
+          (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+            responsiveLayout.keypadLayoutMode === 'stacked')
+            ? 'mt-2'
+            : 'mt-5'
+        }`}
+      >
+        <SudokuControls
+          canUndo={canUndo}
+          canRedo={canRedo}
+          canReset={true}
+          isValid={isValid}
+          isSolved={isSolved}
+          onUndo={undo}
+          onRedo={redo}
+          onReset={reset}
+          onExport={handleExport}
+        />
+      </div>
     </div>
   );
 };

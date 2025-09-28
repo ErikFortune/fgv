@@ -39,6 +39,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   selectedCells,
   inputMode,
   onCellSelect,
+  onLongPressToggle,
   onCellValueChange,
   onNoteToggle,
   onClearAllNotes,
@@ -110,6 +111,16 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     [onClearAllNotes]
   );
 
+  // Create long press toggle handler
+  const createLongPressToggleHandler = useCallback(
+    (cellId: CellId) => {
+      return onLongPressToggle
+        ? (event: React.TouchEvent | React.MouseEvent) => onLongPressToggle(cellId, event)
+        : undefined;
+    },
+    [onLongPressToggle]
+  );
+
   // Calculate grid classes
   const gridClasses = useMemo(() => {
     const classes = ['sudoku-grid'];
@@ -127,25 +138,22 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
 
   return (
     <div
-      className={gridClasses}
+      className={`
+        ${gridClasses}
+        grid grid-cols-9 grid-rows-9 gap-0
+        border-4 border-black bg-black
+        mx-auto outline-none
+        aspect-square
+        w-[450px]
+        md:w-[540px]
+        lg:w-[630px]
+        max-w-full
+      `}
       onKeyDown={handleKeyDown}
       role="grid"
       aria-label="Sudoku puzzle entry grid"
       tabIndex={0}
       data-testid="sudoku-grid"
-      style={{
-        // Basic inline styles - in a real app these would be in CSS
-        display: 'grid',
-        gridTemplateColumns: `repeat(${numColumns}, 1fr)`,
-        gridTemplateRows: `repeat(${numRows}, 1fr)`,
-        gap: '0',
-        border: '2px solid #333',
-        width: `${numColumns * 40}px`,
-        height: `${numRows * 40}px`,
-        backgroundColor: '#333', // Grid lines color
-        margin: '20px auto',
-        outline: 'none'
-      }}
     >
       {sortedCells.map((cellInfo) => {
         const isPrimarySelected = selectedCell === cellInfo.id;
@@ -158,6 +166,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
             isSelected={isPrimarySelected || isInMultiSelection}
             inputMode={inputMode}
             onSelect={createCellSelectHandler(cellInfo.id)}
+            onLongPressToggle={createLongPressToggleHandler(cellInfo.id)}
             onValueChange={createCellValueChangeHandler(cellInfo.id)}
             onNoteToggle={createNoteToggleHandler(cellInfo.id)}
             onClearAllNotes={createClearAllNotesHandler(cellInfo.id)}

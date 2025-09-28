@@ -23,7 +23,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, RenderResult, RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import '@fgv/ts-utils-jest';
@@ -31,12 +31,12 @@ import { SudokuGridEntry } from '../../../components/SudokuGridEntry';
 import { IPuzzleDescription } from '@fgv/ts-sudoku-lib';
 
 // Custom render function to ensure container exists
-function customRender(ui: React.ReactElement, options?: any): any {
+function customRender(ui: React.ReactElement, options?: RenderOptions): RenderResult {
   // Ensure we have a proper container
   const container = document.createElement('div');
   document.body.appendChild(container);
 
-  const result: any = render(ui, { container, ...options });
+  const result = render(ui, { container, ...options });
 
   return {
     ...result,
@@ -53,9 +53,7 @@ function getByTestId(container: Element, testId: string): Element {
   return element;
 }
 
-function queryByTestId(container: Element, testId: string): Element | null {
-  return container.querySelector(`[data-testid="${testId}"]`);
-}
+// Removed unused function queryByTestId
 
 // URL.createObjectURL and URL.revokeObjectURL are set up in jest.setup.js
 

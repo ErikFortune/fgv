@@ -140,13 +140,13 @@ export const DualKeypad: React.FC<IDualKeypadProps> = ({
 
   // Calculate container classes
   const containerClasses = useMemo(() => {
-    const classes = ['flex gap-4 p-4'];
+    const classes = ['flex gap-3 p-3'];
 
-    // Layout mode specific styles
+    // Layout mode specific styles - FIXED: side-by-side should be flex-row
     if (effectiveLayoutMode === 'side-by-side') {
-      classes.push('flex-col');
+      classes.push('flex-row justify-center');
     } else if (effectiveLayoutMode === 'stacked') {
-      classes.push('flex-row');
+      classes.push('flex-col');
     } else if (effectiveLayoutMode === 'overlay') {
       classes.push(
         'fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-lg shadow-lg border border-gray-200'
@@ -193,16 +193,13 @@ export const DualKeypad: React.FC<IDualKeypadProps> = ({
       </button>
     );
 
-  // Status text for multi-selection
+  // Status text for multi-selection only (not single selection)
   const statusText = useMemo(() => {
-    if (!hasCellSelection) return null;
-
     if (selectedCellCount > 1) {
-      return `${selectedCellCount} cells selected - operations apply to all`;
+      return `${selectedCellCount} cells selected`;
     }
-
-    return 'Cell selected - ready for input';
-  }, [hasCellSelection, selectedCellCount]);
+    return null;
+  }, [selectedCellCount]);
 
   return (
     <>
@@ -228,11 +225,41 @@ export const DualKeypad: React.FC<IDualKeypadProps> = ({
               </div>
             )}
 
+            {/* Mode Toggle - only show for overlay/hidden modes (no toggle needed for side-by-side) */}
+            {effectiveLayoutMode !== 'side-by-side' && effectiveLayoutMode !== 'stacked' && (
+              <div className="flex justify-center gap-3 mb-3">
+                <button
+                  type="button"
+                  onClick={() => onInputModeChange('notes')}
+                  disabled={disabled}
+                  className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 text-sm font-medium transition-colors ${
+                    inputMode === 'notes'
+                      ? 'bg-blue-500 text-white border-blue-600'
+                      : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                  } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  📝 Notes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onInputModeChange('value')}
+                  disabled={disabled}
+                  className={`px-4 py-2 rounded-lg border-2 flex items-center gap-2 text-sm font-medium transition-colors ${
+                    inputMode === 'value'
+                      ? 'bg-blue-500 text-white border-blue-600'
+                      : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
+                  } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  ✏️ Values
+                </button>
+              </div>
+            )}
+
             {/* Notes Keypad */}
             <NumberKeypad
               keypadType="notes"
               inputMode={inputMode}
-              isActive={inputMode === 'notes'}
+              isActive={true}
               onNumberPress={handleNotePress}
               onClear={handleClearNotes}
               disabled={disabled || !hasCellSelection}
@@ -240,43 +267,11 @@ export const DualKeypad: React.FC<IDualKeypadProps> = ({
               className="flex-1"
             />
 
-            {/* Mode Toggle for mobile */}
-            {(responsiveLayout.deviceType === 'mobile' || useCompactMode) && (
-              <div
-                className={`flex gap-2 ${effectiveLayoutMode === 'side-by-side' ? 'flex-col' : 'flex-row'}`}
-              >
-                <button
-                  type="button"
-                  onClick={() => onInputModeChange('notes')}
-                  disabled={disabled}
-                  className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center text-lg transition-colors ${
-                    inputMode === 'notes'
-                      ? 'bg-blue-500 text-white border-blue-600'
-                      : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
-                  } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  📝
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onInputModeChange('value')}
-                  disabled={disabled}
-                  className={`w-12 h-12 rounded-lg border-2 flex items-center justify-center text-lg transition-colors ${
-                    inputMode === 'value'
-                      ? 'bg-blue-500 text-white border-blue-600'
-                      : 'bg-gray-100 border-gray-300 hover:bg-gray-200'
-                  } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  ✏️
-                </button>
-              </div>
-            )}
-
             {/* Values Keypad */}
             <NumberKeypad
               keypadType="values"
               inputMode={inputMode}
-              isActive={inputMode === 'value'}
+              isActive={true}
               onNumberPress={handleValuePress}
               onClear={handleClearValues}
               disabled={disabled || !hasCellSelection}

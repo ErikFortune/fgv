@@ -73,6 +73,7 @@ export interface ISudokuGridProps {
   readonly selectedCells: CellId[];
   readonly inputMode: InputMode;
   readonly onCellSelect: (cellId: CellId, event?: React.MouseEvent) => void;
+  readonly onLongPressToggle?: (cellId: CellId, event: React.TouchEvent | React.MouseEvent) => void;
   readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;
   readonly onNoteToggle: (cellId: CellId, note: number) => void;
   readonly onClearAllNotes: (cellId: CellId) => void;
@@ -108,6 +109,7 @@ export interface ISudokuCellProps {
   readonly isSelected: boolean;
   readonly inputMode: InputMode;
   readonly onSelect: (event?: React.MouseEvent) => void;
+  readonly onLongPressToggle?: (event: React.TouchEvent | React.MouseEvent) => void;
   readonly onValueChange: (value: number | undefined) => void;
   readonly onNoteToggle: (note: number) => void;
   readonly onClearAllNotes: () => void;

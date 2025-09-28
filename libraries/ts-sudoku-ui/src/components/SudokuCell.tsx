@@ -24,6 +24,7 @@
 
 import React, { useCallback, useMemo, useRef } from 'react';
 import { ISudokuCellProps } from '../types';
+import { useLongPress } from '../hooks/useLongPress';
 
 /**
  * Individual Sudoku cell component with input handling and validation display
@@ -34,6 +35,7 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
   isSelected,
   inputMode,
   onSelect,
+  onLongPressToggle,
   onValueChange,
   onNoteToggle,
   onClearAllNotes,
@@ -45,6 +47,9 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
   const lastClickTimeRef = useRef<number>(0);
   const DOUBLE_TAP_DELAY = 300; // milliseconds
 
+  // Track if a long press just occurred to prevent click interference
+  const longPressOccurredRef = useRef<boolean>(false);
+
   // Handle keyboard input with notes-first paradigm
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
@@ -55,12 +60,18 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       if (key >= '1' && key <= '9') {
         const value = parseInt(key, 10);
 
-        if (inputMode === 'notes' || (!event.shiftKey && !event.ctrlKey && !event.metaKey)) {
-          // Default to notes mode, or explicit notes mode
-          onNoteToggle(value);
-        } else {
-          // Modifier key held - commit value (shift/ctrl/cmd + number)
+        // Check if modifier keys are pressed to override current input mode
+        const hasModifierKey = event.shiftKey || event.ctrlKey || event.metaKey;
+
+        if (hasModifierKey) {
+          // Modifier key held - always place value (override current mode)
           onValueChange(value);
+        } else if (inputMode === 'value') {
+          // Value mode - place value
+          onValueChange(value);
+        } else {
+          // Notes mode (default) - toggle note
+          onNoteToggle(value);
         }
         event.preventDefault();
       } else if (key === 'Delete' || key === 'Backspace') {
@@ -95,9 +106,43 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
     ]
   );
 
+  // Handle long press for multiselect toggle
+  const handleLongPress = useCallback(
+    (event: React.TouchEvent | React.MouseEvent) => {
+      if (onLongPressToggle && !isImmutable) {
+        console.log(`Long press detected on cell ${id}, setting flag to true`);
+        longPressOccurredRef.current = true;
+        onLongPressToggle(event);
+      }
+    },
+    [onLongPressToggle, isImmutable, id]
+  );
+
+  // Set up long press detection
+  const longPressProps = useLongPress({
+    onLongPress: handleLongPress,
+    delay: 500,
+    shouldPreventDefault: false
+  });
+
   // Handle mouse click with double-tap detection
   const handleClick = useCallback(
     (event: React.MouseEvent) => {
+      // If a long press just occurred, ignore this click event
+      if (longPressOccurredRef.current) {
+        console.log(`Click on cell ${id} - IGNORING due to long press flag`);
+        longPressOccurredRef.current = false; // Reset for next interaction
+        event.preventDefault();
+        return;
+      }
+
+      console.log(`Click on cell ${id} - processing normally`);
+
+      // Prevent default context menu on Ctrl+click
+      if (event.ctrlKey || event.metaKey) {
+        event.preventDefault();
+      }
+
       const currentTime = Date.now();
       const timeSinceLastClick = currentTime - lastClickTimeRef.current;
 
@@ -111,25 +156,55 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
 
       lastClickTimeRef.current = currentTime;
     },
-    [onSelect, onClearAllNotes, isImmutable, contents.notes.length]
+    [onSelect, onClearAllNotes, isImmutable, contents.notes.length, id]
+  );
+
+  // Handle mouse up - need to check if long press just occurred
+  const handleMouseUp = useCallback(
+    (event: React.MouseEvent) => {
+      const wasLongPress = longPressProps.onMouseUp(event);
+      console.log(
+        `Mouse up on cell ${id}, wasLongPress: ${wasLongPress}, flag: ${longPressOccurredRef.current}`
+      );
+
+      // Don't reset the flag here - let the click handler handle it
+      // The flag will be reset in handleClick or handleMouseLeave
+    },
+    [longPressProps, id]
+  );
+
+  // Handle touch end - need to check if long press just occurred
+  const handleTouchEnd = useCallback(
+    (event: React.TouchEvent) => {
+      const wasLongPress = longPressProps.onTouchEnd(event);
+
+      // Don't reset the flag here - let the click handler handle it
+      // The flag will be reset in handleClick or handleMouseLeave
+    },
+    [longPressProps]
+  );
+
+  // Handle mouse leave - reset long press flag
+  const handleMouseLeave = useCallback(
+    (event: React.MouseEvent) => {
+      longPressOccurredRef.current = false;
+      longPressProps.onMouseLeave(event);
+    },
+    [longPressProps]
   );
 
   // Calculate CSS classes
   const cellClasses = useMemo(() => {
     const classes = [
-      // Base cell styles
-      'w-10',
-      'h-10',
-      'lg:w-12',
-      'lg:h-12',
-      'max-sm:w-9',
-      'max-sm:h-9',
+      // Base cell styles - fill grid cell completely
+      'w-full',
+      'h-full',
       'border',
       'border-gray-400',
       'bg-white',
-      'text-lg',
-      'lg:text-2xl',
-      'max-sm:text-base',
+      'text-base',
+      'md:text-lg',
+      'lg:text-xl',
       'font-bold',
       'flex',
       'items-center',
@@ -140,15 +215,27 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       'select-none',
       'touch-manipulation',
       'transition-all',
-      'duration-150'
+      'duration-150',
+      'overflow-hidden',
+      'p-0'
     ];
 
-    // State-based styles
+    // Hover effects - apply before selection so selection can override
+    if (!isImmutable && !isSelected) {
+      classes.push('hover:bg-gray-50', 'hover:border-blue-500');
+    }
+    if (hasValidationError && !isSelected) {
+      classes.push('hover:bg-red-50', 'hover:border-red-600');
+    }
+
+    // State-based styles - Applied after hover so they take precedence
     if (isSelected) {
       if (className?.includes('multi-selected')) {
-        classes.push('bg-green-50', 'ring-1', 'ring-green-500');
+        // Multi-Selected: More distinct blue background with darker border
+        classes.push('bg-blue-200', 'border-blue-500', '!bg-blue-200');
       } else {
-        classes.push('bg-blue-100', 'ring-2', 'ring-blue-600');
+        // Single Selected: Darker blue background for clear distinction
+        classes.push('bg-blue-300', 'border-blue-600', '!bg-blue-300');
       }
     }
     if (hasValidationError) {
@@ -161,21 +248,12 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       classes.push('font-black');
     }
 
-    // Add border classes for 3x3 sections
+    // Enhanced 3x3 section boundaries per UX specs - using standard Tailwind classes
     if ((column + 1) % 3 === 0 && column < 8) {
-      classes.push('border-r-2', 'border-r-gray-900');
+      classes.push('border-r-4', 'border-r-black');
     }
     if ((row + 1) % 3 === 0 && row < 8) {
-      classes.push('border-b-2', 'border-b-gray-900');
-    }
-
-    // Hover effects
-    if (!isImmutable) {
-      classes.push('hover:bg-gray-50', 'hover:border-blue-500');
-    }
-    // Selected state already has bg-blue-100, no need for duplicate hover
-    if (hasValidationError) {
-      classes.push('hover:bg-red-50', 'hover:border-red-600');
+      classes.push('border-b-4', 'border-b-black');
     }
 
     // Focus styles
@@ -189,11 +267,12 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
   // Format display value
   const displayValue = contents.value?.toString() || '';
 
-  // Render notes in 3x3 grid layout
+  // Render notes in fixed 3x3 grid layout - each number has fixed position
   const renderNotesGrid = useCallback(() => {
-    if (contents.value || contents.notes.length === 0) return null;
+    if (contents.value) return null; // Only show notes when no value is present
 
-    // Create a 3x3 grid for notes (positions 1-9)
+    // Create a 3x3 grid for notes (positions 1-9) with fixed layout
+    // Only render notes that are actually selected (completely invisible otherwise)
     const notesGrid = Array(9)
       .fill(null)
       .map((__value, index) => {
@@ -201,18 +280,20 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
         const hasNote = contents.notes.includes(noteValue);
 
         return (
-          <span
-            key={noteValue}
-            className="text-[7px] max-sm:text-[6px] lg:text-[11px] text-gray-600 font-normal leading-none flex items-center justify-center w-full h-full"
-          >
-            {hasNote ? noteValue : ''}
-          </span>
+          <div key={noteValue} className="flex items-center justify-center">
+            {hasNote && (
+              <span className="text-[0.5rem] md:text-[0.55rem] lg:text-[0.6rem] font-normal leading-none text-gray-600">
+                {noteValue}
+              </span>
+            )}
+          </div>
         );
       });
 
     return (
       <div
-        className="absolute top-0.5 left-0.5 right-0.5 bottom-0.5 grid grid-cols-3 grid-rows-3 gap-px pointer-events-none"
+        className="absolute inset-0 m-[2px] grid grid-cols-3 grid-rows-3 gap-0 pointer-events-none"
+        style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(3, 1fr)' }}
         aria-hidden="true"
       >
         {notesGrid}
@@ -225,7 +306,13 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       type="button"
       className={cellClasses}
       onClick={handleClick}
+      onContextMenu={(e) => e.preventDefault()}
       onKeyDown={handleKeyDown}
+      onMouseDown={longPressProps.onMouseDown}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={longPressProps.onTouchStart}
+      onTouchEnd={handleTouchEnd}
       tabIndex={isSelected ? 0 : -1}
       data-testid={`sudoku-cell-${id}`}
       data-row={row}

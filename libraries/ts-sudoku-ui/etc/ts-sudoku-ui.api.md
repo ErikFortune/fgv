@@ -90,6 +90,8 @@ export interface ISudokuCellProps {
     // (undocumented)
     readonly onClearAllNotes: () => void;
     // (undocumented)
+    readonly onLongPressToggle?: (event: React.TouchEvent | React.MouseEvent) => void;
+    // (undocumented)
     readonly onNoteToggle: (note: number) => void;
     // (undocumented)
     readonly onSelect: (event?: React.MouseEvent) => void;
@@ -147,6 +149,8 @@ export interface ISudokuGridProps {
     readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;
     // (undocumented)
     readonly onClearAllNotes: (cellId: CellId) => void;
+    // (undocumented)
+    readonly onLongPressToggle?: (cellId: CellId, event: React.TouchEvent | React.MouseEvent) => void;
     // (undocumented)
     readonly onNavigate: (direction: NavigationDirection) => void;
     // (undocumented)

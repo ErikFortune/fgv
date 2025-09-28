@@ -24,6 +24,7 @@
 
 import React, { useCallback, useMemo, useState } from 'react';
 import { ISudokuControlsProps } from '../types';
+import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
 
 /**
  * Control panel for grid-wide operations
@@ -42,6 +43,7 @@ export const SudokuControls: React.FC<ISudokuControlsProps> = ({
   className
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const responsiveLayout = useResponsiveLayout();
 
   // Handle reset with confirmation
   const handleResetClick = useCallback(() => {
@@ -102,18 +104,25 @@ export const SudokuControls: React.FC<ISudokuControlsProps> = ({
     border: '1px solid #388e3c'
   };
 
+  // Calculate if we should use compact layout
+  const isCompactMode =
+    responsiveLayout.deviceType === 'mobile' &&
+    (responsiveLayout.keypadLayoutMode === 'side-by-side' || responsiveLayout.keypadLayoutMode === 'stacked');
+
   return (
     <div className={controlClasses} data-testid="sudoku-controls">
       <div
         style={{
           display: 'flex',
-          flexDirection: 'column',
+          flexDirection: isCompactMode ? 'row' : 'column',
           alignItems: 'center',
-          gap: '16px',
-          padding: '16px',
+          justifyContent: 'center',
+          gap: isCompactMode ? '8px' : '16px',
+          padding: isCompactMode ? '8px' : '16px',
           border: '1px solid #ddd',
           borderRadius: '8px',
-          backgroundColor: '#fafafa'
+          backgroundColor: '#fafafa',
+          flexWrap: isCompactMode ? 'wrap' : 'nowrap'
         }}
       >
         {/* Undo/Redo controls */}
@@ -141,44 +150,52 @@ export const SudokuControls: React.FC<ISudokuControlsProps> = ({
         </div>
 
         {/* Reset control with confirmation */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-          {!showResetConfirm ? (
-            <button
-              type="button"
-              onClick={handleResetClick}
-              disabled={!canReset}
-              style={canReset ? dangerButtonStyle : disabledButtonStyle}
-              data-testid="reset-button"
-              title="Clear all entries"
-            >
-              🗑️ Reset Puzzle
-            </button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+        {!showResetConfirm ? (
+          <button
+            type="button"
+            onClick={handleResetClick}
+            disabled={!canReset}
+            style={canReset ? dangerButtonStyle : disabledButtonStyle}
+            data-testid="reset-button"
+            title="Clear all entries"
+          >
+            🗑️ Reset Puzzle
+          </button>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: isCompactMode ? 'row' : 'column',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            {!isCompactMode && (
               <div style={{ fontSize: '12px', color: '#666', textAlign: 'center' }}>
                 Are you sure? This will clear all entries.
               </div>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={handleResetClick}
-                  style={dangerButtonStyle}
-                  data-testid="confirm-reset-button"
-                >
-                  Yes, Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancelReset}
-                  style={buttonStyle}
-                  data-testid="cancel-reset-button"
-                >
-                  Cancel
-                </button>
-              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleResetClick}
+                style={dangerButtonStyle}
+                data-testid="confirm-reset-button"
+                title={isCompactMode ? 'Are you sure? This will clear all entries.' : undefined}
+              >
+                Yes, Reset
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelReset}
+                style={buttonStyle}
+                data-testid="cancel-reset-button"
+              >
+                Cancel
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Export control */}
         <button
@@ -191,22 +208,28 @@ export const SudokuControls: React.FC<ISudokuControlsProps> = ({
           📤 Export Puzzle
         </button>
 
-        {/* Instructions */}
-        <div
-          style={{
-            fontSize: '12px',
-            color: '#666',
-            textAlign: 'center',
-            maxWidth: '300px',
-            lineHeight: '1.4'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Instructions:</div>
-          <div>• Click a cell to select it</div>
-          <div>• Type 1-9 to enter numbers</div>
-          <div>• Press Delete/Backspace to clear</div>
-          <div>• Use arrow keys to navigate</div>
-        </div>
+        {/* Instructions - hide on mobile with visible keypads */}
+        {!(
+          responsiveLayout.deviceType === 'mobile' &&
+          (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+            responsiveLayout.keypadLayoutMode === 'stacked')
+        ) && (
+          <div
+            style={{
+              fontSize: '12px',
+              color: '#666',
+              textAlign: 'center',
+              maxWidth: '300px',
+              lineHeight: '1.4'
+            }}
+          >
+            <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Instructions:</div>
+            <div>• Click a cell to select it</div>
+            <div>• Type 1-9 to enter numbers</div>
+            <div>• Press Delete/Backspace to clear</div>
+            <div>• Use arrow keys to navigate</div>
+          </div>
+        )}
 
         {/* Status indicator */}
         <div

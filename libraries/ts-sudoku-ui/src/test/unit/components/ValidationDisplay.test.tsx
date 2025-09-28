@@ -57,7 +57,8 @@ describe('ValidationDisplay', () => {
       render(<ValidationDisplay {...defaultProps} className="custom-validation" />);
 
       const display = screen.getByTestId('validation-display');
-      expect(display).toHaveClass('validation-display');
+      expect(display).toHaveClass('w-full');
+      expect(display).toHaveClass('max-w-lg');
       expect(display).toHaveClass('custom-validation');
     });
   });

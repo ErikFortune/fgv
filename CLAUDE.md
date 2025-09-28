@@ -453,3 +453,4 @@ The following agent-specific guidelines provide detailed information for working
 @.agents/MONOREPO_GUIDELINES.md
 @.agents/RESULT_PATTERN_GUIDE.md
 @.agents/COVERAGE_GUIDELINES.md
+- webpack does not pick up library changes in a separate application.  the app must be restarted if the library changes.

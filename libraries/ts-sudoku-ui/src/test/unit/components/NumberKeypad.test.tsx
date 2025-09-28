@@ -106,28 +106,28 @@ describe('NumberKeypad', () => {
     render(<NumberKeypad {...mockProps} isActive={true} />);
 
     const keypad = screen.getByTestId('number-keypad-notes');
-    expect(keypad).toHaveClass('number-keypad--active');
+    expect(keypad).toHaveClass('shadow-md'); // Active state adds shadow
   });
 
   test('should have inactive styling when isActive is false', () => {
     render(<NumberKeypad {...mockProps} isActive={false} />);
 
     const keypad = screen.getByTestId('number-keypad-notes');
-    expect(keypad).toHaveClass('number-keypad--inactive');
+    expect(keypad).toHaveClass('opacity-75'); // Inactive state adds opacity
   });
 
   test('should show compact mode styling', () => {
     render(<NumberKeypad {...mockProps} compact={true} />);
 
     const keypad = screen.getByTestId('number-keypad-notes');
-    expect(keypad).toHaveClass('number-keypad--compact');
+    expect(keypad).toHaveClass('p-2', 'gap-2'); // Compact mode uses smaller padding and gap
   });
 
   test('should show standard mode styling by default', () => {
     render(<NumberKeypad {...mockProps} />);
 
     const keypad = screen.getByTestId('number-keypad-notes');
-    expect(keypad).toHaveClass('number-keypad--standard');
+    expect(keypad).toHaveClass('p-3', 'gap-3'); // Standard mode uses normal padding and gap
   });
 
   test('should have proper ARIA labels for accessibility', () => {
