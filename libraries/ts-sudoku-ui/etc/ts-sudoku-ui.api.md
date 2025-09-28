@@ -186,6 +186,8 @@ export interface ISudokuGridProps {
     // (undocumented)
     readonly onNoteToggle: (cellId: CellId, note: number) => void;
     // (undocumented)
+    readonly puzzleType?: string;
+    // (undocumented)
     readonly selectedCell: CellId | null;
     // (undocumented)
     readonly selectedCells: CellId[];
@@ -212,7 +214,7 @@ export interface IValidationError {
     // (undocumented)
     readonly message: string;
     // (undocumented)
-    readonly type: 'duplicate-row' | 'duplicate-column' | 'duplicate-section' | 'invalid-value';
+    readonly type: 'duplicate-row' | 'duplicate-column' | 'duplicate-section' | 'duplicate-diagonal' | 'invalid-value';
 }
 
 // @public

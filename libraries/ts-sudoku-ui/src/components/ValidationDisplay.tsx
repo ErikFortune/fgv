@@ -48,6 +48,7 @@ export const ValidationDisplay: React.FC<IValidationDisplayProps> = ({
       'duplicate-row': [] as typeof errors,
       'duplicate-column': [] as typeof errors,
       'duplicate-section': [] as typeof errors,
+      'duplicate-diagonal': [] as typeof errors,
       'invalid-value': [] as typeof errors
     };
 

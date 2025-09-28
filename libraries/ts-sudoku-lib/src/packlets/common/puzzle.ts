@@ -68,6 +68,7 @@ export interface IPuzzleUpdate {
 export class Puzzle {
   public readonly id?: string;
   public readonly description: string;
+  public readonly type: string;
   public readonly initialState: PuzzleState;
 
   /**
@@ -115,6 +116,7 @@ export class Puzzle {
 
     this.id = puzzle.id;
     this.description = puzzle.description;
+    this.type = puzzle.type;
 
     const rows = Puzzle._createRowCages(puzzle.rows, puzzle.cols).orThrow();
     const columns = Puzzle._createColumnCages(puzzle.rows, puzzle.cols).orThrow();

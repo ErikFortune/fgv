@@ -706,6 +706,8 @@ export class Puzzle {
     // (undocumented)
     toStrings(state: PuzzleState): string[];
     // (undocumented)
+    readonly type: string;
+    // (undocumented)
     updateCellNotes(want: string | IRowColumn, notes: number[], state: PuzzleState): Result<IPuzzleUpdate>;
     // (undocumented)
     updateCellValue(want: string | IRowColumn, value: number | undefined, state: PuzzleState): Result<IPuzzleUpdate>;
@@ -743,7 +745,8 @@ declare namespace Puzzles {
         SudokuPuzzle as Sudoku,
         SudokuXPuzzle as SudokuX,
         KillerCombinations,
-        IKillerConstraints
+        IKillerConstraints,
+        AnyPuzzle
     }
 }
 export { Puzzles }
@@ -794,6 +797,7 @@ export class PuzzleSession {
     // (undocumented)
     protected _steps: IPuzzleStep[];
     toStrings(): string[];
+    get type(): string;
     undo(): Result<this>;
     updateCellNotes(spec: string | IRowColumn | ICell, notes: number[]): Result<this>;
     updateCells(updates: ICellState[]): Result<this>;
@@ -909,7 +913,7 @@ export const totalsByCageSize: readonly {
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/common/puzzle.ts:299:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
+// src/packlets/common/puzzle.ts:301:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
 
 // (No @packageDocumentation comment for this package)
 

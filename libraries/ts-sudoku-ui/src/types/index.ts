@@ -30,7 +30,12 @@ import { CellId, ICellContents, NavigationDirection, IPuzzleDescription } from '
  */
 export interface IValidationError {
   readonly cellId: CellId;
-  readonly type: 'duplicate-row' | 'duplicate-column' | 'duplicate-section' | 'invalid-value';
+  readonly type:
+    | 'duplicate-row'
+    | 'duplicate-column'
+    | 'duplicate-section'
+    | 'duplicate-diagonal'
+    | 'invalid-value';
   readonly conflictingCells: CellId[];
   readonly message: string;
 }
@@ -72,6 +77,7 @@ export interface ISudokuGridProps {
   readonly selectedCell: CellId | null;
   readonly selectedCells: CellId[];
   readonly inputMode: InputMode;
+  readonly puzzleType?: string;
   readonly onCellSelect: (cellId: CellId, event?: React.MouseEvent) => void;
   readonly onLongPressToggle?: (cellId: CellId, event: React.TouchEvent | React.MouseEvent) => void;
   readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;

@@ -62,6 +62,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   exportPuzzle: () => IPuzzleDescription | null;
 } {
   const [session, setSession] = useState<PuzzleSession | null>(null);
+  const [puzzleDescription, setPuzzleDescription] = useState<IPuzzleDescription | null>(null);
   const [selectedCell, setSelectedCell] = useState<CellId | null>(null);
   const [selectedCells, setSelectedCells] = useState<CellId[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>('notes'); // Notes-first paradigm
@@ -80,16 +81,18 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       cells: '.'.repeat(81) // Empty 9x9 grid
     };
 
-    const sessionResult = Puzzles.Sudoku.create(puzzleDescriptor).onSuccess((puzzle) =>
+    const sessionResult = Puzzles.Any.create(puzzleDescriptor).onSuccess((puzzle) =>
       PuzzleSession.create(puzzle)
     );
 
     if (sessionResult.isSuccess()) {
       setSession(sessionResult.value);
+      setPuzzleDescription(puzzleDescriptor);
       setError(null);
     } else {
       setError(`Failed to create puzzle session: ${sessionResult.message}`);
       setSession(null);
+      setPuzzleDescription(null);
     }
   }, [initialPuzzleDescription]);
 
@@ -130,11 +133,29 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
         checkDuplicates(rowCells.cellIds, 'duplicate-row');
         checkDuplicates(colCells.cellIds, 'duplicate-column');
         checkDuplicates(sectionCells.cellIds, 'duplicate-section');
+
+        // For Sudoku X puzzles, also check diagonal constraints
+        if (puzzleDescription?.type === 'sudoku-x') {
+          // Find diagonal cages in the session
+          const diagonalCages = session.cages.filter((cage) => cage.cageType === 'x');
+
+          // Check main diagonal (top-left to bottom-right)
+          if (cell.row === cell.col && diagonalCages.length > 0) {
+            const mainDiagonal = diagonalCages[0];
+            checkDuplicates(mainDiagonal.cellIds, 'duplicate-diagonal');
+          }
+
+          // Check anti-diagonal (top-right to bottom-left)
+          if (cell.row + cell.col === 8 && diagonalCages.length > 1) {
+            const antiDiagonal = diagonalCages[1];
+            checkDuplicates(antiDiagonal.cellIds, 'duplicate-diagonal');
+          }
+        }
       }
     });
 
     return errors;
-  }, [session, updateCounter]);
+  }, [session, puzzleDescription, updateCounter]);
 
   // Get cell display information
   const cellDisplayInfo = useMemo((): ICellDisplayInfo[] => {
@@ -170,8 +191,26 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       const sectionCells =
         session.sections[Math.floor(placedCell.row / 3) * 3 + Math.floor(placedCell.col / 3)].cellIds;
 
-      // Combine all affected cells (remove duplicates)
+      // Start with row, column, and section cells
       const affectedCells = new Set([...rowCells, ...colCells, ...sectionCells]);
+
+      // For Sudoku X puzzles, also include diagonal cells
+      if (puzzleDescription?.type === 'sudoku-x') {
+        // Find diagonal cages in the session
+        const diagonalCages = session.cages.filter((cage) => cage.cageType === 'x');
+
+        // Check main diagonal (top-left to bottom-right)
+        if (placedCell.row === placedCell.col && diagonalCages.length > 0) {
+          const mainDiagonal = diagonalCages[0];
+          mainDiagonal.cellIds.forEach((cellId) => affectedCells.add(cellId));
+        }
+
+        // Check anti-diagonal (top-right to bottom-left)
+        if (placedCell.row + placedCell.col === 8 && diagonalCages.length > 1) {
+          const antiDiagonal = diagonalCages[1];
+          antiDiagonal.cellIds.forEach((cellId) => affectedCells.add(cellId));
+        }
+      }
 
       // Remove the placed cell itself from the list
       affectedCells.delete(placedCellId);
@@ -190,7 +229,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
         }
       }
     },
-    [session]
+    [session, puzzleDescription]
   );
 
   // Update cell value with smart note removal
@@ -345,13 +384,13 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     return {
       id: session.id || 'exported-puzzle',
       description: session.description || 'Exported Puzzle',
-      type: 'sudoku',
+      type: puzzleDescription?.type || 'sudoku',
       level: 1,
       rows: session.numRows,
       cols: session.numColumns,
       cells: cellsArray.join('')
     };
-  }, [session, updateCounter]);
+  }, [session, puzzleDescription, updateCounter]);
 
   return {
     session,

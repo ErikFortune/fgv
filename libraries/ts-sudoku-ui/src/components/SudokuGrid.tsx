@@ -38,6 +38,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   selectedCell,
   selectedCells,
   inputMode,
+  puzzleType,
   onCellSelect,
   onLongPressToggle,
   onCellValueChange,
@@ -147,10 +148,29 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     });
   }, [cells]);
 
+  // Render diagonal lines for Sudoku X puzzles
+  const renderDiagonalLines = (): React.ReactNode => {
+    if (puzzleType !== 'sudoku-x') return null;
+
+    return (
+      <div
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{
+          background: `
+            linear-gradient(45deg, transparent 49%, rgba(156, 163, 175, 0.15) 49.5%, rgba(156, 163, 175, 0.15) 50.5%, transparent 51%),
+            linear-gradient(-45deg, transparent 49%, rgba(156, 163, 175, 0.15) 49.5%, rgba(156, 163, 175, 0.15) 50.5%, transparent 51%)
+          `,
+          zIndex: 1
+        }}
+      />
+    );
+  };
+
   return (
     <div
       className={`
         ${gridClasses}
+        relative
         grid grid-cols-9 grid-rows-9 gap-0
         border-4 border-black bg-black
         mx-auto outline-none
@@ -168,6 +188,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
       tabIndex={0}
       data-testid="sudoku-grid"
     >
+      {renderDiagonalLines()}
       {sortedCells.map((cellInfo) => {
         const isPrimarySelected = selectedCell === cellInfo.id;
         const isInMultiSelection = selectedCells.includes(cellInfo.id);

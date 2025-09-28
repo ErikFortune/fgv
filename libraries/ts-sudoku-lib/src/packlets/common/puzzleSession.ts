@@ -76,6 +76,13 @@ export class PuzzleSession {
   }
 
   /**
+   * Type of the puzzle being solved.
+   */
+  public get type(): string {
+    return this._puzzle.type;
+  }
+
+  /**
    * Number of rows in the puzzle being solved.
    */
   public get numRows(): number {

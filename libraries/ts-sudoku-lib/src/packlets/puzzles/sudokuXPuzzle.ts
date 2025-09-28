@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import { Result, captureResult, succeed } from '@fgv/ts-utils';
+import { Result, captureResult, succeed, fail } from '@fgv/ts-utils';
 import { Cage, CageId, CellId, IPuzzleDescription, Ids, Puzzle } from '../common';
 
 /**

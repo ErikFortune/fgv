@@ -30,3 +30,4 @@ import { SudokuXPuzzle as SudokuX } from './sudokuXPuzzle';
 export { Any, Killer, Sudoku, SudokuX };
 export { KillerCombinations } from './killerCombinations';
 export type { IKillerConstraints } from './killerCombinationsTypes';
+export type { AnyPuzzle } from './anyPuzzle';

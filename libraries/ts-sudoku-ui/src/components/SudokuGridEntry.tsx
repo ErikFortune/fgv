@@ -484,6 +484,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             selectedCell={selectedCell}
             selectedCells={selectedCells}
             inputMode={inputMode}
+            puzzleType={initialPuzzleDescription?.type}
             onCellSelect={handleCellSelect}
             onLongPressToggle={handleLongPressToggle}
             onCellValueChange={handleCellValueChange}
