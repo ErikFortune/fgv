@@ -32,6 +32,7 @@ export * from './logging';
 export * from './model';
 export * from './public';
 export * from './puzzle';
+export * from './puzzleDefinitions';
 export * from './puzzleSession';
 export * from './puzzleState';
 

@@ -65,9 +65,14 @@ export class Ids {
     return `C${String.fromCharCode(firstColIdChar + col)}` as CageId;
   }
 
-  public static sectionCageId(row: number, col: number): CageId {
-    row = Math.floor(row / 3) * 3;
-    col = Math.floor(col / 3) * 3;
+  public static sectionCageId(
+    row: number,
+    col: number,
+    cageHeight: number = 3,
+    cageWidth: number = 3
+  ): CageId {
+    row = Math.floor(row / cageHeight) * cageHeight;
+    col = Math.floor(col / cageWidth) * cageWidth;
     return `S${String.fromCharCode(firstRowIdChar + row)}${String.fromCharCode(
       firstColIdChar + col
     )}` as CageId;

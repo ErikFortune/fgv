@@ -24,7 +24,16 @@
 
 import '@fgv/ts-utils-jest';
 import { PuzzleCollections } from '../../../packlets/collections';
-import { CageId, CellId, ICellState, Ids, Puzzle, PuzzleState, PuzzleType } from '../../../packlets/common';
+import {
+  CageId,
+  CellId,
+  ICellState,
+  Ids,
+  Puzzle,
+  PuzzleState,
+  PuzzleType,
+  PuzzleDefinitionFactory
+} from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Puzzle class', () => {
@@ -54,7 +63,11 @@ describe('Puzzle class', () => {
 
   describe('constructor', () => {
     test.each(tests)('succeeds for "$description"', (tc) => {
-      expect(Puzzles.Sudoku.create(tc)).toSucceedAndSatisfy((board) => {
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(tc).onSuccess((puzzleDefinition) =>
+          Puzzles.Sudoku.create(puzzleDefinition)
+        )
+      ).toSucceedAndSatisfy((board) => {
         expect(board.toStrings(board.initialState)).toEqual(tc.expected);
         expect(board.toString(board.initialState)).toEqual(tc.expected.join('\n'));
         expect(board.numRows).toBe(9);
@@ -76,31 +89,47 @@ describe('Puzzle class', () => {
 
     test('fails for invalid puzzle type', () => {
       const t = { ...tests[0], type: 'killer-sudoku' as PuzzleType };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported type/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(t).onSuccess((puzzleDefinition) =>
+          Puzzles.Sudoku.create(puzzleDefinition)
+        )
+      ).toFailWith(/unsupported type/i);
     });
 
     test('fails for invalid row count', () => {
       const t = { ...tests[0], rows: 10 };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/expected 90 cells, found 81/i);
+      expect(PuzzleDefinitionFactory.fromLegacy(t)).toFailWith(
+        /Cannot determine reasonable cage dimensions/i
+      );
     });
 
     test('fails for invalid column count', () => {
       const t = { ...tests[0], cols: 10 };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/expected 90 cells, found 81/i);
+      expect(PuzzleDefinitionFactory.fromLegacy(t)).toFailWith(
+        /Cannot determine reasonable cage dimensions/i
+      );
     });
 
     test('fails for invalid cell definitions', () => {
       const t = { ...tests[0], cells: tests[0].cells.slice(1) };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/expected 81 cells/i);
+      expect(PuzzleDefinitionFactory.fromLegacy(t)).toFailWith(/Expected 81 cells, got 80/i);
     });
 
     test('fails for invalid value in cell definitions', () => {
       const cells = tests[0].cells.replace('9', 'A');
       const t = { ...tests[0], cells };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/illegal value/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(t).onSuccess((puzzleDefinition) =>
+          Puzzles.Sudoku.create(puzzleDefinition)
+        )
+      ).toFailWith(/illegal value/i);
 
       t.cells = t.cells.replace('A', '0');
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/illegal value/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(t).onSuccess((puzzleDefinition) =>
+          Puzzles.Sudoku.create(puzzleDefinition)
+        )
+      ).toFailWith(/illegal value/i);
     });
   });
 
@@ -108,7 +137,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      puzzle = Puzzles.Sudoku.create(tests[0]).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(tests[0]).orThrow();
+      puzzle = Puzzles.Sudoku.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
 

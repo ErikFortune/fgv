@@ -31,7 +31,8 @@ import {
   PuzzleState,
   PuzzleSession,
   totalsByCageSize,
-  IPuzzleDescription
+  IPuzzleDescription,
+  PuzzleDefinitionFactory
 } from '../../../packlets/common';
 import { KillerCombinations, IKillerConstraints } from '../../../packlets/puzzles';
 import * as Puzzles from '../../../packlets/puzzles';
@@ -80,7 +81,8 @@ describe('KillerCombinations', () => {
       ].join('')
     };
 
-    const puzzle = Puzzles.Killer.create(basePuzzleDesc).orThrow();
+    const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(basePuzzleDesc).orThrow();
+    const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
     const session = PuzzleSession.create(puzzle).orThrow();
 
     // Apply prefilled values if provided
@@ -125,7 +127,8 @@ describe('KillerCombinations', () => {
       ].join('')
     };
 
-    const puzzle = Puzzles.Killer.create(existingPuzzleDesc).orThrow();
+    const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(existingPuzzleDesc).orThrow();
+    const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
     const session = PuzzleSession.create(puzzle).orThrow();
 
     // Apply contained values if provided
@@ -650,7 +653,8 @@ describe('KillerCombinations', () => {
           '|A15,B10,C12,D20,E17,F11,G09,H14,I13,J16,K12,L15,M20,N20,O13,P14,Q07,R11,S18,T21,U19,V10,W06,X09'
       };
 
-      const puzzle = Puzzles.Killer.create(killerPuzzleDesc).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(killerPuzzleDesc).orThrow();
+      const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
       const session = PuzzleSession.create(puzzle).orThrow();
 
       // Test with cage 'KA' (15 total, should be 2 cells based on pattern)

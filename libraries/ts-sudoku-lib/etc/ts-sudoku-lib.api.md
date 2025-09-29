@@ -19,6 +19,8 @@ export const allPuzzleTypes: PuzzleType[];
 class AnyPuzzle {
     // (undocumented)
     static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+    // (undocumented)
+    static createFromDefinition(puzzle: IPuzzleDefinition): Result<Puzzle>;
 }
 
 // @public
@@ -385,7 +387,7 @@ export class Ids {
     // (undocumented)
     static rowCageId(row: number): CageId;
     // (undocumented)
-    static sectionCageId(row: number, col: number): CageId;
+    static sectionCageId(row: number, col: number, cageHeight?: number, cageWidth?: number): CageId;
 }
 
 // @public
@@ -492,6 +494,32 @@ interface IKillerConstraints {
 }
 
 // @public
+export interface IPuzzleDefinition extends IPuzzleDimensions {
+    // (undocumented)
+    readonly basicCageTotal: number;
+    // (undocumented)
+    readonly cages?: ICage[];
+    // (undocumented)
+    readonly cells: string;
+    // (undocumented)
+    readonly description: string;
+    // (undocumented)
+    readonly id?: string;
+    // (undocumented)
+    readonly level: number;
+    // (undocumented)
+    readonly maxValue: number;
+    // (undocumented)
+    readonly totalCages: number;
+    // (undocumented)
+    readonly totalColumns: number;
+    // (undocumented)
+    readonly totalRows: number;
+    // (undocumented)
+    readonly type: PuzzleType;
+}
+
+// @public
 export interface IPuzzleDescription {
     // (undocumented)
     cells: string;
@@ -507,6 +535,14 @@ export interface IPuzzleDescription {
     rows: number;
     // (undocumented)
     type: PuzzleType;
+}
+
+// @public
+export interface IPuzzleDimensions {
+    readonly boardHeightInCages: number;
+    readonly boardWidthInCages: number;
+    readonly cageHeightInCells: number;
+    readonly cageWidthInCells: number;
 }
 
 // @public
@@ -566,7 +602,7 @@ class KillerCombinations {
 // @public (undocumented)
 class KillerSudokuPuzzle extends Puzzle {
     // (undocumented)
-    static create(desc: IPuzzleDescription): Result<Puzzle>;
+    static create(desc: IPuzzleDefinition): Result<Puzzle>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -607,7 +643,7 @@ export type NavigationWrap = 'none' | 'wrap-around' | 'wrap-next';
 // @public
 export class Puzzle {
     // Warning: (ae-incompatible-release-tags) The symbol "__constructor" is marked as @public, but its signature references "Cage" which is marked as @internal
-    protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]);
+    protected constructor(puzzle: IPuzzleDefinition, extraCages?: [CageId, Cage][]);
     // Warning: (ae-incompatible-release-tags) The symbol "cages" is marked as @public, but its signature references "Cage" which is marked as @internal
     //
     // (undocumented)
@@ -637,11 +673,13 @@ export class Puzzle {
     // (undocumented)
     protected readonly _columns: Map<CageId, Cage>;
     // @internal (undocumented)
-    protected static _createColumnCages(numRows: number, numCols: number): Result<[CageId, Cage][]>;
+    protected static _createColumnCages(numRows: number, numCols: number, basicCageTotal: number): Result<[CageId, Cage][]>;
     // @internal (undocumented)
-    protected static _createRowCages(numRows: number, numCols: number): Result<[CageId, Cage][]>;
+    protected static _createRowCages(numRows: number, numCols: number, basicCageTotal: number): Result<[CageId, Cage][]>;
     // (undocumented)
     readonly description: string;
+    // (undocumented)
+    readonly dimensions: IPuzzleDefinition;
     // Warning: (ae-incompatible-release-tags) The symbol "getCage" is marked as @public, but its signature references "Cage" which is marked as @internal
     //
     // (undocumented)
@@ -733,6 +771,24 @@ export class PuzzleCollection {
 // @public
 export class PuzzleCollections {
     static get default(): PuzzleCollection;
+}
+
+// @public
+export class PuzzleDefinitionFactory {
+    static create(dimensions: IPuzzleDimensions, options?: Partial<IPuzzleDefinition>): Result<IPuzzleDefinition>;
+    static fromLegacy(legacy: {
+        id?: string;
+        description: string;
+        type: PuzzleType;
+        level: number;
+        rows: number;
+        cols: number;
+        cells: string;
+        cages?: ICage[];
+    }): Result<IPuzzleDefinition>;
+    static getStandardConfig(name: StandardConfigName): IPuzzleDimensions;
+    static getStandardConfigs(): Record<StandardConfigName, IPuzzleDimensions>;
+    static validate(dimensions: IPuzzleDimensions): Result<true>;
 }
 
 // @public
@@ -884,16 +940,47 @@ export type PuzzleType = 'killer-sudoku' | 'sudoku' | 'sudoku-x';
 // @public
 const puzzleType: Converter<PuzzleType, ReadonlyArray<PuzzleType>>;
 
+// @public
+export const STANDARD_CONFIGS: {
+    readonly puzzle4x4: {
+        readonly cageWidthInCells: 2;
+        readonly cageHeightInCells: 2;
+        readonly boardWidthInCages: 2;
+        readonly boardHeightInCages: 2;
+    };
+    readonly puzzle6x6: {
+        readonly cageWidthInCells: 3;
+        readonly cageHeightInCells: 2;
+        readonly boardWidthInCages: 2;
+        readonly boardHeightInCages: 3;
+    };
+    readonly puzzle9x9: {
+        readonly cageWidthInCells: 3;
+        readonly cageHeightInCells: 3;
+        readonly boardWidthInCages: 3;
+        readonly boardHeightInCages: 3;
+    };
+    readonly puzzle12x12: {
+        readonly cageWidthInCells: 4;
+        readonly cageHeightInCells: 3;
+        readonly boardWidthInCages: 3;
+        readonly boardHeightInCages: 4;
+    };
+};
+
+// @public
+export type StandardConfigName = keyof typeof STANDARD_CONFIGS;
+
 // @public (undocumented)
 class SudokuPuzzle extends Puzzle {
     // (undocumented)
-    static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+    static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
 }
 
 // @public (undocumented)
 class SudokuXPuzzle extends Puzzle {
     // (undocumented)
-    static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+    static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
 }
 
 // @public
@@ -913,7 +1000,7 @@ export const totalsByCageSize: readonly {
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/common/puzzle.ts:301:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
+// src/packlets/common/puzzle.ts:309:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
 
 // (No @packageDocumentation comment for this package)
 

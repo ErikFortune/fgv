@@ -29,7 +29,8 @@ import {
   IPuzzleDescription,
   Puzzle,
   PuzzleState,
-  PuzzleType
+  PuzzleType,
+  PuzzleDefinitionFactory
 } from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
@@ -56,7 +57,11 @@ describe('SudokuXPuzzle', () => {
 
   describe('SudokuXPuzzle.create', () => {
     test('should create a valid Sudoku X puzzle successfully', () => {
-      expect(Puzzles.SudokuX.create(validSudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(validSudokuXDescription).onSuccess((puzzleDefinition) =>
+          Puzzles.SudokuX.create(puzzleDefinition)
+        )
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.id).toBe('sudoku-x-test');
         expect(puzzle.description).toBe('Sudoku X Test Puzzle');
         expect(puzzle.type).toBe('sudoku-x');
@@ -66,7 +71,11 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should create empty Sudoku X puzzle successfully', () => {
-      expect(Puzzles.SudokuX.create(emptySudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).onSuccess((puzzleDefinition) =>
+          Puzzles.SudokuX.create(puzzleDefinition)
+        )
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.id).toBe('sudoku-x-empty');
         expect(puzzle.type).toBe('sudoku-x');
         expect(puzzle.numRows).toBe(9);
@@ -76,17 +85,23 @@ describe('SudokuXPuzzle', () => {
 
     test('should fail for non-sudoku-x puzzle type', () => {
       const invalidPuzzle = { ...validSudokuXDescription, type: 'sudoku' as PuzzleType };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/unsupported type sudoku/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(invalidPuzzle).onSuccess((puzzleDefinition) =>
+          Puzzles.SudokuX.create(puzzleDefinition)
+        )
+      ).toFailWith(/unsupported type sudoku/i);
     });
 
     test('should fail for invalid dimensions', () => {
       const invalidPuzzle = { ...validSudokuXDescription, rows: 8 };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/expected 72 cells, found 81/i);
+      expect(PuzzleDefinitionFactory.fromLegacy(invalidPuzzle)).toFailWith(
+        /Cannot determine reasonable cage dimensions/i
+      );
     });
 
     test('should fail for invalid cell count', () => {
       const invalidPuzzle = { ...validSudokuXDescription, cells: '4.....13.' };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/expected 81 cells/i);
+      expect(PuzzleDefinitionFactory.fromLegacy(invalidPuzzle)).toFailWith(/Expected 81 cells, got 9/i);
     });
 
     test('should fail for invalid cell values', () => {
@@ -94,7 +109,11 @@ describe('SudokuXPuzzle', () => {
         ...validSudokuXDescription,
         cells: validSudokuXDescription.cells.replace('4', 'X')
       };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/illegal value/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(invalidPuzzle).onSuccess((puzzleDefinition) =>
+          Puzzles.SudokuX.create(puzzleDefinition)
+        )
+      ).toFailWith(/illegal value/i);
     });
   });
 
@@ -102,7 +121,8 @@ describe('SudokuXPuzzle', () => {
     let puzzle: Puzzle;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
     });
 
     test('should have X1 diagonal cage (top-left to bottom-right)', () => {
@@ -148,7 +168,8 @@ describe('SudokuXPuzzle', () => {
     let puzzle: Puzzle;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
     });
 
     test('should inherit all standard Sudoku row constraints', () => {
@@ -188,7 +209,8 @@ describe('SudokuXPuzzle', () => {
     let state: PuzzleState;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
 
@@ -288,7 +310,8 @@ describe('SudokuXPuzzle', () => {
     let state: PuzzleState;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(validSudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(validSudokuXDescription).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
 
@@ -386,21 +409,27 @@ describe('SudokuXPuzzle', () => {
         cells: '123456789456789123789123456234567891567891234891234567345678912678912345912345678'
       };
 
-      expect(Puzzles.SudokuX.create(solvedSudokuX)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(solvedSudokuX).onSuccess((puzzleDefinition) =>
+          Puzzles.SudokuX.create(puzzleDefinition)
+        )
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.checkIsSolved(puzzle.initialState)).toBe(true);
         expect(puzzle.checkIsValid(puzzle.initialState)).toBe(true);
       });
     });
 
     test('should not detect solved state when cells are empty', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       expect(puzzle.checkIsSolved(puzzle.initialState)).toBe(false);
       expect(puzzle.checkIsValid(puzzle.initialState)).toBe(true); // Empty is valid but not solved
     });
 
     test('should detect when diagonal constraints would be violated in completed grid', () => {
       // Test diagonal constraint validation by creating updates that violate diagonals
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       const state = puzzle.initialState;
 
       // Create a scenario where diagonal validation can be tested
@@ -416,7 +445,8 @@ describe('SudokuXPuzzle', () => {
 
   describe('performance and edge cases', () => {
     test('should handle rapid cell updates efficiently', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       let currentState = puzzle.initialState;
 
       const startTime = Date.now();
@@ -440,7 +470,8 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should handle edge case cell coordinates correctly', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
 
       // Test corner cells
       const cornerCells = ['A1', 'A9', 'I1', 'I9'] as CellId[];
@@ -452,7 +483,8 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should maintain consistent cage memberships', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(emptySudokuXDescription).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
 
       // Each cell should belong to exactly the expected number of cages
       // Regular cells: row + column + section = 3 cages

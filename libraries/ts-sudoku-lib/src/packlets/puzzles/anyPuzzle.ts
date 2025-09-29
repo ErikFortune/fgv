@@ -24,7 +24,7 @@
 
 import { Result, fail } from '@fgv/ts-utils';
 
-import { IPuzzleDescription, Puzzle } from '../common';
+import { IPuzzleDescription, IPuzzleDefinition, Puzzle, PuzzleDefinitionFactory } from '../common';
 import { KillerSudokuPuzzle } from './killerSudokuPuzzle';
 import { SudokuPuzzle } from './sudokuPuzzle';
 import { SudokuXPuzzle } from './sudokuXPuzzle';
@@ -35,6 +35,12 @@ import { SudokuXPuzzle } from './sudokuXPuzzle';
  */
 export class AnyPuzzle {
   public static create(puzzle: IPuzzleDescription): Result<Puzzle> {
+    return PuzzleDefinitionFactory.fromLegacy(puzzle).onSuccess((puzzleDefinition) => {
+      return AnyPuzzle.createFromDefinition(puzzleDefinition);
+    });
+  }
+
+  public static createFromDefinition(puzzle: IPuzzleDefinition): Result<Puzzle> {
     switch (puzzle.type) {
       case 'sudoku':
         return SudokuPuzzle.create(puzzle);

@@ -23,7 +23,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, IPuzzleDescription } from '../../../packlets/common';
+import { Converters, IPuzzleDescription, PuzzleDefinitionFactory } from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Puzzles.Killer class', () => {
@@ -57,7 +57,11 @@ describe('Puzzles.Killer class', () => {
 
   describe('create static method', () => {
     test('succeeds for a valid puzzle', () => {
-      expect(Puzzles.Killer.create(def)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.rows.map((r) => r.id)).toEqual(['RA', 'RB', 'RC', 'RD', 'RE', 'RF', 'RG', 'RH', 'RI']);
         expect(puzzle.cols.map((c) => c.id)).toEqual(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']);
         expect(puzzle.sections.map((s) => s.id)).toEqual([
@@ -152,7 +156,11 @@ describe('Puzzles.Killer class', () => {
       // add values for added cells (not sure if these values are actually correct)
       def.cells = def.cells.replace('a09,b09,c11', 'a05,b03,c11,d04,e06');
       // cSpell: enable
-      expect(Puzzles.Killer.create(def)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.cages.map((c) => c.id)).toEqual([
           'RA',
           'RB',
@@ -227,25 +235,41 @@ describe('Puzzles.Killer class', () => {
 
     test('fails if cells property is incorrectly delimited', () => {
       def.cells = def.cells.replace('|', '/');
-      expect(Puzzles.Killer.create(def)).toFailWith(/malformed cells\|cages/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toFailWith(/malformed cells\|cages/i);
     });
 
     test('fails if cell mappings are mismatched', () => {
       const [cells, cages] = def.cells.split('|');
       def.cells = `${cells}xyz|${cages}`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/expected 81 cell mappings, found 84/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toFailWith(/expected 81 cell mappings, found 84/i);
     });
 
     test('fails if cage sizes are mismatched', () => {
       const [cells, cages] = def.cells.split('|');
       def.cells = `${cells}|${cages},x10`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/expected 29 cage sizes, found 30/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toFailWith(/expected 29 cage sizes, found 30/i);
     });
 
     test('fails if cage specification is malformed', () => {
       const [cells, cages] = def.cells.split('|');
       def.cells = `${cells}|${cages.replace('b09', 'b9')}.`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/malformed cage spec b9/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toFailWith(/malformed cage spec b9/i);
     });
 
     test('fails if a cage has too many cells', () => {
@@ -255,13 +279,21 @@ describe('Puzzles.Killer class', () => {
       // cSpell: enable
       cages = cages.replace(',C09', '');
       def.cells = `${cells}|${cages}`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/invalid cell count 10 for cage KA/i);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toFailWith(/invalid cell count 10 for cage KA/i);
     });
 
     test('fails if cage total is out of range', () => {
       const [cells, cages] = def.cells.split('|');
       def.cells = `${cells}|${cages.replace('b09', 'b19')}.`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/invalid total 19 for cage Kb \(expected 3..17\)/);
+      expect(
+        PuzzleDefinitionFactory.fromLegacy(def).onSuccess((puzzleDefinition) =>
+          Puzzles.Killer.create(puzzleDefinition)
+        )
+      ).toFailWith(/invalid total 19 for cage Kb \(expected 3..17\)/);
     });
   });
 });
