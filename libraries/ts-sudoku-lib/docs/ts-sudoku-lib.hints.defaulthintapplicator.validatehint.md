@@ -9,7 +9,7 @@ Validates that a hint can be safely applied to the given state.
 **Signature:**
 
 ```typescript
-validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState, loggingContext?: ISudokuLoggingContext): Result<void>;
 ```
 
 ## Parameters
@@ -75,6 +75,22 @@ state
 </td><td>
 
 The current puzzle state
+
+
+</td></tr>
+<tr><td>
+
+loggingContext
+
+
+</td><td>
+
+[ISudokuLoggingContext](./ts-sudoku-lib.isudokuloggingcontext.md)
+
+
+</td><td>
+
+_(Optional)_ Optional logging context for diagnostic output
 
 
 </td></tr>

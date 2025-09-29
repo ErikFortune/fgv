@@ -157,7 +157,12 @@ describe('PuzzleDefinitionFactory', () => {
         cells: '.'.repeat(81)
       };
 
-      const result = PuzzleDefinitionFactory.fromLegacy(legacy);
+      const result = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: legacy.description,
+        type: legacy.type,
+        level: legacy.level,
+        cells: legacy.cells
+      });
 
       expect(result).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.totalRows).toBe(9);
@@ -178,7 +183,12 @@ describe('PuzzleDefinitionFactory', () => {
         cells: '.'.repeat(16)
       };
 
-      const result = PuzzleDefinitionFactory.fromLegacy(legacy);
+      const result = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle4x4, {
+        description: legacy.description,
+        type: legacy.type,
+        level: legacy.level,
+        cells: legacy.cells
+      });
 
       expect(result).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.totalRows).toBe(4);

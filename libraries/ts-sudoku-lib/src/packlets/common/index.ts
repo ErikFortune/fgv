@@ -29,7 +29,6 @@ export * from './cell';
 export * from './common';
 export { Ids } from './ids';
 export * from './logging';
-export * from './model';
 export * from './public';
 export * from './puzzle';
 export * from './puzzleDefinitions';

@@ -23,23 +23,36 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { CageId, IPuzzleDescription, PuzzleType } from '../../../packlets/common';
+import { CageId, PuzzleDefinitionFactory, STANDARD_CONFIGS, PuzzleType } from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
+import { Result } from '@fgv/ts-utils';
+import { Puzzle } from '../../../packlets/common';
+
+// Helper function to create puzzle
+function createPuzzle(
+  id: string,
+  description: string,
+  type: PuzzleType,
+  level: number,
+  cells: string
+): Result<Puzzle> {
+  return PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+    id,
+    description,
+    type,
+    level,
+    cells
+  }).onSuccess((puzzleDefinition) => Puzzles.Any.create(puzzleDefinition));
+}
 
 describe('AnyPuzzle factory integration', () => {
   describe('Sudoku X puzzle creation', () => {
-    const sudokuXDescription: IPuzzleDescription = {
-      id: 'any-puzzle-sudoku-x',
-      description: 'Any Puzzle Sudoku X Test',
-      type: 'sudoku-x' as PuzzleType,
-      level: 1,
-      rows: 9,
-      cols: 9,
-      cells: '4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1'
-    };
+    const sudokuXCells = '4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1';
 
     test('should create Sudoku X puzzle with correct type', () => {
-      expect(Puzzles.Any.create(sudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('any-puzzle-sudoku-x', 'Any Puzzle Sudoku X Test', 'sudoku-x', 1, sudokuXCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.type).toBe('sudoku-x');
         expect(puzzle.id).toBe('any-puzzle-sudoku-x');
         expect(puzzle.description).toBe('Any Puzzle Sudoku X Test');
@@ -47,7 +60,9 @@ describe('AnyPuzzle factory integration', () => {
     });
 
     test('should create puzzle with diagonal constraints', () => {
-      expect(Puzzles.Any.create(sudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('any-puzzle-sudoku-x', 'Any Puzzle Sudoku X Test', 'sudoku-x', 1, sudokuXCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         // Should have X1 diagonal cage
         expect(puzzle.getCage('X1' as CageId)).toSucceedAndSatisfy((x1Cage) => {
           expect(x1Cage.cageType).toBe('x');
@@ -65,7 +80,9 @@ describe('AnyPuzzle factory integration', () => {
     });
 
     test('should maintain all standard Sudoku constraints', () => {
-      expect(Puzzles.Any.create(sudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('any-puzzle-sudoku-x', 'Any Puzzle Sudoku X Test', 'sudoku-x', 1, sudokuXCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         // Should have all 9 rows
         for (let row = 0; row < 9; row++) {
           expect(puzzle.getRow(row)).toSucceedAndSatisfy((rowCage) => {
@@ -98,48 +115,39 @@ describe('AnyPuzzle factory integration', () => {
   });
 
   describe('puzzle type differentiation', () => {
-    const basePuzzleData = {
-      id: 'type-test',
-      description: 'Type Test Puzzle',
-      level: 1,
-      rows: 9,
-      cols: 9,
-      cells: '.'.repeat(81)
-    };
+    const emptyCells = '.'.repeat(81);
 
     test('should create standard Sudoku without diagonal constraints', () => {
-      const standardPuzzle = { ...basePuzzleData, type: 'sudoku' as PuzzleType };
+      expect(createPuzzle('type-test', 'Type Test Puzzle', 'sudoku', 1, emptyCells)).toSucceedAndSatisfy(
+        (puzzle) => {
+          expect(puzzle.type).toBe('sudoku');
 
-      expect(Puzzles.Any.create(standardPuzzle)).toSucceedAndSatisfy((puzzle) => {
-        expect(puzzle.type).toBe('sudoku');
-
-        // Should not have diagonal cages
-        expect(puzzle.getCage('X1' as CageId)).toFailWith(/not found/i);
-        expect(puzzle.getCage('X2' as CageId)).toFailWith(/not found/i);
-      });
+          // Should not have diagonal cages
+          expect(puzzle.getCage('X1' as CageId)).toFailWith(/not found/i);
+          expect(puzzle.getCage('X2' as CageId)).toFailWith(/not found/i);
+        }
+      );
     });
 
     test('should create Sudoku X with diagonal constraints', () => {
-      const sudokuXPuzzle = { ...basePuzzleData, type: 'sudoku-x' as PuzzleType };
+      expect(createPuzzle('type-test', 'Type Test Puzzle', 'sudoku-x', 1, emptyCells)).toSucceedAndSatisfy(
+        (puzzle) => {
+          expect(puzzle.type).toBe('sudoku-x');
 
-      expect(Puzzles.Any.create(sudokuXPuzzle)).toSucceedAndSatisfy((puzzle) => {
-        expect(puzzle.type).toBe('sudoku-x');
-
-        // Should have diagonal cages
-        expect(puzzle.getCage('X1' as CageId)).toSucceed();
-        expect(puzzle.getCage('X2' as CageId)).toSucceed();
-      });
+          // Should have diagonal cages
+          expect(puzzle.getCage('X1' as CageId)).toSucceed();
+          expect(puzzle.getCage('X2' as CageId)).toSucceed();
+        }
+      );
     });
 
     test('should create Killer Sudoku with killer constraints', () => {
-      const killerPuzzle = {
-        ...basePuzzleData,
-        type: 'killer-sudoku' as PuzzleType,
-        cells:
-          'ABCCCDDDEABFFGGGDEHIJKGGLLLHIJKMGLNNHOPPMQQNROOSTMUVWRSSSTTUVWRXYTTTZZabXYYYcccab|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
-      };
+      const killerCells =
+        'ABCCCDDDEABFFGGGDEHIJKGGLLLHIJKMGLNNHOPPMQQNROOSTMUVWRSSSTTUVWRXYTTTZZabXYYYcccab|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11';
 
-      expect(Puzzles.Any.create(killerPuzzle)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('type-test', 'Type Test Puzzle', 'killer-sudoku', 1, killerCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.type).toBe('killer-sudoku');
 
         // Should not have diagonal cages (specific to Sudoku X)
@@ -149,47 +157,53 @@ describe('AnyPuzzle factory integration', () => {
     });
 
     test('should fail for unsupported puzzle types', () => {
-      const unsupportedPuzzle = { ...basePuzzleData, type: 'unknown-type' as PuzzleType };
-
-      expect(Puzzles.Any.create(unsupportedPuzzle)).toFailWith(/unsupported type unknown-type/i);
+      expect(
+        createPuzzle('type-test', 'Type Test Puzzle', 'unknown-type' as PuzzleType, 1, emptyCells)
+      ).toFailWith(/unknown puzzle type: unknown-type/i);
     });
   });
 
   describe('functional constraint validation across puzzle types', () => {
     test('should enforce different constraint sets for different puzzle types', () => {
-      const testData = {
-        id: 'constraint-test',
-        description: 'Constraint Test',
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.'.repeat(81)
-      };
+      const emptyCells = '.'.repeat(81);
 
       // Create different puzzle types
-      const standardPuzzle = Puzzles.Any.create({ ...testData, type: 'sudoku' as PuzzleType }).orThrow();
-      const sudokuXPuzzle = Puzzles.Any.create({ ...testData, type: 'sudoku-x' as PuzzleType }).orThrow();
+      const standardPuzzle = createPuzzle(
+        'constraint-test',
+        'Constraint Test',
+        'sudoku',
+        1,
+        emptyCells
+      ).orThrow();
+      const sudokuXPuzzle = createPuzzle(
+        'constraint-test',
+        'Constraint Test',
+        'sudoku-x',
+        1,
+        emptyCells
+      ).orThrow();
 
-      // Place the same value in diagonal cells
+      // Place the same value in diagonal cells that are in different sections
+      // A1 is in top-left section, E5 is in center section, I9 is in bottom-right section
       const diagonalUpdate1 = standardPuzzle.updateCellValue('A1', 5, standardPuzzle.initialState).orThrow();
-      const diagonalUpdate2 = standardPuzzle.updateCellValue('B2', 5, diagonalUpdate1.to).orThrow();
+      const diagonalUpdate2 = standardPuzzle.updateCellValue('E5', 5, diagonalUpdate1.to).orThrow();
 
-      // Standard Sudoku should allow this (no diagonal constraint)
+      // Standard Sudoku should allow this (no diagonal constraint, different sections/rows/cols)
       expect(standardPuzzle.getCell('A1')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(diagonalUpdate2.to)).toBe(true);
       });
-      expect(standardPuzzle.getCell('B2')).toSucceedAndSatisfy((cell) => {
+      expect(standardPuzzle.getCell('E5')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(diagonalUpdate2.to)).toBe(true);
       });
 
       // Sudoku X should reject this (diagonal constraint violated)
       const sudokuXUpdate1 = sudokuXPuzzle.updateCellValue('A1', 5, sudokuXPuzzle.initialState).orThrow();
-      const sudokuXUpdate2 = sudokuXPuzzle.updateCellValue('B2', 5, sudokuXUpdate1.to).orThrow();
+      const sudokuXUpdate2 = sudokuXPuzzle.updateCellValue('E5', 5, sudokuXUpdate1.to).orThrow();
 
       expect(sudokuXPuzzle.getCell('A1')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(sudokuXUpdate2.to)).toBe(false);
       });
-      expect(sudokuXPuzzle.getCell('B2')).toSucceedAndSatisfy((cell) => {
+      expect(sudokuXPuzzle.getCell('E5')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(sudokuXUpdate2.to)).toBe(false);
       });
     });
@@ -197,17 +211,12 @@ describe('AnyPuzzle factory integration', () => {
 
   describe('backward compatibility', () => {
     test('should maintain existing functionality for standard Sudoku', () => {
-      const standardDescription: IPuzzleDescription = {
-        id: 'backward-compat-test',
-        description: 'Backward Compatibility Test',
-        type: 'sudoku' as PuzzleType,
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.........9.46.7....768.41..3.97.1.8.7.8...3.1.513.87.2..75.261...54.32.8.........'
-      };
+      const standardCells =
+        '.........9.46.7....768.41..3.97.1.8.7.8...3.1.513.87.2..75.261...54.32.8.........';
 
-      expect(Puzzles.Any.create(standardDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('backward-compat-test', 'Backward Compatibility Test', 'sudoku', 1, standardCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         // Should behave exactly like the original Sudoku implementation
         expect(puzzle.type).toBe('sudoku');
         expect(puzzle.numRows).toBe(9);
@@ -229,17 +238,11 @@ describe('AnyPuzzle factory integration', () => {
     });
 
     test('should maintain existing API for all supported operations', () => {
-      const sudokuXDescription: IPuzzleDescription = {
-        id: 'api-compat-test',
-        description: 'API Compatibility Test',
-        type: 'sudoku-x' as PuzzleType,
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.'.repeat(81)
-      };
+      const emptyCells = '.'.repeat(81);
 
-      expect(Puzzles.Any.create(sudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('api-compat-test', 'API Compatibility Test', 'sudoku-x', 1, emptyCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         // All standard puzzle operations should be available
         expect(typeof puzzle.getCell).toBe('function');
         expect(typeof puzzle.getRow).toBe('function');
@@ -269,62 +272,18 @@ describe('AnyPuzzle factory integration', () => {
 
   describe('error handling and edge cases', () => {
     test('should handle invalid puzzle descriptions gracefully', () => {
-      const invalidDescriptions = [
-        // Missing required fields
-        { id: 'test', description: 'test', level: 1, rows: 9, cols: 9 }, // Missing type and cells
+      // Invalid type
+      expect(createPuzzle('test', 'test', 'invalid-type' as PuzzleType, 1, '.'.repeat(81))).toFail();
 
-        // Invalid type
-        {
-          id: 'test',
-          description: 'test',
-          type: 'invalid-type' as PuzzleType,
-          level: 1,
-          rows: 9,
-          cols: 9,
-          cells: '.'.repeat(81)
-        },
-
-        // Invalid dimensions
-        {
-          id: 'test',
-          description: 'test',
-          type: 'sudoku-x' as PuzzleType,
-          level: 1,
-          rows: 8,
-          cols: 9,
-          cells: '.'.repeat(72)
-        },
-
-        // Invalid cell count
-        {
-          id: 'test',
-          description: 'test',
-          type: 'sudoku-x' as PuzzleType,
-          level: 1,
-          rows: 9,
-          cols: 9,
-          cells: '.'.repeat(80)
-        }
-      ];
-
-      for (const invalidDesc of invalidDescriptions) {
-        expect(Puzzles.Any.create(invalidDesc as IPuzzleDescription)).toFail();
-      }
+      // Invalid cell count (80 instead of 81)
+      expect(createPuzzle('test', 'test', 'sudoku-x', 1, '.'.repeat(80))).toFail();
     });
 
     test('should handle edge case puzzle data', () => {
       // Empty description strings
-      const emptyStringPuzzle: IPuzzleDescription = {
-        id: '',
-        description: '',
-        type: 'sudoku-x' as PuzzleType,
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.'.repeat(81)
-      };
+      const emptyCells = '.'.repeat(81);
 
-      expect(Puzzles.Any.create(emptyStringPuzzle)).toSucceedAndSatisfy((puzzle) => {
+      expect(createPuzzle('', '', 'sudoku-x', 1, emptyCells)).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.id).toBe('');
         expect(puzzle.description).toBe('');
         expect(puzzle.type).toBe('sudoku-x');
@@ -332,17 +291,11 @@ describe('AnyPuzzle factory integration', () => {
     });
 
     test('should handle special characters in puzzle data', () => {
-      const specialCharPuzzle: IPuzzleDescription = {
-        id: 'test-special-éñ中',
-        description: 'Test with special chars: éñ中文',
-        type: 'sudoku-x' as PuzzleType,
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.'.repeat(81)
-      };
+      const emptyCells = '.'.repeat(81);
 
-      expect(Puzzles.Any.create(specialCharPuzzle)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        createPuzzle('test-special-éñ中', 'Test with special chars: éñ中文', 'sudoku-x', 1, emptyCells)
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.id).toBe('test-special-éñ中');
         expect(puzzle.description).toBe('Test with special chars: éñ中文');
       });
@@ -351,22 +304,14 @@ describe('AnyPuzzle factory integration', () => {
 
   describe('performance characteristics', () => {
     test('should create puzzles efficiently across different types', () => {
-      const testData = {
-        id: 'perf-test',
-        description: 'Performance Test',
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.'.repeat(81)
-      };
-
+      const emptyCells = '.'.repeat(81);
       const puzzleTypes: PuzzleType[] = ['sudoku', 'sudoku-x'];
       const startTime = Date.now();
 
       // Create multiple puzzles of different types
       for (let i = 0; i < 10; i++) {
         for (const type of puzzleTypes) {
-          const puzzle = Puzzles.Any.create({ ...testData, type, id: `perf-test-${type}-${i}` });
+          const puzzle = createPuzzle(`perf-test-${type}-${i}`, 'Performance Test', type, 1, emptyCells);
           expect(puzzle).toSucceed();
         }
       }
@@ -379,32 +324,24 @@ describe('AnyPuzzle factory integration', () => {
     });
 
     test('should handle rapid puzzle type switching', () => {
-      const testData = {
-        id: 'switch-test',
-        description: 'Switch Test',
-        level: 1,
-        rows: 9,
-        cols: 9,
-        cells: '.'.repeat(81)
-      };
-
+      const emptyCells = '.'.repeat(81);
       const types: PuzzleType[] = ['sudoku', 'sudoku-x', 'sudoku', 'sudoku-x'];
 
       for (let i = 0; i < types.length; i++) {
-        const puzzleDesc = { ...testData, type: types[i], id: `switch-${i}` };
+        expect(createPuzzle(`switch-${i}`, 'Switch Test', types[i], 1, emptyCells)).toSucceedAndSatisfy(
+          (puzzle) => {
+            expect(puzzle.type).toBe(types[i]);
 
-        expect(Puzzles.Any.create(puzzleDesc)).toSucceedAndSatisfy((puzzle) => {
-          expect(puzzle.type).toBe(types[i]);
-
-          // Verify type-specific characteristics
-          if (types[i] === 'sudoku-x') {
-            expect(puzzle.getCage('X1' as CageId)).toSucceed();
-            expect(puzzle.getCage('X2' as CageId)).toSucceed();
-          } else {
-            expect(puzzle.getCage('X1' as CageId)).toFailWith(/not found/i);
-            expect(puzzle.getCage('X2' as CageId)).toFailWith(/not found/i);
+            // Verify type-specific characteristics
+            if (types[i] === 'sudoku-x') {
+              expect(puzzle.getCage('X1' as CageId)).toSucceed();
+              expect(puzzle.getCage('X2' as CageId)).toSucceed();
+            } else {
+              expect(puzzle.getCage('X1' as CageId)).toFailWith(/not found/i);
+              expect(puzzle.getCage('X2' as CageId)).toFailWith(/not found/i);
+            }
           }
-        });
+        );
       }
     });
   });

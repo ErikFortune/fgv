@@ -24,7 +24,8 @@
 
 import '@fgv/ts-utils-jest';
 import {
-  IPuzzleDescription,
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS,
   Ids,
   NavigationDirection,
   NavigationWrap,
@@ -35,39 +36,38 @@ import {
 } from '../../..';
 
 describe('PuzzleSession class', () => {
-  const testPuzzle: IPuzzleDescription = {
-    id: 'test',
-    // cSpell: disable
-    description: 'hidden pair sample from sudowiki.org',
-    type: 'sudoku' as PuzzleType,
-    // cSpell: enable
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: [
-      '.........',
-      '9.46.7...',
-      '.768.41..',
-      '3.97.1.8.',
-      '7.8...3.1',
-      '.513.87.2',
-      '..75.261.',
-      '..54.32.8',
-      '.........'
-    ].join('')
-  };
+  const testCells = [
+    '.........',
+    '9.46.7...',
+    '.768.41..',
+    '3.97.1.8.',
+    '7.8...3.1',
+    '.513.87.2',
+    '..75.261.',
+    '..54.32.8',
+    '.........'
+  ].join('');
 
   let puzzle: PuzzleSession;
   beforeEach(() => {
-    puzzle = PuzzleSession.create(Puzzles.Any.create(testPuzzle).orThrow()).orThrow();
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+      id: 'test',
+      // cSpell: disable
+      description: 'hidden pair sample from sudowiki.org',
+      // cSpell: enable
+      type: 'sudoku' as PuzzleType,
+      level: 1,
+      cells: testCells
+    }).orThrow();
+    puzzle = PuzzleSession.create(Puzzles.Any.create(puzzleDefinition).orThrow()).orThrow();
   });
 
   describe('basic getters', () => {
     test('propagate values from the supplied description', () => {
-      expect(puzzle.id).toEqual(testPuzzle.id);
-      expect(puzzle.description).toEqual(testPuzzle.description);
-      expect(puzzle.numRows).toEqual(testPuzzle.rows);
-      expect(puzzle.numColumns).toEqual(testPuzzle.cols);
+      expect(puzzle.id).toEqual('test');
+      expect(puzzle.description).toEqual('hidden pair sample from sudowiki.org');
+      expect(puzzle.numRows).toEqual(9);
+      expect(puzzle.numColumns).toEqual(9);
       expect(puzzle.rows.map((r) => r.id)).toEqual(['RA', 'RB', 'RC', 'RD', 'RE', 'RF', 'RG', 'RH', 'RI']);
       expect(puzzle.cols.map((c) => c.id)).toEqual(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']);
       expect(puzzle.sections.map((c) => c.id)).toEqual([
@@ -320,13 +320,13 @@ describe('PuzzleSession class', () => {
       expect(puzzle.updateCellValue('A1', 1)).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(1);
         expect(puzzle.numSteps).toBe(1);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^./, '1'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^./, '1'));
       });
 
       expect(puzzle.updateCellValue({ row: 0, col: 1 }, 2)).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(2);
         expect(puzzle.numSteps).toBe(2);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^../, '12'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^../, '12'));
       });
     });
   });
@@ -339,7 +339,7 @@ describe('PuzzleSession class', () => {
       expect(puzzle.updateCellNotes('A1', [1, 2, 3])).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(1);
         expect(puzzle.numSteps).toBe(1);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells);
+        expect(puzzle.toStrings().join('')).toEqual(testCells);
         expect(puzzle.getCellContents(Ids.cellId('A1').orThrow())).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([1, 2, 3]);
         });
@@ -348,7 +348,7 @@ describe('PuzzleSession class', () => {
       expect(puzzle.updateCellNotes({ row: 0, col: 1 }, [4, 5, 6])).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(2);
         expect(puzzle.numSteps).toBe(2);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells);
+        expect(puzzle.toStrings().join('')).toEqual(testCells);
         expect(puzzle.getCellContents(Ids.cellId('A2').orThrow())).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([4, 5, 6]);
         });
@@ -377,7 +377,7 @@ describe('PuzzleSession class', () => {
       ).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(1);
         expect(puzzle.numSteps).toBe(1);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^./, '7'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^./, '7'));
         expect(puzzle.getCellContents({ row: 0, col: 1 })).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([1, 2, 3]);
         });
@@ -584,20 +584,20 @@ describe('PuzzleSession class', () => {
         expect(puzzle.nextStep).toBe(1);
         expect(puzzle.numSteps).toBe(1);
         expect(puzzle.canUndo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^./, '1'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^./, '1'));
       });
 
       expect(puzzle.updateCellValue({ row: 0, col: 1 }, 2)).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(2);
         expect(puzzle.numSteps).toBe(2);
         expect(puzzle.canUndo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^../, '12'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^../, '12'));
       });
       expect(puzzle.updateCellValue({ row: 0, col: 2 }, 3)).toSucceedAndSatisfy(() => {
         expect(puzzle.nextStep).toBe(3);
         expect(puzzle.numSteps).toBe(3);
         expect(puzzle.canUndo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^.../, '123'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^.../, '123'));
       });
 
       expect(puzzle.undo()).toSucceedAndSatisfy(() => {
@@ -605,7 +605,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.numSteps).toBe(3);
         expect(puzzle.canUndo).toBe(true);
         expect(puzzle.canRedo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^../, '12'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^../, '12'));
       });
 
       expect(puzzle.undo()).toSucceedAndSatisfy(() => {
@@ -613,7 +613,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.numSteps).toBe(3);
         expect(puzzle.canUndo).toBe(true);
         expect(puzzle.canRedo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^./, '1'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^./, '1'));
       });
 
       expect(puzzle.undo()).toSucceedAndSatisfy(() => {
@@ -621,7 +621,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.numSteps).toBe(3);
         expect(puzzle.canUndo).toBe(false);
         expect(puzzle.canRedo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells);
+        expect(puzzle.toStrings().join('')).toEqual(testCells);
       });
 
       expect(puzzle.undo()).toFailWith(/nothing to undo/i);
@@ -651,7 +651,7 @@ describe('PuzzleSession class', () => {
       expect(puzzle.nextStep).toBe(0);
       expect(puzzle.numSteps).toBe(4);
       expect(puzzle.canRedo).toBe(true);
-      expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells);
+      expect(puzzle.toStrings().join('')).toEqual(testCells);
       expect(puzzle.getCellContents(Ids.cellId('A4').orThrow())).toSucceedAndSatisfy(({ contents }) => {
         expect(contents.notes).toEqual([]);
       });
@@ -660,7 +660,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.nextStep).toBe(1);
         expect(puzzle.numSteps).toBe(4);
         expect(puzzle.canRedo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^./, '1'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^./, '1'));
         expect(puzzle.getCellContents(Ids.cellId('A4').orThrow())).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([]);
         });
@@ -670,7 +670,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.nextStep).toBe(2);
         expect(puzzle.numSteps).toBe(4);
         expect(puzzle.canRedo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^../, '12'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^../, '12'));
         expect(puzzle.getCellContents(Ids.cellId('A4').orThrow())).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([]);
         });
@@ -680,7 +680,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.nextStep).toBe(3);
         expect(puzzle.numSteps).toBe(4);
         expect(puzzle.canRedo).toBe(true);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^.../, '123'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^.../, '123'));
         expect(puzzle.getCellContents(Ids.cellId('A4').orThrow())).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([]);
         });
@@ -690,7 +690,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.nextStep).toBe(4);
         expect(puzzle.numSteps).toBe(4);
         expect(puzzle.canRedo).toBe(false);
-        expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells.replace(/^.../, '123'));
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^.../, '123'));
         expect(puzzle.getCellContents(Ids.cellId('A4').orThrow())).toSucceedAndSatisfy(({ contents }) => {
           expect(contents.notes).toEqual([4, 5, 6]);
         });
@@ -721,7 +721,7 @@ describe('PuzzleSession class', () => {
       expect(puzzle.nextStep).toBe(0);
       expect(puzzle.numSteps).toBe(4);
       expect(puzzle.canRedo).toBe(true);
-      expect(puzzle.toStrings().join('')).toEqual(testPuzzle.cells);
+      expect(puzzle.toStrings().join('')).toEqual(testCells);
       expect(puzzle.getCellContents(Ids.cellId('A4').orThrow())).toSucceedAndSatisfy(({ contents }) => {
         expect(contents.notes).toEqual([]);
       });
@@ -731,9 +731,7 @@ describe('PuzzleSession class', () => {
         expect(puzzle.nextStep).toBe(2);
         expect(puzzle.numSteps).toBe(2);
         expect(puzzle.canRedo).toBe(false);
-        expect(puzzle.toStrings().join('')).toEqual(
-          testPuzzle.cells.replace(/^./, '1').replace('9.46', '9846')
-        );
+        expect(puzzle.toStrings().join('')).toEqual(testCells.replace(/^./, '1').replace('9.46', '9846'));
       });
     });
   });

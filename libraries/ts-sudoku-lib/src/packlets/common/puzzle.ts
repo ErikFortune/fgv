@@ -147,7 +147,7 @@ export class Puzzle {
 
         const init = cellInit.shift();
         /* c8 ignore next - defense in depth/make type check happy. undefined init should never happen */
-        const immutableValue = init === '.' ? undefined : Number.parseInt(init ?? '0');
+        const immutableValue = init === '.' ? undefined : this._parseAlphanumericValue(init ?? '0');
         if (
           immutableValue !== undefined &&
           (Number.isNaN(immutableValue) || immutableValue < 1 || immutableValue > puzzle.maxValue)
@@ -251,6 +251,27 @@ export class Puzzle {
       }
     }
     return succeed(cages);
+  }
+
+  /**
+   * Parse alphanumeric cell value (1-9, A-Z for values 10-35)
+   * @internal
+   */
+  private _parseAlphanumericValue(char: string): number {
+    // Handle digits 1-9
+    if (char >= '1' && char <= '9') {
+      return Number.parseInt(char, 10);
+    }
+    // Handle uppercase A-Z for values 10-35
+    if (char >= 'A' && char <= 'Z') {
+      return char.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+    }
+    // Handle lowercase a-z for values 10-35
+    if (char >= 'a' && char <= 'z') {
+      return char.charCodeAt(0) - 'a'.charCodeAt(0) + 10;
+    }
+    // Invalid character, return NaN to trigger error handling
+    return Number.NaN;
   }
 
   /**

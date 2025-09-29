@@ -9,7 +9,7 @@ Gets a puzzle by id from this collection.
 **Signature:**
 
 ```typescript
-getDescription(id: string): Result<IPuzzleDescription>;
+getDescription(id: string): Result<Files.Model.IPuzzleFileData>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The string ID of the puzzle to be returned.
 
 **Returns:**
 
-Result&lt;[IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)<!-- -->&gt;
+Result&lt;[Files.Model.IPuzzleFileData](./ts-sudoku-lib.files.model.ipuzzlefiledata.md)<!-- -->&gt;
 
 `Success` with the requested [puzzle](./ts-sudoku-lib.puzzlesession.md)<!-- -->, or `Failure` with details if an error occurs.
 

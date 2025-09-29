@@ -22,18 +22,35 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Result } from '@fgv/ts-utils';
-import { IPuzzlesFile } from './model';
+import { Converter, Converters, Result, succeed } from '@fgv/ts-utils';
+import { IPuzzlesFile, IPuzzleFileData } from './model';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { Converters as CommonConverters } from '../common';
+
+/**
+ * Converts puzzle file data from JSON format
+ * @public
+ */
+export const puzzleFileData: Converter<IPuzzleFileData> = Converters.strictObject<IPuzzleFileData>(
+  {
+    id: Converters.string,
+    description: Converters.string,
+    type: CommonConverters.puzzleType,
+    level: Converters.number,
+    cells: Converters.oneOf([Converters.string, Converters.stringArray.map((s) => succeed(s.join('')))])
+  },
+  {
+    optionalFields: ['id']
+  }
+);
 
 /**
  * Converts an arbitrary object to a {@link Files.Model.IPuzzlesFile | IPuzzlesFile}.
  * @public
  */
 export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuzzlesFile>({
-  puzzles: Converters.arrayOf(CommonConverters.puzzleDescription)
+  puzzles: Converters.arrayOf(puzzleFileData)
 });
 
 /**

@@ -22,9 +22,111 @@
  * SOFTWARE.
  */
 
-import { Result, succeed, fail } from '@fgv/ts-utils';
-import { PuzzleType } from './common';
+import { Result, succeed, fail, captureResult } from '@fgv/ts-utils';
+import { PuzzleType, CageId, CellId } from './common';
 import { ICage } from './public';
+
+/**
+ * Interface for puzzle type-specific validation
+ * @public
+ */
+export interface IPuzzleTypeValidator {
+  /**
+   * Validate the cells string for this puzzle type
+   */
+  validateCells(cells: string, dimensions: IPuzzleDimensions): Result<true>;
+}
+
+/**
+ * Default validator for standard Sudoku puzzles
+ */
+class StandardSudokuValidator implements IPuzzleTypeValidator {
+  public validateCells(cells: string, dimensions: IPuzzleDimensions): Result<true> {
+    const expectedLength =
+      dimensions.cageHeightInCells *
+      dimensions.boardHeightInCages *
+      dimensions.cageWidthInCells *
+      dimensions.boardWidthInCages;
+
+    if (cells.length !== expectedLength) {
+      return fail(`Expected ${expectedLength} cells, got ${cells.length}`);
+    }
+
+    return succeed(true);
+  }
+}
+
+/**
+ * Validator for Killer Sudoku puzzles - understands extended format with cage definitions
+ */
+class KillerSudokuValidator implements IPuzzleTypeValidator {
+  public validateCells(cells: string, dimensions: IPuzzleDimensions): Result<true> {
+    const expectedBasicLength =
+      dimensions.cageHeightInCells *
+      dimensions.boardHeightInCages *
+      dimensions.cageWidthInCells *
+      dimensions.boardWidthInCages;
+
+    // Killer sudoku cells format includes cage definitions, so it will be longer than basic format
+    // The basic grid should be at the beginning of the string
+    if (cells.length < expectedBasicLength) {
+      return fail(
+        `Killer sudoku cells must contain at least ${expectedBasicLength} grid cells, got ${cells.length}`
+      );
+    }
+
+    // Find the separator between grid and cage definitions
+    const separatorIndex = cells.indexOf('|');
+    if (separatorIndex === -1) {
+      return fail('Killer sudoku cells must contain cage definitions after "|" separator');
+    }
+
+    if (separatorIndex !== expectedBasicLength) {
+      return fail(
+        `Killer sudoku grid portion must be exactly ${expectedBasicLength} characters, got ${separatorIndex}`
+      );
+    }
+
+    // Extract the basic grid portion (before the | separator)
+    const gridPortion = cells.substring(0, separatorIndex);
+
+    // For killer sudoku, the grid portion contains:
+    // - Digits 1-9 for prefilled values
+    // - '.' for empty cells
+    // - Letters A-Z, a-z for cage identifiers
+    const maxDigit = dimensions.cageWidthInCells * dimensions.cageHeightInCells;
+    const validDigits = new Set(['.', ...Array.from({ length: maxDigit }, (__val, i) => String(i + 1))]);
+    const validCageLetters = new Set([...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', ...'abcdefghijklmnopqrstuvwxyz']);
+
+    for (let i = 0; i < gridPortion.length; i++) {
+      const char = gridPortion[i];
+      if (!validDigits.has(char) && !validCageLetters.has(char)) {
+        return fail(`Invalid character '${char}' at position ${i} in killer sudoku grid portion`);
+      }
+    }
+
+    return succeed(true);
+  }
+}
+
+/**
+ * Validator for Sudoku X puzzles - same as standard but with diagonal constraints
+ */
+class SudokuXValidator implements IPuzzleTypeValidator {
+  public validateCells(cells: string, dimensions: IPuzzleDimensions): Result<true> {
+    // Sudoku X uses the same cell format as standard sudoku
+    return new StandardSudokuValidator().validateCells(cells, dimensions);
+  }
+}
+
+/**
+ * Registry of validators for different puzzle types
+ */
+const PUZZLE_TYPE_VALIDATORS: Record<PuzzleType, IPuzzleTypeValidator> = {
+  sudoku: new StandardSudokuValidator(),
+  'killer-sudoku': new KillerSudokuValidator(),
+  'sudoku-x': new SudokuXValidator()
+};
 
 /**
  * Core dimensional configuration for a puzzle grid
@@ -96,74 +198,114 @@ export class PuzzleDefinitionFactory {
     dimensions: IPuzzleDimensions,
     options: Partial<IPuzzleDefinition> = {}
   ): Result<IPuzzleDefinition> {
-    return this.validate(dimensions).onSuccess(() => {
-      const totalRows = dimensions.cageHeightInCells * dimensions.boardHeightInCages;
-      const totalColumns = dimensions.cageWidthInCells * dimensions.boardWidthInCages;
-      const maxValue = dimensions.cageWidthInCells * dimensions.cageHeightInCells;
-      const totalCages = dimensions.boardWidthInCages * dimensions.boardHeightInCages;
-      const basicCageTotal = this._calculateBasicCageTotal(maxValue);
+    const dimensionValidation = this.validate(dimensions);
+    if (dimensionValidation.isFailure()) {
+      return fail(dimensionValidation.message);
+    }
 
-      // Validate cell data if provided
-      if (options.cells && options.cells.length !== totalRows * totalColumns) {
-        return fail(`Expected ${totalRows * totalColumns} cells, got ${options.cells.length}`);
+    const totalRows = dimensions.cageHeightInCells * dimensions.boardHeightInCages;
+    const totalColumns = dimensions.cageWidthInCells * dimensions.boardWidthInCages;
+    const maxValue = dimensions.cageWidthInCells * dimensions.cageHeightInCells;
+    const totalCages = dimensions.boardWidthInCages * dimensions.boardHeightInCages;
+    const basicCageTotal = this._calculateBasicCageTotal(maxValue);
+
+    // Validate cell data using type-specific validator
+    if (options.cells) {
+      const puzzleType = options.type ?? 'sudoku';
+      const validator = PUZZLE_TYPE_VALIDATORS[puzzleType];
+      if (!validator) {
+        return fail(`Unknown puzzle type: ${puzzleType}`);
       }
 
-      const puzzleDefinition: IPuzzleDefinition = {
-        // Dimensions
-        cageWidthInCells: dimensions.cageWidthInCells,
-        cageHeightInCells: dimensions.cageHeightInCells,
-        boardWidthInCages: dimensions.boardWidthInCages,
-        boardHeightInCages: dimensions.boardHeightInCages,
+      const cellValidation = validator.validateCells(options.cells, dimensions);
+      if (cellValidation.isFailure()) {
+        return fail(cellValidation.message);
+      }
+    }
 
-        // Derived properties
-        totalRows,
-        totalColumns,
-        maxValue,
-        totalCages,
-        basicCageTotal,
+    const puzzleDefinition: IPuzzleDefinition = {
+      // Dimensions
+      cageWidthInCells: dimensions.cageWidthInCells,
+      cageHeightInCells: dimensions.cageHeightInCells,
+      boardWidthInCages: dimensions.boardWidthInCages,
+      boardHeightInCages: dimensions.boardHeightInCages,
 
-        // Default values
-        id: options.id,
-        description: options.description ?? `${totalRows}x${totalColumns} puzzle`,
-        type: options.type ?? 'sudoku',
-        level: options.level ?? 1,
-        cells: options.cells ?? '.'.repeat(totalRows * totalColumns),
-        cages: options.cages
-      };
+      // Derived properties
+      totalRows,
+      totalColumns,
+      maxValue,
+      totalCages,
+      basicCageTotal,
 
-      return succeed(puzzleDefinition);
-    });
+      // Default values
+      id: options.id,
+      description: options.description ?? `${totalRows}x${totalColumns} puzzle`,
+      type: options.type ?? 'sudoku',
+      level: options.level ?? 1,
+      cells: options.cells ?? '.'.repeat(totalRows * totalColumns),
+      cages: options.cages
+    };
+
+    return succeed(puzzleDefinition);
   }
 
   /**
-   * Create a puzzle definition from a legacy IPuzzleDescription
+   * Create killer sudoku puzzle definition with cage constraints
    */
-  public static fromLegacy(legacy: {
-    id?: string;
-    description: string;
-    type: PuzzleType;
-    level: number;
-    rows: number;
-    cols: number;
-    cells: string;
-    cages?: ICage[];
-  }): Result<IPuzzleDefinition> {
-    // Determine dimensions based on grid size
-    const dimensions = this._inferDimensionsFromSize(legacy.rows, legacy.cols);
-    if (dimensions.isFailure()) {
-      return fail(
-        `Cannot infer cage dimensions for ${legacy.rows}x${legacy.cols} grid: ${dimensions.message}`
-      );
+  public static createKiller(
+    dimensions: IPuzzleDimensions,
+    description: Omit<
+      IPuzzleDefinition,
+      | 'cageWidthInCells'
+      | 'cageHeightInCells'
+      | 'boardWidthInCages'
+      | 'boardHeightInCages'
+      | 'totalRows'
+      | 'totalColumns'
+      | 'maxValue'
+      | 'totalCages'
+      | 'basicCageTotal'
+      | 'cages'
+    > & {
+      killerCages: Array<{
+        id: string;
+        cellPositions: Array<{ row: number; col: number }>;
+        sum: number;
+      }>;
     }
+  ): Result<IPuzzleDefinition> {
+    return captureResult(() => {
+      // Import needed here to avoid circular dependencies
+      const { Ids } = require('./ids');
 
-    return this.create(dimensions.value, {
-      id: legacy.id,
-      description: legacy.description,
-      type: legacy.type,
-      level: legacy.level,
-      cells: legacy.cells,
-      cages: legacy.cages
-    });
+      // Convert killer cage format to standard cage format - creating minimal cage objects
+      const cages = description.killerCages.map((killerCage) => {
+        const cellIds = killerCage.cellPositions.map((pos) => Ids.cellId(pos).orThrow());
+
+        return {
+          id: `K${killerCage.id}` as CageId,
+          name: `Killer Cage ${killerCage.id}`,
+          cellIds,
+          cageType: 'killer' as const,
+          total: killerCage.sum,
+          numCells: cellIds.length,
+          containsCell: (cellId: CellId) => cellIds.includes(cellId),
+          sum: killerCage.sum // Keep for compatibility
+        };
+      });
+
+      // Return the result directly, not wrapped in another Result
+      const result = this.create(dimensions, {
+        ...description,
+        cages,
+        type: 'killer-sudoku'
+      });
+
+      if (result.isFailure()) {
+        throw new Error(result.message);
+      }
+      return result.value;
+    }).onFailure((error) => fail(`Failed to create killer sudoku: ${error}`));
   }
 
   /**
@@ -173,6 +315,11 @@ export class PuzzleDefinitionFactory {
     // Structural validation
     if (dimensions.cageWidthInCells < 1 || dimensions.cageHeightInCells < 1) {
       return fail('Cage dimensions must be positive integers');
+    }
+
+    // Sudoku cages must be multi-cell (both dimensions > 1)
+    if (dimensions.cageWidthInCells < 2 || dimensions.cageHeightInCells < 2) {
+      return fail('Cage dimensions must be at least 2x2 for valid Sudoku puzzles');
     }
 
     if (dimensions.boardWidthInCages < 1 || dimensions.boardHeightInCages < 1) {
@@ -211,67 +358,23 @@ export class PuzzleDefinitionFactory {
   }
 
   /**
+   * Get validator for a specific puzzle type
+   */
+  public static getValidator(puzzleType: PuzzleType): IPuzzleTypeValidator | undefined {
+    return PUZZLE_TYPE_VALIDATORS[puzzleType];
+  }
+
+  /**
+   * Register a custom validator for a puzzle type
+   */
+  public static registerValidator(puzzleType: PuzzleType, validator: IPuzzleTypeValidator): void {
+    PUZZLE_TYPE_VALIDATORS[puzzleType] = validator;
+  }
+
+  /**
    * Calculate the basic cage total (sum of 1 to maxValue)
    */
   private static _calculateBasicCageTotal(maxValue: number): number {
     return (maxValue * (maxValue + 1)) / 2;
-  }
-
-  /**
-   * Infer cage dimensions from legacy grid size
-   */
-  private static _inferDimensionsFromSize(rows: number, cols: number): Result<IPuzzleDimensions> {
-    // Check if it matches a standard configuration
-    for (const config of Object.values(STANDARD_CONFIGS)) {
-      const totalRows = config.cageHeightInCells * config.boardHeightInCages;
-      const totalColumns = config.cageWidthInCells * config.boardWidthInCages;
-
-      if (rows === totalRows && cols === totalColumns) {
-        return succeed(config);
-      }
-    }
-
-    // For non-standard sizes, make reasonable assumptions
-    // Try to find factors that create reasonable cage sizes
-    const possibleCageWidths = this._getFactors(cols);
-    const possibleCageHeights = this._getFactors(rows);
-
-    // Prefer cage dimensions that create reasonable value ranges (2-12)
-    for (const cageWidth of possibleCageWidths) {
-      for (const cageHeight of possibleCageHeights) {
-        const maxValue = cageWidth * cageHeight;
-        if (maxValue >= 2 && maxValue <= 12) {
-          const boardWidth = cols / cageWidth;
-          const boardHeight = rows / cageHeight;
-
-          if (Number.isInteger(boardWidth) && Number.isInteger(boardHeight)) {
-            return succeed({
-              cageWidthInCells: cageWidth,
-              cageHeightInCells: cageHeight,
-              boardWidthInCages: boardWidth,
-              boardHeightInCages: boardHeight
-            });
-          }
-        }
-      }
-    }
-
-    return fail(`Cannot determine reasonable cage dimensions for ${rows}x${cols} grid`);
-  }
-
-  /**
-   * Get all factors of a number
-   */
-  private static _getFactors(n: number): number[] {
-    const factors: number[] = [];
-    for (let i = 1; i <= Math.sqrt(n); i++) {
-      if (n % i === 0) {
-        factors.push(i);
-        if (i !== n / i) {
-          factors.push(n / i);
-        }
-      }
-    }
-    return factors.sort((a, b) => a - b);
   }
 }

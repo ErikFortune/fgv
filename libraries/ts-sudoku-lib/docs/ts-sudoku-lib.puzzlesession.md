@@ -430,6 +430,27 @@ The current [state](./ts-sudoku-lib.puzzlestate.md) of this puzzle session.
 
 
 </td></tr>
+<tr><td>
+
+[type](./ts-sudoku-lib.puzzlesession.type.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Type of the puzzle being solved.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

@@ -98,5 +98,26 @@ _(Optional)_
 
 
 </td></tr>
+<tr><td>
+
+[loggingContext?](./ts-sudoku-lib.hints.ihintsystemconfig.loggingcontext.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ISudokuLoggingContext](./ts-sudoku-lib.isudokuloggingcontext.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
 </tbody></table>
 

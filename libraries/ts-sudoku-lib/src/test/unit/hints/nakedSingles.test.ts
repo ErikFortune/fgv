@@ -29,7 +29,7 @@ import { NakedSinglesProvider } from '../../../packlets/hints/nakedSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
 import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
+import { Puzzles, PuzzleDefinitionFactory, STANDARD_CONFIGS, PuzzleType } from '../../../index';
 import { ConfidenceLevels, TechniqueIds, ConfidenceLevel } from '../../../packlets/hints/types';
 
 /* eslint-enable @rushstack/packlets/mechanics */
@@ -535,16 +535,14 @@ describe('NakedSinglesProvider', () => {
 
 // Helper functions for creating test puzzles and states
 function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzleDesc: IPuzzleDescription = {
+  const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
     id: 'test-puzzle',
     description: 'Test puzzle for naked singles',
     type: 'sudoku' as PuzzleType,
     level: 1,
-    rows: 9,
-    cols: 9,
     cells: rows.join('')
-  };
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
+  }).orThrow();
+  const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
   return { puzzle, state: session.state };
 }

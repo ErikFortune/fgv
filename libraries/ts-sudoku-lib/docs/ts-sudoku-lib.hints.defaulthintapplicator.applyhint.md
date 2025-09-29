@@ -9,7 +9,7 @@ Applies a hint to the puzzle state, generating the necessary cell updates.
 **Signature:**
 
 ```typescript
-applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
+applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState, loggingContext?: ISudokuLoggingContext): Result<readonly ICellState[]>;
 ```
 
 ## Parameters
@@ -75,6 +75,22 @@ state
 </td><td>
 
 The current puzzle state
+
+
+</td></tr>
+<tr><td>
+
+loggingContext
+
+
+</td><td>
+
+[ISudokuLoggingContext](./ts-sudoku-lib.isudokuloggingcontext.md)
+
+
+</td><td>
+
+_(Optional)_ Optional logging context for diagnostic output
 
 
 </td></tr>

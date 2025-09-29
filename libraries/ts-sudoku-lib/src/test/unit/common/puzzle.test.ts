@@ -32,7 +32,8 @@ import {
   Puzzle,
   PuzzleState,
   PuzzleType,
-  PuzzleDefinitionFactory
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS
 } from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
@@ -63,11 +64,13 @@ describe('Puzzle class', () => {
 
   describe('constructor', () => {
     test.each(tests)('succeeds for "$description"', (tc) => {
-      expect(
-        PuzzleDefinitionFactory.fromLegacy(tc).onSuccess((puzzleDefinition) =>
-          Puzzles.Sudoku.create(puzzleDefinition)
-        )
-      ).toSucceedAndSatisfy((board) => {
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: tc.description,
+        type: tc.type,
+        level: tc.level,
+        cells: tc.cells
+      });
+      expect(puzzleDefinition.onSuccess((def) => Puzzles.Sudoku.create(def))).toSucceedAndSatisfy((board) => {
         expect(board.toStrings(board.initialState)).toEqual(tc.expected);
         expect(board.toString(board.initialState)).toEqual(tc.expected.join('\n'));
         expect(board.numRows).toBe(9);
@@ -89,47 +92,252 @@ describe('Puzzle class', () => {
 
     test('fails for invalid puzzle type', () => {
       const t = { ...tests[0], type: 'killer-sudoku' as PuzzleType };
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: t.description,
+        type: t.type,
+        level: t.level,
+        cells: Array.isArray(t.cells) ? t.cells.join('') : t.cells
+      });
+      // killer-sudoku is a valid type but requires cage format with "|" separator
+      expect(puzzleDefinition.onSuccess((def) => Puzzles.Sudoku.create(def))).toFailWith(
+        /cage definitions after.*separator/i
+      );
+    });
+
+    test('fails for invalid grid size with cell count mismatch', () => {
+      // Test: Grid with wrong cell count should fail
+      const invalidDimensions = {
+        cageWidthInCells: 3,
+        cageHeightInCells: 3,
+        boardWidthInCages: 3,
+        boardHeightInCages: 4 // This creates 9x12 = 108 cells
+      };
       expect(
-        PuzzleDefinitionFactory.fromLegacy(t).onSuccess((puzzleDefinition) =>
-          Puzzles.Sudoku.create(puzzleDefinition)
-        )
-      ).toFailWith(/unsupported type/i);
+        PuzzleDefinitionFactory.create(invalidDimensions, {
+          description: 'Invalid cell count test',
+          type: 'sudoku',
+          level: 1,
+          cells: tests[0].cells // Only 81 cells
+        })
+      ).toFailWith(/expected 108 cells, got 81/i);
     });
 
-    test('fails for invalid row count', () => {
-      const t = { ...tests[0], rows: 10 };
-      expect(PuzzleDefinitionFactory.fromLegacy(t)).toFailWith(
-        /Cannot determine reasonable cage dimensions/i
-      );
-    });
-
-    test('fails for invalid column count', () => {
-      const t = { ...tests[0], cols: 10 };
-      expect(PuzzleDefinitionFactory.fromLegacy(t)).toFailWith(
-        /Cannot determine reasonable cage dimensions/i
-      );
+    test('fails for unsupported grid dimensions', () => {
+      // Test: Invalid cage dimensions should fail validation (7x1 cage is not valid for Sudoku)
+      const invalidDimensions = {
+        cageWidthInCells: 7,
+        cageHeightInCells: 1,
+        boardWidthInCages: 1,
+        boardHeightInCages: 7
+      };
+      expect(
+        PuzzleDefinitionFactory.create(invalidDimensions, {
+          description: 'Invalid 7x7 grid',
+          type: 'sudoku',
+          level: 1,
+          cells: '.'.repeat(49)
+        })
+      ).toFailWith(/Cage dimensions must be at least 2x2/i);
     });
 
     test('fails for invalid cell definitions', () => {
-      const t = { ...tests[0], cells: tests[0].cells.slice(1) };
-      expect(PuzzleDefinitionFactory.fromLegacy(t)).toFailWith(/Expected 81 cells, got 80/i);
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: tests[0].description,
+          type: tests[0].type,
+          level: tests[0].level,
+          cells: tests[0].cells.slice(1) // Remove one character
+        })
+      ).toFailWith(/expected 81 cells, got 80/i);
     });
 
     test('fails for invalid value in cell definitions', () => {
-      const cells = tests[0].cells.replace('9', 'A');
-      const t = { ...tests[0], cells };
+      const cellsWithA = tests[0].cells.replace('9', 'A');
       expect(
-        PuzzleDefinitionFactory.fromLegacy(t).onSuccess((puzzleDefinition) =>
-          Puzzles.Sudoku.create(puzzleDefinition)
-        )
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: tests[0].description,
+          type: tests[0].type,
+          level: tests[0].level,
+          cells: cellsWithA
+        }).onSuccess((def) => Puzzles.Sudoku.create(def))
       ).toFailWith(/illegal value/i);
 
-      t.cells = t.cells.replace('A', '0');
+      const cellsWithZero = tests[0].cells.replace('9', '0');
       expect(
-        PuzzleDefinitionFactory.fromLegacy(t).onSuccess((puzzleDefinition) =>
-          Puzzles.Sudoku.create(puzzleDefinition)
-        )
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: tests[0].description,
+          type: tests[0].type,
+          level: tests[0].level,
+          cells: cellsWithZero
+        }).onSuccess((def) => Puzzles.Sudoku.create(def))
       ).toFailWith(/illegal value/i);
+    });
+  });
+
+  describe('Standard Grid Configurations', () => {
+    test('supports 4x4 grid with 2x2 cages', () => {
+      const puzzle4x4 = {
+        description: '4x4 Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        rows: 4,
+        cols: 4,
+        cells: '1..2.3..4..12..3'
+      };
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle4x4, {
+        description: puzzle4x4.description,
+        type: puzzle4x4.type,
+        level: puzzle4x4.level,
+        cells: puzzle4x4.cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(4);
+        expect(def.totalColumns).toBe(4);
+        expect(def.maxValue).toBe(4);
+        expect(def.basicCageTotal).toBe(10); // 1+2+3+4
+        expect(def.cageWidthInCells).toBe(2);
+        expect(def.cageHeightInCells).toBe(2);
+        expect(def.boardWidthInCages).toBe(2);
+        expect(def.boardHeightInCages).toBe(2);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('supports 6x6 grid with 3x2 cages', () => {
+      const puzzle6x6 = {
+        description: '6x6 Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        rows: 6,
+        cols: 6,
+        cells: '12..5634....5....3..6..2....3463.6..'
+      };
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle6x6, {
+        description: puzzle6x6.description,
+        type: puzzle6x6.type,
+        level: puzzle6x6.level,
+        cells: puzzle6x6.cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(6);
+        expect(def.totalColumns).toBe(6);
+        expect(def.maxValue).toBe(6);
+        expect(def.basicCageTotal).toBe(21); // 1+2+3+4+5+6
+        expect(def.cageWidthInCells).toBe(3);
+        expect(def.cageHeightInCells).toBe(2);
+        expect(def.boardWidthInCages).toBe(2);
+        expect(def.boardHeightInCages).toBe(3);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('supports 9x9 grid with 3x3 cages (traditional)', () => {
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: tests[0].description,
+        type: tests[0].type,
+        level: tests[0].level,
+        cells: Array.isArray(tests[0].cells) ? tests[0].cells.join('') : tests[0].cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(9);
+        expect(def.totalColumns).toBe(9);
+        expect(def.maxValue).toBe(9);
+        expect(def.basicCageTotal).toBe(45); // 1+2+...+9
+        expect(def.cageWidthInCells).toBe(3);
+        expect(def.cageHeightInCells).toBe(3);
+        expect(def.boardWidthInCages).toBe(3);
+        expect(def.boardHeightInCages).toBe(3);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('supports 12x12 grid with 4x3 cages', () => {
+      const puzzle12x12 = {
+        description: '12x12 Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        rows: 12,
+        cols: 12,
+        cells: [
+          '..1.6.2.A7..',
+          '62.5B....1..',
+          '.8....C3B.62',
+          'A97.2.6..B5.',
+          '.5......37C.',
+          '3B....7...9.',
+          '57B.4.....1.',
+          '8.....A.9...',
+          '.4..97...6..',
+          '.1C.......B.',
+          '4....2.C....',
+          '....5C..7126'
+        ].join('')
+      };
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+        description: puzzle12x12.description,
+        type: puzzle12x12.type,
+        level: puzzle12x12.level,
+        cells: puzzle12x12.cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(12);
+        expect(def.totalColumns).toBe(12);
+        expect(def.maxValue).toBe(12);
+        expect(def.basicCageTotal).toBe(78); // 1+2+...+12
+        expect(def.cageWidthInCells).toBe(4);
+        expect(def.cageHeightInCells).toBe(3);
+        expect(def.boardWidthInCages).toBe(3);
+        expect(def.boardHeightInCages).toBe(4);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('validates mathematical relationships for all configurations', () => {
+      const configurations = [
+        { name: '4x4', rows: 4, cols: 4, cells: '.'.repeat(16), config: STANDARD_CONFIGS.puzzle4x4 },
+        { name: '6x6', rows: 6, cols: 6, cells: '.'.repeat(36), config: STANDARD_CONFIGS.puzzle6x6 },
+        { name: '9x9', rows: 9, cols: 9, cells: '.'.repeat(81), config: STANDARD_CONFIGS.puzzle9x9 },
+        { name: '12x12', rows: 12, cols: 12, cells: '.'.repeat(144), config: STANDARD_CONFIGS.puzzle12x12 }
+      ];
+
+      configurations.forEach(({ name, rows, cols, cells, config }) => {
+        const testPuzzle = {
+          description: `${name} Mathematical Test`,
+          type: 'sudoku' as PuzzleType,
+          level: 1,
+          rows,
+          cols,
+          cells
+        };
+
+        const puzzleDefinition = PuzzleDefinitionFactory.create(config, {
+          description: testPuzzle.description,
+          type: testPuzzle.type,
+          level: testPuzzle.level,
+          cells: Array.isArray(testPuzzle.cells) ? testPuzzle.cells.join('') : testPuzzle.cells
+        });
+        expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+          // Verify mathematical relationships
+          expect(def.totalRows).toBe(def.cageHeightInCells * def.boardHeightInCages);
+          expect(def.totalColumns).toBe(def.cageWidthInCells * def.boardWidthInCages);
+          expect(def.maxValue).toBe(def.cageWidthInCells * def.cageHeightInCells);
+          expect(def.basicCageTotal).toBe((def.maxValue * (def.maxValue + 1)) / 2);
+
+          // Verify cell count matches
+          expect(def.cells.length).toBe(def.totalRows * def.totalColumns);
+        });
+      });
     });
   });
 
@@ -137,7 +345,12 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(tests[0]).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: tests[0].description,
+        type: tests[0].type,
+        level: tests[0].level,
+        cells: Array.isArray(tests[0].cells) ? tests[0].cells.join('') : tests[0].cells
+      }).orThrow();
       puzzle = Puzzles.Sudoku.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
@@ -223,8 +436,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const desc = PuzzleCollections.default.getDescription('almost-done').orThrow();
-      puzzle = Puzzles.Any.create(desc).orThrow();
+      const session = PuzzleCollections.default.getPuzzle('almost-done').orThrow();
+      puzzle = session.puzzle;
       state = puzzle.initialState;
     });
 
@@ -247,8 +460,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const desc = PuzzleCollections.default.getDescription('almost-done').orThrow();
-      puzzle = Puzzles.Any.create(desc).orThrow();
+      const session = PuzzleCollections.default.getPuzzle('almost-done').orThrow();
+      puzzle = session.puzzle;
       state = puzzle.initialState;
     });
 
@@ -287,8 +500,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const desc = PuzzleCollections.default.getDescription('hidden-pair').orThrow();
-      puzzle = Puzzles.Any.create(desc).orThrow();
+      const session = PuzzleCollections.default.getPuzzle('hidden-pair').orThrow();
+      puzzle = session.puzzle;
       state = puzzle.initialState;
     });
 

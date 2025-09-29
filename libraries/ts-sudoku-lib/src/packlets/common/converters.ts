@@ -24,7 +24,7 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { CageId, CellId, PuzzleType, allPuzzleTypes } from './common';
-import { IPuzzleDescription } from './model';
+// IPuzzleDescription removed - no legacy compatibility
 
 const cageIdRegExp: RegExp = /^(R[A-Z]$)|(C[0-9]$)|(S[A-Z][0-9]$)|(X[1-2]$)|(K[A-Za-z]$)/;
 
@@ -64,21 +64,5 @@ export const puzzleType: Converter<
   ReadonlyArray<PuzzleType>
 > = Converters.enumeratedValue<PuzzleType>(allPuzzleTypes);
 
-/**
- * Converts an arbitrary object to a {@link IPuzzleDescription | IPuzzleDescription}.
- * @public
- */
-export const puzzleDescription: Converter<IPuzzleDescription> = Converters.strictObject<IPuzzleDescription>(
-  {
-    id: Converters.string,
-    description: Converters.string,
-    type: puzzleType,
-    level: Converters.number,
-    rows: Converters.number,
-    cols: Converters.number,
-    cells: Converters.oneOf([Converters.string, Converters.stringArray.map((s) => succeed(s.join('')))])
-  },
-  {
-    optionalFields: ['id']
-  }
-);
+// puzzleDescription converter REMOVED - No legacy compatibility
+// Use PuzzleDefinitionFactory.create() with IPuzzleDefinition directly

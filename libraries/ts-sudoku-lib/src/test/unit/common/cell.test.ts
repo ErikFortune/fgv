@@ -23,7 +23,14 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { CellId, Puzzle, PuzzleState, PuzzleType, PuzzleDefinitionFactory } from '../../../packlets/common';
+import {
+  CellId,
+  Puzzle,
+  PuzzleState,
+  PuzzleType,
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS
+} from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Cell class', () => {
@@ -55,7 +62,12 @@ describe('Cell class', () => {
   ];
 
   beforeEach(() => {
-    const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(tests[0]).orThrow();
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+      description: tests[0].description,
+      type: tests[0].type,
+      level: tests[0].level,
+      cells: tests[0].cells
+    }).orThrow();
     puzzle = Puzzles.Sudoku.create(puzzleDefinition).orThrow();
     state = puzzle.initialState;
   });

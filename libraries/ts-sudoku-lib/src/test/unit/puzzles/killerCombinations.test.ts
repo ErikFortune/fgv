@@ -31,8 +31,8 @@ import {
   PuzzleState,
   PuzzleSession,
   totalsByCageSize,
-  IPuzzleDescription,
-  PuzzleDefinitionFactory
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS
 } from '../../../packlets/common';
 import { KillerCombinations, IKillerConstraints } from '../../../packlets/puzzles';
 import * as Puzzles from '../../../packlets/puzzles';
@@ -53,35 +53,31 @@ describe('KillerCombinations', () => {
   } {
     const { cageTotal, prefilledValues = new Map(), cageId = 'A' } = config;
 
-    // Use the actual working killer puzzle from the existing tests
-    // and replace the first cage with our test parameters
-    const basePuzzleDesc: IPuzzleDescription = {
+    const cells = [
+      'ABCCCDDDE',
+      'ABFFGGGDE',
+      'HIJKGGLLL',
+      'HIJKMGLNN',
+      'HOPPMQQNR',
+      'OOSTMUVWR',
+      'SSSTTUVWR',
+      'XYTTTZZab',
+      'XYYYcccab',
+      `|${cageId}${cageTotal
+        .toString()
+        .padStart(
+          2,
+          '0'
+        )},B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
+    ].join('');
+
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
       id: 'test-killer',
       description: 'Test killer sudoku puzzle',
       type: 'killer-sudoku',
       level: 1,
-      rows: 9,
-      cols: 9,
-      cells: [
-        'ABCCCDDDE',
-        'ABFFGGGDE',
-        'HIJKGGLLL',
-        'HIJKMGLNN',
-        'HOPPMQQNR',
-        'OOSTMUVWR',
-        'SSSTTUVWR',
-        'XYTTTZZab',
-        'XYYYcccab',
-        `|${cageId}${cageTotal
-          .toString()
-          .padStart(
-            2,
-            '0'
-          )},B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
-      ].join('')
-    };
-
-    const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(basePuzzleDesc).orThrow();
+      cells
+    }).orThrow();
     const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
     const session = PuzzleSession.create(puzzle).orThrow();
 
@@ -105,29 +101,32 @@ describe('KillerCombinations', () => {
     state: PuzzleState;
     cage: ICage;
   } {
-    // Use an existing working killer puzzle for these specific test cases
-    const existingPuzzleDesc: IPuzzleDescription = {
+    const cells = [
+      'ABCCCDDDE',
+      'ABFGGGGDE',
+      'HIJKGGLLL',
+      'HIJKMGLNN',
+      'HOPPMQQNR',
+      'OOSTMUVWR',
+      'SSSTTUVWR',
+      'XYTTTZZab',
+      'XYYYcccab',
+      `|A${total
+        .toString()
+        .padStart(
+          2,
+          '0'
+        )},B09,C09,D20,E16,F09,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
+    ].join('');
+
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
       id: 'test-killer',
       description: 'Test killer sudoku puzzle',
       type: 'killer-sudoku',
       level: 1,
-      rows: 9,
-      cols: 9,
-      cells: [
-        'ABCCCDDDE',
-        'ABFFGGGDE',
-        'HIJKGGLLL',
-        'HIJKMGLNN',
-        'HOPPMQQNR',
-        'OOSTMUVWR',
-        'SSSTTUVWR',
-        'XYTTTZZab',
-        'XYYYcccab',
-        '|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
-      ].join('')
-    };
+      cells
+    }).orThrow();
 
-    const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(existingPuzzleDesc).orThrow();
     const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
     const session = PuzzleSession.create(puzzle).orThrow();
 
@@ -378,27 +377,26 @@ describe('KillerCombinations', () => {
   describe('getCellPossibilities', () => {
     test('should fail for non-killer cages', () => {
       // Create a real puzzle with a standard sudoku puzzle (has row cages)
-      const regularPuzzleDesc: IPuzzleDescription = {
+      const regularCells = [
+        '.........',
+        '9.46.7...',
+        '.768.41..',
+        '3.97.1.8.',
+        '7.8...3.1',
+        '.513.87.2',
+        '..75.261.',
+        '..54.32.8',
+        '.........'
+      ].join('');
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
         id: 'test-regular',
         description: 'Test regular sudoku puzzle',
         type: 'sudoku',
         level: 1,
-        rows: 9,
-        cols: 9,
-        cells: [
-          '.........',
-          '9.46.7...',
-          '.768.41..',
-          '3.97.1.8.',
-          '7.8...3.1',
-          '.513.87.2',
-          '..75.261.',
-          '..54.32.8',
-          '.........'
-        ].join('')
-      };
-
-      const puzzle = Puzzles.Any.create(regularPuzzleDesc).orThrow();
+        cells: regularCells
+      }).orThrow();
+      const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
       const session = PuzzleSession.create(puzzle).orThrow();
 
       // Get a row cage (non-killer cage)
@@ -637,23 +635,21 @@ describe('KillerCombinations', () => {
   describe('Real Puzzle Integration', () => {
     test('should work with actual killer sudoku puzzle structure', () => {
       // Test with a more realistic killer sudoku puzzle structure
-      const killerPuzzleDesc: IPuzzleDescription = {
+      const killerCells =
+        'AABBCCDDEAABBCCDDE' +
+        'FFGGHHIIEFFJJKKLLE' +
+        'MMJJKKLNNMMOOPPQNN' +
+        'RROOPPQSSRRTTUUVSS' +
+        'WWTTUUVXX' +
+        '|A15,B10,C12,D20,E17,F11,G09,H14,I13,J16,K12,L15,M20,N20,O13,P14,Q07,R11,S18,T21,U19,V10,W06,X09';
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
         id: 'real-killer-test',
         description: 'Realistic killer sudoku test puzzle',
         type: 'killer-sudoku',
         level: 2,
-        rows: 9,
-        cols: 9,
-        cells:
-          'AABBCCDDEAABBCCDDE' +
-          'FFGGHHIIEFFJJKKLLE' +
-          'MMJJKKLNNMMOOPPQNN' +
-          'RROOPPQSSRRTTUUVSS' +
-          'WWTTUUVXX' +
-          '|A15,B10,C12,D20,E17,F11,G09,H14,I13,J16,K12,L15,M20,N20,O13,P14,Q07,R11,S18,T21,U19,V10,W06,X09'
-      };
-
-      const puzzleDefinition = PuzzleDefinitionFactory.fromLegacy(killerPuzzleDesc).orThrow();
+        cells: killerCells
+      }).orThrow();
       const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
       const session = PuzzleSession.create(puzzle).orThrow();
 

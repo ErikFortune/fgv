@@ -27,7 +27,7 @@
 import '@fgv/ts-utils-jest';
 import { HintSystem, DefaultHintApplicator } from '../../../packlets/hints/hints';
 import { Puzzle, PuzzleState, CellId, PuzzleSession } from '../../../packlets/common';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
+import { Puzzles, PuzzleDefinitionFactory, STANDARD_CONFIGS, PuzzleType } from '../../../index';
 import { TechniqueIds, ConfidenceLevels, IHint } from '../../../packlets/hints/types';
 
 /* eslint-enable @rushstack/packlets/mechanics */
@@ -171,21 +171,18 @@ describe('HintSystem', () => {
 
     test('should preserve existing notes when applying hint', () => {
       // Create a state with notes
-      const session = PuzzleSession.create(
-        Puzzles.Any.create(
-          createTestPuzzle([
-            '12345678.',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........'
-          ])
-        ).orThrow()
-      ).orThrow();
+      const { puzzle } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+      const session = PuzzleSession.create(puzzle).orThrow();
 
       // Add some notes to the target cell
       session.updateCellNotes('A9', [1, 2, 9]).orThrow();
@@ -570,21 +567,18 @@ describe('DefaultHintApplicator', () => {
 
     test('should preserve existing notes', () => {
       // Create a session with notes
-      const session = PuzzleSession.create(
-        Puzzles.Any.create(
-          createTestPuzzle([
-            '12345678.',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........',
-            '.........'
-          ])
-        ).orThrow()
-      ).orThrow();
+      const { puzzle } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+      const session = PuzzleSession.create(puzzle).orThrow();
 
       session.updateCellNotes('A9', [1, 2, 9]).orThrow();
       const stateWithNotes = session.state;
@@ -603,30 +597,15 @@ describe('DefaultHintApplicator', () => {
   });
 });
 
-// Helper functions
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
-    id: 'test-puzzle',
-    description: 'Test puzzle for hint system',
-    type: 'sudoku' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: rows.join('')
-  };
-}
-
 function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzleDesc: IPuzzleDescription = {
+  const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
     id: 'test-puzzle',
     description: 'Test puzzle for hint system',
     type: 'sudoku' as PuzzleType,
     level: 1,
-    rows: 9,
-    cols: 9,
     cells: rows.join('')
-  };
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
+  }).orThrow();
+  const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
   return { puzzle, state: session.state };
 }

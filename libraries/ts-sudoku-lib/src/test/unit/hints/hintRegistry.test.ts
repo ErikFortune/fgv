@@ -31,7 +31,7 @@ import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
 import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
+import { Puzzles, PuzzleDefinitionFactory, STANDARD_CONFIGS, PuzzleType } from '../../../index';
 import {
   TechniqueIds,
   ConfidenceLevels,
@@ -231,7 +231,7 @@ describe('HintRegistry', () => {
     let testPuzzle: Puzzle;
 
     beforeEach(() => {
-      const puzzleDesc = createTestPuzzle([
+      const result = createPuzzleAndState([
         '12345678.', // Creates a naked single at A9
         '.........',
         '.........',
@@ -242,7 +242,6 @@ describe('HintRegistry', () => {
         '.........',
         '.........'
       ]);
-      const result = createPuzzleAndState(puzzleDesc);
       testPuzzle = result.puzzle;
       testState = result.state;
 
@@ -316,7 +315,7 @@ describe('HintRegistry', () => {
     });
 
     test('should handle state where no hints are available', () => {
-      const completePuzzle = createTestPuzzle([
+      const completeResult = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -327,7 +326,6 @@ describe('HintRegistry', () => {
         '678912345',
         '912345678'
       ]);
-      const completeResult = createPuzzleAndState(completePuzzle);
 
       expect(registry.generateAllHints(completeResult.puzzle, completeResult.state)).toSucceedAndSatisfy(
         (hints) => {
@@ -342,7 +340,7 @@ describe('HintRegistry', () => {
     let testPuzzle: Puzzle;
 
     beforeEach(() => {
-      const puzzleDesc = createTestPuzzle([
+      const result = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -353,7 +351,6 @@ describe('HintRegistry', () => {
         '.........',
         '.........'
       ]);
-      const result = createPuzzleAndState(puzzleDesc);
       testPuzzle = result.puzzle;
       testState = result.state;
 
@@ -374,7 +371,7 @@ describe('HintRegistry', () => {
     });
 
     test('should fail when no hints are available', () => {
-      const completePuzzle = createTestPuzzle([
+      const completeResult = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -385,7 +382,6 @@ describe('HintRegistry', () => {
         '678912345',
         '912345678'
       ]);
-      const completeResult = createPuzzleAndState(completePuzzle);
 
       expect(registry.getBestHint(completeResult.puzzle, completeResult.state)).toFailWith(
         /No hints available/
@@ -475,7 +471,7 @@ describe('HintRegistry', () => {
   describe('integration scenarios', () => {
     test('should work with real puzzle scenarios', () => {
       // Use a more realistic puzzle scenario
-      const puzzleDesc = createTestPuzzle([
+      const result = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -486,7 +482,6 @@ describe('HintRegistry', () => {
         '...419..5',
         '....8..79'
       ]);
-      const result = createPuzzleAndState(puzzleDesc);
 
       registry.registerProvider(nakedSinglesProvider).orThrow();
       registry.registerProvider(hiddenSinglesProvider).orThrow();
@@ -508,26 +503,21 @@ describe('HintRegistry', () => {
 });
 
 // Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
+function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
+  const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
     id: 'test-puzzle',
     description: 'Test puzzle for hint registry',
     type: 'sudoku' as PuzzleType,
     level: 1,
-    rows: 9,
-    cols: 9,
     cells: rows.join('')
-  };
-}
-
-function createPuzzleAndState(puzzleDesc: IPuzzleDescription): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
+  }).orThrow();
+  const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
   const session = PuzzleSession.create(puzzle).orThrow();
   return { puzzle, state: session.state };
 }
 
 function createTestPuzzleAndState(): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzleDesc = createTestPuzzle([
+  return createPuzzleAndState([
     '12345678.',
     '.........',
     '.........',
@@ -538,7 +528,6 @@ function createTestPuzzleAndState(): { puzzle: Puzzle; state: PuzzleState } {
     '.........',
     '.........'
   ]);
-  return createPuzzleAndState(puzzleDesc);
 }
 
 // Additional tests for coverage completion

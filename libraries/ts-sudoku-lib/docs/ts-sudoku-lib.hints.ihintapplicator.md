@@ -27,7 +27,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[applyHint(hint, puzzle, state)](./ts-sudoku-lib.hints.ihintapplicator.applyhint.md)
+[applyHint(hint, puzzle, state, loggingContext)](./ts-sudoku-lib.hints.ihintapplicator.applyhint.md)
 
 
 </td><td>
@@ -38,7 +38,7 @@ Applies a hint to the puzzle state, generating the necessary cell updates.
 </td></tr>
 <tr><td>
 
-[validateHint(hint, puzzle, state)](./ts-sudoku-lib.hints.ihintapplicator.validatehint.md)
+[validateHint(hint, puzzle, state, loggingContext)](./ts-sudoku-lib.hints.ihintapplicator.validatehint.md)
 
 
 </td><td>

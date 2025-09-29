@@ -62,6 +62,17 @@ Get well-known [puzzle collections](./ts-sudoku-lib.puzzlecollection.md)<!-- -->
 </td></tr>
 <tr><td>
 
+[PuzzleDefinitionFactory](./ts-sudoku-lib.puzzledefinitionfactory.md)
+
+
+</td><td>
+
+Factory for creating and validating puzzle definitions
+
+
+</td></tr>
+<tr><td>
+
 [PuzzleSession](./ts-sudoku-lib.puzzlesession.md)
 
 
@@ -152,12 +163,34 @@ Describes a single cell update.
 </td></tr>
 <tr><td>
 
-[IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)
+[IPuzzleDefinition](./ts-sudoku-lib.ipuzzledefinition.md)
 
 
 </td><td>
 
-Description of a single puzzle.
+Complete puzzle definition with derived properties
+
+
+</td></tr>
+<tr><td>
+
+[IPuzzleDimensions](./ts-sudoku-lib.ipuzzledimensions.md)
+
+
+</td><td>
+
+Core dimensional configuration for a puzzle grid
+
+
+</td></tr>
+<tr><td>
+
+[IPuzzleTypeValidator](./ts-sudoku-lib.ipuzzletypevalidator.md)
+
+
+</td><td>
+
+Interface for puzzle type-specific validation
 
 
 </td></tr>
@@ -180,6 +213,17 @@ Describes a single puzzle update.
 </td><td>
 
 The row/column coordinate of a single [cell](./ts-sudoku-lib.icell.md) in a [puzzle](./ts-sudoku-lib.puzzlesession.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ISudokuLoggingContext](./ts-sudoku-lib.isudokuloggingcontext.md)
+
+
+</td><td>
+
+Logging context interface for sudoku library components. Provides optional diagnostic logging capability.
 
 
 </td></tr>
@@ -257,6 +301,28 @@ Description
 </td><td>
 
 All supported public types.
+
+
+</td></tr>
+<tr><td>
+
+[DefaultSudokuLoggingContext](./ts-sudoku-lib.defaultsudokuloggingcontext.md)
+
+
+</td><td>
+
+Default no-op logging context.
+
+
+</td></tr>
+<tr><td>
+
+[STANDARD\_CONFIGS](./ts-sudoku-lib.standard_configs.md)
+
+
+</td><td>
+
+Standard puzzle configurations
 
 
 </td></tr>
@@ -349,6 +415,17 @@ Wrapping rules when navigating within a puzzle.
 </td><td>
 
 Describes the rules that apply to the puzzle.
+
+
+</td></tr>
+<tr><td>
+
+[StandardConfigName](./ts-sudoku-lib.standardconfigname.md)
+
+
+</td><td>
+
+Type for standard configuration names
 
 
 </td></tr>

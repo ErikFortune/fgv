@@ -27,7 +27,7 @@
 import '@fgv/ts-utils-jest';
 import { PuzzleSessionHints } from '../../../packlets/hints';
 import { PuzzleSession } from '../../../packlets/common';
-import { IPuzzleDescription, PuzzleType, Puzzles } from '../../../index';
+import { PuzzleDefinitionFactory, STANDARD_CONFIGS, PuzzleType, Puzzles } from '../../../index';
 import { TechniqueIds } from '../../../packlets/hints/types';
 
 /* eslint-enable @rushstack/packlets/mechanics */
@@ -38,13 +38,11 @@ describe('PuzzleSessionHints', () => {
   beforeEach(() => {
     // Create a puzzle with multiple empty cells where naked singles should be detectable
     // Use a more typical sudoku puzzle state with some cells filled
-    const testPuzzle: IPuzzleDescription = {
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
       id: 'hint-test',
       description: 'Test puzzle for hints system',
       type: 'sudoku' as PuzzleType,
       level: 1,
-      rows: 9,
-      cols: 9,
       cells: [
         '5.......1',
         '.7.....3.',
@@ -56,9 +54,8 @@ describe('PuzzleSessionHints', () => {
         '.8.....7.',
         '3.......9'
       ].join('')
-    };
-
-    const puzzle = Puzzles.Any.create(testPuzzle).orThrow();
+    }).orThrow();
+    const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
     session = PuzzleSession.create(puzzle).orThrow();
     hintsSession = PuzzleSessionHints.create(session).orThrow();
   });
@@ -530,13 +527,11 @@ describe('PuzzleSessionHints', () => {
   describe('error scenarios and edge cases', () => {
     test('should handle empty hints gracefully', () => {
       // Create a puzzle that should have no hints (completely filled)
-      const completedPuzzle: IPuzzleDescription = {
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
         id: 'completed',
         description: 'Completed puzzle',
         type: 'sudoku' as PuzzleType,
         level: 1,
-        rows: 9,
-        cols: 9,
         cells: [
           '123456789',
           '456789123',
@@ -548,9 +543,8 @@ describe('PuzzleSessionHints', () => {
           '678912345',
           '912345678'
         ].join('')
-      };
-
-      const puzzle = Puzzles.Any.create(completedPuzzle).orThrow();
+      }).orThrow();
+      const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
       const completedSession = PuzzleSession.create(puzzle).orThrow();
       const completedHintsSession = PuzzleSessionHints.create(completedSession).orThrow();
 

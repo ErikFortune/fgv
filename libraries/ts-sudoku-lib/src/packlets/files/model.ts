@@ -22,12 +22,25 @@
  * SOFTWARE.
  */
 
-import { IPuzzleDescription } from '../common';
+import { PuzzleType } from '../common';
+
+/**
+ * Input format for puzzle data in JSON files.
+ * Contains only the essential data needed to create an IPuzzleDefinition.
+ * @public
+ */
+export interface IPuzzleFileData {
+  id?: string;
+  description: string;
+  type: PuzzleType;
+  level: number;
+  cells: string;
+}
 
 /**
  * Parsed file containing a collection of puzzles.
  * @public
  */
 export interface IPuzzlesFile {
-  puzzles: IPuzzleDescription[];
+  puzzles: IPuzzleFileData[];
 }

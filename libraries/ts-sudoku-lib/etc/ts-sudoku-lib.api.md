@@ -13,14 +13,10 @@ import { Result } from '@fgv/ts-utils';
 // @public
 export const allPuzzleTypes: PuzzleType[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "PuzzleDescription"
-//
 // @internal
 class AnyPuzzle {
     // (undocumented)
-    static create(puzzle: IPuzzleDescription): Result<Puzzle>;
-    // (undocumented)
-    static createFromDefinition(puzzle: IPuzzleDefinition): Result<Puzzle>;
+    static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
 }
 
 // @public
@@ -143,8 +139,7 @@ declare namespace Converters {
     export {
         cageId,
         cellId,
-        puzzleType,
-        puzzleDescription
+        puzzleType
     }
 }
 export { Converters }
@@ -152,6 +147,7 @@ export { Converters }
 declare namespace Converters_2 {
     export {
         loadPuzzlesFile,
+        puzzleFileData,
         puzzlesFile
     }
 }
@@ -520,11 +516,17 @@ export interface IPuzzleDefinition extends IPuzzleDimensions {
 }
 
 // @public
-export interface IPuzzleDescription {
+export interface IPuzzleDimensions {
+    readonly boardHeightInCages: number;
+    readonly boardWidthInCages: number;
+    readonly cageHeightInCells: number;
+    readonly cageWidthInCells: number;
+}
+
+// @public
+interface IPuzzleFileData {
     // (undocumented)
     cells: string;
-    // (undocumented)
-    cols: number;
     // (undocumented)
     description: string;
     // (undocumented)
@@ -532,17 +534,7 @@ export interface IPuzzleDescription {
     // (undocumented)
     level: number;
     // (undocumented)
-    rows: number;
-    // (undocumented)
     type: PuzzleType;
-}
-
-// @public
-export interface IPuzzleDimensions {
-    readonly boardHeightInCages: number;
-    readonly boardWidthInCages: number;
-    readonly cageHeightInCells: number;
-    readonly cageWidthInCells: number;
 }
 
 // @public
@@ -556,7 +548,12 @@ interface IPuzzleSessionHintsConfig extends IHintSystemConfig {
 // @public
 interface IPuzzlesFile {
     // (undocumented)
-    puzzles: IPuzzleDescription[];
+    puzzles: IPuzzleFileData[];
+}
+
+// @public
+export interface IPuzzleTypeValidator {
+    validateCells(cells: string, dimensions: IPuzzleDimensions): Result<true>;
 }
 
 // @public
@@ -622,6 +619,7 @@ export function logIfAvailable(context: ISudokuLoggingContext | undefined, level
 
 declare namespace Model {
     export {
+        IPuzzleFileData,
         IPuzzlesFile
     }
 }
@@ -762,10 +760,10 @@ export class PuzzleCollection {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(from: Files.Model.IPuzzlesFile): Result<PuzzleCollection>;
-    getDescription(id: string): Result<IPuzzleDescription>;
+    getDescription(id: string): Result<Files.Model.IPuzzleFileData>;
     getPuzzle(id: string): Result<PuzzleSession>;
     static load(file: FileTree.IFileTreeFileItem): Result<PuzzleCollection>;
-    readonly puzzles: readonly IPuzzleDescription[];
+    readonly puzzles: readonly Files.Model.IPuzzleFileData[];
 }
 
 // @public
@@ -776,23 +774,25 @@ export class PuzzleCollections {
 // @public
 export class PuzzleDefinitionFactory {
     static create(dimensions: IPuzzleDimensions, options?: Partial<IPuzzleDefinition>): Result<IPuzzleDefinition>;
-    static fromLegacy(legacy: {
-        id?: string;
-        description: string;
-        type: PuzzleType;
-        level: number;
-        rows: number;
-        cols: number;
-        cells: string;
-        cages?: ICage[];
+    static createKiller(dimensions: IPuzzleDimensions, description: Omit<IPuzzleDefinition, 'cageWidthInCells' | 'cageHeightInCells' | 'boardWidthInCages' | 'boardHeightInCages' | 'totalRows' | 'totalColumns' | 'maxValue' | 'totalCages' | 'basicCageTotal' | 'cages'> & {
+        killerCages: Array<{
+            id: string;
+            cellPositions: Array<{
+                row: number;
+                col: number;
+            }>;
+            sum: number;
+        }>;
     }): Result<IPuzzleDefinition>;
     static getStandardConfig(name: StandardConfigName): IPuzzleDimensions;
     static getStandardConfigs(): Record<StandardConfigName, IPuzzleDimensions>;
+    static getValidator(puzzleType: PuzzleType): IPuzzleTypeValidator | undefined;
+    static registerValidator(puzzleType: PuzzleType, validator: IPuzzleTypeValidator): void;
     static validate(dimensions: IPuzzleDimensions): Result<true>;
 }
 
 // @public
-const puzzleDescription: Converter<IPuzzleDescription>;
+const puzzleFileData: Converter<IPuzzleFileData>;
 
 declare namespace Puzzles {
     export {
@@ -1000,7 +1000,7 @@ export const totalsByCageSize: readonly {
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/common/puzzle.ts:309:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
+// src/packlets/common/puzzle.ts:346:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
 
 // (No @packageDocumentation comment for this package)
 
