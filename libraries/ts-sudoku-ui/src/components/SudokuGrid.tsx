@@ -142,6 +142,16 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     return classes.join(' ');
   }, [className]);
 
+  // Calculate border classes based on puzzle type
+  const borderClasses = useMemo(() => {
+    //if (puzzleType === 'killer') {
+    // Minimal borders for Killer Sudoku to let cage borders stand out
+    //return 'gap-px border  border-2 border-gray-300 bg-gray-300';
+    //}
+    // Standard thick borders for other puzzle types
+    return 'border-2 border-black bg-black';
+  }, [puzzleType]);
+
   // Sort cells by row and column for proper display order
   const sortedCells = useMemo(() => {
     return [...cells].sort((a, b) => {
@@ -195,8 +205,8 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
       className={`
         ${gridClasses}
         relative
-        grid grid-cols-9 grid-rows-9 gap-0
-        border-4 border-black bg-black
+        grid grid-cols-9 grid-rows-9 ${puzzleType === 'killer-sudoku' ? 'gap-0' : 'gap-0'}
+        ${borderClasses}
         mx-auto outline-none
         aspect-square
         w-[450px]

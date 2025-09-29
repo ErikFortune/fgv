@@ -26,6 +26,8 @@ import React, { useMemo } from 'react';
 import { CellId } from '@fgv/ts-sudoku-lib';
 import { ICageOverlayProps } from '../types';
 import { CageSumIndicator } from './CageSumIndicator';
+import { CagePatternManager } from '../utils/CagePatternManager';
+import { CageLookupManager } from '../utils/CageLookupManager';
 
 /**
  * Helper to get cell position from CellId
@@ -50,73 +52,6 @@ function getCellPosition(cellId: CellId): { row: number; col: number } {
   // Fallback - should not happen with valid CellIds
   console.warn(`Invalid CellId format: ${cellId}`);
   return { row: 0, col: 0 };
-}
-
-/**
- * Helper to calculate cage boundary path
- */
-function calculateCageBoundary(cellIds: CellId[], cellSize: number): string {
-  if (cellIds.length === 0) return '';
-
-  // Convert cell IDs to grid positions
-  const positions = cellIds.map(getCellPosition);
-
-  // Create a set of occupied cells for quick lookup
-  const occupiedCells = new Set(positions.map((pos) => `${pos.row},${pos.col}`));
-
-  // For each cell, determine which borders to draw
-  const segments: Array<{ x1: number; y1: number; x2: number; y2: number }> = [];
-
-  positions.forEach(({ row, col }) => {
-    const x = col * cellSize;
-    const y = row * cellSize;
-
-    // Inset borders by 10% from cell edges to draw inside the cell borders
-    const inset = cellSize * 0.1;
-
-    // Check top border
-    if (!occupiedCells.has(`${row - 1},${col}`)) {
-      segments.push({
-        x1: x + inset,
-        y1: y + inset,
-        x2: x + cellSize - inset,
-        y2: y + inset
-      });
-    }
-
-    // Check bottom border
-    if (!occupiedCells.has(`${row + 1},${col}`)) {
-      segments.push({
-        x1: x + inset,
-        y1: y + cellSize - inset,
-        x2: x + cellSize - inset,
-        y2: y + cellSize - inset
-      });
-    }
-
-    // Check left border
-    if (!occupiedCells.has(`${row},${col - 1}`)) {
-      segments.push({
-        x1: x + inset,
-        y1: y + inset,
-        x2: x + inset,
-        y2: y + cellSize - inset
-      });
-    }
-
-    // Check right border
-    if (!occupiedCells.has(`${row},${col + 1}`)) {
-      segments.push({
-        x1: x + cellSize - inset,
-        y1: y + inset,
-        x2: x + cellSize - inset,
-        y2: y + cellSize - inset
-      });
-    }
-  });
-
-  // Convert segments to SVG path
-  return segments.map((seg) => `M${seg.x1},${seg.y1}L${seg.x2},${seg.y2}`).join(' ');
 }
 
 /**
@@ -162,6 +97,10 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
     cages: cages.map((c) => ({ id: c.cage.id, cellIds: c.cage.cellIds }))
   });
 
+  // Initialize managers once
+  const patternManager = useMemo(() => new CagePatternManager(), []);
+  const lookupManager = useMemo(() => CageLookupManager.getInstance(), []);
+
   // Calculate SVG viewBox and class names
   const viewBox = `0 0 ${gridSize.width} ${gridSize.height}`;
 
@@ -180,7 +119,7 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
       style={{ zIndex: 1000 }}
       data-testid="cage-overlay"
     >
-      {/* SVG for cage boundaries */}
+      {/* SVG for cage boundaries using connected border system */}
       <svg
         width="100%"
         height="100%"
@@ -188,27 +127,49 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
         className="absolute inset-0"
         preserveAspectRatio="none"
       >
+        {/* Render connected cage borders using two-stage lookup */}
         {cages.map((cageInfo, index) => {
           const { cage, isHighlighted, isValid } = cageInfo;
-          const pathData = calculateCageBoundary(cage.cellIds, cellSize);
 
-          if (!pathData) return null;
+          // Build occupied cells set for this cage
+          const occupiedCells = patternManager.buildOccupiedCellsSet(cage.cellIds);
 
-          return (
-            <g key={cage.id || index}>
-              <path
-                d={pathData}
-                stroke={isHighlighted ? '#1e40af' : isValid ? '#2563eb' : '#dc2626'}
-                strokeWidth="0.8"
-                strokeDasharray="1.2 0.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-                opacity="1.0"
-                vectorEffect="non-scaling-stroke"
-              />
-            </g>
-          );
+          // Render each cell with connected borders
+          return cage.cellIds.map((cellId, cellIndex) => {
+            const { row, col } = getCellPosition(cellId);
+            const x = col * cellSize;
+            const y = row * cellSize;
+
+            // Analyze neighbors and get pattern
+            const neighbors = patternManager.analyzeNeighbors(cellId, occupiedCells);
+            const neighborPattern = lookupManager.neighborsToPattern(neighbors);
+            const pathData = lookupManager.getPatternSVG(neighborPattern);
+
+            // Skip if no path data
+            if (!pathData) {
+              return null;
+            }
+
+            // Render connected border pattern
+            return (
+              <g
+                key={`${cage.id || index}-${cellIndex}`}
+                transform={`translate(${x}, ${y}) scale(${cellSize})`}
+              >
+                <path
+                  d={pathData}
+                  stroke={isHighlighted ? '#1e40af' : isValid ? '#2563eb' : '#dc2626'}
+                  strokeWidth={0.8 / cellSize}
+                  strokeDasharray="6 4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  fill="none"
+                  opacity="1.0"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </g>
+            );
+          });
         })}
       </svg>
 

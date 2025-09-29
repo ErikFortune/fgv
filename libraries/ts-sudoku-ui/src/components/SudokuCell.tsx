@@ -194,7 +194,7 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       'w-full',
       'h-full',
       'border',
-      'border-gray-400',
+      'border-gray-300',
       'bg-white',
       'text-blue-800',
       'text-base',
@@ -243,12 +243,12 @@ export const SudokuCell: React.FC<ISudokuCellProps> = ({
       classes.push('font-black');
     }
 
-    // Enhanced 3x3 section boundaries per UX specs - using standard Tailwind classes
+    // Enhanced 3x3 section boundaries - keep original thickness but softer color
     if ((column + 1) % 3 === 0 && column < 8) {
-      classes.push('border-r-4', 'border-r-black');
+      classes.push('border-r-2', 'border-r-black');
     }
     if ((row + 1) % 3 === 0 && row < 8) {
-      classes.push('border-b-4', 'border-b-black');
+      classes.push('border-b-2', 'border-b-black');
     }
 
     // Focus styles
