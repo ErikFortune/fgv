@@ -31,7 +31,7 @@ import {
   Puzzles,
   IPuzzleDescription
 } from '@fgv/ts-sudoku-lib';
-import { IValidationError, ICellDisplayInfo, InputMode } from '../types';
+import { IValidationError, ICellDisplayInfo, InputMode, ICageDisplayInfo } from '../types';
 
 /**
  * Hook for managing puzzle session state and operations
@@ -46,6 +46,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   setSelectedCells: (cells: CellId[]) => void;
   setInputMode: (mode: InputMode) => void;
   cellDisplayInfo: ICellDisplayInfo[];
+  cageDisplayInfo: ICageDisplayInfo[];
   validationErrors: IValidationError[];
   isValid: boolean;
   isSolved: boolean;
@@ -176,6 +177,44 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       };
     });
   }, [session, validationErrors, updateCounter]);
+
+  // Get cage display information for Killer Sudoku
+  const cageDisplayInfo = useMemo((): ICageDisplayInfo[] => {
+    if (!session || puzzleDescription?.type !== 'killer-sudoku') return [];
+
+    return session.cages
+      .filter((cage) => cage.cageType === 'killer') // Only show killer cages, not diagonal/section cages
+      .map((cage) => {
+        // Calculate current sum
+        let currentSum = 0;
+        let isComplete = true;
+        let hasValues = false;
+
+        for (const cellId of cage.cellIds) {
+          const contentsResult = session.state.getCellContents(cellId);
+          if (contentsResult.isSuccess() && contentsResult.value.value) {
+            currentSum += contentsResult.value.value;
+            hasValues = true;
+          } else {
+            isComplete = false;
+          }
+        }
+
+        // Check if the current sum is valid (not exceeding target when incomplete, or matching target when complete)
+        const isValid = isComplete ? currentSum === cage.total : currentSum <= cage.total;
+
+        // Check if cage should be highlighted (contains selected cell)
+        const isHighlighted = selectedCell ? cage.cellIds.includes(selectedCell) : false;
+
+        return {
+          cage,
+          isHighlighted,
+          currentSum: hasValues ? currentSum : undefined,
+          isComplete,
+          isValid
+        };
+      });
+  }, [session, puzzleDescription, selectedCell, updateCounter]);
 
   // Helper function to remove notes that conflict with a placed value
   const removeConflictingNotes = useCallback(
@@ -401,6 +440,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     setSelectedCells,
     setInputMode,
     cellDisplayInfo,
+    cageDisplayInfo,
     validationErrors,
     isValid: session?.checkIsValid() ?? false,
     isSolved: session?.checkIsSolved() ?? false,

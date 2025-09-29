@@ -50,6 +50,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     setSelectedCells,
     setInputMode,
     cellDisplayInfo,
+    cageDisplayInfo,
     validationErrors,
     isValid,
     isSolved,
@@ -481,6 +482,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             numRows={session.numRows}
             numColumns={session.numColumns}
             cells={cellDisplayInfo}
+            cages={cageDisplayInfo}
             selectedCell={selectedCell}
             selectedCells={selectedCells}
             inputMode={inputMode}

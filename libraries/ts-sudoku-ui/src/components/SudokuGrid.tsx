@@ -26,6 +26,7 @@ import React, { useCallback, useMemo } from 'react';
 import { CellId, NavigationDirection } from '@fgv/ts-sudoku-lib';
 import { ISudokuGridProps } from '../types';
 import { SudokuCell } from './SudokuCell';
+import { CageOverlay } from './CageOverlay';
 
 /**
  * Grid component that renders the 9x9 Sudoku grid with proper visual structure
@@ -35,6 +36,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   numRows,
   numColumns,
   cells,
+  cages,
   selectedCell,
   selectedCells,
   inputMode,
@@ -148,6 +150,19 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     });
   }, [cells]);
 
+  // Calculate grid dimensions for overlays
+  const gridDimensions = useMemo(() => {
+    // Base cell size in grid units - we'll scale this with CSS
+    const baseCellSize = 1;
+    return {
+      cellSize: baseCellSize,
+      gridSize: {
+        width: numColumns * baseCellSize,
+        height: numRows * baseCellSize
+      }
+    };
+  }, [numRows, numColumns]);
+
   // Render diagonal lines for Sudoku X puzzles
   const renderDiagonalLines = (): React.ReactNode => {
     if (puzzleType !== 'sudoku-x') return null;
@@ -163,6 +178,15 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
           zIndex: 1
         }}
       />
+    );
+  };
+
+  // Render cage overlay for Killer Sudoku
+  const renderCageOverlay = (): React.ReactNode => {
+    if (puzzleType !== 'killer-sudoku' || !cages || cages.length === 0) return null;
+
+    return (
+      <CageOverlay cages={cages} gridSize={gridDimensions.gridSize} cellSize={gridDimensions.cellSize} />
     );
   };
 
@@ -189,6 +213,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
       data-testid="sudoku-grid"
     >
       {renderDiagonalLines()}
+      {renderCageOverlay()}
       {sortedCells.map((cellInfo) => {
         const isPrimarySelected = selectedCell === cellInfo.id;
         const isInMultiSelection = selectedCells.includes(cellInfo.id);

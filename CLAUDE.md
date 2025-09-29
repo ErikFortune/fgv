@@ -454,3 +454,5 @@ The following agent-specific guidelines provide detailed information for working
 @.agents/RESULT_PATTERN_GUIDE.md
 @.agents/COVERAGE_GUIDELINES.md
 - webpack does not pick up library changes in a separate application.  the app must be restarted if the library changes.
+- use rushx or rush instead of npm in the monorepo
+- when a web app running in dev mode fails to load with a missing library that you have edited, try to kill and restart the app.  webpack can lose track of dependencies in a monorepo.

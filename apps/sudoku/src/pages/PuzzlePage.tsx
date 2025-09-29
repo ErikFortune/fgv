@@ -28,7 +28,7 @@ const samplePuzzles: Record<string, IPuzzleDescription> = {
   killer: {
     id: 'killer-example',
     description: 'Killer Sudoku Example',
-    type: 'killer',
+    type: 'killer-sudoku',
     level: 100,
     rows: 9,
     cols: 9,
@@ -100,9 +100,10 @@ export const PuzzlePage: React.FC = () => {
   const handleReset = () => {
     observability.diag.info('User requested puzzle reset');
     observability.user.success('Puzzle reset successfully!');
-    // Reset functionality - for demonstration
-    setCurrentState(null);
-    // Reset puzzle
+    // Reset functionality - for demonstration - reloading puzzle
+    if (puzzleDesc) {
+      setPuzzleDesc({ ...puzzleDesc });
+    }
   };
 
   const handleExport = () => {

@@ -31,6 +31,8 @@ export { ValidationDisplay } from './components/ValidationDisplay';
 export { CompactControlRibbon } from './components/CompactControlRibbon';
 export { DualKeypad } from './components/DualKeypad';
 export { NumberKeypad } from './components/NumberKeypad';
+export { CageOverlay } from './components/CageOverlay';
+export { CageSumIndicator } from './components/CageSumIndicator';
 
 // Hooks
 export { usePuzzleSession } from './hooks/usePuzzleSession';
@@ -44,7 +46,10 @@ export type {
   ICellDisplayInfo,
   ISudokuCellProps,
   ISudokuControlsProps,
-  IValidationDisplayProps
+  IValidationDisplayProps,
+  ICageDisplayInfo,
+  ICageOverlayProps,
+  ICageSumIndicatorProps
 } from './types';
 
 // Compact control ribbon types

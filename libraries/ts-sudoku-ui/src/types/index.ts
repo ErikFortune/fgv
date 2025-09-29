@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import { CellId, ICellContents, NavigationDirection, IPuzzleDescription } from '@fgv/ts-sudoku-lib';
+import { CellId, ICellContents, NavigationDirection, IPuzzleDescription, ICage } from '@fgv/ts-sudoku-lib';
 
 /**
  * Validation error for display in the UI
@@ -74,6 +74,7 @@ export interface ISudokuGridProps {
   readonly numRows: number;
   readonly numColumns: number;
   readonly cells: ICellDisplayInfo[];
+  readonly cages?: ICageDisplayInfo[];
   readonly selectedCell: CellId | null;
   readonly selectedCells: CellId[];
   readonly inputMode: InputMode;
@@ -151,5 +152,41 @@ export interface IValidationDisplayProps {
   readonly errors: IValidationError[];
   readonly isValid: boolean;
   readonly isSolved: boolean;
+  readonly className?: string;
+}
+
+/**
+ * Display information for a cage in Killer Sudoku
+ * @public
+ */
+export interface ICageDisplayInfo {
+  readonly cage: ICage;
+  readonly isHighlighted: boolean;
+  readonly currentSum?: number;
+  readonly isComplete: boolean;
+  readonly isValid: boolean;
+}
+
+/**
+ * Props for the CageOverlay component
+ * @public
+ */
+export interface ICageOverlayProps {
+  readonly cages: ICageDisplayInfo[];
+  readonly gridSize: { width: number; height: number };
+  readonly cellSize: number;
+  readonly className?: string;
+}
+
+/**
+ * Props for the CageSumIndicator component
+ * @public
+ */
+export interface ICageSumIndicatorProps {
+  readonly cage: ICage;
+  readonly currentSum?: number;
+  readonly isComplete: boolean;
+  readonly isValid: boolean;
+  readonly position: { top: number; left: number };
   readonly className?: string;
 }

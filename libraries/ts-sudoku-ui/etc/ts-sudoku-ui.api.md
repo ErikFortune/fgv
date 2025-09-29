@@ -5,12 +5,19 @@
 ```ts
 
 import { CellId } from '@fgv/ts-sudoku-lib';
+import { ICage } from '@fgv/ts-sudoku-lib';
 import { ICellContents } from '@fgv/ts-sudoku-lib';
 import { IPuzzleDescription } from '@fgv/ts-sudoku-lib';
 import { NavigationDirection } from '@fgv/ts-sudoku-lib';
 import { NavigationWrap } from '@fgv/ts-sudoku-lib';
 import { PuzzleSession } from '@fgv/ts-sudoku-lib';
 import { default as React_2 } from 'react';
+
+// @public
+export const CageOverlay: React_2.FC<ICageOverlayProps>;
+
+// @public
+export const CageSumIndicator: React_2.FC<ICageSumIndicatorProps>;
 
 // @public
 export const CompactControlRibbon: React_2.FC<ICompactControlRibbonProps>;
@@ -20,6 +27,54 @@ export type DeviceType = 'mobile' | 'tablet' | 'desktop';
 
 // @public
 export const DualKeypad: React_2.FC<IDualKeypadProps>;
+
+// @public
+export interface ICageDisplayInfo {
+    // (undocumented)
+    readonly cage: ICage;
+    // (undocumented)
+    readonly currentSum?: number;
+    // (undocumented)
+    readonly isComplete: boolean;
+    // (undocumented)
+    readonly isHighlighted: boolean;
+    // (undocumented)
+    readonly isValid: boolean;
+}
+
+// @public
+export interface ICageOverlayProps {
+    // (undocumented)
+    readonly cages: ICageDisplayInfo[];
+    // (undocumented)
+    readonly cellSize: number;
+    // (undocumented)
+    readonly className?: string;
+    // (undocumented)
+    readonly gridSize: {
+        width: number;
+        height: number;
+    };
+}
+
+// @public
+export interface ICageSumIndicatorProps {
+    // (undocumented)
+    readonly cage: ICage;
+    // (undocumented)
+    readonly className?: string;
+    // (undocumented)
+    readonly currentSum?: number;
+    // (undocumented)
+    readonly isComplete: boolean;
+    // (undocumented)
+    readonly isValid: boolean;
+    // (undocumented)
+    readonly position: {
+        top: number;
+        left: number;
+    };
+}
 
 // @public
 export interface ICellDisplayInfo {
@@ -158,6 +213,8 @@ export interface ISudokuGridEntryProps {
 // @public
 export interface ISudokuGridProps {
     // (undocumented)
+    readonly cages?: ICageDisplayInfo[];
+    // (undocumented)
     readonly cells: ICellDisplayInfo[];
     // (undocumented)
     readonly className?: string;
@@ -249,6 +306,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     setSelectedCells: (cells: CellId[]) => void;
     setInputMode: (mode: InputMode) => void;
     cellDisplayInfo: ICellDisplayInfo[];
+    cageDisplayInfo: ICageDisplayInfo[];
     validationErrors: IValidationError[];
     isValid: boolean;
     isSolved: boolean;
