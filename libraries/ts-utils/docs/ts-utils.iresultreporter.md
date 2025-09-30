@@ -36,7 +36,7 @@ Description
 </td></tr>
 <tr><td>
 
-[reportSuccess(level, value, detail)](./ts-utils.iresultreporter.reportsuccess.md)
+[reportSuccess(level, value, detail, message)](./ts-utils.iresultreporter.reportsuccess.md)
 
 
 </td><td>

@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
+reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void;
 ```
 
 ## Parameters
@@ -64,6 +64,22 @@ detail
 </td><td>
 
 TD
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+message
+
+
+</td><td>
+
+[ErrorFormatter](./ts-utils.errorformatter.md)<!-- -->&lt;TD&gt;
 
 
 </td><td>

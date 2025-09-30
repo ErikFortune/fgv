@@ -182,7 +182,7 @@ Logs a message at the given level.
 </td></tr>
 <tr><td>
 
-[reportSuccess(level, value, detail)](./ts-utils.logging.logreporter.reportsuccess.md)
+[reportSuccess(level, value, detail, message)](./ts-utils.logging.logreporter.reportsuccess.md)
 
 
 </td><td>

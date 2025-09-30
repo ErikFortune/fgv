@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 import { ILogger, ReporterLogLevel, NoOpLogger, stringifyLogValue } from './logger';
-import { IResultReporter, MessageLogLevel, Success } from '../base';
+import { ErrorFormatter, IResultReporter, MessageLogLevel, Success } from '../base';
 
 /**
  * A function that formats a value for logging.
@@ -129,8 +129,9 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
   /**
    * {@inheritDoc IResultReporter.reportSuccess}
    */
-  public reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void {
-    const formatted = this._valueFormatter(value, detail);
+  public reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void {
+    const formattedValue = this._valueFormatter(value, detail);
+    const formatted = message ? message(formattedValue, detail) : formattedValue;
     this.log(level, formatted);
   }
 
