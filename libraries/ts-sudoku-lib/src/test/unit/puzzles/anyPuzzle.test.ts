@@ -170,26 +170,27 @@ describe('AnyPuzzle factory integration', () => {
       const standardPuzzle = Puzzles.Any.create({ ...testData, type: 'sudoku' as PuzzleType }).orThrow();
       const sudokuXPuzzle = Puzzles.Any.create({ ...testData, type: 'sudoku-x' as PuzzleType }).orThrow();
 
-      // Place the same value in diagonal cells
+      // Place the same value in diagonal cells that don't share section
+      // A1 (0,0) is in section SA1, E5 (4,4) is in section SB2
       const diagonalUpdate1 = standardPuzzle.updateCellValue('A1', 5, standardPuzzle.initialState).orThrow();
-      const diagonalUpdate2 = standardPuzzle.updateCellValue('B2', 5, diagonalUpdate1.to).orThrow();
+      const diagonalUpdate2 = standardPuzzle.updateCellValue('E5', 5, diagonalUpdate1.to).orThrow();
 
       // Standard Sudoku should allow this (no diagonal constraint)
       expect(standardPuzzle.getCell('A1')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(diagonalUpdate2.to)).toBe(true);
       });
-      expect(standardPuzzle.getCell('B2')).toSucceedAndSatisfy((cell) => {
+      expect(standardPuzzle.getCell('E5')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(diagonalUpdate2.to)).toBe(true);
       });
 
       // Sudoku X should reject this (diagonal constraint violated)
       const sudokuXUpdate1 = sudokuXPuzzle.updateCellValue('A1', 5, sudokuXPuzzle.initialState).orThrow();
-      const sudokuXUpdate2 = sudokuXPuzzle.updateCellValue('B2', 5, sudokuXUpdate1.to).orThrow();
+      const sudokuXUpdate2 = sudokuXPuzzle.updateCellValue('E5', 5, sudokuXUpdate1.to).orThrow();
 
       expect(sudokuXPuzzle.getCell('A1')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(sudokuXUpdate2.to)).toBe(false);
       });
-      expect(sudokuXPuzzle.getCell('B2')).toSucceedAndSatisfy((cell) => {
+      expect(sudokuXPuzzle.getCell('E5')).toSucceedAndSatisfy((cell) => {
         expect(cell.isValid(sudokuXUpdate2.to)).toBe(false);
       });
     });

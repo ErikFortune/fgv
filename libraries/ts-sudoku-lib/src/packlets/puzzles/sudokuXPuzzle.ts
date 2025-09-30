@@ -38,6 +38,9 @@ export class SudokuXPuzzle extends Puzzle {
     if (puzzle.type !== 'sudoku-x') {
       return fail(`Puzzle '${puzzle.description}' unsupported type ${puzzle.type}`);
     }
+    if (puzzle.rows !== 9 || puzzle.cols !== 9) {
+      return fail(`Sudoku X puzzle must be 9x9, got ${puzzle.rows}x${puzzle.cols}`);
+    }
     return captureResult(() => {
       return new SudokuXPuzzle(puzzle, SudokuXPuzzle._getXCages(puzzle));
     }).onSuccess((puzzle) => {

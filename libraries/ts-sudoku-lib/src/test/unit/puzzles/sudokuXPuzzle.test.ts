@@ -81,7 +81,7 @@ describe('SudokuXPuzzle', () => {
 
     test('should fail for invalid dimensions', () => {
       const invalidPuzzle = { ...validSudokuXDescription, rows: 8 };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/expected 72 cells, found 81/i);
+      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/must be 9x9, got 8x9/i);
     });
 
     test('should fail for invalid cell count', () => {
