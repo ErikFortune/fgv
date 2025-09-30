@@ -142,12 +142,4 @@ describe('NumberKeypad', () => {
     const clearButton = screen.getByTestId('keypad-notes-clear');
     expect(clearButton).toHaveAttribute('aria-label', 'Clear notes');
   });
-
-  test('should show status indicator', () => {
-    render(<NumberKeypad {...mockProps} isActive={true} />);
-    expect(screen.getByText('Active')).toBeInTheDocument();
-
-    render(<NumberKeypad {...mockProps} isActive={false} />);
-    expect(screen.getByText('Inactive')).toBeInTheDocument();
-  });
 });

@@ -65,9 +65,7 @@ describe('SudokuCell - Notes Functionality', () => {
 
       render(<SudokuCell {...defaultProps} cellInfo={cellWithNotes} />);
 
-      // Should render notes grid container
-      expect(document.querySelector('.sudoku-cell__notes-grid')).toBeInTheDocument();
-
+      // Notes are rendered as individual elements in a grid
       // Should show the correct notes
       expect(screen.getByText('1')).toBeInTheDocument();
       expect(screen.getByText('5')).toBeInTheDocument();

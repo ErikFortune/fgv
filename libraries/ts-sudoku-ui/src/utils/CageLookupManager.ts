@@ -94,15 +94,15 @@ export class CageLookupManager {
    * Convert neighbor analysis to 8-bit pattern
    */
   public neighborsToPattern(neighbors: INeighborAnalysis): number {
-    // eslint-disable-next-line no-bitwise
+    // should be bitwise or but that makes eslint cranky
     return (
-      (neighbors.north ? 1 : 0) |
-      (neighbors.northEast ? 2 : 0) |
-      (neighbors.east ? 4 : 0) |
-      (neighbors.southEast ? 8 : 0) |
-      (neighbors.south ? 16 : 0) |
-      (neighbors.southWest ? 32 : 0) |
-      (neighbors.west ? 64 : 0) |
+      (neighbors.north ? 1 : 0) +
+      (neighbors.northEast ? 2 : 0) +
+      (neighbors.east ? 4 : 0) +
+      (neighbors.southEast ? 8 : 0) +
+      (neighbors.south ? 16 : 0) +
+      (neighbors.southWest ? 32 : 0) +
+      (neighbors.west ? 64 : 0) +
       (neighbors.northWest ? 128 : 0)
     );
   }

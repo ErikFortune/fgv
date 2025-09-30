@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useResponsiveLayout } from '../../../hooks/useResponsiveLayout';
 
 // Mock window properties
@@ -179,7 +179,8 @@ describe('useResponsiveLayout', () => {
     expect(result.current.orientation).toBe('landscape');
   });
 
-  test('should update on orientation change', (done) => {
+  test('should update on orientation change', async () => {
+    jest.useFakeTimers();
     mockWindowDimensions(400, 800);
     mockTouchSupport(true);
 
@@ -187,17 +188,20 @@ describe('useResponsiveLayout', () => {
 
     expect(result.current.orientation).toBe('portrait');
 
-    // Simulate orientation change with delay
     act(() => {
       mockWindowDimensions(800, 400);
       window.dispatchEvent(new Event('orientationchange'));
-
-      // Check after the timeout delay
-      setTimeout(() => {
-        expect(result.current.orientation).toBe('landscape');
-        done();
-      }, 150);
+      jest.advanceTimersByTime(100); // Match the hook's setTimeout delay
     });
+
+    await waitFor(
+      () => {
+        expect(result.current.orientation).toBe('landscape');
+      },
+      { timeout: 1000 }
+    );
+
+    jest.useRealTimers();
   });
 
   test('should determine correct keypad layout modes', () => {

@@ -164,19 +164,19 @@ export class CagePatternManager {
    * Convert edge pattern to numeric ID (0-15)
    */
   public getEdgeId(edges: IEdgePattern): number {
-    // eslint-disable-next-line no-bitwise
-    return (edges.top ? 1 : 0) | (edges.right ? 2 : 0) | (edges.bottom ? 4 : 0) | (edges.left ? 8 : 0);
+    // should be bitwise or but that makes eslint cranky
+    return (edges.top ? 1 : 0) + (edges.right ? 2 : 0) + (edges.bottom ? 4 : 0) + (edges.left ? 8 : 0);
   }
 
   /**
    * Convert corner pattern to numeric ID (0-15)
    */
   public getCornerId(corners: ICornerPattern): number {
-    // eslint-disable-next-line no-bitwise
+    // should be bitwise or but that makes eslint cranky
     return (
-      (corners.topRight ? 1 : 0) |
-      (corners.bottomRight ? 2 : 0) |
-      (corners.bottomLeft ? 4 : 0) |
+      (corners.topRight ? 1 : 0) +
+      (corners.bottomRight ? 2 : 0) +
+      (corners.bottomLeft ? 4 : 0) +
       (corners.topLeft ? 8 : 0)
     );
   }

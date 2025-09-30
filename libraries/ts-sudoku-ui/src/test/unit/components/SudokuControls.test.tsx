@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Erik Fortune
+ * Copyright (c) 2025 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import '@fgv/ts-utils-jest';
@@ -45,12 +45,10 @@ describe('SudokuControls', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
   });
 
   afterEach(() => {
     jest.runOnlyPendingTimers();
-    jest.useRealTimers();
   });
 
   describe('rendering', () => {
@@ -116,27 +114,50 @@ describe('SudokuControls', () => {
       expect(redoButton).toBeDisabled();
     });
 
-    test('should call onUndo when undo button is clicked', () => {
+    test('should call onUndo when undo button is clicked', async () => {
+      jest.useFakeTimers();
       const onUndo = jest.fn();
       render(<SudokuControls {...defaultProps} canUndo={true} onUndo={onUndo} />);
 
       const undoButton = screen.getByTestId('undo-button');
-      fireEvent.click(undoButton);
+      act(() => {
+        fireEvent.click(undoButton);
+        jest.advanceTimersByTime(1000); // Trigger any setTimeout in useEffect
+      });
 
       expect(onUndo).toHaveBeenCalledTimes(1);
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('undo-button')).toBeInTheDocument(); // Ensure DOM is stable
+        },
+        { timeout: 1000 }
+      );
+      jest.useRealTimers();
     });
 
-    test('should call onRedo when redo button is clicked', () => {
+    test('should call onRedo when redo button is clicked', async () => {
+      jest.useFakeTimers();
       const onRedo = jest.fn();
       render(<SudokuControls {...defaultProps} canRedo={true} onRedo={onRedo} />);
 
       const redoButton = screen.getByTestId('redo-button');
-      fireEvent.click(redoButton);
+      act(() => {
+        fireEvent.click(redoButton);
+        jest.advanceTimersByTime(1000);
+      });
 
       expect(onRedo).toHaveBeenCalledTimes(1);
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('redo-button')).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+      jest.useRealTimers();
     });
 
-    test('should not call handlers when buttons are disabled', () => {
+    test('should not call handlers when buttons are disabled', async () => {
+      jest.useFakeTimers();
       const onUndo = jest.fn();
       const onRedo = jest.fn();
       render(
@@ -146,11 +167,21 @@ describe('SudokuControls', () => {
       const undoButton = screen.getByTestId('undo-button');
       const redoButton = screen.getByTestId('redo-button');
 
-      fireEvent.click(undoButton);
-      fireEvent.click(redoButton);
+      act(() => {
+        fireEvent.click(undoButton);
+        fireEvent.click(redoButton);
+        jest.advanceTimersByTime(1000);
+      });
 
       expect(onUndo).not.toHaveBeenCalled();
       expect(onRedo).not.toHaveBeenCalled();
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('undo-button')).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+      jest.useRealTimers();
     });
   });
 
@@ -172,19 +203,21 @@ describe('SudokuControls', () => {
       expect(resetButton).toBeDisabled();
     });
 
-    test('should show confirmation dialog when reset is clicked first time', () => {
+    test('should show confirmation dialog when reset is clicked first time', async () => {
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       const resetButton = screen.getByTestId('reset-button');
       fireEvent.click(resetButton);
 
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
-      expect(screen.getByTestId('confirm-reset-button')).toBeInTheDocument();
-      expect(screen.getByTestId('cancel-reset-button')).toBeInTheDocument();
-      expect(screen.queryByTestId('reset-button')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+        expect(screen.getByTestId('confirm-reset-button')).toBeInTheDocument();
+        expect(screen.getByTestId('cancel-reset-button')).toBeInTheDocument();
+        expect(screen.queryByTestId('reset-button')).not.toBeInTheDocument();
+      });
     });
 
-    test('should call onReset when confirm button is clicked', () => {
+    test('should call onReset when confirm button is clicked', async () => {
       const onReset = jest.fn();
       render(<SudokuControls {...defaultProps} canReset={true} onReset={onReset} />);
 
@@ -193,13 +226,13 @@ describe('SudokuControls', () => {
       fireEvent.click(resetButton);
 
       // Second click on confirm calls onReset
-      const confirmButton = screen.getByTestId('confirm-reset-button');
+      const confirmButton = await screen.findByTestId('confirm-reset-button');
       fireEvent.click(confirmButton);
 
       expect(onReset).toHaveBeenCalledTimes(1);
     });
 
-    test('should hide confirmation when cancel button is clicked', () => {
+    test('should hide confirmation when cancel button is clicked', async () => {
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
@@ -207,31 +240,37 @@ describe('SudokuControls', () => {
       fireEvent.click(resetButton);
 
       // Cancel
-      const cancelButton = screen.getByTestId('cancel-reset-button');
+      const cancelButton = await screen.findByTestId('cancel-reset-button');
       fireEvent.click(cancelButton);
 
       // Should be back to original state
-      expect(screen.getByTestId('reset-button')).toBeInTheDocument();
-      expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+        expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+      });
     });
 
-    test('should auto-hide confirmation after 3 seconds', () => {
+    test('should auto-hide confirmation after 3 seconds', async () => {
+      jest.useFakeTimers();
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
       const resetButton = screen.getByTestId('reset-button');
       fireEvent.click(resetButton);
 
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      await screen.findByText('Are you sure? This will clear all entries.');
 
       // Fast forward 3 seconds
       act(() => {
         jest.advanceTimersByTime(3000);
       });
 
-      // Should be back to original state
-      expect(screen.getByTestId('reset-button')).toBeInTheDocument();
-      expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+      // Wait for DOM to update
+      await waitFor(() => {
+        expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+        expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+      });
+      jest.useRealTimers();
     });
 
     test('should not call onReset when reset button is first clicked', () => {
@@ -244,18 +283,21 @@ describe('SudokuControls', () => {
       expect(onReset).not.toHaveBeenCalled();
     });
 
-    test('should hide confirmation and reset to initial state after confirm', () => {
+    test('should hide confirmation and reset to initial state after confirm', async () => {
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
       fireEvent.click(screen.getByTestId('reset-button'));
 
+      const confirmButton = await screen.findByTestId('confirm-reset-button');
       // Confirm reset
-      fireEvent.click(screen.getByTestId('confirm-reset-button'));
+      fireEvent.click(confirmButton);
 
-      // Should be back to initial state
-      expect(screen.getByTestId('reset-button')).toBeInTheDocument();
-      expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+      await waitFor(() => {
+        // Should be back to initial state
+        expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+        expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+      });
     });
   });
 
@@ -270,26 +312,48 @@ describe('SudokuControls', () => {
       expect(exportButton).toBeEnabled();
     });
 
-    test('should call onExport when export button is clicked', () => {
+    test('should call onExport when export button is clicked', async () => {
+      jest.useFakeTimers();
       const onExport = jest.fn();
       render(<SudokuControls {...defaultProps} onExport={onExport} />);
 
       const exportButton = screen.getByTestId('export-button');
-      fireEvent.click(exportButton);
+      act(() => {
+        fireEvent.click(exportButton);
+        jest.advanceTimersByTime(1000);
+      });
 
       expect(onExport).toHaveBeenCalledTimes(1);
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('export-button')).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+      jest.useRealTimers();
     });
 
-    test('should handle multiple export clicks', () => {
+    test('should handle multiple export clicks', async () => {
+      jest.useFakeTimers();
       const onExport = jest.fn();
       render(<SudokuControls {...defaultProps} onExport={onExport} />);
 
       const exportButton = screen.getByTestId('export-button');
-      fireEvent.click(exportButton);
-      fireEvent.click(exportButton);
-      fireEvent.click(exportButton);
+      act(() => {
+        fireEvent.click(exportButton);
+        fireEvent.click(exportButton);
+        fireEvent.click(exportButton);
+        jest.advanceTimersByTime(1000);
+      });
 
       expect(onExport).toHaveBeenCalledTimes(3);
+      await waitFor(
+        () => {
+          expect(screen.getByTestId('export-button')).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+      jest.useRealTimers();
     });
   });
 
@@ -355,6 +419,7 @@ describe('SudokuControls', () => {
     });
 
     test('should be keyboard navigable', async () => {
+      jest.useFakeTimers();
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
       render(<SudokuControls {...defaultProps} canUndo={true} canRedo={true} />);
 
@@ -370,9 +435,11 @@ describe('SudokuControls', () => {
 
       await user.tab();
       expect(screen.getByTestId('export-button')).toHaveFocus();
+      jest.useRealTimers();
     });
 
     test('should skip disabled buttons in tab order', async () => {
+      jest.useFakeTimers();
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
       render(<SudokuControls {...defaultProps} canUndo={false} canRedo={false} />);
 
@@ -382,9 +449,11 @@ describe('SudokuControls', () => {
 
       await user.tab();
       expect(screen.getByTestId('export-button')).toHaveFocus();
+      jest.useRealTimers();
     });
 
     test('should be activatable with keyboard', async () => {
+      jest.useFakeTimers();
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
       const onExport = jest.fn();
       render(<SudokuControls {...defaultProps} onExport={onExport} />);
@@ -394,6 +463,7 @@ describe('SudokuControls', () => {
       await user.keyboard('{Enter}');
 
       expect(onExport).toHaveBeenCalledTimes(1);
+      jest.useRealTimers();
     });
   });
 
@@ -415,20 +485,22 @@ describe('SudokuControls', () => {
       expect(redoButton).toBeDisabled();
     });
 
-    test('should apply different styles for confirmation buttons', () => {
+    test('should apply different styles for confirmation buttons', async () => {
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
       fireEvent.click(screen.getByTestId('reset-button'));
 
-      const confirmButton = screen.getByTestId('confirm-reset-button');
-      const cancelButton = screen.getByTestId('cancel-reset-button');
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId('confirm-reset-button');
+        const cancelButton = screen.getByTestId('cancel-reset-button');
 
-      expect(confirmButton).toHaveTextContent('Yes, Reset');
-      expect(cancelButton).toHaveTextContent('Cancel');
+        expect(confirmButton).toHaveTextContent('Yes, Reset');
+        expect(cancelButton).toHaveTextContent('Cancel');
+      });
     });
 
-    test('should show different status styling based on puzzle state', () => {
+    test('should show different status styling based on puzzle state', async () => {
       const { rerender } = render(<SudokuControls {...defaultProps} isValid={true} isSolved={false} />);
 
       // Valid state
@@ -436,16 +508,20 @@ describe('SudokuControls', () => {
 
       // Solved state
       rerender(<SudokuControls {...defaultProps} isValid={true} isSolved={true} />);
-      expect(screen.getByText('✅ Solved!')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('✅ Solved!')).toBeInTheDocument();
+      });
 
       // Error state
       rerender(<SudokuControls {...defaultProps} isValid={false} isSolved={false} />);
-      expect(screen.getByText('⚠ Has Errors')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('⚠ Has Errors')).toBeInTheDocument();
+      });
     });
   });
 
   describe('edge cases and error handling', () => {
-    test('should handle rapid clicking on reset button', () => {
+    test('should handle rapid clicking on reset button', async () => {
       const onReset = jest.fn();
       render(<SudokuControls {...defaultProps} canReset={true} onReset={onReset} />);
 
@@ -455,33 +531,45 @@ describe('SudokuControls', () => {
       fireEvent.click(resetButton);
       fireEvent.click(resetButton); // This should not do anything since confirmation is shown
 
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      });
       expect(onReset).not.toHaveBeenCalled();
     });
 
-    test('should handle reset confirmation timeout correctly', () => {
+    test('should handle reset confirmation timeout correctly', async () => {
+      jest.useFakeTimers();
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       const resetButton = screen.getByTestId('reset-button');
       fireEvent.click(resetButton);
 
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      });
 
       // Fast forward 2.5 seconds (not enough to trigger timeout)
       act(() => {
         jest.advanceTimersByTime(2500);
       });
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      });
 
       // Fast forward remaining time
       act(() => {
         jest.advanceTimersByTime(500);
       });
-      expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
-      expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+        expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+      });
+      jest.useRealTimers();
     });
 
-    test('should handle manual cancel after timeout is set', () => {
+    test('should handle manual cancel after timeout is set', async () => {
+      jest.useFakeTimers();
       render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
@@ -496,24 +584,34 @@ describe('SudokuControls', () => {
       });
 
       // Should still show reset button (timeout shouldn't interfere)
-      expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByTestId('reset-button')).toBeInTheDocument();
+      });
+      jest.useRealTimers();
     });
 
-    test('should handle component unmount during confirmation timeout', () => {
+    test('should handle component unmount during confirmation timeout', async () => {
+      jest.useFakeTimers();
       const { unmount } = render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
       fireEvent.click(screen.getByTestId('reset-button'));
 
+      // Verify confirmation appears
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      });
+
       // Unmount component
       unmount();
 
-      // Should not throw when timeout fires
-      expect(() => {
-        act(() => {
-          jest.advanceTimersByTime(3000);
-        });
-      }).not.toThrow();
+      // Advance timers
+      act(() => {
+        jest.advanceTimersByTime(3000);
+      });
+
+      // No assertion needed; Jest fails if errors are thrown
+      jest.useRealTimers();
     });
 
     test('should handle all props being false', () => {
@@ -540,7 +638,7 @@ describe('SudokuControls', () => {
   });
 
   describe('component updates', () => {
-    test('should update button states when props change', () => {
+    test('should update button states when props change', async () => {
       const { rerender } = render(<SudokuControls {...defaultProps} canUndo={false} canRedo={false} />);
 
       expect(screen.getByTestId('undo-button')).toBeDisabled();
@@ -548,36 +646,46 @@ describe('SudokuControls', () => {
 
       rerender(<SudokuControls {...defaultProps} canUndo={true} canRedo={true} />);
 
-      expect(screen.getByTestId('undo-button')).toBeEnabled();
-      expect(screen.getByTestId('redo-button')).toBeEnabled();
+      await waitFor(() => {
+        expect(screen.getByTestId('undo-button')).toBeEnabled();
+        expect(screen.getByTestId('redo-button')).toBeEnabled();
+      });
     });
 
-    test('should update status indicator when state changes', () => {
+    test('should update status indicator when state changes', async () => {
       const { rerender } = render(<SudokuControls {...defaultProps} isValid={false} isSolved={false} />);
 
       expect(screen.getByText('⚠ Has Errors')).toBeInTheDocument();
 
       rerender(<SudokuControls {...defaultProps} isValid={true} isSolved={false} />);
-      expect(screen.getByText('✓ Valid')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('✓ Valid')).toBeInTheDocument();
+      });
 
       rerender(<SudokuControls {...defaultProps} isValid={true} isSolved={true} />);
-      expect(screen.getByText('✅ Solved!')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('✅ Solved!')).toBeInTheDocument();
+      });
     });
 
-    test('should handle canReset changing while confirmation is shown', () => {
+    test('should handle canReset changing while confirmation is shown', async () => {
       const { rerender } = render(<SudokuControls {...defaultProps} canReset={true} />);
 
       // Show confirmation
       fireEvent.click(screen.getByTestId('reset-button'));
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+      });
 
       // Disable reset
       rerender(<SudokuControls {...defaultProps} canReset={false} />);
 
       // Currently the component maintains confirmation state even when canReset becomes false
       // This could be improved in the future, but the test documents current behavior
-      expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
-      expect(screen.queryByTestId('reset-button')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+        expect(screen.queryByTestId('reset-button')).not.toBeInTheDocument();
+      });
     });
   });
 });

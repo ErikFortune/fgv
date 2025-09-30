@@ -255,7 +255,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       affectedCells.delete(placedCellId);
 
       // Update notes for each affected cell
-      for (const cellId of affectedCells) {
+      for (const cellId of Array.from(affectedCells)) {
         const contentsResult = session.state.getCellContents(cellId);
         if (contentsResult.isSuccess()) {
           const contents = contentsResult.value;

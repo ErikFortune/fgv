@@ -36,7 +36,7 @@ jest.mock('../../../hooks/useResponsiveLayout', () => ({
   })
 }));
 
-import React from 'react';
+import React, { act } from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CompactControlRibbon } from '../../../components/CompactControlRibbon';
 
@@ -147,17 +147,19 @@ describe('CompactControlRibbon', () => {
     fireEvent.click(resetButton);
 
     // Should show confirm and cancel buttons
-    expect(screen.getByTestId('compact-confirm-reset-button')).toBeInTheDocument();
-    expect(screen.getByTestId('compact-cancel-reset-button')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('compact-confirm-reset-button')).toBeInTheDocument();
+      expect(screen.getByTestId('compact-cancel-reset-button')).toBeInTheDocument();
+    });
 
     // Click confirm to actually reset
-    const confirmButton = screen.getByTestId('compact-confirm-reset-button');
+    const confirmButton = await screen.findByTestId('compact-confirm-reset-button');
     fireEvent.click(confirmButton);
 
     expect(mockProps.onReset).toHaveBeenCalled();
   });
 
-  test('should handle reset cancellation', () => {
+  test('should handle reset cancellation', async () => {
     render(<CompactControlRibbon {...mockProps} />);
 
     // First click to enter confirmation mode
@@ -165,12 +167,14 @@ describe('CompactControlRibbon', () => {
     fireEvent.click(resetButton);
 
     // Click cancel
-    const cancelButton = screen.getByTestId('compact-cancel-reset-button');
+    const cancelButton = await screen.findByTestId('compact-cancel-reset-button');
     fireEvent.click(cancelButton);
 
     // Should return to normal reset button
-    expect(screen.getByTestId('compact-reset-button')).toBeInTheDocument();
-    expect(mockProps.onReset).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.getByTestId('compact-reset-button')).toBeInTheDocument();
+      expect(mockProps.onReset).not.toHaveBeenCalled();
+    });
   });
 
   test('should auto-hide reset confirmation after timeout', async () => {
@@ -181,13 +185,18 @@ describe('CompactControlRibbon', () => {
     const resetButton = screen.getByTestId('compact-reset-button');
     fireEvent.click(resetButton);
 
-    expect(screen.getByTestId('compact-confirm-reset-button')).toBeInTheDocument();
+    // Verify confirmation appears
+    await screen.findByTestId('compact-confirm-reset-button');
 
     // Fast-forward time
-    jest.advanceTimersByTime(3000);
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
 
+    // Verify return to normal state
     await waitFor(() => {
       expect(screen.getByTestId('compact-reset-button')).toBeInTheDocument();
+      expect(screen.queryByTestId('compact-confirm-reset-button')).not.toBeInTheDocument();
     });
 
     jest.useRealTimers();

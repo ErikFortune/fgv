@@ -35,11 +35,10 @@ function ensureValidDOM() {
     document.documentElement.appendChild(body);
   }
 
-  // Clear any existing content but preserve the structure
-  document.body.innerHTML = '';
-
   // Add basic attributes that React might expect
-  document.body.setAttribute('id', 'test-root');
+  if (!document.body.getAttribute('id')) {
+    document.body.setAttribute('id', 'test-root');
+  }
 }
 
 // Setup the DOM structure immediately
@@ -67,12 +66,8 @@ beforeEach(() => {
 
 afterEach(() => {
   // Clean up React Testing Library after each test
+  // This will remove any rendered components from the DOM
   cleanup();
-
-  // Clean up DOM state
-  if (document.body) {
-    document.body.innerHTML = '';
-  }
 });
 
 // Setup window.URL for SudokuGridEntry tests
@@ -81,9 +76,25 @@ global.URL = {
   revokeObjectURL: jest.fn()
 };
 
+// Setup window dimensions for responsive layout hook
+Object.defineProperty(window, 'innerWidth', {
+  writable: true,
+  configurable: true,
+  value: 1024
+});
+
+Object.defineProperty(window, 'innerHeight', {
+  writable: true,
+  configurable: true,
+  value: 768
+});
+
 // Suppress console output in tests by providing a no-op logger
 // This affects both direct console calls and components that use logger dependency injection
 global.testLogger = () => {}; // No-op logger for tests
+
+// Save original console.error before overriding
+const originalConsoleError = console.error;
 
 // Suppress console output in tests by providing a no-op logger
 // This affects both direct console calls and components that use logger dependency injection
@@ -91,5 +102,5 @@ global.console = {
   ...console,
   log: global.testLogger,
   warn: global.testLogger,
-  error: console.error // Keep error for actual test failures
+  error: originalConsoleError // Keep original error for debugging
 };
