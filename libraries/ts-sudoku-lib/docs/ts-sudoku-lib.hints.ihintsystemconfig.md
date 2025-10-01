@@ -98,5 +98,26 @@ _(Optional)_
 
 
 </td></tr>
+<tr><td>
+
+[logger?](./ts-sudoku-lib.hints.ihintsystemconfig.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
 </tbody></table>
 

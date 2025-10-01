@@ -9,7 +9,7 @@ Applies a hint to the puzzle state, generating the necessary cell updates.
 **Signature:**
 
 ```typescript
-applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly import('../common').ICellState[]>;
+applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
 ```
 
 ## Parameters
@@ -82,7 +82,7 @@ The current puzzle state
 
 **Returns:**
 
-Result&lt;readonly import('../common').[ICellState](./ts-sudoku-lib.icellstate.md)<!-- -->\[\]&gt;
+Result&lt;readonly [ICellState](./ts-sudoku-lib.icellstate.md)<!-- -->\[\]&gt;
 
 Result containing the cell state updates needed to apply the hint
 

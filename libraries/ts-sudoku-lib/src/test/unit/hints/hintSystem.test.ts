@@ -522,36 +522,36 @@ describe('DefaultHintApplicator', () => {
   describe('validateHint', () => {
     test('should validate valid set-value hint', () => {
       const validHint = createTestHint('A9', 9);
-      expect(applicator.validateHint(validHint, testPuzzle, testState)).toSucceed();
+      expect(applicator.canApplyHint(validHint, testPuzzle, testState)).toSucceed();
     });
 
     test('should reject unsupported action types', () => {
       const invalidHint = createTestHint('A9', 9, 'eliminate-candidate');
-      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(
         /Unsupported action type/
       );
     });
 
     test('should reject hint for non-existent cell', () => {
       const invalidHint = createTestHint('Z9', 9); // Invalid cell ID
-      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/Invalid cell/);
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(/Invalid cell/);
     });
 
     test('should reject hint for already filled cell', () => {
       const invalidHint = createTestHint('A1', 5); // A1 already has value 1
-      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
     });
 
     test('should reject hint with invalid value', () => {
       const invalidHint = createTestHint('A9', 10);
-      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(
         /Invalid value.*must be 1-9/
       );
     });
 
     test('should reject hint with missing value', () => {
       const invalidHint = createTestHint('A9', undefined);
-      expect(applicator.validateHint(invalidHint, testPuzzle, testState)).toFailWith(/No value specified/);
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(/No value specified/);
     });
   });
 
@@ -756,6 +756,54 @@ describe('HintSystem - Error Scenarios for Coverage', () => {
       expect(hintSystem.applyHint(mixedValidityHint, puzzle, state)).toFailWith(
         /Invalid cell|cell.*not found/i
       );
+    });
+  });
+
+  describe('with logging', () => {
+    test('logs hint generation with InMemoryLogger', () => {
+      const { Logging } = require('@fgv/ts-utils');
+      const memoryLogger = new Logging.InMemoryLogger('detail');
+      const testLogger = new Logging.LogReporter({ logger: memoryLogger });
+
+      const systemWithLogging = HintSystem.create({ logger: testLogger }).orThrow();
+
+      // Create a simple puzzle state with a naked single
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // Creates naked single at A9 = 9
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(systemWithLogging.generateHints(puzzle, state)).toSucceed();
+
+      // Verify logging occurred
+      expect(memoryLogger.logged.some((msg: string) => msg.includes('Generating hints'))).toBe(true);
+      expect(memoryLogger.logged.some((msg: string) => msg.includes('Generated'))).toBe(true);
+    });
+
+    test('works with default no-op logger when logger not provided', () => {
+      // System created without logger should work silently
+      const systemWithoutLogging = HintSystem.create({}).orThrow();
+
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // Creates naked single at A9 = 9
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(systemWithoutLogging.generateHints(puzzle, state)).toSucceed();
     });
   });
 });

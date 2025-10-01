@@ -22,58 +22,12 @@
  * SOFTWARE.
  */
 
-import type { Logging } from '@fgv/ts-utils';
+import { Logging } from '@fgv/ts-utils';
 
 /**
- * Logging context interface for sudoku library components.
- * Provides optional diagnostic logging capability.
+ * Default no-op logger for use when diagnostic logging is not needed.
  * @public
  */
-export interface ISudokuLoggingContext {
-  /**
-   * Optional diagnostic logger for internal system diagnostics.
-   * When provided, enables detailed logging of puzzle operations,
-   * hint generation, and solving progress.
-   */
-  readonly logger?: Logging.ILogger;
-}
-
-/**
- * Default no-op logging context.
- * @public
- */
-export const DefaultSudokuLoggingContext: ISudokuLoggingContext = {
-  logger: undefined
-};
-
-/**
- * Helper function to safely log a message if logger is available.
- * @param context - The logging context
- * @param level - The log level
- * @param message - The message to log
- * @param parameters - Additional parameters
- * @internal
- */
-export function logIfAvailable(
-  context: ISudokuLoggingContext | undefined,
-  level: 'detail' | 'info' | 'warn' | 'error',
-  message?: unknown,
-  ...parameters: unknown[]
-): void {
-  if (context?.logger) {
-    switch (level) {
-      case 'detail':
-        context.logger.detail(message, ...parameters);
-        break;
-      case 'info':
-        context.logger.info(message, ...parameters);
-        break;
-      case 'warn':
-        context.logger.warn(message, ...parameters);
-        break;
-      case 'error':
-        context.logger.error(message, ...parameters);
-        break;
-    }
-  }
-}
+export const DefaultSudokuLogger: Logging.LogReporter<unknown> = new Logging.LogReporter({
+  logger: new Logging.NoOpLogger()
+});

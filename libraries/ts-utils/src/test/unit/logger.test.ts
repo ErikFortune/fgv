@@ -793,5 +793,329 @@ describe('Logger class', () => {
         expect(() => reporter.reportSuccess('info', 'test')).toThrow('Formatter error');
       });
     });
+
+    describe('withValueFormatter method', () => {
+      describe('basic functionality', () => {
+        test('should create new LogReporter with different value formatter', () => {
+          const logger = new InMemoryLogger();
+          const originalFormatter = (value: string): string => `Original: ${value}`;
+          const newFormatter = (value: string): string => `New: ${value}`;
+
+          const originalReporter = new LogReporter<string>({ logger, valueFormatter: originalFormatter });
+          const newReporter = originalReporter.withValueFormatter(newFormatter);
+
+          // Test that they are different instances
+          expect(newReporter).not.toBe(originalReporter);
+
+          // Test that formatters work differently
+          originalReporter.reportSuccess('info', 'test');
+          expect(logger.logged[logger.logged.length - 1]).toBe('Original: test');
+
+          newReporter.reportSuccess('info', 'test');
+          expect(logger.logged[logger.logged.length - 1]).toBe('New: test');
+        });
+
+        test('should preserve the same logger instance', () => {
+          const logger = new InMemoryLogger();
+          const originalReporter = new LogReporter<string>({ logger });
+          const newReporter = originalReporter.withValueFormatter((v) => `formatted: ${v}`);
+
+          // Both reporters should write to the same logger
+          originalReporter.reportSuccess('info', 'first');
+          newReporter.reportSuccess('info', 'second');
+
+          expect(logger.logged).toContain('first');
+          expect(logger.logged).toContain('formatted: second');
+        });
+
+        test('should preserve the original message formatter', () => {
+          const logger = new InMemoryLogger();
+          const messageFormatter = (msg: string): string => `[MSG] ${msg}`;
+          const valueFormatter = (value: string): string => `value=${value}`;
+          const newValueFormatter = (value: number): string => `num=${value}`;
+
+          const originalReporter = new LogReporter<string>({
+            logger,
+            valueFormatter,
+            messageFormatter
+          });
+          const newReporter = originalReporter.withValueFormatter(newValueFormatter);
+
+          // Test message formatter is preserved by reporting a failure
+          newReporter.reportFailure('info', 'test message');
+          expect(logger.logged[logger.logged.length - 1]).toBe('[MSG] test message');
+        });
+
+        test('should work with default value formatter', () => {
+          const logger = new InMemoryLogger();
+          const originalReporter = new LogReporter<string>({ logger });
+          const newFormatter = (value: string): string => `custom: ${value}`;
+
+          const newReporter = originalReporter.withValueFormatter(newFormatter);
+
+          newReporter.reportSuccess('info', 'test');
+          expect(logger.logged[logger.logged.length - 1]).toBe('custom: test');
+        });
+      });
+
+      describe('type parameter changes', () => {
+        test('should support changing value type from string to number', () => {
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string>({ logger });
+          const numberFormatter = (value: number): string => `Number: ${value.toFixed(2)}`;
+
+          const numberReporter = stringReporter.withValueFormatter(numberFormatter);
+
+          numberReporter.reportSuccess('info', 42.123);
+          expect(logger.logged[logger.logged.length - 1]).toBe('Number: 42.12');
+        });
+
+        test('should support changing value type to complex object', () => {
+          interface Person {
+            name: string;
+            age: number;
+          }
+
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string>({ logger });
+          const personFormatter = (person: Person): string => `${person.name} (${person.age})`;
+
+          const personReporter = stringReporter.withValueFormatter(personFormatter);
+
+          personReporter.reportSuccess('info', { name: 'Alice', age: 30 });
+          expect(logger.logged[logger.logged.length - 1]).toBe('Alice (30)');
+        });
+
+        test('should maintain type safety with changed types', () => {
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string>({ logger });
+          const numberFormatter = (value: number): string => String(value);
+
+          const numberReporter = stringReporter.withValueFormatter(numberFormatter);
+
+          // TypeScript should enforce that we pass numbers now
+          numberReporter.reportSuccess('info', 123);
+
+          // This would be a TypeScript error if uncommented:
+          // numberReporter.reportSuccess('info', 'not a number');
+
+          expect(logger.logged[logger.logged.length - 1]).toBe('123');
+        });
+      });
+
+      describe('formatter chaining', () => {
+        test('should support multiple withValueFormatter calls', () => {
+          const logger = new InMemoryLogger();
+          const originalReporter = new LogReporter<string>({ logger });
+
+          const reporter1 = originalReporter.withValueFormatter((v: string) => `[1] ${v}`);
+          const reporter2 = reporter1.withValueFormatter((v: number) => `[2] ${v}`);
+          const reporter3 = reporter2.withValueFormatter((v: boolean) => `[3] ${v}`);
+
+          originalReporter.reportSuccess('info', 'original');
+          reporter1.reportSuccess('info', 'first');
+          reporter2.reportSuccess('info', 42);
+          reporter3.reportSuccess('info', true);
+
+          expect(logger.logged).toContain('original');
+          expect(logger.logged).toContain('[1] first');
+          expect(logger.logged).toContain('[2] 42');
+          expect(logger.logged).toContain('[3] true');
+        });
+
+        test('should maintain logger instance across chain', () => {
+          const logger = new InMemoryLogger();
+          const originalReporter = new LogReporter<string>({ logger });
+
+          const reporter1 = originalReporter.withValueFormatter((v: number) => String(v));
+          const reporter2 = reporter1.withValueFormatter((v: boolean) => String(v));
+
+          // All should write to the same logger
+          originalReporter.reportSuccess('info', 'test');
+          reporter1.reportSuccess('info', 123);
+          reporter2.reportSuccess('info', false);
+
+          expect(logger.logged).toEqual(['test', '123', 'false']);
+        });
+
+        test('should maintain message formatter across chain', () => {
+          const logger = new InMemoryLogger();
+          const messageFormatter = (msg: string): string => `>>>${msg}<<<`;
+
+          const originalReporter = new LogReporter<string>({
+            logger,
+            messageFormatter
+          });
+
+          const reporter1 = originalReporter.withValueFormatter((v: number) => `num:${v}`);
+          const reporter2 = reporter1.withValueFormatter((v: boolean) => `bool:${v}`);
+
+          // Test message formatter is preserved
+          reporter1.reportFailure('info', 'test1');
+          reporter2.reportFailure('info', 'test2');
+
+          expect(logger.logged).toContain('>>>test1<<<');
+          expect(logger.logged).toContain('>>>test2<<<');
+        });
+      });
+
+      describe('integration with Result.report()', () => {
+        test('should work with Success.report() and transformed reporter', () => {
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string>({ logger });
+          const numberReporter = stringReporter.withValueFormatter(
+            (value: number) => `Result value: ${value}`
+          );
+
+          const result = succeed(42);
+          result.report(numberReporter, { success: 'info' });
+
+          expect(logger.logged).toContain('Result value: 42');
+        });
+
+        test('should work with Failure.report() and transformed reporter', () => {
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string>({ logger });
+          const numberReporter = stringReporter.withValueFormatter((value: number) => `Value: ${value}`);
+
+          const result = fail<number>('Something went wrong');
+          result.report(numberReporter, { failure: 'error' });
+
+          expect(logger.logged).toContain('Something went wrong');
+        });
+
+        test('should work with DetailedSuccess.report()', () => {
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string, { extra: string }>({ logger });
+          const numberReporter = stringReporter.withValueFormatter((value: number) => `Number: ${value}`);
+
+          const result = succeed(42);
+          result.report(numberReporter, { success: 'info' });
+
+          expect(logger.logged).toContain('Number: 42');
+        });
+
+        test('should work with DetailedFailure.report()', () => {
+          const logger = new InMemoryLogger();
+          const stringReporter = new LogReporter<string, { code: number }>({ logger });
+          const numberReporter = stringReporter.withValueFormatter((value: number) => `Value: ${value}`);
+
+          const result = fail<number>('Error occurred');
+          result.report(numberReporter, { failure: 'error' });
+
+          expect(logger.logged).toContain('Error occurred');
+        });
+
+        test('should handle Result.report() with custom options', () => {
+          const logger = new InMemoryLogger();
+          const originalReporter = new LogReporter<string>({ logger });
+          const transformedReporter = originalReporter.withValueFormatter(
+            (value: { id: number; name: string }) => `ID: ${value.id}, Name: ${value.name}`
+          );
+
+          const result = succeed({ id: 1, name: 'Test' });
+          result.report(transformedReporter, {
+            success: 'info'
+          });
+
+          expect(logger.logged).toContain('ID: 1, Name: Test');
+        });
+      });
+
+      describe('edge cases', () => {
+        test('should handle formatter that returns empty string', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<string>({ logger });
+          const emptyReporter = reporter.withValueFormatter(() => '');
+
+          emptyReporter.reportSuccess('info', 'anything');
+          expect(logger.logged).toContain('');
+        });
+
+        test('should handle formatter that throws exception', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<string>({ logger });
+          const errorReporter = reporter.withValueFormatter((): string => {
+            throw new Error('Formatter failed');
+          });
+
+          expect(() => errorReporter.reportSuccess('info', 'test')).toThrow('Formatter failed');
+        });
+
+        test('should handle formatter returning special values', () => {
+          const logger = new InMemoryLogger();
+          const reporter = new LogReporter<string>({ logger });
+
+          const undefinedReporter = reporter.withValueFormatter(() => undefined as unknown as string);
+          undefinedReporter.reportSuccess('info', 'test');
+          // When formatter returns undefined, it gets converted to empty string
+          expect(logger.logged).toContain('');
+
+          const nullReporter = reporter.withValueFormatter(() => null as unknown as string);
+          nullReporter.reportSuccess('info', 'test');
+          // When formatter returns null, it gets converted to string "null"
+          expect(logger.logged[logger.logged.length - 1]).toBe('null');
+        });
+
+        test('should work with NoOpLogger', () => {
+          const logger = new NoOpLogger();
+          const reporter = new LogReporter<string>({ logger });
+          const newReporter = reporter.withValueFormatter((v: number) => `num:${v}`);
+
+          // Should not throw
+          expect(() => newReporter.reportSuccess('info', 42)).not.toThrow();
+        });
+
+        test('should preserve detail type parameter', () => {
+          interface CustomDetail {
+            timestamp: number;
+            userId: string;
+          }
+
+          const logger = new InMemoryLogger();
+          const originalReporter = new LogReporter<string, CustomDetail>({ logger });
+          const newReporter = originalReporter.withValueFormatter((value: number) => `Value: ${value}`);
+
+          // The detail type should still be CustomDetail
+          const result = succeed<number>(42);
+
+          // This should compile and work correctly
+          result.report(newReporter, { success: 'info' });
+          expect(logger.logged[logger.logged.length - 1]).toBe('Value: 42');
+        });
+      });
+
+      describe('log level interaction', () => {
+        test('should respect logger log level in derived reporter', () => {
+          const logger = new InMemoryLogger('warning'); // Only warning and error
+          const originalReporter = new LogReporter<string>({ logger });
+          const derivedReporter = originalReporter.withValueFormatter((v: number) => `Number: ${v}`);
+
+          derivedReporter.reportSuccess('info', 123); // Should be suppressed
+          derivedReporter.reportSuccess('warning', 456); // Should log
+          derivedReporter.reportSuccess('error', 789); // Should log
+
+          expect(logger.logged).not.toContain('Number: 123');
+          expect(logger.logged).toContain('Number: 456');
+          expect(logger.logged).toContain('Number: 789');
+        });
+
+        test('should log messages at correct levels through derived reporter', () => {
+          const logger = new InMemoryLogger('detail');
+          const originalReporter = new LogReporter<string>({ logger });
+          const derivedReporter = originalReporter.withValueFormatter((v: boolean) => (v ? 'TRUE' : 'FALSE'));
+
+          derivedReporter.reportSuccess('quiet', true); // Suppressed
+          derivedReporter.reportSuccess('detail', true); // Logged
+          derivedReporter.reportFailure('info', 'info message'); // Logged
+          derivedReporter.reportFailure('error', 'error message'); // Logged
+
+          expect(logger.suppressed).toContain('TRUE');
+          expect(logger.logged).toContain('TRUE');
+          expect(logger.logged).toContain('info message');
+          expect(logger.logged).toContain('error message');
+        });
+      });
+    });
   });
 });

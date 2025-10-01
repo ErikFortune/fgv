@@ -373,6 +373,25 @@ Cage\[\]
 
 
 </td></tr>
+<tr><td>
+
+[type](./ts-sudoku-lib.puzzle.type.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

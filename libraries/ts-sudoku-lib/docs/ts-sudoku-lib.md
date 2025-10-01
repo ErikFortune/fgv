@@ -262,6 +262,17 @@ All supported public types.
 </td></tr>
 <tr><td>
 
+[DefaultSudokuLogger](./ts-sudoku-lib.defaultsudokulogger.md)
+
+
+</td><td>
+
+Default no-op logger for use when diagnostic logging is not needed.
+
+
+</td></tr>
+<tr><td>
+
 [totalsByCageSize](./ts-sudoku-lib.totalsbycagesize.md)
 
 

@@ -72,6 +72,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[logger](./ts-utils.logging.logreporter.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ILogger](./ts-utils.logging.ilogger.md)
+
+
+</td><td>
+
+Base logger used to by this reporter.
+
+
+</td></tr>
+<tr><td>
+
 [logLevel](./ts-utils.logging.logreporter.loglevel.md)
 
 
@@ -220,6 +241,20 @@ Generic method to try to format an object for logging.
 </td><td>
 
 Logs a warning message.
+
+
+</td></tr>
+<tr><td>
+
+[withValueFormatter(valueFormatter)](./ts-utils.logging.logreporter.withvalueformatter.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [LogReporter](./ts-utils.logging.logreporter.md) with the same logger but a different value formatter.
 
 
 </td></tr>

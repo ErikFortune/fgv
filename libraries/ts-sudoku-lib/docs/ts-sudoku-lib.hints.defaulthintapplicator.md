@@ -13,6 +13,40 @@ export declare class DefaultHintApplicator implements IHintApplicator
 ```
 **Implements:** [IHintApplicator](./ts-sudoku-lib.hints.ihintapplicator.md)
 
+## Constructors
+
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(logger)](./ts-sudoku-lib.hints.defaulthintapplicator._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a new [DefaultHintApplicator](./ts-sudoku-lib.hints.defaulthintapplicator.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
@@ -47,7 +81,7 @@ Applies a hint to the puzzle state, generating the necessary cell updates.
 </td></tr>
 <tr><td>
 
-[validateHint(hint, puzzle, state)](./ts-sudoku-lib.hints.defaulthintapplicator.validatehint.md)
+[canApplyHint(hint, puzzle, state)](./ts-sudoku-lib.hints.defaulthintapplicator.canapplyhint.md)
 
 
 </td><td>

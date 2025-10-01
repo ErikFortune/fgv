@@ -38,7 +38,7 @@ Applies a hint to the puzzle state, generating the necessary cell updates.
 </td></tr>
 <tr><td>
 
-[validateHint(hint, puzzle, state)](./ts-sudoku-lib.hints.ihintapplicator.validatehint.md)
+[canApplyHint(hint, puzzle, state)](./ts-sudoku-lib.hints.ihintapplicator.canapplyhint.md)
 
 
 </td><td>

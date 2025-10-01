@@ -1437,8 +1437,7 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     //
     // (undocumented)
     log(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
-    // @internal
-    protected readonly _logger: ILogger;
+    readonly logger: ILogger;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -1456,6 +1455,9 @@ class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
     //
     // (undocumented)
     warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    withValueFormatter<TN>(valueFormatter: LogValueFormatter<TN, TD>): LogReporter<TN, TD>;
 }
 
 // @public
