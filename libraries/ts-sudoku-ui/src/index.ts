@@ -34,6 +34,9 @@ export { NumberKeypad } from './components/NumberKeypad';
 export { CageOverlay } from './components/CageOverlay';
 export { CageSumIndicator } from './components/CageSumIndicator';
 
+// Contexts
+export * from './contexts/DiagnosticLoggerContext';
+
 // Hooks
 export { usePuzzleSession } from './hooks/usePuzzleSession';
 export { useResponsiveLayout } from './hooks/useResponsiveLayout';

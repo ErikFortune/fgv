@@ -126,6 +126,25 @@ import { LocalThing } from './localModule';
 import type { SomeType } from './types';
 ```
 
+#### Inline imports
+Never use inline imports.  Inline imports bring shame upon you and your ancestors.
+```typescript
+// ❌ WRONG - inline import
+applyHint(
+    hint: IHint
+): Result<readonly import('../common').ICellState[]>
+
+
+// ✅ CORRECT
+import { ICellState } from './common'
+
+applyHint(
+  hint: IHint
+): Result<readonly ICellState[]>
+
+```
+
+
 ### Naming Conventions
 ```markdown
 ## Observe and Match Exactly

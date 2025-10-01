@@ -8,10 +8,12 @@ import { CellId } from '@fgv/ts-sudoku-lib';
 import { ICage } from '@fgv/ts-sudoku-lib';
 import { ICellContents } from '@fgv/ts-sudoku-lib';
 import { IPuzzleDescription } from '@fgv/ts-sudoku-lib';
+import { Logging } from '@fgv/ts-utils';
 import { NavigationDirection } from '@fgv/ts-sudoku-lib';
 import { NavigationWrap } from '@fgv/ts-sudoku-lib';
 import { PuzzleSession } from '@fgv/ts-sudoku-lib';
 import { default as React_2 } from 'react';
+import { ReactNode } from 'react';
 
 // @public
 export const CageOverlay: React_2.FC<ICageOverlayProps>;
@@ -23,7 +25,16 @@ export const CageSumIndicator: React_2.FC<ICageSumIndicatorProps>;
 export const CompactControlRibbon: React_2.FC<ICompactControlRibbonProps>;
 
 // @public
+export const DefaultDiagnosticLogger: Logging.LogReporter<unknown>;
+
+// @public
 export type DeviceType = 'mobile' | 'tablet' | 'desktop';
+
+// @public
+export const DiagnosticLoggerContext: React_2.Context<Logging.LogReporter<unknown>>;
+
+// @public
+export const DiagnosticLoggerProvider: React_2.FC<IDiagnosticLoggerProviderProps>;
 
 // @public
 export const DualKeypad: React_2.FC<IDualKeypadProps>;
@@ -109,6 +120,12 @@ export interface ICompactControlRibbonProps {
         readonly cellId: string;
         readonly message: string;
     }>;
+}
+
+// @public
+export interface IDiagnosticLoggerProviderProps {
+    children: ReactNode;
+    logger?: Logging.LogReporter<unknown>;
 }
 
 // @public
@@ -295,6 +312,9 @@ export const SudokuGrid: React_2.FC<ISudokuGridProps>;
 
 // @public
 export const SudokuGridEntry: React_2.FC<ISudokuGridEntryProps>;
+
+// @public
+export const useDiagnosticLogger: () => Logging.LogReporter<unknown>;
 
 // @public
 export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription): {

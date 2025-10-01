@@ -22,45 +22,39 @@
  * SOFTWARE.
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { CellId } from '@fgv/ts-sudoku-lib';
 import { ICageOverlayProps } from '../types';
 import { CageSumIndicator } from './CageSumIndicator';
 import { CagePatternManager } from '../utils/CagePatternManager';
 import { CageLookupManager } from '../utils/CageLookupManager';
+import { useDiagnosticLogger } from '../contexts/DiagnosticLoggerContext';
 
 /**
- * Helper to get cell position from CellId
+ * Helper to get cell position from CellId (inlined from getCellPosition)
  */
-function getCellPosition(cellId: CellId): { row: number; col: number } {
-  // CellId format is like "A1" where A is row (A=0, B=1, etc.) and 1 is column (1=0, 2=1, etc.)
-  if (cellId.length >= 2) {
-    const rowChar = cellId.charAt(0);
-    const colStr = cellId.substring(1);
-
-    // Convert letter to row number (A=0, B=1, etc.)
-    const row = rowChar.charCodeAt(0) - 'A'.charCodeAt(0);
-
-    // Convert number to column number (1-based to 0-based)
-    const col = parseInt(colStr, 10) - 1;
-
-    if (!isNaN(row) && !isNaN(col) && row >= 0 && row <= 8 && col >= 0 && col <= 8) {
-      return { row, col };
-    }
-  }
-
-  // Fallback - should not happen with valid CellIds
-  console.warn(`Invalid CellId format: ${cellId}`);
-  return { row: 0, col: 0 };
-}
-
-/**
- * Helper to get the top-left cell position for sum indicator placement
- */
-function getTopLeftPosition(cellIds: CellId[]): { top: number; left: number } {
+function getTopLeftPosition(
+  cellIds: CellId[],
+  log: ReturnType<typeof useDiagnosticLogger>
+): { top: number; left: number } {
   if (cellIds.length === 0) return { top: 0, left: 0 };
 
-  const positions = cellIds.map(getCellPosition);
+  const positions = cellIds.map((cellId) => {
+    // CellId format is like "A1" where A is row (A=0, B=1, etc.) and 1 is column (1=0, 2=1, etc.)
+    if (cellId.length >= 2) {
+      const rowChar = cellId.charAt(0);
+      const colStr = cellId.substring(1);
+      const row = rowChar.charCodeAt(0) - 'A'.charCodeAt(0);
+      const col = parseInt(colStr, 10) - 1;
+
+      if (!isNaN(row) && !isNaN(col) && row >= 0 && row <= 8 && col >= 0 && col <= 8) {
+        return { row, col };
+      }
+    }
+    // Fallback - should not happen with valid CellIds
+    log.warn(`Invalid CellId format: ${cellId}`);
+    return { row: 0, col: 0 };
+  });
 
   // Find the top-left most cell
   let minRow = positions[0].row;
@@ -89,17 +83,21 @@ function getTopLeftPosition(cellIds: CellId[]): { top: number; left: number } {
  * @public
  */
 export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cellSize, className }) => {
-  // Debug logging
-  console.log('CageOverlay rendered with:', {
-    cageCount: cages.length,
-    gridSize,
-    cellSize,
-    cages: cages.map((c) => ({ id: c.cage.id, cellIds: c.cage.cellIds }))
-  });
+  const log = useDiagnosticLogger();
 
   // Initialize managers once
   const patternManager = useMemo(() => new CagePatternManager(), []);
   const lookupManager = useMemo(() => CageLookupManager.getInstance(), []);
+
+  // Debug logging
+  useEffect(() => {
+    log.info('CageOverlay rendered', {
+      cageCount: cages.length,
+      gridSize,
+      cellSize,
+      cages: cages.map((c) => ({ id: c.cage.id, cellIds: c.cage.cellIds }))
+    });
+  }, [cages, gridSize, cellSize, log]);
 
   // Calculate SVG viewBox and class names
   const viewBox = `0 0 ${gridSize.width} ${gridSize.height}`;
@@ -136,7 +134,23 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
 
           // Render each cell with connected borders
           return cage.cellIds.map((cellId, cellIndex) => {
-            const { row, col } = getCellPosition(cellId);
+            // Inline getCellPosition logic
+            let row = 0,
+              col = 0;
+            if (cellId.length >= 2) {
+              const rowChar = cellId.charAt(0);
+              const colStr = cellId.substring(1);
+              row = rowChar.charCodeAt(0) - 'A'.charCodeAt(0);
+              col = parseInt(colStr, 10) - 1;
+              if (isNaN(row) || isNaN(col) || row < 0 || row > 8 || col < 0 || col > 8) {
+                log.warn(`Invalid CellId format: ${cellId}`);
+                row = 0;
+                col = 0;
+              }
+            } else {
+              log.warn(`Invalid CellId format: ${cellId}`);
+            }
+
             const x = col * cellSize;
             const y = row * cellSize;
 
@@ -176,7 +190,7 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
       {/* Sum indicators */}
       {cages.map((cageInfo, index) => {
         const { cage, currentSum, isComplete, isValid } = cageInfo;
-        const position = getTopLeftPosition(cage.cellIds);
+        const position = getTopLeftPosition(cage.cellIds, log);
 
         return (
           <CageSumIndicator

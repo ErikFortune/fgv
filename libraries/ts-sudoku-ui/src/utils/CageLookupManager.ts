@@ -161,10 +161,6 @@ export class CageLookupManager {
       const segmentPatternId = this._segmentMaskToId.get(segmentMask)!;
       this._neighborToSegmentLookup[neighborPattern] = segmentPatternId;
     }
-
-    console.log(
-      `Generated ${this._segmentPatterns.length} unique segment patterns from 256 neighbor combinations`
-    );
   }
 
   /**
