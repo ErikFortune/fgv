@@ -54,7 +54,7 @@ describe('CombinationCard', () => {
       const combo = createCombination([1, 2, 3]);
       render(<CombinationCard combination={combo} onToggle={jest.fn()} />);
 
-      expect(screen.getByText('1, 2, 3')).toBeInTheDocument();
+      expect(screen.getByText('123')).toBeInTheDocument();
     });
 
     test('should render active (not eliminated) combination correctly', () => {
@@ -75,8 +75,10 @@ describe('CombinationCard', () => {
       const card = screen.getByRole('button');
       expect(card).toHaveAttribute('aria-pressed', 'true');
       expect(card).toHaveAttribute('aria-label', 'Combination 6, 7, 8 (eliminated)');
-      expect(card).toHaveClass('line-through');
-      expect(card).toHaveClass('opacity-50');
+      expect(card).toHaveClass('opacity-60');
+      // line-through is applied to the span, not the button
+      const numberSpan = card.querySelector('span');
+      expect(numberSpan).toHaveClass('line-through');
     });
 
     test('should apply custom className when provided', () => {
@@ -98,8 +100,8 @@ describe('CombinationCard', () => {
       const combo = createCombination([9, 1, 5]);
       render(<CombinationCard combination={combo} onToggle={jest.fn()} />);
 
-      // Numbers should be displayed in the order they appear in the array
-      expect(screen.getByText('9, 1, 5')).toBeInTheDocument();
+      // Numbers should be displayed in the order they appear in the array (as continuous string)
+      expect(screen.getByText('915')).toBeInTheDocument();
     });
   });
 
@@ -269,8 +271,8 @@ describe('CombinationCard', () => {
 
       const card = screen.getByRole('button');
       expect(card).toHaveClass('px-3');
-      expect(card).toHaveClass('py-2');
-      expect(card).toHaveClass('rounded-lg');
+      expect(card).toHaveClass('py-1');
+      expect(card).toHaveClass('rounded');
       expect(card).toHaveClass('cursor-pointer');
       expect(card).toHaveClass('select-none');
     });
@@ -281,9 +283,9 @@ describe('CombinationCard', () => {
 
       const card = screen.getByRole('button');
       expect(card).toHaveClass('border-blue-500');
-      expect(card).toHaveClass('bg-blue-50');
+      expect(card).toHaveClass('bg-white');
       expect(card).not.toHaveClass('line-through');
-      expect(card).not.toHaveClass('opacity-50');
+      expect(card).not.toHaveClass('opacity-60');
     });
 
     test('should apply eliminated combination styles', () => {
@@ -292,9 +294,11 @@ describe('CombinationCard', () => {
 
       const card = screen.getByRole('button');
       expect(card).toHaveClass('border-gray-300');
-      expect(card).toHaveClass('bg-gray-100');
-      expect(card).toHaveClass('line-through');
-      expect(card).toHaveClass('opacity-50');
+      expect(card).toHaveClass('bg-gray-50');
+      expect(card).toHaveClass('opacity-60');
+      // line-through is on the span element
+      const numberSpan = card.querySelector('span');
+      expect(numberSpan).toHaveClass('line-through');
     });
 
     test('should have hover effect classes', () => {
@@ -302,7 +306,7 @@ describe('CombinationCard', () => {
       render(<CombinationCard combination={combo} onToggle={jest.fn()} />);
 
       const card = screen.getByRole('button');
-      expect(card).toHaveClass('hover:shadow-md');
+      expect(card).toHaveClass('hover:shadow-sm');
     });
 
     test('should have transition classes', () => {
@@ -354,12 +358,12 @@ describe('CombinationCard', () => {
 
       const { rerender } = render(<CombinationCard combination={combo1} onToggle={onToggle} />);
 
-      expect(screen.getByText('1, 2, 3')).toBeInTheDocument();
+      expect(screen.getByText('123')).toBeInTheDocument();
 
       rerender(<CombinationCard combination={combo2} onToggle={onToggle} />);
 
-      expect(screen.queryByText('1, 2, 3')).not.toBeInTheDocument();
-      expect(screen.getByText('4, 5, 6')).toBeInTheDocument();
+      expect(screen.queryByText('123')).not.toBeInTheDocument();
+      expect(screen.getByText('456')).toBeInTheDocument();
     });
   });
 
@@ -375,7 +379,7 @@ describe('CombinationCard', () => {
       const combo = createCombination([1, 2, 3, 4, 5, 6, 7, 8, 9]);
       render(<CombinationCard combination={combo} onToggle={jest.fn()} />);
 
-      expect(screen.getByText('1, 2, 3, 4, 5, 6, 7, 8, 9')).toBeInTheDocument();
+      expect(screen.getByText('123456789')).toBeInTheDocument();
     });
 
     test('should handle combinations with repeated numbers', () => {
@@ -383,7 +387,7 @@ describe('CombinationCard', () => {
       const combo = createCombination([5, 5, 5]);
       render(<CombinationCard combination={combo} onToggle={jest.fn()} />);
 
-      expect(screen.getByText('5, 5, 5')).toBeInTheDocument();
+      expect(screen.getByText('555')).toBeInTheDocument();
     });
 
     test('should not re-render when only callback changes due to memo', () => {

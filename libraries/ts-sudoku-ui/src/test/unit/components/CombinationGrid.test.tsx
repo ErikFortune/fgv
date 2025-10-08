@@ -53,48 +53,48 @@ describe('CombinationGrid', () => {
     test('should render all combinations', () => {
       render(<CombinationGrid {...defaultProps} />);
 
-      expect(screen.getByText('1, 2')).toBeInTheDocument();
-      expect(screen.getByText('3, 4')).toBeInTheDocument();
-      expect(screen.getByText('5, 6')).toBeInTheDocument();
+      expect(screen.getByText('12')).toBeInTheDocument();
+      expect(screen.getByText('34')).toBeInTheDocument();
+      expect(screen.getByText('56')).toBeInTheDocument();
     });
 
-    test('should render as a grid', () => {
+    test('should render as a flex container', () => {
       const { container } = render(<CombinationGrid {...defaultProps} />);
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toBeInTheDocument();
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toBeInTheDocument();
     });
 
-    test('should apply panel mode grid classes', () => {
+    test('should apply panel mode flex classes', () => {
       const { container } = render(<CombinationGrid {...defaultProps} mode="panel" />);
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('grid-cols-2');
-      expect(grid).toHaveClass('sm:grid-cols-3');
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('flex-wrap');
+      expect(gridContainer).toHaveClass('gap-2');
     });
 
-    test('should apply modal mode grid classes', () => {
+    test('should apply modal mode flex classes', () => {
       const { container } = render(<CombinationGrid {...defaultProps} mode="modal" />);
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('grid-cols-2');
-      expect(grid).not.toHaveClass('sm:grid-cols-3');
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('flex-wrap');
+      expect(gridContainer).toHaveClass('gap-2');
     });
 
-    test('should apply common grid classes', () => {
+    test('should apply common container classes', () => {
       const { container } = render(<CombinationGrid {...defaultProps} />);
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('gap-2');
-      expect(grid).toHaveClass('p-4');
-      expect(grid).toHaveClass('overflow-y-auto');
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('gap-2');
+      expect(gridContainer).toHaveClass('p-4');
+      expect(gridContainer).toHaveClass('overflow-y-auto');
     });
 
     test('should apply custom className when provided', () => {
       const { container } = render(<CombinationGrid {...defaultProps} className="custom-grid-class" />);
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('custom-grid-class');
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('custom-grid-class');
     });
 
     test('should display empty state when no combinations', () => {
@@ -145,7 +145,7 @@ describe('CombinationGrid', () => {
       const onToggle = jest.fn();
       render(<CombinationGrid {...defaultProps} onToggle={onToggle} />);
 
-      const firstCard = screen.getByText('1, 2').closest('button');
+      const firstCard = screen.getByText('12').closest('button');
       fireEvent.click(firstCard!);
 
       expect(onToggle).toHaveBeenCalledTimes(1);
@@ -158,9 +158,9 @@ describe('CombinationGrid', () => {
 
       render(<CombinationGrid {...defaultProps} combinations={combinations} onToggle={onToggle} />);
 
-      const card1 = screen.getByText('1, 2').closest('button');
-      const card2 = screen.getByText('3, 4').closest('button');
-      const card3 = screen.getByText('5, 6').closest('button');
+      const card1 = screen.getByText('12').closest('button');
+      const card2 = screen.getByText('34').closest('button');
+      const card3 = screen.getByText('56').closest('button');
 
       fireEvent.click(card1!);
       fireEvent.click(card2!);
@@ -187,11 +187,11 @@ describe('CombinationGrid', () => {
       expect(emptyContainer).toHaveClass('p-8');
     });
 
-    test('should not display grid when showing empty state', () => {
+    test('should not display flex container when showing empty state', () => {
       const { container } = render(<CombinationGrid {...defaultProps} combinations={[]} />);
 
-      const grid = container.querySelector('.grid');
-      expect(grid).not.toBeInTheDocument();
+      const flexContainer = container.querySelector('.flex-wrap');
+      expect(flexContainer).not.toBeInTheDocument();
     });
   });
 
@@ -205,9 +205,9 @@ describe('CombinationGrid', () => {
         />
       );
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('grid-cols-2');
-      expect(grid).toHaveClass('sm:grid-cols-3');
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('flex-wrap');
+      expect(gridContainer).toHaveClass('gap-2');
     });
 
     test('should handle modal mode correctly', () => {
@@ -219,9 +219,9 @@ describe('CombinationGrid', () => {
         />
       );
 
-      const grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('grid-cols-2');
-      expect(grid).not.toHaveClass('sm:grid-cols-3');
+      const gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('flex-wrap');
+      expect(gridContainer).toHaveClass('gap-2');
     });
   });
 
@@ -232,25 +232,25 @@ describe('CombinationGrid', () => {
 
       const { rerender } = render(<CombinationGrid {...defaultProps} combinations={combinations1} />);
 
-      expect(screen.getByText('1, 2')).toBeInTheDocument();
-      expect(screen.queryByText('3, 4')).not.toBeInTheDocument();
+      expect(screen.getByText('12')).toBeInTheDocument();
+      expect(screen.queryByText('34')).not.toBeInTheDocument();
 
       rerender(<CombinationGrid {...defaultProps} combinations={combinations2} />);
 
-      expect(screen.queryByText('1, 2')).not.toBeInTheDocument();
-      expect(screen.getByText('3, 4')).toBeInTheDocument();
+      expect(screen.queryByText('12')).not.toBeInTheDocument();
+      expect(screen.getByText('34')).toBeInTheDocument();
     });
 
     test('should update when mode changes', () => {
       const { container, rerender } = render(<CombinationGrid {...defaultProps} mode="panel" />);
 
-      let grid = container.querySelector('.grid');
-      expect(grid).toHaveClass('sm:grid-cols-3');
+      let gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('flex-wrap');
 
       rerender(<CombinationGrid {...defaultProps} mode="modal" />);
 
-      grid = container.querySelector('.grid');
-      expect(grid).not.toHaveClass('sm:grid-cols-3');
+      gridContainer = container.querySelector('.flex');
+      expect(gridContainer).toHaveClass('flex-wrap');
     });
 
     test('should handle transition from empty to filled', () => {
@@ -261,17 +261,17 @@ describe('CombinationGrid', () => {
       rerender(<CombinationGrid {...defaultProps} combinations={defaultProps.combinations} />);
 
       expect(screen.queryByText('No combinations available for this cage')).not.toBeInTheDocument();
-      expect(screen.getByText('1, 2')).toBeInTheDocument();
+      expect(screen.getByText('12')).toBeInTheDocument();
     });
 
     test('should handle transition from filled to empty', () => {
       const { rerender } = render(<CombinationGrid {...defaultProps} />);
 
-      expect(screen.getByText('1, 2')).toBeInTheDocument();
+      expect(screen.getByText('12')).toBeInTheDocument();
 
       rerender(<CombinationGrid {...defaultProps} combinations={[]} />);
 
-      expect(screen.queryByText('1, 2')).not.toBeInTheDocument();
+      expect(screen.queryByText('12')).not.toBeInTheDocument();
       expect(screen.getByText('No combinations available for this cage')).toBeInTheDocument();
     });
   });
@@ -283,7 +283,7 @@ describe('CombinationGrid', () => {
       render(<CombinationGrid {...defaultProps} combinations={combinations} />);
 
       expect(screen.getAllByRole('button')).toHaveLength(1);
-      expect(screen.getByText('1, 2, 3')).toBeInTheDocument();
+      expect(screen.getByText('123')).toBeInTheDocument();
     });
 
     test('should handle many combinations', () => {
