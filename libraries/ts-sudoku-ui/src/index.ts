@@ -40,6 +40,16 @@ export * from './contexts/DiagnosticLoggerContext';
 // Hooks
 export { usePuzzleSession } from './hooks/usePuzzleSession';
 export { useResponsiveLayout } from './hooks/useResponsiveLayout';
+export { useKillerCombinations } from './hooks/useKillerCombinations';
+export { useCombinationElimination } from './hooks/useCombinationElimination';
+export { useKeyboardShortcut } from './hooks/useKeyboardShortcut';
+
+// Killer Combinations Components
+export { KillerCombinationsExplorer } from './components/KillerCombinationsExplorer';
+export { KillerCombinationsPanel } from './components/KillerCombinationsPanel';
+export { KillerCombinationsModal } from './components/KillerCombinationsModal';
+export { CombinationGrid } from './components/CombinationGrid';
+export { CombinationCard } from './components/CombinationCard';
 
 // Types
 export type {
@@ -52,7 +62,13 @@ export type {
   IValidationDisplayProps,
   ICageDisplayInfo,
   ICageOverlayProps,
-  ICageSumIndicatorProps
+  ICageSumIndicatorProps,
+  IKillerCombinationsMode,
+  ICombinationDisplayInfo,
+  IEliminationState,
+  IKillerCombinationsExplorerProps,
+  ICombinationCardProps,
+  ICombinationGridProps
 } from './types';
 
 // Compact control ribbon types
@@ -69,6 +85,9 @@ export type {
   KeypadLayoutMode,
   IResponsiveLayoutInfo
 } from './hooks/useResponsiveLayout';
+
+// Keyboard shortcut types
+export type { IKeyboardShortcutOptions } from './hooks/useKeyboardShortcut';
 
 // Re-export commonly used types from ts-sudoku-lib
 export type { IPuzzleDescription } from '@fgv/ts-sudoku-lib';

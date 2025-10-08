@@ -14,12 +14,19 @@ import { NavigationWrap } from '@fgv/ts-sudoku-lib';
 import { PuzzleSession } from '@fgv/ts-sudoku-lib';
 import { default as React_2 } from 'react';
 import { ReactNode } from 'react';
+import { Result } from '@fgv/ts-utils';
 
 // @public
 export const CageOverlay: React_2.FC<ICageOverlayProps>;
 
 // @public
 export const CageSumIndicator: React_2.FC<ICageSumIndicatorProps>;
+
+// @public
+export const CombinationCard: React_2.NamedExoticComponent<ICombinationCardProps>;
+
+// @public
+export const CombinationGrid: React_2.FC<ICombinationGridProps>;
 
 // @public
 export const CompactControlRibbon: React_2.FC<ICompactControlRibbonProps>;
@@ -104,17 +111,52 @@ export interface ICellDisplayInfo {
 }
 
 // @public
+export interface ICombinationCardProps {
+    // (undocumented)
+    readonly className?: string;
+    // (undocumented)
+    readonly combination: ICombinationDisplayInfo;
+    // (undocumented)
+    readonly onToggle: (signature: string) => void;
+}
+
+// @public
+export interface ICombinationDisplayInfo {
+    // (undocumented)
+    readonly combination: number[];
+    // (undocumented)
+    readonly isEliminated: boolean;
+    // (undocumented)
+    readonly signature: string;
+}
+
+// @public
+export interface ICombinationGridProps {
+    // (undocumented)
+    readonly className?: string;
+    // (undocumented)
+    readonly combinations: ICombinationDisplayInfo[];
+    // (undocumented)
+    readonly mode: IKillerCombinationsMode;
+    // (undocumented)
+    readonly onToggle: (signature: string) => void;
+}
+
+// @public
 export interface ICompactControlRibbonProps {
     readonly canRedo: boolean;
     readonly canReset: boolean;
+    readonly canShowCombinations?: boolean;
     readonly canUndo: boolean;
     readonly className?: string;
     readonly isSolved: boolean;
     readonly isValid: boolean;
+    readonly onCombinations?: () => void;
     readonly onExport: () => void;
     readonly onRedo: () => void;
     readonly onReset: () => void;
     readonly onUndo: () => void;
+    readonly showCombinations?: boolean;
     readonly validationErrors: ReadonlyArray<{
         readonly type: string;
         readonly cellId: string;
@@ -144,6 +186,47 @@ export interface IDualKeypadProps {
     readonly selectedCellCount: number;
     readonly showOverlayToggle?: boolean;
 }
+
+// @public
+export interface IEliminationState {
+    // (undocumented)
+    readonly clearAll: () => void;
+    // (undocumented)
+    readonly eliminatedSignatures: Set<string>;
+    // (undocumented)
+    readonly toggleElimination: (signature: string) => void;
+}
+
+// @public
+export interface IKeyboardShortcutOptions {
+    // (undocumented)
+    readonly ctrl?: boolean;
+    // (undocumented)
+    readonly meta?: boolean;
+    // (undocumented)
+    readonly preventDefault?: boolean;
+    // (undocumented)
+    readonly shift?: boolean;
+}
+
+// @public
+export interface IKillerCombinationsExplorerProps {
+    // (undocumented)
+    readonly className?: string;
+    // (undocumented)
+    readonly isOpen: boolean;
+    // (undocumented)
+    readonly mobileBreakpoint?: number;
+    // (undocumented)
+    readonly onClose: () => void;
+    // (undocumented)
+    readonly puzzleId?: string;
+    // (undocumented)
+    readonly selectedCage: ICage | null;
+}
+
+// @public
+export type IKillerCombinationsMode = 'panel' | 'modal';
 
 // @public
 export interface INumberKeypadProps {
@@ -295,6 +378,19 @@ export interface IValidationError {
 export type KeypadLayoutMode = 'side-by-side' | 'stacked' | 'overlay' | 'hidden';
 
 // @public
+export const KillerCombinationsExplorer: React_2.FC<IKillerCombinationsExplorerProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IKillerCombinationsModalProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const KillerCombinationsModal: React_2.FC<IKillerCombinationsModalProps>;
+
+// Warning: (ae-forgotten-export) The symbol "IKillerCombinationsPanelProps" needs to be exported by the entry point index.d.ts
+//
+// @public
+export const KillerCombinationsPanel: React_2.FC<IKillerCombinationsPanelProps>;
+
+// @public
 export const NumberKeypad: React_2.FC<INumberKeypadProps>;
 
 // @public
@@ -314,7 +410,16 @@ export const SudokuGrid: React_2.FC<ISudokuGridProps>;
 export const SudokuGridEntry: React_2.FC<ISudokuGridEntryProps>;
 
 // @public
+export function useCombinationElimination(puzzleId: string | undefined, cageId: string | undefined): IEliminationState;
+
+// @public
 export const useDiagnosticLogger: () => Logging.LogReporter<unknown>;
+
+// @public
+export function useKeyboardShortcut(key: string, callback: () => void, options?: IKeyboardShortcutOptions): void;
+
+// @public
+export function useKillerCombinations(cage: ICage | null): Result<ICombinationDisplayInfo[]>;
 
 // @public
 export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription): {

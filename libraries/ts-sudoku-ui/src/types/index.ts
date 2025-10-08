@@ -190,3 +190,63 @@ export interface ICageSumIndicatorProps {
   readonly position: { top: number; left: number };
   readonly className?: string;
 }
+
+/**
+ * Display mode for killer combinations explorer
+ * @public
+ */
+export type IKillerCombinationsMode = 'panel' | 'modal';
+
+/**
+ * Display information for a single combination
+ * @public
+ */
+export interface ICombinationDisplayInfo {
+  readonly combination: number[];
+  readonly signature: string;
+  readonly isEliminated: boolean;
+}
+
+/**
+ * State management for combination elimination
+ * @public
+ */
+export interface IEliminationState {
+  readonly eliminatedSignatures: Set<string>;
+  readonly toggleElimination: (signature: string) => void;
+  readonly clearAll: () => void;
+}
+
+/**
+ * Props for the KillerCombinationsExplorer component
+ * @public
+ */
+export interface IKillerCombinationsExplorerProps {
+  readonly selectedCage: ICage | null;
+  readonly puzzleId?: string;
+  readonly isOpen: boolean;
+  readonly onClose: () => void;
+  readonly mobileBreakpoint?: number;
+  readonly className?: string;
+}
+
+/**
+ * Props for the CombinationCard component
+ * @public
+ */
+export interface ICombinationCardProps {
+  readonly combination: ICombinationDisplayInfo;
+  readonly onToggle: (signature: string) => void;
+  readonly className?: string;
+}
+
+/**
+ * Props for the CombinationGrid component
+ * @public
+ */
+export interface ICombinationGridProps {
+  readonly combinations: ICombinationDisplayInfo[];
+  readonly onToggle: (signature: string) => void;
+  readonly mode: IKillerCombinationsMode;
+  readonly className?: string;
+}
