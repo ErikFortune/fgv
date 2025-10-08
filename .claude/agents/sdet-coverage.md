@@ -1,6 +1,6 @@
 ---
 name: sdet-coverage
-description: Use this agent when you need to analyze test coverage gaps and classify them appropriately. This agent works with existing functional tests to identify untested code paths and categorize them as missing functional tests, testable error cases, or defensive code that should be ignored.
+description: Use this agent when you need to analyze test coverage gaps and classify them appropriately. This agent works with existing functional tests to identify untested code paths and categorize them as missing functional tests, testable error cases, or defensive code that should be ignored. 
 tools: Task, Bash, Glob, Grep, LS, ExitPlanMode, Read, Edit, MultiEdit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash
 model: sonnet
 color: orange
