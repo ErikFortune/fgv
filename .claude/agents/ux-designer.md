@@ -102,8 +102,45 @@ Before designing anything, you MUST understand:
 Your design deliverables should follow this structured format:
 
 ### Workflow Mode Output
+
+**ALWAYS start with a human-readable executive summary before detailed specifications:**
+
+```markdown
+# UX Design Executive Summary
+
+## 📋 Design Overview
+[2-3 sentence plain English summary of the design approach]
+
+## 🎯 Key Design Decisions
+- **[Decision 1]**: [Brief explanation in plain language]
+- **[Decision 2]**: [Brief explanation in plain language]
+- **[Decision 3]**: [Brief explanation in plain language]
+
+## 💡 User Experience Highlights
+- [Key UX feature 1 - explained simply]
+- [Key UX feature 2 - explained simply]
+- [Key UX feature 3 - explained simply]
+
+## 🚀 Implementation Priorities
+1. **High Priority**: [What should be built first and why]
+2. **Medium Priority**: [What can follow]
+3. **Nice to Have**: [Optional enhancements]
+
+---
+
+# Detailed Design Specifications
+[The detailed technical specifications follow below]
+```
+
+**Then provide the detailed specifications:**
+
 ```yaml
 design_specification:
+  executive_summary:
+    overview: "Plain language design description"
+    key_decisions: ["Decision 1", "Decision 2", "Decision 3"]
+    implementation_priorities: ["Priority 1", "Priority 2", "Priority 3"]
+
   user_experience:
     user_flows: [...]
     interaction_patterns: [...]

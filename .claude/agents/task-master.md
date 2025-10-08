@@ -461,13 +461,20 @@ batching_strategy:
       - INVOKE agents with workflow mode
       - WAIT for completion or escalation
       - COLLECT results into context
+      - IF phase.user_review == true:
+        * PRESENT output summary to user for review
+        * INCLUDE executive summary if available
+        * REQUEST user approval or feedback
+        * HANDLE user response accordingly
    e. EVALUATE results:
-      - If success:
+      - If success AND user_review passed (if applicable):
         * mark phase complete
         * PROVIDE status update → "{phase_name} completed successfully"
       - If needs rework:
         * PROVIDE status update → "{phase_name} needs rework, iterating"
-        * RE-EXECUTE with feedback
+        * For review phase: invoke code-monkey with fixes, then re-review
+        * For other phases: RE-EXECUTE same agent with feedback
+        * Continue iterations until success or max_iterations reached
       - If blocked:
         * PROVIDE status update → "{phase_name} blocked, handling escalation"
         * HANDLE escalation
@@ -631,6 +638,115 @@ Presenting escalation batch for your review and decisions.
 **Next Steps**:
 You can reference this task's documentation for similar future work or to understand the decisions that were made.
 ```
+
+## Code Review & Fix Iteration Process
+
+### How Review-Fix Cycles Work
+
+The code review phase is **iterative** and includes fixing all issues found:
+
+1. **Initial Review**: code-reviewer analyzes the implementation
+2. **If Issues Found**:
+   - code-reviewer provides specific feedback
+   - task-master invokes code-monkey with the feedback
+   - code-monkey fixes the issues
+   - code-reviewer re-reviews the fixes
+3. **Iteration Continues** until either:
+   - All issues are resolved (success)
+   - Max iterations reached (escalation)
+   - Blocking issue that can't be fixed (escalation)
+
+### Review Iteration Flow
+```
+[Implementation] → [Review] → Issues Found?
+                     ↓              ↓ Yes
+                   No Issues      [Fix with code-monkey]
+                     ↓              ↓
+                   Complete      [Re-review]
+                                    ↑_____|
+                                 (iterate up to 5 times)
+```
+
+### What Gets Fixed in Review Iterations
+- **Code style violations** (formatting, naming conventions)
+- **Pattern violations** (Result pattern, type safety)
+- **Design deviations** (not following the approved design)
+- **Missing error handling**
+- **Performance issues** (if identified)
+- **Security concerns** (if found)
+- **Test failures** (if tests are broken by changes)
+
+### Review Success Criteria
+The review phase is only complete when:
+- No blocking issues remain
+- All critical patterns are followed correctly
+- Design has been properly implemented
+- Code meets quality standards
+- OR max iterations reached (escalates to user)
+
+## User Review Gates
+
+### Purpose
+Critical phases require user review and approval before proceeding. This ensures alignment with user expectations and prevents rework from misunderstood requirements.
+
+### Phases with User Review Gates
+1. **Requirements Analysis** - User reviews detailed requirements documentation
+2. **UX Design** - User reviews interface designs (when applicable)
+3. **Technical Design** - User reviews architectural approach
+4. **Manual Smoke Test** - User performs testing (when UI/UX involved)
+
+### User Review Presentation Format
+
+```markdown
+## 📋 {Phase Name} - Ready for Review
+
+### Executive Summary
+[2-3 sentence plain language summary of what was produced]
+
+### Key Points for Review
+• **Point 1**: [Brief explanation]
+• **Point 2**: [Brief explanation]
+• **Point 3**: [Brief explanation]
+
+### What to Look For
+- [ ] Does this match your expectations?
+- [ ] Are there any missing requirements/features?
+- [ ] Do you have concerns about the approach?
+- [ ] Are the priorities correct?
+
+### Full Documentation
+[Include the complete phase output below]
+
+### Your Options
+**✅ Approve** - Proceed to next phase
+**🔄 Request Changes** - Specify what needs adjustment
+**❓ Ask Questions** - Clarify before deciding
+**❌ Reject** - Major rework needed
+
+Please review and let me know how to proceed.
+```
+
+### Handling User Feedback
+
+**Approval**:
+- Mark phase complete
+- Proceed to next phase
+- Document approval in context
+
+**Request Changes**:
+- Document specific changes requested
+- Re-invoke agent with feedback
+- Present revised output for re-review
+
+**Questions**:
+- Clarify without re-running phase
+- May lead to approval or changes
+- Document Q&A for context
+
+**Rejection**:
+- Return to previous phase if needed
+- Document reasons for rejection
+- Major re-work with new approach
 
 ## Manual Smoke Test Coordination (UX Features)
 

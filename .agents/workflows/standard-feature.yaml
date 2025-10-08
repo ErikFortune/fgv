@@ -24,9 +24,10 @@ phases:
     mode: workflow
     required: true
     type: gate
+    user_review: true # Requires user review of requirements before proceeding
     dependencies: [requirements_confirmation]
     max_iterations: 5
-    description: 'Analyze and document detailed requirements'
+    description: 'Analyze and document detailed requirements for user review'
 
   - phase: ux_design
     agent: ux-designer
@@ -36,17 +37,19 @@ phases:
     dependencies: [requirements_analysis]
     max_iterations: 2
     type: gate
-    description: 'Design user experience and interface specifications'
+    user_review: true # Requires user review of UX design before proceeding
+    description: 'Design user experience with executive summary and detailed specifications'
 
   - phase: design
     agent: senior-developer
     mode: workflow
     required: true
     type: gate
+    user_review: true # Requires user review of technical design before implementation
     dependencies: [requirements_analysis, ux_design]
     condition_dependencies: 'ux_design_if_applicable'
     max_iterations: 5
-    description: 'Create architectural design and implementation plan'
+    description: 'Create architectural design and implementation plan for user review'
 
   - phase: implementation
     agent: code-monkey
@@ -63,7 +66,8 @@ phases:
     dependencies: [implementation]
     can_run_in_parallel: [] # Removed parallel with functional_test due to smoke test dependency
     max_iterations: 5
-    description: 'Review code for quality and adherence to standards'
+    includes_fixes: true # Review findings are fixed through iterations with code-monkey
+    description: 'Review code and iterate with fixes until quality standards are met'
 
   - phase: manual_smoke_test
     agent: task-master
