@@ -30,6 +30,8 @@ import { SudokuGrid } from './SudokuGrid';
 import { CompactControlRibbon } from './CompactControlRibbon';
 import { DualKeypad } from './DualKeypad';
 import { useResponsiveLayout } from '../hooks/useResponsiveLayout';
+import { KillerCombinationsExplorer } from './KillerCombinationsExplorer';
+import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 
 /**
  * Main container component that orchestrates puzzle entry
@@ -71,8 +73,48 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartCellRef = useRef<CellId | null>(null);
 
+  // Killer Combinations Explorer state
+  const [isCombinationsExplorerOpen, setIsCombinationsExplorerOpen] = useState(false);
+
   // Get responsive layout information
   const responsiveLayout = useResponsiveLayout();
+
+  // Determine selected cage for killer sudoku
+  const selectedCage = useMemo(() => {
+    if (
+      initialPuzzleDescription?.type === 'killer-sudoku' &&
+      selectedCells.length > 0 &&
+      cageDisplayInfo &&
+      cageDisplayInfo.length > 0
+    ) {
+      // Find all cages that contain selected cells
+      const cagesContainingSelection = cageDisplayInfo.filter((cageInfo) =>
+        selectedCells.some((cellId) => cageInfo.cage.containsCell(cellId))
+      );
+
+      // Only return a cage if all selected cells are in the same cage
+      if (cagesContainingSelection.length === 1) {
+        // Verify all selected cells are in this cage
+        const cage = cagesContainingSelection[0].cage;
+        const allInSameCage = selectedCells.every((cellId) => cage.containsCell(cellId));
+        if (allInSameCage) {
+          return cage;
+        }
+      }
+    }
+    return null;
+  }, [initialPuzzleDescription?.type, selectedCells, cageDisplayInfo]);
+
+  // Keyboard shortcut for combinations explorer
+  useKeyboardShortcut(
+    'k',
+    () => {
+      if (selectedCage) {
+        setIsCombinationsExplorerOpen((prev) => !prev);
+      }
+    },
+    { ctrl: true, meta: true, preventDefault: true }
+  );
 
   // Handle cell selection with multi-select support
   const handleCellSelect = useCallback(
@@ -510,6 +552,9 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             onRedo={redo}
             onReset={reset}
             onExport={handleExport}
+            showCombinations={initialPuzzleDescription?.type === 'killer-sudoku'}
+            canShowCombinations={selectedCage !== null}
+            onCombinations={() => setIsCombinationsExplorerOpen(true)}
             className="mt-3 mb-2"
           />
 
@@ -570,6 +615,16 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
           hasCellSelection={selectedCells.length > 0}
           selectedCellCount={selectedCells.length}
           showOverlayToggle={true}
+        />
+      )}
+
+      {/* Killer Combinations Explorer - only render for killer sudoku */}
+      {initialPuzzleDescription?.type === 'killer-sudoku' && selectedCage && (
+        <KillerCombinationsExplorer
+          selectedCage={selectedCage}
+          puzzleId={initialPuzzleDescription.id || 'default'}
+          isOpen={isCombinationsExplorerOpen}
+          onClose={() => setIsCombinationsExplorerOpen(false)}
         />
       )}
     </div>
