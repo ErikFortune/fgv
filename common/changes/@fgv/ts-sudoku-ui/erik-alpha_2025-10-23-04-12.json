@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-sudoku-ui",
+      "comment": "version bump",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-sudoku-ui"
+}
