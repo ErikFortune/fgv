@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 import { ILogger, ReporterLogLevel, NoOpLogger, stringifyLogValue } from './logger';
-import { IResultReporter, MessageLogLevel, Success } from '../base';
+import { ErrorFormatter, IResultReporter, MessageLogLevel, Success } from '../base';
 
 /**
  * A function that formats a value for logging.
@@ -51,10 +51,10 @@ export interface ILogReporterCreateParams<T, TD = unknown> {
  */
 export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T, TD> {
   /**
-   * The logger to wrap.
-   * @internal
+   * Base logger used to by this reporter.
+   * @public
    */
-  protected readonly _logger: ILogger;
+  public readonly logger: ILogger;
 
   /**
    * The formatter to use for values.
@@ -75,7 +75,7 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
   public constructor(params?: ILogReporterCreateParams<T, TD>) {
     /* c8 ignore next 1 */
     params = params ?? {};
-    this._logger = params.logger ?? new NoOpLogger();
+    this.logger = params.logger ?? new NoOpLogger();
     this._valueFormatter = params.valueFormatter ?? LogReporter.tryFormatObject;
     this._messageFormatter = params.messageFormatter ?? ((message, __detail) => message);
   }
@@ -84,35 +84,35 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
    * {@inheritDoc Logging.ILogger.logLevel}
    */
   public get logLevel(): ReporterLogLevel {
-    return this._logger.logLevel;
+    return this.logger.logLevel;
   }
 
   /**
    * {@inheritDoc Logging.ILogger.detail}
    */
   public detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this._logger.detail(message, ...parameters);
+    return this.logger.detail(message, ...parameters);
   }
 
   /**
    * {@inheritDoc Logging.ILogger.info}
    */
   public info(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this._logger.info(message, ...parameters);
+    return this.logger.info(message, ...parameters);
   }
 
   /**
    * {@inheritDoc Logging.ILogger.warn}
    */
   public warn(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this._logger.warn(message, ...parameters);
+    return this.logger.warn(message, ...parameters);
   }
 
   /**
    * {@inheritDoc Logging.ILogger.error}
    */
   public error(message?: unknown, ...parameters: unknown[]): Success<string | undefined> {
-    return this._logger.error(message, ...parameters);
+    return this.logger.error(message, ...parameters);
   }
 
   /**
@@ -123,14 +123,15 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
     message?: unknown,
     ...parameters: unknown[]
   ): Success<string | undefined> {
-    return this._logger.log(level, message, ...parameters);
+    return this.logger.log(level, message, ...parameters);
   }
 
   /**
    * {@inheritDoc IResultReporter.reportSuccess}
    */
-  public reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void {
-    const formatted = this._valueFormatter(value, detail);
+  public reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void {
+    const formattedValue = this._valueFormatter(value, detail);
+    const formatted = message ? message(formattedValue, detail) : formattedValue;
     this.log(level, formatted);
   }
 
@@ -140,6 +141,19 @@ export class LogReporter<T, TD = unknown> implements ILogger, IResultReporter<T,
   public reportFailure(level: MessageLogLevel, message: string, detail?: TD): void {
     const formatted = this._messageFormatter(message, detail);
     this.log(level, formatted);
+  }
+
+  /**
+   * Creates a new {@link Logging.LogReporter | LogReporter} with the same logger but a different value formatter.
+   * @param valueFormatter - The value formatter to use.
+   * @returns A new {@link Logging.LogReporter | LogReporter} with the same logger but a different value formatter.
+   */
+  public withValueFormatter<TN>(valueFormatter: LogValueFormatter<TN, TD>): LogReporter<TN, TD> {
+    return new LogReporter<TN, TD>({
+      logger: this.logger,
+      valueFormatter,
+      messageFormatter: this._messageFormatter
+    });
   }
 
   /**

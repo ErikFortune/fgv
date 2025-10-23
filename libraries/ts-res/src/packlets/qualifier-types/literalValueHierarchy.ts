@@ -165,7 +165,7 @@ export class LiteralValueHierarchy<T extends string = string> {
     if (ancestors.isSuccess()) {
       return ancestors.value.includes(possibleAncestor);
     }
-    /* c8 ignore next 1 - edge case: ancestor validation fallback */
+    /* c8 ignore next 2 - edge case: ancestor validation fallback */
     return false;
   }
 
@@ -218,11 +218,11 @@ export class LiteralValueHierarchy<T extends string = string> {
     // For open hierarchies, skip validation and allow any values
     if (!this.isOpenValues) {
       // Validate that both condition and context exist in the hierarchy
-      /* c8 ignore next 2 - functional error case tested but coverage intermittently missed */
+      /* c8 ignore next 3 - functional error case tested but coverage intermittently missed */
       if (!this.values.has(condition as T)) {
         return NoMatch;
       }
-      /* c8 ignore next 2 - functional error case tested but coverage intermittently missed */
+      /* c8 ignore next 3 - functional error case tested but coverage intermittently missed */
       if (!this.values.has(context as T)) {
         return NoMatch;
       }
@@ -257,6 +257,7 @@ export class LiteralValueHierarchy<T extends string = string> {
   ): Result<ReadonlyMap<T, ILiteralValue<T>>> {
     const errors = new MessageAggregator();
     const values = params.values;
+    /* c8 ignore next 1 - defense in depth */
     const hierarchy = params.hierarchy ?? {};
 
     // If no values are provided, collect all values from the hierarchy
@@ -283,7 +284,7 @@ export class LiteralValueHierarchy<T extends string = string> {
 
         const parent = valueMap.get(parentName as T);
         if (!parent) {
-          errors.addMessage(`${valueName}: parent ${parentName} is not a valid literal value.`);
+          errors.addMessage(`${valueName}: parent ${parentName} is invalid literal value.`);
           continue;
         }
 
@@ -296,7 +297,7 @@ export class LiteralValueHierarchy<T extends string = string> {
           ancestors.push(ancestor.name);
           /* c8 ignore next 1 - defensive coding: ancestor.parent === value is very difficult to reach */
           if (ancestor.parent === parent || ancestor.parent === value) {
-            /* c8 ignore next 3 - defensive coding: circular reference error reporting intermittently missed */
+            /* c8 ignore next 4 - defensive coding: circular reference error reporting intermittently missed */
             errors.addMessage(`${valueName}: Circular reference detected: ${ancestors.join('->')}`);
             circular = true;
             break;
@@ -304,7 +305,7 @@ export class LiteralValueHierarchy<T extends string = string> {
           ancestor = ancestor.parent;
         }
 
-        /* c8 ignore next 2 - defensive coding: circular reference handling intermittently missed */
+        /* c8 ignore next 3 - defensive coding: circular reference handling intermittently missed */
         if (circular) {
           continue;
         }

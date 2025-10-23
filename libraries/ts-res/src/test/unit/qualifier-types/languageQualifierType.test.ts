@@ -73,10 +73,10 @@ describe('LanguageQualifierType', () => {
       });
     });
 
-    test('fails if the name is not a valid qualifier type name', () => {
+    test('fails if the name is invalid qualifier type name', () => {
       expect(
         TsRes.QualifierTypes.LanguageQualifierType.create({
-          name: 'not a valid name'
+          name: 'invalid name'
         })
       ).toFailWith(/invalid qualifier type name/i);
     });
@@ -223,10 +223,10 @@ describe('LanguageQualifierType', () => {
       });
     });
 
-    test('fails if the name is not a valid qualifier type name', () => {
+    test('fails if the name is invalid qualifier type name', () => {
       const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILanguageQualifierTypeConfig> =
         {
-          name: 'not a valid name',
+          name: 'invalid name',
           systemType: 'language'
         };
 

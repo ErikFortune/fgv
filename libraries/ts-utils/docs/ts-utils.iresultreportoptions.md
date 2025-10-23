@@ -45,31 +45,12 @@ Description
 
 </td><td>
 
-[MessageLogLevel](./ts-utils.messageloglevel.md)
+[MessageLogLevel](./ts-utils.messageloglevel.md) \| [IMessageReportDetail](./ts-utils.imessagereportdetail.md)<!-- -->&lt;TD&gt;
 
 
 </td><td>
 
 _(Optional)_ The level of reporting to be used for failure results. Default is 'error'.
-
-
-</td></tr>
-<tr><td>
-
-[message?](./ts-utils.iresultreportoptions.message.md)
-
-
-</td><td>
-
-
-</td><td>
-
-[ErrorFormatter](./ts-utils.errorformatter.md)<!-- -->&lt;TD&gt;
-
-
-</td><td>
-
-_(Optional)_ The error formatter to be used for reporting an error result.
 
 
 </td></tr>
@@ -83,7 +64,7 @@ _(Optional)_ The error formatter to be used for reporting an error result.
 
 </td><td>
 
-[MessageLogLevel](./ts-utils.messageloglevel.md)
+[MessageLogLevel](./ts-utils.messageloglevel.md) \| [IMessageReportDetail](./ts-utils.imessagereportdetail.md)<!-- -->&lt;TD&gt;
 
 
 </td><td>

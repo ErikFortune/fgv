@@ -105,7 +105,7 @@ describe('QualifierCollector class', () => {
             { name: 'language', typeName: 'language', defaultPriority: 600 }
           ]
         })
-      ).toFailWith(/not a valid priority/i);
+      ).toFailWith(/invalid priority/i);
     });
 
     test('fails if there are duplicate qualifiers', () => {

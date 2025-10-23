@@ -47,8 +47,8 @@ describe('importContext', () => {
         );
       });
 
-      test('fails if the baseId is not a valid ResourceId', () => {
-        expect(TsRes.Import.ImportContext.create({ baseId: 'bogus id' })).toFailWith(/not a valid resource/i);
+      test('fails if the baseId is invalid ResourceId', () => {
+        expect(TsRes.Import.ImportContext.create({ baseId: 'bogus id' })).toFailWith(/invalid resource/i);
       });
     });
 
@@ -103,7 +103,7 @@ describe('importContext', () => {
 
       test('fails if any of the names to be added are not valid ResourceIds', () => {
         const context = TsRes.Import.ImportContext.create({ baseId: 'baseId' }).orThrow();
-        expect(context.withName('bogus id')).toFailWith(/not a valid resource/i);
+        expect(context.withName('bogus id')).toFailWith(/invalid resource/i);
       });
     });
   });

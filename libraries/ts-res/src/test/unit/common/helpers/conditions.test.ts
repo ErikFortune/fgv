@@ -43,17 +43,13 @@ describe('Condition helpers', () => {
     test('fails if qualifier is not a valid qualifier name', () => {
       const qualifier = 'bogus qualifier';
       const value = 'someValue';
-      expect(TsRes.Helpers.buildConditionToken({ qualifier, value })).toFailWith(
-        /not a valid condition token/i
-      );
+      expect(TsRes.Helpers.buildConditionToken({ qualifier, value })).toFailWith(/invalid condition token/i);
     });
 
     test('fails if value is not a valid value', () => {
       const qualifier = 'someQualifier';
       const value = 'bogus/value';
-      expect(TsRes.Helpers.buildConditionToken({ qualifier, value })).toFailWith(
-        /not a valid condition token/i
-      );
+      expect(TsRes.Helpers.buildConditionToken({ qualifier, value })).toFailWith(/invalid condition token/i);
     });
   });
 
@@ -83,7 +79,7 @@ describe('Condition helpers', () => {
         { qualifier: 'qualifier1', value: 'value1' },
         { qualifier: 'qualifier2', value: 'bogus/value' }
       ];
-      expect(TsRes.Helpers.buildConditionSetToken(tokens)).toFailWith(/not a valid condition token/i);
+      expect(TsRes.Helpers.buildConditionSetToken(tokens)).toFailWith(/invalid condition token/i);
     });
   });
 
@@ -100,9 +96,7 @@ describe('Condition helpers', () => {
     });
 
     test('fails if the token is not a valid condition token', () => {
-      expect(TsRes.Helpers.parseConditionTokenParts('bogus token')).toFailWith(
-        /not a valid condition token/i
-      );
+      expect(TsRes.Helpers.parseConditionTokenParts('bogus token')).toFailWith(/invalid condition token/i);
     });
   });
 
@@ -124,7 +118,7 @@ describe('Condition helpers', () => {
     test('fails if one of the tokens is invalid', () => {
       expect(
         TsRes.Helpers.parseConditionSetTokenParts('qualifier1=value1,qualifier2=bogus/value')
-      ).toFailWith(/not a valid condition token/i);
+      ).toFailWith(/invalid condition token/i);
     });
   });
 });

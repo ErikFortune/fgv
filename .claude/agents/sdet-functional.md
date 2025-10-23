@@ -1,6 +1,6 @@
 ---
 name: sdet-functional
-description: Use this agent when you need to create comprehensive functional tests focused on behavior verification. This agent writes tests that validate requirements and functionality work correctly, separate from coverage analysis.
+description: Use this agent when you need to create comprehensive functional tests focused on behavior verification. This agent writes tests that validate requirements and functionality work correctly.  Your work is separate from coverage analysis and you do not concern yourself with coverage as measured by coverage tools.
 tools: Task, Bash, Glob, Grep, LS, ExitPlanMode, Read, Edit, MultiEdit, Write, NotebookEdit, WebFetch, TodoWrite, WebSearch, BashOutput, KillBash
 model: sonnet
 color: yellow

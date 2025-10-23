@@ -169,19 +169,45 @@ interface TaskContext {
 - **refactor-major.yaml** - Systematic refactoring with behavior preservation
 - **documentation.yaml** - Documentation creation and update workflow
 
-### Workflow Selection Logic
+### Workflow Selection Logic (DEFAULT TO STANDARD-FEATURE)
+
+**CRITICAL: Always default to `standard-feature` workflow unless explicitly overridden**
+
 ```yaml
+DEFAULT_WORKFLOW: standard-feature  # USE THIS UNLESS CLEARLY INAPPROPRIATE
+
 Task Analysis:
   - Classify type (feature, bugfix, refactor, test, docs, hotfix)
   - Assess complexity (trivial, simple, moderate, complex)
   - Consider priority (low, medium, high, critical)
 
-Workflow Selection:
-  - hotfix + critical → hotfix-emergency
-  - bugfix + (trivial|simple) → bugfix-fast
-  - feature + (moderate|complex) → standard-feature
-  - refactor + (moderate|complex) → refactor-major
-  - docs → documentation
+Workflow Selection Algorithm (MUST BE APPLIED IN THIS ORDER):
+  1. User Override:
+     - User explicitly requests specific workflow → use requested workflow
+
+  2. Emergency Detection:
+     - hotfix + critical → hotfix-emergency
+     - Keywords: "EMERGENCY", "PRODUCTION DOWN", "CRITICAL FIX"
+
+  3. Trivial Bug (ALL conditions required):
+     - bugfix + trivial complexity
+     - Single file change expected
+     - No design required
+     - Clear, obvious fix
+     → bugfix-fast
+
+  4. Documentation Only:
+     - docs (no code changes) → documentation
+
+  5. DEFAULT FOR ALL OTHER CASES:
+     → standard-feature (ALWAYS USE THIS IF UNCERTAIN)
+
+Important:
+  - When complexity is unclear → standard-feature
+  - When type is ambiguous → standard-feature
+  - When user says "implement X" → standard-feature
+  - When adding ANY new functionality → standard-feature
+  - When enhancing existing features → standard-feature
 ```
 
 ## Quality Gates

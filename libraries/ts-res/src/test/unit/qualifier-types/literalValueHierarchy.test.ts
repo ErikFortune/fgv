@@ -142,9 +142,7 @@ describe('LiteralValueHierarchy', () => {
         values,
         hierarchy
       };
-      expect(TsRes.QualifierTypes.LiteralValueHierarchy.create(init)).toFailWith(
-        /not a valid literal value/i
-      );
+      expect(TsRes.QualifierTypes.LiteralValueHierarchy.create(init)).toFailWith(/invalid literal value/i);
     });
 
     test('fails if the hierarchy contains a circular reference', () => {

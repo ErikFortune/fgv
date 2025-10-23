@@ -61,7 +61,7 @@ export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
       if (from === undefined && ctx?.ignoreUndefinedProperties === true) {
         return true;
       }
-      return fail(`"${String(from)}": not a valid JSON primitive.`);
+      return fail(`"${String(from)}": invalid JSON primitive.`);
     }
   });
 
@@ -79,7 +79,7 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
     self?: Validator<JsonObject, IJsonValidatorContext>
   ) => {
     if (!isJsonObject(from)) {
-      return fail('not a valid JSON object.');
+      return fail('invalid JSON object.');
     }
     const errors: string[] = [];
     for (const [name, value] of Object.entries(from)) {
@@ -89,7 +89,7 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
       });
     }
     if (errors.length > 0) {
-      return fail(`not a valid JSON object:\n${errors.join('\n')}`);
+      return fail(`invalid JSON object:\n${errors.join('\n')}`);
     }
     return true;
   }

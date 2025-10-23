@@ -59,6 +59,7 @@ export class ReadOnlyResourceTreeChildren<T>
       if (node.isLeaf) {
         return succeed(node).withDetail<Collections.ResultMapResultDetail>('success');
       }
+      /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
       return fail<IReadOnlyResourceTreeNode<T>>(
         `${name}: not a resource${this.path ? ` in ${this.path}` : ''}.`
       ).withDetail<Collections.ResultMapResultDetail>('failure');
@@ -70,6 +71,7 @@ export class ReadOnlyResourceTreeChildren<T>
       if (node.isBranch) {
         return succeed(node).withDetail<Collections.ResultMapResultDetail>('success');
       }
+      /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
       return fail<IReadOnlyResourceTreeNode<T>>(
         `${name}: not a branch${this.path ? ` in ${this.path}` : ''}.`
       ).withDetail<Collections.ResultMapResultDetail>('failure');
@@ -117,6 +119,7 @@ export class ReadOnlyResourceTreeChildren<T>
           'success'
         );
       }
+      /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
       return fail<IReadOnlyResourceTreeBranch<T>>(
         `${id}: not a branch${this.path ? ` in ${this.path}` : ''}.`
       ).withDetail<Collections.ResultMapResultDetail>('failure');

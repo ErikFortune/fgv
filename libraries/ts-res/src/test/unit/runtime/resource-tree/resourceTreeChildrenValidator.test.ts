@@ -104,11 +104,11 @@ describe('ResourceTreeChildrenValidator', () => {
     });
 
     test('fails with invalid ResourceId strings', () => {
-      expect(validator.getById('invalid..id')).toFailWith(/not a valid resource ID/i);
-      expect(validator.getById('')).toFailWith(/not a valid resource ID/i);
-      expect(validator.getById('.')).toFailWith(/not a valid resource ID/i);
-      expect(validator.getById('.invalid')).toFailWith(/not a valid resource ID/i);
-      expect(validator.getById('invalid.')).toFailWith(/not a valid resource ID/i);
+      expect(validator.getById('invalid..id')).toFailWith(/invalid resource ID/i);
+      expect(validator.getById('')).toFailWith(/invalid resource ID/i);
+      expect(validator.getById('.')).toFailWith(/invalid resource ID/i);
+      expect(validator.getById('.invalid')).toFailWith(/invalid resource ID/i);
+      expect(validator.getById('invalid.')).toFailWith(/invalid resource ID/i);
     });
 
     test('fails for nonexistent resources', () => {
@@ -130,9 +130,9 @@ describe('ResourceTreeChildrenValidator', () => {
     });
 
     test('fails with invalid ResourceName strings', () => {
-      expect(validator.getResource('invalid..name')).toFailWith(/not a valid resource name/i);
-      expect(validator.getResource('')).toFailWith(/not a valid resource name/i);
-      expect(validator.getResource('.')).toFailWith(/not a valid resource name/i);
+      expect(validator.getResource('invalid..name')).toFailWith(/invalid resource name/i);
+      expect(validator.getResource('')).toFailWith(/invalid resource name/i);
+      expect(validator.getResource('.')).toFailWith(/invalid resource name/i);
     });
 
     test('fails for nonexistent resources', () => {
@@ -153,9 +153,9 @@ describe('ResourceTreeChildrenValidator', () => {
     });
 
     test('fails with invalid ResourceName strings', () => {
-      expect(validator.getBranch('invalid..name')).toFailWith(/not a valid resource name/i);
-      expect(validator.getBranch('')).toFailWith(/not a valid resource name/i);
-      expect(validator.getBranch('.')).toFailWith(/not a valid resource name/i);
+      expect(validator.getBranch('invalid..name')).toFailWith(/invalid resource name/i);
+      expect(validator.getBranch('')).toFailWith(/invalid resource name/i);
+      expect(validator.getBranch('.')).toFailWith(/invalid resource name/i);
     });
 
     test('fails for nonexistent branches', () => {
@@ -181,8 +181,8 @@ describe('ResourceTreeChildrenValidator', () => {
     });
 
     test('fails with invalid ResourceId strings', () => {
-      expect(validator.getResourceById('invalid..id')).toFailWith(/not a valid resource ID/i);
-      expect(validator.getResourceById('')).toFailWith(/not a valid resource ID/i);
+      expect(validator.getResourceById('invalid..id')).toFailWith(/invalid resource ID/i);
+      expect(validator.getResourceById('')).toFailWith(/invalid resource ID/i);
     });
 
     test('fails for nonexistent resources', () => {
@@ -213,8 +213,8 @@ describe('ResourceTreeChildrenValidator', () => {
     });
 
     test('fails with invalid ResourceId strings', () => {
-      expect(validator.getBranchById('invalid..id')).toFailWith(/not a valid resource ID/i);
-      expect(validator.getBranchById('')).toFailWith(/not a valid resource ID/i);
+      expect(validator.getBranchById('invalid..id')).toFailWith(/invalid resource ID/i);
+      expect(validator.getBranchById('')).toFailWith(/invalid resource ID/i);
     });
 
     test('fails for nonexistent branches', () => {
@@ -323,16 +323,16 @@ describe('ResourceTreeChildrenValidator', () => {
       const invalidInputs = ['invalid..name', '', '.', '..', 'name.', '.name'];
 
       for (const invalid of invalidInputs) {
-        expect(validator.getResource(invalid)).toFailWith(/not a valid resource name/i);
-        expect(validator.getBranch(invalid)).toFailWith(/not a valid resource name/i);
+        expect(validator.getResource(invalid)).toFailWith(/invalid resource name/i);
+        expect(validator.getBranch(invalid)).toFailWith(/invalid resource name/i);
       }
 
       const invalidIds = ['invalid..id', '', '.', '..', 'id.', '.id'];
 
       for (const invalid of invalidIds) {
-        expect(validator.getById(invalid)).toFailWith(/not a valid resource ID/i);
-        expect(validator.getResourceById(invalid)).toFailWith(/not a valid resource ID/i);
-        expect(validator.getBranchById(invalid)).toFailWith(/not a valid resource ID/i);
+        expect(validator.getById(invalid)).toFailWith(/invalid resource ID/i);
+        expect(validator.getResourceById(invalid)).toFailWith(/invalid resource ID/i);
+        expect(validator.getBranchById(invalid)).toFailWith(/invalid resource ID/i);
       }
     });
 

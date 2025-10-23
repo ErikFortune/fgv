@@ -138,7 +138,7 @@ describe('ValidatingSimpleContextQualifierProvider class', () => {
       expect(provider.validating.getValidated('priority')).toSucceedWith(
         'high' as TsRes.QualifierContextValue
       );
-      expect(provider.validating.getValidated('nonexistent')).toFailWith(/Not a valid qualifier name/);
+      expect(provider.validating.getValidated('nonexistent')).toFailWith(/invalid qualifier name/);
     });
 
     test('provides index-based validated access', () => {
@@ -147,7 +147,7 @@ describe('ValidatingSimpleContextQualifierProvider class', () => {
       );
       expect(provider.validating.getValidatedByIndex(1)).toSucceedWith('US' as TsRes.QualifierContextValue);
       expect(provider.validating.getValidatedByIndex(2)).toSucceedWith('high' as TsRes.QualifierContextValue);
-      expect(provider.validating.getValidatedByIndex(99)).toFailWith(/Not a valid qualifier index/);
+      expect(provider.validating.getValidatedByIndex(99)).toFailWith(/invalid qualifier index/);
     });
 
     test('validates values using qualifier type-specific validation', () => {

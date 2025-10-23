@@ -414,12 +414,12 @@ describe('ResourceResolver Coverage Tests', () => {
       }).orThrow();
 
       // Test error handling for non-existent resource IDs
-      expect(resolver.resolveResource('non-existent-id')).toFailWith(/not found|not a valid resource ID/i);
+      expect(resolver.resolveResource('non-existent-id')).toFailWith(/not found|invalid resource ID/i);
       expect(resolver.resolveAllResourceCandidates('non-existent-id')).toFailWith(
-        /not found|not a valid resource ID/i
+        /not found|invalid resource ID/i
       );
       expect(resolver.resolveComposedResourceValue('non-existent-id')).toFailWith(
-        /not found|not a valid resource ID/i
+        /not found|invalid resource ID/i
       );
     });
   });

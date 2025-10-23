@@ -120,6 +120,7 @@ describe('ResourceManagerBuilder', () => {
       });
       expect(manager).toSucceedAndSatisfy((m) => {
         expect(m.qualifiers).toBe(qualifiers);
+        expect(m.qualifierTypes).toBe(qualifierTypes);
         expect(m.resourceTypes).toBe(resourceTypes);
         expect(m.size).toEqual(0);
         expect(m.conditions.size).toEqual(0);

@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-static sectionCageId(row: number, col: number): CageId;
+static sectionCageId(row: number, col: number, cageHeight?: number, cageWidth?: number): CageId;
 ```
 
 ## Parameters
@@ -53,6 +53,38 @@ number
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+cageHeight
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
+cageWidth
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

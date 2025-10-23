@@ -314,8 +314,8 @@ export class ZipFileTreeAccessors<TCT extends string = string> implements FileTr
             resolve(succeed(new ZipFileTreeAccessors<TCT>(files, normalizedParams)));
           }
         });
+        /* c8 ignore next 6 - defensive coding: fflate reports errors via callback, not exceptions */
       } catch (error) {
-        /* c8 ignore next 5 - defensive coding: fflate always throws Error objects in practice */
         resolve(
           fail(`Failed to load ZIP archive: ${error instanceof Error ? error.message : String(error)}`)
         );

@@ -53,11 +53,11 @@ describe('common resources', () => {
     expect(TsRes.Validate.toResourceTypeName(identifier)).toSucceedWith(identifier as TsRes.ResourceTypeName);
   });
 
-  test.each(invalidIdentifiers)('%s is not a valid ResourceName and ResourceTypeName', (identifier) => {
+  test.each(invalidIdentifiers)('%s is invalid ResourceName and ResourceTypeName', (identifier) => {
     expect(TsRes.Validate.isValidResourceName(identifier)).toBe(false);
     expect(TsRes.Validate.isValidResourceTypeName(identifier)).toBe(false);
-    expect(TsRes.Validate.toResourceName(identifier)).toFailWith(/not a valid resource name/i);
-    expect(TsRes.Validate.toResourceTypeName(identifier)).toFailWith(/not a valid resource type name/i);
+    expect(TsRes.Validate.toResourceName(identifier)).toFailWith(/invalid resource name/i);
+    expect(TsRes.Validate.toResourceTypeName(identifier)).toFailWith(/invalid resource type name/i);
   });
 
   test.each([0, 1, 10, 100])('%s is a valid index for various resource collectibles', (index) => {
@@ -67,11 +67,11 @@ describe('common resources', () => {
     expect(TsRes.Validate.toResourceTypeIndex(index)).toSucceedWith(index as TsRes.ResourceTypeIndex);
   });
 
-  test.each([-1, -10, -100])('%s is not a valid index for various resource collectibles', (index) => {
+  test.each([-1, -10, -100])('%s is invalid index for various resource collectibles', (index) => {
     expect(TsRes.Validate.isValidResourceIndex(index)).toBe(false);
     expect(TsRes.Validate.isValidResourceTypeIndex(index)).toBe(false);
-    expect(TsRes.Validate.toResourceIndex(index)).toFailWith(/not a valid resource index/i);
-    expect(TsRes.Validate.toResourceTypeIndex(index)).toFailWith(/not a valid resource type index/i);
+    expect(TsRes.Validate.toResourceIndex(index)).toFailWith(/invalid resource index/i);
+    expect(TsRes.Validate.toResourceTypeIndex(index)).toFailWith(/invalid resource type index/i);
   });
 
   test.each(['resource', 'some.resource.path', 'a.resource.with_underscores'])(
@@ -93,9 +93,9 @@ describe('common resources', () => {
     'resource.path.id.',
     'resource.path.id..',
     'resource.path.id..extra'
-  ])('%s is not a valid ResourceId', (id) => {
+  ])('%s is invalid ResourceId', (id) => {
     expect(TsRes.Validate.isValidResourceId(id)).toBe(false);
-    expect(TsRes.Validate.toResourceId(id)).toFailWith(/not a valid resource id/i);
+    expect(TsRes.Validate.toResourceId(id)).toFailWith(/invalid resource id/i);
   });
 
   describe('splitResourceId', () => {
@@ -114,7 +114,26 @@ describe('common resources', () => {
       'resource+path',
       'resource/path'
     ])('fails for invalid id %s', (id) => {
-      expect(TsRes.Helpers.splitResourceId(id as TsRes.ResourceId)).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.splitResourceId(id as TsRes.ResourceId)).toFailWith(/invalid resource/i);
+    });
+  });
+
+  describe('getNameForResourceId', () => {
+    test.each(validResourceIds)('gets name for %s', (tc) => {
+      expect(TsRes.Helpers.getNameForResourceId(tc.id as TsRes.ResourceId)).toSucceedWith(
+        tc.parts[tc.parts.length - 1] as TsRes.ResourceName
+      );
+    });
+    test.each([
+      '',
+      'resource.',
+      '.resource',
+      'resource..path',
+      'resource.path.',
+      'resource+path',
+      'resource/path'
+    ])('fails for invalid id %s', (id) => {
+      expect(TsRes.Helpers.getNameForResourceId(id as TsRes.ResourceId)).toFailWith(/invalid resource/i);
     });
   });
 
@@ -126,11 +145,11 @@ describe('common resources', () => {
     });
 
     test('fails if any part is invalid', () => {
-      expect(TsRes.Helpers.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.joinResourceIds('foo', 'bar', 'b@z')).toFailWith(/invalid resource/i);
     });
 
     test('fails if resulting id is empty', () => {
-      expect(TsRes.Helpers.joinResourceIds(undefined, undefined)).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.joinResourceIds(undefined, undefined)).toFailWith(/invalid resource/i);
     });
   });
 
@@ -142,7 +161,7 @@ describe('common resources', () => {
     });
 
     test('fails if any part is invalid', () => {
-      expect(TsRes.Helpers.joinOptionalResourceIds('foo', 'bar', 'b@z')).toFailWith(/not a valid resource/i);
+      expect(TsRes.Helpers.joinOptionalResourceIds('foo', 'bar', 'b@z')).toFailWith(/invalid resource/i);
     });
 
     test('returns undefined if resulting id is empty', () => {

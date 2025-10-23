@@ -9,7 +9,7 @@ Reports the result to the supplied reporter
 **Signature:**
 
 ```typescript
-report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this;
+report(reporter?: IResultReporter<T, unknown>, options?: IResultReportOptions<unknown>): DetailedSuccess<T, TD>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ reporter
 
 </td><td>
 
-[IResultReporter](./ts-utils.iresultreporter.md)<!-- -->&lt;T, TD&gt;
+[IResultReporter](./ts-utils.iresultreporter.md)<!-- -->&lt;T, unknown&gt;
 
 
 </td><td>
@@ -53,7 +53,7 @@ options
 
 </td><td>
 
-[IResultReportOptions](./ts-utils.iresultreportoptions.md)<!-- -->&lt;TD&gt;
+[IResultReportOptions](./ts-utils.iresultreportoptions.md)<!-- -->&lt;unknown&gt;
 
 
 </td><td>
@@ -66,5 +66,5 @@ _(Optional)_ The [options](./ts-utils.iresultreportoptions.md) for reporting the
 
 **Returns:**
 
-this
+[DetailedSuccess](./ts-utils.detailedsuccess.md)<!-- -->&lt;T, TD&gt;
 

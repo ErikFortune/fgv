@@ -185,18 +185,12 @@ describe('jsonImporter', () => {
 
     test('fails for an unknown importable type', () => {
       const badImportable = { type: 'unknown', json: { helloMyNameIs: 'importable' }, context };
-      expect(importer.import(badImportable, manager)).toFailWithDetail(
-        /not a valid JSON importable/i,
-        'skipped'
-      );
+      expect(importer.import(badImportable, manager)).toFailWithDetail(/invalid JSON importable/i, 'skipped');
     });
 
     test('fails for a known non-json importable type', () => {
       const badImportable = { type: 'path', path: 'some/path', context };
-      expect(importer.import(badImportable, manager)).toFailWithDetail(
-        /not a valid JSON importable/i,
-        'skipped'
-      );
+      expect(importer.import(badImportable, manager)).toFailWithDetail(/invalid JSON importable/i, 'skipped');
     });
 
     test('fails for JSON importable with a non-object payload', () => {

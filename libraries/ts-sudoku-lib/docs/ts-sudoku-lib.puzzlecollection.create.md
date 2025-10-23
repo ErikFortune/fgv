@@ -4,12 +4,12 @@
 
 ## PuzzleCollection.create() method
 
-Creates a new puzzle from a loaded 
+Creates a new puzzle from a loaded [PuzzlesFile](./ts-sudoku-lib.files.model.ipuzzlesfile.md)
 
 **Signature:**
 
 ```typescript
-static create(from: FileData.Model.IPuzzlesFile): Result<PuzzleCollection>;
+static create(from: Files.Model.IPuzzlesFile): Result<PuzzleCollection>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ from
 
 </td><td>
 
-[FileData.Model.IPuzzlesFile](./ts-sudoku-lib.file_2.model.ipuzzlesfile.md)
+[Files.Model.IPuzzlesFile](./ts-sudoku-lib.files.model.ipuzzlesfile.md)
 
 
 </td><td>
 
-The  to be loaded.
+The [puzzles file](./ts-sudoku-lib.files.model.ipuzzlesfile.md) to be loaded.
 
 
 </td></tr>

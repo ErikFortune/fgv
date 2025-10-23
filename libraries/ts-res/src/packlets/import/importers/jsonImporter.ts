@@ -61,7 +61,7 @@ export class JsonImporter implements IImporter {
     if (!isImportable(item) || item.type !== 'json') {
       /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
       const name = item.context?.baseId ?? 'unknown';
-      return failWithDetail(`${name}: not a valid JSON importable (${item.type})`, 'skipped');
+      return failWithDetail(`${name}: invalid JSON importable (${item.type})`, 'skipped');
     }
     return (
       this._tryImportResourceCollection(item)
