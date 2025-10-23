@@ -186,13 +186,13 @@ export const PuzzlePage: React.FC = () => {
   }
 
   return (
-    <div className="puzzle-container">
-      <div className="puzzle-header">
+    <div className="max-w-3xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div>
           <h2>{gameTypeNames[gameType || '']}</h2>
           <p>{puzzleDesc.description}</p>
         </div>
-        <div className="puzzle-actions">
+        <div className="flex gap-4">
           <button onClick={handleReset}>Reset</button>
           <button onClick={handleExport}>Export</button>
           <button onClick={handleNewGame}>New Game</button>

@@ -23,7 +23,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { createContext, useContext, ReactNode } from 'react';
 import type { ToastType } from '../contexts';
-import './Toast.css';
 
 /**
  * Toast notification data structure.
@@ -120,17 +119,18 @@ interface IToastItemProps {
 
 const ToastItem: React.FC<IToastItemProps> = ({ toast, onRemove }) => {
   const getToastClassName = (type: ToastType): string => {
-    const baseClass = 'toast';
+    const baseClass =
+      'p-3 rounded-lg shadow-lg text-white font-medium flex items-center justify-between min-w-80 max-w-96 mb-2 animate-slide-in motion-reduce:animate-none';
     switch (type) {
       case 'success':
-        return `${baseClass} toast--success`;
+        return `${baseClass} bg-emerald-600`;
       case 'error':
-        return `${baseClass} toast--error`;
+        return `${baseClass} bg-red-600`;
       case 'warning':
-        return `${baseClass} toast--warning`;
+        return `${baseClass} bg-amber-600`;
       case 'info':
       default:
-        return `${baseClass} toast--info`;
+        return `${baseClass} bg-blue-600`;
     }
   };
 
@@ -150,15 +150,15 @@ const ToastItem: React.FC<IToastItemProps> = ({ toast, onRemove }) => {
 
   return (
     <div className={getToastClassName(toast.type)} role="alert" aria-live="polite">
-      <div className="toast-content">
-        <span className="toast-icon" aria-hidden="true">
+      <div className="flex items-center">
+        <span className="mr-2 text-lg" aria-hidden="true">
           {getIcon(toast.type)}
         </span>
-        <span className="toast-message">{toast.message}</span>
+        <span className="flex-1">{toast.message}</span>
       </div>
       <button
         onClick={() => onRemove(toast.id)}
-        className="toast-close-button"
+        className="ml-4 text-white bg-transparent border-0 cursor-pointer p-1 rounded transition-colors hover:text-gray-200 focus:outline-none focus:ring-1 focus:ring-white"
         aria-label="Close notification"
       >
         ×
@@ -174,7 +174,11 @@ const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useToast();
 
   return (
-    <div className="toast-container" aria-live="polite" aria-label="Notifications">
+    <div
+      className="fixed top-4 right-4 z-50 flex flex-col gap-2"
+      aria-live="polite"
+      aria-label="Notifications"
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
       ))}

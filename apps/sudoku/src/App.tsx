@@ -12,7 +12,7 @@ function AppContent() {
 
   return (
     <ObservabilityProvider showToast={showToast}>
-      <div className="App">
+      <div className="App w-full mx-auto md:px-0 px-4">
         <Navigation />
         <main>
           <Routes>

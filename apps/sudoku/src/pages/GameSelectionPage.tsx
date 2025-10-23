@@ -54,17 +54,21 @@ export const GameSelectionPage: React.FC = () => {
       <h2>Select Game Type</h2>
       <p>Choose the type of Sudoku puzzle you'd like to play:</p>
 
-      <div className="game-selection">
+      <div className="grid grid-cols-1 md:grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-8 my-8">
         {gameTypes.map((gameType) => (
-          <div key={gameType.id} className="game-type-card" onClick={() => handleGameTypeSelect(gameType.id)}>
-            <h3>{gameType.name}</h3>
+          <div
+            key={gameType.id}
+            className="border border-gray-200 rounded-lg p-8 text-left cursor-pointer transition-all hover:border-indigo-600 hover:-translate-y-0.5"
+            onClick={() => handleGameTypeSelect(gameType.id)}
+          >
+            <h3 className="mt-0 text-indigo-600">{gameType.name}</h3>
             <p>{gameType.description}</p>
             <ul>
               {gameType.features.map((feature, index) => (
                 <li key={index}>{feature}</li>
               ))}
             </ul>
-            <button style={{ marginTop: '1rem' }}>Play {gameType.name}</button>
+            <button className="mt-4">Play {gameType.name}</button>
           </div>
         ))}
       </div>

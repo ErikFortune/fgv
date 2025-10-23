@@ -19,6 +19,21 @@ module.exports = {
         'sudoku-primary': '#2563eb',
         'sudoku-secondary': '#1e40af',
         'sudoku-accent': '#3b82f6'
+      },
+      keyframes: {
+        slideIn: {
+          from: {
+            opacity: '0',
+            transform: 'translateX(100%)'
+          },
+          to: {
+            opacity: '1',
+            transform: 'translateX(0)'
+          }
+        }
+      },
+      animation: {
+        'slide-in': 'slideIn 0.3s ease-out'
       }
     }
   },
