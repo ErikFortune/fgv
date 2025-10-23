@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-browser",
-  "version": "5.0.1-1",
+  "version": "5.0.1-2",
   "description": "Visual browser tool for ts-res resources",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
