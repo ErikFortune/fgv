@@ -487,10 +487,11 @@
       "tags": ["tools", "cli"]
     },
     {
-      "packageName": "@fgv/ts-res-ui-playground",
-      "projectFolder": "tools/ts-res-ui-playground",
-      "shouldPublish": false,
-      "tags": ["tools", "playground", "ui", "react"]
+      "packageName": "@fgv/ts-res-browser",
+      "projectFolder": "tools/ts-res-browser",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "browser"]
     },
     {
       "packageName": "@fgv/ts-res-browser-cli",
@@ -500,11 +501,10 @@
       "tags": ["tools", "cli", "browser"]
     },
     {
-      "packageName": "@fgv/ts-res-browser",
-      "projectFolder": "tools/ts-res-browser",
-      "shouldPublish": true,
-      "versionPolicyName": "base-utils",
-      "tags": ["tools", "ui", "browser"]
+      "packageName": "@fgv/ts-res-ui-playground",
+      "projectFolder": "tools/ts-res-ui-playground",
+      "shouldPublish": false,
+      "tags": ["tools", "playground", "ui", "react"]
     },
     {
       "packageName": "@fgv/sudoku-app",
