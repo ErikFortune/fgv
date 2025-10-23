@@ -1,0 +1,17 @@
+{
+  "resources": {
+    "feature-flags": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "socialLogin": false,
+            "analytics": false,
+            "chatSupport": true
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

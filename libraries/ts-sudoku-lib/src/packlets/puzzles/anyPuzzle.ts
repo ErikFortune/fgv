@@ -24,17 +24,17 @@
 
 import { Result, fail } from '@fgv/ts-utils';
 
-import { IPuzzleDescription, Puzzle } from '../common';
+import { IPuzzleDefinition, Puzzle } from '../common';
 import { KillerSudokuPuzzle } from './killerSudokuPuzzle';
 import { SudokuPuzzle } from './sudokuPuzzle';
 import { SudokuXPuzzle } from './sudokuXPuzzle';
 
 /**
- * Static class to instantiate any puzzle from a {@link PuzzleDescription | puzzle description}.
+ * Static class to instantiate any puzzle from a {@link IPuzzleDefinition | puzzle definition}.
  * @internal
  */
 export class AnyPuzzle {
-  public static create(puzzle: IPuzzleDescription): Result<Puzzle> {
+  public static create(puzzle: IPuzzleDefinition): Result<Puzzle> {
     switch (puzzle.type) {
       case 'sudoku':
         return SudokuPuzzle.create(puzzle);

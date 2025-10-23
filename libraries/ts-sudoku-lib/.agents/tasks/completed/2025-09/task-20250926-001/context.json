@@ -1,0 +1,29 @@
+{
+  "task": {
+    "id": "task-20250926-001",
+    "description": "Document KillerCombinations testing architecture decision",
+    "type": "docs",
+    "priority": "medium",
+    "complexity": "simple"
+  },
+  "artifacts": {
+    "requirements": "Document architectural decision regarding testing approach for KillerCombinations",
+    "design": "Decision documentation for hybrid testing approach",
+    "implementation": "Update task artifacts with decision rationale"
+  },
+  "state": {
+    "currentPhase": "implementation",
+    "completedPhases": ["requirements_confirmation"],
+    "iterations": 1,
+    "blockers": [],
+    "decisions": [
+      {
+        "id": "killer-combinations-testing-approach",
+        "summary": "Hybrid testing approach for KillerCombinations",
+        "rationale": "Replace fragile mocks with real puzzle instances for better test reliability",
+        "timestamp": "2025-09-26T18:32:00Z"
+      }
+    ]
+  },
+  "feedback": {}
+}

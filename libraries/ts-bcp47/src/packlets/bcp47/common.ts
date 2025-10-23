@@ -74,12 +74,12 @@ export function subtagsToString(subtags: ISubtags): string {
 /**
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export const UndeterminedLanguage: Iana.LanguageSubtags.LanguageSubtag =
   'und' as Iana.LanguageSubtags.LanguageSubtag;
 
 /**
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export const GlobalRegion: Iana.LanguageSubtags.RegionSubtag = '001' as Iana.LanguageSubtags.RegionSubtag;

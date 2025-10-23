@@ -22,9 +22,10 @@
  * SOFTWARE.
  */
 
-import * as File from './packlets/file';
+import * as Files from './packlets/files';
+import * as Hints from './packlets/hints';
 import * as Puzzles from './packlets/puzzles';
 
 export * from './packlets/collections';
 export * from './packlets/common';
-export { File, Puzzles };
+export { Files, Hints, Puzzles };

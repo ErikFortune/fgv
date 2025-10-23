@@ -16,6 +16,7 @@ Also includes a handful of custom matchers to simplify the testing of other cust
 - [Summary](#summary)
 - [Installation](#installation)
 - [Setup](#setup)
+  - [ANSI Color Stripping](#ansi-color-stripping)
 - [API](#api)
   - [Testing Result\<T\>](#testing-resultt)
     - [.toFail()](#tofail)
@@ -42,6 +43,16 @@ npm install --save-dev @fgv/ts-utils-jest
 ## Setup
 
 Note that snapshot testing for Jest itself can be tricky because different environments (e.g. CLI vs IDE vs CICD) might generate slightly different output due to e.g. differences in color display of diffs.   To facilitate snapshot testing across multiple environments, this library also provides an extensible set of snapshot resolvers that can be used to capture environment-specific snapshots.
+
+### ANSI Color Stripping
+
+**All matchers in this library automatically strip ANSI color codes** from Jest output to ensure consistent snapshots across different terminal environments. This includes:
+
+- **Jest matcher utilities** (`printExpected`, `printReceived`) used in error messages
+- **Snapshot content** passed to `toMatchSnapshot()` and `toFailTestAndMatchSnapshot()`
+- **Test failure messages** captured by custom matcher testing utilities
+
+This means you can run tests with any terminal color settings (`FORCE_COLOR=0`, `FORCE_COLOR=1`, or default) and get identical snapshot results. No special configuration is required - the color stripping happens automatically.
 
 ## API
 

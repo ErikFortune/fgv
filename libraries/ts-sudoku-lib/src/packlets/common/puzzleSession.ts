@@ -76,6 +76,13 @@ export class PuzzleSession {
   }
 
   /**
+   * Type of the puzzle being solved.
+   */
+  public get type(): string {
+    return this._puzzle.type;
+  }
+
+  /**
    * Number of rows in the puzzle being solved.
    */
   public get numRows(): number {
@@ -122,6 +129,13 @@ export class PuzzleSession {
    */
   public get cells(): ICell[] {
     return this._puzzle.cells;
+  }
+
+  /**
+   * The puzzle structure for this session.
+   */
+  public get puzzle(): Puzzle {
+    return this._puzzle;
   }
 
   /**

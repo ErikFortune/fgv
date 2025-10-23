@@ -23,17 +23,17 @@
  */
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
-import { IPuzzleDescription, Puzzle } from '../common';
+import { IPuzzleDefinition, Puzzle } from '../common';
 
 /**
  * @public
  */
 export class SudokuPuzzle extends Puzzle {
-  private constructor(puzzle: IPuzzleDescription) {
+  private constructor(puzzle: IPuzzleDefinition) {
     super(puzzle);
   }
 
-  public static create(puzzle: IPuzzleDescription): Result<Puzzle> {
+  public static create(puzzle: IPuzzleDefinition): Result<Puzzle> {
     /* c8 ignore next 3 */
     if (puzzle.type !== 'sudoku') {
       return fail(`Puzzle '${puzzle.description}' unsupported type ${puzzle.type}`);

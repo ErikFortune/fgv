@@ -29,6 +29,17 @@ Description
 </td></tr>
 <tr><td>
 
+[KillerCombinations](./ts-sudoku-lib.puzzles.killercombinations.md)
+
+
+</td><td>
+
+Helper class providing UI assistance functions for killer sudoku puzzle solving. Generates possible totals, number combinations with constraints, and cell-specific possibilities based on current puzzle state.
+
+
+</td></tr>
+<tr><td>
+
 [Sudoku](./ts-sudoku-lib.puzzles.sudoku.md)
 
 
@@ -48,3 +59,30 @@ Description
 
 </td></tr>
 </tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IKillerConstraints](./ts-sudoku-lib.puzzles.ikillerconstraints.md)
+
+
+</td><td>
+
+Constraints that can be applied when generating killer cage combinations.
+
+
+</td></tr>
+</tbody></table>
+

@@ -142,12 +142,10 @@ export class ValidateTag {
 
     if (!this._validators) {
       this._validators = {
-        /* eslint-disable @typescript-eslint/naming-convention */
         unknown: new IsWellFormedValidator(),
         'well-formed': new IsWellFormedValidator(),
         valid: new IsValidValidator(),
         'strictly-valid': new IsStrictlyValidValidator()
-        /* eslint-enable @typescript-eslint/naming-convention */
       };
     }
     return this._validators![wantValidity];

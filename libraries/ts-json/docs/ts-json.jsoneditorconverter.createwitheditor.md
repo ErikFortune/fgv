@@ -45,6 +45,7 @@ editor
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[JsonEditorConverter](./ts-json.jsoneditorconverter.md)<!-- -->&gt;

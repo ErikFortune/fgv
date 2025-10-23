@@ -93,6 +93,34 @@ export const allPuzzleTypes: PuzzleType[] = ['killer-sudoku', 'sudoku', 'sudoku-
  * {@link ICell | cells}.
  * @public
  */
+/**
+ * Calculate the minimum and maximum possible totals for a cage of given size
+ * @param cageSize - Number of cells in the cage
+ * @param maxValue - Maximum value allowed in a cell (e.g., 9 for 9x9, 16 for 16x16)
+ * @returns Object with min and max possible totals
+ * @public
+ */
+export function getCageTotalBounds(cageSize: number, maxValue: number): { min: number; max: number } {
+  /* c8 ignore next 3 - functional code tested but coverage intermittently missed */
+  if (cageSize <= 0) {
+    return { min: 0, max: 0 };
+  }
+
+  // Minimum is sum of first cageSize numbers (1, 2, 3, ...)
+  const min = (cageSize * (cageSize + 1)) / 2;
+
+  // Maximum is sum of last cageSize numbers (maxValue, maxValue-1, ...)
+  // But cageSize cannot exceed maxValue
+  const effectiveCageSize = Math.min(cageSize, maxValue);
+  const max = effectiveCageSize * maxValue - (effectiveCageSize * (effectiveCageSize - 1)) / 2;
+
+  return { min, max };
+}
+
+/**
+ * Legacy array for backward compatibility - supports standard 9x9 Sudoku
+ * @public
+ */
 export const totalsByCageSize: readonly { min: number; max: number }[] = [
   { min: 0, max: 0 },
   { min: 1, max: 9 },

@@ -1,0 +1,28 @@
+# FGV Multi-Agent Development Task Log
+#
+# This file contains a sequential log of all development tasks completed through
+# the multi-agent workflow system. Each line is a JSON object representing one
+# completed task with summary information for debugging and system understanding.
+#
+# Format: JSON Lines (JSONL) - one JSON object per line
+# Schema: See task-log-schema.json for complete format specification
+#
+# Usage Examples:
+#   # Find recent authentication-related changes
+#   grep "auth\|login\|session" .agents/task-log.jsonl | tail -5
+#
+#   # Find changes to UserService in last 30 days
+#   grep "UserService" .agents/task-log.jsonl | grep "$(date -d '30 days ago' +%Y-%m)"
+#
+#   # Find high-risk changes
+#   grep '"level":"high"' .agents/task-log.jsonl
+#
+#   # Find breaking API changes
+#   grep '"breaking":true' .agents/task-log.jsonl
+#
+# Log entries begin below this header:
+{"task_id":"task-20250920-231604","timestamp":"2025-09-20T23:16:04Z","type":"bugfix","workflow":"bugfix_fast","summary":"Fixed ts-res-browser import error by migrating from deprecated importDirectory/importFiles to FileTree-based API","business_rationale":"ts-res-browser was completely non-functional due to FileTree refactor breaking backward compatibility - users could not import any resources","user_impact":"high","components_affected":["ts-res-browser","ImportView handlers","ZIP import workflow"],"api_changes":{"breaking":false,"deprecated_methods_removed":["actions.importFiles","actions.importDirectory"],"new_methods_used":["actions.importFileTree"]},"risk_assessment":{"level":"low","factors":["well_defined_migration_path","successful_compilation","clear_api_replacement"]},"validation":{"automated_tests":false,"manual_validation_completed":false,"performance_validated":false},"artifacts_path":".agents/tasks/completed/task-20250920-231604/","tags":["import","filetree","api-migration","compatibility"]}
+{"task_id":"task-20250921-001","timestamp":"2025-09-21T07:13:00Z","type":"bugfix","workflow":"bugfix-fast","summary":"Fixed ts-res-ui-playground startup error by updating GenericQualifierTypeFactory to QualifierTypeFactory","business_rationale":"Restore developer playground functionality for ts-res testing and validation after API refactoring","user_impact":"high","components_affected":["ts-res-ui-playground","TsRes.Config API integration"],"api_changes":{"breaking":false},"risk_assessment":{"level":"low","factors":["simple_class_name_change","identical_constructor_signature"]},"validation":{"automated_tests":false,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".agents/tasks/completed/2024-09/task-20250921-001/","tags":["api-migration","playground","startup-fix","ts-res"]}
+{"task_id":"task-20250126-001","timestamp":"2025-01-26T20:45:00Z","type":"feature","workflow":"standard-feature","summary":"Implemented KillerCombinations class with UI helper functions and comprehensive testing","business_rationale":"Enable killer sudoku UI features with mathematical constraint validation and hint generation","user_impact":"medium","components_affected":["KillerCombinations","PuzzleTest","SudokuLibrary"],"api_changes":{"breaking":false,"new_endpoints":["KillerCombinations.getPossibleTotals","KillerCombinations.getCombinations","KillerCombinations.getCellPossibilities"]},"risk_assessment":{"level":"low","factors":["new_mathematical_algorithms","comprehensive_test_coverage"]},"validation":{"automated_tests":true,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".agents/tasks/completed/2025-01/task-20250126-001/","tags":["killer-sudoku","mathematical-algorithms","ui-helpers","testing-architecture"]}
+{"task_id":"task-20250127-003","timestamp":"2025-01-27T24:35:00Z","type":"feature","workflow":"standard-feature","summary":"Implemented complete Sudoku X support with diagonal constraints across core/UI/app layers","business_rationale":"Add Sudoku X puzzle type to expand puzzle options and support diagonal constraint gameplay","user_impact":"medium","components_affected":["SudokuXPuzzle","SudokuGrid","usePuzzleSession","AnyPuzzle"],"api_changes":{"breaking":false,"new_endpoints":[],"modified_endpoints":[]},"database_changes":{"migrations":false,"schema_changes":[]},"risk_assessment":{"level":"low","factors":["factory_pattern_changes","new_constraint_type","ui_visualization"]},"validation":{"automated_tests":true,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".agents/tasks/completed/2025-01/task-20250127-003/","tags":["sudoku","diagonal-constraints","factory-pattern","ui-enhancement","puzzle-types"]}
+{"task_id":"task-20250128-001","timestamp":"2025-01-28T20:00:00Z","type":"feature","workflow":"standard-feature","summary":"Killer Sudoku cage visualization with connected borders and sum indicators","business_rationale":"Add professional-quality Killer Sudoku support to enhance puzzle application competitive features","user_impact":"high","components_affected":["CageOverlay","CageLookupManager","CagePatternManager","CageSumIndicator","SudokuGrid","SudokuCell"],"api_changes":{"breaking":false,"new_components":["CageOverlay","CageSumIndicator"],"enhanced_components":["SudokuGrid"]},"risk_assessment":{"level":"low","factors":["new_components","visual_integration"]},"validation":{"automated_tests":true,"manual_validation_completed":true,"performance_validated":true},"artifacts_path":".agents/tasks/completed/2025-01/task-20250127-003-killer/","tags":["killer-sudoku","cage-visualization","performance-optimization","svg-rendering","visual-hierarchy"]}

@@ -4,3 +4,51 @@
 
 ## Iana.LanguageSubtags.JarConverters namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[loadRawSubtagRegistryFileSync(path)](./ts-bcp47.iana.languagesubtags.jarconverters.loadrawsubtagregistryfilesync.md)
+
+
+</td><td>
+
+Loads a text (JAR) format language subtag registry file and returns the registry format with field names matching legacy test JSON format ("Suppress-Script", "Preferred-Value") suitable for creating test JSON files that work with JAR converters.
+
+
+</td></tr>
+<tr><td>
+
+[loadRawSubtagRegistryFromString(content)](./ts-bcp47.iana.languagesubtags.jarconverters.loadrawsubtagregistryfromstring.md)
+
+
+</td><td>
+
+Parses a text (JAR) format language subtag registry from string content and returns the registry format with field names matching legacy test JSON format ("Suppress-Script", "Preferred-Value").
+
+
+</td></tr>
+<tr><td>
+
+[loadTxtSubtagRegistryFromString(content)](./ts-bcp47.iana.languagesubtags.jarconverters.loadtxtsubtagregistryfromstring.md)
+
+
+</td><td>
+
+Parses a text (JAR) format language subtag registry from string content.
+
+
+</td></tr>
+</tbody></table>
+

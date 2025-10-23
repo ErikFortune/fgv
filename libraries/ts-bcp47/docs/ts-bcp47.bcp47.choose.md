@@ -79,6 +79,7 @@ _(Optional)_ (optional) Parameters to control language tag conversion or compari
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[LanguageTag](./ts-bcp47.bcp47.languagetag.md)<!-- -->\[\]&gt;

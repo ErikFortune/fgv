@@ -1,0 +1,48 @@
+{
+  "id": "only-defaults",
+  "resourceType": "json",
+  "candidates": [
+    {
+      "json": {
+        "message": "Fallback French",
+        "priority": "high",
+        "type": "fallback-1"
+      },
+      "conditions": [
+        {
+          "qualifierName": "language",
+          "value": "fr",
+          "scoreAsDefault": 0.9
+        }
+      ]
+    },
+    {
+      "json": {
+        "message": "Fallback German",
+        "priority": "medium",
+        "type": "fallback-2"
+      },
+      "conditions": [
+        {
+          "qualifierName": "language",
+          "value": "de",
+          "scoreAsDefault": 0.8
+        }
+      ]
+    },
+    {
+      "json": {
+        "message": "Fallback Spanish",
+        "priority": "low",
+        "type": "fallback-3"
+      },
+      "conditions": [
+        {
+          "qualifierName": "language",
+          "value": "es",
+          "scoreAsDefault": 0.7
+        }
+      ]
+    }
+  ]
+}

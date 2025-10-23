@@ -51,12 +51,14 @@ export const string: StringConverter = new StringConverter();
  * @returns A new {@link Converter | Converter} returning `<T>`.
  * @public
  */
-export function enumeratedValue<T>(values: T[]): Converter<T, T[]> {
-  return new BaseConverter((from: unknown, __self: Converter<T, T[]>, context?: T[]): Result<T> => {
-    const v = context ?? values;
-    const index = v.indexOf(from as T);
-    return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${JSON.stringify(from)}`);
-  });
+export function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, ReadonlyArray<T>> {
+  return new BaseConverter(
+    (from: unknown, __self: Converter<T, ReadonlyArray<T>>, context?: ReadonlyArray<T>): Result<T> => {
+      const v = context ?? values;
+      const index = v.indexOf(from as T);
+      return index >= 0 ? succeed(v[index]) : fail(`Invalid enumerated value ${JSON.stringify(from)}`);
+    }
+  );
 }
 
 /**
@@ -73,21 +75,23 @@ export function enumeratedValue<T>(values: T[]): Converter<T, T[]> {
  * @public
  */
 export function mappedEnumeratedValue<T, TC = unknown>(
-  map: [T, unknown[]][],
+  map: ReadonlyArray<[T, ReadonlyArray<TC>]>,
   message?: string
-): Converter<T, TC> {
-  return new BaseConverter((from: unknown, __self: Converter<T, TC>, __context?: TC) => {
-    for (const item of map) {
-      if (item[1].includes(from)) {
-        return succeed(item[0]);
+): Converter<T, ReadonlyArray<TC>> {
+  return new BaseConverter(
+    (from: unknown, __self: Converter<T, ReadonlyArray<TC>>, __context?: ReadonlyArray<TC>) => {
+      for (const item of map) {
+        if (item[1].includes(from as TC)) {
+          return succeed(item[0]);
+        }
       }
+      return fail(
+        message
+          ? `${JSON.stringify(from)}: ${message}`
+          : `Cannot map '${JSON.stringify(from)}' to a supported value`
+      );
     }
-    return fail(
-      message
-        ? `${JSON.stringify(from)}: ${message}`
-        : `Cannot map '${JSON.stringify(from)}' to a supported value`
-    );
-  });
+  );
 }
 
 /**
@@ -347,7 +351,7 @@ export const numberArray: Converter<number[], unknown> = arrayOf(number);
  * helper functions.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface KeyedConverterOptions<T extends string = string, TC = unknown> {
   /**
    * if `onError` is `'fail'` (default), then the entire conversion fails if any key or element
@@ -750,6 +754,7 @@ export function object<T, TC = unknown>(
   properties: FieldConverters<T, TC>,
   optional: (keyof T)[]
 ): ObjectConverter<T, TC>;
+
 /**
  * Concrete implementation of {@link Converters.(object:1) | Converters.object(fields, options)}
  * and {@link Converters.(object:2) | Converters.objects(fields, optionalKeys)}.
@@ -899,7 +904,7 @@ export function discriminatedObject<T, TD extends string = string, TC = unknown>
 export function transform<T, TC = unknown>(properties: FieldConverters<T, TC>): Converter<T, TC> {
   return new BaseConverter((from: unknown, __self, context?: TC) => {
     // eslint bug thinks key is used before defined
-    // eslint-disable-next-line no-use-before-define
+
     const converted = {} as { [key in keyof T]: T[key] };
     const errors: string[] = [];
 
@@ -945,7 +950,7 @@ export type FieldTransformers<TSRC, TDEST, TC = unknown> = {
  * Options for a {@link Converters.transformObject} call.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface TransformObjectOptions<TSRC> {
   /**
    * If `strict` is `true` then unused properties in the source object cause
@@ -991,7 +996,7 @@ export function transformObject<TSRC, TDEST, TC = unknown>(
 ): Converter<TDEST, TC> {
   return new BaseConverter((from: unknown, __self, context?: TC) => {
     // eslint bug thinks key is used before defined
-    // eslint-disable-next-line no-use-before-define
+
     const converted = {} as { [key in keyof TDEST]: TDEST[key] };
     const errors: string[] = [];
     const used: Set<keyof TSRC> = new Set(options?.ignore);

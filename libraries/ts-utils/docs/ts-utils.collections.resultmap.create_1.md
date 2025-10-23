@@ -47,6 +47,7 @@ _(Optional)_ An optional set of parameters to configure the map.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [Result](./ts-utils.result.md)<!-- -->&lt;[ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;&gt;

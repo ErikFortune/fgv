@@ -23,41 +23,34 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { Converters, IPuzzleDescription } from '../../../packlets/common';
+import { PuzzleDefinitionFactory, STANDARD_CONFIGS } from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Puzzles.Killer class', () => {
-  const baseDef = {
-    // cSpell: disable
-    id: 'killer-insane',
-    description: 'Insane (3208329) example from djape.net',
-    type: 'killer-sudoku',
-    level: 100,
-    rows: 9,
-    cols: 9,
-    cells: [
-      'ABCCCDDDE',
-      'ABFFGGGDE',
-      'HIJKGGLLL',
-      'HIJKMGLNN',
-      'HOPPMQQNR',
-      'OOSTMUVWR',
-      'SSSTTUVWR',
-      'XYTTTZZab',
-      'XYYYcccab',
-      '|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
-    ]
-    // cSpell: enable
-  };
-
-  let def: IPuzzleDescription;
-  beforeEach(() => {
-    def = Converters.puzzleDescription.convert(baseDef).orThrow();
-  });
+  const testCells = [
+    'ABCCCDDDE',
+    'ABFFGGGDE',
+    'HIJKGGLLL',
+    'HIJKMGLNN',
+    'HOPPMQQNR',
+    'OOSTMUVWR',
+    'SSSTTUVWR',
+    'XYTTTZZab',
+    'XYYYcccab',
+    '|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
+  ].join('');
 
   describe('create static method', () => {
     test('succeeds for a valid puzzle', () => {
-      expect(Puzzles.Killer.create(def)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'killer-insane',
+          description: 'Insane (3208329) example from djape.net',
+          type: 'killer-sudoku',
+          level: 100,
+          cells: testCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.rows.map((r) => r.id)).toEqual(['RA', 'RB', 'RC', 'RD', 'RE', 'RF', 'RG', 'RH', 'RI']);
         expect(puzzle.cols.map((c) => c.id)).toEqual(['C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9']);
         expect(puzzle.sections.map((s) => s.id)).toEqual([
@@ -72,7 +65,6 @@ describe('Puzzles.Killer class', () => {
           'SG7'
         ]);
         expect(puzzle.cages.map((c) => c.id)).toEqual([
-          /* eslint-disable prettier/prettier */
           'RA',
           'RB',
           'RC',
@@ -129,7 +121,6 @@ describe('Puzzles.Killer class', () => {
           'Ka',
           'Kb',
           'Kc'
-          /* enlist-enable prettier/prettier */
         ]);
         expect(puzzle.cells.map((c) => c.toString()).join('')).toEqual(
           [
@@ -149,14 +140,19 @@ describe('Puzzles.Killer class', () => {
 
     test('promotes single-cell cages to givens', () => {
       // cSpell: disable
-      // split the last two cells
-      def.cells = def.cells.replace('cccab', 'cccde');
-      // add values for added cells (not sure if these values are actually correct)
-      def.cells = def.cells.replace('a09,b09,c11', 'a05,b03,c11,d04,e06');
+      // split the last two cells and add values for added cells
+      const modifiedCells = testCells.replace('cccab', 'cccde').replace('a09,b09,c11', 'a05,b03,c11,d04,e06');
       // cSpell: enable
-      expect(Puzzles.Killer.create(def)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'killer-insane',
+          description: 'Insane (3208329) example from djape.net',
+          type: 'killer-sudoku',
+          level: 100,
+          cells: modifiedCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.cages.map((c) => c.id)).toEqual([
-          /* eslint-disable prettier/prettier */
           'RA',
           'RB',
           'RC',
@@ -211,7 +207,6 @@ describe('Puzzles.Killer class', () => {
           'KY',
           'KZ',
           'Kc'
-          /* enlist-enable prettier/prettier */
         ]);
         expect(puzzle.cells.map((c) => c.toString()).join('')).toEqual(
           [
@@ -230,42 +225,84 @@ describe('Puzzles.Killer class', () => {
     });
 
     test('fails if cells property is incorrectly delimited', () => {
-      def.cells = def.cells.replace('|', '/');
-      expect(Puzzles.Killer.create(def)).toFailWith(/malformed cells\|cages/i);
+      const invalidCells = testCells.replace('|', '/');
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: 'Test puzzle',
+          type: 'killer-sudoku',
+          level: 1,
+          cells: invalidCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toFailWith(/killer sudoku cells must contain cage definitions after "\|" separator/i);
     });
 
     test('fails if cell mappings are mismatched', () => {
-      const [cells, cages] = def.cells.split('|');
-      def.cells = `${cells}xyz|${cages}`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/expected 81 cell mappings, found 84/i);
+      const [cells, cages] = testCells.split('|');
+      const invalidCells = `${cells}xyz|${cages}`;
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: 'Test puzzle',
+          type: 'killer-sudoku',
+          level: 1,
+          cells: invalidCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toFailWith(/killer sudoku grid portion must be exactly 81 characters, got 84/i);
     });
 
     test('fails if cage sizes are mismatched', () => {
-      const [cells, cages] = def.cells.split('|');
-      def.cells = `${cells}|${cages},x10`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/expected 29 cage sizes, found 30/i);
+      const [cells, cages] = testCells.split('|');
+      const invalidCells = `${cells}|${cages},x10`;
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: 'Test puzzle',
+          type: 'killer-sudoku',
+          level: 1,
+          cells: invalidCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toFailWith(/expected 29 cage sizes, found 30/i);
     });
 
     test('fails if cage specification is malformed', () => {
-      const [cells, cages] = def.cells.split('|');
-      def.cells = `${cells}|${cages.replace('b09', 'b9')}.`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/malformed cage spec b9/i);
+      const [cells, cages] = testCells.split('|');
+      const invalidCells = `${cells}|${cages.replace('b09', 'b9')}.`;
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: 'Test puzzle',
+          type: 'killer-sudoku',
+          level: 1,
+          cells: invalidCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toFailWith(/malformed cage spec b9/i);
     });
 
     test('fails if a cage has too many cells', () => {
-      let [cells, cages] = def.cells.split('|');
+      let [cells, cages] = testCells.split('|');
       // cSpell: disable
       cells = cells.replace('ABCCCDDDE', 'AAAAAAAAA');
       // cSpell: enable
       cages = cages.replace(',C09', '');
-      def.cells = `${cells}|${cages}`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/invalid cell count 10 for cage KA/i);
+      const invalidCells = `${cells}|${cages}`;
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: 'Test puzzle',
+          type: 'killer-sudoku',
+          level: 1,
+          cells: invalidCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toFailWith(/invalid cell count 10 for cage KA/i);
     });
 
     test('fails if cage total is out of range', () => {
-      const [cells, cages] = def.cells.split('|');
-      def.cells = `${cells}|${cages.replace('b09', 'b19')}.`;
-      expect(Puzzles.Killer.create(def)).toFailWith(/invalid total 19 for cage Kb \(expected 3..17\)/);
+      const [cells, cages] = testCells.split('|');
+      const invalidCells = `${cells}|${cages.replace('b09', 'b19')}.`;
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: 'Test puzzle',
+          type: 'killer-sudoku',
+          level: 1,
+          cells: invalidCells
+        }).onSuccess((puzzleDefinition) => Puzzles.Killer.create(puzzleDefinition))
+      ).toFailWith(/invalid total 19 for cage Kb \(expected 3..17\)/);
     });
   });
 });

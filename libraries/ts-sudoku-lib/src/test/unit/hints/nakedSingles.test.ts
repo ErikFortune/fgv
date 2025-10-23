@@ -1,0 +1,533 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/* eslint-disable @rushstack/packlets/mechanics */
+
+import '@fgv/ts-utils-jest';
+import { NakedSinglesProvider } from '../../../packlets/hints/nakedSingles';
+import { ConfidenceLevels, TechniqueIds, ConfidenceLevel } from '../../../packlets/hints/types';
+import { createPuzzleAndState } from '../helpers/puzzleBuilders';
+
+/* eslint-enable @rushstack/packlets/mechanics */
+
+describe('NakedSinglesProvider', () => {
+  let provider: NakedSinglesProvider;
+
+  beforeEach(() => {
+    provider = NakedSinglesProvider.create().orThrow();
+  });
+
+  describe('creation', () => {
+    test('should create successfully', () => {
+      expect(NakedSinglesProvider.create()).toSucceed();
+    });
+
+    test('should have correct technique properties', () => {
+      expect(provider.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+      expect(provider.techniqueName).toBe('Naked Singles');
+      expect(provider.difficulty).toBe('beginner');
+      expect(provider.priority).toBe(1);
+    });
+  });
+
+  describe('canProvideHints', () => {
+    test('should return true for puzzle with empty cells', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.canProvideHints(puzzle, state)).toBe(true);
+    });
+
+    test('should return false for completely filled puzzle', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '123456789',
+        '456789123',
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678'
+      ]);
+
+      expect(provider.canProvideHints(puzzle, state)).toBe(false);
+    });
+  });
+
+  describe('generateHints - basic naked singles', () => {
+    test('should detect single naked single in simple scenario', () => {
+      // Create a puzzle where cell A9 can only be 9
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // A9 must be 9
+        '456789123',
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678' // Complete row to avoid another naked single
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        expect(hints).toHaveLength(1);
+
+        const hint = hints[0];
+        expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+        expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+        expect(hint.cellActions).toHaveLength(1);
+
+        const action = hint.cellActions[0];
+        expect(action.cellId).toBe('A9');
+        expect(action.action).toBe('set-value');
+        expect(action.value).toBe(9);
+        expect(action.reason).toContain('Only possible value');
+      });
+    });
+
+    test('should detect multiple naked singles', () => {
+      // Create a puzzle where multiple cells have only one candidate
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // A9 must be 9
+        '45678912.', // B9 must be 3
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeGreaterThanOrEqual(2);
+
+        // Check that all hints are naked singles with high confidence
+        for (const hint of hints) {
+          expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+          expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+          expect(hint.cellActions).toHaveLength(1);
+          expect(hint.cellActions[0].action).toBe('set-value');
+          expect(hint.cellActions[0].value).toBeGreaterThanOrEqual(1);
+          expect(hint.cellActions[0].value).toBeLessThanOrEqual(9);
+        }
+
+        // Verify specific naked singles
+        const nakedSingles = hints.map((h) => ({
+          cellId: h.cellActions[0].cellId,
+          value: h.cellActions[0].value
+        }));
+
+        expect(nakedSingles).toContainEqual({ cellId: 'A9', value: 9 });
+        expect(nakedSingles).toContainEqual({ cellId: 'B9', value: 3 });
+      });
+    });
+
+    test('should not generate hints when no naked singles exist', () => {
+      // Create a puzzle where all empty cells have multiple candidates
+      const { puzzle, state } = createPuzzleAndState([
+        '1........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        expect(hints).toHaveLength(0);
+      });
+    });
+  });
+
+  describe('generateHints - constraint scenarios', () => {
+    test('should detect naked single constrained by row', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // All values 1-8 in row, only 9 possible in A9
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'A9');
+        expect(hint).toBeDefined();
+        expect(hint!.cellActions[0].value).toBe(9);
+      });
+    });
+
+    test('should detect naked single constrained by column', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '1........',
+        '2........',
+        '3........',
+        '4........',
+        '5........',
+        '6........',
+        '7........',
+        '8........',
+        '.........' // I1 must be 9 (only value not in column)
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'I1');
+        expect(hint).toBeDefined();
+        expect(hint!.cellActions[0].value).toBe(9);
+      });
+    });
+
+    test('should detect naked single constrained by 3x3 box', () => {
+      // Add 7, 8 to complete constraints for a naked single
+      const { puzzle, state } = createPuzzleAndState([
+        '127......',
+        '348......',
+        '56.......',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'C3');
+        expect(hint).toBeDefined();
+        expect(hint!.cellActions[0].value).toBe(9);
+      });
+    });
+  });
+
+  describe('generateHints - edge cases', () => {
+    test('should handle empty puzzle gracefully', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        expect(hints).toHaveLength(0);
+      });
+    });
+
+    test('should handle nearly complete puzzle', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '123456789',
+        '456789123',
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '91234567.' // Only one empty cell
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        expect(hints).toHaveLength(1);
+        expect(hints[0].cellActions[0].cellId).toBe('I9');
+        expect(hints[0].cellActions[0].value).toBe(8);
+      });
+    });
+
+    test('should respect maxHints option', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // Multiple naked singles possible
+        '45678912.',
+        '78912345.',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678'
+      ]);
+
+      expect(provider.generateHints(puzzle, state, { maxHints: 2 })).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeLessThanOrEqual(2);
+      });
+    });
+
+    test('should respect minConfidence option', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      // All naked singles should have high confidence, so this should work
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: ConfidenceLevels.HIGH })
+      ).toSucceedAndSatisfy((hints) => {
+        for (const hint of hints) {
+          expect(hint.confidence).toBeGreaterThanOrEqual(ConfidenceLevels.HIGH);
+        }
+      });
+
+      // Invalid confidence filter should fail
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: 6 as unknown as ConfidenceLevel })
+      ).toFailWith(/minConfidence must be between 1 and 5/);
+    });
+  });
+
+  describe('hint structure validation', () => {
+    test('should create well-formed hints', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeGreaterThan(0);
+
+        const hint = hints[0];
+
+        // Verify hint structure
+        expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+        expect(hint.techniqueName).toBe('Naked Singles');
+        expect(hint.difficulty).toBe('beginner');
+        expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+        expect(hint.priority).toBe(1);
+
+        // Verify cell actions
+        expect(hint.cellActions).toHaveLength(1);
+        expect(hint.cellActions[0].action).toBe('set-value');
+        expect(hint.cellActions[0].value).toBeGreaterThanOrEqual(1);
+        expect(hint.cellActions[0].value).toBeLessThanOrEqual(9);
+        expect(hint.cellActions[0].reason).toBeTruthy();
+
+        // Verify relevant cells
+        expect(hint.relevantCells.primary).toHaveLength(1);
+        expect(hint.relevantCells.primary[0]).toBe(hint.cellActions[0].cellId);
+        expect(hint.relevantCells.secondary.length).toBeGreaterThan(0);
+        expect(hint.relevantCells.affected).toHaveLength(0);
+
+        // Verify explanations
+        expect(hint.explanations).toHaveLength(3);
+        const levels = hint.explanations.map((exp) => exp.level);
+        expect(levels).toContain('brief');
+        expect(levels).toContain('detailed');
+        expect(levels).toContain('educational');
+
+        // Verify explanation content
+        for (const explanation of hint.explanations) {
+          expect(explanation.title).toBeTruthy();
+          expect(explanation.description).toBeTruthy();
+          expect(explanation.steps).toBeDefined();
+          expect(explanation.tips).toBeDefined();
+        }
+      });
+    });
+
+    test('should include relevant cells that constrain the naked single', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // All constraints in same row
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints.find((h) => h.cellActions[0].cellId === 'A9');
+        expect(hint).toBeDefined();
+
+        // Should include cells from the same row that have values
+        const secondaryCells = hint!.relevantCells.secondary;
+        expect(secondaryCells.length).toBeGreaterThan(0);
+
+        // All secondary cells should be in the same row and have values
+        for (const cellId of secondaryCells) {
+          expect(cellId).toMatch(/^A[1-9]$/); // Same row (A1-A9)
+          expect(state.hasValue(cellId)).toBe(true);
+        }
+      });
+    });
+  });
+
+  describe('explanation content validation', () => {
+    test('should provide accurate brief explanations', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints[0];
+        const briefExplanation = hint.explanations.find((exp) => exp.level === 'brief');
+        expect(briefExplanation).toBeDefined();
+
+        expect(briefExplanation!.title).toBe('Naked Single');
+        expect(briefExplanation!.description).toContain('can only contain the value');
+        expect(briefExplanation!.steps).toContain('Set A9 = 9');
+        expect(briefExplanation!.tips).toContain('Look for cells with only one possible value');
+      });
+    });
+
+    test('should provide detailed explanations with step-by-step instructions', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints[0];
+        const detailedExplanation = hint.explanations.find((exp) => exp.level === 'detailed');
+        expect(detailedExplanation).toBeDefined();
+
+        expect(detailedExplanation!.title).toBe('Naked Single Analysis');
+        expect(detailedExplanation!.description).toContain('has only one possible candidate');
+        expect(detailedExplanation!.steps).toHaveLength(4);
+        expect(detailedExplanation!.tips).toHaveLength(3);
+      });
+    });
+
+    test('should provide educational explanations with learning context', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        const hint = hints[0];
+        const educationalExplanation = hint.explanations.find((exp) => exp.level === 'educational');
+        expect(educationalExplanation).toBeDefined();
+
+        expect(educationalExplanation!.title).toBe('Understanding Naked Singles');
+        expect(educationalExplanation!.description).toContain('naked single occurs when');
+        expect(educationalExplanation!.description).toContain('fundamental rules');
+        expect(educationalExplanation!.steps).toHaveLength(7);
+        expect(educationalExplanation!.tips).toHaveLength(4);
+        expect(educationalExplanation!.tips![0]).toContain('always correct');
+      });
+    });
+  });
+
+  describe('option validation', () => {
+    test('should validate invalid maxHints option', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(provider.generateHints(puzzle, state, { maxHints: -1 })).toFailWith(
+        /maxHints cannot be negative/
+      );
+    });
+
+    test('should validate invalid minConfidence option', () => {
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: 0 as unknown as ConfidenceLevel })
+      ).toFailWith(/minConfidence must be between 1 and 5/);
+      expect(
+        provider.generateHints(puzzle, state, { minConfidence: 6 as unknown as ConfidenceLevel })
+      ).toFailWith(/minConfidence must be between 1 and 5/);
+    });
+  });
+});
+
+// Helper functions for creating test puzzles and states

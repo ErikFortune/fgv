@@ -42,7 +42,7 @@ type TestIndex = Brand<number, 'TestIndex'>;
 
 const testKey = Converters.string
   .withConstraint((s) => /^thing[0-9]+$/.test(s))
-  .withFormattedError((val: unknown) => `${val} is not a valid test thing key`)
+  .withFormattedError((val: unknown) => `${val} is invalid test thing key`)
   .withBrand('TestKey');
 const testIndex = Converters.number.withConstraint((n) => n !== 13).withBrand('TestIndex');
 
@@ -199,7 +199,7 @@ describe('ValidatingConvertingCollector', () => {
         const collector = new ValidatingConvertingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
         expect(collector.validating.add('thingamajig1', thing)).toFailWithDetail(
-          /not a valid test thing key/i,
+          /invalid test thing key/i,
           'invalid-key'
         );
       });
@@ -260,7 +260,7 @@ describe('ValidatingConvertingCollector', () => {
         const collector = new ValidatingConvertingCollector(testCollectorParams);
         const thing: ITestThing = { str: 'thing1', num: 1, bool: true };
         expect(collector.validating.getOrAdd('thingamajig1', thing)).toFailWithDetail(
-          /not a valid test thing key/i,
+          /invalid test thing key/i,
           'invalid-key'
         );
       });
@@ -272,7 +272,7 @@ describe('ValidatingConvertingCollector', () => {
           succeed(new CollectibleTestThing(thing, key, index as TestIndex))
         );
         expect(collector.validating.getOrAdd('thingamajig1', factory)).toFailWithDetail(
-          /not a valid test thing key/i,
+          /invalid test thing key/i,
           'invalid-key'
         );
         expect(factory).not.toHaveBeenCalled();
@@ -292,11 +292,9 @@ describe('ValidatingConvertingCollector', () => {
 
     test('validates on all calls that return Result', () => {
       const collector = new ValidatingConvertingCollector(testCollectorParams);
-      expect(collector.validating.get('thingamajig1')).toFailWith(/not a valid test thing key/i);
+      expect(collector.validating.get('thingamajig1')).toFailWith(/invalid test thing key/i);
       expect(collector.validating.has('thingamajig1')).toBe(false);
-      expect(collector.validating.getOrAdd('thingamajig1', things[0])).toFailWith(
-        /not a valid test thing key/i
-      );
+      expect(collector.validating.getOrAdd('thingamajig1', things[0])).toFailWith(/invalid test thing key/i);
     });
   });
 

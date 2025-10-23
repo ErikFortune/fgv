@@ -63,43 +63,43 @@ describe('converters', () => {
     }
   ];
   const invalidJsonTests = [
-    { description: 'NaN', value: Number.NaN, expectedError: /not.*valid json/i },
-    { description: 'Symbol', value: Symbol('value'), expectedError: /not.*valid json/i },
-    { description: 'a RegExp', value: /test/i, expectedError: /not.*valid json/i },
-    { description: 'a Date', value: new Date(), expectedError: /not.*valid json/i },
+    { description: 'NaN', value: Number.NaN, expectedError: /invalid json/i },
+    { description: 'Symbol', value: Symbol('value'), expectedError: /invalid json/i },
+    { description: 'a RegExp', value: /test/i, expectedError: /invalid json/i },
+    { description: 'a Date', value: new Date(), expectedError: /invalid json/i },
     {
       description: 'an object with an invalid property',
       value: { invalid: /true/i },
-      expectedError: /not.*valid json/i
+      expectedError: /invalid json/i
     },
     {
       description: 'an object with nested invalid property',
       value: {
         invalid: [/bad/i]
       },
-      expectedError: /not.*valid json/i
+      expectedError: /invalid json/i
     }
   ];
   const jsonWithUndefinedTests = [
-    { description: 'undefined', value: undefined, expectedError: /undefined.*not.*valid/i }
+    { description: 'undefined', value: undefined, expectedError: /undefined.*invalid/i }
   ];
   const jsonObjectWithUndefinedTests = [
     {
       description: 'an object with undefined property',
       value: { invalid: undefined },
-      expectedError: /undefined.*not.*valid/i
+      expectedError: /undefined.*invalid/i
     }
   ];
   const jsonArrayWithUndefinedTests = [
     {
       description: 'array containing objects with undefined properties',
       value: [{ good: 'str', bad: undefined }],
-      expectedError: /undefined.*not.*valid/i
+      expectedError: /undefined.*invalid/i
     },
     {
       description: 'array containing undefined',
       value: [{ good: 'str' }, undefined, 'hello'],
-      expectedError: /undefined.*not.*valid/i
+      expectedError: /undefined.*invalid/i
     }
   ];
 
@@ -112,8 +112,8 @@ describe('converters', () => {
     });
 
     test.each([
-      { description: 'object', value: {}, expectedError: /not a valid json primitive/i },
-      { description: 'array', value: [], expectedError: /not a valid json primitive/i },
+      { description: 'object', value: {}, expectedError: /invalid json primitive/i },
+      { description: 'array', value: [], expectedError: /invalid json primitive/i },
       ...invalidJsonTests,
       ...jsonWithUndefinedTests
     ])('fails for $description', (tc) => {
@@ -135,12 +135,12 @@ describe('converters', () => {
       ...invalidJsonTests,
       ...jsonObjectWithUndefinedTests,
       ...validPrimitiveTests.map((t) => {
-        return { ...t, expectedError: /not a valid json object/i };
+        return { ...t, expectedError: /invalid json object/i };
       }),
       ...validArrayTests.map((t) => {
-        return { ...t, expectedError: /not a valid json object/i };
+        return { ...t, expectedError: /invalid json object/i };
       }),
-      { description: 'null', value: null, expectedError: /not a valid json object/i }
+      { description: 'null', value: null, expectedError: /invalid json object/i }
     ])('fails for $description', (tc) => {
       expect(converter.convert(tc.value)).toFailWith(tc.expectedError);
     });
@@ -151,7 +151,7 @@ describe('converters', () => {
         bad: undefined
       };
 
-      expect(converter.convert(obj)).toFailWith(/undefined.*not.*valid/);
+      expect(converter.convert(obj)).toFailWith(/undefined.*invalid/);
       expect(converter.convert(obj, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
         // verify equality but not identity (copying converter)
         expect(v).toEqual(sanitizeJson(obj).orThrow());
@@ -195,7 +195,7 @@ describe('converters', () => {
         undefined
       ];
 
-      expect(converter.convert(arr)).toFailWith(/undefined.*not.*valid/);
+      expect(converter.convert(arr)).toFailWith(/undefined.*invalid/);
       expect(converter.convert(arr, { ignoreUndefinedProperties: true })).toSucceedAndSatisfy((v) => {
         // explicitly test equality but not identity (copying converter)
         expect(v).toEqual(sanitizeJson(arr).orThrow());

@@ -1,0 +1,1054 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2023 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/* eslint-disable @rushstack/packlets/mechanics */
+
+import '@fgv/ts-utils-jest';
+import { Result, succeed } from '@fgv/ts-utils';
+import { HintSystem, DefaultHintApplicator } from '../../../packlets/hints/hints';
+import { BaseHintProvider } from '../../../packlets/hints/baseHintProvider';
+import { Puzzle, PuzzleState, CellId, PuzzleSession } from '../../../packlets/common';
+import {
+  TechniqueIds,
+  TechniqueId,
+  ConfidenceLevels,
+  IHint,
+  IHintGenerationOptions
+} from '../../../packlets/hints/types';
+import { createPuzzleAndState } from '../helpers/puzzleBuilders';
+
+/* eslint-enable @rushstack/packlets/mechanics */
+
+describe('HintSystem', () => {
+  let hintSystem: HintSystem;
+  let testState: PuzzleState;
+  let testPuzzle: Puzzle;
+
+  beforeEach(() => {
+    hintSystem = HintSystem.create().orThrow();
+
+    const result = createPuzzleAndState([
+      '12345678.', // Creates naked single at A9 = 9
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........'
+    ]);
+    testPuzzle = result.puzzle;
+    testState = result.state;
+  });
+
+  describe('creation', () => {
+    test('should create with default configuration', () => {
+      expect(HintSystem.create()).toSucceed();
+    });
+
+    test('should create with custom configuration', () => {
+      const config = {
+        enableNakedSingles: true,
+        enableHiddenSingles: false,
+        defaultExplanationLevel: 'brief' as const
+      };
+
+      expect(HintSystem.create(config)).toSucceedAndSatisfy((system) => {
+        expect(system.config.enableNakedSingles).toBe(true);
+        expect(system.config.enableHiddenSingles).toBe(false);
+        expect(system.config.defaultExplanationLevel).toBe('brief');
+      });
+    });
+
+    test('should have default providers registered', () => {
+      const registeredTechniques = hintSystem.registry.getRegisteredTechniques();
+      expect(registeredTechniques).toContain(TechniqueIds.NAKED_SINGLES);
+      expect(registeredTechniques).toContain(TechniqueIds.HIDDEN_SINGLES);
+    });
+
+    test('should have default applicator', () => {
+      expect(hintSystem.applicator).toBeInstanceOf(DefaultHintApplicator);
+    });
+  });
+
+  describe('generateHints', () => {
+    test('should generate hints for puzzle state', () => {
+      expect(hintSystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeGreaterThan(0);
+
+        for (const hint of hints) {
+          expect(hint.cellActions.length).toBeGreaterThan(0);
+          expect(hint.explanations.length).toBeGreaterThan(0);
+          expect(hint.confidence).toBeGreaterThanOrEqual(1);
+          expect(hint.confidence).toBeLessThanOrEqual(5);
+        }
+      });
+    });
+
+    test('should pass options to registry', () => {
+      const options = {
+        maxHints: 1,
+        minConfidence: ConfidenceLevels.HIGH,
+        enabledTechniques: [TechniqueIds.NAKED_SINGLES]
+      };
+
+      expect(hintSystem.generateHints(testPuzzle, testState, options)).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeLessThanOrEqual(1);
+
+        for (const hint of hints) {
+          expect(hint.confidence).toBeGreaterThanOrEqual(ConfidenceLevels.HIGH);
+          expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+        }
+      });
+    });
+
+    test('should sort hints by priority when maxHints is set and confidence is equal', () => {
+      // Create a puzzle that generates both naked and hidden singles hints
+      // Both techniques have HIGH confidence (5), but different priorities (1 vs 2)
+      const { puzzle: multiHintPuzzle, state: multiHintState } = createPuzzleAndState([
+        '12345678.', // A9 naked single = 9
+        '..9......', // Block column 2 for hidden single scenarios
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      // Request maxHints to trigger sorting logic
+      const options = { maxHints: 2 };
+
+      expect(hintSystem.generateHints(multiHintPuzzle, multiHintState, options)).toSucceedAndSatisfy(
+        (hints) => {
+          expect(hints.length).toBeGreaterThan(0);
+          expect(hints.length).toBeLessThanOrEqual(2);
+
+          // If we have multiple hints with same confidence, they should be sorted by priority
+          // Naked singles (priority 1) should come before hidden singles (priority 2)
+          if (hints.length > 1) {
+            const priorities = hints.map((h) => h.priority);
+            const sortedPriorities = [...priorities].sort((a, b) => a - b);
+            expect(priorities).toEqual(sortedPriorities);
+          }
+        }
+      );
+    });
+
+    test('should fail with invalid hint generation options', () => {
+      // Test with invalid maxHints (negative value)
+      // Both providers validate and fail, so error appears multiple times
+      expect(hintSystem.generateHints(testPuzzle, testState, { maxHints: -1 })).toFailWith(
+        /maxHints cannot be negative/i
+      );
+    });
+  });
+
+  describe('getBestHint', () => {
+    test('should return single best hint', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        expect(hint.cellActions.length).toBeGreaterThan(0);
+        expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+
+        // Should be highest priority (lowest number)
+        expect(hint.priority).toBe(1);
+      });
+    });
+
+    test('should fail when no hints available', () => {
+      const { puzzle: completePuzzle, state: completeState } = createPuzzleAndState([
+        '123456789',
+        '456789123',
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678'
+      ]);
+
+      expect(hintSystem.getBestHint(completePuzzle, completeState)).toFailWith(/No hints available/);
+    });
+
+    test('should respect filtering options', () => {
+      expect(
+        hintSystem.getBestHint(testPuzzle, testState, {
+          enabledTechniques: [TechniqueIds.HIDDEN_SINGLES]
+        })
+      ).toSucceedAndSatisfy((hint) => {
+        expect(hint.techniqueId).toBe(TechniqueIds.HIDDEN_SINGLES);
+      });
+    });
+  });
+
+  describe('applyHint', () => {
+    test('should generate cell updates from hint', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        expect(hintSystem.applyHint(hint, testPuzzle, testState)).toSucceedAndSatisfy((updates) => {
+          expect(updates.length).toBeGreaterThan(0);
+
+          const update = updates[0];
+          expect(update.id).toBe(hint.cellActions[0].cellId);
+          expect(update.value).toBe(hint.cellActions[0].value);
+          expect(update.notes).toBeDefined();
+        });
+      });
+    });
+
+    test('should preserve existing notes when applying hint', () => {
+      // Create a state with notes
+      const { puzzle } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+      const session = PuzzleSession.create(puzzle).orThrow();
+
+      // Add some notes to the target cell
+      session.updateCellNotes('A9', [1, 2, 9]).orThrow();
+      const stateWithNotes = session.state;
+
+      expect(hintSystem.getBestHint(testPuzzle, stateWithNotes)).toSucceedAndSatisfy((hint) => {
+        expect(hintSystem.applyHint(hint, testPuzzle, stateWithNotes)).toSucceedAndSatisfy((updates) => {
+          const update = updates[0];
+          expect(update.notes).toEqual([1, 2, 9]);
+          expect(update.value).toBe(9);
+        });
+      });
+    });
+  });
+
+  describe('validateHint', () => {
+    test('should validate correct hint', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        expect(hintSystem.validateHint(hint, testPuzzle, testState)).toSucceed();
+      });
+    });
+
+    test('should reject hint for already filled cell', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        // Create a modified state where the target cell is already filled
+        const { puzzle: filledPuzzle, state: filledState } = createPuzzleAndState([
+          '123456789', // All cells filled
+          '.........',
+          '.........',
+          '.........',
+          '.........',
+          '.........',
+          '.........',
+          '.........',
+          '.........'
+        ]);
+
+        expect(hintSystem.validateHint(hint, filledPuzzle, filledState)).toFailWith(/already has value/);
+      });
+    });
+
+    test('should reject hint with invalid value', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        // Create a modified hint with invalid value
+        const invalidHint = {
+          ...hint,
+          cellActions: [
+            {
+              ...hint.cellActions[0],
+              value: 10 // Invalid value
+            }
+          ]
+        };
+
+        expect(hintSystem.validateHint(invalidHint, testPuzzle, testState)).toFailWith(
+          /Invalid value.*must be 1-9/
+        );
+      });
+    });
+  });
+
+  describe('formatHintExplanation', () => {
+    test('should format explanation at default level', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        const formatted = hintSystem.formatHintExplanation(hint);
+        expect(formatted.length).toBeGreaterThan(0);
+        expect(formatted).toContain('Naked Single');
+      });
+    });
+
+    test('should format explanation at specified level', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        const briefFormatted = hintSystem.formatHintExplanation(hint, 'brief');
+        const educationalFormatted = hintSystem.formatHintExplanation(hint, 'educational');
+
+        expect(briefFormatted.length).toBeGreaterThan(0);
+        expect(educationalFormatted.length).toBeGreaterThan(0);
+        expect(educationalFormatted.length).toBeGreaterThan(briefFormatted.length);
+      });
+    });
+
+    test('should handle missing explanation level gracefully', () => {
+      expect(hintSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        // Create hint with limited explanations
+        const limitedHint = {
+          ...hint,
+          explanations: [hint.explanations[0]] // Only one explanation
+        };
+
+        const formatted = hintSystem.formatHintExplanation(limitedHint, 'educational');
+        expect(formatted).toContain('No explanation available');
+      });
+    });
+  });
+
+  describe('hasHints', () => {
+    test('should return true when hints are available', () => {
+      expect(hintSystem.hasHints(testPuzzle, testState)).toSucceedAndSatisfy((hasHints) => {
+        expect(hasHints).toBe(true);
+      });
+    });
+
+    test('should return false when no hints are available', () => {
+      const { puzzle: completePuzzle2, state: completeState } = createPuzzleAndState([
+        '123456789',
+        '456789123',
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678'
+      ]);
+
+      expect(hintSystem.hasHints(completePuzzle2, completeState)).toSucceedAndSatisfy((hasHints) => {
+        expect(hasHints).toBe(false);
+      });
+    });
+  });
+
+  describe('getHintStatistics', () => {
+    test('should provide statistics about available hints', () => {
+      expect(hintSystem.getHintStatistics(testPuzzle, testState)).toSucceedAndSatisfy((stats) => {
+        expect(stats.totalHints).toBeGreaterThan(0);
+        expect(stats.hintsByTechnique).toBeInstanceOf(Map);
+        expect(stats.hintsByDifficulty).toBeInstanceOf(Map);
+
+        // Should have at least one technique represented
+        expect(stats.hintsByTechnique.size).toBeGreaterThan(0);
+        expect(stats.hintsByDifficulty.size).toBeGreaterThan(0);
+
+        // Counts should be consistent
+        let totalFromTechniques = 0;
+        for (const count of stats.hintsByTechnique.values()) {
+          totalFromTechniques += count;
+        }
+        expect(totalFromTechniques).toBe(stats.totalHints);
+      });
+    });
+
+    test('should return zero statistics for complete puzzle', () => {
+      const { puzzle: completePuzzle, state: completeState } = createPuzzleAndState([
+        '123456789',
+        '456789123',
+        '789123456',
+        '234567891',
+        '567891234',
+        '891234567',
+        '345678912',
+        '678912345',
+        '912345678'
+      ]);
+
+      expect(hintSystem.getHintStatistics(completePuzzle, completeState)).toSucceedAndSatisfy((stats) => {
+        expect(stats.totalHints).toBe(0);
+        expect(stats.hintsByTechnique.size).toBe(0);
+        expect(stats.hintsByDifficulty.size).toBe(0);
+      });
+    });
+  });
+
+  describe('getSystemSummary', () => {
+    test('should provide informative system summary', () => {
+      const summary = hintSystem.getSystemSummary();
+
+      expect(summary).toContain('Sudoku Hint System');
+      expect(summary).toContain('Registered Techniques');
+      expect(summary).toContain('Naked Singles');
+      expect(summary).toContain('Hidden Singles');
+      expect(summary).toContain('Default Explanation Level');
+    });
+
+    test('should reflect current configuration', () => {
+      const briefSystem = HintSystem.create({
+        defaultExplanationLevel: 'brief'
+      }).orThrow();
+
+      const summary = briefSystem.getSystemSummary();
+      expect(summary).toContain('brief');
+    });
+  });
+
+  describe('integration scenarios', () => {
+    test('should work with realistic puzzle progression', () => {
+      // Start with a more complex puzzle
+      const { puzzle: realPuzzle2, state: realState } = createPuzzleAndState([
+        '53..7....',
+        '6..195...',
+        '.98....6.',
+        '8...6...3',
+        '4..8.3..1',
+        '7...2...6',
+        '.6....28.',
+        '...419..5',
+        '....8..79'
+      ]);
+
+      // Should be able to generate hints
+      expect(hintSystem.generateHints(realPuzzle2, realState)).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeGreaterThanOrEqual(0);
+
+        if (hints.length > 0) {
+          // Should be able to get best hint
+          expect(hintSystem.getBestHint(realPuzzle2, realState)).toSucceed();
+
+          // Should be able to validate and apply hints
+          const hint = hints[0];
+          expect(hintSystem.validateHint(hint, realPuzzle2, realState)).toSucceed();
+          expect(hintSystem.applyHint(hint, realPuzzle2, realState)).toSucceed();
+
+          // Should be able to format explanations
+          const explanation = hintSystem.formatHintExplanation(hint);
+          expect(explanation.length).toBeGreaterThan(0);
+        }
+      });
+    });
+
+    test('should handle edge case puzzles gracefully', () => {
+      // Empty puzzle
+      const { puzzle: emptyPuzzle2, state: emptyState } = createPuzzleAndState([
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(hintSystem.generateHints(emptyPuzzle2, emptyState)).toSucceed();
+      expect(hintSystem.hasHints(emptyPuzzle2, emptyState)).toSucceed();
+      expect(hintSystem.getHintStatistics(emptyPuzzle2, emptyState)).toSucceed();
+
+      // Minimal puzzle
+      const { puzzle: minimalPuzzle2, state: minimalState } = createPuzzleAndState([
+        '1........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(hintSystem.generateHints(minimalPuzzle2, minimalState)).toSucceed();
+      expect(hintSystem.hasHints(minimalPuzzle2, minimalState)).toSucceed();
+    });
+
+    test('should maintain consistency across multiple operations', () => {
+      // Multiple calls should produce consistent results
+      const hints1 = hintSystem.generateHints(testPuzzle, testState).orThrow();
+      const hints2 = hintSystem.generateHints(testPuzzle, testState).orThrow();
+
+      expect(hints1.length).toBe(hints2.length);
+
+      // Best hint should be consistent
+      const best1 = hintSystem.getBestHint(testPuzzle, testState).orThrow();
+      const best2 = hintSystem.getBestHint(testPuzzle, testState).orThrow();
+
+      expect(best1.cellActions[0].cellId).toBe(best2.cellActions[0].cellId);
+      expect(best1.cellActions[0].value).toBe(best2.cellActions[0].value);
+    });
+  });
+
+  describe('configuration effects', () => {
+    test('should respect disabled techniques', () => {
+      const nakedOnlySystem = HintSystem.create({
+        enableNakedSingles: true,
+        enableHiddenSingles: false
+      }).orThrow();
+
+      expect(nakedOnlySystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
+        for (const hint of hints) {
+          expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+        }
+      });
+
+      const hiddenOnlySystem = HintSystem.create({
+        enableNakedSingles: false,
+        enableHiddenSingles: true
+      }).orThrow();
+
+      expect(hiddenOnlySystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
+        for (const hint of hints) {
+          expect(hint.techniqueId).toBe(TechniqueIds.HIDDEN_SINGLES);
+        }
+      });
+    });
+
+    test('should use configured default explanation level', () => {
+      const briefSystem = HintSystem.create({
+        defaultExplanationLevel: 'brief'
+      }).orThrow();
+
+      expect(briefSystem.getBestHint(testPuzzle, testState)).toSucceedAndSatisfy((hint) => {
+        const formatted = briefSystem.formatHintExplanation(hint);
+
+        // Should use brief explanation by default
+        const briefExp = hint.explanations.find((exp) => exp.level === 'brief');
+        expect(formatted).toContain(briefExp!.title);
+      });
+    });
+  });
+
+  describe('confidence handling', () => {
+    test('should use defaultConfidence from provider configuration', () => {
+      // Both naked singles and hidden singles use HIGH confidence (5)
+      expect(hintSystem.generateHints(testPuzzle, testState)).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeGreaterThan(0);
+
+        // All hints from default providers should have HIGH confidence
+        for (const hint of hints) {
+          expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+        }
+
+        // Specifically check naked singles
+        const nakedSingleHints = hints.filter((h) => h.techniqueId === TechniqueIds.NAKED_SINGLES);
+        expect(nakedSingleHints.length).toBeGreaterThan(0);
+        for (const hint of nakedSingleHints) {
+          expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+        }
+
+        // Specifically check hidden singles if present
+        const hiddenSingleHints = hints.filter((h) => h.techniqueId === TechniqueIds.HIDDEN_SINGLES);
+        for (const hint of hiddenSingleHints) {
+          expect(hint.confidence).toBe(ConfidenceLevels.HIGH);
+        }
+      });
+    });
+
+    test('should sort hints by confidence descending when maxHints is set', () => {
+      // Create a custom test provider with MEDIUM confidence
+      class TestMediumConfidenceProvider extends BaseHintProvider {
+        public constructor() {
+          super({
+            techniqueId: 'test-medium' as TechniqueId,
+            techniqueName: 'Test Medium Confidence',
+            difficulty: 'beginner',
+            priority: 10, // Lower priority than standard providers
+            defaultConfidence: ConfidenceLevels.MEDIUM // MEDIUM confidence (3)
+          });
+        }
+
+        public canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean {
+          return this.getEmptyCells(puzzle, state).length > 0;
+        }
+
+        public generateHints(
+          puzzle: Puzzle,
+          state: PuzzleState,
+          options?: IHintGenerationOptions
+        ): Result<readonly IHint[]> {
+          const emptyCells = this.getEmptyCells(puzzle, state);
+          if (emptyCells.length === 0) {
+            return succeed([]);
+          }
+
+          // Generate hints with MEDIUM confidence using defaultConfidence
+          const hints: IHint[] = [];
+          for (const cellId of emptyCells.slice(0, 2)) {
+            // Limit to 2 hints
+            const candidates = this.getCandidates(cellId, puzzle, state);
+            if (candidates.length > 0) {
+              hints.push(
+                this.createHint(
+                  [this.createCellAction(cellId, 'set-value', candidates[0], 'Test medium confidence')],
+                  this.createRelevantCells([cellId]),
+                  [this.createExplanation('brief', 'Test Medium', 'Test medium confidence hint')]
+                  // Note: no confidence parameter, so defaultConfidence is used
+                )
+              );
+            }
+          }
+
+          return succeed(this.filterHints(hints, options));
+        }
+      }
+
+      // Create a custom hint system with both standard and test providers
+      const customSystem = HintSystem.create().orThrow();
+      const testProvider = new TestMediumConfidenceProvider();
+      customSystem.registry.registerProvider(testProvider).orThrow();
+
+      // Create a puzzle that generates multiple hints
+      const { puzzle: multiHintPuzzle, state: multiHintState } = createPuzzleAndState([
+        '12345678.', // A9 naked single with HIGH confidence
+        '.........', // Row 2 has multiple empty cells for test provider
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      // Request with maxHints to trigger sorting
+      const maxHintsOptions = { maxHints: 5 };
+      expect(
+        customSystem.generateHints(multiHintPuzzle, multiHintState, maxHintsOptions)
+      ).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBeGreaterThan(1); // Should have both HIGH and MEDIUM confidence hints
+        expect(hints.length).toBeLessThanOrEqual(maxHintsOptions.maxHints);
+
+        // Verify hints are sorted by confidence descending
+        for (let i = 1; i < hints.length; i++) {
+          const prevHint = hints[i - 1];
+          const currHint = hints[i];
+
+          // Higher confidence should come first
+          if (prevHint.confidence !== currHint.confidence) {
+            expect(prevHint.confidence).toBeGreaterThan(currHint.confidence);
+          } else {
+            // If confidence is equal, lower priority should come first
+            expect(prevHint.priority).toBeLessThanOrEqual(currHint.priority);
+          }
+        }
+
+        // Verify we have both HIGH and MEDIUM confidence hints
+        const highConfHints = hints.filter((h) => h.confidence === ConfidenceLevels.HIGH);
+        const mediumConfHints = hints.filter((h) => h.confidence === ConfidenceLevels.MEDIUM);
+        expect(highConfHints.length).toBeGreaterThan(0);
+        expect(mediumConfHints.length).toBeGreaterThan(0);
+
+        // All HIGH confidence hints should come before all MEDIUM confidence hints
+        const firstMediumIndex = hints.findIndex((h) => h.confidence === ConfidenceLevels.MEDIUM);
+        const lastHighIndex = hints.map((h) => h.confidence).lastIndexOf(ConfidenceLevels.HIGH);
+        expect(lastHighIndex).toBeLessThan(firstMediumIndex);
+      });
+    });
+  });
+});
+
+describe('DefaultHintApplicator', () => {
+  let applicator: DefaultHintApplicator;
+  let testState: PuzzleState;
+  let testPuzzle: Puzzle;
+
+  beforeEach(() => {
+    applicator = new DefaultHintApplicator();
+
+    const result = createPuzzleAndState([
+      '12345678.',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........'
+    ]);
+    testPuzzle = result.puzzle;
+    testState = result.state;
+  });
+
+  describe('validateHint', () => {
+    test('should validate valid set-value hint', () => {
+      const validHint = createTestHint('A9', 9);
+      expect(applicator.canApplyHint(validHint, testPuzzle, testState)).toSucceed();
+    });
+
+    test('should reject unsupported action types', () => {
+      const invalidHint = createTestHint('A9', 9, 'eliminate-candidate');
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(
+        /Unsupported action type/
+      );
+    });
+
+    test('should reject hint for non-existent cell', () => {
+      const invalidHint = createTestHint('Z9', 9); // Invalid cell ID
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(/Invalid cell/);
+    });
+
+    test('should reject hint for already filled cell', () => {
+      const invalidHint = createTestHint('A1', 5); // A1 already has value 1
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
+    });
+
+    test('should reject hint with invalid value', () => {
+      const invalidHint = createTestHint('A9', 10);
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(
+        /Invalid value.*must be 1-9/
+      );
+    });
+
+    test('should reject hint with missing value', () => {
+      const invalidHint = createTestHint('A9', undefined);
+      expect(applicator.canApplyHint(invalidHint, testPuzzle, testState)).toFailWith(/No value specified/);
+    });
+  });
+
+  describe('applyHint', () => {
+    test('should generate correct cell updates', () => {
+      const hint = createTestHint('A9', 9);
+      expect(applicator.applyHint(hint, testPuzzle, testState)).toSucceedAndSatisfy((updates) => {
+        expect(updates).toHaveLength(1);
+
+        const update = updates[0];
+        expect(update.id).toBe('A9');
+        expect(update.value).toBe(9);
+        expect(update.notes).toBeDefined();
+      });
+    });
+
+    test('should preserve existing notes', () => {
+      // Create a session with notes
+      const { puzzle } = createPuzzleAndState([
+        '12345678.',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+      const session = PuzzleSession.create(puzzle).orThrow();
+
+      session.updateCellNotes('A9', [1, 2, 9]).orThrow();
+      const stateWithNotes = session.state;
+
+      const hint = createTestHint('A9', 9);
+      expect(applicator.applyHint(hint, testPuzzle, stateWithNotes)).toSucceedAndSatisfy((updates) => {
+        const update = updates[0];
+        expect(update.notes).toEqual([1, 2, 9]);
+      });
+    });
+
+    test('should fail validation before applying', () => {
+      const invalidHint = createTestHint('A1', 5); // Already filled cell
+      expect(applicator.applyHint(invalidHint, testPuzzle, testState)).toFailWith(/already has value/);
+    });
+  });
+});
+
+function createTestHint(
+  cellId: string,
+  value: number | undefined,
+  action: 'set-value' | 'eliminate-candidate' = 'set-value'
+): IHint {
+  return {
+    techniqueId: TechniqueIds.NAKED_SINGLES,
+    techniqueName: 'Test Technique',
+    difficulty: 'beginner' as const,
+    confidence: ConfidenceLevels.HIGH,
+    cellActions: [
+      {
+        cellId: cellId as unknown as import('../../../packlets/common').CellId,
+        action,
+        value,
+        reason: 'Test reason'
+      }
+    ],
+    relevantCells: {
+      primary: [cellId as unknown as import('../../../packlets/common').CellId],
+      secondary: [],
+      affected: []
+    },
+    explanations: [
+      {
+        level: 'brief' as const,
+        title: 'Test',
+        description: 'Test description'
+      }
+    ],
+    priority: 1
+  };
+}
+
+// Additional tests for error scenarios to improve coverage
+describe('HintSystem - Error Scenarios for Coverage', () => {
+  let hintSystem: HintSystem;
+  let puzzle: Puzzle;
+  let state: PuzzleState;
+
+  beforeEach(() => {
+    hintSystem = HintSystem.create().orThrow();
+
+    const result = createPuzzleAndState([
+      '12345678.', // Creates naked single at A9 = 9
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........',
+      '.........'
+    ]);
+    puzzle = result.puzzle;
+    state = result.state;
+  });
+
+  describe('hint validation error scenarios', () => {
+    test('should handle invalid value in set-value action', () => {
+      const invalidHint = createTestHint('A9', 0); // Invalid value
+      expect(hintSystem.validateHint(invalidHint, puzzle, state)).toFailWith(/invalid value/i);
+
+      const invalidHint2 = createTestHint('A9', 10); // Invalid value
+      expect(hintSystem.validateHint(invalidHint2, puzzle, state)).toFailWith(/invalid value/i);
+    });
+
+    test('should handle missing value in set-value action', () => {
+      const hintWithoutValue = createTestHint('A9', undefined);
+      expect(hintSystem.validateHint(hintWithoutValue, puzzle, state)).toFailWith(/no value specified/i);
+    });
+
+    test('should handle invalid cell ID in hint application', () => {
+      const invalidCellHint = createTestHint('invalid-cell', 5);
+      expect(hintSystem.applyHint(invalidCellHint, puzzle, state)).toFailWith(
+        /Invalid cell|cell.*not found/i
+      );
+    });
+  });
+
+  describe('hint application edge cases', () => {
+    test('should handle cell contents retrieval failure', () => {
+      // Create a hint with an invalid cell ID to trigger getCellContents failure
+      const badHint = createTestHint('Z9', 5);
+      expect(hintSystem.applyHint(badHint, puzzle, state)).toFailWith(/Invalid cell|cell.*not found/i);
+    });
+
+    test('should handle multiple cell actions with mixed validity', () => {
+      const mixedValidityHint = {
+        techniqueId: TechniqueIds.NAKED_SINGLES,
+        techniqueName: 'Test Technique',
+        difficulty: 'beginner' as const,
+        confidence: ConfidenceLevels.HIGH,
+        cellActions: [
+          {
+            cellId: 'A9' as CellId,
+            action: 'set-value' as const,
+            value: 9,
+            reason: 'Valid action'
+          },
+          {
+            cellId: 'invalid-cell' as CellId,
+            action: 'set-value' as const,
+            value: 6,
+            reason: 'Invalid cell'
+          }
+        ],
+        relevantCells: {
+          primary: ['A9' as CellId],
+          secondary: [],
+          affected: []
+        },
+        explanations: [
+          {
+            level: 'brief' as const,
+            title: 'Test',
+            description: 'Test'
+          }
+        ],
+        priority: 1
+      };
+
+      expect(hintSystem.applyHint(mixedValidityHint, puzzle, state)).toFailWith(
+        /Invalid cell|cell.*not found/i
+      );
+    });
+  });
+
+  describe('with logging', () => {
+    test('logs hint generation with InMemoryLogger', () => {
+      const { Logging } = require('@fgv/ts-utils');
+      const memoryLogger = new Logging.InMemoryLogger('detail');
+      const testLogger = new Logging.LogReporter({ logger: memoryLogger });
+
+      const systemWithLogging = HintSystem.create({ logger: testLogger }).orThrow();
+
+      // Create a simple puzzle state with a naked single
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // Creates naked single at A9 = 9
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(systemWithLogging.generateHints(puzzle, state)).toSucceed();
+
+      // Verify logging occurred
+      expect(memoryLogger.logged.some((msg: string) => msg.includes('Generating hints'))).toBe(true);
+      expect(memoryLogger.logged.some((msg: string) => msg.includes('Generated'))).toBe(true);
+    });
+
+    test('works with default no-op logger when logger not provided', () => {
+      // System created without logger should work silently
+      const systemWithoutLogging = HintSystem.create({}).orThrow();
+
+      const { puzzle, state } = createPuzzleAndState([
+        '12345678.', // Creates naked single at A9 = 9
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      expect(systemWithoutLogging.generateHints(puzzle, state)).toSucceed();
+    });
+  });
+
+  describe('BaseHintProvider.filterHints confidence sorting', () => {
+    test('should sort hints by confidence descending when provider generates mixed confidence hints', () => {
+      // This test directly exercises lines 209-214 in baseHintProvider.ts
+      // Specifically line 211: return b.confidence - a.confidence;
+      class MixedConfidenceProvider extends BaseHintProvider {
+        public constructor() {
+          super({
+            techniqueId: 'test-mixed-confidence' as TechniqueId,
+            techniqueName: 'Test Mixed Confidence',
+            difficulty: 'beginner',
+            priority: 10
+          });
+        }
+
+        public canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean {
+          return this.getEmptyCells(puzzle, state).length > 0;
+        }
+
+        public generateHints(
+          puzzle: Puzzle,
+          state: PuzzleState,
+          options?: IHintGenerationOptions
+        ): Result<readonly IHint[]> {
+          const emptyCells = this.getEmptyCells(puzzle, state);
+          if (emptyCells.length < 3) {
+            return succeed([]);
+          }
+
+          // Create hints with EXPLICITLY DIFFERENT confidence levels
+          // This is critical - we pass specific confidence values to createHint
+          const hints: IHint[] = [
+            // High confidence hint
+            this.createHint(
+              [this.createCellAction(emptyCells[0], 'set-value', 5, 'High confidence hint')],
+              this.createRelevantCells([emptyCells[0]]),
+              [this.createExplanation('brief', 'High Confidence', 'This hint has high confidence')],
+              ConfidenceLevels.HIGH // Explicitly set to 5
+            ),
+            // Low confidence hint
+            this.createHint(
+              [this.createCellAction(emptyCells[1], 'set-value', 6, 'Low confidence hint')],
+              this.createRelevantCells([emptyCells[1]]),
+              [this.createExplanation('brief', 'Low Confidence', 'This hint has low confidence')],
+              ConfidenceLevels.LOW // Explicitly set to 1
+            ),
+            // Medium confidence hint
+            this.createHint(
+              [this.createCellAction(emptyCells[2], 'set-value', 7, 'Medium confidence hint')],
+              this.createRelevantCells([emptyCells[2]]),
+              [this.createExplanation('brief', 'Medium Confidence', 'This hint has medium confidence')],
+              ConfidenceLevels.MEDIUM // Explicitly set to 3
+            )
+          ];
+
+          // Call filterHints with maxHints to trigger sorting logic at lines 209-214
+          return succeed(this.filterHints(hints, options));
+        }
+      }
+
+      // Create a puzzle with enough empty cells
+      const { puzzle: testPuzzle, state: testState } = createPuzzleAndState([
+        '123......', // Row 1 has 6 empty cells
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........',
+        '.........'
+      ]);
+
+      const provider = new MixedConfidenceProvider();
+
+      // Test with maxHints to trigger the sorting code path
+      expect(provider.generateHints(testPuzzle, testState, { maxHints: 3 })).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBe(3);
+
+        // Verify hints are sorted by confidence descending
+        // This proves line 211 (b.confidence - a.confidence) was executed
+        expect(hints[0].confidence).toBe(ConfidenceLevels.HIGH); // 5
+        expect(hints[1].confidence).toBe(ConfidenceLevels.MEDIUM); // 3
+        expect(hints[2].confidence).toBe(ConfidenceLevels.LOW); // 1
+
+        // Also verify the sort is stable (maintaining relative order)
+        expect(hints[0].explanations[0].title).toBe('High Confidence');
+        expect(hints[1].explanations[0].title).toBe('Medium Confidence');
+        expect(hints[2].explanations[0].title).toBe('Low Confidence');
+      });
+
+      // Test with maxHints < total to verify slice also works
+      expect(provider.generateHints(testPuzzle, testState, { maxHints: 2 })).toSucceedAndSatisfy((hints) => {
+        expect(hints.length).toBe(2);
+
+        // Should return the top 2 by confidence
+        expect(hints[0].confidence).toBe(ConfidenceLevels.HIGH); // 5
+        expect(hints[1].confidence).toBe(ConfidenceLevels.MEDIUM); // 3
+      });
+    });
+  });
+});

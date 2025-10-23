@@ -1,0 +1,71 @@
+{
+  "name": "Qualifier Default Values Demo",
+  "description": "Configuration demonstrating qualifier default values functionality with language, territory, and device qualifiers",
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": false,
+        "acceptLowercase": true
+      }
+    },
+    {
+      "name": "device",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": true,
+        "caseSensitive": false,
+        "enumeratedValues": ["phone", "tablet", "desktop", "watch", "tv"]
+      }
+    },
+    {
+      "name": "environment",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": true,
+        "enumeratedValues": ["development", "staging", "production"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 600,
+      "defaultValue": "en-US, en-CA, en-GB"
+    },
+    {
+      "name": "territory",
+      "typeName": "territory",
+      "defaultPriority": 500,
+      "defaultValue": "US"
+    },
+    {
+      "name": "device",
+      "typeName": "device",
+      "defaultPriority": 400,
+      "defaultValue": "desktop, tablet"
+    },
+    {
+      "name": "environment",
+      "typeName": "environment",
+      "defaultPriority": 300,
+      "defaultValue": "production"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}

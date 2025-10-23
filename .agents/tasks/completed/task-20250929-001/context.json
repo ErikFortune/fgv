@@ -1,0 +1,18 @@
+{
+  "task": {
+    "id": "task-20250929-001",
+    "description": "Replace legacy logging in ts-sudoku-lib and add IObservabilityContext to ts-sudoku-ui",
+    "type": "refactor",
+    "priority": "high",
+    "complexity": "moderate"
+  },
+  "artifacts": {},
+  "state": {
+    "currentPhase": "requirements_confirmation",
+    "completedPhases": [],
+    "iterations": 0,
+    "blockers": [],
+    "decisions": []
+  },
+  "feedback": {}
+}

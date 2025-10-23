@@ -24,7 +24,17 @@
 
 import '@fgv/ts-utils-jest';
 import { PuzzleCollections } from '../../../packlets/collections';
-import { CageId, CellId, ICellState, Ids, Puzzle, PuzzleState, PuzzleType } from '../../../packlets/common';
+import {
+  CageId,
+  CellId,
+  ICellState,
+  Ids,
+  Puzzle,
+  PuzzleState,
+  PuzzleType,
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS
+} from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('Puzzle class', () => {
@@ -54,7 +64,13 @@ describe('Puzzle class', () => {
 
   describe('constructor', () => {
     test.each(tests)('succeeds for "$description"', (tc) => {
-      expect(Puzzles.Sudoku.create(tc)).toSucceedAndSatisfy((board) => {
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: tc.description,
+        type: tc.type,
+        level: tc.level,
+        cells: tc.cells
+      });
+      expect(puzzleDefinition.onSuccess((def) => Puzzles.Sudoku.create(def))).toSucceedAndSatisfy((board) => {
         expect(board.toStrings(board.initialState)).toEqual(tc.expected);
         expect(board.toString(board.initialState)).toEqual(tc.expected.join('\n'));
         expect(board.numRows).toBe(9);
@@ -76,31 +92,536 @@ describe('Puzzle class', () => {
 
     test('fails for invalid puzzle type', () => {
       const t = { ...tests[0], type: 'killer-sudoku' as PuzzleType };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported type/i);
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: t.description,
+        type: t.type,
+        level: t.level,
+        cells: Array.isArray(t.cells) ? t.cells.join('') : t.cells
+      });
+      // killer-sudoku is a valid type but requires cage format with "|" separator
+      expect(puzzleDefinition.onSuccess((def) => Puzzles.Sudoku.create(def))).toFailWith(
+        /cage definitions after.*separator/i
+      );
     });
 
-    test('fails for invalid row count type', () => {
-      const t = { ...tests[0], rows: 10 };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported row count/i);
+    test('fails for invalid grid size with cell count mismatch', () => {
+      // Test: Grid with wrong cell count should fail
+      const invalidDimensions = {
+        cageWidthInCells: 3,
+        cageHeightInCells: 3,
+        boardWidthInCages: 3,
+        boardHeightInCages: 4 // This creates 9x12 = 108 cells
+      };
+      expect(
+        PuzzleDefinitionFactory.create(invalidDimensions, {
+          description: 'Invalid cell count test',
+          type: 'sudoku',
+          level: 1,
+          cells: tests[0].cells // Only 81 cells
+        })
+      ).toFailWith(/expected 108 cells, got 81/i);
     });
 
-    test('fails for invalid row count type', () => {
-      const t = { ...tests[0], cols: 10 };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/unsupported column count/i);
+    test('fails for unsupported grid dimensions', () => {
+      // Test: Invalid cage dimensions should fail validation (7x1 cage is not valid for Sudoku)
+      const invalidDimensions = {
+        cageWidthInCells: 7,
+        cageHeightInCells: 1,
+        boardWidthInCages: 1,
+        boardHeightInCages: 7
+      };
+      expect(
+        PuzzleDefinitionFactory.create(invalidDimensions, {
+          description: 'Invalid 7x7 grid',
+          type: 'sudoku',
+          level: 1,
+          cells: '.'.repeat(49)
+        })
+      ).toFailWith(/Cage dimensions must be at least 2x2/i);
     });
 
     test('fails for invalid cell definitions', () => {
-      const t = { ...tests[0], cells: tests[0].cells.slice(1) };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/expected 81 cells/i);
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: tests[0].description,
+          type: tests[0].type,
+          level: tests[0].level,
+          cells: tests[0].cells.slice(1) // Remove one character
+        })
+      ).toFailWith(/expected 81 cells, got 80/i);
     });
 
     test('fails for invalid value in cell definitions', () => {
-      const cells = tests[0].cells.replace('9', 'A');
-      const t = { ...tests[0], cells };
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/illegal value/i);
+      const cellsWithA = tests[0].cells.replace('9', 'A');
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: tests[0].description,
+          type: tests[0].type,
+          level: tests[0].level,
+          cells: cellsWithA
+        }).onSuccess((def) => Puzzles.Sudoku.create(def))
+      ).toFailWith(/illegal value/i);
 
-      t.cells = t.cells.replace('A', '0');
-      expect(Puzzles.Sudoku.create(t)).toFailWith(/illegal value/i);
+      const cellsWithZero = tests[0].cells.replace('9', '0');
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          description: tests[0].description,
+          type: tests[0].type,
+          level: tests[0].level,
+          cells: cellsWithZero
+        }).onSuccess((def) => Puzzles.Sudoku.create(def))
+      ).toFailWith(/illegal value/i);
+    });
+
+    describe('constructor error conditions for cell values', () => {
+      test('fails when cell value is less than 1', () => {
+        // Replace first '9' with '0' which is < 1
+        const cellsWithZero = tests[0].cells.replace('9', '0');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Invalid cell value < 1',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithZero
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"0"/i);
+      });
+
+      test('fails when cell value exceeds maxValue for 9x9 puzzle', () => {
+        // 'A' represents 10, which exceeds maxValue of 9
+        const cellsWithTen = tests[0].cells.replace('9', 'A');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Cell value exceeds maxValue',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithTen
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"A"/i);
+      });
+
+      test('fails when cell value exceeds maxValue for 4x4 puzzle', () => {
+        // '5' exceeds maxValue of 4 in a 4x4 puzzle
+        const cellsWithFive = '1..25...4..12..3'; // Contains '5' which is > 4
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle4x4, {
+            description: '4x4 with value > 4',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: cellsWithFive
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"5"/i);
+      });
+
+      test('fails when cell value exceeds maxValue for 6x6 puzzle', () => {
+        // '7' exceeds maxValue of 6 in a 6x6 puzzle
+        const cellsWithSeven = '17..5634....5....3..6..2....3463.6..'; // Contains '7' which is > 6
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle6x6, {
+            description: '6x6 with value > 6',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: cellsWithSeven
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"7"/i);
+      });
+
+      test('fails for invalid alphanumeric character in cell', () => {
+        // '@' is invalid alphanumeric character
+        const cellsWithInvalid = tests[0].cells.replace('9', '@');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Invalid character in cell',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithInvalid
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"@"/i);
+      });
+
+      test('fails for exclamation mark in cells', () => {
+        const cellsWithChar = tests[0].cells.replace('9', '!');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Cell with !',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithChar
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"!"/i);
+      });
+
+      test('fails for hash symbol in cells', () => {
+        const cellsWithChar = tests[0].cells.replace('9', '#');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Cell with #',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithChar
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"#"/i);
+      });
+
+      test('fails for dollar sign in cells', () => {
+        const cellsWithChar = tests[0].cells.replace('9', '$');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Cell with $',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithChar
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"\$"/i);
+      });
+
+      test('fails for percent sign in cells', () => {
+        const cellsWithChar = tests[0].cells.replace('9', '%');
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Cell with %',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: cellsWithChar
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"%"/i);
+      });
+    });
+
+    describe('constructor error conditions for cell count', () => {
+      test('fails when cell count is less than expected', () => {
+        // Remove last character - 80 cells instead of 81
+        const tooFewCells = tests[0].cells.slice(0, -1);
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Too few cells',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: tooFewCells
+          })
+        ).toFailWith(/expected 81 cells, got 80/i);
+      });
+
+      test('fails when cell count is more than expected', () => {
+        // Add extra character - 82 cells instead of 81
+        const tooManyCells = tests[0].cells + '.';
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Too many cells',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: tooManyCells
+          })
+        ).toFailWith(/expected 81 cells, got 82/i);
+      });
+
+      test('fails when very few cells provided', () => {
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+            description: 'Very few cells',
+            type: tests[0].type,
+            level: tests[0].level,
+            cells: '.' // Only 1 cell instead of 81
+          })
+        ).toFailWith(/expected 81 cells, got 1/i);
+      });
+
+      test('fails for 4x4 puzzle with wrong cell count', () => {
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle4x4, {
+            description: '4x4 wrong count',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: '1..2.3..4..12..' // Only 15 cells instead of 16
+          })
+        ).toFailWith(/expected 16 cells, got 15/i);
+      });
+
+      test('fails for 6x6 puzzle with wrong cell count', () => {
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle6x6, {
+            description: '6x6 wrong count',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: '12..5634....5....3..6..2....3463.6.' // Only 35 cells instead of 36
+          })
+        ).toFailWith(/expected 36 cells, got 35/i);
+      });
+
+      test('fails for 12x12 puzzle with wrong cell count', () => {
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+            description: '12x12 wrong count',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: '.'.repeat(143) // Only 143 cells instead of 144
+          })
+        ).toFailWith(/expected 144 cells, got 143/i);
+      });
+    });
+
+    describe('constructor error conditions for alphanumeric values in 12x12', () => {
+      test('accepts valid alphanumeric values A-C in 12x12 puzzle', () => {
+        const validCells = [
+          '..1.6.2.A7..',
+          '62.5B....1..',
+          '.8....C3B.62',
+          'A97.2.6..B5.',
+          '.5......37C.',
+          '3B....7...9.',
+          '57B.4.....1.',
+          '8.....A.9...',
+          '.4..97...6..',
+          '.1C.......B.',
+          '4....2.C....',
+          '....5C..7126'
+        ].join('');
+
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+            description: '12x12 with valid alphanumeric',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: validCells
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toSucceed();
+      });
+
+      test('accepts lowercase alphanumeric values a-c in 12x12 puzzle', () => {
+        const validCells = [
+          '..1.6.2.a7..',
+          '62.5b....1..',
+          '.8....c3b.62',
+          'a97.2.6..b5.',
+          '.5......37c.',
+          '3b....7...9.',
+          '57b.4.....1.',
+          '8.....a.9...',
+          '.4..97...6..',
+          '.1c.......b.',
+          '4....2.c....',
+          '....5c..7126'
+        ].join('');
+
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+            description: '12x12 with lowercase alphanumeric',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: validCells
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toSucceedAndSatisfy((puzzle) => {
+          // Verify that lowercase letters a, b, c are parsed as values 10, 11, 12
+          expect(puzzle.getCellContents('A9' as CellId, puzzle.initialState)).toSucceedAndSatisfy(
+            ({ contents }) => {
+              expect(contents.value).toBe(10); // 'a' should be parsed as 10
+            }
+          );
+          expect(puzzle.getCellContents('B5' as CellId, puzzle.initialState)).toSucceedAndSatisfy(
+            ({ contents }) => {
+              expect(contents.value).toBe(11); // 'b' should be parsed as 11
+            }
+          );
+          expect(puzzle.getCellContents('C7' as CellId, puzzle.initialState)).toSucceedAndSatisfy(
+            ({ contents }) => {
+              expect(contents.value).toBe(12); // 'c' should be parsed as 12
+            }
+          );
+        });
+      });
+
+      test('fails when alphanumeric value exceeds maxValue for 12x12', () => {
+        // 'D' represents 13, which exceeds maxValue of 12
+        const cellsWithD = '.'.repeat(143) + 'D'; // 144 cells with 'D' at end
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+            description: '12x12 with value > 12',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: cellsWithD
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"D"/i);
+      });
+
+      test('fails when lowercase alphanumeric value exceeds maxValue for 12x12', () => {
+        // 'd' represents 13, which exceeds maxValue of 12
+        const cellsWithD = '.'.repeat(143) + 'd'; // 144 cells with 'd' at end
+        expect(
+          PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+            description: '12x12 with lowercase value > 12',
+            type: 'sudoku' as PuzzleType,
+            level: 1,
+            cells: cellsWithD
+          }).onSuccess((def) => Puzzles.Sudoku.create(def))
+        ).toFailWith(/illegal value.*"d"/i);
+      });
+    });
+  });
+
+  describe('Standard Grid Configurations', () => {
+    test('supports 4x4 grid with 2x2 cages', () => {
+      const puzzle4x4 = {
+        description: '4x4 Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        rows: 4,
+        cols: 4,
+        cells: '1..2.3..4..12..3'
+      };
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle4x4, {
+        description: puzzle4x4.description,
+        type: puzzle4x4.type,
+        level: puzzle4x4.level,
+        cells: puzzle4x4.cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(4);
+        expect(def.totalColumns).toBe(4);
+        expect(def.maxValue).toBe(4);
+        expect(def.basicCageTotal).toBe(10); // 1+2+3+4
+        expect(def.cageWidthInCells).toBe(2);
+        expect(def.cageHeightInCells).toBe(2);
+        expect(def.boardWidthInCages).toBe(2);
+        expect(def.boardHeightInCages).toBe(2);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('supports 6x6 grid with 3x2 cages', () => {
+      const puzzle6x6 = {
+        description: '6x6 Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        rows: 6,
+        cols: 6,
+        cells: '12..5634....5....3..6..2....3463.6..'
+      };
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle6x6, {
+        description: puzzle6x6.description,
+        type: puzzle6x6.type,
+        level: puzzle6x6.level,
+        cells: puzzle6x6.cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(6);
+        expect(def.totalColumns).toBe(6);
+        expect(def.maxValue).toBe(6);
+        expect(def.basicCageTotal).toBe(21); // 1+2+3+4+5+6
+        expect(def.cageWidthInCells).toBe(3);
+        expect(def.cageHeightInCells).toBe(2);
+        expect(def.boardWidthInCages).toBe(2);
+        expect(def.boardHeightInCages).toBe(3);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('supports 9x9 grid with 3x3 cages (traditional)', () => {
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: tests[0].description,
+        type: tests[0].type,
+        level: tests[0].level,
+        cells: Array.isArray(tests[0].cells) ? tests[0].cells.join('') : tests[0].cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(9);
+        expect(def.totalColumns).toBe(9);
+        expect(def.maxValue).toBe(9);
+        expect(def.basicCageTotal).toBe(45); // 1+2+...+9
+        expect(def.cageWidthInCells).toBe(3);
+        expect(def.cageHeightInCells).toBe(3);
+        expect(def.boardWidthInCages).toBe(3);
+        expect(def.boardHeightInCages).toBe(3);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('supports 12x12 grid with 4x3 cages', () => {
+      const puzzle12x12 = {
+        description: '12x12 Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        rows: 12,
+        cols: 12,
+        cells: [
+          '..1.6.2.A7..',
+          '62.5B....1..',
+          '.8....C3B.62',
+          'A97.2.6..B5.',
+          '.5......37C.',
+          '3B....7...9.',
+          '57B.4.....1.',
+          '8.....A.9...',
+          '.4..97...6..',
+          '.1C.......B.',
+          '4....2.C....',
+          '....5C..7126'
+        ].join('')
+      };
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle12x12, {
+        description: puzzle12x12.description,
+        type: puzzle12x12.type,
+        level: puzzle12x12.level,
+        cells: puzzle12x12.cells
+      });
+      expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+        expect(def.totalRows).toBe(12);
+        expect(def.totalColumns).toBe(12);
+        expect(def.maxValue).toBe(12);
+        expect(def.basicCageTotal).toBe(78); // 1+2+...+12
+        expect(def.cageWidthInCells).toBe(4);
+        expect(def.cageHeightInCells).toBe(3);
+        expect(def.boardWidthInCages).toBe(3);
+        expect(def.boardHeightInCages).toBe(4);
+
+        // Verify puzzle creation works
+        expect(Puzzles.Sudoku.create(def)).toSucceed();
+      });
+    });
+
+    test('validates mathematical relationships for all configurations', () => {
+      const configurations = [
+        { name: '4x4', rows: 4, cols: 4, cells: '.'.repeat(16), config: STANDARD_CONFIGS.puzzle4x4 },
+        { name: '6x6', rows: 6, cols: 6, cells: '.'.repeat(36), config: STANDARD_CONFIGS.puzzle6x6 },
+        { name: '9x9', rows: 9, cols: 9, cells: '.'.repeat(81), config: STANDARD_CONFIGS.puzzle9x9 },
+        { name: '12x12', rows: 12, cols: 12, cells: '.'.repeat(144), config: STANDARD_CONFIGS.puzzle12x12 }
+      ];
+
+      configurations.forEach(({ name, rows, cols, cells, config }) => {
+        const testPuzzle = {
+          description: `${name} Mathematical Test`,
+          type: 'sudoku' as PuzzleType,
+          level: 1,
+          rows,
+          cols,
+          cells
+        };
+
+        const puzzleDefinition = PuzzleDefinitionFactory.create(config, {
+          description: testPuzzle.description,
+          type: testPuzzle.type,
+          level: testPuzzle.level,
+          cells: Array.isArray(testPuzzle.cells) ? testPuzzle.cells.join('') : testPuzzle.cells
+        });
+        expect(puzzleDefinition).toSucceedAndSatisfy((def) => {
+          // Verify mathematical relationships
+          expect(def.totalRows).toBe(def.cageHeightInCells * def.boardHeightInCages);
+          expect(def.totalColumns).toBe(def.cageWidthInCells * def.boardWidthInCages);
+          expect(def.maxValue).toBe(def.cageWidthInCells * def.cageHeightInCells);
+          expect(def.basicCageTotal).toBe((def.maxValue * (def.maxValue + 1)) / 2);
+
+          // Verify cell count matches
+          expect(def.cells.length).toBe(def.totalRows * def.totalColumns);
+        });
+      });
     });
   });
 
@@ -108,7 +629,13 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      puzzle = Puzzles.Sudoku.create(tests[0]).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        description: tests[0].description,
+        type: tests[0].type,
+        level: tests[0].level,
+        cells: Array.isArray(tests[0].cells) ? tests[0].cells.join('') : tests[0].cells
+      }).orThrow();
+      puzzle = Puzzles.Sudoku.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
 
@@ -193,8 +720,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const desc = PuzzleCollections.default.getDescription('almost-done').orThrow();
-      puzzle = Puzzles.Any.create(desc).orThrow();
+      const session = PuzzleCollections.default.getPuzzle('almost-done').orThrow();
+      puzzle = session.puzzle;
       state = puzzle.initialState;
     });
 
@@ -217,8 +744,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const desc = PuzzleCollections.default.getDescription('almost-done').orThrow();
-      puzzle = Puzzles.Any.create(desc).orThrow();
+      const session = PuzzleCollections.default.getPuzzle('almost-done').orThrow();
+      puzzle = session.puzzle;
       state = puzzle.initialState;
     });
 
@@ -257,8 +784,8 @@ describe('Puzzle class', () => {
     let puzzle: Puzzle;
     let state: PuzzleState;
     beforeEach(() => {
-      const desc = PuzzleCollections.default.getDescription('hidden-pair').orThrow();
-      puzzle = Puzzles.Any.create(desc).orThrow();
+      const session = PuzzleCollections.default.getPuzzle('hidden-pair').orThrow();
+      puzzle = session.puzzle;
       state = puzzle.initialState;
     });
 

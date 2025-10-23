@@ -47,6 +47,7 @@ The value to check.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 value is [ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)<!-- -->&lt;TK, TV&gt;

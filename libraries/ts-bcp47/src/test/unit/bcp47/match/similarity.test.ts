@@ -142,8 +142,8 @@ describe('LanguageSimilarityComparer class', () => {
       },
       {
         description: 'region mismatch is partial',
-        l1: 'en-US',
-        l2: 'en-GB',
+        l1: 'pt-PT',
+        l2: 'pt-BR',
         expected: Bcp47.tagSimilarity.sibling
       },
       {
@@ -172,13 +172,19 @@ describe('LanguageSimilarityComparer class', () => {
       },
       {
         description: 'language affinity applies for related languages',
-        l1: 'en-AU',
+        l1: 'en-ZA',
         l2: 'en-CA',
         expected: Bcp47.tagSimilarity.affinity
       },
       {
         description: 'preferred language affinity applies for related languages if one is primary',
         l1: 'en-GB',
+        l2: 'en-CA',
+        expected: Bcp47.tagSimilarity.preferredAffinity
+      },
+      {
+        description: 'AU and NZ match with preferred affinity',
+        l1: 'en-NZ',
         l2: 'en-AU',
         expected: Bcp47.tagSimilarity.preferredAffinity
       },

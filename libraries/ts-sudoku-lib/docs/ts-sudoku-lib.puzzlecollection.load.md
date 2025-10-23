@@ -9,7 +9,7 @@ Creates a new puzzle from a JSON file.
 **Signature:**
 
 ```typescript
-static load(path: string): Result<PuzzleCollection>;
+static load(file: FileTree.IFileTreeFileItem): Result<PuzzleCollection>;
 ```
 
 ## Parameters
@@ -32,21 +32,20 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-path
+file
 
 
 </td><td>
 
-string
+FileTree.IFileTreeFileItem
 
 
 </td><td>
-
-path to the JSON file to be loaded.
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[PuzzleCollection](./ts-sudoku-lib.puzzlecollection.md)<!-- -->&gt;

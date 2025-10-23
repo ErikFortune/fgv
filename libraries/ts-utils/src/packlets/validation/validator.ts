@@ -24,10 +24,22 @@ import { Brand, Failure, Result } from '../base';
 import { ConstraintTrait, ValidatorTraits } from './traits';
 
 /**
+ * Type for a validation function, which validates that a supplied `unknown`
+ * value is a valid value of type `<T>`, possibly as influenced by
+ * an optionally-supplied validation context of type `<TC>`.
+ * @public
+ */
+export type ValidatorFunc<T, TC> = (
+  from: unknown,
+  context?: TC,
+  self?: Validator<T, TC>
+) => boolean | Failure<T>;
+
+/**
  * Options that apply to any {@link Validation.Validator | Validator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ValidatorOptions<TC> {
   defaultContext?: TC;
 }
@@ -56,7 +68,7 @@ export type ValidationErrorFormatter<TC = unknown> = (val: unknown, message?: st
  * required characteristics (type, values, etc).
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface Validator<T, TC = unknown> {
   /**
    * {@link Validation.ValidatorTraits | Traits} describing this validation.

@@ -28,8 +28,8 @@ import * as Scope from './scope';
 import { Result, captureResult } from '@fgv/ts-utils';
 import { YearMonthDaySpec } from '../jar/language-subtags/registry/model';
 import { RegisteredItem, RegistryFile } from './model';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import defaultSubtags from '../../../data/iana/language-subtags.json';
+import { getIanaDataBuffer } from '../iana-data-embedded';
+import { loadLanguageRegistriesFromZipBuffer } from '../languageRegistriesLoader';
 
 /**
  * @public
@@ -110,7 +110,11 @@ export class LanguageSubtagRegistry {
   }
 
   public static loadDefault(): Result<LanguageSubtagRegistry> {
-    return this.createFromJson(defaultSubtags);
+    return captureResult(() => {
+      const zipBuffer = getIanaDataBuffer();
+      const registries = loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
+      return registries.subtags;
+    });
   }
 
   public static load(root: string): Result<LanguageSubtagRegistry> {
@@ -132,5 +136,9 @@ export class LanguageSubtagRegistry {
       const registry = JarConverters.loadTxtSubtagRegistryFileSync(path.join(root)).orThrow();
       return new LanguageSubtagRegistry(registry);
     });
+  }
+
+  public static createFromTxtContent(content: string): Result<LanguageSubtagRegistry> {
+    return JarConverters.loadTxtSubtagRegistryFromString(content).onSuccess(LanguageSubtagRegistry.create);
   }
 }

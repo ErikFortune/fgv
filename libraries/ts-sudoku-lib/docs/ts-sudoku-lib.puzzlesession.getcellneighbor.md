@@ -79,6 +79,7 @@ Wrapping rules to be applied.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[ICell](./ts-sudoku-lib.icell.md)<!-- -->&gt;

@@ -4,7 +4,7 @@
 
 ## PuzzleSession.create() method
 
-Creates a new [puzzle session](./ts-sudoku-lib.puzzlesession.md) from a supplied .
+Creates a new [puzzle session](./ts-sudoku-lib.puzzlesession.md) from a supplied [puzzle](./ts-sudoku-lib.puzzle.md)<!-- -->.
 
 **Signature:**
 
@@ -37,16 +37,17 @@ puzzle
 
 </td><td>
 
-Puzzle
+[Puzzle](./ts-sudoku-lib.puzzle.md)
 
 
 </td><td>
 
-The  from which the session is to be initialized.
+The [puzzle](./ts-sudoku-lib.puzzle.md) from which the session is to be initialized.
 
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[PuzzleSession](./ts-sudoku-lib.puzzlesession.md)<!-- -->&gt;

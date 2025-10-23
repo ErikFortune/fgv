@@ -63,6 +63,7 @@ _(Optional)_ An optional detail to be added if this result was successful.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;T, TD&gt;
