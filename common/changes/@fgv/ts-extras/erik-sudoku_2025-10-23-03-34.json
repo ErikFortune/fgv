@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-extras",
+      "comment": "minor cleanup",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-extras"
+}
