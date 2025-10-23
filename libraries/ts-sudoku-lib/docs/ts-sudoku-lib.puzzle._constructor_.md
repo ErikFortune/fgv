@@ -9,7 +9,7 @@ Constructs a new puzzle state.
 **Signature:**
 
 ```typescript
-protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]);
+protected constructor(puzzle: IPuzzleDefinition, extraCages?: [CageId, Cage][]);
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ puzzle
 
 </td><td>
 
-[IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)
+[IPuzzleDefinition](./ts-sudoku-lib.ipuzzledefinition.md)
 
 
 </td><td>
 
-[Puzzle description](./ts-sudoku-lib.ipuzzledescription.md) from which this puzzle state is to be initialized.
+[Puzzle definition](./ts-sudoku-lib.ipuzzledefinition.md) from which this puzzle state is to be initialized.
 
 
 </td></tr>

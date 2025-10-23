@@ -11,7 +11,7 @@ Each combination contains unique numbers from 1-9 that sum exactly to the specif
 **Signature:**
 
 ```typescript
-static getCombinations(cageSize: number, total: number, constraints?: IKillerConstraints): Result<number[][]>;
+static getCombinations(cageSize: number, total: number, constraints?: IKillerConstraints, maxValue?: number): Result<number[][]>;
 ```
 
 ## Parameters
@@ -77,6 +77,22 @@ constraints
 </td><td>
 
 _(Optional)_ Optional constraints on included/excluded numbers
+
+
+</td></tr>
+<tr><td>
+
+maxValue
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

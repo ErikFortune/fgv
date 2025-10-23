@@ -23,7 +23,7 @@
  */
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { CellId, totalsByCageSize, Cage, ICage, Puzzle, PuzzleState } from '../common';
+import { CellId, getCageTotalBounds, Cage, ICage, Puzzle, PuzzleState } from '../common';
 import { IKillerConstraints } from './killerCombinationsTypes';
 import { CombinationCache } from './internal/combinationCache';
 import { CombinationGenerator } from './internal/combinationGenerator';
@@ -54,17 +54,13 @@ export class KillerCombinations {
    * }
    * ```
    */
-  public static getPossibleTotals(cageSize: number): Result<number[]> {
+  public static getPossibleTotals(cageSize: number, maxValue: number = 9): Result<number[]> {
     // Validate cage size
-    if (!Number.isInteger(cageSize) || cageSize < 1 || cageSize > 9) {
-      return fail(`Cage size must be an integer between 1 and 9, got ${cageSize}`);
+    if (!Number.isInteger(cageSize) || cageSize < 1 || cageSize > maxValue) {
+      return fail(`Cage size must be an integer between 1 and ${maxValue}, got ${cageSize}`);
     }
 
-    const bounds = totalsByCageSize[cageSize];
-    /* c8 ignore next 2 - defensive coding: totalsByCageSize should always have entries for valid cage sizes 1-9 */
-    if (!bounds) {
-      return fail(`No bounds defined for cage size ${cageSize}`);
-    }
+    const bounds = getCageTotalBounds(cageSize, maxValue);
 
     // Generate all totals in the valid range
     const totals: number[] = [];
@@ -105,19 +101,16 @@ export class KillerCombinations {
   public static getCombinations(
     cageSize: number,
     total: number,
-    constraints?: IKillerConstraints
+    constraints?: IKillerConstraints,
+    maxValue: number = 9
   ): Result<number[][]> {
     // Validate cage size
-    if (!Number.isInteger(cageSize) || cageSize < 1 || cageSize > 9) {
-      return fail(`Cage size must be an integer between 1 and 9, got ${cageSize}`);
+    if (!Number.isInteger(cageSize) || cageSize < 1 || cageSize > maxValue) {
+      return fail(`Cage size must be an integer between 1 and ${maxValue}, got ${cageSize}`);
     }
 
     // Validate total against cage size bounds
-    const bounds = totalsByCageSize[cageSize];
-    /* c8 ignore next 2 - defensive coding: totalsByCageSize should always have entries for valid cage sizes 1-9 */
-    if (!bounds) {
-      return fail(`No bounds defined for cage size ${cageSize}`);
-    }
+    const bounds = getCageTotalBounds(cageSize, maxValue);
 
     if (!Number.isInteger(total) || total < bounds.min || total > bounds.max) {
       return fail(
@@ -126,7 +119,7 @@ export class KillerCombinations {
     }
 
     // Validate constraints
-    const constraintValidation = this._validateConstraints(constraints);
+    const constraintValidation = this._validateConstraints(constraints, maxValue);
     if (constraintValidation.isFailure()) {
       return fail(constraintValidation.message);
     }
@@ -139,7 +132,7 @@ export class KillerCombinations {
     }
 
     // Generate combinations
-    const combinations = CombinationGenerator.generate(cageSize, total, constraints);
+    const combinations = CombinationGenerator.generate(cageSize, total, constraints, maxValue);
 
     // Cache the result
     CombinationCache.set(cacheKey, combinations);
@@ -190,7 +183,7 @@ export class KillerCombinations {
 
     // Get valid combinations for this cage
     const combinationsResult = this.getCombinations(cage.numCells, cage.total, constraints);
-    /* c8 ignore next 2 - error propagation from getCombinations already tested, integration error hard to trigger */
+    /* c8 ignore next 3 - error propagation from getCombinations already tested, integration error hard to trigger */
     if (combinationsResult.isFailure()) {
       return fail(`Failed to get combinations for cage ${cage.id}: ${combinationsResult.message}`);
     }
@@ -202,9 +195,10 @@ export class KillerCombinations {
   /**
    * Validate constraint parameters.
    * @param constraints - Constraints to validate
+   * @param maxValue - Maximum value allowed in cells
    * @returns Result indicating success or failure with error message
    */
-  private static _validateConstraints(constraints?: IKillerConstraints): Result<true> {
+  private static _validateConstraints(constraints?: IKillerConstraints, maxValue: number = 9): Result<true> {
     if (!constraints) {
       return succeed(true);
     }
@@ -218,8 +212,8 @@ export class KillerCombinations {
       }
 
       for (const num of excluded) {
-        if (!Number.isInteger(num) || num < 1 || num > 9) {
-          return fail(`excludedNumbers must contain integers between 1-9, got ${num}`);
+        if (!Number.isInteger(num) || num < 1 || num > maxValue) {
+          return fail(`excludedNumbers must contain integers between 1-${maxValue}, got ${num}`);
         }
       }
 
@@ -239,8 +233,8 @@ export class KillerCombinations {
       }
 
       for (const num of required) {
-        if (!Number.isInteger(num) || num < 1 || num > 9) {
-          return fail(`requiredNumbers must contain integers between 1-9, got ${num}`);
+        if (!Number.isInteger(num) || num < 1 || num > maxValue) {
+          return fail(`requiredNumbers must contain integers between 1-${maxValue}, got ${num}`);
         }
       }
 

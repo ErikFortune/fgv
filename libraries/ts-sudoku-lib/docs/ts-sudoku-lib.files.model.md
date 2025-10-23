@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IPuzzleFileData](./ts-sudoku-lib.files.model.ipuzzlefiledata.md)
+
+
+</td><td>
+
+Input format for puzzle data in JSON files. Contains only the essential data needed to create an IPuzzleDefinition.
+
+
+</td></tr>
+<tr><td>
+
+[IPuzzleFileDimensions](./ts-sudoku-lib.files.model.ipuzzlefiledimensions.md)
+
+
+</td><td>
+
+Dimensional configuration for puzzles
+
+
+</td></tr>
+<tr><td>
+
 [IPuzzlesFile](./ts-sudoku-lib.files.model.ipuzzlesfile.md)
 
 

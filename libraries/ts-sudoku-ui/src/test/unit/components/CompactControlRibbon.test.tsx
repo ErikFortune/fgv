@@ -23,17 +23,9 @@
  */
 
 // Mock the useResponsiveLayout hook
+const mockUseResponsiveLayout = jest.fn();
 jest.mock('../../../hooks/useResponsiveLayout', () => ({
-  useResponsiveLayout: () => ({
-    deviceType: 'desktop',
-    orientation: 'landscape',
-    keypadLayoutMode: 'hidden',
-    screenWidth: 1024,
-    screenHeight: 768,
-    isTouchDevice: false,
-    isSmallScreen: false,
-    hasSpaceForDualKeypads: true
-  })
+  useResponsiveLayout: () => mockUseResponsiveLayout()
 }));
 
 import React, { act } from 'react';
@@ -59,8 +51,46 @@ describe('CompactControlRibbon', () => {
     onExport: jest.fn()
   };
 
+  // Default desktop layout
+  const desktopLayout = {
+    deviceType: 'desktop' as const,
+    orientation: 'landscape' as const,
+    keypadLayoutMode: 'hidden' as const,
+    screenWidth: 1024,
+    screenHeight: 768,
+    isTouchDevice: false,
+    isSmallScreen: false,
+    hasSpaceForDualKeypads: true
+  };
+
+  // Mobile layout with side-by-side keypad
+  const mobileLayoutSideBySide = {
+    deviceType: 'mobile' as const,
+    orientation: 'portrait' as const,
+    keypadLayoutMode: 'side-by-side' as const,
+    screenWidth: 375,
+    screenHeight: 667,
+    isTouchDevice: true,
+    isSmallScreen: true,
+    hasSpaceForDualKeypads: false
+  };
+
+  // Mobile layout with stacked keypad
+  const mobileLayoutStacked = {
+    deviceType: 'mobile' as const,
+    orientation: 'portrait' as const,
+    keypadLayoutMode: 'stacked' as const,
+    screenWidth: 320,
+    screenHeight: 568,
+    isTouchDevice: true,
+    isSmallScreen: true,
+    hasSpaceForDualKeypads: false
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Set default desktop layout
+    mockUseResponsiveLayout.mockReturnValue(desktopLayout);
   });
 
   test('should render compact control ribbon', () => {
@@ -207,5 +237,259 @@ describe('CompactControlRibbon', () => {
 
     const resetButton = screen.getByTestId('compact-reset-button');
     expect(resetButton).toBeDisabled();
+  });
+
+  // Mobile Layout Tests
+  describe('Mobile Layout', () => {
+    test('should render mobile layout with side-by-side keypad mode', () => {
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutSideBySide);
+      render(<CompactControlRibbon {...mockProps} />);
+
+      const container = screen.getByTestId('compact-control-ribbon');
+      expect(container.className).toContain('gap-2');
+      expect(container.className).toContain('p-1.5');
+    });
+
+    test('should render mobile layout with stacked keypad mode', () => {
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutStacked);
+      render(<CompactControlRibbon {...mockProps} />);
+
+      const container = screen.getByTestId('compact-control-ribbon');
+      expect(container.className).toContain('gap-2');
+      expect(container.className).toContain('p-1.5');
+    });
+
+    test('should use smaller button sizes on mobile', () => {
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutSideBySide);
+      render(<CompactControlRibbon {...mockProps} />);
+
+      const exportButton = screen.getByTestId('compact-export-button');
+      expect(exportButton.className).toContain('w-8');
+      expect(exportButton.className).toContain('h-8');
+      expect(exportButton.className).toContain('text-xs');
+    });
+
+    test('should use smaller status indicator on mobile', () => {
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutSideBySide);
+      render(<CompactControlRibbon {...mockProps} />);
+
+      const statusIndicator = screen.getByTestId('status-indicator');
+      expect(statusIndicator.className).toContain('w-8');
+      expect(statusIndicator.className).toContain('h-8');
+      expect(statusIndicator.className).toContain('text-xs');
+    });
+
+    test('should not apply mobile layout when device is mobile but keypad mode is overlay', () => {
+      mockUseResponsiveLayout.mockReturnValue({
+        ...mobileLayoutSideBySide,
+        keypadLayoutMode: 'overlay' as const
+      });
+      render(<CompactControlRibbon {...mockProps} />);
+
+      const container = screen.getByTestId('compact-control-ribbon');
+      // Should use desktop sizing
+      expect(container.className).not.toContain('gap-2');
+      expect(container.className).not.toContain('p-1.5');
+    });
+
+    test('should not apply mobile layout when device is mobile but keypad mode is hidden', () => {
+      mockUseResponsiveLayout.mockReturnValue({
+        ...mobileLayoutSideBySide,
+        keypadLayoutMode: 'hidden' as const
+      });
+      render(<CompactControlRibbon {...mockProps} />);
+
+      const container = screen.getByTestId('compact-control-ribbon');
+      // Should use desktop sizing
+      expect(container.className).not.toContain('gap-2');
+      expect(container.className).not.toContain('p-1.5');
+    });
+  });
+
+  // Killer Combinations Button Tests
+  describe('Killer Combinations Button', () => {
+    test('should show combinations button when showCombinations is true', () => {
+      const onCombinations = jest.fn();
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          showCombinations={true}
+          canShowCombinations={true}
+          onCombinations={onCombinations}
+        />
+      );
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      expect(combinationsButton).toBeInTheDocument();
+    });
+
+    test('should not show combinations button when showCombinations is false', () => {
+      render(<CompactControlRibbon {...mockProps} showCombinations={false} />);
+
+      expect(screen.queryByTestId('compact-combinations-button')).not.toBeInTheDocument();
+    });
+
+    test('should not show combinations button when showCombinations is undefined', () => {
+      render(<CompactControlRibbon {...mockProps} />);
+
+      expect(screen.queryByTestId('compact-combinations-button')).not.toBeInTheDocument();
+    });
+
+    test('should not show combinations button when onCombinations is not provided', () => {
+      render(<CompactControlRibbon {...mockProps} showCombinations={true} />);
+
+      expect(screen.queryByTestId('compact-combinations-button')).not.toBeInTheDocument();
+    });
+
+    test('should enable combinations button when canShowCombinations is true', () => {
+      const onCombinations = jest.fn();
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          showCombinations={true}
+          canShowCombinations={true}
+          onCombinations={onCombinations}
+        />
+      );
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      expect(combinationsButton).not.toBeDisabled();
+      expect(combinationsButton).toHaveAttribute('title', 'Show cage combinations (Ctrl/Cmd+K)');
+      expect(combinationsButton).toHaveAttribute('aria-label', 'Show combinations for selected cage');
+    });
+
+    test('should disable combinations button when canShowCombinations is false', () => {
+      const onCombinations = jest.fn();
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          showCombinations={true}
+          canShowCombinations={false}
+          onCombinations={onCombinations}
+        />
+      );
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      expect(combinationsButton).toBeDisabled();
+      expect(combinationsButton).toHaveAttribute('title', 'Select cells from a single cage');
+      expect(combinationsButton).toHaveAttribute('aria-label', 'No cage selected');
+    });
+
+    test('should disable combinations button when canShowCombinations is undefined', () => {
+      const onCombinations = jest.fn();
+      render(<CompactControlRibbon {...mockProps} showCombinations={true} onCombinations={onCombinations} />);
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      expect(combinationsButton).toBeDisabled();
+    });
+
+    test('should call onCombinations when combinations button is clicked', () => {
+      const onCombinations = jest.fn();
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          showCombinations={true}
+          canShowCombinations={true}
+          onCombinations={onCombinations}
+        />
+      );
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      fireEvent.click(combinationsButton);
+
+      expect(onCombinations).toHaveBeenCalled();
+    });
+
+    test('should render combinations button with SVG icon', () => {
+      const onCombinations = jest.fn();
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          showCombinations={true}
+          canShowCombinations={true}
+          onCombinations={onCombinations}
+        />
+      );
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      const svg = combinationsButton.querySelector('svg');
+      expect(svg).toBeInTheDocument();
+      expect(svg).toHaveClass('w-5', 'h-5');
+    });
+
+    test('should render combinations button with mobile sizing', () => {
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutSideBySide);
+      const onCombinations = jest.fn();
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          showCombinations={true}
+          canShowCombinations={true}
+          onCombinations={onCombinations}
+        />
+      );
+
+      const combinationsButton = screen.getByTestId('compact-combinations-button');
+      expect(combinationsButton.className).toContain('w-8');
+      expect(combinationsButton.className).toContain('h-8');
+      expect(combinationsButton.className).toContain('text-xs');
+    });
+  });
+
+  // Additional Edge Cases
+  describe('Additional Edge Cases', () => {
+    test('should apply custom className when provided', () => {
+      render(<CompactControlRibbon {...mockProps} className="custom-class" />);
+
+      const container = screen.getByTestId('compact-control-ribbon');
+      expect(container.className).toContain('custom-class');
+    });
+
+    test('should handle single validation error message correctly', () => {
+      render(
+        <CompactControlRibbon
+          {...mockProps}
+          validationErrors={[{ type: 'duplicate-row', cellId: 'A1', message: 'Duplicate in row' }]}
+        />
+      );
+
+      const statusIndicator = screen.getByTestId('status-indicator');
+      expect(statusIndicator).toHaveTextContent('1');
+      expect(statusIndicator).toHaveAttribute('title', '1 validation error');
+    });
+
+    test('should maintain functionality when switching from desktop to mobile layout', () => {
+      mockUseResponsiveLayout.mockReturnValue(desktopLayout);
+      const { rerender } = render(<CompactControlRibbon {...mockProps} />);
+
+      // Verify desktop sizing
+      let exportButton = screen.getByTestId('compact-export-button');
+      expect(exportButton.className).toContain('w-10');
+      expect(exportButton.className).toContain('h-10');
+
+      // Switch to mobile
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutSideBySide);
+      rerender(<CompactControlRibbon {...mockProps} />);
+
+      // Verify mobile sizing
+      exportButton = screen.getByTestId('compact-export-button');
+      expect(exportButton.className).toContain('w-8');
+      expect(exportButton.className).toContain('h-8');
+    });
+
+    test('should maintain all button functionality on mobile layout', () => {
+      mockUseResponsiveLayout.mockReturnValue(mobileLayoutSideBySide);
+      render(<CompactControlRibbon {...mockProps} />);
+
+      // Test all buttons work on mobile
+      fireEvent.click(screen.getByTestId('compact-export-button'));
+      expect(mockProps.onExport).toHaveBeenCalled();
+
+      fireEvent.click(screen.getByTestId('compact-undo-button'));
+      expect(mockProps.onUndo).toHaveBeenCalled();
+
+      fireEvent.click(screen.getByTestId('compact-redo-button'));
+      expect(mockProps.onRedo).toHaveBeenCalled();
+    });
   });
 });

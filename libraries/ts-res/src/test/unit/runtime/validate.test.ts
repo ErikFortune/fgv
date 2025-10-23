@@ -119,7 +119,7 @@ describe('Runtime.validate', () => {
           isPartial: false,
           mergeMethod: 'replace'
         })
-      ).toFailWith(/json.*not a valid JSON/i);
+      ).toFailWith(/json.*invalid JSON/i);
 
       // Invalid isPartial type
       expect(

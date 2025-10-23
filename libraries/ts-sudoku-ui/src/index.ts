@@ -88,6 +88,3 @@ export type {
 
 // Keyboard shortcut types
 export type { IKeyboardShortcutOptions } from './hooks/useKeyboardShortcut';
-
-// Re-export commonly used types from ts-sudoku-lib
-export type { IPuzzleDescription } from '@fgv/ts-sudoku-lib';

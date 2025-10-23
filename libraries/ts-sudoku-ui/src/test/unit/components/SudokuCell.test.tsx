@@ -480,6 +480,24 @@ describe('SudokuCell', () => {
       expect(cell).toHaveClass('custom-class');
     });
 
+    test('should apply multi-selected class when className includes multi-selected', () => {
+      render(<SudokuCell {...defaultProps} isSelected={true} className="multi-selected" />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      expect(cell).toHaveClass('multi-selected');
+      expect(cell).toHaveClass('bg-blue-200');
+      expect(cell).toHaveClass('border-blue-500');
+    });
+
+    test('should apply single selected styling when not multi-selected', () => {
+      render(<SudokuCell {...defaultProps} isSelected={true} className="selected-cell" />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      expect(cell).toHaveClass('selected-cell');
+      expect(cell).toHaveClass('bg-blue-300');
+      expect(cell).toHaveClass('border-blue-600');
+    });
+
     test('should render value correctly', () => {
       const cellWithValue = createMockCellInfo({
         contents: { value: 6, notes: [] }
@@ -512,6 +530,22 @@ describe('SudokuCell', () => {
 
       // When there's a value, notes should not be rendered
       expect(screen.queryByText('1')).not.toBeInTheDocument();
+    });
+
+    test('should not render notes when cell has a value (early return)', () => {
+      const cellWithValueAndNotes = createMockCellInfo({
+        contents: { value: 8, notes: [1, 2, 3, 4, 5, 6, 7, 9] }
+      });
+
+      render(<SudokuCell {...defaultProps} cellInfo={cellWithValueAndNotes} />);
+
+      // Should show value
+      expect(screen.getByText('8')).toBeInTheDocument();
+
+      // Should NOT show any notes despite notes array having values
+      expect(screen.queryByText('1')).not.toBeInTheDocument();
+      expect(screen.queryByText('2')).not.toBeInTheDocument();
+      expect(screen.queryByText('3')).not.toBeInTheDocument();
     });
   });
 
@@ -549,6 +583,889 @@ describe('SudokuCell', () => {
 
       cell = screen.getByTestId('sudoku-cell-cell-0-0');
       expect(cell).toHaveAttribute('data-selected', 'true');
+    });
+  });
+
+  describe('notes mode functionality', () => {
+    test('should toggle notes when number pressed in notes mode', async () => {
+      const user = userEvent.setup();
+      const onNoteToggle = jest.fn();
+
+      render(
+        <SudokuCell {...defaultProps} inputMode="notes" onNoteToggle={onNoteToggle} isSelected={true} />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('3');
+
+      expect(onNoteToggle).toHaveBeenCalledWith(3);
+    });
+
+    test('should toggle notes for all numbers 1-9 in notes mode', async () => {
+      const user = userEvent.setup();
+      const onNoteToggle = jest.fn();
+
+      render(
+        <SudokuCell {...defaultProps} inputMode="notes" onNoteToggle={onNoteToggle} isSelected={true} />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      for (let i = 1; i <= 9; i++) {
+        await user.keyboard(i.toString());
+        expect(onNoteToggle).toHaveBeenCalledWith(i);
+      }
+
+      expect(onNoteToggle).toHaveBeenCalledTimes(9);
+    });
+
+    test('should clear notes with Delete when cell has notes but no value', async () => {
+      const user = userEvent.setup();
+      const onClearAllNotes = jest.fn();
+      const cellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [1, 2, 3] }
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={cellWithNotes}
+          onClearAllNotes={onClearAllNotes}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('{Delete}');
+
+      expect(onClearAllNotes).toHaveBeenCalledTimes(1);
+    });
+
+    test('should clear notes with Backspace when cell has notes but no value', async () => {
+      const user = userEvent.setup();
+      const onClearAllNotes = jest.fn();
+      const cellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [4, 5] }
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={cellWithNotes}
+          onClearAllNotes={onClearAllNotes}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('{Backspace}');
+
+      expect(onClearAllNotes).toHaveBeenCalledTimes(1);
+    });
+
+    test('should clear notes with 0 key when cell has notes but no value', async () => {
+      const user = userEvent.setup();
+      const onClearAllNotes = jest.fn();
+      const cellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [7, 8, 9] }
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={cellWithNotes}
+          onClearAllNotes={onClearAllNotes}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('0');
+
+      expect(onClearAllNotes).toHaveBeenCalledTimes(1);
+    });
+
+    test('should not toggle notes for immutable cells', async () => {
+      const user = userEvent.setup();
+      const onNoteToggle = jest.fn();
+      const immutableCell = createMockCellInfo({
+        isImmutable: true
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={immutableCell}
+          inputMode="notes"
+          onNoteToggle={onNoteToggle}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('3');
+
+      expect(onNoteToggle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('modifier key behavior', () => {
+    test('should place value when Shift is pressed in notes mode', async () => {
+      const user = userEvent.setup();
+      const onValueChange = jest.fn();
+      const onNoteToggle = jest.fn();
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          inputMode="notes"
+          onValueChange={onValueChange}
+          onNoteToggle={onNoteToggle}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('{Shift>}5{/Shift}');
+
+      expect(onValueChange).toHaveBeenCalledWith(5);
+      expect(onNoteToggle).not.toHaveBeenCalled();
+    });
+
+    test('should place value when Ctrl is pressed in notes mode', async () => {
+      const user = userEvent.setup();
+      const onValueChange = jest.fn();
+      const onNoteToggle = jest.fn();
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          inputMode="notes"
+          onValueChange={onValueChange}
+          onNoteToggle={onNoteToggle}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('{Control>}7{/Control}');
+
+      expect(onValueChange).toHaveBeenCalledWith(7);
+      expect(onNoteToggle).not.toHaveBeenCalled();
+    });
+
+    test('should place value when Meta/Cmd is pressed in notes mode', async () => {
+      const user = userEvent.setup();
+      const onValueChange = jest.fn();
+      const onNoteToggle = jest.fn();
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          inputMode="notes"
+          onValueChange={onValueChange}
+          onNoteToggle={onNoteToggle}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('{Meta>}9{/Meta}');
+
+      expect(onValueChange).toHaveBeenCalledWith(9);
+      expect(onNoteToggle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('double-tap functionality', () => {
+    test('should clear notes on double-tap', () => {
+      const onClearAllNotes = jest.fn();
+      const cellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [1, 2, 3] }
+      });
+
+      render(<SudokuCell {...defaultProps} cellInfo={cellWithNotes} onClearAllNotes={onClearAllNotes} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+      // First click
+      fireEvent.click(cell);
+      expect(onClearAllNotes).not.toHaveBeenCalled();
+
+      // Second click within 300ms - should trigger double-tap
+      fireEvent.click(cell);
+      expect(onClearAllNotes).toHaveBeenCalledTimes(1);
+    });
+
+    test('should not trigger double-tap clear if taps are too far apart', () => {
+      jest.useFakeTimers();
+      const onClearAllNotes = jest.fn();
+      const cellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [1, 2, 3] }
+      });
+
+      render(<SudokuCell {...defaultProps} cellInfo={cellWithNotes} onClearAllNotes={onClearAllNotes} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+      // First click
+      fireEvent.click(cell);
+
+      // Advance time beyond double-tap threshold (300ms)
+      jest.advanceTimersByTime(350);
+
+      // Second click - should not trigger double-tap
+      fireEvent.click(cell);
+      expect(onClearAllNotes).not.toHaveBeenCalled();
+
+      jest.useRealTimers();
+    });
+
+    test('should not clear notes on double-tap for immutable cells', () => {
+      const onClearAllNotes = jest.fn();
+      const immutableCellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [1, 2, 3] },
+        isImmutable: true
+      });
+
+      render(
+        <SudokuCell {...defaultProps} cellInfo={immutableCellWithNotes} onClearAllNotes={onClearAllNotes} />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+      // Double click
+      fireEvent.click(cell);
+      fireEvent.click(cell);
+
+      expect(onClearAllNotes).not.toHaveBeenCalled();
+    });
+
+    test('should not clear notes on double-tap if notes array is empty', () => {
+      const onClearAllNotes = jest.fn();
+      const cellWithoutNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [] }
+      });
+
+      render(<SudokuCell {...defaultProps} cellInfo={cellWithoutNotes} onClearAllNotes={onClearAllNotes} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+      // Double click
+      fireEvent.click(cell);
+      fireEvent.click(cell);
+
+      expect(onClearAllNotes).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('long press functionality', () => {
+    describe('basic long press detection', () => {
+      test('should call onLongPressToggle when long press occurs with mouse', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start mouse down
+        fireEvent.mouseDown(cell);
+
+        // Advance time to trigger long press (500ms)
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should call onLongPressToggle when long press occurs with touch', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start touch
+        fireEvent.touchStart(cell);
+
+        // Advance time to trigger long press (500ms)
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should not call onLongPressToggle for immutable cells', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const immutableCell = createMockCellInfo({
+          isImmutable: true
+        });
+
+        render(
+          <SudokuCell {...defaultProps} cellInfo={immutableCell} onLongPressToggle={onLongPressToggle} />
+        );
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start mouse down
+        fireEvent.mouseDown(cell);
+
+        // Advance time to trigger long press (500ms)
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).not.toHaveBeenCalled();
+
+        jest.useRealTimers();
+      });
+
+      test('should not trigger long press if released before timeout', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start mouse down
+        fireEvent.mouseDown(cell);
+
+        // Release before timeout (400ms < 500ms)
+        jest.advanceTimersByTime(400);
+        fireEvent.mouseUp(cell);
+
+        // Advance past timeout to ensure it doesn't fire
+        jest.advanceTimersByTime(200);
+
+        expect(onLongPressToggle).not.toHaveBeenCalled();
+
+        jest.useRealTimers();
+      });
+    });
+
+    describe('long press cancellation', () => {
+      test('should cancel long press on mouse leave', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start mouse down
+        fireEvent.mouseDown(cell);
+
+        // Move mouse away before timeout
+        jest.advanceTimersByTime(300);
+        fireEvent.mouseLeave(cell);
+
+        // Advance past timeout
+        jest.advanceTimersByTime(300);
+
+        expect(onLongPressToggle).not.toHaveBeenCalled();
+
+        jest.useRealTimers();
+      });
+
+      test('should reset long press flag on mouse leave', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const onSelect = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} onSelect={onSelect} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Trigger long press
+        fireEvent.mouseDown(cell);
+        jest.advanceTimersByTime(500);
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        // Mouse leave should reset the flag
+        fireEvent.mouseLeave(cell);
+
+        // Click should now work normally (not be prevented)
+        fireEvent.click(cell);
+        expect(onSelect).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+    });
+
+    describe('long press and click interaction', () => {
+      test('should prevent click immediately after long press', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const onSelect = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} onSelect={onSelect} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start long press
+        fireEvent.mouseDown(cell);
+
+        // Trigger long press
+        jest.advanceTimersByTime(500);
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        // Release mouse (triggers mouseUp and click)
+        fireEvent.mouseUp(cell);
+        fireEvent.click(cell);
+
+        // Click should be prevented after long press
+        expect(onSelect).not.toHaveBeenCalled();
+
+        jest.useRealTimers();
+      });
+
+      test('should allow normal click after long press flag is reset', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const onSelect = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} onSelect={onSelect} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // First: trigger long press
+        fireEvent.mouseDown(cell);
+        jest.advanceTimersByTime(500);
+        fireEvent.mouseUp(cell);
+        fireEvent.click(cell); // This click is prevented
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+        expect(onSelect).not.toHaveBeenCalled();
+
+        // Second: normal click should work
+        fireEvent.click(cell);
+        expect(onSelect).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+    });
+
+    describe('long press with touch events', () => {
+      test('should handle complete touch long press sequence', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start touch
+        fireEvent.touchStart(cell);
+
+        // Hold for long press duration
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        // End touch
+        fireEvent.touchEnd(cell);
+
+        jest.useRealTimers();
+      });
+
+      test('should cancel touch long press on touch move (drag away)', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start touch
+        fireEvent.touchStart(cell);
+
+        // User drags before timeout - this should not cancel in current implementation
+        // but we test the behavior
+        jest.advanceTimersByTime(300);
+
+        // Complete the timeout
+        jest.advanceTimersByTime(300);
+
+        // Long press should still trigger since touchMove doesn't cancel
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should not trigger long press if touch released early', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Start touch
+        fireEvent.touchStart(cell);
+
+        // Release before timeout
+        jest.advanceTimersByTime(400);
+        fireEvent.touchEnd(cell);
+
+        // Advance past timeout
+        jest.advanceTimersByTime(200);
+
+        expect(onLongPressToggle).not.toHaveBeenCalled();
+
+        jest.useRealTimers();
+      });
+    });
+
+    describe('long press with different cell states', () => {
+      test('should trigger long press on selected cell', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} isSelected={true} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        fireEvent.mouseDown(cell);
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should trigger long press on cell with value', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const cellWithValue = createMockCellInfo({
+          contents: { value: 5, notes: [] }
+        });
+
+        render(
+          <SudokuCell {...defaultProps} cellInfo={cellWithValue} onLongPressToggle={onLongPressToggle} />
+        );
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        fireEvent.mouseDown(cell);
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should trigger long press on cell with notes', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const cellWithNotes = createMockCellInfo({
+          contents: { value: undefined, notes: [1, 2, 3] }
+        });
+
+        render(
+          <SudokuCell {...defaultProps} cellInfo={cellWithNotes} onLongPressToggle={onLongPressToggle} />
+        );
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        fireEvent.mouseDown(cell);
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should trigger long press on cell with validation error', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+        const errorCell = createMockCellInfo({
+          hasValidationError: true
+        });
+
+        render(<SudokuCell {...defaultProps} cellInfo={errorCell} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        fireEvent.mouseDown(cell);
+        jest.advanceTimersByTime(500);
+
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+    });
+
+    describe('long press timing edge cases', () => {
+      test('should trigger long press at exactly 500ms', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        fireEvent.mouseDown(cell);
+
+        // Not triggered at 499ms
+        jest.advanceTimersByTime(499);
+        expect(onLongPressToggle).not.toHaveBeenCalled();
+
+        // Triggered at 500ms
+        jest.advanceTimersByTime(1);
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+
+      test('should trigger long press for very long holds', () => {
+        jest.useFakeTimers();
+        const onLongPressToggle = jest.fn();
+
+        render(<SudokuCell {...defaultProps} onLongPressToggle={onLongPressToggle} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        fireEvent.mouseDown(cell);
+
+        // Hold for 2 seconds
+        jest.advanceTimersByTime(2000);
+
+        // Should only trigger once
+        expect(onLongPressToggle).toHaveBeenCalledTimes(1);
+
+        jest.useRealTimers();
+      });
+    });
+
+    describe('long press without onLongPressToggle handler', () => {
+      test('should not error when onLongPressToggle is undefined', () => {
+        jest.useFakeTimers();
+
+        const propsWithoutHandler = {
+          ...defaultProps,
+          onLongPressToggle: undefined
+        };
+
+        render(<SudokuCell {...propsWithoutHandler} />);
+
+        const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+
+        // Should not throw error
+        expect(() => {
+          fireEvent.mouseDown(cell);
+          jest.advanceTimersByTime(500);
+          fireEvent.mouseUp(cell);
+        }).not.toThrow();
+
+        jest.useRealTimers();
+      });
+    });
+  });
+
+  describe('zero key behavior', () => {
+    test('should clear both value and notes with 0 key', async () => {
+      const user = userEvent.setup();
+      const onValueChange = jest.fn();
+      const onClearAllNotes = jest.fn();
+      const cellWithValueAndNotes = createMockCellInfo({
+        contents: { value: 5, notes: [1, 2, 3] }
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={cellWithValueAndNotes}
+          onValueChange={onValueChange}
+          onClearAllNotes={onClearAllNotes}
+          isSelected={true}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      cell.focus();
+
+      await user.keyboard('0');
+
+      expect(onValueChange).toHaveBeenCalledWith(undefined);
+      expect(onClearAllNotes).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('context menu prevention', () => {
+    test('should prevent default context menu', () => {
+      render(<SudokuCell {...defaultProps} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+      fireEvent(cell, event);
+
+      expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+
+    test('should prevent default on Ctrl+click', () => {
+      render(<SudokuCell {...defaultProps} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true, ctrlKey: true });
+      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+      fireEvent(cell, event);
+
+      expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+
+    test('should prevent default on Meta+click', () => {
+      render(<SudokuCell {...defaultProps} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true });
+      const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+      fireEvent(cell, event);
+
+      expect(preventDefaultSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('drag events', () => {
+    test('should call onDragOver on mouse move', () => {
+      const onDragOver = jest.fn();
+
+      render(<SudokuCell {...defaultProps} onDragOver={onDragOver} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      fireEvent.mouseMove(cell);
+
+      expect(onDragOver).toHaveBeenCalledTimes(1);
+    });
+
+    test('should call onDragOver on touch move', () => {
+      const onDragOver = jest.fn();
+
+      render(<SudokuCell {...defaultProps} onDragOver={onDragOver} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      fireEvent.touchMove(cell);
+
+      expect(onDragOver).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('puzzle dimensions and section borders', () => {
+    test('should apply section borders based on 3x3 cage dimensions', () => {
+      const cellAtBoundary = createMockCellInfo({
+        id: 'cell-0-2' as CellId,
+        row: 0,
+        column: 2
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={cellAtBoundary}
+          puzzleDimensions={{ cageWidth: 3, cageHeight: 3, numRows: 9, numColumns: 9 }}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-2');
+      expect(cell).toBeInTheDocument();
+      // Cell at column 2 should have right border (column 2 + 1 = 3, which is divisible by 3)
+    });
+
+    test('should apply section borders based on 2x3 cage dimensions (6x6 puzzle)', () => {
+      const cellAtBoundary = createMockCellInfo({
+        id: 'cell-0-1' as CellId,
+        row: 0,
+        column: 1
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={cellAtBoundary}
+          puzzleDimensions={{ cageWidth: 2, cageHeight: 3, numRows: 6, numColumns: 6 }}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-1');
+      expect(cell).toBeInTheDocument();
+      // Cell at column 1 should have right border (column 1 + 1 = 2, which is divisible by 2)
+    });
+
+    test('should not apply right border at last column', () => {
+      const edgeCell = createMockCellInfo({
+        id: 'cell-0-8' as CellId,
+        row: 0,
+        column: 8
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={edgeCell}
+          puzzleDimensions={{ cageWidth: 3, cageHeight: 3, numRows: 9, numColumns: 9 }}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-8');
+      expect(cell).toBeInTheDocument();
+      // Should not have enhanced border at last column
+    });
+
+    test('should not apply bottom border at last row', () => {
+      const edgeCell = createMockCellInfo({
+        id: 'cell-8-0' as CellId,
+        row: 8,
+        column: 0
+      });
+
+      render(
+        <SudokuCell
+          {...defaultProps}
+          cellInfo={edgeCell}
+          puzzleDimensions={{ cageWidth: 3, cageHeight: 3, numRows: 9, numColumns: 9 }}
+        />
+      );
+
+      const cell = screen.getByTestId('sudoku-cell-cell-8-0');
+      expect(cell).toBeInTheDocument();
+      // Should not have enhanced border at last row
+    });
+  });
+
+  describe('aria-label for notes', () => {
+    test('should include notes in aria-label', () => {
+      const cellWithNotes = createMockCellInfo({
+        contents: { value: undefined, notes: [2, 5, 7] }
+      });
+
+      render(<SudokuCell {...defaultProps} cellInfo={cellWithNotes} />);
+
+      const cell = screen.getByTestId('sudoku-cell-cell-0-0');
+      expect(cell).toHaveAttribute('aria-label', 'Row 1, Column 1, notes: 2, 5, 7');
     });
   });
 
@@ -590,6 +1507,21 @@ describe('SudokuCell', () => {
 
       const notesElement = screen.getByText('5');
       expect(notesElement).toBeInTheDocument();
+    });
+
+    test('should not render notes when cell has a value', () => {
+      const cellWithValueAndNotes = createMockCellInfo({
+        contents: { value: 3, notes: [1, 2, 4] }
+      });
+
+      render(<SudokuCell {...defaultProps} cellInfo={cellWithValueAndNotes} />);
+
+      // Value should be shown
+      expect(screen.getByText('3')).toBeInTheDocument();
+      // Notes should not be rendered when value exists
+      expect(screen.queryByText('1')).not.toBeInTheDocument();
+      expect(screen.queryByText('2')).not.toBeInTheDocument();
+      expect(screen.queryByText('4')).not.toBeInTheDocument();
     });
   });
 });

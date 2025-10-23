@@ -332,7 +332,7 @@ export function toQualifierTypeIndex(index: number): Result<QualifierTypeIndex> 
 export function toQualifierMatchScore(value: number): Result<QualifierMatchScore> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidQualifierMatchScore(value)) {
-    return fail(`${value}: not a valid match score`);
+    return fail(`${value}: invalid match score`);
   }
   return succeed(value as QualifierMatchScore);
 }
@@ -347,7 +347,7 @@ export function toQualifierMatchScore(value: number): Result<QualifierMatchScore
 export function toConditionPriority(priority: number): Result<ConditionPriority> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionPriority(priority)) {
-    return fail(`${priority}: not a valid priority`);
+    return fail(`${priority}: invalid priority`);
   }
   return succeed(priority);
 }
@@ -362,7 +362,7 @@ export function toConditionPriority(priority: number): Result<ConditionPriority>
 export function toConditionIndex(index: number): Result<ConditionIndex> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionIndex(index)) {
-    return fail(`${index}: not a valid condition index`);
+    return fail(`${index}: invalid condition index`);
   }
   return succeed(index);
 }
@@ -376,7 +376,7 @@ export function toConditionIndex(index: number): Result<ConditionIndex> {
  */
 export function toConditionOperator(operator: string): Result<ConditionOperator> {
   if (!isValidConditionOperator(operator)) {
-    return fail(`${operator}: not a valid condition operator`);
+    return fail(`${operator}: invalid condition operator`);
   }
   return succeed(operator as ConditionOperator);
 }
@@ -391,7 +391,7 @@ export function toConditionOperator(operator: string): Result<ConditionOperator>
 export function toConditionKey(key: string): Result<ConditionKey> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionKey(key)) {
-    return fail(`${key}: not a valid condition key`);
+    return fail(`${key}: invalid condition key`);
   }
   return succeed(key);
 }
@@ -406,7 +406,7 @@ export function toConditionKey(key: string): Result<ConditionKey> {
 export function toConditionToken(token: string): Result<ConditionToken> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionToken(token)) {
-    return fail(`${token}: not a valid condition token`);
+    return fail(`${token}: invalid condition token`);
   }
   return succeed(token);
 }
@@ -421,7 +421,7 @@ export function toConditionToken(token: string): Result<ConditionToken> {
 export function toConditionSetIndex(index: number): Result<ConditionSetIndex> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionSetIndex(index)) {
-    return fail(`${index}: not a valid condition set index`);
+    return fail(`${index}: invalid condition set index`);
   }
   return succeed(index);
 }
@@ -436,7 +436,7 @@ export function toConditionSetIndex(index: number): Result<ConditionSetIndex> {
 export function toConditionSetKey(key: string): Result<ConditionSetKey> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidConditionSetKey(key)) {
-    return fail(`${key}: not a valid condition set key`);
+    return fail(`${key}: invalid condition set key`);
   }
   return succeed(key);
 }
@@ -451,7 +451,7 @@ export function toConditionSetKey(key: string): Result<ConditionSetKey> {
 export function toConditionSetToken(token: string): Result<ConditionSetToken> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidConditionSetToken(token)) {
-    return fail(`${token}: not a valid condition set token`);
+    return fail(`${token}: invalid condition set token`);
   }
   return succeed(token);
 }
@@ -465,7 +465,7 @@ export function toConditionSetToken(token: string): Result<ConditionSetToken> {
  */
 export function toConditionSetHash(hash: string): Result<ConditionSetHash> {
   if (!isValidConditionSetHash(hash)) {
-    return fail(`${hash}: not a valid condition set hash`);
+    return fail(`${hash}: invalid condition set hash`);
   }
   return succeed(hash);
 }
@@ -480,7 +480,7 @@ export function toConditionSetHash(hash: string): Result<ConditionSetHash> {
 export function toDecisionKey(key: string): Result<DecisionKey> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidDecisionKey(key)) {
-    return fail(`${key}: not a valid decision key`);
+    return fail(`${key}: invalid decision key`);
   }
   return succeed(key);
 }
@@ -495,7 +495,7 @@ export function toDecisionKey(key: string): Result<DecisionKey> {
 export function toDecisionIndex(index: number): Result<DecisionIndex> {
   /* c8 ignore next 3 - coverage is having a bad day */
   if (!isValidDecisionIndex(index)) {
-    return fail(`${index}: not a valid decision index`);
+    return fail(`${index}: invalid decision index`);
   }
   return succeed(index);
 }
@@ -543,7 +543,7 @@ export function isValidContextToken(token: string): token is ContextToken {
 export function toContextQualifierToken(token: string): Result<ContextQualifierToken> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidContextQualifierToken(token)) {
-    return fail(`${token}: not a valid context qualifier token`);
+    return fail(`${token}: invalid context qualifier token`);
   }
   return succeed(token);
 }
@@ -558,7 +558,7 @@ export function toContextQualifierToken(token: string): Result<ContextQualifierT
 export function toContextToken(token: string): Result<ContextToken> {
   /* c8 ignore next 3 - functional code path tested but coverage intermittently missed */
   if (!isValidContextToken(token)) {
-    return fail(`${token}: not a valid context token`);
+    return fail(`${token}: invalid context token`);
   }
   return succeed(token);
 }

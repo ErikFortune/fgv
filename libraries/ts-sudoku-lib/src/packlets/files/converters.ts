@@ -22,18 +22,48 @@
  * SOFTWARE.
  */
 
-import { Converter, Converters, Result } from '@fgv/ts-utils';
-import { IPuzzlesFile } from './model';
+import { Converter, Converters, Result, succeed } from '@fgv/ts-utils';
+import { IPuzzlesFile, IPuzzleFileData, IPuzzleFileDimensions } from './model';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { Converters as CommonConverters } from '../common';
+
+/**
+ * Converts puzzle file dimensions from JSON format
+ * @public
+ */
+export const puzzleFileDimensions: Converter<IPuzzleFileDimensions> =
+  Converters.strictObject<IPuzzleFileDimensions>({
+    cageWidthInCells: Converters.number,
+    cageHeightInCells: Converters.number,
+    boardWidthInCages: Converters.number,
+    boardHeightInCages: Converters.number
+  });
+
+/**
+ * Converts puzzle file data from JSON format
+ * @public
+ */
+export const puzzleFileData: Converter<IPuzzleFileData> = Converters.strictObject<IPuzzleFileData>(
+  {
+    id: Converters.string,
+    description: Converters.string,
+    type: CommonConverters.puzzleType,
+    level: Converters.number,
+    cells: Converters.oneOf([Converters.string, Converters.stringArray.map((s) => succeed(s.join('')))]),
+    dimensions: puzzleFileDimensions
+  },
+  {
+    optionalFields: ['id']
+  }
+);
 
 /**
  * Converts an arbitrary object to a {@link Files.Model.IPuzzlesFile | IPuzzlesFile}.
  * @public
  */
 export const puzzlesFile: Converter<IPuzzlesFile> = Converters.strictObject<IPuzzlesFile>({
-  puzzles: Converters.arrayOf(CommonConverters.puzzleDescription)
+  puzzles: Converters.arrayOf(puzzleFileData)
 });
 
 /**

@@ -208,8 +208,8 @@ export class ConditionSet implements IValidatedConditionSetDecl {
       const conditions = Object.entries(conditionSet).map(([qualifierName, value]) => {
         if (typeof value === 'string') {
           return { qualifierName, value };
+          /* c8 ignore next 3 - edge case */
         } else {
-          /* c8 ignore next 1 - edge case: object spread pattern rarely used */
           return { qualifierName, ...value };
         }
       });

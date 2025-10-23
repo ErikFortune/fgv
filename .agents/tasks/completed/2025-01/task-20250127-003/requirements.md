@@ -83,7 +83,7 @@
 - **Validation Display**: Extend validation error system for diagonal conflicts
 
 #### TR3: Type System Consistency
-- **Interface Alignment**: Ensure `IPuzzleDescription` types match between libraries
+- **Interface Alignment**: Ensure `IPuzzleDefinition` types match between libraries
 - **Export Consistency**: Maintain type exports and factory pattern usage
 - **Error Propagation**: Proper Result pattern usage throughout call stack
 

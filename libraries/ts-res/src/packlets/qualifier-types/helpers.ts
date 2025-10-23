@@ -69,9 +69,9 @@ export function createQualifierTypeFromConfig(
         .onSuccess((configuration) =>
           LiteralQualifierType.createFromConfig({ ...typeConfig, configuration })
         );
-    default:
-      return fail(`Unknown qualifier type: ${typeConfig.systemType}`);
   }
+  /* c8 ignore next 1 - defense in depth */
+  return fail(`Unknown qualifier type: ${typeConfig.systemType}`);
 }
 
 /**
@@ -95,7 +95,8 @@ export function createQualifierTypeFromSystemConfig(
       return TerritoryQualifierType.createFromConfig(typeConfig);
     case 'literal':
       return LiteralQualifierType.createFromConfig(typeConfig);
-    default:
-      return fail(`${systemType}: Unknown system qualifier type.`);
   }
+  /* c8 ignore next 3 - should not happen */
+  // @ts-expect-error
+  return fail(`${systemType}: Unknown system qualifier type.`);
 }

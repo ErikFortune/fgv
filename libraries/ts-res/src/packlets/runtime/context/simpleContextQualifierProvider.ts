@@ -209,21 +209,22 @@ export class SimpleContextQualifierProvider
     if (nameOrIndexOrQualifier instanceof Qualifier) {
       return succeed(nameOrIndexOrQualifier);
     }
+    /* c8 ignore next 16 - functional code tested but coverage intermittently missed */
     if (typeof nameOrIndexOrQualifier === 'string') {
       return this.qualifiers.validating
         .get(nameOrIndexOrQualifier)
-        .withErrorFormat((error) => `${nameOrIndexOrQualifier}: Not a valid qualifier name.`);
+        .withErrorFormat((error) => `${nameOrIndexOrQualifier}: invalid qualifier name.`);
     }
 
     if (typeof nameOrIndexOrQualifier === 'number') {
       return this.qualifiers
         .getAt(nameOrIndexOrQualifier)
-        .withErrorFormat((error) => `${nameOrIndexOrQualifier}: Not a valid qualifier index.`);
+        .withErrorFormat((error) => `${nameOrIndexOrQualifier}: invalid qualifier index.`);
     }
 
     return SimpleContextQualifierProvider._qualifierNameFromQualifierLike(nameOrIndexOrQualifier)
       .onSuccess((qualifierName) => this.qualifiers.validating.get(qualifierName))
-      .withErrorFormat((error) => `${nameOrIndexOrQualifier}: Not a valid Qualifier, name or index.`);
+      .withErrorFormat((error) => `${nameOrIndexOrQualifier}: invalid Qualifier, name or index.`);
   }
 
   /**

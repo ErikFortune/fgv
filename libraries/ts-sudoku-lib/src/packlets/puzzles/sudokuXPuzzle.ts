@@ -23,23 +23,24 @@
  */
 
 import { Result, captureResult, succeed, fail } from '@fgv/ts-utils';
-import { Cage, CageId, CellId, IPuzzleDescription, Ids, Puzzle } from '../common';
+import { Cage, CageId, CellId, IPuzzleDefinition, Ids, Puzzle } from '../common';
 
 /**
  * @public
  */
 export class SudokuXPuzzle extends Puzzle {
-  private constructor(puzzle: IPuzzleDescription, extraCages: [CageId, Cage][]) {
+  private constructor(puzzle: IPuzzleDefinition, extraCages: [CageId, Cage][]) {
     super(puzzle, extraCages);
   }
 
-  public static create(puzzle: IPuzzleDescription): Result<Puzzle> {
+  public static create(puzzle: IPuzzleDefinition): Result<Puzzle> {
     /* c8 ignore next 3 */
     if (puzzle.type !== 'sudoku-x') {
       return fail(`Puzzle '${puzzle.description}' unsupported type ${puzzle.type}`);
     }
-    if (puzzle.rows !== 9 || puzzle.cols !== 9) {
-      return fail(`Sudoku X puzzle must be 9x9, got ${puzzle.rows}x${puzzle.cols}`);
+    // Sudoku X diagonals work for any square puzzle (totalRows === totalColumns)
+    if (puzzle.totalRows !== puzzle.totalColumns) {
+      return fail(`Sudoku X puzzle must be square, got ${puzzle.totalRows}x${puzzle.totalColumns}`);
     }
     return captureResult(() => {
       return new SudokuXPuzzle(puzzle, SudokuXPuzzle._getXCages(puzzle));
@@ -48,11 +49,15 @@ export class SudokuXPuzzle extends Puzzle {
     });
   }
 
-  private static _getXCages(puzzle: IPuzzleDescription): [CageId, Cage][] {
+  private static _getXCages(puzzle: IPuzzleDefinition): [CageId, Cage][] {
     const x1Cells: CellId[] = [];
     const x2Cells: CellId[] = [];
 
-    for (let row = 0, col1 = 0, col2 = puzzle.cols - 1; row < puzzle.rows; row++, col1++, col2--) {
+    for (
+      let row = 0, col1 = 0, col2 = puzzle.totalColumns - 1;
+      row < puzzle.totalRows;
+      row++, col1++, col2--
+    ) {
       x1Cells.push(Ids.cellId({ row, col: col1 }).orThrow());
       x2Cells.push(Ids.cellId({ row, col: col2 }).orThrow());
     }
@@ -60,8 +65,8 @@ export class SudokuXPuzzle extends Puzzle {
     const x1Id = Ids.cageId('X1').orThrow();
     const x2Id = Ids.cageId('X2').orThrow();
 
-    const x1 = Cage.create(x1Id, 'x', 45, x1Cells).orThrow();
-    const x2 = Cage.create(x2Id, 'x', 45, x2Cells).orThrow();
+    const x1 = Cage.create(x1Id, 'x', puzzle.basicCageTotal, x1Cells).orThrow();
+    const x2 = Cage.create(x2Id, 'x', puzzle.basicCageTotal, x2Cells).orThrow();
     return [
       [x1Id, x1],
       [x2Id, x2]

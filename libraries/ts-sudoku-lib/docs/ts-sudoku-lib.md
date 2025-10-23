@@ -62,6 +62,17 @@ Get well-known [puzzle collections](./ts-sudoku-lib.puzzlecollection.md)<!-- -->
 </td></tr>
 <tr><td>
 
+[PuzzleDefinitionFactory](./ts-sudoku-lib.puzzledefinitionfactory.md)
+
+
+</td><td>
+
+Factory for creating and validating puzzle definitions
+
+
+</td></tr>
+<tr><td>
+
 [PuzzleSession](./ts-sudoku-lib.puzzlesession.md)
 
 
@@ -77,6 +88,43 @@ Represents a single puzzle session, including puzzle, current state and redo/und
 
 
 </td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getCageTotalBounds(cageSize, maxValue)](./ts-sudoku-lib.getcagetotalbounds.md)
+
+
+</td><td>
+
+Calculate the minimum and maximum possible totals for a cage of given size
+
+
+</td></tr>
+<tr><td>
+
+[parseCellId(cellId)](./ts-sudoku-lib.parsecellid.md)
+
+
+</td><td>
+
+Parse a cell ID string back to row/column coordinates
 
 
 </td></tr>
@@ -152,12 +200,34 @@ Describes a single cell update.
 </td></tr>
 <tr><td>
 
-[IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)
+[IPuzzleDefinition](./ts-sudoku-lib.ipuzzledefinition.md)
 
 
 </td><td>
 
-Description of a single puzzle.
+Complete puzzle definition with derived properties
+
+
+</td></tr>
+<tr><td>
+
+[IPuzzleDimensions](./ts-sudoku-lib.ipuzzledimensions.md)
+
+
+</td><td>
+
+Core dimensional configuration for a puzzle grid
+
+
+</td></tr>
+<tr><td>
+
+[IPuzzleTypeValidator](./ts-sudoku-lib.ipuzzletypevalidator.md)
+
+
+</td><td>
+
+Interface for puzzle type-specific validation
 
 
 </td></tr>
@@ -273,12 +343,23 @@ Default no-op logger for use when diagnostic logging is not needed.
 </td></tr>
 <tr><td>
 
+[STANDARD\_CONFIGS](./ts-sudoku-lib.standard_configs.md)
+
+
+</td><td>
+
+Standard puzzle configurations
+
+
+</td></tr>
+<tr><td>
+
 [totalsByCageSize](./ts-sudoku-lib.totalsbycagesize.md)
 
 
 </td><td>
 
-The minimum and maximum possible values for a [cage](./ts-sudoku-lib.icage.md)<!-- -->, by cage size in [cells](./ts-sudoku-lib.icell.md)<!-- -->.
+Legacy array for backward compatibility - supports standard 9x9 Sudoku
 
 
 </td></tr>
@@ -360,6 +441,17 @@ Wrapping rules when navigating within a puzzle.
 </td><td>
 
 Describes the rules that apply to the puzzle.
+
+
+</td></tr>
+<tr><td>
+
+[StandardConfigName](./ts-sudoku-lib.standardconfigname.md)
+
+
+</td><td>
+
+Type for standard configuration names
 
 
 </td></tr>

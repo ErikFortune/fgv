@@ -215,7 +215,7 @@ describe('ReadOnlyResourceTreeChildren', () => {
     });
 
     test('handles invalid ResourceId paths', () => {
-      expect(children.getById('invalid..id' as ResourceId)).toFailWith(/not a valid resource name/i);
+      expect(children.getById('invalid..id' as ResourceId)).toFailWith(/invalid resource name/i);
     });
 
     test('provides context in error messages', () => {
@@ -340,7 +340,7 @@ describe('ReadOnlyResourceTreeChildren', () => {
 
   describe('edge cases and error conditions', () => {
     test('handles empty path components gracefully', () => {
-      expect(children.getById('' as ResourceId)).toFailWith(/not a valid resource name/i);
+      expect(children.getById('' as ResourceId)).toFailWith(/invalid resource name/i);
     });
 
     test('handles complex traversal failures', () => {

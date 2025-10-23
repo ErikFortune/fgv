@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import { CellId } from '@fgv/ts-sudoku-lib';
+import { CellId, parseCellId } from '@fgv/ts-sudoku-lib';
 
 /**
  * Represents the neighbor analysis for a cell in 8 directions
@@ -93,16 +93,9 @@ export class CagePatternManager {
    * Convert CellId to grid position
    */
   private _getCellPosition(cellId: CellId): { row: number; col: number } {
-    if (cellId.length >= 2) {
-      const rowChar = cellId.charAt(0);
-      const colStr = cellId.substring(1);
-
-      const row = rowChar.charCodeAt(0) - 'A'.charCodeAt(0);
-      const col = parseInt(colStr, 10) - 1;
-
-      if (!isNaN(row) && !isNaN(col) && row >= 0 && row <= 8 && col >= 0 && col <= 8) {
-        return { row, col };
-      }
+    const parsed = parseCellId(cellId);
+    if (parsed) {
+      return parsed;
     }
 
     console.warn(`Invalid CellId format: ${cellId}`);

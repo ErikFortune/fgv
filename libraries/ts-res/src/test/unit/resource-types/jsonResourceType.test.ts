@@ -49,7 +49,7 @@ describe('JsonResourceType', () => {
     });
 
     test('fails for invalid indexes', () => {
-      expect(TsRes.ResourceTypes.JsonResourceType.create({ index: -1 })).toFailWith(/not a valid/i);
+      expect(TsRes.ResourceTypes.JsonResourceType.create({ index: -1 })).toFailWith(/invalid/i);
     });
   });
 
@@ -90,7 +90,7 @@ describe('JsonResourceType', () => {
     test('fails for non-json values', () => {
       const value = { foo: () => true } as unknown as JsonObject;
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
-      expect(rt.validate(value, 'full')).toFailWith(/not a valid JSON object/);
+      expect(rt.validate(value, 'full')).toFailWith(/invalid JSON object/);
     });
   });
 
@@ -247,7 +247,7 @@ describe('JsonResourceType', () => {
       const rt = TsRes.ResourceTypes.JsonResourceType.create().orThrow();
       const invalidInit = { func: () => 'test' } as unknown as JsonObject;
 
-      expect(rt.createTemplate(resourceId, invalidInit)).toFailWith(/not a valid JSON object/);
+      expect(rt.createTemplate(resourceId, invalidInit)).toFailWith(/invalid JSON object/);
     });
   });
 

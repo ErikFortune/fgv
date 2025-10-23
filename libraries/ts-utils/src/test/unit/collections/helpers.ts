@@ -33,7 +33,7 @@ export type TestThingIndex = Brand<number, 'TestThingIndex'>;
 
 export const testThingKey: Converter<TestThingKey, unknown> = Converters.string
   .withConstraint((s) => /^thing\d{1,4}$/.test(s))
-  .withFormattedError((val: unknown) => `${val} is not a valid TestThingKey`)
+  .withFormattedError((val: unknown) => `${val} is invalid TestThingKey`)
   .withBrand('TestThingKey');
 
 export const testThingIndex: Converter<TestThingIndex, unknown> = Converters.number

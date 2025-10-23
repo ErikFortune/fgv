@@ -45,6 +45,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[puzzleFileData](./ts-sudoku-lib.files.converters.puzzlefiledata.md)
+
+
+</td><td>
+
+Converts puzzle file data from JSON format
+
+
+</td></tr>
+<tr><td>
+
+[puzzleFileDimensions](./ts-sudoku-lib.files.converters.puzzlefiledimensions.md)
+
+
+</td><td>
+
+Converts puzzle file dimensions from JSON format
+
+
+</td></tr>
+<tr><td>
+
 [puzzlesFile](./ts-sudoku-lib.files.converters.puzzlesfile.md)
 
 

@@ -54,6 +54,7 @@ export class PossibilityAnalyzer {
     // Identify empty cells and initialize possibilities
     for (const cellId of cage.cellIds) {
       const cellContents = state.getCellContents(cellId).orDefault();
+      /* c8 ignore next 1 - ? is defense in depth */
       if (cellContents?.value !== undefined) {
         // Cell already has a value - set empty possibilities array
         possibilities.set(cellId, []);
@@ -89,6 +90,7 @@ export class PossibilityAnalyzer {
 
       // Get the cell to check sudoku constraints
       const cellResult = puzzle.getCell(cellId);
+      /* c8 ignore next 3 - defensive coding: protects against internal cage/puzzle state corruption */
       if (cellResult.isFailure()) {
         continue;
       }

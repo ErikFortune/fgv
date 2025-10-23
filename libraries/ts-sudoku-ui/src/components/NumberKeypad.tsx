@@ -72,6 +72,7 @@ export const NumberKeypad: React.FC<INumberKeypadProps> = ({
   // Handle number button press with haptic feedback if available
   const handleNumberPress = useCallback(
     (number: number) => {
+      /* c8 ignore next 1 - not reachable in practice */
       if (disabled) return;
 
       // Trigger haptic feedback on touch devices
@@ -86,6 +87,7 @@ export const NumberKeypad: React.FC<INumberKeypadProps> = ({
 
   // Handle clear button press
   const handleClear = useCallback(() => {
+    /* c8 ignore next 1 - not reachable in practice */
     if (disabled) return;
 
     // Trigger haptic feedback on touch devices

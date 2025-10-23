@@ -41,6 +41,7 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
   selectedCells,
   inputMode,
   puzzleType,
+  puzzleDimensions,
   onCellSelect,
   onLongPressToggle,
   onCellValueChange,
@@ -142,6 +143,24 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     return classes.join(' ');
   }, [className]);
 
+  // Calculate grid template styles for dynamic grid sizes
+  const gridStyles = useMemo(() => {
+    // Base cell size in pixels (for 9x9 grid, this would be 50px, 60px, 70px at different breakpoints)
+    const baseCellSizePx = 50; // Base size for small screens
+
+    // Calculate width based on number of columns
+    // We use the max of rows/columns to ensure square cells
+    const maxDimension = Math.max(numRows, numColumns);
+    const width = maxDimension * baseCellSizePx;
+
+    return {
+      gridTemplateColumns: `repeat(${numColumns}, 1fr)`,
+      gridTemplateRows: `repeat(${numRows}, 1fr)`,
+      width: `min(${width}px, 100%)`,
+      maxWidth: `${width}px`
+    };
+  }, [numRows, numColumns]);
+
   // Calculate border classes based on puzzle type
   const borderClasses = useMemo(() => {
     //if (puzzleType === 'killer') {
@@ -196,7 +215,13 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
     if (puzzleType !== 'killer-sudoku' || !cages || cages.length === 0) return null;
 
     return (
-      <CageOverlay cages={cages} gridSize={gridDimensions.gridSize} cellSize={gridDimensions.cellSize} />
+      <CageOverlay
+        cages={cages}
+        gridSize={gridDimensions.gridSize}
+        cellSize={gridDimensions.cellSize}
+        numRows={numRows}
+        numColumns={numColumns}
+      />
     );
   };
 
@@ -205,15 +230,12 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
       className={`
         ${gridClasses}
         relative
-        grid grid-cols-9 grid-rows-9 ${puzzleType === 'killer-sudoku' ? 'gap-0' : 'gap-0'}
+        grid ${puzzleType === 'killer-sudoku' ? 'gap-0' : 'gap-0'}
         ${borderClasses}
         mx-auto outline-none
         aspect-square
-        w-[450px]
-        md:w-[540px]
-        lg:w-[630px]
-        max-w-full
       `}
+      style={gridStyles}
       onKeyDown={handleKeyDown}
       onMouseUp={onDragEnd}
       onTouchEnd={onDragEnd}
@@ -234,6 +256,16 @@ export const SudokuGrid: React.FC<ISudokuGridProps> = ({
             cellInfo={cellInfo}
             isSelected={isPrimarySelected || isInMultiSelection}
             inputMode={inputMode}
+            puzzleDimensions={
+              puzzleDimensions
+                ? {
+                    numRows,
+                    numColumns,
+                    cageHeight: puzzleDimensions.cageHeightInCells,
+                    cageWidth: puzzleDimensions.cageWidthInCells
+                  }
+                : undefined
+            }
             onSelect={createCellSelectHandler(cellInfo.id)}
             onLongPressToggle={createLongPressToggleHandler(cellInfo.id)}
             onValueChange={createCellValueChangeHandler(cellInfo.id)}

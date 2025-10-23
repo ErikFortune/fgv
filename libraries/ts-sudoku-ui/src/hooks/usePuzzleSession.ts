@@ -29,15 +29,16 @@ import {
   NavigationDirection,
   NavigationWrap,
   Puzzles,
-  IPuzzleDescription
+  IPuzzleDefinition
 } from '@fgv/ts-sudoku-lib';
 import { IValidationError, ICellDisplayInfo, InputMode, ICageDisplayInfo } from '../types';
+import { createEmptyPuzzleDefinition, createPuzzleDefinition } from '../utils/puzzleDefinitionHelper';
 
 /**
  * Hook for managing puzzle session state and operations
  * @public
  */
-export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription): {
+export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDefinition): {
   session: PuzzleSession | null;
   selectedCell: CellId | null;
   selectedCells: CellId[];
@@ -60,10 +61,10 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   undo: () => void;
   redo: () => void;
   reset: () => void;
-  exportPuzzle: () => IPuzzleDescription | null;
+  exportPuzzle: () => IPuzzleDefinition | null;
 } {
   const [session, setSession] = useState<PuzzleSession | null>(null);
-  const [puzzleDescription, setPuzzleDescription] = useState<IPuzzleDescription | null>(null);
+  const [puzzleDescription, setPuzzleDescription] = useState<IPuzzleDefinition | null>(null);
   const [selectedCell, setSelectedCell] = useState<CellId | null>(null);
   const [selectedCells, setSelectedCells] = useState<CellId[]>([]);
   const [inputMode, setInputMode] = useState<InputMode>('notes'); // Notes-first paradigm
@@ -72,15 +73,8 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
 
   // Initialize or update puzzle session
   useEffect(() => {
-    const puzzleDescriptor: IPuzzleDescription = initialPuzzleDescription || {
-      id: 'manual-entry',
-      description: 'Manual Entry Puzzle',
-      type: 'sudoku' as const,
-      level: 1,
-      rows: 9,
-      cols: 9,
-      cells: '.'.repeat(81) // Empty 9x9 grid
-    };
+    // Use the provided description or create a default empty 9x9 puzzle
+    const puzzleDescriptor: IPuzzleDefinition = initialPuzzleDescription || createEmptyPuzzleDefinition();
 
     const sessionResult = Puzzles.Any.create(puzzleDescriptor).onSuccess((puzzle) =>
       PuzzleSession.create(puzzle)
@@ -112,7 +106,15 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
         // Check for duplicates in row, column, and section
         const rowCells = session.rows[cell.row];
         const colCells = session.cols[cell.col];
-        const sectionCells = session.sections[Math.floor(cell.row / 3) * 3 + Math.floor(cell.col / 3)];
+
+        // Calculate section index based on puzzle dimensions
+        const cageHeight = session.puzzle.dimensions.cageHeightInCells;
+        const cageWidth = session.puzzle.dimensions.cageWidthInCells;
+        const sectionRow = Math.floor(cell.row / cageHeight);
+        const sectionCol = Math.floor(cell.col / cageWidth);
+        const sectionsPerRow = Math.ceil(session.numColumns / cageWidth);
+        const sectionIndex = sectionRow * sectionsPerRow + sectionCol;
+        const sectionCells = session.sections[sectionIndex];
 
         const checkDuplicates = (cageCellIds: CellId[], type: IValidationError['type']): void => {
           const duplicates = cageCellIds.filter((cellId) => {
@@ -164,6 +166,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
 
     return session.cells.map((cell) => {
       const contentsResult = session.state.getCellContents(cell.id);
+      /* c8 ignore next 1 - defense in depth */
       const contents = contentsResult.isSuccess() ? contentsResult.value : { value: undefined, notes: [] };
       const hasValidationError = validationErrors.some((error) => error.cellId === cell.id);
 
@@ -219,16 +222,25 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   // Helper function to remove notes that conflict with a placed value
   const removeConflictingNotes = useCallback(
     (placedCellId: CellId, placedValue: number) => {
+      /* c8 ignore next 1 - defense in depth should not happen */
       if (!session) return;
 
       const placedCell = session.cells.find((cell) => cell.id === placedCellId);
+      /* c8 ignore next 1 - defense in depth should not happen */
       if (!placedCell) return;
 
       // Get cells in the same row, column, and section
       const rowCells = session.rows[placedCell.row].cellIds;
       const colCells = session.cols[placedCell.col].cellIds;
-      const sectionCells =
-        session.sections[Math.floor(placedCell.row / 3) * 3 + Math.floor(placedCell.col / 3)].cellIds;
+
+      // Calculate section index based on puzzle dimensions
+      const cageHeight = session.puzzle.dimensions.cageHeightInCells;
+      const cageWidth = session.puzzle.dimensions.cageWidthInCells;
+      const sectionRow = Math.floor(placedCell.row / cageHeight);
+      const sectionCol = Math.floor(placedCell.col / cageWidth);
+      const sectionsPerRow = Math.ceil(session.numColumns / cageWidth);
+      const sectionIndex = sectionRow * sectionsPerRow + sectionCol;
+      const sectionCells = session.sections[sectionIndex].cellIds;
 
       // Start with row, column, and section cells
       const affectedCells = new Set([...rowCells, ...colCells, ...sectionCells]);
@@ -274,6 +286,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   // Update cell value with smart note removal
   const updateCellValue = useCallback(
     (cellId: CellId, value: number | undefined) => {
+      /* c8 ignore next 1 - defense in depth should not happen */
       if (!session) return;
 
       const result = session.updateCellValue(cellId, value);
@@ -295,6 +308,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   // Toggle a note in a cell
   const toggleCellNote = useCallback(
     (cellId: CellId, note: number) => {
+      /* c8 ignore next 1 - defense in depth should not happen */
       if (!session) return;
 
       // Get current cell contents
@@ -312,6 +326,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       const result = session.updateCellNotes(cellId, newNotes);
       if (result.isSuccess()) {
         setUpdateCounter((prev) => prev + 1);
+        /* c8 ignore next 3 - defense in depth */
       } else {
         setError(`Failed to toggle note: ${result.message}`);
       }
@@ -322,6 +337,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
   // Clear all notes from a cell
   const clearCellNotes = useCallback(
     (cellId: CellId) => {
+      /* c8 ignore next 1 - defense in depth should not happen */
       if (!session) return;
 
       const result = session.updateCellNotes(cellId, []);
@@ -340,6 +356,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       if (!session || !selectedCell) return;
 
       const currentCell = session.cells.find((cell) => cell.id === selectedCell);
+      /* c8 ignore next 1 - defense in depth should not happen */
       if (!currentCell) return;
 
       let newRow = currentCell.row;
@@ -370,6 +387,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
 
   // Undo last move
   const undo = useCallback(() => {
+    /* c8 ignore next 1 - defense in depth should not happen */
     if (!session) return;
 
     const result = session.undo();
@@ -382,6 +400,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
 
   // Redo last undone move
   const redo = useCallback(() => {
+    /* c8 ignore next 1 - defense in depth should not happen */
     if (!session) return;
 
     const result = session.redo();
@@ -394,6 +413,7 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
 
   // Reset puzzle to initial state
   const reset = useCallback(() => {
+    /* c8 ignore next 1 - defense in depth should not happen */
     if (!session) return;
 
     const result = PuzzleSession.create(session.puzzle);
@@ -401,13 +421,15 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       setSession(result.value);
       setSelectedCell(null);
       setUpdateCounter(0);
+      /* c8 ignore next 3 - defense in depth */
     } else {
       setError(`Failed to reset: ${result.message}`);
     }
   }, [session]);
 
   // Export puzzle state
-  const exportPuzzle = useCallback((): IPuzzleDescription | null => {
+  const exportPuzzle = useCallback((): IPuzzleDefinition | null => {
+    /* c8 ignore next 1 - defense in depth should not happen */
     if (!session) return null;
 
     const cellsArray = Array(session.numRows * session.numColumns).fill('.');
@@ -420,15 +442,21 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
       }
     });
 
-    return {
-      id: session.id || 'exported-puzzle',
-      description: session.description || 'Exported Puzzle',
-      type: puzzleDescription?.type || 'sudoku',
+    /* c8 ignore next 4 - defense in depth */
+    const id = session.id && session.id !== '' ? session.id : 'exported-puzzle';
+    const description =
+      session.description && session.description !== '' ? session.description : 'Exported Puzzle';
+    const type = puzzleDescription?.type ?? 'sudoku';
+
+    return createPuzzleDefinition({
+      id,
+      description,
+      type,
       level: 1,
-      rows: session.numRows,
-      cols: session.numColumns,
+      totalRows: session.numRows,
+      totalColumns: session.numColumns,
       cells: cellsArray.join('')
-    };
+    });
   }, [session, puzzleDescription, updateCounter]);
 
   return {

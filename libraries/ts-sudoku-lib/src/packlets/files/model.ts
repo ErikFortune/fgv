@@ -22,12 +22,37 @@
  * SOFTWARE.
  */
 
-import { IPuzzleDescription } from '../common';
+import { PuzzleType } from '../common';
+
+/**
+ * Dimensional configuration for puzzles
+ * @public
+ */
+export interface IPuzzleFileDimensions {
+  cageWidthInCells: number;
+  cageHeightInCells: number;
+  boardWidthInCages: number;
+  boardHeightInCages: number;
+}
+
+/**
+ * Input format for puzzle data in JSON files.
+ * Contains only the essential data needed to create an IPuzzleDefinition.
+ * @public
+ */
+export interface IPuzzleFileData {
+  id?: string;
+  description: string;
+  type: PuzzleType;
+  level: number;
+  cells: string;
+  dimensions: IPuzzleFileDimensions;
+}
 
 /**
  * Parsed file containing a collection of puzzles.
  * @public
  */
 export interface IPuzzlesFile {
-  puzzles: IPuzzleDescription[];
+  puzzles: IPuzzleFileData[];
 }

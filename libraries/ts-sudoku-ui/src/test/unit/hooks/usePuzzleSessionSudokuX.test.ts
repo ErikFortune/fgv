@@ -23,30 +23,31 @@
  */
 
 import { renderHook, act } from '@testing-library/react';
-import { IPuzzleDescription, CellId } from '@fgv/ts-sudoku-lib';
+import { IPuzzleDefinition, CellId } from '@fgv/ts-sudoku-lib';
 import '@fgv/ts-utils-jest';
 import { usePuzzleSession } from '../../../hooks/usePuzzleSession';
+import { createPuzzleDefinition } from '../../../utils/puzzleDefinitionHelper';
 
 describe('usePuzzleSession with Sudoku X', () => {
-  const sudokuXDescription: IPuzzleDescription = {
+  const sudokuXDescription: IPuzzleDefinition = createPuzzleDefinition({
     id: 'sudoku-x-hook-test',
     description: 'Sudoku X Hook Test',
     type: 'sudoku-x',
     level: 1,
-    rows: 9,
-    cols: 9,
+    totalRows: 9,
+    totalColumns: 9,
     cells: '4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1'
-  };
+  });
 
-  const emptySudokuXDescription: IPuzzleDescription = {
+  const emptySudokuXDescription: IPuzzleDefinition = createPuzzleDefinition({
     id: 'empty-sudoku-x',
     description: 'Empty Sudoku X',
     type: 'sudoku-x',
     level: 1,
-    rows: 9,
-    cols: 9,
+    totalRows: 9,
+    totalColumns: 9,
     cells: '.'.repeat(81)
-  };
+  });
 
   describe('Sudoku X puzzle initialization', () => {
     test('should initialize Sudoku X puzzle successfully', () => {
@@ -431,15 +432,15 @@ describe('usePuzzleSession with Sudoku X', () => {
 
   describe('edge cases and error handling', () => {
     test('should handle invalid Sudoku X puzzle gracefully', () => {
-      const invalidSudokuX: IPuzzleDescription = {
+      const invalidSudokuX: IPuzzleDefinition = createPuzzleDefinition({
         id: 'invalid-sudoku-x',
         description: 'Invalid Sudoku X',
         type: 'sudoku-x',
         level: 1,
-        rows: 9,
-        cols: 9,
+        totalRows: 9,
+        totalColumns: 9,
         cells: 'invalid-cells'
-      };
+      });
 
       const { result } = renderHook(() => usePuzzleSession(invalidSudokuX));
 

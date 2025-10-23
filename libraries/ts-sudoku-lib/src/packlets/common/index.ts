@@ -27,11 +27,11 @@ import * as Converters from './converters';
 export * from './cage';
 export * from './cell';
 export * from './common';
-export { Ids } from './ids';
+export { Ids, parseCellId } from './ids';
 export { DefaultSudokuLogger } from './logging';
-export * from './model';
 export * from './public';
 export * from './puzzle';
+export * from './puzzleDefinitions';
 export * from './puzzleSession';
 export * from './puzzleState';
 

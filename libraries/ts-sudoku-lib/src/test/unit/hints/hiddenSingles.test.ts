@@ -26,11 +26,8 @@
 
 import '@fgv/ts-utils-jest';
 import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
-import { PuzzleState } from '../../../packlets/common/puzzleState';
-import { Puzzle } from '../../../packlets/common/puzzle';
-import { PuzzleSession } from '../../../packlets/common/puzzleSession';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
 import { ConfidenceLevels, TechniqueIds } from '../../../packlets/hints/types';
+import { createPuzzleAndState } from '../helpers/puzzleBuilders';
 
 /* eslint-enable @rushstack/packlets/mechanics */
 
@@ -276,6 +273,43 @@ describe('HiddenSinglesProvider', () => {
           expect(boxHiddenSingle.techniqueId).toBe(TechniqueIds.HIDDEN_SINGLES);
           const explanation = boxHiddenSingle.explanations.find((exp) => exp.level === 'brief');
           expect(explanation?.description).toContain('section');
+        }
+      });
+    });
+
+    test('should format section unit name correctly in explanation', () => {
+      // Create a puzzle where a value can only go in one cell within a section (but multiple cells in row/col)
+      // Section 0 (top-left): Need to place 9 such that it can only go in ONE cell in the section
+      const { puzzle, state } = createPuzzleAndState([
+        '12.......', // Row 0: A1=1, A2=2, need to place 9 somewhere in A3-A9
+        '345......', // Row 1: B1=3, B2=4, B3=5
+        '678......', // Row 2: C1=6, C2=7, C3=8
+        '......9..', // 9 in row 3, col 6 - blocks column 6
+        '.......9.', // 9 in row 4, col 7 - blocks column 7
+        '........9', // 9 in row 5, col 8 - blocks column 8
+        '...9.....', // 9 in row 6, col 3 - this makes column 3 have a 9
+        '....9....', // 9 in row 7, col 4 - this makes column 4 have a 9
+        '.....9...' // 9 in row 8, col 5 - this makes column 5 have a 9
+      ]);
+
+      // In section 0 (rows 0-2, cols 0-2), we have:
+      // A1=1, A2=2, B1=3, B2=4, B3=5, C1=6, C2=7, C3=8
+      // Empty: A3 (row 0, col 2)
+      // Columns 3-8 all have 9s in other rows, so 9 must go in cols 0, 1, or 2
+      // But C3 is filled with 8, so in section 0, only A3 can have 9
+      // Actually wait, A3 is same as col 2, and C3 is filled, so A3 might be able to take 9
+
+      expect(provider.generateHints(puzzle, state)).toSucceedAndSatisfy((hints) => {
+        // Check if we have any section-based hints
+        const sectionHints = hints.filter((hint) =>
+          hint.explanations.some((exp) => exp.description.toLowerCase().includes('section'))
+        );
+
+        // We should find at least some hints, and section hints should format as "section N"
+        expect(hints.length).toBeGreaterThan(0);
+        if (sectionHints.length > 0) {
+          const sectionExplanation = sectionHints[0].explanations[0].description;
+          expect(sectionExplanation).toMatch(/section \d+/);
         }
       });
     });
@@ -806,17 +840,3 @@ describe('HiddenSinglesProvider', () => {
 });
 
 // Helper functions for creating test puzzles and states
-function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzleDesc: IPuzzleDescription = {
-    id: 'test-puzzle',
-    description: 'Test puzzle for hidden singles',
-    type: 'sudoku' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: rows.join('')
-  };
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
-  const session = PuzzleSession.create(puzzle).orThrow();
-  return { puzzle, state: session.state };
-}

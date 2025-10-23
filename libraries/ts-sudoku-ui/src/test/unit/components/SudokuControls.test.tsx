@@ -28,6 +28,8 @@ import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';
 import '@fgv/ts-utils-jest';
 import { SudokuControls } from '../../../components/SudokuControls';
+import * as ResponsiveLayoutModule from '../../../hooks/useResponsiveLayout';
+import type { IResponsiveLayoutInfo } from '../../../hooks/useResponsiveLayout';
 
 describe('SudokuControls', () => {
   const defaultProps = {
@@ -685,6 +687,194 @@ describe('SudokuControls', () => {
       await waitFor(() => {
         expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
         expect(screen.queryByTestId('reset-button')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('responsive layout variations', () => {
+    const mockResponsiveLayout = (
+      deviceType: 'mobile' | 'tablet' | 'desktop',
+      keypadLayoutMode: 'side-by-side' | 'stacked' | 'overlay' | 'hidden'
+    ): void => {
+      const mockLayoutInfo: IResponsiveLayoutInfo = {
+        deviceType,
+        keypadLayoutMode,
+        orientation: 'portrait',
+        screenWidth: deviceType === 'mobile' ? 400 : deviceType === 'tablet' ? 900 : 1200,
+        screenHeight: 800,
+        isTouchDevice: deviceType !== 'desktop',
+        isSmallScreen: deviceType === 'mobile',
+        hasSpaceForDualKeypads: true
+      };
+
+      jest.spyOn(ResponsiveLayoutModule, 'useResponsiveLayout').mockReturnValue(mockLayoutInfo);
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    describe('compact mode rendering', () => {
+      test('should render compact mode for mobile with side-by-side keypad', () => {
+        mockResponsiveLayout('mobile', 'side-by-side');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        const controls = screen.getByTestId('sudoku-controls');
+        expect(controls).toBeInTheDocument();
+
+        // Instructions should be hidden in compact mode
+        expect(screen.queryByText('Instructions:')).not.toBeInTheDocument();
+        expect(screen.queryByText('• Click a cell to select it')).not.toBeInTheDocument();
+      });
+
+      test('should render compact mode for mobile with stacked keypad', () => {
+        mockResponsiveLayout('mobile', 'stacked');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        const controls = screen.getByTestId('sudoku-controls');
+        expect(controls).toBeInTheDocument();
+
+        // Instructions should be hidden in compact mode with stacked layout
+        expect(screen.queryByText('Instructions:')).not.toBeInTheDocument();
+        expect(screen.queryByText('• Click a cell to select it')).not.toBeInTheDocument();
+      });
+
+      test('should show instructions for mobile with overlay keypad', () => {
+        mockResponsiveLayout('mobile', 'overlay');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible when keypad is overlay
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+
+      test('should show instructions for mobile with hidden keypad', () => {
+        mockResponsiveLayout('mobile', 'hidden');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible when keypad is hidden
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+    });
+
+    describe('tablet layout variations', () => {
+      test('should render full mode for tablet with side-by-side keypad', () => {
+        mockResponsiveLayout('tablet', 'side-by-side');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible for tablet
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+
+      test('should render full mode for tablet with stacked keypad', () => {
+        mockResponsiveLayout('tablet', 'stacked');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible for tablet
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+
+      test('should render full mode for tablet with overlay keypad', () => {
+        mockResponsiveLayout('tablet', 'overlay');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible for tablet
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+    });
+
+    describe('desktop layout variations', () => {
+      test('should render full mode for desktop with hidden keypad', () => {
+        mockResponsiveLayout('desktop', 'hidden');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible for desktop
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+
+      test('should render full mode for desktop with overlay keypad', () => {
+        mockResponsiveLayout('desktop', 'overlay');
+
+        render(<SudokuControls {...defaultProps} />);
+
+        // Instructions should be visible for desktop
+        expect(screen.getByText('Instructions:')).toBeInTheDocument();
+        expect(screen.getByText('• Click a cell to select it')).toBeInTheDocument();
+      });
+    });
+
+    describe('reset confirmation in compact mode', () => {
+      test('should show compact reset confirmation for mobile side-by-side', async () => {
+        mockResponsiveLayout('mobile', 'side-by-side');
+
+        render(<SudokuControls {...defaultProps} canReset={true} />);
+
+        // Show confirmation
+        fireEvent.click(screen.getByTestId('reset-button'));
+
+        await waitFor(() => {
+          const confirmButton = screen.getByTestId('confirm-reset-button');
+          expect(confirmButton).toBeInTheDocument();
+
+          // In compact mode, confirmation message is shown as title attribute
+          expect(confirmButton).toHaveAttribute('title', 'Are you sure? This will clear all entries.');
+
+          // Full confirmation message should not be visible in compact mode
+          expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+        });
+      });
+
+      test('should show compact reset confirmation for mobile stacked', async () => {
+        mockResponsiveLayout('mobile', 'stacked');
+
+        render(<SudokuControls {...defaultProps} canReset={true} />);
+
+        // Show confirmation
+        fireEvent.click(screen.getByTestId('reset-button'));
+
+        await waitFor(() => {
+          const confirmButton = screen.getByTestId('confirm-reset-button');
+          expect(confirmButton).toBeInTheDocument();
+
+          // In compact mode, confirmation message is shown as title attribute
+          expect(confirmButton).toHaveAttribute('title', 'Are you sure? This will clear all entries.');
+
+          // Full confirmation message should not be visible in compact mode
+          expect(screen.queryByText('Are you sure? This will clear all entries.')).not.toBeInTheDocument();
+        });
+      });
+
+      test('should show full reset confirmation for non-compact modes', async () => {
+        mockResponsiveLayout('mobile', 'overlay');
+
+        render(<SudokuControls {...defaultProps} canReset={true} />);
+
+        // Show confirmation
+        fireEvent.click(screen.getByTestId('reset-button'));
+
+        await waitFor(() => {
+          // Full confirmation message should be visible in non-compact mode
+          expect(screen.getByText('Are you sure? This will clear all entries.')).toBeInTheDocument();
+
+          const confirmButton = screen.getByTestId('confirm-reset-button');
+          expect(confirmButton).toBeInTheDocument();
+
+          // Title should not be set in non-compact mode
+          expect(confirmButton).not.toHaveAttribute('title');
+        });
       });
     });
   });

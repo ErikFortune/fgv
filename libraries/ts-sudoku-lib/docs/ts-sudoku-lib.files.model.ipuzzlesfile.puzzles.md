@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-puzzles: IPuzzleDescription[];
+puzzles: IPuzzleFileData[];
 ```

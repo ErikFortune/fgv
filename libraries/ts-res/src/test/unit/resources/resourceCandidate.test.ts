@@ -202,7 +202,7 @@ describe('ResourceCandidate', () => {
           candidateValues,
           decl
         })
-      ).toFailWith(/not a valid resource id/i);
+      ).toFailWith(/invalid resource id/i);
     });
 
     test('fails if the declaration cannot be normalized', () => {

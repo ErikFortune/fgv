@@ -35,8 +35,7 @@ import { NakedSinglesProvider } from '../../../packlets/hints/nakedSingles';
 import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
 import { Puzzle } from '../../../packlets/common/puzzle';
-import { PuzzleSession } from '../../../packlets/common/puzzleSession';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
+import { createPuzzleAndState } from '../helpers/puzzleBuilders';
 import {
   IHintExplanation,
   TechniqueIds,
@@ -159,7 +158,7 @@ describe('Explanation Content Validation', () => {
     nakedSinglesProvider = NakedSinglesProvider.create().orThrow();
     hiddenSinglesProvider = HiddenSinglesProvider.create().orThrow();
 
-    const puzzleDesc = createTestPuzzle([
+    const result = createPuzzleAndState([
       '12345678.', // Creates naked single at A9 = 9
       '.........',
       '.........',
@@ -170,7 +169,6 @@ describe('Explanation Content Validation', () => {
       '.........',
       '.........'
     ]);
-    const result = createPuzzleAndState(puzzleDesc);
     testPuzzle = result.puzzle;
     testState = result.state;
   });
@@ -524,7 +522,7 @@ describe('ExplanationRegistry', () => {
     };
 
     // Create test hint and state
-    const puzzleDesc = createTestPuzzle([
+    const result = createPuzzleAndState([
       '12345678.',
       '.........',
       '.........',
@@ -535,7 +533,6 @@ describe('ExplanationRegistry', () => {
       '.........',
       '.........'
     ]);
-    const result = createPuzzleAndState(puzzleDesc);
     testPuzzle = result.puzzle;
     testState = result.state;
 
@@ -830,20 +827,3 @@ describe('EducationalContent', () => {
 });
 
 // Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
-    id: 'test-puzzle',
-    description: 'Test puzzle for explanations',
-    type: 'sudoku' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: rows.join('')
-  };
-}
-
-function createPuzzleAndState(puzzleDesc: IPuzzleDescription): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
-  const session = PuzzleSession.create(puzzle).orThrow();
-  return { puzzle, state: session.state };
-}

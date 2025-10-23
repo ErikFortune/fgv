@@ -41,6 +41,7 @@ export const CageSumIndicator: React.FC<ICageSumIndicatorProps> = ({
   const displayClasses = useMemo(() => {
     const classes = ['cage-sum-indicator'];
 
+    /* c8 ignore next 1 - defense in depth */
     if (className) classes.push(className);
 
     if (!isValid) {

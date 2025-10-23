@@ -901,6 +901,94 @@ describe('ResourceResolver class', () => {
           originalCandidates;
       });
     });
+
+    test('falls back to default match when no regular matches exist', () => {
+      // Set up a qualifier with a defaultValue that will trigger scoreAsDefault matching
+      const qualifierTypesWithDefault = TsRes.QualifierTypes.QualifierTypeCollector.create({
+        qualifierTypes: [
+          TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
+          TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow()
+        ]
+      }).orThrow();
+
+      const qualifiersWithDefault = TsRes.Qualifiers.QualifierCollector.create({
+        qualifierTypes: qualifierTypesWithDefault,
+        qualifiers: [
+          {
+            name: 'language',
+            typeName: 'language',
+            defaultPriority: 600,
+            defaultValue: 'fr' // Default is French
+          },
+          { name: 'territory', typeName: 'territory', defaultPriority: 700 }
+        ]
+      }).orThrow();
+
+      const managerWithDefaults = TsRes.Resources.ResourceManagerBuilder.create({
+        qualifiers: qualifiersWithDefault,
+        resourceTypes
+      }).orThrow();
+
+      // Add a resource where candidates only match via scoreAsDefault
+      // Context will be 'en-US' but no candidates match English
+      // One candidate has scoreAsDefault for French (the default)
+      managerWithDefaults
+        .addResource({
+          id: 'default-fallback-test',
+          resourceTypeName: 'json',
+          candidates: [
+            {
+              json: { message: 'Default French fallback' },
+              conditions: [
+                {
+                  qualifierName: 'language',
+                  value: 'fr', // Matches the qualifier defaultValue
+                  scoreAsDefault: 0.5
+                }
+              ]
+            },
+            {
+              json: { message: 'Specific German message' },
+              conditions: {
+                language: 'de' // Won't match en-US context
+              }
+            }
+          ]
+        })
+        .orThrow();
+
+      const contextWithDefaults = TsRes.Runtime.ValidatingSimpleContextQualifierProvider.create({
+        qualifiers: qualifiersWithDefault,
+        qualifierValues: {
+          language: 'en-US', // Context is English but no candidates match English directly
+          territory: 'US'
+        }
+      }).orThrow();
+
+      const resolverWithDefaults = TsRes.Runtime.ResourceResolver.create({
+        resourceManager: managerWithDefaults,
+        qualifierTypes: qualifierTypesWithDefault,
+        contextQualifierProvider: contextWithDefaults
+      }).orThrow();
+
+      expect(managerWithDefaults.getBuiltResource('default-fallback-test')).toSucceedAndSatisfy(
+        (resource) => {
+          // Should fall back to the candidate with scoreAsDefault for French (the default)
+          // since no candidates match en-US via regular matching
+          expect(resolverWithDefaults.resolveResource(resource)).toSucceedAndSatisfy((candidate) => {
+            expect(candidate.json).toEqual({ message: 'Default French fallback' });
+          });
+
+          // Also test resolveAllResourceCandidates to ensure default matches are included
+          expect(resolverWithDefaults.resolveAllResourceCandidates(resource)).toSucceedAndSatisfy(
+            (candidates) => {
+              expect(candidates).toHaveLength(1);
+              expect(candidates[0].json).toEqual({ message: 'Default French fallback' });
+            }
+          );
+        }
+      );
+    });
   });
 
   describe('resolveAllResourceCandidates method', () => {

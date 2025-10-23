@@ -120,7 +120,7 @@ export function isValidCandidateValueKey(key: string): key is CandidateValueKey 
 export function toResourceName(name: string): Result<ResourceName> {
   /* c8 ignore next 3 - coverage having issues */
   if (!isValidResourceName(name)) {
-    return fail(`${name}: not a valid resource name.`);
+    return fail(`${name}: invalid resource name.`);
   }
   return succeed(name);
 }
@@ -136,7 +136,7 @@ export function toResourceName(name: string): Result<ResourceName> {
 export function toResourceId(id: string): Result<ResourceId> {
   /* c8 ignore next 3 - defensive coding: resource ID validation should prevent invalid IDs */
   if (!isValidResourceId(id)) {
-    return fail(`${id}: not a valid resource ID.`);
+    return fail(`${id}: invalid resource ID.`);
   }
   return succeed(id);
 }
@@ -163,7 +163,7 @@ export function toOptionalResourceId(id?: string): Result<ResourceId | undefined
  */
 export function toResourceIndex(index: number): Result<ResourceIndex> {
   if (!isValidResourceIndex(index)) {
-    return fail(`${index}: not a valid resource index.`);
+    return fail(`${index}: invalid resource index.`);
   }
   return succeed(index);
 }
@@ -179,7 +179,7 @@ export function toResourceIndex(index: number): Result<ResourceIndex> {
 export function toResourceTypeName(name: string): Result<ResourceTypeName> {
   /* c8 ignore next 3 - coverage having issues */
   if (!isValidResourceTypeName(name)) {
-    return fail(`${name}: not a valid resource type name.`);
+    return fail(`${name}: invalid resource type name.`);
   }
   return succeed(name);
 }
@@ -195,7 +195,7 @@ export function toResourceTypeName(name: string): Result<ResourceTypeName> {
 export function toResourceTypeIndex(index: number): Result<ResourceTypeIndex> {
   /* c8 ignore next 3 - coverage having issues */
   if (!isValidResourceTypeIndex(index)) {
-    return fail(`${index}: not a valid resource type index.`);
+    return fail(`${index}: invalid resource type index.`);
   }
   return succeed(index);
 }
@@ -211,7 +211,7 @@ export function toResourceTypeIndex(index: number): Result<ResourceTypeIndex> {
 export function toCandidateValueKey(key: string): Result<CandidateValueKey> {
   /* c8 ignore next 3 - coverage having issues */
   if (!isValidCandidateValueKey(key)) {
-    return fail(`${key}: not a valid candidate value key.`);
+    return fail(`${key}: invalid candidate value key.`);
   }
   return succeed(key);
 }
@@ -227,7 +227,7 @@ export function toCandidateValueKey(key: string): Result<CandidateValueKey> {
 export function toCandidateValueIndex(index: number): Result<CandidateValueIndex> {
   /* c8 ignore next 3 - coverage having issues */
   if (!isValidCandidateValueIndex(index)) {
-    return fail(`${index}: not a valid candidate value index.`);
+    return fail(`${index}: invalid candidate value index.`);
   }
   return succeed(index);
 }

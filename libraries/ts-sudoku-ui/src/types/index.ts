@@ -22,7 +22,8 @@
  * SOFTWARE.
  */
 
-import { CellId, ICellContents, NavigationDirection, IPuzzleDescription, ICage } from '@fgv/ts-sudoku-lib';
+import { CellId, ICellContents, NavigationDirection, IPuzzleDefinition, ICage } from '@fgv/ts-sudoku-lib';
+import { KeypadLayoutMode } from '../hooks/useResponsiveLayout';
 
 /**
  * Validation error for display in the UI
@@ -48,7 +49,7 @@ export interface ISudokuGridEntryProps {
   /**
    * Optional initial puzzle session to load. If not provided, an empty puzzle is created.
    */
-  readonly initialPuzzleDescription?: IPuzzleDescription;
+  readonly initialPuzzleDescription?: IPuzzleDefinition;
 
   /**
    * Callback fired when the puzzle state changes
@@ -64,6 +65,11 @@ export interface ISudokuGridEntryProps {
    * Optional CSS class name for styling
    */
   readonly className?: string;
+
+  /**
+   * Optional forced layout mode for testing (overrides responsive detection)
+   */
+  readonly forceLayoutMode?: KeypadLayoutMode;
 }
 
 /**
@@ -79,6 +85,17 @@ export interface ISudokuGridProps {
   readonly selectedCells: CellId[];
   readonly inputMode: InputMode;
   readonly puzzleType?: string;
+  readonly puzzleDimensions?: {
+    readonly cageHeightInCells: number;
+    readonly cageWidthInCells: number;
+    readonly boardWidthInCages: number;
+    readonly boardHeightInCages: number;
+    readonly totalRows: number;
+    readonly totalColumns: number;
+    readonly maxValue: number;
+    readonly totalCages: number;
+    readonly basicCageTotal: number;
+  };
   readonly onCellSelect: (cellId: CellId, event?: React.MouseEvent) => void;
   readonly onLongPressToggle?: (cellId: CellId, event: React.TouchEvent | React.MouseEvent) => void;
   readonly onCellValueChange: (cellId: CellId, value: number | undefined) => void;
@@ -118,6 +135,12 @@ export interface ISudokuCellProps {
   readonly cellInfo: ICellDisplayInfo;
   readonly isSelected: boolean;
   readonly inputMode: InputMode;
+  readonly puzzleDimensions?: {
+    readonly numRows: number;
+    readonly numColumns: number;
+    readonly cageHeight: number;
+    readonly cageWidth: number;
+  };
   readonly onSelect: (event?: React.MouseEvent) => void;
   readonly onLongPressToggle?: (event: React.TouchEvent | React.MouseEvent) => void;
   readonly onValueChange: (value: number | undefined) => void;
@@ -175,6 +198,8 @@ export interface ICageOverlayProps {
   readonly cages: ICageDisplayInfo[];
   readonly gridSize: { width: number; height: number };
   readonly cellSize: number;
+  readonly numRows?: number;
+  readonly numColumns?: number;
   readonly className?: string;
 }
 

@@ -30,8 +30,7 @@ import { NakedSinglesProvider } from '../../../packlets/hints/nakedSingles';
 import { HiddenSinglesProvider } from '../../../packlets/hints/hiddenSingles';
 import { PuzzleState } from '../../../packlets/common/puzzleState';
 import { Puzzle } from '../../../packlets/common/puzzle';
-import { PuzzleSession } from '../../../packlets/common/puzzleSession';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
+import { createPuzzleAndState } from '../helpers/puzzleBuilders';
 import {
   TechniqueIds,
   ConfidenceLevels,
@@ -231,7 +230,7 @@ describe('HintRegistry', () => {
     let testPuzzle: Puzzle;
 
     beforeEach(() => {
-      const puzzleDesc = createTestPuzzle([
+      const result = createPuzzleAndState([
         '12345678.', // Creates a naked single at A9
         '.........',
         '.........',
@@ -242,7 +241,6 @@ describe('HintRegistry', () => {
         '.........',
         '.........'
       ]);
-      const result = createPuzzleAndState(puzzleDesc);
       testPuzzle = result.puzzle;
       testState = result.state;
 
@@ -316,7 +314,7 @@ describe('HintRegistry', () => {
     });
 
     test('should handle state where no hints are available', () => {
-      const completePuzzle = createTestPuzzle([
+      const completeResult = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -327,7 +325,6 @@ describe('HintRegistry', () => {
         '678912345',
         '912345678'
       ]);
-      const completeResult = createPuzzleAndState(completePuzzle);
 
       expect(registry.generateAllHints(completeResult.puzzle, completeResult.state)).toSucceedAndSatisfy(
         (hints) => {
@@ -342,7 +339,7 @@ describe('HintRegistry', () => {
     let testPuzzle: Puzzle;
 
     beforeEach(() => {
-      const puzzleDesc = createTestPuzzle([
+      const result = createPuzzleAndState([
         '12345678.',
         '.........',
         '.........',
@@ -353,7 +350,6 @@ describe('HintRegistry', () => {
         '.........',
         '.........'
       ]);
-      const result = createPuzzleAndState(puzzleDesc);
       testPuzzle = result.puzzle;
       testState = result.state;
 
@@ -374,7 +370,7 @@ describe('HintRegistry', () => {
     });
 
     test('should fail when no hints are available', () => {
-      const completePuzzle = createTestPuzzle([
+      const completeResult = createPuzzleAndState([
         '123456789',
         '456789123',
         '789123456',
@@ -385,7 +381,6 @@ describe('HintRegistry', () => {
         '678912345',
         '912345678'
       ]);
-      const completeResult = createPuzzleAndState(completePuzzle);
 
       expect(registry.getBestHint(completeResult.puzzle, completeResult.state)).toFailWith(
         /No hints available/
@@ -408,7 +403,17 @@ describe('HintRegistry', () => {
       const faultyProvider = new TestFaultyHintProvider();
       registry.registerProvider(faultyProvider).orThrow();
 
-      const result = createTestPuzzleAndState();
+      const result = createPuzzleAndState([
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9)
+      ]);
 
       expect(registry.generateAllHints(result.puzzle, result.state)).toFailWith(/Simulated provider failure/);
     });
@@ -417,14 +422,34 @@ describe('HintRegistry', () => {
       const invalidProvider = new TestInvalidHintProvider();
       registry.registerProvider(invalidProvider).orThrow();
 
-      const result = createTestPuzzleAndState();
+      const result = createPuzzleAndState([
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9)
+      ]);
 
       // Registry should handle invalid hints gracefully
       expect(registry.generateAllHints(result.puzzle, result.state)).toSucceed();
     });
 
     test('should validate options in generateAllHints', () => {
-      const result = createTestPuzzleAndState();
+      const result = createPuzzleAndState([
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9)
+      ]);
 
       expect(registry.generateAllHints(result.puzzle, result.state, { maxHints: -1 })).toSucceedAndSatisfy(
         (hints) => {
@@ -457,17 +482,25 @@ describe('HintRegistry', () => {
     });
 
     test('should use priority for best hint selection', () => {
-      const result = createTestPuzzleAndState();
+      const result = createPuzzleAndState([
+        '12345678.', // A9 must be 9 (naked single)
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9),
+        '.'.repeat(9)
+      ]);
 
       registry.registerProvider(hiddenSinglesProvider).orThrow(); // priority 2, registered first
       registry.registerProvider(nakedSinglesProvider).orThrow(); // priority 1, registered second
 
       expect(registry.getBestHint(result.puzzle, result.state)).toSucceedAndSatisfy((hint) => {
         // Should prefer naked singles (priority 1) over hidden singles (priority 2)
-        // if both are available
-        if (hint.techniqueId === TechniqueIds.NAKED_SINGLES) {
-          expect(hint.priority).toBe(1);
-        }
+        expect(hint.techniqueId).toBe(TechniqueIds.NAKED_SINGLES);
+        expect(hint.priority).toBe(1);
       });
     });
   });
@@ -475,7 +508,7 @@ describe('HintRegistry', () => {
   describe('integration scenarios', () => {
     test('should work with real puzzle scenarios', () => {
       // Use a more realistic puzzle scenario
-      const puzzleDesc = createTestPuzzle([
+      const result = createPuzzleAndState([
         '53..7....',
         '6..195...',
         '.98....6.',
@@ -486,7 +519,6 @@ describe('HintRegistry', () => {
         '...419..5',
         '....8..79'
       ]);
-      const result = createPuzzleAndState(puzzleDesc);
 
       registry.registerProvider(nakedSinglesProvider).orThrow();
       registry.registerProvider(hiddenSinglesProvider).orThrow();
@@ -506,40 +538,6 @@ describe('HintRegistry', () => {
     });
   });
 });
-
-// Helper functions for creating test puzzles and states
-function createTestPuzzle(rows: string[]): IPuzzleDescription {
-  return {
-    id: 'test-puzzle',
-    description: 'Test puzzle for hint registry',
-    type: 'sudoku' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: rows.join('')
-  };
-}
-
-function createPuzzleAndState(puzzleDesc: IPuzzleDescription): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
-  const session = PuzzleSession.create(puzzle).orThrow();
-  return { puzzle, state: session.state };
-}
-
-function createTestPuzzleAndState(): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzleDesc = createTestPuzzle([
-    '12345678.',
-    '.........',
-    '.........',
-    '.........',
-    '.........',
-    '.........',
-    '.........',
-    '.........',
-    '.........'
-  ]);
-  return createPuzzleAndState(puzzleDesc);
-}
 
 // Additional tests for coverage completion
 describe('HintRegistry - Additional Coverage', () => {

@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Result } from '@fgv/ts-utils';
-import { IPuzzleDescription } from '@fgv/ts-sudoku-lib';
-import { SudokuGridEntry, IPuzzleDescription as UIIPuzzleDescription } from '@fgv/ts-sudoku-ui';
+import { IPuzzleDefinition } from '@fgv/ts-sudoku-lib';
+import { SudokuGridEntry } from '@fgv/ts-sudoku-ui';
 import { useObservability } from '../contexts';
 
 // Sample puzzles for each type
-const samplePuzzles: Record<string, IPuzzleDescription> = {
+const samplePuzzles: Record<string, IPuzzleDefinition> = {
   standard: {
     id: 'standard-example',
     description: 'Classic Sudoku Example',
     type: 'sudoku',
     level: 1,
-    rows: 9,
-    cols: 9,
+    totalRows: 9,
+    totalColumns: 9,
+    maxValue: 9,
+    totalCages: 9,
+    basicCageTotal: 45,
+    cageWidthInCells: 3,
+    cageHeightInCells: 3,
+    boardWidthInCages: 3,
+    boardHeightInCages: 3,
     cells: '.........9.46.7....768.41..3.97.1.8.7.8...3.1.513.87.2..75.261...54.32.8.........'
   },
   'sudoku-x': {
@@ -21,8 +27,15 @@ const samplePuzzles: Record<string, IPuzzleDescription> = {
     description: 'Sudoku X Example',
     type: 'sudoku-x',
     level: 1,
-    rows: 9,
-    cols: 9,
+    totalRows: 9,
+    totalColumns: 9,
+    maxValue: 9,
+    totalCages: 9,
+    basicCageTotal: 45,
+    cageWidthInCells: 3,
+    cageHeightInCells: 3,
+    boardWidthInCages: 3,
+    boardHeightInCages: 3,
     cells: '4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1'
   },
   killer: {
@@ -30,8 +43,15 @@ const samplePuzzles: Record<string, IPuzzleDescription> = {
     description: 'Killer Sudoku Example',
     type: 'killer-sudoku',
     level: 100,
-    rows: 9,
-    cols: 9,
+    totalRows: 9,
+    totalColumns: 9,
+    maxValue: 9,
+    totalCages: 9,
+    basicCageTotal: 45,
+    cageWidthInCells: 3,
+    cageHeightInCells: 3,
+    boardWidthInCages: 3,
+    boardHeightInCages: 3,
     cells:
       'ABCCCDDDEABFFGGGDEHIJKGGLLLHIJKMGLNNHOPPMQQNROOSTMUVWRSSSTTUVWRXYTTTZZabXYYYcccab|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
   }
@@ -47,7 +67,7 @@ export const PuzzlePage: React.FC = () => {
   const { gameType } = useParams<{ gameType: string }>();
   const navigate = useNavigate();
   const observability = useObservability();
-  const [puzzleDesc, setPuzzleDesc] = useState<IPuzzleDescription | null>(null);
+  const [puzzleDesc, setPuzzleDesc] = useState<IPuzzleDefinition | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize puzzle based on game type

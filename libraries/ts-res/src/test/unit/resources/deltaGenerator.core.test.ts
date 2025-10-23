@@ -341,6 +341,60 @@ describe('DeltaGenerator - Core functionality', () => {
         expect(nonObjectGenerator.generate(options)).toFailWith(/Delta changes must be a JSON object/);
       });
 
+      test('should reject non-object values for new resources', () => {
+        // Create a delta resolver that returns non-object values for a NEW resource
+        class TestableNonObjectDeltaResolver implements TsRes.IResourceResolver {
+          public get resourceIds(): ReadonlyArray<TsRes.ResourceId> {
+            return ['new.resource'] as TsRes.ResourceId[];
+          }
+
+          public resolveComposedResourceValue(resourceId: string): Result<JsonValue> {
+            if (resourceId === 'new.resource') {
+              // Return a string value instead of an object
+              return succeed('this is a string, not an object');
+            }
+            return fail('Resource not found');
+          }
+
+          public withContext(context: unknown): Result<TsRes.IResourceResolver> {
+            return succeed(this);
+          }
+        }
+
+        // Create an empty baseline resolver so the resource appears as NEW
+        class TestableEmptyBaselineResolver implements TsRes.IResourceResolver {
+          public get resourceIds(): ReadonlyArray<TsRes.ResourceId> {
+            return [];
+          }
+
+          public resolveComposedResourceValue(resourceId: string): Result<JsonValue> {
+            return fail('Resource not found in baseline');
+          }
+
+          public withContext(context: unknown): Result<TsRes.IResourceResolver> {
+            return succeed(this);
+          }
+        }
+
+        const newResourceGenerator = DeltaGenerator.create({
+          baselineResolver: new TestableEmptyBaselineResolver(),
+          deltaResolver: new TestableNonObjectDeltaResolver(),
+          resourceManager: testSetup.resourceManager,
+          logger: testSetup.mockLogger
+        }).orThrow();
+
+        // Don't specify resourceIds - let it discover resources automatically from delta resolver
+        // This allows the new resource to be discovered and processed
+
+        // Should fail because new resources must have JSON object values
+        const result = newResourceGenerator.generate();
+        expect(result).toFail();
+        if (result.isFailure()) {
+          // Verify the error message contains the expected validation
+          expect(result.message).toMatch(/Resource value must be a JSON object, got string/);
+        }
+      });
+
       test('should handle diff computation failure', () => {
         // This would be difficult to test without mocking the Diff module
         // But we can test the scenario where values are reported as identical by diff

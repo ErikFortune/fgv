@@ -56,7 +56,7 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
         }
         break;
     }
-    return fail(`"${String(from)}": not a valid JSON primitive.`);
+    return fail(`"${String(from)}": invalid JSON primitive.`);
   }
 );
 
@@ -76,7 +76,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
     ctx?: IJsonConverterContext
   ): Result<JsonObject> => {
     if (!isJsonObject(from)) {
-      return fail('not a valid JSON object.');
+      return fail('invalid JSON object.');
     }
     const obj: JsonObject = {};
     const errors: string[] = [];
@@ -97,7 +97,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
         });
     }
     if (errors.length > 0) {
-      return fail(`not a valid JSON object:\n${errors.join('\n')}`);
+      return fail(`invalid JSON object:\n${errors.join('\n')}`);
     }
     return succeed(obj);
   }

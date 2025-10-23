@@ -7,7 +7,7 @@
 import { CellId } from '@fgv/ts-sudoku-lib';
 import { ICage } from '@fgv/ts-sudoku-lib';
 import { ICellContents } from '@fgv/ts-sudoku-lib';
-import { IPuzzleDescription } from '@fgv/ts-sudoku-lib';
+import { IPuzzleDefinition } from '@fgv/ts-sudoku-lib';
 import { Logging } from '@fgv/ts-utils';
 import { NavigationDirection } from '@fgv/ts-sudoku-lib';
 import { NavigationWrap } from '@fgv/ts-sudoku-lib';
@@ -73,6 +73,10 @@ export interface ICageOverlayProps {
         width: number;
         height: number;
     };
+    // (undocumented)
+    readonly numColumns?: number;
+    // (undocumented)
+    readonly numRows?: number;
 }
 
 // @public
@@ -240,8 +244,6 @@ export interface INumberKeypadProps {
     readonly onNumberPress: (number: number) => void;
 }
 
-export { IPuzzleDescription }
-
 // @public
 export interface IResponsiveLayoutInfo {
     readonly deviceType: DeviceType;
@@ -276,6 +278,13 @@ export interface ISudokuCellProps {
     readonly onSelect: (event?: React.MouseEvent) => void;
     // (undocumented)
     readonly onValueChange: (value: number | undefined) => void;
+    // (undocumented)
+    readonly puzzleDimensions?: {
+        readonly numRows: number;
+        readonly numColumns: number;
+        readonly cageHeight: number;
+        readonly cageWidth: number;
+    };
 }
 
 // @public
@@ -305,7 +314,8 @@ export interface ISudokuControlsProps {
 // @public
 export interface ISudokuGridEntryProps {
     readonly className?: string;
-    readonly initialPuzzleDescription?: IPuzzleDescription;
+    readonly forceLayoutMode?: KeypadLayoutMode;
+    readonly initialPuzzleDescription?: IPuzzleDefinition;
     readonly onStateChange?: (isValid: boolean, isSolved: boolean) => void;
     readonly onValidationErrors?: (errors: IValidationError[]) => void;
 }
@@ -342,6 +352,18 @@ export interface ISudokuGridProps {
     readonly onNavigate: (direction: NavigationDirection) => void;
     // (undocumented)
     readonly onNoteToggle: (cellId: CellId, note: number) => void;
+    // (undocumented)
+    readonly puzzleDimensions?: {
+        readonly cageHeightInCells: number;
+        readonly cageWidthInCells: number;
+        readonly boardWidthInCages: number;
+        readonly boardHeightInCages: number;
+        readonly totalRows: number;
+        readonly totalColumns: number;
+        readonly maxValue: number;
+        readonly totalCages: number;
+        readonly basicCageTotal: number;
+    };
     // (undocumented)
     readonly puzzleType?: string;
     // (undocumented)
@@ -422,7 +444,7 @@ export function useKeyboardShortcut(key: string, callback: () => void, options?:
 export function useKillerCombinations(cage: ICage | null): Result<ICombinationDisplayInfo[]>;
 
 // @public
-export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription): {
+export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDefinition): {
     session: PuzzleSession | null;
     selectedCell: CellId | null;
     selectedCells: CellId[];
@@ -445,11 +467,11 @@ export function usePuzzleSession(initialPuzzleDescription?: IPuzzleDescription):
     undo: () => void;
     redo: () => void;
     reset: () => void;
-    exportPuzzle: () => IPuzzleDescription | null;
+    exportPuzzle: () => IPuzzleDefinition | null;
 };
 
 // @public
-export function useResponsiveLayout(): IResponsiveLayoutInfo;
+export function useResponsiveLayout(forceLayoutMode?: KeypadLayoutMode): IResponsiveLayoutInfo;
 
 // @public
 export const ValidationDisplay: React_2.FC<IValidationDisplayProps>;

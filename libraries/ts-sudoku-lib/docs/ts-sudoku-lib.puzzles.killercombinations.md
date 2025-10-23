@@ -50,7 +50,7 @@ Analyzes the current state of the puzzle and cage to determine which values are 
 </td></tr>
 <tr><td>
 
-[getCombinations(cageSize, total, constraints)](./ts-sudoku-lib.puzzles.killercombinations.getcombinations.md)
+[getCombinations(cageSize, total, constraints, maxValue)](./ts-sudoku-lib.puzzles.killercombinations.getcombinations.md)
 
 
 </td><td>
@@ -68,7 +68,7 @@ Each combination contains unique numbers from 1-9 that sum exactly to the specif
 </td></tr>
 <tr><td>
 
-[getPossibleTotals(cageSize)](./ts-sudoku-lib.puzzles.killercombinations.getpossibletotals.md)
+[getPossibleTotals(cageSize, maxValue)](./ts-sudoku-lib.puzzles.killercombinations.getpossibletotals.md)
 
 
 </td><td>

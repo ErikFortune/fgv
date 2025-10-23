@@ -291,13 +291,13 @@ export class HiddenSinglesProvider extends BaseHintProvider {
         return `row ${unitIndex + 1}`;
       case 'column':
         return `column ${unitIndex + 1}`;
+      /* c8 ignore next 4 - unreachable: puzzles use 'section' cage type, not 'box' */
       case 'box':
         const boxRow = Math.floor(unitIndex / 3);
         const boxCol = unitIndex % 3;
         return `box (${boxRow + 1},${boxCol + 1})`;
-      default:
-        return `${unitType} ${unitIndex}`;
     }
+    return `${unitType} ${unitIndex}`;
   }
 
   /**

@@ -92,8 +92,9 @@ export function useLongPress(options: IUseLongPressOptions): ILongPressHandlers 
   }, []);
 
   const end = useCallback(() => {
+    const wasLongPress = isLongPressRef.current;
     cancel();
-    return isLongPressRef.current;
+    return wasLongPress;
   }, [cancel]);
 
   return {

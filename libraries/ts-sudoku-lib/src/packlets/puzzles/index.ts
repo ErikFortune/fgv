@@ -22,12 +22,11 @@
  * SOFTWARE.
  */
 
-import { AnyPuzzle as Any } from './anyPuzzle';
 import { KillerSudokuPuzzle as Killer } from './killerSudokuPuzzle';
 import { SudokuPuzzle as Sudoku } from './sudokuPuzzle';
 import { SudokuXPuzzle as SudokuX } from './sudokuXPuzzle';
+import { KillerCombinations } from './killerCombinations';
+import { AnyPuzzle as Any } from './anyPuzzle';
+export * from './killerCombinationsTypes';
 
-export { Any, Killer, Sudoku, SudokuX };
-export { KillerCombinations } from './killerCombinations';
-export type { IKillerConstraints } from './killerCombinationsTypes';
-export type { AnyPuzzle } from './anyPuzzle';
+export { Any, Killer, KillerCombinations, Sudoku, SudokuX };

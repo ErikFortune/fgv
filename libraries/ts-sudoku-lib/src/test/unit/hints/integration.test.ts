@@ -27,11 +27,9 @@
 import '@fgv/ts-utils-jest';
 import { HintSystem } from '../../../packlets/hints/hints';
 import { PuzzleSessionHints } from '../../../packlets/hints';
-import { PuzzleState } from '../../../packlets/common/puzzleState';
-import { Puzzle } from '../../../packlets/common/puzzle';
 import { PuzzleSession } from '../../../packlets/common/puzzleSession';
-import { Puzzles, IPuzzleDescription, PuzzleType } from '../../../index';
 import { ConfidenceLevels } from '../../../packlets/hints/types';
+import { createPuzzleAndState } from '../helpers/puzzleBuilders';
 
 /* eslint-enable @rushstack/packlets/mechanics */
 
@@ -557,17 +555,3 @@ describe('Hint System Integration', () => {
 });
 
 // Helper functions for creating test puzzles and states
-function createPuzzleAndState(rows: string[]): { puzzle: Puzzle; state: PuzzleState } {
-  const puzzleDesc: IPuzzleDescription = {
-    id: 'integration-test-puzzle',
-    description: 'Integration test puzzle for hint system',
-    type: 'sudoku' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: rows.join('')
-  };
-  const puzzle = Puzzles.Any.create(puzzleDesc).orThrow();
-  const session = PuzzleSession.create(puzzle).orThrow();
-  return { puzzle, state: session.state };
-}

@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-import { Result, fail, succeed, Logging } from '@fgv/ts-utils';
+import { Result, fail, succeed, Logging, mapResults } from '@fgv/ts-utils';
 import { ICellState, Puzzle, PuzzleState, DefaultSudokuLogger } from '../common';
 import { ExplanationFormatter } from './explanations';
 import { HintRegistry } from './hintRegistry';
@@ -54,6 +54,7 @@ export class DefaultHintApplicator implements IHintApplicator {
    * @param logger - Optional logger for diagnostic output
    */
   public constructor(logger?: Logging.LogReporter<unknown>) {
+    /* c8 ignore next 1 - defense in depth */
     this._log = logger ?? DefaultSudokuLogger;
   }
 
@@ -65,22 +66,13 @@ export class DefaultHintApplicator implements IHintApplicator {
    * @returns Result indicating validation success or failure with details
    */
   public canApplyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void> {
-    // Check that all cell actions are valid
-    for (const action of hint.cellActions) {
+    const maxValue = Math.sqrt(puzzle.numRows * puzzle.numColumns);
+
+    // Validate all cell actions
+    const validations = hint.cellActions.map((action) => {
       // Only support set-value actions for now
       if (action.action !== 'set-value') {
         return fail(`Unsupported action type: ${action.action}`);
-      }
-
-      // Check that the cell exists and is empty
-      const cellResult = state.getCellContents(action.cellId);
-      if (cellResult.isFailure()) {
-        return fail(`Invalid cell ${action.cellId}: ${cellResult.message}`);
-      }
-
-      const cellContents = cellResult.value;
-      if (cellContents.value !== undefined) {
-        return fail(`Cell ${action.cellId} already has value ${cellContents.value}`);
       }
 
       // Validate the value to be set
@@ -88,13 +80,23 @@ export class DefaultHintApplicator implements IHintApplicator {
         return fail(`No value specified for set-value action on cell ${action.cellId}`);
       }
 
-      const maxValue = Math.sqrt(puzzle.numRows * puzzle.numColumns);
       if (action.value < 1 || action.value > maxValue) {
         return fail(`Invalid value ${action.value} for cell ${action.cellId} (must be 1-${maxValue})`);
       }
-    }
 
-    return succeed(undefined);
+      // Check that the cell exists and is empty
+      return state
+        .getCellContents(action.cellId)
+        .withErrorFormat((e) => `Invalid cell ${action.cellId}: ${e}`)
+        .onSuccess((cellContents) => {
+          if (cellContents.value !== undefined) {
+            return fail(`Cell ${action.cellId} already has value ${cellContents.value}`);
+          }
+          return succeed(undefined);
+        });
+    });
+
+    return mapResults(validations).onSuccess(() => succeed(undefined));
   }
 
   /**
@@ -114,6 +116,7 @@ export class DefaultHintApplicator implements IHintApplicator {
         if (action.action === 'set-value' && action.value !== undefined) {
           // Get current cell contents to preserve notes
           const cellResult = state.getCellContents(action.cellId);
+          /* c8 ignore next 3 - internal error should never happen in practice */
           if (cellResult.isFailure()) {
             return fail(`Failed to get cell contents: ${cellResult.message}`);
           }
@@ -175,40 +178,39 @@ export class HintSystem {
       ...config
     };
 
-    // Create registry
-    const registryResult = HintRegistry.create();
-    if (registryResult.isFailure()) {
-      return fail(`Failed to create hint registry: ${registryResult.message}`);
-    }
-    const registry = registryResult.value;
+    return HintRegistry.create()
+      .withErrorFormat((e) => `Failed to create hint registry: ${e}`)
+      .onSuccess((registry) => {
+        // Register naked singles provider if enabled
+        if (finalConfig.enableNakedSingles) {
+          const nakedResult = NakedSinglesProvider.create()
+            .withErrorFormat((e) => `Failed to create naked singles provider: ${e}`)
+            .onSuccess((provider) => registry.registerProvider(provider))
+            .withErrorFormat((e) => `Failed to register naked singles provider: ${e}`);
 
-    // Register providers based on configuration
-    if (finalConfig.enableNakedSingles) {
-      const nakedProvider = NakedSinglesProvider.create();
-      if (nakedProvider.isFailure()) {
-        return fail(`Failed to create naked singles provider: ${nakedProvider.message}`);
-      }
-      const registerResult = registry.registerProvider(nakedProvider.value);
-      if (registerResult.isFailure()) {
-        return fail(`Failed to register naked singles provider: ${registerResult.message}`);
-      }
-    }
+          /* c8 ignore next 3 - defensive coding: provider creation/registration should not fail */
+          if (nakedResult.isFailure()) {
+            return fail<HintSystem>(nakedResult.message);
+          }
+        }
 
-    if (finalConfig.enableHiddenSingles) {
-      const hiddenProvider = HiddenSinglesProvider.create();
-      if (hiddenProvider.isFailure()) {
-        return fail(`Failed to create hidden singles provider: ${hiddenProvider.message}`);
-      }
-      const registerResult = registry.registerProvider(hiddenProvider.value);
-      if (registerResult.isFailure()) {
-        return fail(`Failed to register hidden singles provider: ${registerResult.message}`);
-      }
-    }
+        // Register hidden singles provider if enabled
+        if (finalConfig.enableHiddenSingles) {
+          const hiddenResult = HiddenSinglesProvider.create()
+            .withErrorFormat((e) => `Failed to create hidden singles provider: ${e}`)
+            .onSuccess((provider) => registry.registerProvider(provider))
+            .withErrorFormat((e) => `Failed to register hidden singles provider: ${e}`);
 
-    // Create applicator
-    const applicator = new DefaultHintApplicator();
+          /* c8 ignore next 3 - defensive coding: provider creation/registration should not fail */
+          if (hiddenResult.isFailure()) {
+            return fail<HintSystem>(hiddenResult.message);
+          }
+        }
 
-    return succeed(new HintSystem(registry, applicator, finalConfig));
+        // Create applicator and return complete system
+        const applicator = new DefaultHintApplicator(finalConfig.logger);
+        return succeed(new HintSystem(registry, applicator, finalConfig));
+      });
   }
 
   /**
@@ -298,6 +300,7 @@ export class HintSystem {
    * @returns Formatted explanation string
    */
   public formatHintExplanation(hint: IHint, level?: ExplanationLevel): string {
+    /* c8 ignore next 1 - ?? is defense in depth */
     const explanationLevel = level ?? this._config.defaultExplanationLevel ?? 'detailed';
     const explanation = hint.explanations.find((exp) => exp.level === explanationLevel);
 
@@ -316,16 +319,19 @@ export class HintSystem {
     const techniques = this._registry.getRegisteredTechniques();
     const techniqueNames = techniques.map((id: TechniqueId) => {
       const provider = this._registry.getProvider(id);
+      /* c8 ignore next 1 - fallback to id should not happen in practice */
       return provider.isSuccess() ? provider.value.techniqueName : id;
     });
 
+    /* c8 ignore next 1 - ?? is defense in depth */
+    const defaultExplanationLevel = this._config.defaultExplanationLevel ?? 'detailed';
     return [
       'Sudoku Hint System',
       '='.repeat(20),
       `Registered Techniques: ${techniques.length}`,
       ...techniqueNames.map((name: string) => `• ${name}`),
       '',
-      `Default Explanation Level: ${this._config.defaultExplanationLevel ?? 'detailed'}`
+      `Default Explanation Level: ${defaultExplanationLevel}`
     ].join('\n');
   }
 
@@ -361,6 +367,7 @@ export class HintSystem {
 
       for (const hint of hints) {
         // Count by technique
+        /* c8 ignore next 1 - ?? is defense in depth */
         const techniqueCount = hintsByTechnique.get(hint.techniqueName) ?? 0;
         hintsByTechnique.set(hint.techniqueName, techniqueCount + 1);
 

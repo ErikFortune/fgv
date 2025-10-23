@@ -26,37 +26,30 @@ import '@fgv/ts-utils-jest';
 import {
   CageId,
   CellId,
-  IPuzzleDescription,
   Puzzle,
   PuzzleState,
-  PuzzleType
+  PuzzleType,
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS
 } from '../../../packlets/common';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('SudokuXPuzzle', () => {
-  const validSudokuXDescription: IPuzzleDescription = {
-    id: 'sudoku-x-test',
-    description: 'Sudoku X Test Puzzle',
-    type: 'sudoku-x' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: '4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1'
-  };
-
-  const emptySudokuXDescription: IPuzzleDescription = {
-    id: 'sudoku-x-empty',
-    description: 'Empty Sudoku X Puzzle',
-    type: 'sudoku-x' as PuzzleType,
-    level: 1,
-    rows: 9,
-    cols: 9,
-    cells: '.'.repeat(81)
-  };
+  const validSudokuXCells =
+    '4.....13....6.1.....7..29...76.....2....3..9.9.1....577...1.6..3...5.7...4......1';
+  const emptySudokuXCells = '.'.repeat(81);
 
   describe('SudokuXPuzzle.create', () => {
     test('should create a valid Sudoku X puzzle successfully', () => {
-      expect(Puzzles.SudokuX.create(validSudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'sudoku-x-test',
+          description: 'Sudoku X Test Puzzle',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells: validSudokuXCells
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.id).toBe('sudoku-x-test');
         expect(puzzle.description).toBe('Sudoku X Test Puzzle');
         expect(puzzle.type).toBe('sudoku-x');
@@ -66,7 +59,15 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should create empty Sudoku X puzzle successfully', () => {
-      expect(Puzzles.SudokuX.create(emptySudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'sudoku-x-empty',
+          description: 'Empty Sudoku X Puzzle',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells: emptySudokuXCells
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.id).toBe('sudoku-x-empty');
         expect(puzzle.type).toBe('sudoku-x');
         expect(puzzle.numRows).toBe(9);
@@ -75,26 +76,102 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should fail for non-sudoku-x puzzle type', () => {
-      const invalidPuzzle = { ...validSudokuXDescription, type: 'sudoku' as PuzzleType };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/unsupported type sudoku/i);
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'sudoku-x-test',
+          description: 'Sudoku X Test Puzzle',
+          type: 'sudoku' as PuzzleType,
+          level: 1,
+          cells: validSudokuXCells
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toFailWith(/unsupported type sudoku/i);
     });
 
     test('should fail for invalid dimensions', () => {
-      const invalidPuzzle = { ...validSudokuXDescription, rows: 8 };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/must be 9x9, got 8x9/i);
+      // Test with invalid dimensions that should fail validation
+      const invalidDimensions = {
+        cageWidthInCells: 0,
+        cageHeightInCells: 3,
+        boardWidthInCages: 3,
+        boardHeightInCages: 3
+      };
+      expect(
+        PuzzleDefinitionFactory.create(invalidDimensions, {
+          id: 'sudoku-x-test',
+          description: 'Sudoku X Test Puzzle',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells: validSudokuXCells
+        })
+      ).toFailWith(/cage dimensions must be positive/i);
+    });
+
+    test('should fail for non-square dimensions (6x4 grid)', () => {
+      // Sudoku X requires square grids (totalRows === totalColumns)
+      // This tests a 6x4 grid (2x3 cage, 3x2 board = 6 rows x 4 columns)
+      const nonSquareDimensions = {
+        cageWidthInCells: 2,
+        cageHeightInCells: 3,
+        boardWidthInCages: 2,
+        boardHeightInCages: 2
+      };
+      const cells = '.'.repeat(6 * 4); // 24 cells for 6x4 grid
+
+      expect(
+        PuzzleDefinitionFactory.create(nonSquareDimensions, {
+          id: 'sudoku-x-nonsquare',
+          description: 'Non-square Sudoku X Test',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toFailWith(/must be square.*6x4/i);
+    });
+
+    test('should fail for non-square dimensions (8x6 grid)', () => {
+      // Test another non-square configuration: 8x6 grid
+      // (2x4 cage, 3x2 board = 8 rows x 6 columns)
+      const nonSquareDimensions = {
+        cageWidthInCells: 3,
+        cageHeightInCells: 4,
+        boardWidthInCages: 2,
+        boardHeightInCages: 2
+      };
+      const cells = '.'.repeat(8 * 6); // 48 cells for 8x6 grid
+
+      expect(
+        PuzzleDefinitionFactory.create(nonSquareDimensions, {
+          id: 'sudoku-x-nonsquare-2',
+          description: 'Another Non-square Sudoku X Test',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toFailWith(/must be square.*8x6/i);
     });
 
     test('should fail for invalid cell count', () => {
-      const invalidPuzzle = { ...validSudokuXDescription, cells: '4.....13.' };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/expected 81 cells/i);
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'sudoku-x-test',
+          description: 'Sudoku X Test Puzzle',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells: '4.....13.'
+        })
+      ).toFailWith(/Expected 81 cells, got 9/i);
     });
 
     test('should fail for invalid cell values', () => {
-      const invalidPuzzle = {
-        ...validSudokuXDescription,
-        cells: validSudokuXDescription.cells.replace('4', 'X')
-      };
-      expect(Puzzles.SudokuX.create(invalidPuzzle)).toFailWith(/illegal value/i);
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'sudoku-x-test',
+          description: 'Sudoku X Test Puzzle',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells: validSudokuXCells.replace('4', 'X')
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toFailWith(/illegal value/i);
     });
   });
 
@@ -102,7 +179,14 @@ describe('SudokuXPuzzle', () => {
     let puzzle: Puzzle;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
     });
 
     test('should have X1 diagonal cage (top-left to bottom-right)', () => {
@@ -148,7 +232,14 @@ describe('SudokuXPuzzle', () => {
     let puzzle: Puzzle;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
     });
 
     test('should inherit all standard Sudoku row constraints', () => {
@@ -188,7 +279,14 @@ describe('SudokuXPuzzle', () => {
     let state: PuzzleState;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
 
@@ -288,7 +386,14 @@ describe('SudokuXPuzzle', () => {
     let state: PuzzleState;
 
     beforeEach(() => {
-      puzzle = Puzzles.SudokuX.create(validSudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-test',
+        description: 'Sudoku X Test Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: validSudokuXCells
+      }).orThrow();
+      puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       state = puzzle.initialState;
     });
 
@@ -341,7 +446,14 @@ describe('SudokuXPuzzle', () => {
 
   describe('integration with Any puzzle factory', () => {
     test('should create Sudoku X puzzle through Any factory', () => {
-      expect(Puzzles.Any.create(validSudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-test',
+        description: 'Sudoku X Test Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: validSudokuXCells
+      }).orThrow();
+      expect(Puzzles.Any.create(puzzleDefinition)).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.type).toBe('sudoku-x');
         expect(puzzle.id).toBe('sudoku-x-test');
 
@@ -352,9 +464,14 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should differentiate from standard Sudoku through Any factory', () => {
-      const standardPuzzle = { ...validSudokuXDescription, type: 'sudoku' as PuzzleType };
-
-      expect(Puzzles.Any.create(standardPuzzle)).toSucceedAndSatisfy((puzzle) => {
+      const standardPuzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-test',
+        description: 'Sudoku X Test Puzzle',
+        type: 'sudoku' as PuzzleType,
+        level: 1,
+        cells: validSudokuXCells
+      }).orThrow();
+      expect(Puzzles.Any.create(standardPuzzleDefinition)).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.type).toBe('sudoku');
 
         // Standard Sudoku should not have diagonal cages
@@ -362,7 +479,14 @@ describe('SudokuXPuzzle', () => {
         expect(puzzle.getCage('X2' as CageId)).toFailWith(/not found/i);
       });
 
-      expect(Puzzles.Any.create(validSudokuXDescription)).toSucceedAndSatisfy((puzzle) => {
+      const sudokuXPuzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-test',
+        description: 'Sudoku X Test Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: validSudokuXCells
+      }).orThrow();
+      expect(Puzzles.Any.create(sudokuXPuzzleDefinition)).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.type).toBe('sudoku-x');
 
         // Sudoku X should have diagonal cages
@@ -374,33 +498,46 @@ describe('SudokuXPuzzle', () => {
 
   describe('puzzle solving detection', () => {
     test('should detect solved state when all constraints are satisfied', () => {
-      // Use a known valid solved Sudoku X puzzle
-      const solvedSudokuX: IPuzzleDescription = {
-        id: 'solved-sudoku-x',
-        description: 'Solved Sudoku X',
-        type: 'sudoku-x' as PuzzleType,
-        level: 1,
-        rows: 9,
-        cols: 9,
-        // This is a valid complete Sudoku X grid
-        cells: '123456789456789123789123456234567891567891234891234567345678912678912345912345678'
-      };
+      // Use a known valid solved Sudoku X puzzle - This is a valid complete Sudoku X grid
+      const solvedCells = '123456789456789123789123456234567891567891234891234567345678912678912345912345678';
 
-      expect(Puzzles.SudokuX.create(solvedSudokuX)).toSucceedAndSatisfy((puzzle) => {
+      expect(
+        PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+          id: 'solved-sudoku-x',
+          description: 'Solved Sudoku X',
+          type: 'sudoku-x' as PuzzleType,
+          level: 1,
+          cells: solvedCells
+        }).onSuccess((puzzleDefinition) => Puzzles.SudokuX.create(puzzleDefinition))
+      ).toSucceedAndSatisfy((puzzle) => {
         expect(puzzle.checkIsSolved(puzzle.initialState)).toBe(true);
         expect(puzzle.checkIsValid(puzzle.initialState)).toBe(true);
       });
     });
 
     test('should not detect solved state when cells are empty', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       expect(puzzle.checkIsSolved(puzzle.initialState)).toBe(false);
       expect(puzzle.checkIsValid(puzzle.initialState)).toBe(true); // Empty is valid but not solved
     });
 
     test('should detect when diagonal constraints would be violated in completed grid', () => {
       // Test diagonal constraint validation by creating updates that violate diagonals
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       const state = puzzle.initialState;
 
       // Create a scenario where diagonal validation can be tested
@@ -416,7 +553,14 @@ describe('SudokuXPuzzle', () => {
 
   describe('performance and edge cases', () => {
     test('should handle rapid cell updates efficiently', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
       let currentState = puzzle.initialState;
 
       const startTime = Date.now();
@@ -440,7 +584,14 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should handle edge case cell coordinates correctly', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
 
       // Test corner cells
       const cornerCells = ['A1', 'A9', 'I1', 'I9'] as CellId[];
@@ -452,7 +603,14 @@ describe('SudokuXPuzzle', () => {
     });
 
     test('should maintain consistent cage memberships', () => {
-      const puzzle = Puzzles.SudokuX.create(emptySudokuXDescription).orThrow();
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
+        id: 'sudoku-x-empty',
+        description: 'Empty Sudoku X Puzzle',
+        type: 'sudoku-x' as PuzzleType,
+        level: 1,
+        cells: emptySudokuXCells
+      }).orThrow();
+      const puzzle = Puzzles.SudokuX.create(puzzleDefinition).orThrow();
 
       // Each cell should belong to exactly the expected number of cages
       // Regular cells: row + column + section = 3 cages

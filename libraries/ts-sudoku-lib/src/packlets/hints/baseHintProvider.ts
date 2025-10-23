@@ -100,11 +100,13 @@ export abstract class BaseHintProvider implements IHintProvider {
     explanations: readonly IHintExplanation[],
     confidence?: ConfidenceLevel
   ): IHint {
+    /* c8 ignore next 1 - defense in depth */
+    confidence = confidence ?? this.defaultConfidence;
     return {
       techniqueId: this.techniqueId,
       techniqueName: this.techniqueName,
       difficulty: this.difficulty,
-      confidence: confidence ?? this.defaultConfidence,
+      confidence,
       cellActions,
       relevantCells,
       explanations,

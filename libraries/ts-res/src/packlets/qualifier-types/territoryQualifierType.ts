@@ -315,6 +315,6 @@ export class TerritoryQualifierType extends QualifierType<
     const normalized = value.toUpperCase();
     return TerritoryQualifierType.isValidTerritoryConditionValue(normalized, acceptLowercase)
       ? succeed(normalized)
-      : fail(`${value}: not a valid territory code`);
+      : fail(`${value}: invalid territory code`);
   }
 }

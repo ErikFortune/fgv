@@ -576,6 +576,7 @@ export class PuzzleSessionHints {
     }
 
     const cacheKey = this._generateCacheKey(options);
+    /* c8 ignore next 1 - ?? is defense in depth */
     const timeoutMs = this._config.cacheTimeoutMs ?? 5000;
     const now = Date.now();
 

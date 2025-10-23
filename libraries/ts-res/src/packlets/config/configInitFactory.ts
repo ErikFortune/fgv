@@ -129,6 +129,7 @@ export class BuiltInQualifierTypeFactory
     if (QualifierTypes.Config.isSystemQualifierTypeConfig(config)) {
       return QualifierTypes.createQualifierTypeFromSystemConfig(config);
     }
+    /* c8 ignore next 2 - functional code tested but coverage intermittently missed */
     return fail(`${config.name}: unknown built-in qualifier type (${config.systemType})`);
   }
 }

@@ -48,11 +48,11 @@ describe('Context helpers', () => {
       );
     });
 
-    test('fails if qualifier is not a valid qualifier name', () => {
+    test('fails if qualifier is invalid qualifier name', () => {
       const qualifier = 'bogus qualifier';
       const value = 'en-US';
       expect(TsRes.Helpers.buildContextQualifierToken({ qualifier, value })).toFailWith(
-        /not a valid context qualifier token/i
+        /invalid context qualifier token/i
       );
     });
 
@@ -60,7 +60,7 @@ describe('Context helpers', () => {
       const qualifier = 'language';
       const value = '';
       expect(TsRes.Helpers.buildContextQualifierToken({ qualifier, value })).toFailWith(
-        /not a valid context qualifier token/i
+        /invalid context qualifier token/i
       );
     });
   });
@@ -94,7 +94,7 @@ describe('Context helpers', () => {
         { qualifier: 'language', value: 'en-US' },
         { qualifier: 'bad qualifier', value: 'US' }
       ];
-      expect(TsRes.Helpers.buildContextToken(parts)).toFailWith(/not a valid context qualifier token/i);
+      expect(TsRes.Helpers.buildContextToken(parts)).toFailWith(/invalid context qualifier token/i);
     });
   });
 
@@ -117,7 +117,7 @@ describe('Context helpers', () => {
     test('fails for invalid token', () => {
       const token = 'invalid token' as unknown as TsRes.ContextQualifierToken;
       expect(TsRes.Helpers.parseContextQualifierTokenParts(token)).toFailWith(
-        /not a valid context qualifier token/i
+        /invalid context qualifier token/i
       );
     });
   });
@@ -150,7 +150,7 @@ describe('Context helpers', () => {
 
     test('fails if any part is invalid', () => {
       const token = 'language=en-US|bad token' as unknown as TsRes.ContextToken;
-      expect(TsRes.Helpers.parseContextTokenParts(token)).toFailWith(/not a valid context qualifier token/i);
+      expect(TsRes.Helpers.parseContextTokenParts(token)).toFailWith(/invalid context qualifier token/i);
     });
   });
 });

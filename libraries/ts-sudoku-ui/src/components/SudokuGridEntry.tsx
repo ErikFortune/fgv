@@ -41,7 +41,8 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
   initialPuzzleDescription,
   onStateChange,
   onValidationErrors,
-  className
+  className,
+  forceLayoutMode
 }) => {
   const {
     session,
@@ -77,7 +78,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
   const [isCombinationsExplorerOpen, setIsCombinationsExplorerOpen] = useState(false);
 
   // Get responsive layout information
-  const responsiveLayout = useResponsiveLayout();
+  const responsiveLayout = useResponsiveLayout(forceLayoutMode);
 
   // Determine selected cage for killer sudoku
   const selectedCage = useMemo(() => {
@@ -288,7 +289,8 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${exported.id || 'sudoku-puzzle'}.json`;
+      /* c8 ignore next 1 - defensive in depth */
+      link.download = `${exported.id ?? 'sudoku-puzzle'}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -359,6 +361,16 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     return classes.join(' ');
   }, [className]);
 
+  // Check if we're in mobile mode with visible keypads (side-by-side or stacked)
+  const isMobileWithVisibleKeypads = useMemo(
+    () =>
+      /* c8 ignore next 3 - defense in depth */
+      responsiveLayout.deviceType === 'mobile' &&
+      (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
+        responsiveLayout.keypadLayoutMode === 'stacked'),
+    [responsiveLayout.deviceType, responsiveLayout.keypadLayoutMode]
+  );
+
   // Determine if we should show traditional input mode toggle - only when keypads are not visible
   const showTraditionalModeToggle =
     responsiveLayout.keypadLayoutMode === 'hidden' || responsiveLayout.keypadLayoutMode === 'overlay';
@@ -368,11 +380,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     const classes = ['flex items-start mx-auto'];
 
     // Optimize spacing for mobile with visible keypads
-    if (
-      responsiveLayout.deviceType === 'mobile' &&
-      (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
-        responsiveLayout.keypadLayoutMode === 'stacked')
-    ) {
+    if (isMobileWithVisibleKeypads) {
       classes.push('gap-2 p-2');
     } else {
       classes.push('gap-5 p-5');
@@ -391,18 +399,14 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     }
 
     return classes.join(' ');
-  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation, responsiveLayout.deviceType]);
+  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation, isMobileWithVisibleKeypads]);
 
   // Calculate game area classes
   const gameAreaClasses = useMemo(() => {
     const classes = ['flex flex-col items-center'];
 
     // Optimize spacing for mobile with visible keypads
-    if (
-      responsiveLayout.deviceType === 'mobile' &&
-      (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
-        responsiveLayout.keypadLayoutMode === 'stacked')
-    ) {
+    if (isMobileWithVisibleKeypads) {
       classes.push('gap-2');
     } else {
       classes.push('gap-5');
@@ -415,7 +419,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
     }
 
     return classes.join(' ');
-  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation, responsiveLayout.deviceType]);
+  }, [responsiveLayout.keypadLayoutMode, responsiveLayout.orientation, isMobileWithVisibleKeypads]);
 
   // Show error state if session failed to initialize
   if (error) {
@@ -446,36 +450,16 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
         {/* Game area container */}
         <div className={gameAreaClasses}>
           {/* Puzzle title - compact on mobile */}
-          <div
-            className={`text-center ${
-              responsiveLayout.deviceType === 'mobile' &&
-              (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
-                responsiveLayout.keypadLayoutMode === 'stacked')
-                ? 'mb-1'
-                : 'mb-3'
-            }`}
-          >
+          <div className={`text-center ${isMobileWithVisibleKeypads ? 'mb-1' : 'mb-3'}`}>
             <h2
               className={`m-0 font-semibold text-gray-900 ${
-                responsiveLayout.deviceType === 'mobile' &&
-                (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
-                  responsiveLayout.keypadLayoutMode === 'stacked')
-                  ? 'mb-1 text-lg'
-                  : 'mb-2 text-2xl'
+                isMobileWithVisibleKeypads ? 'mb-1 text-lg' : 'mb-2 text-2xl'
               }`}
             >
               {session.description}
             </h2>
             {session.id && (
-              <div
-                className={`text-gray-600 m-0 ${
-                  responsiveLayout.deviceType === 'mobile' &&
-                  (responsiveLayout.keypadLayoutMode === 'side-by-side' ||
-                    responsiveLayout.keypadLayoutMode === 'stacked')
-                    ? 'text-xs'
-                    : 'text-sm'
-                }`}
-              >
+              <div className={`text-gray-600 m-0 ${isMobileWithVisibleKeypads ? 'text-xs' : 'text-sm'}`}>
                 ID: {session.id}
               </div>
             )}
@@ -529,6 +513,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             selectedCells={selectedCells}
             inputMode={inputMode}
             puzzleType={initialPuzzleDescription?.type}
+            puzzleDimensions={session.puzzle.dimensions}
             onCellSelect={handleCellSelect}
             onLongPressToggle={handleLongPressToggle}
             onCellValueChange={handleCellValueChange}
@@ -598,6 +583,7 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
             hasCellSelection={selectedCells.length > 0}
             selectedCellCount={selectedCells.length}
             showOverlayToggle={false}
+            forceLayoutMode={forceLayoutMode}
           />
         )}
       </div>
@@ -622,9 +608,9 @@ export const SudokuGridEntry: React.FC<ISudokuGridEntryProps> = ({
       {initialPuzzleDescription?.type === 'killer-sudoku' && selectedCage && (
         <KillerCombinationsExplorer
           selectedCage={selectedCage}
-          puzzleId={initialPuzzleDescription.id || 'default'}
+          puzzleId={/* c8 ignore next 1 - defense in depth */ initialPuzzleDescription.id ?? 'default'}
           isOpen={isCombinationsExplorerOpen}
-          onClose={() => setIsCombinationsExplorerOpen(false)}
+          onClose={/* c8 ignore next 1 - defense in depth */ () => setIsCombinationsExplorerOpen(false)}
         />
       )}
     </div>

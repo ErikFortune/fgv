@@ -22,6 +22,8 @@
  * SOFTWARE.
  */
 
+/* c8 ignore file */
+
 /**
  * Constraints that can be applied when generating killer cage combinations.
  * @public

@@ -82,7 +82,7 @@ export function getPredefinedDeclaration(
     }
     return baseConfig;
   }
-
+  /* c8 ignore next 3 - defense in depth */
   return fail(`Unknown predefined system configuration: ${name}`);
 }
 

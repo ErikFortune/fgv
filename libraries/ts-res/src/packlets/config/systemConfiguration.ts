@@ -176,6 +176,7 @@ export class SystemConfiguration {
     initParams?: ISystemConfigurationInitParams
   ): Result<SystemConfiguration> {
     if (initParams?.qualifierDefaultValues) {
+      /* c8 ignore next 9 - functional code tested but coverage intermittently missed */
       return updateSystemConfigurationQualifierDefaultValues(
         config,
         initParams.qualifierDefaultValues

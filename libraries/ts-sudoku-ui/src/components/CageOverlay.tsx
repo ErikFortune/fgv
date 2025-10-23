@@ -23,33 +23,29 @@
  */
 
 import React, { useMemo, useEffect } from 'react';
-import { CellId } from '@fgv/ts-sudoku-lib';
+import { CellId, parseCellId } from '@fgv/ts-sudoku-lib';
 import { ICageOverlayProps } from '../types';
 import { CageSumIndicator } from './CageSumIndicator';
 import { CagePatternManager } from '../utils/CagePatternManager';
 import { CageLookupManager } from '../utils/CageLookupManager';
 import { useDiagnosticLogger } from '../contexts/DiagnosticLoggerContext';
+import { Logging } from '@fgv/ts-utils';
 
 /**
- * Helper to get cell position from CellId (inlined from getCellPosition)
+ * Helper to get cell position from CellId
  */
 function getTopLeftPosition(
   cellIds: CellId[],
-  log: ReturnType<typeof useDiagnosticLogger>
+  log: Logging.LogReporter<unknown, unknown>,
+  numRows: number,
+  numColumns: number
 ): { top: number; left: number } {
   if (cellIds.length === 0) return { top: 0, left: 0 };
 
   const positions = cellIds.map((cellId) => {
-    // CellId format is like "A1" where A is row (A=0, B=1, etc.) and 1 is column (1=0, 2=1, etc.)
-    if (cellId.length >= 2) {
-      const rowChar = cellId.charAt(0);
-      const colStr = cellId.substring(1);
-      const row = rowChar.charCodeAt(0) - 'A'.charCodeAt(0);
-      const col = parseInt(colStr, 10) - 1;
-
-      if (!isNaN(row) && !isNaN(col) && row >= 0 && row <= 8 && col >= 0 && col <= 8) {
-        return { row, col };
-      }
+    const parsed = parseCellId(cellId);
+    if (parsed && parsed.row >= 0 && parsed.row < numRows && parsed.col >= 0 && parsed.col < numColumns) {
+      return parsed;
     }
     // Fallback - should not happen with valid CellIds
     log.warn(`Invalid CellId format: ${cellId}`);
@@ -68,9 +64,8 @@ function getTopLeftPosition(
   });
 
   // Convert grid coordinates to percentage-based positioning
-  // Grid is 9x9, so each cell is ~11.11% wide and high
-  const cellWidthPercent = 100 / 9;
-  const cellHeightPercent = 100 / 9;
+  const cellWidthPercent = 100 / numColumns;
+  const cellHeightPercent = 100 / numRows;
 
   return {
     top: minRow * cellHeightPercent + 0.5, // Small offset from corner
@@ -82,7 +77,14 @@ function getTopLeftPosition(
  * Component for rendering cage boundaries and sum indicators in Killer Sudoku
  * @public
  */
-export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cellSize, className }) => {
+export const CageOverlay: React.FC<ICageOverlayProps> = ({
+  cages,
+  gridSize,
+  cellSize,
+  numRows = 9,
+  numColumns = 9,
+  className
+}) => {
   const log = useDiagnosticLogger();
 
   // Initialize managers once
@@ -134,19 +136,20 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
 
           // Render each cell with connected borders
           return cage.cellIds.map((cellId, cellIndex) => {
-            // Inline getCellPosition logic
+            // Parse cell position using centralized function
+            const parsed = parseCellId(cellId);
             let row = 0,
               col = 0;
-            if (cellId.length >= 2) {
-              const rowChar = cellId.charAt(0);
-              const colStr = cellId.substring(1);
-              row = rowChar.charCodeAt(0) - 'A'.charCodeAt(0);
-              col = parseInt(colStr, 10) - 1;
-              if (isNaN(row) || isNaN(col) || row < 0 || row > 8 || col < 0 || col > 8) {
-                log.warn(`Invalid CellId format: ${cellId}`);
-                row = 0;
-                col = 0;
-              }
+
+            if (
+              parsed &&
+              parsed.row >= 0 &&
+              parsed.row < numRows &&
+              parsed.col >= 0 &&
+              parsed.col < numColumns
+            ) {
+              row = parsed.row;
+              col = parsed.col;
             } else {
               log.warn(`Invalid CellId format: ${cellId}`);
             }
@@ -167,7 +170,7 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
             // Render connected border pattern
             return (
               <g
-                key={`${cage.id || index}-${cellIndex}`}
+                key={/* c8 ignore next 1 - defense in depth */ `${cage.id ?? index}-${cellIndex}`}
                 transform={`translate(${x}, ${y}) scale(${cellSize})`}
               >
                 <path
@@ -190,11 +193,11 @@ export const CageOverlay: React.FC<ICageOverlayProps> = ({ cages, gridSize, cell
       {/* Sum indicators */}
       {cages.map((cageInfo, index) => {
         const { cage, currentSum, isComplete, isValid } = cageInfo;
-        const position = getTopLeftPosition(cage.cellIds, log);
+        const position = getTopLeftPosition(cage.cellIds, log, numRows, numColumns);
 
         return (
           <CageSumIndicator
-            key={cage.id || index}
+            key={/* c8 ignore next 1 - defense in depth */ cage.id ?? index}
             cage={cage}
             currentSum={currentSum}
             isComplete={isComplete}

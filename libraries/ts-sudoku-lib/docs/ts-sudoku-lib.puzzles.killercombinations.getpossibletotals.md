@@ -11,7 +11,7 @@ Uses the existing totalsByCageSize constant to determine the valid range of tota
 **Signature:**
 
 ```typescript
-static getPossibleTotals(cageSize: number): Result<number[]>;
+static getPossibleTotals(cageSize: number, maxValue?: number): Result<number[]>;
 ```
 
 ## Parameters
@@ -45,6 +45,22 @@ number
 </td><td>
 
 The number of cells in the cage (must be 1-9)
+
+
+</td></tr>
+<tr><td>
+
+maxValue
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

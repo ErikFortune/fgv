@@ -9,5 +9,5 @@ All puzzles in the collection.
 **Signature:**
 
 ```typescript
-readonly puzzles: readonly IPuzzleDescription[];
+readonly puzzles: readonly Files.Model.IPuzzleFileData[];
 ```

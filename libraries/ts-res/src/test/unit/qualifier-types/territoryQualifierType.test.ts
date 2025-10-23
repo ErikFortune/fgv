@@ -93,10 +93,10 @@ describe('TerritoryQualifierType', () => {
       });
     });
 
-    test('fails if the name is not a valid qualifier type name', () => {
+    test('fails if the name is invalid qualifier type name', () => {
       expect(
         TsRes.QualifierTypes.TerritoryQualifierType.create({
-          name: 'not a valid name'
+          name: 'invalid name'
         })
       ).toFailWith(/invalid qualifier type name/i);
     });
@@ -109,7 +109,7 @@ describe('TerritoryQualifierType', () => {
           index: 10,
           allowedTerritories: [...validTerritories, ...invalidTerritories]
         })
-      ).toFailWith(/not a valid territory/i);
+      ).toFailWith(/invalid territory/i);
     });
   });
 
@@ -465,13 +465,13 @@ describe('TerritoryQualifierType', () => {
 
       test('fails for invalid territories', () => {
         expect(TsRes.QualifierTypes.TerritoryQualifierType.toTerritoryConditionValue('419')).toFailWith(
-          /not a valid territory code/i
+          /invalid territory code/i
         );
         expect(TsRes.QualifierTypes.TerritoryQualifierType.toTerritoryConditionValue('USA')).toFailWith(
-          /not a valid territory code/i
+          /invalid territory code/i
         );
         expect(TsRes.QualifierTypes.TerritoryQualifierType.toTerritoryConditionValue('mexico')).toFailWith(
-          /not a valid territory code/i
+          /invalid territory code/i
         );
       });
     });
@@ -500,14 +500,14 @@ describe('TerritoryQualifierType', () => {
 
       test('fails for invalid territories', () => {
         expect(TsRes.QualifierTypes.TerritoryQualifierType.toTerritoryConditionValue('419', true)).toFailWith(
-          /not a valid territory code/i
+          /invalid territory code/i
         );
         expect(TsRes.QualifierTypes.TerritoryQualifierType.toTerritoryConditionValue('USA', true)).toFailWith(
-          /not a valid territory code/i
+          /invalid territory code/i
         );
         expect(
           TsRes.QualifierTypes.TerritoryQualifierType.toTerritoryConditionValue('mexico', true)
-        ).toFailWith(/not a valid territory code/i);
+        ).toFailWith(/invalid territory code/i);
       });
     });
   });
@@ -643,10 +643,10 @@ describe('TerritoryQualifierType', () => {
       );
     });
 
-    test('fails if the name is not a valid qualifier type name', () => {
+    test('fails if the name is invalid qualifier type name', () => {
       const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ITerritoryQualifierTypeConfig> =
         {
-          name: 'not a valid name',
+          name: 'invalid name',
           systemType: 'territory'
         };
 
@@ -666,7 +666,7 @@ describe('TerritoryQualifierType', () => {
         };
 
       expect(TsRes.QualifierTypes.TerritoryQualifierType.createFromConfig(config)).toFailWith(
-        /not a valid territory code/i
+        /invalid territory code/i
       );
     });
 

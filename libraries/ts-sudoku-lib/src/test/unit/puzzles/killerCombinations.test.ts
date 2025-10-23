@@ -31,9 +31,12 @@ import {
   PuzzleState,
   PuzzleSession,
   totalsByCageSize,
-  IPuzzleDescription
+  PuzzleDefinitionFactory,
+  STANDARD_CONFIGS
 } from '../../../packlets/common';
-import { KillerCombinations, IKillerConstraints } from '../../../packlets/puzzles';
+import { KillerCombinations } from '../../../packlets/puzzles';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as KillerCombinationsTypes from '../../../packlets/puzzles/killerCombinationsTypes';
 import * as Puzzles from '../../../packlets/puzzles';
 
 describe('KillerCombinations', () => {
@@ -52,35 +55,32 @@ describe('KillerCombinations', () => {
   } {
     const { cageTotal, prefilledValues = new Map(), cageId = 'A' } = config;
 
-    // Use the actual working killer puzzle from the existing tests
-    // and replace the first cage with our test parameters
-    const basePuzzleDesc: IPuzzleDescription = {
+    const cells = [
+      'ABCCCDDDE',
+      'ABFFGGGDE',
+      'HIJKGGLLL',
+      'HIJKMGLNN',
+      'HOPPMQQNR',
+      'OOSTMUVWR',
+      'SSSTTUVWR',
+      'XYTTTZZab',
+      'XYYYcccab',
+      `|${cageId}${cageTotal
+        .toString()
+        .padStart(
+          2,
+          '0'
+        )},B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
+    ].join('');
+
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
       id: 'test-killer',
       description: 'Test killer sudoku puzzle',
       type: 'killer-sudoku',
       level: 1,
-      rows: 9,
-      cols: 9,
-      cells: [
-        'ABCCCDDDE',
-        'ABFFGGGDE',
-        'HIJKGGLLL',
-        'HIJKMGLNN',
-        'HOPPMQQNR',
-        'OOSTMUVWR',
-        'SSSTTUVWR',
-        'XYTTTZZab',
-        'XYYYcccab',
-        `|${cageId}${cageTotal
-          .toString()
-          .padStart(
-            2,
-            '0'
-          )},B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
-      ].join('')
-    };
-
-    const puzzle = Puzzles.Killer.create(basePuzzleDesc).orThrow();
+      cells
+    }).orThrow();
+    const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
     const session = PuzzleSession.create(puzzle).orThrow();
 
     // Apply prefilled values if provided
@@ -103,29 +103,33 @@ describe('KillerCombinations', () => {
     state: PuzzleState;
     cage: ICage;
   } {
-    // Use an existing working killer puzzle for these specific test cases
-    const existingPuzzleDesc: IPuzzleDescription = {
+    const cells = [
+      'ABCCCDDDE',
+      'ABFGGGGDE',
+      'HIJKGGLLL',
+      'HIJKMGLNN',
+      'HOPPMQQNR',
+      'OOSTMUVWR',
+      'SSSTTUVWR',
+      'XYTTTZZab',
+      'XYYYcccab',
+      `|A${total
+        .toString()
+        .padStart(
+          2,
+          '0'
+        )},B09,C09,D20,E16,F09,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11`
+    ].join('');
+
+    const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
       id: 'test-killer',
       description: 'Test killer sudoku puzzle',
       type: 'killer-sudoku',
       level: 1,
-      rows: 9,
-      cols: 9,
-      cells: [
-        'ABCCCDDDE',
-        'ABFFGGGDE',
-        'HIJKGGLLL',
-        'HIJKMGLNN',
-        'HOPPMQQNR',
-        'OOSTMUVWR',
-        'SSSTTUVWR',
-        'XYTTTZZab',
-        'XYYYcccab',
-        '|A11,B09,C09,D20,E16,F17,G30,H17,I13,J09,K11,L16,M16,N11,O16,P07,Q11,R10,S14,T39,U08,V17,W16,X06,Y26,Z06,a09,b09,c11'
-      ].join('')
-    };
+      cells
+    }).orThrow();
 
-    const puzzle = Puzzles.Killer.create(existingPuzzleDesc).orThrow();
+    const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
     const session = PuzzleSession.create(puzzle).orThrow();
 
     // Apply contained values if provided
@@ -233,7 +237,7 @@ describe('KillerCombinations', () => {
     });
 
     test('should handle excluded numbers constraint', () => {
-      const constraints: IKillerConstraints = { excludedNumbers: [1, 2] };
+      const constraints: KillerCombinationsTypes.IKillerConstraints = { excludedNumbers: [1, 2] };
 
       expect(KillerCombinations.getCombinations(2, 10, constraints)).toSucceedAndSatisfy((combinations) => {
         expect(combinations).toEqual([
@@ -249,7 +253,7 @@ describe('KillerCombinations', () => {
     });
 
     test('should handle required numbers constraint', () => {
-      const constraints: IKillerConstraints = { requiredNumbers: [9] };
+      const constraints: KillerCombinationsTypes.IKillerConstraints = { requiredNumbers: [9] };
 
       expect(KillerCombinations.getCombinations(3, 15, constraints)).toSucceedAndSatisfy((combinations) => {
         expect(combinations).toEqual([
@@ -264,7 +268,7 @@ describe('KillerCombinations', () => {
     });
 
     test('should handle both excluded and required constraints', () => {
-      const constraints: IKillerConstraints = {
+      const constraints: KillerCombinationsTypes.IKillerConstraints = {
         excludedNumbers: [1, 2],
         requiredNumbers: [9]
       };
@@ -284,19 +288,21 @@ describe('KillerCombinations', () => {
 
     test('should return empty array for impossible combinations', () => {
       // Impossible: required number conflicts with total
-      const constraints: IKillerConstraints = { requiredNumbers: [9] };
+      const constraints: KillerCombinationsTypes.IKillerConstraints = { requiredNumbers: [9] };
       expect(KillerCombinations.getCombinations(2, 5, constraints)).toSucceedWith([]);
 
       // Impossible: too many required numbers
-      const tooManyRequired: IKillerConstraints = { requiredNumbers: [1, 2, 3] };
+      const tooManyRequired: KillerCombinationsTypes.IKillerConstraints = { requiredNumbers: [1, 2, 3] };
       expect(KillerCombinations.getCombinations(2, 10, tooManyRequired)).toSucceedWith([]);
 
       // Impossible: excluded all possible numbers
-      const allExcluded: IKillerConstraints = { excludedNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9] };
+      const allExcluded: KillerCombinationsTypes.IKillerConstraints = {
+        excludedNumbers: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      };
       expect(KillerCombinations.getCombinations(2, 10, allExcluded)).toSucceedWith([]);
 
       // Edge case: required numbers exactly fill cage but wrong sum
-      const wrongSum: IKillerConstraints = { requiredNumbers: [1, 2] };
+      const wrongSum: KillerCombinationsTypes.IKillerConstraints = { requiredNumbers: [1, 2] };
       expect(KillerCombinations.getCombinations(2, 10, wrongSum)).toSucceedWith([]);
     });
 
@@ -317,19 +323,19 @@ describe('KillerCombinations', () => {
 
     test('should validate constraint parameters', () => {
       // Invalid excluded numbers
-      const invalidExcluded: IKillerConstraints = { excludedNumbers: [10] };
+      const invalidExcluded: KillerCombinationsTypes.IKillerConstraints = { excludedNumbers: [10] };
       expect(KillerCombinations.getCombinations(2, 10, invalidExcluded)).toFailWith(
         /excludedNumbers must contain integers between 1-9/i
       );
 
       // Invalid required numbers
-      const invalidRequired: IKillerConstraints = { requiredNumbers: [0] };
+      const invalidRequired: KillerCombinationsTypes.IKillerConstraints = { requiredNumbers: [0] };
       expect(KillerCombinations.getCombinations(2, 10, invalidRequired)).toFailWith(
         /requiredNumbers must contain integers between 1-9/i
       );
 
       // Conflicting constraints
-      const conflicting: IKillerConstraints = {
+      const conflicting: KillerCombinationsTypes.IKillerConstraints = {
         excludedNumbers: [5],
         requiredNumbers: [5]
       };
@@ -338,13 +344,13 @@ describe('KillerCombinations', () => {
       );
 
       // Duplicate numbers
-      const duplicateExcluded: IKillerConstraints = { excludedNumbers: [1, 1, 2] };
+      const duplicateExcluded: KillerCombinationsTypes.IKillerConstraints = { excludedNumbers: [1, 1, 2] };
       expect(KillerCombinations.getCombinations(2, 10, duplicateExcluded)).toFailWith(
         /excludedNumbers must not contain duplicates/i
       );
 
       // Duplicate required numbers
-      const duplicateRequired: IKillerConstraints = { requiredNumbers: [5, 5] };
+      const duplicateRequired: KillerCombinationsTypes.IKillerConstraints = { requiredNumbers: [5, 5] };
       expect(KillerCombinations.getCombinations(2, 10, duplicateRequired)).toFailWith(
         /requiredNumbers must not contain duplicates/i
       );
@@ -375,27 +381,26 @@ describe('KillerCombinations', () => {
   describe('getCellPossibilities', () => {
     test('should fail for non-killer cages', () => {
       // Create a real puzzle with a standard sudoku puzzle (has row cages)
-      const regularPuzzleDesc: IPuzzleDescription = {
+      const regularCells = [
+        '.........',
+        '9.46.7...',
+        '.768.41..',
+        '3.97.1.8.',
+        '7.8...3.1',
+        '.513.87.2',
+        '..75.261.',
+        '..54.32.8',
+        '.........'
+      ].join('');
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
         id: 'test-regular',
         description: 'Test regular sudoku puzzle',
         type: 'sudoku',
         level: 1,
-        rows: 9,
-        cols: 9,
-        cells: [
-          '.........',
-          '9.46.7...',
-          '.768.41..',
-          '3.97.1.8.',
-          '7.8...3.1',
-          '.513.87.2',
-          '..75.261.',
-          '..54.32.8',
-          '.........'
-        ].join('')
-      };
-
-      const puzzle = Puzzles.Any.create(regularPuzzleDesc).orThrow();
+        cells: regularCells
+      }).orThrow();
+      const puzzle = Puzzles.Any.create(puzzleDefinition).orThrow();
       const session = PuzzleSession.create(puzzle).orThrow();
 
       // Get a row cage (non-killer cage)
@@ -562,7 +567,7 @@ describe('KillerCombinations', () => {
 
     test('should maintain performance under complex scenarios', () => {
       // Test with multiple constraints and larger cages
-      const complexConstraints: IKillerConstraints = {
+      const complexConstraints: KillerCombinationsTypes.IKillerConstraints = {
         excludedNumbers: [1, 2, 3],
         requiredNumbers: [8, 9]
       };
@@ -634,23 +639,22 @@ describe('KillerCombinations', () => {
   describe('Real Puzzle Integration', () => {
     test('should work with actual killer sudoku puzzle structure', () => {
       // Test with a more realistic killer sudoku puzzle structure
-      const killerPuzzleDesc: IPuzzleDescription = {
+      const killerCells =
+        'AABBCCDDEAABBCCDDE' +
+        'FFGGHHIIEFFJJKKLLE' +
+        'MMJJKKLNNMMOOPPQNN' +
+        'RROOPPQSSRRTTUUVSS' +
+        'WWTTUUVXX' +
+        '|A15,B10,C12,D20,E17,F11,G09,H14,I13,J16,K12,L15,M20,N20,O13,P14,Q07,R11,S18,T21,U19,V10,W06,X09';
+
+      const puzzleDefinition = PuzzleDefinitionFactory.create(STANDARD_CONFIGS.puzzle9x9, {
         id: 'real-killer-test',
         description: 'Realistic killer sudoku test puzzle',
         type: 'killer-sudoku',
         level: 2,
-        rows: 9,
-        cols: 9,
-        cells:
-          'AABBCCDDEAABBCCDDE' +
-          'FFGGHHIIEFFJJKKLLE' +
-          'MMJJKKLNNMMOOPPQNN' +
-          'RROOPPQSSRRTTUUVSS' +
-          'WWTTUUVXX' +
-          '|A15,B10,C12,D20,E17,F11,G09,H14,I13,J16,K12,L15,M20,N20,O13,P14,Q07,R11,S18,T21,U19,V10,W06,X09'
-      };
-
-      const puzzle = Puzzles.Killer.create(killerPuzzleDesc).orThrow();
+        cells: killerCells
+      }).orThrow();
+      const puzzle = Puzzles.Killer.create(puzzleDefinition).orThrow();
       const session = PuzzleSession.create(puzzle).orThrow();
 
       // Test with cage 'KA' (15 total, should be 2 cells based on pattern)
@@ -704,7 +708,7 @@ describe('KillerCombinations', () => {
         /Total 100 is invalid for cage size 3.*valid range.*6-24/
       );
 
-      const badConstraints: IKillerConstraints = { excludedNumbers: [15] };
+      const badConstraints: KillerCombinationsTypes.IKillerConstraints = { excludedNumbers: [15] };
       expect(KillerCombinations.getCombinations(2, 10, badConstraints)).toFailWith(
         /excludedNumbers must contain integers between 1-9, got 15/
       );
@@ -712,12 +716,16 @@ describe('KillerCombinations', () => {
 
     test('should handle malformed constraint objects', () => {
       // Test various malformed constraint scenarios
-      const nonArrayExcluded = { excludedNumbers: 5 } as unknown as IKillerConstraints;
+      const nonArrayExcluded = {
+        excludedNumbers: 5
+      } as unknown as KillerCombinationsTypes.IKillerConstraints;
       expect(KillerCombinations.getCombinations(2, 10, nonArrayExcluded)).toFailWith(
         /excludedNumbers must be an array/i
       );
 
-      const nonArrayRequired = { requiredNumbers: 'invalid' } as unknown as IKillerConstraints;
+      const nonArrayRequired = {
+        requiredNumbers: 'invalid'
+      } as unknown as KillerCombinationsTypes.IKillerConstraints;
       expect(KillerCombinations.getCombinations(2, 10, nonArrayRequired)).toFailWith(
         /requiredNumbers must be an array/i
       );

@@ -26,6 +26,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import '@fgv/ts-utils-jest';
 import { usePuzzleSession } from '../../../hooks/usePuzzleSession';
 import { CellId } from '@fgv/ts-sudoku-lib';
+import { createPuzzleDefinition } from '../../../utils/puzzleDefinitionHelper';
 
 // TODO: This test suite causes OOM - needs investigation into hook implementation
 describe.skip('usePuzzleSession - Notes Functionality', () => {
@@ -248,15 +249,17 @@ describe.skip('usePuzzleSession - Notes Functionality', () => {
 
       // Test with invalid puzzle description to get null session
       const { result: nullSessionResult } = renderHook(() =>
-        usePuzzleSession({
-          id: 'invalid',
-          description: 'Invalid Puzzle',
-          type: 'sudoku' as const,
-          level: 1,
-          rows: 0, // Invalid rows
-          cols: 0, // Invalid cols
-          cells: ''
-        })
+        usePuzzleSession(
+          createPuzzleDefinition({
+            id: 'invalid',
+            description: 'Invalid Puzzle',
+            type: 'sudoku' as const,
+            level: 1,
+            totalRows: 1, // Minimum valid rows
+            totalColumns: 1, // Minimum valid cols
+            cells: '.'
+          })
+        )
       );
 
       // These should not throw errors when session is null/invalid

@@ -29,13 +29,19 @@ import { IKillerConstraints } from '../killerCombinationsTypes';
  */
 export class CombinationGenerator {
   /**
-   * Generates all possible combinations of unique numbers 1-9 that sum to the target total.
+   * Generates all possible combinations of unique numbers that sum to the target total.
    * @param cageSize - Number of cells in the cage
    * @param total - Target sum
    * @param constraints - Optional constraints on included/excluded numbers
+   * @param maxValue - Maximum value allowed in cells (defaults to 9)
    * @returns Array of combinations, each sorted in ascending order
    */
-  public static generate(cageSize: number, total: number, constraints?: IKillerConstraints): number[][] {
+  public static generate(
+    cageSize: number,
+    total: number,
+    constraints?: IKillerConstraints,
+    maxValue: number = 9
+  ): number[][] {
     const results: number[][] = [];
     const excludedSet = new Set(constraints?.excludedNumbers ?? []);
     const requiredNumbers = constraints?.requiredNumbers ?? [];
@@ -58,7 +64,7 @@ export class CombinationGenerator {
 
     if (remainingSize === 0) {
       // Only required numbers should be present
-      /* c8 ignore next 2 - edge case: required numbers fill cage but sum doesn't match (tested via KillerCombinations) */
+      /* c8 ignore next 3 - edge case: required numbers fill cage but sum doesn't match (tested via KillerCombinations) */
       if (remainingTotal === 0) {
         return [Array.from(requiredNumbers).sort()];
       }
@@ -67,7 +73,7 @@ export class CombinationGenerator {
 
     // Generate combinations for the remaining slots
     const availableNumbers: number[] = [];
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= maxValue; i++) {
       if (!excludedSet.has(i) && !requiredSet.has(i)) {
         availableNumbers.push(i);
       }

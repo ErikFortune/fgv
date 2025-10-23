@@ -136,22 +136,24 @@ function determineKeypadLayoutMode(
   if (deviceType === 'tablet') {
     return orientation === 'portrait' ? 'side-by-side' : 'stacked';
   }
-
+  /* c8 ignore next 2 - defense in depth: all device types are explicitly handled above */
   return 'overlay';
 }
 
 /**
  * Hook to detect responsive layout information for optimal keypad display
+ * @param forceLayoutMode - Optional layout mode override for testing
  * @public
  */
-export function useResponsiveLayout(): IResponsiveLayoutInfo {
+export function useResponsiveLayout(forceLayoutMode?: KeypadLayoutMode): IResponsiveLayoutInfo {
   const [layoutInfo, setLayoutInfo] = useState<IResponsiveLayoutInfo>(() => {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const isTouchDevice = detectTouchSupport();
     const orientation: ScreenOrientation = width > height ? 'landscape' : 'portrait';
     const deviceType = determineDeviceType(width, height, isTouchDevice);
-    const keypadLayoutMode = determineKeypadLayoutMode(deviceType, orientation, width, height, isTouchDevice);
+    const keypadLayoutMode =
+      forceLayoutMode ?? determineKeypadLayoutMode(deviceType, orientation, width, height, isTouchDevice);
 
     return {
       deviceType,
@@ -167,6 +169,11 @@ export function useResponsiveLayout(): IResponsiveLayoutInfo {
   });
 
   useEffect(() => {
+    // Don't set up listeners if layout mode is forced
+    if (forceLayoutMode) {
+      return;
+    }
+
     function updateLayoutInfo(): void {
       const width = window.innerWidth;
       const height = window.innerHeight;
@@ -210,7 +217,7 @@ export function useResponsiveLayout(): IResponsiveLayoutInfo {
       window.removeEventListener('resize', updateLayoutInfo);
       window.removeEventListener('orientationchange', updateLayoutInfo);
     };
-  }, []);
+  }, [forceLayoutMode]);
 
   return layoutInfo;
 }

@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-readonly [IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)<!-- -->\[\]
+readonly [Files.Model.IPuzzleFileData](./ts-sudoku-lib.files.model.ipuzzlefiledata.md)<!-- -->\[\]
 
 
 </td><td>

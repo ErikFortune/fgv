@@ -259,6 +259,25 @@ string
 </td></tr>
 <tr><td>
 
+[dimensions](./ts-sudoku-lib.puzzle.dimensions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IPuzzleDefinition](./ts-sudoku-lib.ipuzzledefinition.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [id?](./ts-sudoku-lib.puzzle.id.md)
 
 

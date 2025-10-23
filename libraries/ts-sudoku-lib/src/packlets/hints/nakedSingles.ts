@@ -23,7 +23,7 @@
  */
 
 import { Result, succeed } from '@fgv/ts-utils';
-import { CellId, Ids, Puzzle, PuzzleState } from '../common';
+import { CellId, Ids, Puzzle, PuzzleState, parseCellId } from '../common';
 import { BaseHintProvider } from './baseHintProvider';
 import { ConfidenceLevels, IHint, IHintGenerationOptions, TechniqueIds } from './types';
 
@@ -84,7 +84,7 @@ export class NakedSinglesProvider extends BaseHintProvider {
         // A naked single has exactly one candidate
         if (candidates.length === 1) {
           const value = candidates[0];
-          const hint = this._createNakedSingleHint(cellId, value, state);
+          const hint = this._createNakedSingleHint(cellId, value, state, puzzle);
           hints.push(hint);
         }
       }
@@ -100,12 +100,12 @@ export class NakedSinglesProvider extends BaseHintProvider {
    * @param state - The current puzzle state
    * @returns A complete hint for this naked single
    */
-  private _createNakedSingleHint(cellId: CellId, value: number, state: PuzzleState): IHint {
+  private _createNakedSingleHint(cellId: CellId, value: number, state: PuzzleState, puzzle: Puzzle): IHint {
     // Create cell action to set the value
     const cellAction = this.createCellAction(cellId, 'set-value', value, `Only possible value for this cell`);
 
     // Find related cells that eliminate other candidates
-    const relatedCells = this._findRelatedCells(cellId, value, state);
+    const relatedCells = this._findRelatedCells(cellId, value, state, puzzle);
 
     // Create relevant cells grouping
     const relevantCells = this.createRelevantCells(
@@ -146,14 +146,14 @@ export class NakedSinglesProvider extends BaseHintProvider {
         'educational',
         'Understanding Naked Singles',
         `A naked single occurs when a cell has only one possible value due to Sudoku's fundamental rules. ` +
-          `In cell ${cellId}, the value ${value} is the only number from 1-9 that doesn't already appear in the ` +
-          `same row, column, or 3x3 box. This makes it a "naked" single because the solution is immediately visible.`,
+          `In cell ${cellId}, the value ${value} is the only number from 1-${puzzle.dimensions.maxValue} that doesn't already appear in the ` +
+          `same row, column, or section. This makes it a "naked" single because the solution is immediately visible.`,
         [
           `Locate cell ${cellId} in the grid`,
-          `Scan the row containing ${cellId} and note which numbers 1-9 are already placed`,
-          `Scan the column containing ${cellId} and note which numbers 1-9 are already placed`,
-          `Scan the 3x3 box containing ${cellId} and note which numbers 1-9 are already placed`,
-          `Combine all the "used" numbers from row, column, and box`,
+          `Scan the row containing ${cellId} and note which numbers 1-${puzzle.dimensions.maxValue} are already placed`,
+          `Scan the column containing ${cellId} and note which numbers 1-${puzzle.dimensions.maxValue} are already placed`,
+          `Scan the section containing ${cellId} and note which numbers 1-${puzzle.dimensions.maxValue} are already placed`,
+          `Combine all the "used" numbers from row, column, and section`,
           `The remaining unused number is ${value}, which must go in ${cellId}`,
           `Place ${value} in cell ${cellId}`
         ],
@@ -174,39 +174,30 @@ export class NakedSinglesProvider extends BaseHintProvider {
    * @param cellId - The cell to analyze
    * @param value - The value that will be placed
    * @param state - The current puzzle state
+   * @param puzzle - The puzzle for dimensions
    * @returns Array of cell IDs that are related to this naked single
    */
-  private _findRelatedCells(cellId: CellId, value: number, state: PuzzleState): CellId[] {
+  private _findRelatedCells(cellId: CellId, value: number, state: PuzzleState, puzzle: Puzzle): CellId[] {
     const relatedCells: CellId[] = [];
 
-    // Extract row and column from cellId using proper format (e.g., "A1" -> row=0, col=0)
-    // CellId format is [A-Z][0-9], where A-I represents rows 0-8 and 1-9 represents cols 0-8
-    const cellStr = cellId.toString();
-    if (cellStr.length !== 2) {
+    // Parse the cell ID to get row and column
+    const coords = parseCellId(cellId.toString());
+    /* c8 ignore next 3 - defensive coding: handles corrupted cell ID, impractical to test via public API */
+    if (!coords) {
       return relatedCells;
     }
 
-    const rowChar = cellStr.charCodeAt(0);
-    const colChar = cellStr.charCodeAt(1);
+    const { row, col } = coords;
+    const totalRows = puzzle.dimensions.totalRows;
+    const totalColumns = puzzle.dimensions.totalColumns;
+    const cageHeight = puzzle.dimensions.cageHeightInCells;
+    const cageWidth = puzzle.dimensions.cageWidthInCells;
 
-    // Validate format and extract coordinates
-    if (
-      rowChar < 'A'.charCodeAt(0) ||
-      rowChar > 'I'.charCodeAt(0) ||
-      colChar < '1'.charCodeAt(0) ||
-      colChar > '9'.charCodeAt(0)
-    ) {
-      return relatedCells;
-    }
-
-    const row = rowChar - 'A'.charCodeAt(0); // A=0, B=1, ..., I=8
-    const col = colChar - '1'.charCodeAt(0); // 1=0, 2=1, ..., 9=8
-
-    // Find cells in the same row, column, and box that contain any value
+    // Find cells in the same row, column, and section that contain any value
     // These are the cells that constrain our naked single
 
     // Same row
-    for (let c = 0; c < 9; c++) {
+    for (let c = 0; c < totalColumns; c++) {
       if (c !== col) {
         const checkIdResult = Ids.cellId({ row, col: c });
         if (checkIdResult.isSuccess() && state.hasValue(checkIdResult.value)) {
@@ -216,7 +207,7 @@ export class NakedSinglesProvider extends BaseHintProvider {
     }
 
     // Same column
-    for (let r = 0; r < 9; r++) {
+    for (let r = 0; r < totalRows; r++) {
       if (r !== row) {
         const checkIdResult = Ids.cellId({ row: r, col });
         if (checkIdResult.isSuccess() && state.hasValue(checkIdResult.value)) {
@@ -225,12 +216,12 @@ export class NakedSinglesProvider extends BaseHintProvider {
       }
     }
 
-    // Same 3x3 box
-    const boxStartRow = Math.floor(row / 3) * 3;
-    const boxStartCol = Math.floor(col / 3) * 3;
+    // Same section/cage
+    const boxStartRow = Math.floor(row / cageHeight) * cageHeight;
+    const boxStartCol = Math.floor(col / cageWidth) * cageWidth;
 
-    for (let r = boxStartRow; r < boxStartRow + 3; r++) {
-      for (let c = boxStartCol; c < boxStartCol + 3; c++) {
+    for (let r = boxStartRow; r < boxStartRow + cageHeight; r++) {
+      for (let c = boxStartCol; c < boxStartCol + cageWidth; c++) {
         if (r !== row || c !== col) {
           const checkIdResult = Ids.cellId({ row: r, col: c });
           if (checkIdResult.isSuccess() && state.hasValue(checkIdResult.value)) {

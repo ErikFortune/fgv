@@ -80,7 +80,7 @@ describe('PuzzleState', () => {
     });
 
     test('returns false for an invalid cell', () => {
-      expect(state.hasValue('B9' as CellId)).toBe(false);
+      expect(state.hasValue('Z9' as CellId)).toBe(false);
     });
   });
 

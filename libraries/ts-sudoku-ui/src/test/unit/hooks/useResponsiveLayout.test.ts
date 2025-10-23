@@ -229,4 +229,102 @@ describe('useResponsiveLayout', () => {
     const { result: tabletLandscape } = renderHook(() => useResponsiveLayout());
     expect(tabletLandscape.current.keypadLayoutMode).toBe('overlay'); // Desktop size with touch
   });
+
+  test('should respect forceLayoutMode parameter', () => {
+    mockWindowDimensions(400, 800);
+    mockTouchSupport(true);
+
+    // Normal mode would be 'side-by-side' for mobile portrait
+    const { result: normal } = renderHook(() => useResponsiveLayout());
+    expect(normal.current.keypadLayoutMode).toBe('side-by-side');
+
+    // Force overlay mode
+    const { result: forced } = renderHook(() => useResponsiveLayout('overlay'));
+    expect(forced.current.keypadLayoutMode).toBe('overlay');
+
+    // Device type and other properties should still be detected normally
+    expect(forced.current.deviceType).toBe('mobile');
+    expect(forced.current.orientation).toBe('portrait');
+  });
+
+  test('should not update when forceLayoutMode is set', () => {
+    mockWindowDimensions(400, 800);
+    mockTouchSupport(true);
+
+    const { result } = renderHook(() => useResponsiveLayout('stacked'));
+
+    expect(result.current.keypadLayoutMode).toBe('stacked');
+
+    // Simulate resize - should NOT update when forced
+    act(() => {
+      mockWindowDimensions(1200, 900);
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    // Layout mode should remain forced, but dimensions should still be from initial state
+    expect(result.current.keypadLayoutMode).toBe('stacked');
+    expect(result.current.screenWidth).toBe(400); // Still the initial width
+  });
+
+  test('should detect tablet in landscape mode', () => {
+    mockWindowDimensions(1200, 900); // Landscape tablet size
+    mockTouchSupport(true);
+
+    const { result } = renderHook(() => useResponsiveLayout());
+
+    // At 1200x900 with touch, this is desktop size (> 1024) so it becomes 'desktop' with 'overlay'
+    // To get a true tablet, we need width between 768 and 1024
+    expect(result.current.deviceType).toBe('desktop');
+    expect(result.current.keypadLayoutMode).toBe('overlay');
+  });
+
+  test('should detect tablet landscape with correct dimensions', () => {
+    mockWindowDimensions(1000, 800); // Tablet width (768-1024) in landscape
+    mockTouchSupport(true);
+
+    const { result } = renderHook(() => useResponsiveLayout());
+
+    expect(result.current.deviceType).toBe('tablet');
+    expect(result.current.orientation).toBe('landscape');
+    expect(result.current.keypadLayoutMode).toBe('stacked');
+  });
+
+  test('should detect mobile landscape with sufficient height', () => {
+    mockWindowDimensions(700, 650); // Mobile width, landscape, height >= 600
+    mockTouchSupport(true);
+
+    const { result } = renderHook(() => useResponsiveLayout());
+
+    expect(result.current.deviceType).toBe('mobile');
+    expect(result.current.orientation).toBe('landscape');
+    expect(result.current.keypadLayoutMode).toBe('stacked'); // Height >= 600
+  });
+
+  test('should detect no space for dual keypads in narrow portrait', () => {
+    // Width < 480 and portrait (width < height)
+    // This tests that both OR conditions are false: width < 480 AND not landscape
+    mockWindowDimensions(400, 500);
+    mockTouchSupport(true);
+
+    const { result } = renderHook(() => useResponsiveLayout());
+
+    expect(result.current.hasSpaceForDualKeypads).toBe(false); // width < 480 && portrait
+    expect(result.current.orientation).toBe('portrait');
+    expect(result.current.screenWidth).toBe(400);
+    expect(result.current.screenHeight).toBe(500);
+  });
+
+  test('should detect no space in narrow landscape with insufficient height', () => {
+    // Width < 480, landscape, but height < 600
+    // This tests: width < 480 AND (landscape but height < 600)
+    mockWindowDimensions(470, 400);
+    mockTouchSupport(true);
+
+    const { result } = renderHook(() => useResponsiveLayout());
+
+    expect(result.current.hasSpaceForDualKeypads).toBe(false);
+    expect(result.current.orientation).toBe('landscape');
+    expect(result.current.screenWidth).toBe(470);
+    expect(result.current.screenHeight).toBe(400);
+  });
 });
