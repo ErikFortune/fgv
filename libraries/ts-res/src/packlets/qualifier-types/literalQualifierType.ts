@@ -295,6 +295,6 @@ export class LiteralQualifierType extends QualifierType<JsonCompatible<Config.IL
   public static toLiteralConditionValue(from: string): Result<QualifierConditionValue> {
     return LiteralQualifierType.isValidLiteralConditionValue(from)
       ? succeed(from)
-      : fail(`${from}: not a valid literal condition value.`);
+      : fail(`${from}: invalid literal condition value.`);
   }
 }

@@ -87,7 +87,7 @@ describe('DeltaGenerator - Delete merge type placeholder tests (expected to fail
     expect(resource).toSucceedAndSatisfy((builtResource) => {
       // This would check for a candidate with mergeMethod: 'delete' when implemented
       const deleteCandidates = builtResource.candidates.filter(
-        (c) => c.mergeMethod === ('delete' as unknown as 'replace') // Cast needed since 'delete' is not a valid merge method yet
+        (c) => c.mergeMethod === ('delete' as unknown as 'replace') // Cast needed since 'delete' is invalid merge method yet
       );
       expect(deleteCandidates).toHaveLength(1); // This will fail - delete merge type not implemented
     });

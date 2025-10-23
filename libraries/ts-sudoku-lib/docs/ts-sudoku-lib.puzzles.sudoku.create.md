@@ -7,7 +7,7 @@
 **Signature:**
 
 ```typescript
-static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
 ```
 
 ## Parameters
@@ -35,7 +35,7 @@ puzzle
 
 </td><td>
 
-[IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)
+[IPuzzleDefinition](./ts-sudoku-lib.ipuzzledefinition.md)
 
 
 </td><td>
@@ -46,5 +46,5 @@ puzzle
 
 **Returns:**
 
-Result&lt;Puzzle&gt;
+Result&lt;[Puzzle](./ts-sudoku-lib.puzzle.md)<!-- -->&gt;
 

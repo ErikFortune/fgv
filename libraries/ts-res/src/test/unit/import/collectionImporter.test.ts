@@ -385,13 +385,13 @@ describe('CollectionImporter', () => {
     test('fails if the importable is not a resource collection or tree', () => {
       const importable: TsRes.Import.Importable = { type: 'path', path: 'some/path' };
       const importResult = importer.import(importable, manager);
-      expect(importResult).toFailWith(/not a valid resource collection importable/i);
+      expect(importResult).toFailWith(/invalid resource collection importable/i);
     });
 
     test('fails for an unknown importable', () => {
       const importable: TsRes.Import.IImportable = { type: 'unknown' };
       const importResult = importer.import(importable, manager);
-      expect(importResult).toFailWith(/not a valid resource collection importable/i);
+      expect(importResult).toFailWith(/invalid resource collection importable/i);
     });
   });
 });

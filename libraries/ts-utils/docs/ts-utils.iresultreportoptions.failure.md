@@ -9,5 +9,5 @@ The level of reporting to be used for failure results. Default is 'error'.
 **Signature:**
 
 ```typescript
-failure?: MessageLogLevel;
+failure?: MessageLogLevel | IMessageReportDetail<TD>;
 ```

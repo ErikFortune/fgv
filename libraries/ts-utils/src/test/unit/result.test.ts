@@ -311,7 +311,7 @@ describe('Result module', () => {
         const result = success.report(reporter);
 
         expect(result).toBe(success); // should return self for chaining
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test value');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test value', undefined, undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -324,7 +324,7 @@ describe('Result module', () => {
 
         success.report(reporter, { success: 'info' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 42);
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 42, undefined, undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -337,7 +337,7 @@ describe('Result module', () => {
 
         success.report(reporter, { success: 'warning', failure: 'error' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test', undefined, undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -350,7 +350,7 @@ describe('Result module', () => {
 
         success.report(reporter, { success: undefined, failure: 'error' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test', undefined, undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -371,7 +371,7 @@ describe('Result module', () => {
         levels.forEach((level) => {
           reporter.reportSuccess.mockClear();
           success.report(reporter, { success: level });
-          expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test');
+          expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test', undefined, undefined);
         });
       });
 
@@ -402,7 +402,7 @@ describe('Result module', () => {
         expect(result).toBe(success);
       });
 
-      test('ignores message formatter option and does not call it', () => {
+      test('passes message formatter to reporter for success', () => {
         const reporter = {
           reportSuccess: jest.fn(),
           reportFailure: jest.fn()
@@ -410,11 +410,42 @@ describe('Result module', () => {
         const formatter = jest.fn((msg: string) => `formatted: ${msg}`);
         const success = succeed('test value');
 
-        success.report(reporter, { success: 'info', message: formatter });
+        success.report(reporter, { success: { level: 'info', message: formatter } });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 'test value');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 'test value', undefined, formatter);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
-        expect(formatter).not.toHaveBeenCalled();
+        expect(formatter).not.toHaveBeenCalled(); // The formatter is passed but not called by Result itself
+      });
+
+      test('supports success options with detail', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed('test value');
+
+        success.report(reporter, {
+          success: {
+            level: 'detail',
+            detail: 'test detail' as unknown
+          }
+        });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 'test value', undefined, undefined);
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
+      });
+
+      test('supports shorthand success option', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const success = succeed('test value');
+
+        success.report(reporter, { success: 'warning' });
+
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test value', undefined, undefined);
+        expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
     });
   });
@@ -734,10 +765,41 @@ describe('Result module', () => {
         const formatter = jest.fn((msg: string) => `formatted: ${msg}`);
         const failure = fail('test error');
 
-        failure.report(reporter, { message: formatter });
+        failure.report(reporter, { failure: { message: formatter } });
 
         expect(formatter).toHaveBeenCalledWith('test error');
         expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'formatted: test error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('supports failure options with detail', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('test error');
+
+        failure.report(reporter, {
+          failure: {
+            level: 'warning',
+            detail: 'test detail' as unknown
+          }
+        });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'test error');
+        expect(reporter.reportSuccess).not.toHaveBeenCalled();
+      });
+
+      test('supports shorthand failure option', () => {
+        const reporter = {
+          reportSuccess: jest.fn(),
+          reportFailure: jest.fn()
+        };
+        const failure = fail('test error');
+
+        failure.report(reporter, { failure: 'info' });
+
+        expect(reporter.reportFailure).toHaveBeenCalledWith('info', 'test error');
         expect(reporter.reportSuccess).not.toHaveBeenCalled();
       });
     });
@@ -892,7 +954,7 @@ describe('Result module', () => {
         const result = detailedSuccess.report(reporter);
 
         expect(result).toBe(detailedSuccess); // should return self for chaining
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test value', 'test detail');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test value', 'test detail', undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -905,7 +967,7 @@ describe('Result module', () => {
 
         detailedSuccess.report(reporter, { success: 'info' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 42, { key: 'value' });
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 42, { key: 'value' }, undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -918,7 +980,7 @@ describe('Result module', () => {
 
         detailedSuccess.report(reporter, { success: 'warning' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test value', undefined);
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test value', undefined, undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -931,7 +993,7 @@ describe('Result module', () => {
 
         detailedSuccess.report(reporter, { success: 'warning', failure: 'error' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test', 'detail');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('warning', 'test', 'detail', undefined);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
       });
 
@@ -952,7 +1014,7 @@ describe('Result module', () => {
         levels.forEach((level) => {
           reporter.reportSuccess.mockClear();
           detailedSuccess.report(reporter, { success: level });
-          expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test', 'detail');
+          expect(reporter.reportSuccess).toHaveBeenCalledWith(level, 'test', 'detail', undefined);
         });
       });
 
@@ -991,11 +1053,11 @@ describe('Result module', () => {
         const formatter = jest.fn((msg: string) => `formatted: ${msg}`);
         const detailedSuccess = succeedWithDetail('test', 'detail');
 
-        detailedSuccess.report(reporter, { success: 'detail', message: formatter });
+        detailedSuccess.report(reporter, { success: { level: 'detail', message: formatter } });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 'test', 'detail');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 'test', 'detail', formatter);
         expect(reporter.reportFailure).not.toHaveBeenCalled();
-        expect(formatter).not.toHaveBeenCalled();
+        expect(formatter).not.toHaveBeenCalled(); // The formatter is passed but not called by Result itself
       });
     });
 
@@ -1337,10 +1399,10 @@ describe('Result module', () => {
           reportSuccess: jest.fn(),
           reportFailure: jest.fn()
         };
-        const formatter = jest.fn((msg: string, detail?: string) => `${detail}: ${msg}!`);
+        const formatter = jest.fn((msg: string, detail?: unknown) => `${detail as string}: ${msg}!`);
         const detailedFailure = failWithDetail('test error', 'error detail');
 
-        detailedFailure.report(reporter, { message: formatter });
+        detailedFailure.report(reporter, { failure: { message: formatter } });
 
         expect(formatter).toHaveBeenCalledWith('test error', 'error detail');
         expect(reporter.reportFailure).toHaveBeenCalledWith(
@@ -1499,7 +1561,7 @@ describe('Result module', () => {
           .onSuccess(() => succeed('chained'));
 
         expect(result).toSucceedWith('chained');
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test', undefined, undefined);
       });
 
       test('Failure.report() enables method chaining', () => {
@@ -1527,7 +1589,7 @@ describe('Result module', () => {
           .onSuccess((value, detail) => succeedWithDetail(`${value}-${detail}`));
 
         expect(result).toSucceedWith('test-detail');
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test', 'detail');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test', 'detail', undefined);
       });
 
       test('DetailedFailure.report() enables method chaining', () => {
@@ -1559,7 +1621,7 @@ describe('Result module', () => {
 
         succeed('typed value').report(reporter, { success: 'info' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 'typed value');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', 'typed value', undefined, undefined);
       });
 
       test('DetailedResult.report() works with typed reporters including detail', () => {
@@ -1576,7 +1638,7 @@ describe('Result module', () => {
         succeedWithDetail(42, 'number detail').report(reporter, { success: 'detail' });
         failWithDetail<number, string>('error', 'error detail').report(reporter, { failure: 'warning' });
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 42, 'number detail');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('detail', 42, 'number detail', undefined);
         expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'error', 'error detail');
       });
     });
@@ -1593,8 +1655,8 @@ describe('Result module', () => {
         succeedWithDetail('', null as unknown as string).report(reporter);
         failWithDetail<string, string>('', undefined).report(reporter);
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', '');
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', '', null);
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', '', undefined, undefined);
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', '', null, undefined);
         expect(reporter.reportFailure).toHaveBeenCalledWith('error', '');
         expect(reporter.reportFailure).toHaveBeenCalledWith('error', '', undefined);
       });
@@ -1614,7 +1676,7 @@ describe('Result module', () => {
           { failure: 'warning' }
         );
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', complexValue, complexDetail);
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('info', complexValue, complexDetail, undefined);
         expect(reporter.reportFailure).toHaveBeenCalledWith('warning', 'complex error', complexDetail);
       });
 
@@ -1627,7 +1689,7 @@ describe('Result module', () => {
         succeed('test').report(reporter, {});
         fail('test').report(reporter, {});
 
-        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test');
+        expect(reporter.reportSuccess).toHaveBeenCalledWith('quiet', 'test', undefined, undefined);
         expect(reporter.reportFailure).toHaveBeenCalledWith('error', 'test');
       });
     });

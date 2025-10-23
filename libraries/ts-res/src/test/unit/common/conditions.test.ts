@@ -48,7 +48,7 @@ describe('common conditions', () => {
       identifier as TsRes.QualifierTypeName
     );
   });
-  test.each(invalidIdentifiers)('%s is not a valid qualifierName and qualifierTypeName', (identifier) => {
+  test.each(invalidIdentifiers)('%s is invalid qualifierName and qualifierTypeName', (identifier) => {
     expect(TsRes.Validate.isValidQualifierName(identifier)).toBe(false);
     expect(TsRes.Validate.isValidQualifierTypeName(identifier)).toBe(false);
     expect(TsRes.Validate.toQualifierName(identifier)).toFailWith(/invalid qualifier name/i);
@@ -68,7 +68,7 @@ describe('common conditions', () => {
     expect(TsRes.Validate.toDecisionIndex(index)).toSucceedWith(index as TsRes.DecisionIndex);
   });
 
-  test.each([-1, -10, -100])('%s is not a valid index for various condition collectibles', (index) => {
+  test.each([-1, -10, -100])('%s is invalid index for various condition collectibles', (index) => {
     expect(TsRes.Validate.isValidQualifierIndex(index)).toBe(false);
     expect(TsRes.Validate.isValidQualifierTypeIndex(index)).toBe(false);
     expect(TsRes.Validate.isValidConditionIndex(index)).toBe(false);
@@ -76,9 +76,9 @@ describe('common conditions', () => {
     expect(TsRes.Validate.isValidDecisionIndex(index)).toBe(false);
     expect(TsRes.Validate.toQualifierIndex(index)).toFailWith(/invalid qualifier index/i);
     expect(TsRes.Validate.toQualifierTypeIndex(index)).toFailWith(/invalid qualifier type index/i);
-    expect(TsRes.Validate.toConditionIndex(index)).toFailWith(/not a valid condition index/i);
-    expect(TsRes.Validate.toConditionSetIndex(index)).toFailWith(/not a valid condition set index/i);
-    expect(TsRes.Validate.toDecisionIndex(index)).toFailWith(/not a valid decision index/i);
+    expect(TsRes.Validate.toConditionIndex(index)).toFailWith(/invalid condition index/i);
+    expect(TsRes.Validate.toConditionSetIndex(index)).toFailWith(/invalid condition set index/i);
+    expect(TsRes.Validate.toDecisionIndex(index)).toFailWith(/invalid decision index/i);
   });
 
   test.each([TsRes.MinConditionPriority, TsRes.MaxConditionPriority, 100, 500, 700])(
@@ -90,10 +90,10 @@ describe('common conditions', () => {
   );
 
   test.each([TsRes.MinConditionPriority - 1, TsRes.MaxConditionPriority + 1, -100])(
-    '%s is not a valid priority',
+    '%s is invalid priority',
     (priority) => {
       expect(TsRes.Validate.isValidConditionPriority(priority)).toBe(false);
-      expect(TsRes.Validate.toConditionPriority(priority)).toFailWith(/not a valid priority/i);
+      expect(TsRes.Validate.toConditionPriority(priority)).toFailWith(/invalid priority/i);
     }
   );
 
@@ -105,9 +105,9 @@ describe('common conditions', () => {
     }
   );
 
-  test.each([-1.0, -0.001, 1.0001])('%s is not a valid QualifierMatchScore', (score) => {
+  test.each([-1.0, -0.001, 1.0001])('%s is invalid QualifierMatchScore', (score) => {
     expect(TsRes.Validate.isValidQualifierMatchScore(score)).toBe(false);
-    expect(TsRes.Validate.toQualifierMatchScore(score)).toFailWith(/not a valid match score/i);
+    expect(TsRes.Validate.toQualifierMatchScore(score)).toFailWith(/invalid match score/i);
   });
 
   test.each(['always', 'never', 'matches'])('%s is a valid ConditionOperator', (operator) => {
@@ -115,9 +115,9 @@ describe('common conditions', () => {
     expect(TsRes.Validate.toConditionOperator(operator)).toSucceedWith(operator as TsRes.ConditionOperator);
   });
 
-  test.each(['foo', 'bar', 'baz'])('%s is not a valid ConditionOperator', (operator) => {
+  test.each(['foo', 'bar', 'baz'])('%s is invalid ConditionOperator', (operator) => {
     expect(TsRes.Validate.isValidConditionOperator(operator)).toBe(false);
-    expect(TsRes.Validate.toConditionOperator(operator)).toFailWith(/not a valid condition operator/i);
+    expect(TsRes.Validate.toConditionOperator(operator)).toFailWith(/invalid condition operator/i);
   });
 
   test.each(['foo-[bar]', 'foo-matches-[bar]', 'some_qualifier-[some_value]@100'])(
@@ -129,10 +129,10 @@ describe('common conditions', () => {
   );
 
   test.each(['foo-[bar', 'foo-matches-bar', 'some_qualifier-[some_value]@10000'])(
-    '%s is not a valid condition key',
+    '%s is invalid condition key',
     (key) => {
       expect(TsRes.Validate.isValidConditionKey(key)).toBe(false);
-      expect(TsRes.Validate.toConditionKey(key)).toFailWith(/not a valid condition key/i);
+      expect(TsRes.Validate.toConditionKey(key)).toFailWith(/invalid condition key/i);
     }
   );
 
@@ -142,10 +142,10 @@ describe('common conditions', () => {
   });
 
   test.each(['foo:bar', 'foo_bar,bar=baz+', 'foo=bar,bar,baz:blarg'])(
-    '%s is not a valid condition token',
+    '%s is invalid condition token',
     (token) => {
       expect(TsRes.Validate.isValidConditionToken(token)).toBe(false);
-      expect(TsRes.Validate.toConditionSetToken(token)).toFailWith(/not a valid condition set token/i);
+      expect(TsRes.Validate.toConditionSetToken(token)).toFailWith(/invalid condition set token/i);
     }
   );
 
@@ -164,9 +164,9 @@ describe('common conditions', () => {
     'foo-[bar]+bar-[baz',
     'foo-[bar]+bar-[baz]+baz-[foo',
     'foo-[bar]@500+bar-[baz]@600+'
-  ])('%s is not a valid condition set key', (key) => {
+  ])('%s is invalid condition set key', (key) => {
     expect(TsRes.Validate.isValidConditionSetKey(key)).toBe(false);
-    expect(TsRes.Validate.toConditionSetKey(key)).toFailWith(/not a valid condition set key/i);
+    expect(TsRes.Validate.toConditionSetKey(key)).toFailWith(/invalid condition set key/i);
   });
 
   test.each(['somehash', 'hash1234', 'AnotherH'])('%s is a valid condition set hash', (hash) => {
@@ -175,10 +175,10 @@ describe('common conditions', () => {
   });
 
   test.each(['bad_char', 'bad char', 'short', 'too long by far@'])(
-    '%s is not a valid condition set hash',
+    '%s is invalid condition set hash',
     (hash) => {
       expect(TsRes.Validate.isValidConditionSetHash(hash)).toBe(false);
-      expect(TsRes.Validate.toConditionSetHash(hash)).toFailWith(/not a valid condition set hash/i);
+      expect(TsRes.Validate.toConditionSetHash(hash)).toFailWith(/invalid condition set hash/i);
     }
   );
 
@@ -191,10 +191,10 @@ describe('common conditions', () => {
   );
 
   test.each(['foo:bar', 'foo_bar,bar=baz+', 'foo=bar,bar,baz:blarg'])(
-    '%s is not a valid condition set token',
+    '%s is invalid condition set token',
     (token) => {
       expect(TsRes.Validate.isValidConditionSetToken(token)).toBe(false);
-      expect(TsRes.Validate.toConditionSetToken(token)).toFailWith(/not a valid condition set token/i);
+      expect(TsRes.Validate.toConditionSetToken(token)).toFailWith(/invalid condition set token/i);
     }
   );
 
@@ -207,10 +207,10 @@ describe('common conditions', () => {
   );
 
   test.each(['abcd1234+efgh5678+ijkl9012+', 'abcd1234+efgh5678+ijkl9012+mnop_456', 'abcd12345+efgh1234'])(
-    '%s is not a valid decision key',
+    '%s is invalid decision key',
     (key) => {
       expect(TsRes.Validate.isValidDecisionKey(key)).toBe(false);
-      expect(TsRes.Validate.toDecisionKey(key)).toFailWith(/not a valid decision key/i);
+      expect(TsRes.Validate.toDecisionKey(key)).toFailWith(/invalid decision key/i);
     }
   );
 
@@ -226,12 +226,10 @@ describe('common conditions', () => {
   );
 
   test.each(['language=', 'bad qualifier=value', 'language:en-US', '123invalid', 'language=value|another'])(
-    '%s is not a valid context qualifier token',
+    '%s is invalid context qualifier token',
     (token) => {
       expect(TsRes.Validate.isValidContextQualifierToken(token)).toBe(false);
-      expect(TsRes.Validate.toContextQualifierToken(token)).toFailWith(
-        /not a valid context qualifier token/i
-      );
+      expect(TsRes.Validate.toContextQualifierToken(token)).toFailWith(/invalid context qualifier token/i);
     }
   );
 
@@ -251,9 +249,9 @@ describe('common conditions', () => {
     'language=en-US|',
     'language=|territory=US',
     'language=en-US,territory=US' // comma separator instead of pipe
-  ])('%s is not a valid context token', (token) => {
+  ])('%s is invalid context token', (token) => {
     expect(TsRes.Validate.isValidContextToken(token)).toBe(false);
-    expect(TsRes.Validate.toContextToken(token)).toFailWith(/not a valid context token/i);
+    expect(TsRes.Validate.toContextToken(token)).toFailWith(/invalid context token/i);
   });
 
   // Qualifier Default Value Token tests
@@ -286,7 +284,7 @@ describe('common conditions', () => {
     '   ', // whitespace only
     'language:en-US', // colon instead of equals
     'language|en-US' // pipe instead of equals
-  ])('%s is not a valid qualifier default value token', (token) => {
+  ])('%s is invalid qualifier default value token', (token) => {
     expect(TsRes.Validate.isValidQualifierDefaultValueToken(token)).toBe(false);
     expect(TsRes.Validate.toQualifierDefaultValueToken(token)).toFailWith(
       /invalid qualifier default value token/i
@@ -316,10 +314,60 @@ describe('common conditions', () => {
     '|language=en-US', // leading pipe
     'language=en-US|   ', // whitespace token
     'language=en-US|1invalid=value' // qualifier starting with number
-  ])('%s is not a valid qualifier default values token', (token) => {
+  ])('%s is invalid qualifier default values token', (token) => {
     expect(TsRes.Validate.isValidQualifierDefaultValuesToken(token)).toBe(false);
     expect(TsRes.Validate.toQualifierDefaultValuesToken(token)).toFailWith(
       /invalid qualifier default value/i
     );
+  });
+
+  // QualifierContextValue tests
+  describe('QualifierContextValue validation', () => {
+    test.each([
+      'en-US',
+      'simple',
+      'with-hyphens',
+      'with_underscores',
+      'MixedCase',
+      'with.dots',
+      'with spaces',
+      'a',
+      '123',
+      'with,commas',
+      'with|pipes',
+      'with=equals',
+      'with:colons',
+      'with/slashes',
+      'with\\backslashes',
+      'with@symbols',
+      'with#hash',
+      'with$dollar',
+      'with%percent',
+      'with^caret',
+      'with&ampersand',
+      'with*asterisk',
+      'with(parens)',
+      'with[brackets]',
+      'with{braces}',
+      'with<angles>',
+      'with"quotes"',
+      "with'apostrophes",
+      'with`backticks',
+      'unicode-ñ-characters',
+      'emoji😀test',
+      '   leading-spaces',
+      'trailing-spaces   ',
+      '   both-spaces   '
+    ])('%s is a valid qualifier context value', (value) => {
+      expect(TsRes.Validate.isValidQualifierContextValue(value)).toBe(true);
+      expect(TsRes.Validate.toQualifierContextValue(value)).toSucceedWith(
+        value as TsRes.QualifierContextValue
+      );
+    });
+
+    test('empty string is invalid qualifier context value', () => {
+      expect(TsRes.Validate.isValidQualifierContextValue('')).toBe(false);
+      expect(TsRes.Validate.toQualifierContextValue('')).toFailWith(/invalid qualifier context value/i);
+    });
   });
 });

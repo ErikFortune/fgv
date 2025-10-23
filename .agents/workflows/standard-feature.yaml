@@ -23,24 +23,40 @@ phases:
     agent: tpm-agent
     mode: workflow
     required: true
+    type: gate
+    user_review: true # Requires user review of requirements before proceeding
     dependencies: [requirements_confirmation]
+    max_iterations: 5
+    description: 'Analyze and document detailed requirements for user review'
+
+  - phase: ux_design
+    agent: ux-designer
+    mode: workflow
+    required: false
+    condition: 'if_ui_component OR user_interface_changes'
+    dependencies: [requirements_analysis]
     max_iterations: 2
-    description: 'Analyze and document detailed requirements'
+    type: gate
+    user_review: true # Requires user review of UX design before proceeding
+    description: 'Design user experience with executive summary and detailed specifications'
 
   - phase: design
     agent: senior-developer
     mode: workflow
     required: true
-    dependencies: [requirements_analysis]
-    max_iterations: 2
-    description: 'Create architectural design and implementation plan'
+    type: gate
+    user_review: true # Requires user review of technical design before implementation
+    dependencies: [requirements_analysis, ux_design]
+    condition_dependencies: 'ux_design_if_applicable'
+    max_iterations: 5
+    description: 'Create architectural design and implementation plan for user review'
 
   - phase: implementation
     agent: code-monkey
     mode: workflow
     required: true
     dependencies: [design]
-    max_iterations: 3
+    max_iterations: 5
     description: 'Implement the designed solution'
 
   - phase: review
@@ -48,18 +64,35 @@ phases:
     mode: workflow
     required: true
     dependencies: [implementation]
-    can_run_in_parallel: [functional_test]
+    can_run_in_parallel: [] # Removed parallel with functional_test due to smoke test dependency
+    max_iterations: 5
+    includes_fixes: true # Review findings are fixed through iterations with code-monkey
+    description: 'Review code and iterate with fixes until quality standards are met'
+
+  - phase: manual_smoke_test
+    agent: task-master
+    mode: workflow
+    required: false
+    type: user_interaction
+    condition: 'if_ui_component OR user_interface_changes OR ux_design_completed'
+    dependencies: [review, ux_design]
     max_iterations: 2
-    description: 'Review code for quality and adherence to standards'
+    description: 'Coordinate manual smoke testing of UX functionality before comprehensive test creation'
+    smoke_test_checklist:
+      - visual_appearance_matches_design: 'User confirms visual design matches specifications'
+      - interaction_flows_work: 'User confirms all interaction flows work as expected'
+      - edge_cases_handled: 'User tests edge cases and error states'
+      - accessibility_verified: 'Basic accessibility checks performed'
+      - responsive_behavior: 'UI works correctly at different screen sizes'
 
   - phase: functional_test
     agent: sdet-functional
     mode: workflow
     required: true
-    dependencies: [design] # Can start test design early
-    can_run_in_parallel: [review]
-    max_iterations: 2
-    description: 'Create comprehensive functional tests'
+    dependencies: [design, manual_smoke_test] # Now depends on smoke test when applicable
+    condition_dependencies: 'manual_smoke_test_if_applicable'
+    max_iterations: 4
+    description: 'Create comprehensive functional tests based on requirements and smoke test findings'
 
   - phase: coverage_analysis
     agent: sdet-coverage
@@ -79,8 +112,28 @@ phases:
     max_iterations: 1
     description: 'Review test architecture, quality, and patterns'
 
+  - phase: exit_criteria_validation
+    agent: task-master
+    mode: workflow
+    required: true
+    type: completion_gate
+    dependencies: [test_architecture_review, review]
+    max_iterations: 1
+    description: 'TPM, senior developer and senior sdet validate exit criteria'
+
+  - phase: archive_task
+    agent: task-master
+    mode: workflow
+    required: true
+    type: completion_gate
+    dependencies: [exit_criteria_validation]
+    max_iterations: 1
+    description: 'Task-master archives current task after gaining user approval'
+
 success_criteria:
   - all_requirements_implemented: true
+  - ux_design_complete: true # if applicable
+  - ux_smoke_test_passed: true # if UI/UX changes
   - design_followed: true
   - code_quality_acceptable: true
   - tests_comprehensive: true
@@ -100,6 +153,11 @@ quality_gates:
     - requirements_complete: true
     - ambiguities_resolved: true
 
+  after_ux_design:
+    - user_flows_defined: true
+    - accessibility_considered: true
+    - mobile_responsiveness_planned: true
+
   after_design:
     - architecture_defined: true
     - patterns_identified: true
@@ -113,6 +171,11 @@ quality_gates:
   after_review:
     - no_blocking_issues: true
     - critical_patterns_followed: true
+
+  after_manual_smoke_test:
+    - user_interface_functional: true
+    - no_critical_ux_issues: true
+    - ready_for_test_automation: true
 
   after_functional_test:
     - requirements_tested: true

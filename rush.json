@@ -459,6 +459,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-sudoku-ui",
+      "projectFolder": "libraries/ts-sudoku-ui",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
+    },
+    {
       "packageName": "@fgv/ts-utils",
       "projectFolder": "libraries/ts-utils",
       "shouldPublish": true,
@@ -498,6 +505,12 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["tools", "ui", "browser"]
+    },
+    {
+      "packageName": "@fgv/sudoku-app",
+      "projectFolder": "apps/sudoku",
+      "shouldPublish": false,
+      "tags": ["apps", "sudoku", "react", "ui"]
     }
   ]
 }

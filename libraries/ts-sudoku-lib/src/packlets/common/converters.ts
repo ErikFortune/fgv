@@ -24,23 +24,35 @@
 
 import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
 import { CageId, CellId, PuzzleType, allPuzzleTypes } from './common';
-import { IPuzzleDescription } from './model';
 
-const cageIdRegExp: RegExp = /^(R[A-Z]$)|(C[0-9]$)|(S[A-Z][0-9]$)|(X[1-2]$)|(K[A-Za-z]$)/;
+// Updated to support larger grids:
+// - Row IDs: R followed by A-Z or AA-ZZ for rows
+// - Column IDs: C followed by 1-99+ for columns
+// - Section IDs: S followed by row letter(s) and column number(s)
+// - X diagonals: X1, X2
+// - Killer cages: K followed by letter(s)
+const cageIdRegExp: RegExp =
+  /^(R[A-Z]{1,2}$)|(C[0-9]{1,3}$)|(S[A-Z]{1,2}[0-9]{1,3}$)|(X[1-2]$)|(K[A-Za-z]+$)/;
 
 function validateCageId(from: string): Result<CageId> {
   if (cageIdRegExp.test(from)) {
     return succeed(from as CageId);
   }
-  return fail(`malformed cage ID "${from}" (expected "R[A-Z]", "C[0-9]" or "S[A-Z][0-9]")`);
+  return fail(`malformed cage ID "${from}"`);
 }
 
-const cellIdRegExp: RegExp = /^[A-Z][0-9]$/;
+// Updated to support larger grids:
+// - Rows: A-Z for 0-25, then AA-ZZ for 26+
+// - Columns: 1-999 for any size grid
+const cellIdRegExp: RegExp = /^[A-Z]{1,2}[0-9]{1,3}$/;
+
 function validateCellId(from: string): Result<CellId> {
-  if (cellIdRegExp.test(from)) {
-    return succeed(from as CellId);
+  // Check basic format
+  if (!cellIdRegExp.test(from)) {
+    return fail(`malformed cell ID "${from}" (expected row letter(s) followed by column number)`);
   }
-  return fail(`malformed cell ID "${from}" (expected "[A-Z][0-9]")`);
+
+  return succeed(from as CellId);
 }
 
 /**
@@ -63,22 +75,3 @@ export const puzzleType: Converter<
   PuzzleType,
   ReadonlyArray<PuzzleType>
 > = Converters.enumeratedValue<PuzzleType>(allPuzzleTypes);
-
-/**
- * Converts an arbitrary object to a {@link IPuzzleDescription | IPuzzleDescription}.
- * @public
- */
-export const puzzleDescription: Converter<IPuzzleDescription> = Converters.strictObject<IPuzzleDescription>(
-  {
-    id: Converters.string,
-    description: Converters.string,
-    type: puzzleType,
-    level: Converters.number,
-    rows: Converters.number,
-    cols: Converters.number,
-    cells: Converters.oneOf([Converters.string, Converters.stringArray.map((s) => succeed(s.join('')))])
-  },
-  {
-    optionalFields: ['id']
-  }
-);

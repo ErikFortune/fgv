@@ -56,14 +56,16 @@ export class CandidateValueCollector extends ValidatingCollector<CandidateValue>
    * @param params - Parameters to create the collector.
    * @internal
    */
-  protected constructor(params: ICandidateValueCollectorCreateParams = {}) {
+  protected constructor(params?: ICandidateValueCollectorCreateParams) {
     super({
       converters: new Collections.KeyValueConverters<CandidateValueKey, CandidateValue>({
         key: CommonConvert.candidateValueKey,
         value: (from: unknown) => this._toCandidateValue(from)
       })
     });
-    this.normalizer = params?.normalizer ?? new Hash.Crc32Normalizer();
+    /* c8 ignore next 3 - defense in depth */
+    params = params ?? {};
+    this.normalizer = params.normalizer ?? new Hash.Crc32Normalizer();
     params.candidateValues?.forEach((candidateValue) => this.validating.add(candidateValue));
   }
 

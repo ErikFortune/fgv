@@ -41,17 +41,6 @@ Converts an arbitrary value to a [CellId](./ts-sudoku-lib.cellid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
-[puzzleDescription](./ts-sudoku-lib.converters.puzzledescription.md)
-
-
-</td><td>
-
-Converts an arbitrary object to a [IPuzzleDescription](./ts-sudoku-lib.ipuzzledescription.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
 [puzzleType](./ts-sudoku-lib.converters.puzzletype.md)
 
 

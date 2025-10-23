@@ -196,7 +196,7 @@ describe('ZipArchiveLoader', () => {
       expect(finalPhase).toBe('extracting-files');
     });
 
-    test('should call progress callbacks even when buffer is not a valid zip', async () => {
+    test('should call progress callbacks even when buffer is invalid zip', async () => {
       const invalidBuffer = new Uint8Array([1, 2, 3, 4]);
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];

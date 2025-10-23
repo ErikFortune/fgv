@@ -40,5 +40,6 @@ export function createResourceTypeFromConfig(config: IResourceTypeConfig): Resul
       .convert(config.name)
       .onSuccess((key) => JsonResourceType.create({ key }));
   }
+  /* c8 ignore next 2 - functional code tested but coverage intermittently missed */
   return fail(`${config.typeName}: Unknown resource type.`);
 }

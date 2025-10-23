@@ -70,7 +70,7 @@ export class CollectionImporter implements IImporter {
     if (!isImportable(item) || (item.type !== 'resourceCollection' && item.type !== 'resourceTree')) {
       /* c8 ignore next 1 - defense in depth */
       const name = item.context?.baseId ?? 'unknown';
-      return failWithDetail(`${name}: not a valid resource collection importable (${item.type})`, 'skipped');
+      return failWithDetail(`${name}: invalid resource collection importable (${item.type})`, 'skipped');
     }
 
     const container = item.type === 'resourceCollection' ? item.collection : item.tree;

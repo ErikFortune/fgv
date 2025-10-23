@@ -179,6 +179,7 @@ export abstract class ResourceType<T = unknown> implements IResourceType<T> {
       index: index !== undefined ? Validate.toResourceTypeIndex(index).orThrow() : undefined,
       indexConverter: CommonConvert.resourceTypeIndex
     });
+    /* c8 ignore next 1 - defense in depth */
     this._template = template ?? {};
   }
 

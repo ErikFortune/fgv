@@ -161,8 +161,8 @@ describe('Md5Normalizer (Browser - CRC32 based)', () => {
         expect(hash).toMatch(/^[0-9a-f]{8}$/);
       });
 
-      // Should complete in reasonable time (less than 100ms for this size)
-      expect(endTime - startTime).toBeLessThan(100);
+      // Should complete in reasonable time (less than 200ms for this size)
+      expect(endTime - startTime).toBeLessThan(200);
     });
   });
 

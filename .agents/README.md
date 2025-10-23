@@ -14,11 +14,12 @@ A comprehensive system of specialized Claude agents that work together to handle
 @code-reviewer Please review this implementation for Result pattern compliance
 @sdet-functional Please create tests for this validation function
 @senior-developer Please design an approach for caching user sessions
+@ux-designer Please design a mobile-friendly interface for the settings panel
 ```
 
 ## System Overview
 
-This system provides **8 specialized agents** that can work individually or together in orchestrated workflows:
+This system provides **9 specialized agents** that can work individually or together in orchestrated workflows:
 
 ### 🎯 **Task-Master** - Workflow Orchestrator
 - **Use when**: Complex multi-step tasks requiring coordination
@@ -34,6 +35,11 @@ This system provides **8 specialized agents** that can work individually or toge
 - **Use when**: Need technical design and architecture guidance
 - **Capabilities**: Pattern recognition, anti-pattern prevention, design documentation
 - **Output**: Detailed design blueprints for implementation
+
+### 🎨 **UX Designer** - User Experience & Interface Design
+- **Use when**: Need user interface design, interaction patterns, or accessibility guidance
+- **Capabilities**: Mobile-first responsive design, accessibility compliance, complex UI patterns, game interface design
+- **Output**: Detailed UX specifications with component designs and interaction patterns
 
 ### 🔨 **Code Monkey** - Implementation Craftsman
 - **Use when**: Need precise implementation following established patterns
@@ -110,6 +116,7 @@ Repository Root/
 │   ├── task-master.md
 │   ├── tpm-agent.md
 │   ├── senior-developer.md
+│   ├── ux-designer.md
 │   ├── code-monkey.md
 │   ├── code-reviewer.md
 │   ├── sdet-functional.md
@@ -184,7 +191,48 @@ Senior Developer: For user session caching, I recommend this approach:
 [Detailed design follows with rationale and examples]
 ```
 
-### Example 4: Bug Analysis
+### Example 4: UX Design Consultation
+```
+User: @ux-designer I need to design a mobile sudoku interface that supports note-taking and hints
+
+UX Designer: I'll design a mobile-first sudoku interface optimized for touch interactions and accessibility.
+
+## UX Design Recommendation
+
+### User Experience Strategy
+For a mobile sudoku interface, I recommend a clean, grid-focused design with:
+- **Touch-optimized grid**: 44px minimum touch targets for each cell
+- **Contextual input modes**: Easy switching between number entry and note-taking
+- **Progressive hint system**: Hints that don't overwhelm beginners but satisfy experts
+- **Accessibility first**: Full screen reader support and high contrast options
+
+### Interface Design
+**Grid Layout**:
+- 9x9 grid with clear visual separation between 3x3 blocks
+- Large, readable numbers with high contrast (4.5:1 minimum)
+- Visual states: empty, filled, notes, errors, hints, locked
+
+**Input System**:
+- Floating number pad that doesn't obstruct the grid
+- Toggle between "Fill" and "Notes" modes with clear visual indication
+- Long-press for quick note entry
+- Shake to clear cell (with confirmation)
+
+**Progressive Disclosure**:
+- Beginner mode: Simple interface with large hint button
+- Expert mode: Advanced features like conflict highlighting
+- Settings panel: Difficulty preferences, accessibility options
+
+### Implementation Guidance
+- Use CSS Grid for responsive 9x9 layout
+- Implement touch gestures with 300ms max response time
+- Include ARIA labels for screen reader navigation
+- Support both portrait and landscape orientations
+
+[Detailed component specifications and interaction patterns would follow]
+```
+
+### Example 5: Bug Analysis
 ```
 User: @senior-sdet Users are reporting that CSV exports are failing with timeout errors
 
@@ -219,7 +267,7 @@ Senior SDET: I'll analyze this bug to determine the appropriate workflow.
 **Next Steps:** Execute bugfix-fast workflow with focus on async processing
 ```
 
-### Example 5: Manual Validation Planning
+### Example 6: Manual Validation Planning
 ```
 User: @senior-sdet We're implementing payment processing - what manual testing do we need?
 

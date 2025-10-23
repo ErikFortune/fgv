@@ -377,7 +377,7 @@ export class ResourceResolver implements IResourceResolver {
       const candidate = decision.candidates[instanceIndex];
       const conditionSetResult = this.resolveConditionSet(candidate.conditionSet);
 
-      /* c8 ignore next 4 - defensive coding: extreme internal error scenario not reachable in normal operation */
+      /* c8 ignore next 4 - defensive in depth */
       if (conditionSetResult.isFailure()) {
         this._listener?.onCacheError('decision', decisionIndex);
         return fail(`${decision.key}: Failed to resolve condition set": ${conditionSetResult.message}`);
@@ -392,7 +392,6 @@ export class ResourceResolver implements IResourceResolver {
           result: resolution
         });
       } else if (resolution.matchType === 'matchAsDefault') {
-        /* c8 ignore next 4 - edge case: default matching instances rarely used in practice */
         matchingDefaultInstanceResults.push({
           index: instanceIndex,
           result: resolution
@@ -506,7 +505,6 @@ export class ResourceResolver implements IResourceResolver {
   public resolveAllResourceCandidates(
     idOrResource: string | IResource
   ): Result<ReadonlyArray<IResourceCandidate>> {
-    /* c8 ignore next 4 - defensive coding: string resource resolution should use direct resource calls */
     if (typeof idOrResource === 'string') {
       return this.resourceManager
         .getBuiltResource(idOrResource)
@@ -549,7 +547,7 @@ export class ResourceResolver implements IResourceResolver {
 
     // Add all default matches after regular matches (already sorted by priority)
     for (const candidateIndex of resolution.defaultInstanceIndices) {
-      /* c8 ignore next 3 - defensive coding: extreme internal error scenario not reachable in normal operation */
+      /* c8 ignore next 3 - defense in depth should not happen */
       if (candidateIndex >= resource.candidates.length) {
         return fail(`Invalid candidate index ${candidateIndex} for resource "${resource.id}"`);
       }

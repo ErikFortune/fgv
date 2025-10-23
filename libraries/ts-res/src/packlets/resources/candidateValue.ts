@@ -114,6 +114,7 @@ export class CandidateValue implements ICandidateValue {
    * @internal
    */
   protected constructor(params: ICandidateValueCreateParams) {
+    /* c8 ignore next 1 - defense in depth */
     const normalizer = params.normalizer ?? new Hash.Crc32Normalizer();
 
     // Normalize the JSON value

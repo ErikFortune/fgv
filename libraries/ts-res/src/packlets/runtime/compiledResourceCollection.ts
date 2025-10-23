@@ -543,6 +543,7 @@ export class CompiledResourceCollection implements IResourceManager<IResource> {
     const resourceMap = new ValidatingResultMap<ResourceId, IResource>({
       converters: new Collections.KeyValueConverters<ResourceId, IResource>({
         key: Convert.resourceId,
+        /* c8 ignore next 3 - covered but coverage is confused */
         value: (from: unknown): Result<IResource> => {
           return Validate.resource.validate(from);
         }

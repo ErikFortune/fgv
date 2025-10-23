@@ -92,6 +92,16 @@ export interface IResultLogger<TD = unknown> {
 export type MessageLogLevel = 'quiet' | 'detail' | 'info' | 'warning' | 'error';
 
 /**
+ * Details for reporting a message.
+ * @public
+ */
+export interface IMessageReportDetail<TD = unknown> {
+  level?: MessageLogLevel;
+  message?: ErrorFormatter<TD>;
+  detail?: TD;
+}
+
+/**
  * Options for reporting a result.
  * @public
  */
@@ -99,17 +109,12 @@ export interface IResultReportOptions<TD = unknown> {
   /**
    * The level of reporting to be used for failure results.  Default is 'error'.
    */
-  failure?: MessageLogLevel;
+  failure?: MessageLogLevel | IMessageReportDetail<TD>;
 
   /**
    * The level of reporting to be used for success results.  Default is 'quiet'.
    */
-  success?: MessageLogLevel;
-
-  /**
-   * The error formatter to be used for reporting an error result.
-   */
-  message?: ErrorFormatter<TD>;
+  success?: MessageLogLevel | IMessageReportDetail<TD>;
 }
 
 /**
@@ -117,7 +122,7 @@ export interface IResultReportOptions<TD = unknown> {
  * @public
  */
 export interface IResultReporter<T, TD = unknown> {
-  reportSuccess(level: MessageLogLevel, value: T, detail?: TD): void;
+  reportSuccess(level: MessageLogLevel, value: T, detail?: TD, message?: ErrorFormatter<TD>): void;
   reportFailure(level: MessageLogLevel, message: string, detail?: TD): void;
 }
 
@@ -346,7 +351,7 @@ export interface IResult<T> {
    * @param reporter - The {@link IResultReporter | reporter} to which the result will be reported.
    * @param options - The {@link IResultReportOptions | options} for reporting the result.
    */
-  report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this;
+  report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Result<T>;
 }
 
 /**
@@ -485,9 +490,11 @@ export class Success<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this {
-    const level = options?.success ?? 'quiet';
-    reporter?.reportSuccess(level, this._value);
+  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Success<T> {
+    const successOptions =
+      typeof options?.success === 'object' ? options.success : { level: options?.success };
+    const level = successOptions.level ?? 'quiet';
+    reporter?.reportSuccess(level, this._value, undefined, successOptions.message);
     return this;
   }
 
@@ -648,9 +655,11 @@ export class Failure<T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions): this {
-    const level = options?.failure ?? 'error';
-    const message = options?.message?.(this._message) ?? this._message;
+  public report(reporter?: IResultReporter<T>, options?: IResultReportOptions<unknown>): Failure<T> {
+    const failureOptions =
+      typeof options?.failure === 'object' ? options.failure : { level: options?.failure };
+    const level = failureOptions.level ?? 'error';
+    const message = failureOptions.message?.(this._message) ?? this._message;
     reporter?.reportFailure(level, message);
     return this;
   }
@@ -823,9 +832,16 @@ export class DetailedSuccess<T, TD> extends Success<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this {
-    const level = options?.success ?? 'quiet';
-    reporter?.reportSuccess(level, this._value, this._detail);
+  public report(
+    reporter?: IResultReporter<T, unknown>,
+    options?: IResultReportOptions<unknown>
+  ): DetailedSuccess<T, TD> {
+    const successOptions =
+      typeof options?.success === 'object' ? options.success : { level: options?.success };
+    const level = successOptions.level ?? 'quiet';
+    // Cast reporter to preserve detail type when calling reportSuccess
+    const detailedReporter = reporter as IResultReporter<T, TD> | undefined;
+    detailedReporter?.reportSuccess(level, this._value, this._detail, successOptions.message);
     return this;
   }
 
@@ -929,10 +945,19 @@ export class DetailedFailure<T, TD> extends Failure<T> {
   /**
    * {@inheritdoc IResult.report}
    */
-  public report(reporter?: IResultReporter<T, TD>, options?: IResultReportOptions<TD>): this {
-    const level = options?.failure ?? 'error';
-    const message = options?.message?.(this._message, this._detail) ?? this._message;
-    reporter?.reportFailure(level, message, this._detail);
+  public report(
+    reporter?: IResultReporter<T, unknown>,
+    options?: IResultReportOptions<unknown>
+  ): DetailedFailure<T, TD> {
+    const failureOptions =
+      typeof options?.failure === 'object' ? options.failure : { level: options?.failure };
+    const level = failureOptions.level ?? 'error';
+    // Cast formatter to handle detail type properly
+    const formatter = failureOptions.message as ErrorFormatter<TD> | undefined;
+    const message = formatter?.(this._message, this._detail) ?? this._message;
+    // Cast reporter to preserve detail type when calling reportFailure
+    const detailedReporter = reporter as IResultReporter<T, TD> | undefined;
+    detailedReporter?.reportFailure(level, message, this._detail);
     return this;
   }
 

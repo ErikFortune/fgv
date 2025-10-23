@@ -9,5 +9,5 @@ The level of reporting to be used for success results. Default is 'quiet'.
 **Signature:**
 
 ```typescript
-success?: MessageLogLevel;
+success?: MessageLogLevel | IMessageReportDetail<TD>;
 ```

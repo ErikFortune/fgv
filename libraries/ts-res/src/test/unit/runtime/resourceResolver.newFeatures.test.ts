@@ -249,7 +249,7 @@ describe('ResourceResolver New Features', () => {
     });
 
     testBothResolvers('fails when resource ID does not exist', (resolver, resolverName) => {
-      expect(resolver.resolveResource('non-existent')).toFailWith(/not a valid resource ID|not found/i);
+      expect(resolver.resolveResource('non-existent')).toFailWith(/invalid resource ID|not found/i);
     });
 
     testBothResolvers('fails when no candidates match for existing resource', (resolver, resolverName) => {
@@ -304,7 +304,7 @@ describe('ResourceResolver New Features', () => {
 
     testBothResolvers('fails when resource ID does not exist', (resolver, resolverName) => {
       expect(resolver.resolveAllResourceCandidates('non-existent')).toFailWith(
-        /not a valid resource ID|not found/i
+        /invalid resource ID|not found/i
       );
     });
 
@@ -368,7 +368,7 @@ describe('ResourceResolver New Features', () => {
 
     testBothResolvers('fails when resource ID does not exist', (resolver, resolverName) => {
       expect(resolver.resolveComposedResourceValue('non-existent')).toFailWith(
-        /not a valid resource ID|not found/i
+        /invalid resource ID|not found/i
       );
     });
 
@@ -611,14 +611,12 @@ describe('ResourceResolver New Features', () => {
         );
 
         // Non-existent resource should still fail appropriately
-        expect(spanishResolver.resolveResource('non-existent')).toFailWith(
-          /not a valid resource ID|not found/i
-        );
+        expect(spanishResolver.resolveResource('non-existent')).toFailWith(/invalid resource ID|not found/i);
         expect(spanishResolver.resolveAllResourceCandidates('non-existent')).toFailWith(
-          /not a valid resource ID|not found/i
+          /invalid resource ID|not found/i
         );
         expect(spanishResolver.resolveComposedResourceValue('non-existent')).toFailWith(
-          /not a valid resource ID|not found/i
+          /invalid resource ID|not found/i
         );
       });
     });
@@ -695,15 +693,15 @@ describe('ResourceResolver New Features', () => {
     });
 
     testBothResolvers('handles empty string resource ID', (resolver, resolverName) => {
-      expect(resolver.resolveResource('')).toFailWith(/not a valid resource ID/i);
-      expect(resolver.resolveAllResourceCandidates('')).toFailWith(/not a valid resource ID/i);
-      expect(resolver.resolveComposedResourceValue('')).toFailWith(/not a valid resource ID/i);
+      expect(resolver.resolveResource('')).toFailWith(/invalid resource ID/i);
+      expect(resolver.resolveAllResourceCandidates('')).toFailWith(/invalid resource ID/i);
+      expect(resolver.resolveComposedResourceValue('')).toFailWith(/invalid resource ID/i);
     });
 
     testBothResolvers('handles whitespace-only resource ID', (resolver, resolverName) => {
-      expect(resolver.resolveResource('   ')).toFailWith(/not a valid resource ID/i);
-      expect(resolver.resolveAllResourceCandidates('   ')).toFailWith(/not a valid resource ID/i);
-      expect(resolver.resolveComposedResourceValue('   ')).toFailWith(/not a valid resource ID/i);
+      expect(resolver.resolveResource('   ')).toFailWith(/invalid resource ID/i);
+      expect(resolver.resolveAllResourceCandidates('   ')).toFailWith(/invalid resource ID/i);
+      expect(resolver.resolveComposedResourceValue('   ')).toFailWith(/invalid resource ID/i);
     });
 
     testBothResolvers('withContext handles null/undefined context gracefully', (resolver, resolverName) => {

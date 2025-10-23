@@ -111,15 +111,15 @@ describe('LiteralQualifierType', () => {
       });
     });
 
-    test('fails if the name is not a valid qualifier type name', () => {
-      const name = 'not a valid name';
+    test('fails if the name is invalid qualifier type name', () => {
+      const name = 'invalid name';
       expect(TsRes.QualifierTypes.QualifierType.isValidName(name)).toBe(false);
       expect(TsRes.QualifierTypes.LiteralQualifierType.create({ name })).toFailWith(
         /invalid qualifier type name/i
       );
     });
 
-    test('fails if the index is not a valid qualifier type index', () => {
+    test('fails if the index is invalid qualifier type index', () => {
       const index = -1;
       expect(TsRes.QualifierTypes.QualifierType.isValidIndex(index)).toBe(false);
       expect(TsRes.QualifierTypes.LiteralQualifierType.create({ index })).toFailWith(
@@ -132,7 +132,7 @@ describe('LiteralQualifierType', () => {
         enumeratedValues: ['a', 'b', '']
       };
       expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
-        /not a valid literal condition/i
+        /invalid literal condition/i
       );
     });
 
@@ -147,7 +147,7 @@ describe('LiteralQualifierType', () => {
         }
       };
       expect(TsRes.QualifierTypes.LiteralQualifierType.create(params)).toFailWith(
-        /parent.*is not a valid literal value/i
+        /parent.*is invalid literal value/i
       );
     });
 
@@ -818,10 +818,10 @@ describe('LiteralQualifierType', () => {
       });
     });
 
-    test('fails if the name is not a valid qualifier type name', () => {
+    test('fails if the name is invalid qualifier type name', () => {
       const config: TsRes.QualifierTypes.Config.IQualifierTypeConfig<TsRes.QualifierTypes.Config.ILiteralQualifierTypeConfig> =
         {
-          name: 'not a valid name',
+          name: 'invalid name',
           systemType: 'literal'
         };
 
@@ -841,7 +841,7 @@ describe('LiteralQualifierType', () => {
         };
 
       expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toFailWith(
-        /not a valid literal condition value/i
+        /invalid literal condition value/i
       );
     });
 
@@ -860,7 +860,7 @@ describe('LiteralQualifierType', () => {
         };
 
       expect(TsRes.QualifierTypes.LiteralQualifierType.createFromConfig(config)).toFailWith(
-        /not a valid literal condition value/i
+        /invalid literal condition value/i
       );
     });
   });

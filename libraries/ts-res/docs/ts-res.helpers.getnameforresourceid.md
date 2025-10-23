@@ -52,5 +52,5 @@ The resource ID to get the name for.
 
 Result&lt;[ResourceName](./ts-res.resourcename.md)<!-- -->&gt;
 
-The resource name if found, or undefined if not.
+`Success` with the resource name if found, or `Failure` with an error message if not.
 

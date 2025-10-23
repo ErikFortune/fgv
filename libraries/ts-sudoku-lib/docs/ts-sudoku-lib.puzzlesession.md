@@ -91,7 +91,7 @@ number
 
 </td><td>
 
-Puzzle
+[Puzzle](./ts-sudoku-lib.puzzle.md)
 
 
 </td><td>
@@ -350,6 +350,27 @@ Number of steps currently elapsed in this puzzle session. Note that after undo, 
 </td></tr>
 <tr><td>
 
+[puzzle](./ts-sudoku-lib.puzzlesession.puzzle.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Puzzle](./ts-sudoku-lib.puzzle.md)
+
+
+</td><td>
+
+The puzzle structure for this session.
+
+
+</td></tr>
+<tr><td>
+
 [rows](./ts-sudoku-lib.puzzlesession.rows.md)
 
 
@@ -406,6 +427,27 @@ The section [cages](./ts-sudoku-lib.icage.md) in the puzzle being solved.
 </td><td>
 
 The current [state](./ts-sudoku-lib.puzzlestate.md) of this puzzle session.
+
+
+</td></tr>
+<tr><td>
+
+[type](./ts-sudoku-lib.puzzlesession.type.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Type of the puzzle being solved.
 
 
 </td></tr>
@@ -525,7 +567,7 @@ Determines if the puzzle is valid in its current state.
 
 </td><td>
 
-Creates a new [puzzle session](./ts-sudoku-lib.puzzlesession.md) from a supplied .
+Creates a new [puzzle session](./ts-sudoku-lib.puzzlesession.md) from a supplied [puzzle](./ts-sudoku-lib.puzzle.md)<!-- -->.
 
 
 </td></tr>

@@ -579,6 +579,17 @@ Simple error aggregator to simplify collecting all errors in a flow.
 </td></tr>
 <tr><td>
 
+[IMessageReportDetail](./ts-utils.imessagereportdetail.md)
+
+
+</td><td>
+
+Details for reporting a message.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)
 
 

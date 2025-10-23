@@ -153,6 +153,7 @@ describe('CompiledResourceCollection class', () => {
         (collection) => {
           expect(collection.qualifierTypes.size).toBe(2);
           expect(collection.qualifiers.size).toBe(2);
+          expect(collection.resourceIds.length).toBe(1);
           expect(collection.resourceTypes.size).toBe(1);
           expect(collection.conditions.size).toBeGreaterThan(0);
           expect(collection.conditionSets.size).toBeGreaterThan(0);
