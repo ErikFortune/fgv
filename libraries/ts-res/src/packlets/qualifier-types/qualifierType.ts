@@ -33,7 +33,7 @@ import {
   QualifierTypeName,
   Validate
 } from '../common';
-import { JsonCompatible, JsonObject } from '@fgv/ts-json-base';
+import { JsonCompatibleType, JsonObject } from '@fgv/ts-json-base';
 import * as Config from './config';
 
 /**
@@ -133,14 +133,14 @@ export interface IQualifierType<TCFGJSON extends JsonObject = JsonObject>
    * Gets the configuration for this qualifier type.
    * @returns `Success` with the configuration if successful, `Failure` with an error message otherwise.
    */
-  getConfigurationJson(): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
+  getConfigurationJson(): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
    * Validates configuration JSON data for this qualifier type.
    * @param from - The unknown data to validate as configuration JSON.
    * @returns `Success` with validated JSON configuration if valid, `Failure` with an error message otherwise.
    */
-  validateConfigurationJson(from: unknown): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
+  validateConfigurationJson(from: unknown): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 }
 
 /**
@@ -295,14 +295,14 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject>
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public abstract getConfigurationJson(): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
+  public abstract getConfigurationJson(): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.validateConfigurationJson}
    */
   public abstract validateConfigurationJson(
     from: unknown
-  ): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
+  ): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.setIndex}

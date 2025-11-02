@@ -13,7 +13,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import { Hash } from '@fgv/ts-utils';
 import { ICollectible } from '@fgv/ts-utils';
 import { IReadOnlyResultMap } from '@fgv/ts-utils';
-import { JsonCompatible } from '@fgv/ts-json-base';
+import { JsonCompatibleType } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Logging } from '@fgv/ts-utils';
@@ -2512,7 +2512,7 @@ interface IQualifierDefaultValueTokenParts {
 
 // @public
 interface IQualifierType<TCFGJSON extends JsonObject = JsonObject> extends ICollectible<QualifierTypeName, QualifierTypeIndex> {
-    getConfigurationJson(): Result<JsonCompatible<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
+    getConfigurationJson(): Result<JsonCompatibleType<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly index: QualifierTypeIndex | undefined;
     isPotentialMatch(conditionValue: string, contextValue: string): boolean;
@@ -2524,7 +2524,7 @@ interface IQualifierType<TCFGJSON extends JsonObject = JsonObject> extends IColl
     setIndex(index: number): Result<QualifierTypeIndex>;
     readonly systemTypeName: QualifierTypeName;
     validateCondition(value: string, operator?: ConditionOperator): Result<QualifierConditionValue>;
-    validateConfigurationJson(from: unknown): Result<JsonCompatible<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
+    validateConfigurationJson(from: unknown): Result<JsonCompatibleType<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
     validateContextValue(value: string): Result<QualifierContextValue>;
 }
 
@@ -3433,7 +3433,7 @@ const LanguagePrioritySystemConfiguration: ISystemConfiguration;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class LanguageQualifierType extends QualifierType<JsonCompatible<Config_2.ILanguageQualifierTypeConfig>> {
+class LanguageQualifierType extends QualifierType<JsonCompatibleType<Config_2.ILanguageQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ name, allowContextList, index }: ILanguageQualifierTypeCreateParams);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3449,7 +3449,7 @@ class LanguageQualifierType extends QualifierType<JsonCompatible<Config_2.ILangu
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    getConfigurationJson(): Result<JsonCompatible<Config_2.ISystemLanguageQualifierTypeConfig>>;
+    getConfigurationJson(): Result<JsonCompatibleType<Config_2.ISystemLanguageQualifierTypeConfig>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3464,7 +3464,7 @@ class LanguageQualifierType extends QualifierType<JsonCompatible<Config_2.ILangu
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validateConfigurationJson(from: unknown): Result<JsonCompatible<Config_2.ISystemLanguageQualifierTypeConfig>>;
+    validateConfigurationJson(from: unknown): Result<JsonCompatibleType<Config_2.ISystemLanguageQualifierTypeConfig>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3476,7 +3476,7 @@ const languageQualifierTypeConfig: ObjectConverter<Model_2.ILanguageQualifierTyp
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-class LiteralQualifierType extends QualifierType<JsonCompatible<Config_2.ILiteralQualifierTypeConfig>> {
+class LiteralQualifierType extends QualifierType<JsonCompatibleType<Config_2.ILiteralQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ name, caseSensitive, allowContextList, enumeratedValues, hierarchy, index }: ILiteralQualifierTypeCreateParams);
     readonly caseSensitive: boolean;
@@ -3494,7 +3494,7 @@ class LiteralQualifierType extends QualifierType<JsonCompatible<Config_2.ILitera
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    getConfigurationJson(): Result<JsonCompatible<Config_2.ISystemLiteralQualifierTypeConfig>>;
+    getConfigurationJson(): Result<JsonCompatibleType<Config_2.ISystemLiteralQualifierTypeConfig>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly hierarchy?: LiteralValueHierarchy<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3518,7 +3518,7 @@ class LiteralQualifierType extends QualifierType<JsonCompatible<Config_2.ILitera
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validateConfigurationJson(from: unknown): Result<JsonCompatible<Config_2.ISystemLiteralQualifierTypeConfig>>;
+    validateConfigurationJson(from: unknown): Result<JsonCompatibleType<Config_2.ISystemLiteralQualifierTypeConfig>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3942,7 +3942,7 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject> im
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    abstract getConfigurationJson(): Result<JsonCompatible<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
+    abstract getConfigurationJson(): Result<JsonCompatibleType<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -3997,7 +3997,7 @@ export abstract class QualifierType<TCFGJSON extends JsonObject = JsonObject> im
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    abstract validateConfigurationJson(from: unknown): Result<JsonCompatible<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
+    abstract validateConfigurationJson(from: unknown): Result<JsonCompatibleType<Config_2.IQualifierTypeConfig<TCFGJSON>>>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -4992,7 +4992,7 @@ const TerritoryPriorityQualifiers: ReadonlyArray<Qualifiers.IQualifierDecl>;
 const TerritoryPrioritySystemConfiguration: ISystemConfiguration;
 
 // @public
-class TerritoryQualifierType extends QualifierType<JsonCompatible<Config_2.ITerritoryQualifierTypeConfig>> {
+class TerritoryQualifierType extends QualifierType<JsonCompatibleType<Config_2.ITerritoryQualifierTypeConfig>> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     protected constructor({ acceptLowercase, allowedTerritories, allowContextList, name, index, hierarchy }: ITerritoryQualifierTypeCreateParams);
     readonly acceptLowercase: boolean;
@@ -5010,7 +5010,7 @@ class TerritoryQualifierType extends QualifierType<JsonCompatible<Config_2.ITerr
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    getConfigurationJson(): Result<JsonCompatible<Config_2.ISystemTerritoryQualifierTypeConfig>>;
+    getConfigurationJson(): Result<JsonCompatibleType<Config_2.ISystemTerritoryQualifierTypeConfig>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly hierarchy?: LiteralValueHierarchy<string>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -5032,7 +5032,7 @@ class TerritoryQualifierType extends QualifierType<JsonCompatible<Config_2.ITerr
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
-    validateConfigurationJson(from: unknown): Result<JsonCompatible<Config_2.ISystemTerritoryQualifierTypeConfig>>;
+    validateConfigurationJson(from: unknown): Result<JsonCompatibleType<Config_2.ISystemTerritoryQualifierTypeConfig>>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -2,41 +2,97 @@
 
 [Home](./index.md) &gt; [@fgv/ts-json-base](./ts-json-base.md) &gt; [JsonCompatible](./ts-json-base.jsoncompatible.md)
 
-## JsonCompatible type
+## JsonCompatible namespace
 
-A constrained type that is compatible with JSON serialization.
+## Namespaces
 
-This type transforms input types to ensure they can be safely serialized to JSON: - JSON primitives (string, number, boolean, null) are preserved as-is - `undefined` is allowed for TypeScript compatibility with optional properties - Objects are recursively transformed with all properties made JSON-compatible - Arrays are transformed to contain only JSON-compatible elements - Functions are transformed to error types - Other non-JSON types are transformed to error types
+<table><thead><tr><th>
 
-Note: While `undefined` is technically not JSON-serializable, it's allowed here to support TypeScript's optional property patterns. Use `sanitizeJsonObject` to remove undefined properties before actual JSON serialization.
-
-**Signature:**
-
-```typescript
-export type JsonCompatible<T> = IsUnknown<T> extends true ? JsonValue : T extends JsonPrimitive | undefined ? T : T extends Array<unknown> ? JsonCompatibleArray<T[number]> : T extends Function ? ['Error: Function is not JSON-compatible'] : T extends object ? {
-    [K in keyof T]: JsonCompatible<T[K]>;
-} : ['Error: Non-JSON type'];
-```
-**References:** [JsonValue](./ts-json-base.jsonvalue.md)<!-- -->, [JsonPrimitive](./ts-json-base.jsonprimitive.md)<!-- -->, [JsonCompatibleArray](./ts-json-base.jsoncompatiblearray.md)<!-- -->, [JsonCompatible](./ts-json-base.jsoncompatible.md)
-
-## Example
+Namespace
 
 
-```typescript
-interface IUser {
-  name: string;
-  email?: string; // Optional property can be undefined
-}
+</th><th>
 
-type UserCompatible = JsonCompatible<IUser>; // Allows undefined for email
+Description
 
-const user: UserCompatible = {
-  name: "John",
-  email: undefined // This works
-};
 
-// Before JSON serialization, sanitize to remove undefined:
-const sanitized = sanitizeJsonObject(user); // Removes undefined properties
-JSON.stringify(sanitized.value); // Safe to serialize
-```
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converters](./ts-json-base.jsoncompatible.converters.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Validators](./ts-json-base.jsoncompatible.validators.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Converter](./ts-json-base.jsoncompatible.converter.md)
+
+
+</td><td>
+
+A converter which converts a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+
+
+</td></tr>
+<tr><td>
+
+[ObjectConverter](./ts-json-base.jsoncompatible.objectconverter.md)
+
+
+</td><td>
+
+A converter which converts a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+
+
+</td></tr>
+<tr><td>
+
+[ObjectValidator](./ts-json-base.jsoncompatible.objectvalidator.md)
+
+
+</td><td>
+
+A validator which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+
+
+</td></tr>
+<tr><td>
+
+[Validator](./ts-json-base.jsoncompatible.validator.md)
+
+
+</td><td>
+
+A validator which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+
+
+</td></tr>
+</tbody></table>
 

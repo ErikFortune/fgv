@@ -34,7 +34,7 @@ interface JsonArray extends Array<JsonValue> { }
 
 ### JsonCompatible Type
 
-The `JsonCompatible<T>` type provides compile-time validation that a type is JSON-serializable, unlike `JsonValue` which requires an index signature. This is particularly useful for strongly-typed interfaces.
+The `JsonCompatibleType<T>` type provides compile-time validation that a type is JSON-serializable, unlike `JsonValue` which requires an index signature. This is particularly useful for strongly-typed interfaces.
 
 #### Basic Usage
 
@@ -52,7 +52,7 @@ interface UserData {
 }
 
 // ✅ This type remains unchanged because it's fully JSON-compatible
-type ValidatedUserData = JsonCompatible<UserData>;
+type ValidatedUserData = JsonCompatibleType<UserData>;
 
 // ❌ Interface with non-JSON properties
 interface UserWithMethods {
@@ -62,16 +62,16 @@ interface UserWithMethods {
 }
 
 // ❌ This type transforms 'save' to an error type
-type InvalidUserData = JsonCompatible<UserWithMethods>;
+type InvalidUserData = JsonCompatibleType<UserWithMethods>;
 // Result: { id: string; name: string; save: ['Error: Function is not JSON-compatible'] }
 ```
 
 #### The MapOf Pattern
 
-The most powerful application is using `JsonCompatible<T>` as a constraint with default type parameters:
+The most powerful application is using `JsonCompatibleType<T>` as a constraint with default type parameters:
 
 ```typescript
-class MapOf<T, TV extends JsonCompatible<T> = JsonCompatible<T>> extends Map<string, TV> {
+class MapOf<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> extends Map<string, TV> {
   public override set(key: string, value: TV): this {
     return super.set(key, value);
   }

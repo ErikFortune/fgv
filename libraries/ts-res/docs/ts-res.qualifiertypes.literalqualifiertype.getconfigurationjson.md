@@ -9,11 +9,11 @@ Gets the configuration for this qualifier type.
 **Signature:**
 
 ```typescript
-getConfigurationJson(): Result<JsonCompatible<Config.ISystemLiteralQualifierTypeConfig>>;
+getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemLiteralQualifierTypeConfig>>;
 ```
 **Returns:**
 
-Result&lt;JsonCompatible&lt;Config.ISystemLiteralQualifierTypeConfig&gt;&gt;
+Result&lt;JsonCompatibleType&lt;Config.ISystemLiteralQualifierTypeConfig&gt;&gt;
 
 `Success` with the configuration if successful, `Failure` with an error message otherwise.
 

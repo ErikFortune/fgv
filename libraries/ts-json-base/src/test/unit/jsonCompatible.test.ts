@@ -22,13 +22,13 @@
 
 import '@fgv/ts-utils-jest';
 
-import { JsonCompatible, JsonValue, sanitizeJsonObject } from '../../packlets/json';
+import { JsonCompatibleType, JsonValue, sanitizeJsonObject } from '../../packlets/json';
 import { Brand } from '@fgv/ts-utils';
 
 describe('jsonCompatible from json/common module', () => {
   describe('JsonCompatible type', () => {
     // Define a reusable MapOf class using the JsonCompatible constraint
-    class MapOf<T, TV extends JsonCompatible<T> = JsonCompatible<T>> extends Map<string, TV> {
+    class MapOf<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> extends Map<string, TV> {
       public constructor() {
         super();
       }
@@ -359,7 +359,7 @@ describe('jsonCompatible from json/common module', () => {
         const map = new MapOf<IWithRegExp>();
 
         // RegExp is not JSON-serializable (becomes {} when stringified)
-        // type Transformed = JsonCompatible<IWithRegExp>;
+        // type Transformed = JsonCompatibleType<IWithRegExp>;
 
         expect(map).toBeDefined();
       });
@@ -500,7 +500,7 @@ describe('jsonCompatible from json/common module', () => {
 
         // For union types, we need to use only the compatible variants
         // The JsonCompatible type transforms the union to only include compatible members
-        const value1: JsonCompatible<IWithComplexUnions> = {
+        const value1: JsonCompatibleType<IWithComplexUnions> = {
           compatibleObjects: { type: 'user', name: 'Alice' },
           mixedObjects: { type: 'data', value: 'test' }
         };
@@ -509,7 +509,7 @@ describe('jsonCompatible from json/common module', () => {
 
         // For the mixed union type, we can only store the compatible variant
         // because JsonCompatible transforms { callback: () => void } to { callback: ["Error: Function is not JSON-compatible"] }
-        const value2Compatible: JsonCompatible<IWithComplexUnions> = {
+        const value2Compatible: JsonCompatibleType<IWithComplexUnions> = {
           compatibleObjects: { type: 'admin', permissions: ['read', 'write'] },
           mixedObjects: { type: 'data', value: 'compatible data' }
         };
@@ -979,9 +979,9 @@ describe('jsonCompatible from json/common module', () => {
         expect(retrieved?.email).toBe('test@example.com');
         expect(retrieved?.score).toBe(95);
 
-        // Type-wise, the branding should be preserved in JsonCompatible<IWithBrandedTypes>
+        // Type-wise, the branding should be preserved in JsonCompatibleType<IWithBrandedTypes>
         // Let's verify the types are what we expect
-        type TransformedType = JsonCompatible<IWithBrandedTypes>;
+        type TransformedType = JsonCompatibleType<IWithBrandedTypes>;
 
         // The transformed type should still have branded properties
         const typedValue: TransformedType = {
@@ -1048,9 +1048,9 @@ describe('jsonCompatible from json/common module', () => {
       });
 
       test('shows JsonCompatible type transformation preserves branding', () => {
-        // Let's examine what JsonCompatible<UserId> actually becomes
-        type UserIdCompatible = JsonCompatible<UserId>;
-        type EmailCompatible = JsonCompatible<EmailAddress>;
+        // Let's examine what JsonCompatibleType<UserId> actually becomes
+        type UserIdCompatible = JsonCompatibleType<UserId>;
+        type EmailCompatible = JsonCompatibleType<EmailAddress>;
 
         // These should still be the branded types, not just string
         const userId: UserIdCompatible = createUserId('preserved');
@@ -1180,7 +1180,7 @@ describe('jsonCompatible from json/common module', () => {
         const retrieved = map.get('pure');
         expect(retrieved?.events).toHaveLength(2);
 
-        // This reveals an important limitation: JsonCompatible<T[]> where T is a discriminated union
+        // This reveals an important limitation: JsonCompatibleType<T[]> where T is a discriminated union
         // always includes error arrays in the transformed type, even if all variants are compatible
         // This is because JsonCompatible processes the union type systematically
 
@@ -1198,10 +1198,10 @@ describe('jsonCompatible from json/common module', () => {
 
       test('shows how JsonCompatible transforms discriminated unions', () => {
         // Let's examine what happens to each variant type
-        type CompatibleDataEvent = JsonCompatible<IDataEvent>;
-        type CompatibleCallbackEvent = JsonCompatible<ICallbackEvent>;
-        type CompatibleFunctionEvent = JsonCompatible<IFunctionEvent>;
-        type CompatibleComplexEvent = JsonCompatible<IComplexCompatibleEvent>;
+        type CompatibleDataEvent = JsonCompatibleType<IDataEvent>;
+        type CompatibleCallbackEvent = JsonCompatibleType<ICallbackEvent>;
+        type CompatibleFunctionEvent = JsonCompatibleType<IFunctionEvent>;
+        type CompatibleComplexEvent = JsonCompatibleType<IComplexCompatibleEvent>;
 
         // Data event should be unchanged (fully compatible)
         const dataEvent: CompatibleDataEvent = {
@@ -1245,7 +1245,7 @@ describe('jsonCompatible from json/common module', () => {
       });
 
       test('shows type narrowing still works with JsonCompatible discriminated unions', () => {
-        type CompatibleEvent = JsonCompatible<IDataEvent | IComplexCompatibleEvent>;
+        type CompatibleEvent = JsonCompatibleType<IDataEvent | IComplexCompatibleEvent>;
 
         const processEvent = (event: CompatibleEvent): string => {
           switch (event.type) {
@@ -1262,13 +1262,13 @@ describe('jsonCompatible from json/common module', () => {
           }
         };
 
-        const dataEvent: JsonCompatible<IDataEvent> = {
+        const dataEvent: JsonCompatibleType<IDataEvent> = {
           type: 'data',
           timestamp: '2024-01-01T00:00:00Z',
           payload: { id: 'test', value: 42 }
         };
 
-        const complexEvent: JsonCompatible<IComplexCompatibleEvent> = {
+        const complexEvent: JsonCompatibleType<IComplexCompatibleEvent> = {
           type: 'complex',
           timestamp: '2024-01-01T00:00:00Z',
           data: {
@@ -1357,7 +1357,7 @@ describe('jsonCompatible from json/common module', () => {
     test('shows the difference between Record and Partial<Record> with string keys', () => {
       // Regular Record<string, string> works fine
       type RegularRecord = Record<string, string>;
-      type CompatibleRecord = JsonCompatible<RegularRecord>;
+      type CompatibleRecord = JsonCompatibleType<RegularRecord>;
 
       const regularRecord: RegularRecord = { key1: 'value1', key2: 'value2' };
       const compatibleRecord: CompatibleRecord = regularRecord; // This works
@@ -1367,7 +1367,7 @@ describe('jsonCompatible from json/common module', () => {
       // Partial<Record<string, string>> has issues due to undefined values
       type PartialRecord = Partial<Record<string, string>>;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      type CompatiblePartialRecord = JsonCompatible<PartialRecord>;
+      type CompatiblePartialRecord = JsonCompatibleType<PartialRecord>;
 
       // PartialRecord = { [x: string]?: string | undefined }
       // JsonCompatible transforms this to: { [x: string]: string | ["Error: Non-JSON type"] }
@@ -1417,7 +1417,7 @@ describe('jsonCompatible from json/common module', () => {
       type LiteralKeys = 'parent' | 'child' | 'grandchild';
 
       // API signature uses the base type for JSON compatibility
-      const processHierarchy = (hierarchy: JsonCompatible<HierarchyDecl<LiteralKeys>>): string[] => {
+      const processHierarchy = (hierarchy: JsonCompatibleType<HierarchyDecl<LiteralKeys>>): string[] => {
         return Object.keys(hierarchy);
       };
 
@@ -1447,14 +1447,14 @@ describe('jsonCompatible from json/common module', () => {
       // This is the core issue: JsonCompatible doesn't handle undefined well
       type ValueWithUndefined = string | undefined;
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      type CompatibleValueWithUndefined = JsonCompatible<ValueWithUndefined>;
+      type CompatibleValueWithUndefined = JsonCompatibleType<ValueWithUndefined>;
       // This becomes: string | ["Error: Non-JSON type"]
 
       interface IWithUndefinedValue {
         prop: string | undefined;
       }
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      type CompatibleWithUndefinedValue = JsonCompatible<IWithUndefinedValue>;
+      type CompatibleWithUndefinedValue = JsonCompatibleType<IWithUndefinedValue>;
       // This becomes: { prop: string | ["Error: Non-JSON type"] }
 
       // The original interface allows undefined
@@ -1465,14 +1465,14 @@ describe('jsonCompatible from json/common module', () => {
 
       // This is why Partial<Record<string, string>> doesn't work:
       // Partial<Record<string, string>> = { [x: string]?: string | undefined }
-      // JsonCompatible<Partial<Record<string, string>>> = { [x: string]: string | ["Error: Non-JSON type"] }
+      // JsonCompatibleType<Partial<Record<string, string>>> = { [x: string]: string | ["Error: Non-JSON type"] }
 
       expect(originalValue.prop).toBeUndefined();
     });
   });
 
   test('Collection behavior with JsonCompatible', () => {
-    type JsonMap<T, TV extends JsonCompatible<T> = JsonCompatible<T>> = Map<string, TV>;
+    type JsonMap<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> = Map<string, TV>;
     interface IJsonThing {
       a: string;
       b: number;
@@ -1528,10 +1528,10 @@ describe('jsonCompatible from json/common module', () => {
   });
 
   describe('unknown type handling', () => {
-    describe('JsonCompatible<unknown> maps to JsonValue', () => {
+    describe('JsonCompatibleType<unknown> maps to JsonValue', () => {
       test('unknown type resolves to JsonValue', () => {
-        // Test that JsonCompatible<unknown> maps to JsonValue
-        type UnknownCompatible = JsonCompatible<unknown>;
+        // Test that JsonCompatibleType<unknown> maps to JsonValue
+        type UnknownCompatible = JsonCompatibleType<unknown>;
 
         // This should be assignable to JsonValue
         const jsonString: UnknownCompatible = 'test string';
@@ -1553,7 +1553,7 @@ describe('jsonCompatible from json/common module', () => {
       test('unknown type works in generic contexts', () => {
         // Define a generic interface with unknown constraint
         interface IGenericContainer<T = unknown> {
-          data: JsonCompatible<T>;
+          data: JsonCompatibleType<T>;
           metadata: {
             type: string;
             version: number;
@@ -1589,7 +1589,7 @@ describe('jsonCompatible from json/common module', () => {
       });
 
       test('unknown arrays map to JsonValue arrays', () => {
-        type UnknownArray = JsonCompatible<unknown[]>;
+        type UnknownArray = JsonCompatibleType<unknown[]>;
 
         // Should accept arrays of JsonValue elements
         const stringArray: UnknownArray = ['a', 'b', 'c'];
@@ -1610,7 +1610,7 @@ describe('jsonCompatible from json/common module', () => {
           };
         }
 
-        type CompatibleNested = JsonCompatible<INestedUnknown>;
+        type CompatibleNested = JsonCompatibleType<INestedUnknown>;
 
         const nestedData: CompatibleNested = {
           data: 'top level data',
@@ -1648,8 +1648,8 @@ describe('jsonCompatible from json/common module', () => {
           anyProp: any; // eslint-disable-line @typescript-eslint/no-explicit-any
         }
 
-        type UnknownCompatible = JsonCompatible<IWithUnknown>;
-        type AnyCompatible = JsonCompatible<IWithAny>;
+        type UnknownCompatible = JsonCompatibleType<IWithUnknown>;
+        type AnyCompatible = JsonCompatibleType<IWithAny>;
 
         // Unknown should map to JsonValue
         const unknownData: UnknownCompatible = {
@@ -1678,9 +1678,9 @@ describe('jsonCompatible from json/common module', () => {
           data: {};
         }
 
-        type UnknownCompatible = JsonCompatible<IWithUnknown>;
-        type ObjectCompatible = JsonCompatible<IWithObject>;
-        type EmptyObjectCompatible = JsonCompatible<IWithEmptyObject>;
+        type UnknownCompatible = JsonCompatibleType<IWithUnknown>;
+        type ObjectCompatible = JsonCompatibleType<IWithObject>;
+        type EmptyObjectCompatible = JsonCompatibleType<IWithEmptyObject>;
 
         // All should work but unknown should specifically map to JsonValue
         const unknownData: UnknownCompatible = {
@@ -1707,7 +1707,7 @@ describe('jsonCompatible from json/common module', () => {
           data: string | unknown; // Should resolve to JsonValue (which includes string)
         }
 
-        type UnionCompatible = JsonCompatible<IWithUnionUnknown>;
+        type UnionCompatible = JsonCompatibleType<IWithUnionUnknown>;
 
         const unionData: UnionCompatible = {
           data: { object: 'is valid JsonValue' }
@@ -1727,7 +1727,7 @@ describe('jsonCompatible from json/common module', () => {
           unknownProp: unknown;
         }
 
-        type MixedCompatible = JsonCompatible<IKnownTypes>;
+        type MixedCompatible = JsonCompatibleType<IKnownTypes>;
 
         const mixedData: MixedCompatible = {
           stringProp: 'string value',
@@ -1755,11 +1755,11 @@ describe('jsonCompatible from json/common module', () => {
         }
 
         // Let me test if we can actually use the interface in a JsonCompatible context
-        type TestMapOfFunction = Map<string, JsonCompatible<IFunctionContainer>>;
+        type TestMapOfFunction = Map<string, JsonCompatibleType<IFunctionContainer>>;
         const testMap: TestMapOfFunction = new Map();
 
         // This should work at type level but the actual object with function would be invalid
-        const containerWithoutCallback: JsonCompatible<IFunctionContainer> = {
+        const containerWithoutCallback: JsonCompatibleType<IFunctionContainer> = {
           data: 'valid json data',
           callback: ['Error: Function is not JSON-compatible'] as never
         };
@@ -1777,7 +1777,7 @@ describe('jsonCompatible from json/common module', () => {
           data: BrandedUnknown;
         }
 
-        type BrandedUnknownCompatible = JsonCompatible<IWithBrandedUnknown>;
+        type BrandedUnknownCompatible = JsonCompatibleType<IWithBrandedUnknown>;
 
         // Should still work - branded unknown should map to JsonValue while preserving branding
         const brandedUnknownData: BrandedUnknownCompatible = {
@@ -1792,7 +1792,7 @@ describe('jsonCompatible from json/common module', () => {
   describe('JsonCompatible undefined handling', () => {
     test('allows undefined as JSON-compatible', () => {
       // Direct undefined type
-      type UndefinedCompatible = JsonCompatible<undefined>;
+      type UndefinedCompatible = JsonCompatibleType<undefined>;
       const undefinedValue: UndefinedCompatible = undefined;
       expect(undefinedValue).toBeUndefined();
     });
@@ -1803,7 +1803,7 @@ describe('jsonCompatible from json/common module', () => {
         optional?: string;
       }
 
-      type OptionalCompatible = JsonCompatible<IWithOptional>;
+      type OptionalCompatible = JsonCompatibleType<IWithOptional>;
 
       // Should work with undefined optional property
       const value1: OptionalCompatible = {
@@ -1830,7 +1830,7 @@ describe('jsonCompatible from json/common module', () => {
     });
 
     test('handles union types with undefined', () => {
-      type StringOrUndefined = JsonCompatible<string | undefined>;
+      type StringOrUndefined = JsonCompatibleType<string | undefined>;
 
       const value1: StringOrUndefined = 'hello';
       const value2: StringOrUndefined = undefined;
@@ -1848,7 +1848,7 @@ describe('jsonCompatible from json/common module', () => {
         optionalObject?: { nested?: string };
       }
 
-      type ComplexCompatible = JsonCompatible<IComplexOptional>;
+      type ComplexCompatible = JsonCompatibleType<IComplexOptional>;
 
       const value: ComplexCompatible = {
         required: 'test',
@@ -1866,7 +1866,7 @@ describe('jsonCompatible from json/common module', () => {
     });
 
     test('handles arrays with undefined elements', () => {
-      type ArrayWithUndefined = JsonCompatible<(string | undefined)[]>;
+      type ArrayWithUndefined = JsonCompatibleType<(string | undefined)[]>;
 
       const value: ArrayWithUndefined = ['hello', undefined, 'world'];
       expect(value[0]).toBe('hello');
@@ -1880,7 +1880,7 @@ describe('jsonCompatible from json/common module', () => {
         callback?: () => void;
       }
 
-      type FunctionCompatible = JsonCompatible<IWithFunction>;
+      type FunctionCompatible = JsonCompatibleType<IWithFunction>;
 
       // The callback property should become an error type
       const value: FunctionCompatible = {
@@ -1898,7 +1898,7 @@ describe('jsonCompatible from json/common module', () => {
         optional2?: number;
       }
 
-      const rawData: JsonCompatible<IWithOptionals> = {
+      const rawData: JsonCompatibleType<IWithOptionals> = {
         name: 'test',
         optional1: undefined,
         optional2: 42

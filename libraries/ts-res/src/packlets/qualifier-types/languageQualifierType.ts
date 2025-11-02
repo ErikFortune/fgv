@@ -34,7 +34,7 @@ import {
 } from '../common';
 import { IQualifierTypeCreateParams, QualifierType } from './qualifierType';
 import * as Config from './config';
-import { JsonCompatible, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonCompatibleType, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -61,7 +61,7 @@ export interface ILanguageQualifierTypeCreateParams extends Partial<IQualifierTy
  * @public
  */
 export class LanguageQualifierType extends QualifierType<
-  JsonCompatible<Config.ILanguageQualifierTypeConfig>
+  JsonCompatibleType<Config.ILanguageQualifierTypeConfig>
 > {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
@@ -141,7 +141,7 @@ export class LanguageQualifierType extends QualifierType<
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonCompatible<Config.ISystemLanguageQualifierTypeConfig>> {
+  public getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemLanguageQualifierTypeConfig>> {
     return succeed({
       name: this.name,
       systemType: 'language' as const,
@@ -156,7 +156,7 @@ export class LanguageQualifierType extends QualifierType<
    */
   public validateConfigurationJson(
     from: unknown
-  ): Result<JsonCompatible<Config.ISystemLanguageQualifierTypeConfig>> {
+  ): Result<JsonCompatibleType<Config.ISystemLanguageQualifierTypeConfig>> {
     return Config.Convert.systemLanguageQualifierTypeConfig.convert(from);
   }
 

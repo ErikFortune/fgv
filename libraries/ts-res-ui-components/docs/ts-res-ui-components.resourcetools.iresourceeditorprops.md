@@ -9,7 +9,7 @@ Props that will be passed to custom resource editors created by ResourceEditorFa
 **Signature:**
 
 ```typescript
-export interface IResourceEditorProps<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> 
+export interface IResourceEditorProps<T = unknown, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> 
 ```
 
 ## Properties

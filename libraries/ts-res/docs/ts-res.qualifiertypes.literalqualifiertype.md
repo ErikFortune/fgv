@@ -9,9 +9,9 @@ A [qualifier](./ts-res.qualifiertypes.qualifiertype.md) that matches a literal v
 **Signature:**
 
 ```typescript
-export declare class LiteralQualifierType extends QualifierType<JsonCompatible<Config.ILiteralQualifierTypeConfig>> 
+export declare class LiteralQualifierType extends QualifierType<JsonCompatibleType<Config.ILiteralQualifierTypeConfig>> 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiertype.md)<!-- -->&lt;JsonCompatible&lt;Config.ILiteralQualifierTypeConfig&gt;&gt;
+**Extends:** [QualifierType](./ts-res.qualifiertype.md)<!-- -->&lt;JsonCompatibleType&lt;Config.ILiteralQualifierTypeConfig&gt;&gt;
 
 ## Constructors
 
