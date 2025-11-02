@@ -47,7 +47,9 @@ describe('ZipArchiveLoader', () => {
       const archiveBuffer = createResult.value!.zipBuffer;
 
       // Create a mock File object
-      const file = new File([archiveBuffer], 'test-archive.zip', { type: 'application/zip' });
+      const file = new File([archiveBuffer.buffer.slice(0) as ArrayBuffer], 'test-archive.zip', {
+        type: 'application/zip'
+      });
 
       // Load the archive
       const loadResult = await loader.loadFromFile(file, {
@@ -70,7 +72,9 @@ describe('ZipArchiveLoader', () => {
 
       expect(createResult).toSucceed();
       const archiveBuffer = createResult.value!.zipBuffer;
-      const file = new File([archiveBuffer], 'test-archive.zip', { type: 'application/zip' });
+      const file = new File([archiveBuffer.buffer.slice(0) as ArrayBuffer], 'test-archive.zip', {
+        type: 'application/zip'
+      });
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
@@ -133,7 +137,9 @@ describe('ZipArchiveLoader', () => {
 
       expect(createResult).toSucceed();
       const archiveBuffer = createResult.value!.zipBuffer;
-      const file = new File([archiveBuffer], 'test-archive.zip', { type: 'application/zip' });
+      const file = new File([archiveBuffer.buffer.slice(0) as ArrayBuffer], 'test-archive.zip', {
+        type: 'application/zip'
+      });
 
       const loadResult = await loader.loadFromFile(file, {});
 
@@ -160,9 +166,13 @@ describe('ZipArchiveLoader', () => {
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
-      const result = await loader.loadFromBuffer(archiveBuffer, {}, (phase, progress, message) => {
-        progressCalls.push({ phase, progress, message });
-      });
+      const result = await loader.loadFromBuffer(
+        archiveBuffer.buffer.slice(0) as ArrayBuffer,
+        {},
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
 
       expect(result).toSucceed();
       // Should have multiple progress callbacks throughout the process
@@ -201,9 +211,13 @@ describe('ZipArchiveLoader', () => {
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
-      const result = await loader.loadFromBuffer(invalidBuffer, {}, (phase, progress, message) => {
-        progressCalls.push({ phase, progress, message });
-      });
+      const result = await loader.loadFromBuffer(
+        invalidBuffer.buffer.slice(0) as ArrayBuffer,
+        {},
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
 
       expect(result).toFail();
       // Should have at least one progress callback before failing
@@ -228,9 +242,13 @@ describe('ZipArchiveLoader', () => {
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
-      const result = await loader.loadFromBuffer(zipBuffer, {}, (phase, progress, message) => {
-        progressCalls.push({ phase, progress, message });
-      });
+      const result = await loader.loadFromBuffer(
+        zipBuffer.buffer.slice(0) as ArrayBuffer,
+        {},
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
 
       expect(result).toSucceedAndSatisfy((loadedResult) => {
         // Should succeed but have undefined manifest
@@ -278,9 +296,13 @@ describe('ZipArchiveLoader', () => {
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
-      const result = await loader.loadFromBuffer(zipBuffer, {}, (phase, progress, message) => {
-        progressCalls.push({ phase, progress, message });
-      });
+      const result = await loader.loadFromBuffer(
+        zipBuffer.buffer.slice(0) as ArrayBuffer,
+        {},
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
 
       expect(result).toFailWith(
         /Manifest specifies config file at 'config\/missing-config\.json' but it was not found in archive/i
@@ -316,9 +338,13 @@ describe('ZipArchiveLoader', () => {
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
-      const result = await loader.loadFromBuffer(zipBuffer, {}, (phase, progress, message) => {
-        progressCalls.push({ phase, progress, message });
-      });
+      const result = await loader.loadFromBuffer(
+        zipBuffer.buffer.slice(0) as ArrayBuffer,
+        {},
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
 
       expect(result).toFailWith(/Failed to parse manifest\.json/i);
 
@@ -357,9 +383,13 @@ describe('ZipArchiveLoader', () => {
 
       const progressCalls: Array<{ phase: string; progress: number; message: string }> = [];
 
-      const result = await loader.loadFromBuffer(zipBuffer, {}, (phase, progress, message) => {
-        progressCalls.push({ phase, progress, message });
-      });
+      const result = await loader.loadFromBuffer(
+        zipBuffer.buffer.slice(0) as ArrayBuffer,
+        {},
+        (phase, progress, message) => {
+          progressCalls.push({ phase, progress, message });
+        }
+      );
 
       expect(result).toFailWith(/Failed to parse config file 'config\/malformed-config\.json'/i);
 
