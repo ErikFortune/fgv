@@ -53,7 +53,7 @@ describe('ZipArchive Idempotency', () => {
       expect(archiveResult.manifest.input?.type).toBe('directory');
 
       // Load the archive back
-      const file = new File([archiveResult.zipBuffer], 'custom-config.zip', {
+      const file = new File([archiveResult.zipBuffer.buffer.slice(0) as ArrayBuffer], 'custom-config.zip', {
         type: 'application/zip'
       });
 
@@ -129,9 +129,13 @@ describe('ZipArchive Idempotency', () => {
       expect(createResult).toSucceed();
       const archiveResult = createResult.value!;
 
-      const file = new File([archiveResult.zipBuffer], 'resources-config.zip', {
-        type: 'application/zip'
-      });
+      const file = new File(
+        [archiveResult.zipBuffer.buffer.slice(0) as ArrayBuffer],
+        'resources-config.zip',
+        {
+          type: 'application/zip'
+        }
+      );
 
       const loadResult = await loader.loadFromFile(file, {
         strictManifestValidation: true
@@ -163,7 +167,7 @@ describe('ZipArchive Idempotency', () => {
       expect(createResult).toSucceed();
       const archiveResult = createResult.value!;
 
-      const file = new File([archiveResult.zipBuffer], 'complex-paths.zip', {
+      const file = new File([archiveResult.zipBuffer.buffer.slice(0) as ArrayBuffer], 'complex-paths.zip', {
         type: 'application/zip'
       });
 
