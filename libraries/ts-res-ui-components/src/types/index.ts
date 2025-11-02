@@ -10,7 +10,7 @@ import {
   ResourceTypes,
   Import
 } from '@fgv/ts-res';
-import { JsonCompatible, JsonValue, FileTree } from '@fgv/ts-json-base';
+import { JsonCompatibleType, JsonValue, FileTree } from '@fgv/ts-json-base';
 // Import File System Access API types
 import '@fgv/ts-web-extras';
 // IIResourcePickerOptions import removed - unused
@@ -286,7 +286,7 @@ export interface ICompiledViewProps extends IViewBaseProps {
  *
  * @public
  */
-export type ResourceEditorResult<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> =
+export type ResourceEditorResult<T = unknown, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> =
   | {
       /** Indicates whether the factory was able to create an editor for the resource */
       success: true;
@@ -306,7 +306,7 @@ export type ResourceEditorResult<T = unknown, TV extends JsonCompatible<T> = Jso
  *
  * @public
  */
-export interface IResourceEditorProps<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+export interface IResourceEditorProps<T = unknown, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> {
   /** The original JSON value to edit */
   value: TV;
   /** The resource ID for tracking edits */
@@ -331,7 +331,10 @@ export interface IResourceEditorProps<T = unknown, TV extends JsonCompatible<T> 
  *
  * @public
  */
-export interface IResourceEditorFactory<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+export interface IResourceEditorFactory<
+  T = unknown,
+  TV extends JsonCompatibleType<T> = JsonCompatibleType<T>
+> {
   /**
    * Attempts to create a resource editor for the given resource.
    *
@@ -395,7 +398,7 @@ export interface IResolutionViewProps extends IViewBaseProps {
  *
  * @public
  */
-export interface IEditedResourceInfo<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+export interface IEditedResourceInfo<T = unknown, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> {
   /** Unique identifier of the resource being edited */
   resourceId: string;
   originalValue: TV;
@@ -462,7 +465,10 @@ export interface IResolutionState {
  *
  * @public
  */
-export interface ICreatePendingResourceParams<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+export interface ICreatePendingResourceParams<
+  T = unknown,
+  TV extends JsonCompatibleType<T> = JsonCompatibleType<T>
+> {
   /** Full resource ID (e.g., 'platform.languages.az-AZ') - must be unique */
   id: string;
   /** Name of the resource type to use for validation and template creation */
@@ -491,7 +497,10 @@ export interface ICreatePendingResourceParams<T = unknown, TV extends JsonCompat
  *
  * @public
  */
-export interface IStartNewResourceParams<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+export interface IStartNewResourceParams<
+  T = unknown,
+  TV extends JsonCompatibleType<T> = JsonCompatibleType<T>
+> {
   /** Resource type to use (optional - will use first available if not provided) */
   defaultTypeName?: string;
   /** Pre-seed with specific ID (optional) */
@@ -677,7 +686,7 @@ export interface IResolutionContextOptions {
  *
  * @public
  */
-export interface IResolutionResult<T = unknown, TV extends JsonCompatible<T> = JsonCompatible<T>> {
+export interface IResolutionResult<T = unknown, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> {
   /** Whether the resolution was successful */
   success: boolean;
   /** ID of the resource that was resolved */

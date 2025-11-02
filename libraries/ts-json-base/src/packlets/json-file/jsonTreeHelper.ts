@@ -54,7 +54,7 @@ export class JsonTreeHelper {
    */
   public readJsonFromTree(fileTree: FileTree.FileTree, filePath: string): Result<JsonValue> {
     return fileTree.getFile(filePath).onSuccess((file) => {
-      // Now getContents() returns JsonCompatible<unknown> which is assignable to JsonValue!
+      // Now getContents() returns JsonCompatibleType<unknown> which is assignable to JsonValue!
       return file.getContents() as Result<JsonValue>;
     });
   }

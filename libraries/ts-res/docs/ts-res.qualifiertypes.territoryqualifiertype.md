@@ -9,9 +9,9 @@ Qualifier type for territory values. Territories are two-letter ISO-3166-2 Alpha
 **Signature:**
 
 ```typescript
-export declare class TerritoryQualifierType extends QualifierType<JsonCompatible<Config.ITerritoryQualifierTypeConfig>> 
+export declare class TerritoryQualifierType extends QualifierType<JsonCompatibleType<Config.ITerritoryQualifierTypeConfig>> 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiertype.md)<!-- -->&lt;JsonCompatible&lt;Config.ITerritoryQualifierTypeConfig&gt;&gt;
+**Extends:** [QualifierType](./ts-res.qualifiertype.md)<!-- -->&lt;JsonCompatibleType&lt;Config.ITerritoryQualifierTypeConfig&gt;&gt;
 
 ## Constructors
 

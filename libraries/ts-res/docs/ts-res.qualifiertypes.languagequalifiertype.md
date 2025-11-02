@@ -9,9 +9,9 @@
 **Signature:**
 
 ```typescript
-export declare class LanguageQualifierType extends QualifierType<JsonCompatible<Config.ILanguageQualifierTypeConfig>> 
+export declare class LanguageQualifierType extends QualifierType<JsonCompatibleType<Config.ILanguageQualifierTypeConfig>> 
 ```
-**Extends:** [QualifierType](./ts-res.qualifiertype.md)<!-- -->&lt;JsonCompatible&lt;Config.ILanguageQualifierTypeConfig&gt;&gt;
+**Extends:** [QualifierType](./ts-res.qualifiertype.md)<!-- -->&lt;JsonCompatibleType&lt;Config.ILanguageQualifierTypeConfig&gt;&gt;
 
 ## Constructors
 

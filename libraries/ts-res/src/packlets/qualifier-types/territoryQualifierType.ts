@@ -35,7 +35,7 @@ import {
 import { QualifierType } from './qualifierType';
 import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
-import { JsonCompatible, JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonCompatibleType, JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Parameters used to create a new {@link QualifierTypes.TerritoryQualifierType | TerritoryQualifierType} instance.
@@ -82,7 +82,7 @@ export interface ITerritoryQualifierTypeCreateParams {
  * @public
  */
 export class TerritoryQualifierType extends QualifierType<
-  JsonCompatible<Config.ITerritoryQualifierTypeConfig>
+  JsonCompatibleType<Config.ITerritoryQualifierTypeConfig>
 > {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
@@ -213,7 +213,7 @@ export class TerritoryQualifierType extends QualifierType<
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonCompatible<Config.ISystemTerritoryQualifierTypeConfig>> {
+  public getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemTerritoryQualifierTypeConfig>> {
     const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
     const allowedTerritories: JsonObject = this.allowedTerritories
       ? { allowedTerritories: [...this.allowedTerritories] }
@@ -235,7 +235,7 @@ export class TerritoryQualifierType extends QualifierType<
    */
   public validateConfigurationJson(
     from: unknown
-  ): Result<JsonCompatible<Config.ISystemTerritoryQualifierTypeConfig>> {
+  ): Result<JsonCompatibleType<Config.ISystemTerritoryQualifierTypeConfig>> {
     return Config.Convert.systemTerritoryQualifierTypeConfig.convert(from);
   }
 

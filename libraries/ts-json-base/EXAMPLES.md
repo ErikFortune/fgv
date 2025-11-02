@@ -1,6 +1,6 @@
 # JsonCompatible Usage Examples
 
-This document provides comprehensive examples of using the `JsonCompatible<T>` type and the MapOf pattern.
+This document provides comprehensive examples of using the `JsonCompatibleType<T>` type and the MapOf pattern.
 
 ## Table of Contents
 
@@ -26,7 +26,7 @@ interface PersonData {
   metadata: Record<string, string | number>;
 }
 
-type ValidatedPerson = JsonCompatible<PersonData>;
+type ValidatedPerson = JsonCompatibleType<PersonData>;
 // Result: PersonData (unchanged)
 
 // ❌ Interface with methods
@@ -37,7 +37,7 @@ interface PersonWithMethods {
   save(): Promise<void>;
 }
 
-type InvalidPerson = JsonCompatible<PersonWithMethods>;
+type InvalidPerson = JsonCompatibleType<PersonWithMethods>;
 // Result: {
 //   id: string;
 //   name: string;
@@ -59,7 +59,7 @@ interface ArrayExamples {
   mixed: Array<string | number | boolean>;
 }
 
-type ValidArrays = JsonCompatible<ArrayExamples>;
+type ValidArrays = JsonCompatibleType<ArrayExamples>;
 // Result: ArrayExamples (unchanged)
 
 // ❌ Arrays with functions
@@ -69,7 +69,7 @@ interface BadArrays {
   processors: Array<{ name: string; process: (x: any) => any }>;
 }
 
-type InvalidArrays = JsonCompatible<BadArrays>;
+type InvalidArrays = JsonCompatibleType<BadArrays>;
 // Result: {
 //   callbacks: Array<['Error: Function is not JSON-compatible']>;
 //   mixedWithFunctions: Array<string | ['Error: Function is not JSON-compatible']>;
@@ -82,7 +82,7 @@ type InvalidArrays = JsonCompatible<BadArrays>;
 ### Basic Implementation
 
 ```typescript
-class MapOf<T, TV extends JsonCompatible<T> = JsonCompatible<T>> extends Map<string, TV> {
+class MapOf<T, TV extends JsonCompatibleType<T> = JsonCompatibleType<T>> extends Map<string, TV> {
   public override set(key: string, value: TV): this {
     return super.set(key, value);
   }
@@ -345,7 +345,7 @@ interface DeepStructure {
   };
 }
 
-type DeepResult = JsonCompatible<DeepStructure>;
+type DeepResult = JsonCompatibleType<DeepStructure>;
 // Result: {
 //   level1: {
 //     level2: {
@@ -373,7 +373,7 @@ interface MixedArrayExample {
   }>;
 }
 
-type MixedResult = JsonCompatible<MixedArrayExample>;
+type MixedResult = JsonCompatibleType<MixedArrayExample>;
 // Result: {
 //   validArray: Array<string | number | boolean>;
 //   invalidArray: Array<string | ['Error: Function is not JSON-compatible']>;
@@ -395,7 +395,7 @@ interface ProblematicTypes {
   map: Map<string, number>; // Not JSON-serializable
 }
 
-type ProblematicResult = JsonCompatible<ProblematicTypes>;
+type ProblematicResult = JsonCompatibleType<ProblematicTypes>;
 // All properties become error types because they're not JSON-serializable
 ```
 
@@ -407,11 +407,11 @@ type ProblematicResult = JsonCompatible<ProblematicTypes>;
 class JsonStorage<T> {
   private store = new MapOf<T>();
   
-  public set(key: string, value: T & JsonCompatible<T>): void {
+  public set(key: string, value: T & JsonCompatibleType<T>): void {
     this.store.set(key, value);
   }
   
-  public get(key: string): (T & JsonCompatible<T>) | undefined {
+  public get(key: string): (T & JsonCompatibleType<T>) | undefined {
     return this.store.get(key);
   }
   
@@ -441,7 +441,7 @@ class ValidatedMap<T> extends MapOf<T> {
     super();
   }
   
-  public override set(key: string, value: T & JsonCompatible<T>): this {
+  public override set(key: string, value: T & JsonCompatibleType<T>): this {
     if (!this.validator(value)) {
       throw new Error(`Invalid value for key ${key}`);
     }
@@ -462,14 +462,14 @@ const validatedUserMap = new ValidatedMap<UserData>(isUserData);
 ### Conditional JSON Compatibility
 
 ```typescript
-type OnlyJsonCompatible<T> = JsonCompatible<T> extends never 
+type OnlyJsonCompatibleType<T> = JsonCompatibleType<T> extends never 
   ? 'Type is not JSON compatible' 
   : T;
 
 // Usage in function signatures
 function storeData<T>(
   key: string, 
-  data: T & OnlyJsonCompatible<T>
+  data: T & OnlyJsonCompatibleType<T>
 ): void {
   // data is guaranteed to be JSON-compatible
   localStorage.setItem(key, JSON.stringify(data));
@@ -482,4 +482,4 @@ storeData('user', { id: '123', name: 'Alice' });
 // storeData('handler', { fn: () => {} });
 ```
 
-This comprehensive set of examples demonstrates how `JsonCompatible<T>` and the MapOf pattern provide robust compile-time guarantees for JSON serialization while maintaining type safety and developer ergonomics.
+This comprehensive set of examples demonstrates how `JsonCompatibleType<T>` and the MapOf pattern provide robust compile-time guarantees for JSON serialization while maintaining type safety and developer ergonomics.

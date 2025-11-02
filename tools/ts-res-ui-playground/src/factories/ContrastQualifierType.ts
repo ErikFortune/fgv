@@ -129,7 +129,7 @@ export class ContrastQualifierType extends QualifierType {
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
   public getConfigurationJson(): Result<
-    JsonCompatible<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>
+    JsonCompatibleType<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>
   > {
     return succeed({
       name: this.name,
@@ -147,7 +147,7 @@ export class ContrastQualifierType extends QualifierType {
    */
   public validateConfigurationJson(
     from: unknown
-  ): Result<JsonCompatible<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>> {
+  ): Result<JsonCompatibleType<QualifierTypes.Config.IQualifierTypeConfig<IContrastQualifierTypeConfig>>> {
     return systemContrastQualifierTypeConfig.convert(from);
   }
 

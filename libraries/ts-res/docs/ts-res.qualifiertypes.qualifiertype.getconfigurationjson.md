@@ -9,11 +9,11 @@ Gets the configuration for this qualifier type.
 **Signature:**
 
 ```typescript
-abstract getConfigurationJson(): Result<JsonCompatible<Config.IQualifierTypeConfig<TCFGJSON>>>;
+abstract getConfigurationJson(): Result<JsonCompatibleType<Config.IQualifierTypeConfig<TCFGJSON>>>;
 ```
 **Returns:**
 
-Result&lt;JsonCompatible&lt;Config.IQualifierTypeConfig&lt;TCFGJSON&gt;&gt;&gt;
+Result&lt;JsonCompatibleType&lt;Config.IQualifierTypeConfig&lt;TCFGJSON&gt;&gt;&gt;
 
 `Success` with the configuration if successful, `Failure` with an error message otherwise.
 

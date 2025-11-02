@@ -177,6 +177,15 @@ Description
 </td></tr>
 <tr><td>
 
+[JsonCompatible](./ts-json-base.jsoncompatible.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [JsonFile](./ts-json-base.jsonfile.md)
 
 
@@ -210,7 +219,18 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[JsonCompatible](./ts-json-base.jsoncompatible.md)
+[JsonCompatibleArray](./ts-json-base.jsoncompatiblearray.md)
+
+
+</td><td>
+
+A type that represents an array of JSON-compatible values.
+
+
+</td></tr>
+<tr><td>
+
+[JsonCompatibleType](./ts-json-base.jsoncompatibletype.md)
 
 
 </td><td>
@@ -220,17 +240,6 @@ A constrained type that is compatible with JSON serialization.
 This type transforms input types to ensure they can be safely serialized to JSON: - JSON primitives (string, number, boolean, null) are preserved as-is - `undefined` is allowed for TypeScript compatibility with optional properties - Objects are recursively transformed with all properties made JSON-compatible - Arrays are transformed to contain only JSON-compatible elements - Functions are transformed to error types - Other non-JSON types are transformed to error types
 
 Note: While `undefined` is technically not JSON-serializable, it's allowed here to support TypeScript's optional property patterns. Use `sanitizeJsonObject` to remove undefined properties before actual JSON serialization.
-
-
-</td></tr>
-<tr><td>
-
-[JsonCompatibleArray](./ts-json-base.jsoncompatiblearray.md)
-
-
-</td><td>
-
-A type that represents an array of JSON-compatible values.
 
 
 </td></tr>
