@@ -9,7 +9,7 @@ A type that represents an array of JSON-compatible values.
 **Signature:**
 
 ```typescript
-export type JsonCompatibleArray<T> = Array<JsonCompatible<T>>;
+export type JsonCompatibleArray<T> = Array<JsonCompatibleType<T>>;
 ```
-**References:** [JsonCompatible](./ts-json-base.jsoncompatible.md)
+**References:** [JsonCompatibleType](./ts-json-base.jsoncompatibletype.md)
 

@@ -35,7 +35,7 @@ import {
 import { QualifierType } from './qualifierType';
 import { LiteralValueHierarchy } from './literalValueHierarchy';
 import * as Config from './config';
-import { JsonCompatible, JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
+import { JsonCompatibleType, JsonObject, sanitizeJsonObject } from '@fgv/ts-json-base';
 
 /**
  * Interface defining the parameters that can be used to create a new
@@ -83,7 +83,9 @@ export interface ILiteralQualifierTypeCreateParams {
  * optionally case-sensitive or matching against an ordered list of values at runtime.
  * @public
  */
-export class LiteralQualifierType extends QualifierType<JsonCompatible<Config.ILiteralQualifierTypeConfig>> {
+export class LiteralQualifierType extends QualifierType<
+  JsonCompatibleType<Config.ILiteralQualifierTypeConfig>
+> {
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.systemTypeName}
    */
@@ -187,7 +189,7 @@ export class LiteralQualifierType extends QualifierType<JsonCompatible<Config.IL
   /**
    * {@inheritdoc QualifierTypes.IQualifierType.getConfigurationJson}
    */
-  public getConfigurationJson(): Result<JsonCompatible<Config.ISystemLiteralQualifierTypeConfig>> {
+  public getConfigurationJson(): Result<JsonCompatibleType<Config.ISystemLiteralQualifierTypeConfig>> {
     const hierarchy: JsonObject = this.hierarchy ? { hierarchy: this.hierarchy.asRecord() } : {};
     const enumeratedValues: JsonObject = this.enumeratedValues
       ? { enumeratedValues: [...this.enumeratedValues] }
@@ -209,7 +211,7 @@ export class LiteralQualifierType extends QualifierType<JsonCompatible<Config.IL
    */
   public validateConfigurationJson(
     from: unknown
-  ): Result<JsonCompatible<Config.ISystemLiteralQualifierTypeConfig>> {
+  ): Result<JsonCompatibleType<Config.ISystemLiteralQualifierTypeConfig>> {
     return Config.Convert.systemLiteralQualifierTypeConfig.convert(from);
   }
 

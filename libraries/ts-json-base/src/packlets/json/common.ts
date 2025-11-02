@@ -89,7 +89,7 @@ type IsUnknown<T> = unknown extends T ? ([T] extends [unknown] ? true : false) :
  *   email?: string; // Optional property can be undefined
  * }
  *
- * type UserCompatible = JsonCompatible<IUser>; // Allows undefined for email
+ * type UserCompatible = JsonCompatibleType<IUser>; // Allows undefined for email
  *
  * const user: UserCompatible = {
  *   name: "John",
@@ -103,7 +103,7 @@ type IsUnknown<T> = unknown extends T ? ([T] extends [unknown] ? true : false) :
  *
  * @public
  */
-export type JsonCompatible<T> = IsUnknown<T> extends true
+export type JsonCompatibleType<T> = IsUnknown<T> extends true
   ? JsonValue
   : T extends JsonPrimitive | undefined
   ? T
@@ -113,7 +113,7 @@ export type JsonCompatible<T> = IsUnknown<T> extends true
   T extends Function
   ? ['Error: Function is not JSON-compatible']
   : T extends object
-  ? { [K in keyof T]: JsonCompatible<T[K]> }
+  ? { [K in keyof T]: JsonCompatibleType<T[K]> }
   : ['Error: Non-JSON type'];
 
 /**
@@ -122,7 +122,7 @@ export type JsonCompatible<T> = IsUnknown<T> extends true
  * @returns A constrained type that is compatible with JSON serialization.
  * @public
  */
-export type JsonCompatibleArray<T> = Array<JsonCompatible<T>>;
+export type JsonCompatibleArray<T> = Array<JsonCompatibleType<T>>;
 
 /**
  * Test if an `unknown` is a {@link JsonValue | JsonValue}.

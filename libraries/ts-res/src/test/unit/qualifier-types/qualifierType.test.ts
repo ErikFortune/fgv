@@ -22,7 +22,7 @@
 
 import '@fgv/ts-utils-jest';
 import { Result, fail, succeed } from '@fgv/ts-utils';
-import { JsonCompatible, JsonObject } from '@fgv/ts-json-base';
+import { JsonCompatibleType, JsonObject } from '@fgv/ts-json-base';
 import * as TsRes from '../../../index';
 
 /**
@@ -68,7 +68,7 @@ class BaseQualifierTypeTest extends TsRes.QualifierTypes.QualifierType {
   }
 
   public getConfigurationJson(): Result<
-    JsonCompatible<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>
+    JsonCompatibleType<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>
   > {
     return succeed({
       name: this.name,
@@ -79,7 +79,7 @@ class BaseQualifierTypeTest extends TsRes.QualifierTypes.QualifierType {
 
   public validateConfigurationJson(
     from: unknown
-  ): Result<JsonCompatible<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>> {
+  ): Result<JsonCompatibleType<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>> {
     // Simple validation for test class
     if (typeof from !== 'object' || from === null) {
       return fail('Expected object');
@@ -91,7 +91,7 @@ class BaseQualifierTypeTest extends TsRes.QualifierTypes.QualifierType {
     if (obj.systemType !== 'base-test') {
       return fail('systemType must be base-test');
     }
-    return succeed(from as JsonCompatible<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>);
+    return succeed(from as JsonCompatibleType<TsRes.QualifierTypes.Config.IQualifierTypeConfig<JsonObject>>);
   }
 
   protected _matchOne(
