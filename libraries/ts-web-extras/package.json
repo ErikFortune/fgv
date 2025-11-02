@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-web-extras",
-  "version": "5.0.1-2",
+  "version": "5.0.1-3",
   "description": "Browser-compatible utilities and FileTree implementations",
   "main": "lib/index.js",
   "types": "dist/ts-web-extras.d.ts",

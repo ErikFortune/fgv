@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-sudoku-ui",
-  "version": "5.0.1-2",
+  "version": "5.0.1-3",
   "description": "React components for interactive Sudoku puzzle entry and display",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
