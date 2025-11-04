@@ -187,11 +187,14 @@ export const createFilteredResourceManagerSimple = async (
       debugLog(enableDebug, 'Filtered manager created:', filteredManager);
 
       // Create new ImportManager for the filtered system
-      return Import.ImportManager.create({
-        resources: filteredManager,
-        fileTree: FileTree.inMemory([]).orThrow()
-      })
-        .withErrorFormat((e) => `Failed to create filtered import manager: ${e}`)
+      return FileTree.inMemory([])
+        .withErrorFormat((e) => `Failed to create in-memory FileTree: ${e}`)
+        .onSuccess((emptyTree) =>
+          Import.ImportManager.create({
+            resources: filteredManager,
+            fileTree: emptyTree
+          }).withErrorFormat((e) => `Failed to create filtered import manager: ${e}`)
+        )
         .onSuccess((newImportManager) => {
           // Create new ContextQualifierProvider for the filtered system
           return Runtime.ValidatingSimpleContextQualifierProvider.create({

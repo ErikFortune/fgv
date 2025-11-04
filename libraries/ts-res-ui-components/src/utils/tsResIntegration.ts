@@ -109,11 +109,14 @@ export function createTsResSystemFromConfig(
       })
         .withErrorFormat((e) => `Failed to create resource manager: ${e}`)
         .onSuccess((resourceManager) => {
-          return Import.ImportManager.create({
-            resources: resourceManager,
-            fileTree: FileTree.inMemory([]).orThrow()
-          })
-            .withErrorFormat((e) => `Failed to create import manager: ${e}`)
+          return FileTree.inMemory([])
+            .withErrorFormat((e) => `Failed to create in-memory FileTree: ${e}`)
+            .onSuccess((emptyTree) =>
+              Import.ImportManager.create({
+                resources: resourceManager,
+                fileTree: emptyTree
+              }).withErrorFormat((e) => `Failed to create import manager: ${e}`)
+            )
             .onSuccess((importManager) => {
               return Runtime.ValidatingSimpleContextQualifierProvider.create({
                 qualifiers: systemConfiguration.qualifiers
