@@ -52,6 +52,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ArrayConverter](./ts-json-base.jsoncompatible.arrayconverter.md)
+
+
+</td><td>
+
+A converter which converts a supplied `unknown` value to a valid array of [JsonCompatible](./ts-json-base.jsoncompatibletype.md) values.
+
+
+</td></tr>
+<tr><td>
+
+[ArrayValidator](./ts-json-base.jsoncompatible.arrayvalidator.md)
+
+
+</td><td>
+
+A validator which validates arrays of [JsonCompatible](./ts-json-base.jsoncompatibletype.md) values in place.
+
+
+</td></tr>
+<tr><td>
+
 [Converter](./ts-json-base.jsoncompatible.converter.md)
 
 
@@ -80,6 +102,28 @@ A converter which converts a supplied `unknown` value to a valid [JsonCompatible
 </td><td>
 
 A validator which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+
+
+</td></tr>
+<tr><td>
+
+[RecordConverter](./ts-json-base.jsoncompatible.recordconverter.md)
+
+
+</td><td>
+
+A converter which converts a supplied `unknown` value to a valid record of [JsonCompatible](./ts-json-base.jsoncompatibletype.md) values.
+
+
+</td></tr>
+<tr><td>
+
+[RecordValidator](./ts-json-base.jsoncompatible.recordvalidator.md)
+
+
+</td><td>
+
+A validator which validates a record of [JsonCompatible](./ts-json-base.jsoncompatibletype.md) values.
 
 
 </td></tr>

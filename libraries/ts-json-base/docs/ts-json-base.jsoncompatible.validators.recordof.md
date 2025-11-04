@@ -4,12 +4,12 @@
 
 ## JsonCompatible.Validators.recordOf() function
 
-A helper function to create a  which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible RecordValidator&lt;T, TC, TK&gt;](./ts-json-base.jsoncompatible.recordvalidator.md) which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
 
 **Signature:**
 
 ```typescript
-export declare function recordOf<T, TC = unknown, TK extends string = string>(validateElement: JsonCompatible.Validator<T, TC>, options?: Validators.IRecordOfValidatorOptions<TK, TC>): Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>;
+export declare function recordOf<T, TC = unknown, TK extends string = string>(validateElement: JsonCompatible.Validator<T, TC>, options?: Validators.IRecordOfValidatorOptions<TK, TC>): JsonCompatible.RecordValidator<T, TC, TK>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ JsonCompatible.Validator&lt;T, TC&gt;
 
 </td><td>
 
-The element to validate.
+The element validator to use.
 
 
 </td></tr>
@@ -66,7 +66,7 @@ _(Optional)_ The options to use for the validation.
 
 **Returns:**
 
-Validation.Validator&lt;Record&lt;TK, [JsonCompatibleType](./ts-json-base.jsoncompatibletype.md)<!-- -->&lt;T&gt;&gt;, TC&gt;
+[JsonCompatible.RecordValidator](./ts-json-base.jsoncompatible.recordvalidator.md)<!-- -->&lt;T, TC, TK&gt;
 
-A  which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+A `Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>` which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
 

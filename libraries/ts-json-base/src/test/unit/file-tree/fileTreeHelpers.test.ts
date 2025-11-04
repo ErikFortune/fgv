@@ -21,7 +21,7 @@
  */
 
 import '@fgv/ts-utils-jest';
-import { inMemory, forFilesystem } from '../../../packlets/file-tree';
+import { forFilesystem, inMemory } from '../../../packlets/file-tree';
 
 describe('FileTree helpers', () => {
   describe('inMemory function', () => {

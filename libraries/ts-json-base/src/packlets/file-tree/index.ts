@@ -28,6 +28,7 @@ export * from './fileItem';
 
 // Export tree-shakeable helpers (filesystem ones will be shaken out if not used)
 export * from './fileTreeHelpers';
+export { inMemory } from './fileTreeHelpers.inMemory';
 
 // Export in-memory implementations for web compatibility
 export * from './in-memory';

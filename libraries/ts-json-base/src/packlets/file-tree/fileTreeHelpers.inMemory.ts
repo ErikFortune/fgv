@@ -20,35 +20,45 @@
  * SOFTWARE.
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { Result } from '@fgv/ts-utils';
 import { FileTree } from './fileTree';
-import { FsFileTreeAccessors } from './fsTree';
+import { IInMemoryFile, InMemoryTreeAccessors } from './in-memory';
 import { IFileTreeInitParams } from './fileTreeAccessors';
 
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
- * with accessors for the filesystem.
- * @param prefix - An optional prefix to prepended to supplied relative paths.
+ * with accessors for an in-memory file tree.
+ * @param files - An array of File |{@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
+ * @param prefix - An optional prefix to add to the paths of all files in the tree.
  * @returns `Success` with the new {@link FileTree.FileTree | FileTree} instance
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function forFilesystem<TCT extends string = string>(prefix?: string): Result<FileTree<TCT>>;
+export function inMemory<TCT extends string = string>(
+  files: IInMemoryFile<TCT>[],
+  prefix?: string
+): Result<FileTree<TCT>>;
 
 /**
  * Helper function to create a new {@link FileTree.FileTree | FileTree} instance
- * with accessors for the filesystem.
+ * with accessors for an in-memory file tree.
+ * @param files - An array of File |{@link FileTree.IInMemoryFile | in-memory files} to include in the tree.
  * @param params - Optional {@link FileTree.IFileTreeInitParams | initialization parameters} for the file tree.
  * @returns `Success` with the new {@link FileTree.FileTree | FileTree} instance
  * if successful, or `Failure` with an error message otherwise.
  * @public
  */
-export function forFilesystem<TCT extends string = string>(
+export function inMemory<TCT extends string = string>(
+  files: IInMemoryFile<TCT>[],
   params?: IFileTreeInitParams<TCT>
 ): Result<FileTree<TCT>>;
-export function forFilesystem<TCT extends string = string>(
+
+export function inMemory<TCT extends string = string>(
+  files: IInMemoryFile<TCT>[],
   params?: IFileTreeInitParams<TCT> | string
 ): Result<FileTree<TCT>> {
   params = typeof params === 'string' ? { prefix: params } : params;
-  return captureResult(() => new FsFileTreeAccessors<TCT>(params)).onSuccess((hal) => FileTree.create(hal));
+  return InMemoryTreeAccessors.create<TCT>(files, params).onSuccess((hal: InMemoryTreeAccessors<TCT>) =>
+    FileTree.create<TCT>(hal)
+  );
 }
