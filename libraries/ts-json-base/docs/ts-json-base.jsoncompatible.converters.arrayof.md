@@ -4,12 +4,12 @@
 
 ## JsonCompatible.Converters.arrayOf() function
 
-A helper function to create a  which converts a supplied `unknown` value to a valid array of [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md)<!-- -->.
+A helper function to create a [JSON-compatible ArrayConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.arrayconverter.md) which converts a supplied `unknown` value to a valid array of [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md)<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare function arrayOf<T, TC = unknown>(converter: JsonCompatible.Converter<T, TC> | JsonCompatible.Validator<T, TC>, onError?: Conversion.OnError): Converter<JsonCompatibleType<T>[], TC>;
+export declare function arrayOf<T, TC = unknown>(converter: JsonCompatible.Converter<T, TC> | JsonCompatible.Validator<T, TC>, onError?: Conversion.OnError): JsonCompatible.ArrayConverter<T, TC>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ The error handling option to use for the conversion.
 
 **Returns:**
 
-Converter&lt;[JsonCompatibleType](./ts-json-base.jsoncompatibletype.md)<!-- -->&lt;T&gt;\[\], TC&gt;
+[JsonCompatible.ArrayConverter](./ts-json-base.jsoncompatible.arrayconverter.md)<!-- -->&lt;T, TC&gt;
 
-A  which returns `JsonCompatibleType<T>[]`<!-- -->.
+A [JSON-compatible ArrayConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.arrayconverter.md) which returns `JsonCompatibleType<T>[]`<!-- -->.
 

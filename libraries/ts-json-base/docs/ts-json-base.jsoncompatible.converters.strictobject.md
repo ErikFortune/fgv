@@ -4,7 +4,7 @@
 
 ## JsonCompatible.Converters.strictObject() function
 
-A converter which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible ObjectConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.objectconverter.md) which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
 
 **Signature:**
 
@@ -68,5 +68,5 @@ _(Optional)_ The options to use for the conversion.
 
 [JsonCompatible.ObjectConverter](./ts-json-base.jsoncompatible.objectconverter.md)<!-- -->&lt;T, TC&gt;
 
-A converter which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
+A [JSON-compatible ObjectConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.objectconverter.md) which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
 

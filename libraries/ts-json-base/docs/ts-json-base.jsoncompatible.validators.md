@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A helper function to create a  which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible ArrayValidator&lt;T, TC&gt;](./ts-json-base.jsoncompatible.arrayvalidator.md) which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ A helper function to create a [JSON-compatible ObjectValidator&lt;T, TC&gt;](./t
 
 </td><td>
 
-A helper function to create a  which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible RecordValidator&lt;T, TC, TK&gt;](./ts-json-base.jsoncompatible.recordvalidator.md) which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
 
 
 </td></tr>

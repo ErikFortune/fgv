@@ -13,20 +13,26 @@ import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 import { Validators as Validators_3 } from '@fgv/ts-utils';
 
+// @public
+type ArrayConverter<T, TC = unknown> = Converter<JsonCompatibleType<T>[], TC>;
+
 // Warning: (ae-forgotten-export) The symbol "JsonCompatible_2" needs to be exported by the entry point index.d.ts
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function arrayOf<T, TC = unknown>(converter: JsonCompatible_2.Converter<T, TC> | JsonCompatible_2.Validator<T, TC>, onError?: Conversion.OnError): Converter<JsonCompatibleType<T>[], TC>;
+function arrayOf<T, TC = unknown>(converter: JsonCompatible_2.Converter<T, TC> | JsonCompatible_2.Validator<T, TC>, onError?: Conversion.OnError): JsonCompatible_2.ArrayConverter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function arrayOf_2<T, TC = unknown>(validateElement: JsonCompatible_2.Validator<T, TC>, params?: Omit<Validation.Classes.ArrayValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'validateElement'>): Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
+function arrayOf_2<T, TC = unknown>(validateElement: JsonCompatible_2.Validator<T, TC>, params?: Omit<Validation.Classes.ArrayValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'validateElement'>): JsonCompatible_2.ArrayValidator<T, TC>;
+
+// @public
+type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
 
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
@@ -112,6 +118,9 @@ class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryIt
     readonly type: 'directory';
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function discriminatedObject<T, TD extends string = string, TC = unknown>(discriminatorProp: string, converters: Converters_3.DiscriminatedObjectConverters<JsonCompatibleType<T>, TD, TC>): JsonCompatible_2.Converter<T, TC>;
 
@@ -167,6 +176,7 @@ class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
 
 declare namespace FileTree {
     export {
+        inMemory,
         FileTreeItemType,
         ContentTypeFactory,
         IFileTreeInitParams,
@@ -178,7 +188,6 @@ declare namespace FileTree {
         DirectoryItem,
         FileItem,
         forFilesystem,
-        inMemory,
         IInMemoryFile,
         InMemoryTreeAccessors,
         FsFileTreeAccessors
@@ -460,7 +469,11 @@ declare namespace JsonCompatible {
         Converter_2 as Converter,
         Validator_2 as Validator,
         ObjectConverter,
-        ObjectValidator
+        ObjectValidator,
+        ArrayConverter,
+        ArrayValidator,
+        RecordConverter,
+        RecordValidator
     }
 }
 export { JsonCompatible }
@@ -590,6 +603,9 @@ const jsonValue_2: Validator<JsonValue, IJsonValidatorContext>;
 // @public
 export type JsonValueType = 'primitive' | 'object' | 'array';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function object<T, TC = unknown>(properties: Conversion.FieldConverters<JsonCompatibleType<T>, TC>, options?: Conversion.ObjectConverterOptions<JsonCompatibleType<T>>): JsonCompatible_2.ObjectConverter<T, TC>;
 
@@ -616,23 +632,26 @@ export function pickJsonValue(src: JsonObject, path: string): Result<JsonValue>;
 // @public (undocumented)
 function readJsonFileSync(srcPath: string): Result<JsonValue>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
-//
 // @public
-function recordOf<T, TC = unknown, TK extends string = string>(converter: JsonCompatible_2.Converter<T, TC> | JsonCompatible_2.Validator<T, TC>, options?: Converters_3.KeyedConverterOptions<TK, TC>): Converter<Record<TK, JsonCompatibleType<T>>, TC>;
+type RecordConverter<T, TC = unknown, TK extends string = string> = Converter<Record<TK, JsonCompatibleType<T>>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function recordOf_2<T, TC = unknown, TK extends string = string>(validateElement: JsonCompatible_2.Validator<T, TC>, options?: Validators_3.IRecordOfValidatorOptions<TK, TC>): Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>;
+function recordOf<T, TC = unknown, TK extends string = string>(converter: JsonCompatible_2.Converter<T, TC> | JsonCompatible_2.Validator<T, TC>, options?: Converters_3.KeyedConverterOptions<TK, TC>): JsonCompatible_2.RecordConverter<T, TC, TK>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function recordOf_2<T, TC = unknown, TK extends string = string>(validateElement: JsonCompatible_2.Validator<T, TC>, options?: Validators_3.IRecordOfValidatorOptions<TK, TC>): JsonCompatible_2.RecordValidator<T, TC, TK>;
+
+// @public
+type RecordValidator<T, TC = unknown, TK extends string = string> = Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>;
 
 // @public
 export function sanitizeJson(from: unknown): Result<JsonValue>;
@@ -640,6 +659,9 @@ export function sanitizeJson(from: unknown): Result<JsonValue>;
 // @public
 export function sanitizeJsonObject<T>(from: T): Result<T>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<JsonCompatibleType<T>, TC>, options?: Converters_3.StrictObjectConverterOptions<JsonCompatibleType<T>>): JsonCompatible_2.ObjectConverter<T, TC>;
 

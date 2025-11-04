@@ -4,12 +4,12 @@
 
 ## JsonCompatible.Validators.arrayOf() function
 
-A helper function to create a  which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible ArrayValidator&lt;T, TC&gt;](./ts-json-base.jsoncompatible.arrayvalidator.md) which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
 
 **Signature:**
 
 ```typescript
-export declare function arrayOf<T, TC = unknown>(validateElement: JsonCompatible.Validator<T, TC>, params?: Omit<Validation.Classes.ArrayValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'validateElement'>): Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
+export declare function arrayOf<T, TC = unknown>(validateElement: JsonCompatible.Validator<T, TC>, params?: Omit<Validation.Classes.ArrayValidatorConstructorParams<JsonCompatibleType<T>, TC>, 'validateElement'>): JsonCompatible.ArrayValidator<T, TC>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ JsonCompatible.Validator&lt;T, TC&gt;
 
 </td><td>
 
-The element to validate.
+The element validator to use.
 
 
 </td></tr>
@@ -66,7 +66,7 @@ _(Optional)_ The parameters to use for the validation.
 
 **Returns:**
 
-Validation.Classes.ArrayValidator&lt;[JsonCompatibleType](./ts-json-base.jsoncompatibletype.md)<!-- -->&lt;T&gt;, TC&gt;
+[JsonCompatible.ArrayValidator](./ts-json-base.jsoncompatible.arrayvalidator.md)<!-- -->&lt;T, TC&gt;
 
-A  which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
+A [JSON-compatible ArrayValidator&lt;T, TC&gt;](./ts-json-base.jsoncompatible.arrayvalidator.md) which validates a supplied `unknown` value to a valid [JsonCompatible](./ts-json-base.jsoncompatibletype.md) value.
 

@@ -30,6 +30,7 @@ export * from './fileItem';
 
 // Export in-memory implementations for web compatibility
 export * from './in-memory';
+export { inMemory } from './fileTreeHelpers.inMemory';
 
 // Exclude:
 // - fsTree (requires Node.js fs/path)
