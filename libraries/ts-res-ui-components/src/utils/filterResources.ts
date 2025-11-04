@@ -1,6 +1,7 @@
 import { Result, succeed, fail } from '@fgv/ts-utils';
 import { Runtime, Import } from '@fgv/ts-res';
 import { IProcessedResources, IFilteredResource, IFilterResult } from '../types';
+import { FileTree } from '@fgv/ts-json-base';
 
 /**
  * Options for configuring filtering behavior and output.
@@ -187,7 +188,8 @@ export const createFilteredResourceManagerSimple = async (
 
       // Create new ImportManager for the filtered system
       return Import.ImportManager.create({
-        resources: filteredManager
+        resources: filteredManager,
+        fileTree: FileTree.inMemory([]).orThrow()
       })
         .withErrorFormat((e) => `Failed to create filtered import manager: ${e}`)
         .onSuccess((newImportManager) => {

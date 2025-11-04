@@ -110,7 +110,8 @@ export function createTsResSystemFromConfig(
         .withErrorFormat((e) => `Failed to create resource manager: ${e}`)
         .onSuccess((resourceManager) => {
           return Import.ImportManager.create({
-            resources: resourceManager
+            resources: resourceManager,
+            fileTree: FileTree.inMemory([]).orThrow()
           })
             .withErrorFormat((e) => `Failed to create import manager: ${e}`)
             .onSuccess((importManager) => {
