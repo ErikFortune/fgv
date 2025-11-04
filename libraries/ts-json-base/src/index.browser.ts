@@ -23,9 +23,10 @@
 import * as Converters from './packlets/converters';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as FileTree from './packlets/file-tree/index.browser';
+import * as JsonCompatible from './packlets/json-compatible';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as JsonFile from './packlets/json-file/index.browser';
 import * as Validators from './packlets/validators';
 
 export * from './packlets/json';
-export { Converters, FileTree, JsonFile, Validators };
+export { Converters, FileTree, JsonCompatible, JsonFile, Validators };
