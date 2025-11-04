@@ -283,7 +283,8 @@ export function useResourceData(params?: IUseResourceDataParams): IUseResourceDa
             resources: Resources.ResourceManagerBuilder.create({
               qualifiers: systemConfiguration.qualifiers,
               resourceTypes: systemConfiguration.resourceTypes
-            }).orThrow()
+            }).orThrow(),
+            fileTree: FileTree.inMemory([]).orThrow()
           }).orThrow(),
           contextQualifierProvider: Runtime.Context.ValidatingSimpleContextQualifierProvider.create({
             qualifiers: systemConfiguration.qualifiers
