@@ -20,53 +20,55 @@
  * SOFTWARE.
  */
 
-import { Conversion, Converter, Converters } from '@fgv/ts-utils';
+import { Conversion, Converters } from '@fgv/ts-utils';
 import * as JsonCompatible from './common';
 import { JsonCompatibleType } from '../json';
 
 /**
- * A helper function to create a {@link Converter | Converter} which converts a supplied `unknown` value to a valid
- * array of {@link JsonCompatibleType | JsonCompatibleType<T>}.
- * @param converter - {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>}
- * or {@link JsonCompatible.Validator | JSON-compatible Validator<T>} used for each item in the source array.
+ * A helper function to create a {@link JsonCompatible.ArrayConverter | JSON-compatible ArrayConverter<T, TC>}
+ * which converts a supplied `unknown` value to a valid array of {@link JsonCompatibleType | JsonCompatibleType<T>}.
+ * @param converter - {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>} or {@link JsonCompatible.Validator | JSON-compatible Validator<T>} used for each item in the source array.
  * @param onError - The error handling option to use for the conversion.
- * @returns A {@link Converter | Converter} which returns `JsonCompatibleType<T>[]`.
+ * @returns A {@link JsonCompatible.ArrayConverter | JSON-compatible ArrayConverter<T, TC>} which returns `JsonCompatibleType<T>[]`.
  * @public
  */
 export function arrayOf<T, TC = unknown>(
   converter: JsonCompatible.Converter<T, TC> | JsonCompatible.Validator<T, TC>,
   onError: Conversion.OnError = 'failOnError'
-): Converter<JsonCompatibleType<T>[], TC> {
+): JsonCompatible.ArrayConverter<T, TC> {
   return Converters.arrayOf(converter, onError);
 }
 
 /**
- * A helper function to create a {@link Converter | Converter} or which converts the `string`-keyed properties
- * using a supplied {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>} or
+ * A helper function to create a {@link JsonCompatible.RecordConverter | JSON-compatible RecordConverter<T, TC, TK>}
+ * which converts the `string`-keyed properties using a supplied {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>} or
  * {@link JsonCompatible.Validator | JSON-compatible Validator<T>} to produce a
  * `Record<TK, JsonCompatibleType<T>>`.
  * @remarks
- * If present, the supplied {@link Converters.KeyedConverterOptions | options} can provide a strongly-typed
+ * If present, the supplied `Converters.KeyedConverterOptions` can provide a strongly-typed
  * converter for keys and/or control the handling of elements that fail conversion.
  * @param converter - {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>}
  * or {@link JsonCompatible.Validator | JSON-compatible Validator<T>} used for each item in the source object.
- * @param options - Optional {@link Converters.KeyedConverterOptions | KeyedConverterOptions<TK, TC>} which
+ * @param options - Optional `Converters.KeyedConverterOptions<TK, TC>` which
  * supplies a key converter and/or error-handling options.
- * @returns A {@link Converter | Converter} which returns `Record<TK, JsonCompatibleType<T>>`.
+ * @returns A {@link JsonCompatible.RecordConverter | JSON-compatible RecordConverter<T, TC, TK>} which
+ * converts a supplied `unknown` value to a valid record of {@link JsonCompatibleType | JsonCompatible} values.
  * @public
  */
 export function recordOf<T, TC = unknown, TK extends string = string>(
   converter: JsonCompatible.Converter<T, TC> | JsonCompatible.Validator<T, TC>,
   options?: Converters.KeyedConverterOptions<TK, TC>
-): Converter<Record<TK, JsonCompatibleType<T>>, TC> {
+): JsonCompatible.RecordConverter<T, TC, TK> {
   return Converters.recordOf(converter, options ?? { onError: 'fail' });
 }
 
 /**
- * A converter which converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
+ * A helper function to create a {@link JsonCompatible.ObjectConverter | JSON-compatible ObjectConverter<T, TC>} which converts a
+ * supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
  * @param properties - The properties to convert.
  * @param options - The options to use for the conversion.
- * @returns A converter which converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
+ * @returns A {@link JsonCompatible.ObjectConverter | JSON-compatible ObjectConverter<T, TC>} which
+ * converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
  * @public
  */
 export function object<T, TC = unknown>(
@@ -77,10 +79,12 @@ export function object<T, TC = unknown>(
 }
 
 /**
- * A converter which converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
+ * A helper function to create a {@link JsonCompatible.ObjectConverter | JSON-compatible ObjectConverter<T, TC>} which converts a
+ * supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
  * @param properties - The properties to convert.
  * @param options - The options to use for the conversion.
- * @returns A converter which converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
+ * @returns A {@link JsonCompatible.ObjectConverter | JSON-compatible ObjectConverter<T, TC>} which
+ * converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
  * @public
  */
 export function strictObject<T, TC = unknown>(
@@ -92,10 +96,12 @@ export function strictObject<T, TC = unknown>(
 }
 
 /**
- * A converter which converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
+ * A helper function to create a {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>} which converts a
+ * supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
  * @param discriminatorProp - The name of the property used to discriminate types.
  * @param converters - The converters to use for the conversion.
- * @returns A converter which converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
+ * @returns A {@link JsonCompatible.Converter | JSON-compatible Converter<T, TC>} which
+ * converts a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatibleType<T>} value.
  * @public
  */
 export function discriminatedObject<T, TD extends string = string, TC = unknown>(

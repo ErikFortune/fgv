@@ -26,7 +26,7 @@ import { Validation, Validators } from '@fgv/ts-utils';
 
 /**
  * A helper function to create a {@link JsonCompatible.ArrayValidator | JSON-compatible ArrayValidator<T, TC>} which validates a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatible} value.
- * @param validateElement - The element to validate.
+ * @param validateElement - The element validator to use.
  * @param params - The parameters to use for the validation.
  * @returns A {@link JsonCompatible.ArrayValidator | JSON-compatible ArrayValidator<T, TC>} which validates a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatible} value.
  * @public
@@ -37,21 +37,22 @@ export function arrayOf<T, TC = unknown>(
     Validation.Classes.ArrayValidatorConstructorParams<JsonCompatibleType<T>, TC>,
     'validateElement'
   >
-): Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC> {
+): JsonCompatible.ArrayValidator<T, TC> {
   return Validators.arrayOf(validateElement, params ?? {});
 }
 
 /**
- * A helper function to create a {@link JsonCompatible.RecordValidator | JSON-compatible RecordValidator<T, TC>} which validates a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatible} value.
- * @param validateElement - The element to validate.
+ * A helper function to create a {@link JsonCompatible.RecordValidator | JSON-compatible RecordValidator<T, TC, TK>} which validates a supplied `unknown` value
+ * to a valid {@link JsonCompatibleType | JsonCompatible} value.
+ * @param validateElement - The element validator to use.
  * @param options - The options to use for the validation.
- * @returns A {@link JsonCompatible.RecordValidator | JSON-compatible RecordValidator<T, TC>} which validates a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatible} value.
+ * @returns A `Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC>` which validates a supplied `unknown` value to a valid {@link JsonCompatibleType | JsonCompatible} value.
  * @public
  */
 export function recordOf<T, TC = unknown, TK extends string = string>(
   validateElement: JsonCompatible.Validator<T, TC>,
   options?: Validators.IRecordOfValidatorOptions<TK, TC>
-): Validation.Validator<Record<TK, JsonCompatibleType<T>>, TC> {
+): JsonCompatible.RecordValidator<T, TC, TK> {
   return Validators.recordOf(validateElement, options ?? {});
 }
 

@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-A helper function to create a  which converts a supplied `unknown` value to a valid array of [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md)<!-- -->.
+A helper function to create a [JSON-compatible ArrayConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.arrayconverter.md) which converts a supplied `unknown` value to a valid array of [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md)<!-- -->.
 
 
 </td></tr>
@@ -35,7 +35,7 @@ A helper function to create a  which converts a supplied `unknown` value to a va
 
 </td><td>
 
-A converter which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible Converter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.converter.md) which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
 
 
 </td></tr>
@@ -46,7 +46,7 @@ A converter which converts a supplied `unknown` value to a valid [JsonCompatible
 
 </td><td>
 
-A converter which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible ObjectConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.objectconverter.md) which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
 
 
 </td></tr>
@@ -57,7 +57,7 @@ A converter which converts a supplied `unknown` value to a valid [JsonCompatible
 
 </td><td>
 
-A helper function to create a  or which converts the `string`<!-- -->-keyed properties using a supplied [JSON-compatible Converter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.converter.md) or [JSON-compatible Validator&lt;T&gt;](./ts-json-base.jsoncompatible.validator.md) to produce a `Record<TK, JsonCompatibleType<T>>`<!-- -->.
+A helper function to create a [JSON-compatible RecordConverter&lt;T, TC, TK&gt;](./ts-json-base.jsoncompatible.recordconverter.md) which converts the `string`<!-- -->-keyed properties using a supplied [JSON-compatible Converter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.converter.md) or [JSON-compatible Validator&lt;T&gt;](./ts-json-base.jsoncompatible.validator.md) to produce a `Record<TK, JsonCompatibleType<T>>`<!-- -->.
 
 
 </td></tr>
@@ -68,7 +68,7 @@ A helper function to create a  or which converts the `string`<!-- -->-keyed prop
 
 </td><td>
 
-A converter which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
+A helper function to create a [JSON-compatible ObjectConverter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.objectconverter.md) which converts a supplied `unknown` value to a valid [JsonCompatibleType&lt;T&gt;](./ts-json-base.jsoncompatibletype.md) value.
 
 
 </td></tr>

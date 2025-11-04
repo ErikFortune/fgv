@@ -4,12 +4,12 @@
 
 ## JsonCompatible.Converters.recordOf() function
 
-A helper function to create a  or which converts the `string`<!-- -->-keyed properties using a supplied [JSON-compatible Converter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.converter.md) or [JSON-compatible Validator&lt;T&gt;](./ts-json-base.jsoncompatible.validator.md) to produce a `Record<TK, JsonCompatibleType<T>>`<!-- -->.
+A helper function to create a [JSON-compatible RecordConverter&lt;T, TC, TK&gt;](./ts-json-base.jsoncompatible.recordconverter.md) which converts the `string`<!-- -->-keyed properties using a supplied [JSON-compatible Converter&lt;T, TC&gt;](./ts-json-base.jsoncompatible.converter.md) or [JSON-compatible Validator&lt;T&gt;](./ts-json-base.jsoncompatible.validator.md) to produce a `Record<TK, JsonCompatibleType<T>>`<!-- -->.
 
 **Signature:**
 
 ```typescript
-export declare function recordOf<T, TC = unknown, TK extends string = string>(converter: JsonCompatible.Converter<T, TC> | JsonCompatible.Validator<T, TC>, options?: Converters.KeyedConverterOptions<TK, TC>): Converter<Record<TK, JsonCompatibleType<T>>, TC>;
+export declare function recordOf<T, TC = unknown, TK extends string = string>(converter: JsonCompatible.Converter<T, TC> | JsonCompatible.Validator<T, TC>, options?: Converters.KeyedConverterOptions<TK, TC>): JsonCompatible.RecordConverter<T, TC, TK>;
 ```
 
 ## Parameters
@@ -58,7 +58,7 @@ Converters.KeyedConverterOptions&lt;TK, TC&gt;
 
 </td><td>
 
-_(Optional)_ Optional  which supplies a key converter and/or error-handling options.
+_(Optional)_ Optional `Converters.KeyedConverterOptions<TK, TC>` which supplies a key converter and/or error-handling options.
 
 
 </td></tr>
@@ -66,11 +66,11 @@ _(Optional)_ Optional  which supplies a key converter and/or error-handling opti
 
 **Returns:**
 
-Converter&lt;Record&lt;TK, [JsonCompatibleType](./ts-json-base.jsoncompatibletype.md)<!-- -->&lt;T&gt;&gt;, TC&gt;
+[JsonCompatible.RecordConverter](./ts-json-base.jsoncompatible.recordconverter.md)<!-- -->&lt;T, TC, TK&gt;
 
-A  which returns `Record<TK, JsonCompatibleType<T>>`<!-- -->.
+A [JSON-compatible RecordConverter&lt;T, TC, TK&gt;](./ts-json-base.jsoncompatible.recordconverter.md) which converts a supplied `unknown` value to a valid record of [JsonCompatible](./ts-json-base.jsoncompatibletype.md) values.
 
 ## Remarks
 
-If present, the supplied  can provide a strongly-typed converter for keys and/or control the handling of elements that fail conversion.
+If present, the supplied `Converters.KeyedConverterOptions` can provide a strongly-typed converter for keys and/or control the handling of elements that fail conversion.
 

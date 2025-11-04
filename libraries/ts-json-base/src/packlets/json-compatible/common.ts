@@ -51,3 +51,33 @@ export type ObjectConverter<T, TC = unknown> = BaseObjectConverter<JsonCompatibl
  * @public
  */
 export type ObjectValidator<T, TC = unknown> = Validation.Classes.ObjectValidator<JsonCompatibleType<T>, TC>;
+
+/**
+ * A converter which converts a supplied `unknown` value to a valid array of {@link JsonCompatibleType | JsonCompatible} values.
+ * @public
+ */
+export type ArrayConverter<T, TC = unknown> = BaseConverter<JsonCompatibleType<T>[], TC>;
+
+/**
+ * A validator which validates arrays of {@link JsonCompatibleType | JsonCompatible} values in place.
+ * @public
+ */
+export type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
+
+/**
+ * A converter which converts a supplied `unknown` value to a valid record of {@link JsonCompatibleType | JsonCompatible} values.
+ * @public
+ */
+export type RecordConverter<T, TC = unknown, TK extends string = string> = BaseConverter<
+  Record<TK, JsonCompatibleType<T>>,
+  TC
+>;
+
+/**
+ * A validator which validates a record of {@link JsonCompatibleType | JsonCompatible} values.
+ * @public
+ */
+export type RecordValidator<T, TC = unknown, TK extends string = string> = Validation.Validator<
+  Record<TK, JsonCompatibleType<T>>,
+  TC
+>;
