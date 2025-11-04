@@ -63,6 +63,7 @@
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
-    "react": "~19.1.1"
+    "react": ">=18 <20",
+    "react-dom": ">=18 <20"
   }
 }
