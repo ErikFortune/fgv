@@ -9,6 +9,7 @@ import { Converter } from '@fgv/ts-utils';
 import { Converters as Converters_3 } from '@fgv/ts-utils';
 import { ObjectConverter as ObjectConverter_2 } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
+import { StringConverter } from '@fgv/ts-utils';
 import { Validation } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 import { Validators as Validators_3 } from '@fgv/ts-utils';
@@ -34,6 +35,12 @@ function arrayOf_2<T, TC = unknown>(validateElement: JsonCompatible_2.Validator<
 // @public
 type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCompatibleType<T>, TC>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const boolean: Converter<boolean, IJsonConverterContext>;
+
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
 
@@ -45,11 +52,16 @@ type Converter_2<T, TC = unknown> = Converter<JsonCompatibleType<T>, TC>;
 
 declare namespace Converters {
     export {
+        literal,
+        enumeratedValue,
         IJsonConverterContext,
         jsonPrimitive,
         jsonObject,
         jsonArray,
-        jsonValue
+        jsonValue,
+        string,
+        number,
+        boolean
     }
 }
 export { Converters }
@@ -123,6 +135,13 @@ class DirectoryItem<TCT extends string = string> implements IFileTreeDirectoryIt
 //
 // @public
 function discriminatedObject<T, TD extends string = string, TC = unknown>(discriminatorProp: string, converters: Converters_3.DiscriminatedObjectConverters<JsonCompatibleType<T>, TD, TC>): JsonCompatible_2.Converter<T, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
+//
+// @public
+function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Converter<T, IJsonConverterContext | ReadonlyArray<T>>;
 
 // @public
 class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
@@ -604,6 +623,17 @@ const jsonValue_2: Validator<JsonValue, IJsonValidatorContext>;
 export type JsonValueType = 'primitive' | 'object' | 'array';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function literal<T>(value: T): Converter<T, IJsonConverterContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const number: Converter<number, IJsonConverterContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -664,6 +694,12 @@ export function sanitizeJsonObject<T>(from: T): Result<T>;
 //
 // @public
 function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<JsonCompatibleType<T>, TC>, options?: Converters_3.StrictObjectConverterOptions<JsonCompatibleType<T>>): JsonCompatible_2.ObjectConverter<T, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const string: StringConverter<string, IJsonConverterContext>;
 
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;
