@@ -41,6 +41,12 @@ type ArrayValidator<T, TC = unknown> = Validation.Classes.ArrayValidator<JsonCom
 // @public
 const boolean: Converter<boolean, IJsonConverterContext>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validation"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const boolean_2: Validator<boolean, IJsonValidatorContext>;
+
 // @public
 export function classifyJsonValue(from: unknown): Result<JsonValueType>;
 
@@ -142,6 +148,13 @@ function discriminatedObject<T, TD extends string = string, TC = unknown>(discri
 //
 // @public
 function enumeratedValue<T>(values: ReadonlyArray<T>, message?: string): Converter<T, IJsonConverterContext | ReadonlyArray<T>>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validator"
+//
+// @public
+function enumeratedValue_2<T>(values: ReadonlyArray<T>, message?: string): Validator<T, IJsonValidatorContext | ReadonlyArray<T>>;
 
 // @public
 class FileItem<TCT extends string = string> implements IFileTreeFileItem<TCT> {
@@ -627,11 +640,22 @@ export type JsonValueType = 'primitive' | 'object' | 'array';
 // @public
 function literal<T>(value: T): Converter<T, IJsonConverterContext>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function literal_2<T>(value: T): Validator<T, IJsonValidatorContext>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Converter"
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 const number: Converter<number, IJsonConverterContext>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validation"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const number_2: Validator<number, IJsonValidatorContext>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -701,16 +725,27 @@ function strictObject<T, TC = unknown>(properties: Conversion.FieldConverters<Js
 // @public
 const string: StringConverter<string, IJsonConverterContext>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-json-base" does not have an export "Validation"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const string_2: Validation.Classes.StringValidator<string, IJsonValidatorContext>;
+
 // @public
 type Validator_2<T, TC = unknown> = Validator<JsonCompatibleType<T>, TC>;
 
 declare namespace Validators {
     export {
+        literal_2 as literal,
+        enumeratedValue_2 as enumeratedValue,
         IJsonValidatorContext,
         jsonPrimitive_2 as jsonPrimitive,
         jsonObject_2 as jsonObject,
         jsonArray_2 as jsonArray,
-        jsonValue_2 as jsonValue
+        jsonValue_2 as jsonValue,
+        string_2 as string,
+        number_2 as number,
+        boolean_2 as boolean
     }
 }
 export { Validators }
