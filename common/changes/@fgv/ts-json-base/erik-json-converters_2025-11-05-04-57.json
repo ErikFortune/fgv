@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json-base",
+      "comment": "add converters that take json context",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json-base"
+}
