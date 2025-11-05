@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res-ui-components",
-  "version": "5.0.1-8",
+  "version": "5.0.1-9",
   "description": "Reusable React components for ts-res resource visualization and management",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
