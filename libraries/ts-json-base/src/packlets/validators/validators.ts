@@ -153,3 +153,73 @@ export const jsonValue: Validator<JsonValue, IJsonValidatorContext> = new Valida
     return result.success === true ? true : result;
   }
 });
+
+/**
+ * A {@link Validation.Classes.StringValidator | StringValidator} which validates a string in place.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * @public
+ */
+export const string: Validation.Classes.StringValidator<string, IJsonValidatorContext> =
+  new Validation.Classes.StringValidator<string, IJsonValidatorContext>();
+
+/**
+ * A {@link Validation.Classes.NumberValidator | NumberValidator} which validates a number in place.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * @public
+ */
+export const number: Validator<number, IJsonValidatorContext> = new Validation.Classes.NumberValidator<
+  number,
+  IJsonValidatorContext
+>();
+
+/**
+ * A {@link Validation.Classes.BooleanValidator | BooleanValidator} which validates a boolean in place.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * @public
+ */
+export const boolean: Validator<boolean, IJsonValidatorContext> =
+  new Validation.Classes.BooleanValidator<IJsonValidatorContext>();
+
+/**
+ * Helper to create a validator for a literal value.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * Mirrors the behavior of `@fgv/ts-utils`.
+ * @public
+ */
+export function literal<T>(value: T): Validator<T, IJsonValidatorContext> {
+  return new Validation.Base.GenericValidator<T, IJsonValidatorContext>({
+    validator: (from: unknown): boolean | Failure<T> => {
+      return from === value ? true : fail(`Expected literal ${String(value)}, found ${JSON.stringify(from)}`);
+    }
+  });
+}
+
+/**
+ * Helper function to create a {@link Validator | Validator} which validates `unknown` to one of a set of
+ * supplied enumerated values. Anything else fails.
+ *
+ * @remarks
+ * This JSON variant accepts an {@link Validators.IJsonValidatorContext | IJsonValidatorContext} OR
+ * a `ReadonlyArray<T>` as its validation context. If the context is an array, it is used to override the
+ * allowed values for that validation; otherwise, the original `values` supplied at creation time are used.
+ *
+ * @param values - Array of allowed values.
+ * @param message - Optional custom failure message.
+ * @returns A new {@link Validator | Validator} returning `<T>`.
+ * @public
+ */
+export function enumeratedValue<T>(
+  values: ReadonlyArray<T>,
+  message?: string
+): Validator<T, IJsonValidatorContext | ReadonlyArray<T>> {
+  return new Validation.Base.GenericValidator<T, IJsonValidatorContext | ReadonlyArray<T>>({
+    validator: (from: unknown, context?: IJsonValidatorContext | ReadonlyArray<T>): boolean | Failure<T> => {
+      const effectiveValues = Array.isArray(context) ? (context as ReadonlyArray<T>) : values;
+      const index = effectiveValues.indexOf(from as T);
+      if (index >= 0) {
+        return true;
+      }
+      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+    }
+  });
+}
