@@ -3,6 +3,16 @@
   "version": "5.0.1",
   "description": "Sudoku rules library",
   "main": "lib/index.js",
+  "module": "dist/index.js",
+  "types": "dist/ts-sudoku-lib.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/ts-sudoku-lib.d.ts",
+      "import": "./dist/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
   "types": "dist/ts-sudoku-lib.d.ts",
   "scripts": {
     "build": "heft build --clean",
@@ -28,6 +38,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/libraries/ts-sudoku-lib#readme",
   "sideEffects": false,
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@microsoft/api-documenter": "^7.27.3",

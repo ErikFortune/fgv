@@ -24,10 +24,12 @@
 import * as Experimental from './packlets/experimental';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Hash from './packlets/hash/index.browser';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as RecordJar from './packlets/record-jar/index.browser';
 import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-// Browser-safe exports - excludes CSV, RecordJar, and Node.js crypto-based hash
-export { Converters, Experimental, Hash, ZipFileTree };
+// Browser-safe exports - excludes CSV and Node.js crypto-based hash and filesystem helpers
+export { Converters, Experimental, Hash, RecordJar, ZipFileTree };
 /* c8 ignore stop */

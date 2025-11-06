@@ -20,14 +20,9 @@
  * SOFTWARE.
  */
 
-// Browser-safe exports - excludes Node.js filesystem dependencies
+// Browser-safe exports - excludes CSV (requires CSV from ts-extras which is Node-only)
 
-import * as Bcp47 from './packlets/bcp47';
-
-import * as Iana from './packlets/iana';
-
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
-
-export { Bcp47, Iana, Unsd, Utils };
+export * from './common';
+export { DefaultRegistries } from './defaultRegistries';
+export { RegionCodes } from './regionCodes.browser';
+// Exclude: Csv (requires CSV from ts-extras which is not available in browser builds)

@@ -24,13 +24,14 @@
 
 import { nowAsYearMonthDay } from './common/utils';
 import * as Converters from './converters';
-import * as Jar from './jar';
-import * as LanguageSubtags from './language-subtags/index.browser';
+import * as LanguageSubtags from './language-subtags';
 import * as LanguageTagExtensions from './language-tag-extensions';
 import * as Model from './model';
 import * as Validate from './validate';
 
 export { DefaultRegistries } from './defaultRegistries';
-export * from './languageRegistries';
+// Exclude: LanguageRegistries (imports registry classes and loader which have Node dependencies)
 // Exclude: languageRegistriesLoader (requires Node.js fs/path)
-export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };
+// Exclude: Jar (requires RecordJar which is Node.js-only)
+// Note: Use DefaultRegistries for accessing language registries in browser
+export { Converters, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

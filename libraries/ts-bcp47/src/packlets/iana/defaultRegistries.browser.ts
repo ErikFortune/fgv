@@ -20,14 +20,21 @@
  * SOFTWARE.
  */
 
-// Browser-safe exports - excludes Node.js filesystem dependencies
+import { LanguageRegistries } from './languageRegistries.browser';
 
-import * as Bcp47 from './packlets/bcp47';
+/**
+ * @public
+ */
+export class DefaultRegistries {
+  /**
+   * @internal
+   */
+  protected static _languageRegistries?: LanguageRegistries = undefined;
 
-import * as Iana from './packlets/iana';
-
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
-
-export { Bcp47, Iana, Unsd, Utils };
+  public static get languageRegistries(): LanguageRegistries {
+    if (!this._languageRegistries) {
+      this._languageRegistries = LanguageRegistries.loadDefault().orThrow();
+    }
+    return this._languageRegistries;
+  }
+}

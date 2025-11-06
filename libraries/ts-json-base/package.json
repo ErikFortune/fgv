@@ -3,15 +3,16 @@
   "version": "5.0.1",
   "description": "Typescript types and basic functions for working with json",
   "main": "lib/index.js",
+  "module": "dist/index.js",
   "types": "dist/ts-json-base.d.ts",
   "exports": {
     ".": {
       "node": {
-        "import": "./lib/index.js",
+        "import": "./dist/index.js",
         "require": "./lib/index.js"
       },
       "default": {
-        "import": "./lib/index.browser.js",
+        "import": "./dist/index.browser.js",
         "require": "./lib/index.browser.js"
       },
       "types": "./dist/ts-json-base.d.ts"
@@ -41,6 +42,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json-base#readme",
   "sideEffects": false,
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@types/jest": "^29.5.14",

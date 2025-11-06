@@ -45,6 +45,7 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@types/react": "~19.2.2",
     "@types/react-dom": "~19.2.2",

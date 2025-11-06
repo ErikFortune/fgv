@@ -3,26 +3,28 @@
   "version": "5.0.1",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
+  "module": "dist/index.js",
   "types": "dist/ts-extras.d.ts",
   "exports": {
     ".": {
       "node": {
-        "import": "./lib/index.js",
+        "types": "./dist/ts-extras.d.ts",
+        "import": "./dist/index.js",
         "require": "./lib/index.js"
       },
       "default": {
-        "import": "./lib/index.browser.js",
+        "types": "./dist/ts-extras.d.ts",
+        "import": "./dist/index.browser.js",
         "require": "./lib/index.browser.js"
-      },
-      "types": "./dist/ts-extras.d.ts"
+      }
     },
     "./hash": {
       "node": {
-        "import": "./lib/packlets/hash/index.node.js",
+        "import": "./dist/packlets/hash/index.node.js",
         "require": "./lib/packlets/hash/index.node.js"
       },
       "default": {
-        "import": "./lib/packlets/hash/index.browser.js",
+        "import": "./dist/packlets/hash/index.browser.js",
         "require": "./lib/packlets/hash/index.browser.js"
       }
     }
@@ -81,7 +83,8 @@
     "@rushstack/heft-jest-plugin": "1.1.3",
     "eslint-plugin-tsdoc": "~0.4.0",
     "@fgv/ts-utils-jest": "workspace:*",
-    "@fgv/ts-utils": "workspace:*"
+    "@fgv/ts-utils": "workspace:*",
+    "@fgv/heft-dual-rig": "workspace:*"
   },
   "dependencies": {
     "luxon": "^3.7.2",

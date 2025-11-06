@@ -142,6 +142,9 @@ importers:
         specifier: ^3.7.2
         version: 3.7.2
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-extras':
         specifier: workspace:*
         version: link:../ts-extras
@@ -254,6 +257,9 @@ importers:
         specifier: ^5.4.1
         version: 5.5.3
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
@@ -350,6 +356,9 @@ importers:
 
   ../../libraries/ts-json:
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base
@@ -441,6 +450,9 @@ importers:
         specifier: ^3.7.2
         version: 3.7.2
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
@@ -541,6 +553,9 @@ importers:
         specifier: ^3.7.2
         version: 3.7.2
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-extras':
         specifier: workspace:*
         version: link:../ts-extras
@@ -656,6 +671,9 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
@@ -746,6 +764,9 @@ importers:
 
   ../../libraries/ts-sudoku-lib:
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base
@@ -852,6 +873,9 @@ importers:
         specifier: ^2.8.1
         version: 2.8.1
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-utils-jest':
         specifier: workspace:*
         version: link:../ts-utils-jest
@@ -1054,6 +1078,9 @@ importers:
         specifier: ~29.7.0
         version: 29.7.0
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
@@ -1123,6 +1150,9 @@ importers:
 
   ../../libraries/ts-web-extras:
     devDependencies:
+      '@fgv/heft-dual-rig':
+        specifier: workspace:*
+        version: link:../../tools/heft-dual-rig
       '@fgv/ts-json-base':
         specifier: workspace:*
         version: link:../ts-json-base
@@ -1210,6 +1240,9 @@ importers:
 
   ../../tools/heft-dual-rig:
     dependencies:
+      '@microsoft/api-extractor':
+        specifier: ^7.53.3
+        version: 7.53.3(@types/node@20.19.24)
       '@rushstack/heft':
         specifier: 1.1.3
         version: 1.1.3(@types/node@20.19.24)

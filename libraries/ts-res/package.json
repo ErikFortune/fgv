@@ -3,6 +3,27 @@
   "version": "5.0.1",
   "description": "Multi-dimensional Resource Runtime",
   "main": "lib/index.js",
+  "module": "dist/index.js",
+  "types": "dist/ts-res.d.ts",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/ts-res.d.ts",
+        "import": "./dist/index.js",
+        "require": "./lib/index.js"
+      },
+      "node": {
+        "types": "./dist/ts-res.d.ts",
+        "import": "./dist/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "types": "./dist/ts-res.d.ts",
+        "import": "./dist/index.js",
+        "require": "./lib/index.js"
+      }
+    }
+  },
   "types": "dist/ts-res.d.ts",
   "scripts": {
     "build": "heft build --clean",
@@ -31,6 +52,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res#readme",
   "sideEffects": false,
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@microsoft/api-documenter": "^7.27.3",
     "@microsoft/api-extractor": "^7.53.3",

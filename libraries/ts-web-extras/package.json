@@ -3,6 +3,16 @@
   "version": "5.0.1",
   "description": "Browser-compatible utilities and FileTree implementations",
   "main": "lib/index.js",
+  "module": "dist/index.js",
+  "types": "dist/ts-web-extras.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/ts-web-extras.d.ts",
+      "import": "./dist/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
   "types": "dist/ts-web-extras.d.ts",
   "scripts": {
     "build": "heft test --clean",
@@ -31,6 +41,7 @@
   },
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-web-extras#readme",
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",

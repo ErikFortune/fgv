@@ -23,10 +23,10 @@
 // Browser-safe LanguageSubtags exports - excludes Node.js filesystem dependencies
 
 import * as Converters from './converters';
-import * as JarConverters from './jarConverters';
 import * as Model from './model';
 import * as Validate from './validate';
 
 export * from './common';
 // Exclude: LanguageSubtagRegistry (static load methods require Node.js fs/path)
-export { Converters, JarConverters, Model, Validate };
+// Exclude: JarConverters (requires RecordJar which is Node.js-only)
+export { Converters, Model, Validate };

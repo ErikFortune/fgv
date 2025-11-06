@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Erik Fortune
+ * Copyright (c) 2023 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,14 +20,6 @@
  * SOFTWARE.
  */
 
-// Browser-safe exports - excludes Node.js filesystem dependencies
-
-import * as Bcp47 from './packlets/bcp47';
-
-import * as Iana from './packlets/iana';
-
-import * as Unsd from './packlets/unsd';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Utils from './packlets/utils/public';
-
-export { Bcp47, Iana, Unsd, Utils };
+// Browser-safe exports - excludes filesystem helpers
+export * from './recordJarHelpers';
+// Exclude: recordJarFileHelpers (requires Node.js fs/path)

@@ -2,6 +2,16 @@
   "$schema": "https://developer.microsoft.com/json-schemas/heft/v0/typescript.schema.json",
 
   /**
+   * Emit both CommonJS and ESM modules
+   */
+  "additionalModuleKindsToEmit": [
+    {
+      "moduleKind": "esnext",
+      "outFolderName": "dist"
+    }
+  ],
+
+  /**
    * Configures additional file types that should be copied into the TypeScript compiler's emit folders.
    * Note: IANA data is now embedded in TypeScript modules and no longer requires separate files.
    */
