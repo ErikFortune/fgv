@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-json",
+      "comment": "dual-publish",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-json"
+}
