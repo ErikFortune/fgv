@@ -924,7 +924,6 @@ class LanguageRegistries {
     static loadDefaultCompressed(): Result<LanguageRegistries>;
     static loadFromIanaOrg(): Promise<Result<LanguageRegistries>>;
     static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
-    static loadFromZip(zipPath: string): Result<LanguageRegistries>;
     static loadFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array): Result<LanguageRegistries>;
     // (undocumented)
     readonly subtags: LanguageSubtagRegistry;
@@ -997,13 +996,7 @@ class LanguageSubtagRegistry {
     // (undocumented)
     readonly languages: Scope.LanguageSubtagScope;
     // (undocumented)
-    static load(root: string): Result<LanguageSubtagRegistry>;
-    // (undocumented)
     static loadDefault(): Result<LanguageSubtagRegistry>;
-    // (undocumented)
-    static loadJsonRegistryFile(root: string): Result<LanguageSubtagRegistry>;
-    // (undocumented)
-    static loadTxtRegistryFile(root: string): Result<LanguageSubtagRegistry>;
     // (undocumented)
     readonly macrolanguages: Scope.LanguageSubtagScope;
     // (undocumented)
@@ -1186,13 +1179,7 @@ class LanguageTagExtensionRegistry {
     // (undocumented)
     readonly fileDate: YearMonthDaySpec_2;
     // (undocumented)
-    static load(path: string): Result<LanguageTagExtensionRegistry>;
-    // (undocumented)
     static loadDefault(): Result<LanguageTagExtensionRegistry>;
-    // (undocumented)
-    static loadJsonRegistryFile(path: string): Result<LanguageTagExtensionRegistry>;
-    // (undocumented)
-    static loadTxtRegistryFile(path: string): Result<LanguageTagExtensionRegistry>;
 }
 
 // @internal (undocumented)

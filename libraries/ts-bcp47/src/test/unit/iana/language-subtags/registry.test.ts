@@ -58,24 +58,33 @@ describe('LanguageSubtagRegistry class', () => {
 
   describe('load static methods', () => {
     test('loads JSON subtags', () => {
+      const data = Iana.LanguageSubtags.Converters.loadLanguageSubtagsJsonFileSync(
+        TEST_DATA_PATHS.subtagsJson
+      );
       expect(
-        Iana.LanguageSubtags.LanguageSubtagRegistry.load(TEST_DATA_PATHS.subtagsJson)
+        data.onSuccess((d) => Iana.LanguageSubtags.LanguageSubtagRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
         expectRegistryToHaveExpectedCounts(tags);
       });
     });
 
     test('loads JAR as JSON subtag registry', () => {
+      const data = Iana.LanguageSubtags.JarConverters.loadJsonSubtagRegistryFileSync(
+        TEST_DATA_PATHS.registryJson
+      );
       expect(
-        Iana.LanguageSubtags.LanguageSubtagRegistry.loadJsonRegistryFile(TEST_DATA_PATHS.registryJson)
+        data.onSuccess((d) => Iana.LanguageSubtags.LanguageSubtagRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
         expectRegistryToHaveExpectedCounts(tags);
       });
     });
 
     test('loads JAR subtag registry', () => {
+      const data = Iana.LanguageSubtags.JarConverters.loadTxtSubtagRegistryFileSync(
+        TEST_DATA_PATHS.registryTxt
+      );
       expect(
-        Iana.LanguageSubtags.LanguageSubtagRegistry.loadTxtRegistryFile(TEST_DATA_PATHS.registryTxt)
+        data.onSuccess((d) => Iana.LanguageSubtags.LanguageSubtagRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
         expectRegistryToHaveExpectedCounts(tags);
       });

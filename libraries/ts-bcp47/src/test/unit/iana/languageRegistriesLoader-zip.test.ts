@@ -123,8 +123,8 @@ describe('LanguageRegistriesLoader ZIP functionality', () => {
   });
 
   describe('LanguageRegistries ZIP methods', () => {
-    test('should load from ZIP file via LanguageRegistries.loadFromZip', () => {
-      const result = Iana.LanguageRegistries.loadFromZip(tempZipPath);
+    test('should load from ZIP file via loadLanguageRegistriesFromZip', () => {
+      const result = Iana.loadLanguageRegistriesFromZip(tempZipPath);
       expect(result).toSucceedAndSatisfy((registries) => {
         expect(registries).toBeInstanceOf(Iana.LanguageRegistries);
       });

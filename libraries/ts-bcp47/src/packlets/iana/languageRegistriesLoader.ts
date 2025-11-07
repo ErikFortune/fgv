@@ -24,7 +24,9 @@ import { Result, captureResult, fail } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { ZipFileTree } from '@fgv/ts-extras';
 import { LanguageSubtagRegistry } from './language-subtags';
+import * as LanguageSubtagsConverters from './language-subtags/converters';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
+import * as LanguageTagExtensionsConverters from './language-tag-extensions/converters';
 import { LanguageRegistries } from './languageRegistries';
 import path from 'path';
 import fs from 'fs';
@@ -43,10 +45,16 @@ export function loadLanguageRegistries(root: string): Result<LanguageRegistries>
 
   // Handle directory with individual JSON files
   return captureResult(() => {
-    const subtags = LanguageSubtagRegistry.load(path.join(root, 'language-subtags.json')).orThrow();
-    const extensions = LanguageTagExtensionRegistry.load(
+    const subtagsData = LanguageSubtagsConverters.loadLanguageSubtagsJsonFileSync(
+      path.join(root, 'language-subtags.json')
+    ).orThrow();
+    const subtags = LanguageSubtagRegistry.create(subtagsData).orThrow();
+
+    const extensionsData = LanguageTagExtensionsConverters.loadLanguageTagExtensionsJsonFileSync(
       path.join(root, 'language-tag-extensions.json')
     ).orThrow();
+    const extensions = LanguageTagExtensionRegistry.create(extensionsData).orThrow();
+
     return LanguageRegistries.create(subtags, extensions).orThrow();
   });
 }
