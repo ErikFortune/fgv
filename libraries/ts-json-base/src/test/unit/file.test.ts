@@ -24,8 +24,11 @@ import '@fgv/ts-utils-jest';
 
 import { Converters, succeed, fail } from '@fgv/ts-utils';
 import { DateTime } from 'luxon';
-import { IMockFileConfig, MockFileSystem } from '@fgv/ts-utils-jest/lib/helpers/fsHelpers';
+import { MockFs } from '@fgv/ts-utils-jest';
 import fs from 'fs';
+
+type IMockFileConfig = MockFs.IMockFileConfig;
+const { MockFileSystem } = MockFs;
 import { JsonFile } from '../..';
 
 describe('JsonFile module', () => {

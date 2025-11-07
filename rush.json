@@ -508,7 +508,7 @@
     },
     {
       "packageName": "@fgv/heft-dual-rig",
-      "projectFolder": "tools/heft-dual-rig",
+      "projectFolder": "rigs/heft-dual-rig",
       "shouldPublish": false,
       "tags": ["tools", "rig"]
     },

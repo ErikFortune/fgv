@@ -41,6 +41,7 @@
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@types/react": "~19.2.2",
     "@types/react-dom": "~19.2.2",
@@ -73,5 +74,18 @@
     "tailwindcss": "^3.4.0",
     "postcss": "~8.5.6",
     "autoprefixer": "~10.4.21"
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "lib/index.d.ts"
+    }
   }
 }

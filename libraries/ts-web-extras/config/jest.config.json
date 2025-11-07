@@ -2,7 +2,7 @@
   "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
   "setupFilesAfterEnv": ["<rootDir>/lib/test/setupTests.js"],
   "testEnvironment": "jsdom",
-  "coveragePathIgnorePatterns": ["index.js", "public.js", "internal.js"],
+  "coveragePathIgnorePatterns": ["index.js", "index.browser.js", "public.js", "internal.js"],
   "coverageThreshold": {
     "global": {
       "branches": 95,
