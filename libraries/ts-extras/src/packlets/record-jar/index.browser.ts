@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Erik Fortune
+ * Copyright (c) 2023 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,13 @@
  * SOFTWARE.
  */
 
-/* c8 ignore start - Browser-specific export used conditionally in package.json */
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Csv from './packlets/csv/index.browser';
-import * as Experimental from './packlets/experimental';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Hash from './packlets/hash/index.browser';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as RecordJar from './packlets/record-jar/index.browser';
-import * as ZipFileTree from './packlets/zip-file-tree';
+// Browser-safe RecordJar exports - excludes Node.js filesystem dependencies
 
-import { Converters } from './packlets/conversion';
+// Export all browser-safe parsing functionality
+export * from './recordJarHelpers';
 
-// Browser-safe exports - Node.js crypto-based hash excluded (using CRC32 instead)
-export { Converters, Csv, Experimental, Hash, RecordJar, ZipFileTree };
-/* c8 ignore stop */
+// Export FileTree-based reading (web-compatible)
+export { readRecordJarFromTree } from './recordJarFileHelpers';
+
+// Exclude:
+// - readRecordJarFileSync (requires Node.js fs/path)

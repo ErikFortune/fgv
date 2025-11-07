@@ -20,18 +20,13 @@
  * SOFTWARE.
  */
 
-/* c8 ignore start - Browser-specific export used conditionally in package.json */
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Csv from './packlets/csv/index.browser';
-import * as Experimental from './packlets/experimental';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as Hash from './packlets/hash/index.browser';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import * as RecordJar from './packlets/record-jar/index.browser';
-import * as ZipFileTree from './packlets/zip-file-tree';
+// Browser-safe CSV exports - excludes Node.js filesystem dependencies
 
-import { Converters } from './packlets/conversion';
+// Export all browser-safe parsing functionality
+export * from './csvHelpers';
 
-// Browser-safe exports - Node.js crypto-based hash excluded (using CRC32 instead)
-export { Converters, Csv, Experimental, Hash, RecordJar, ZipFileTree };
-/* c8 ignore stop */
+// Export FileTree-based reading (web-compatible)
+export { readCsvFromTree } from './csvFileHelpers';
+
+// Exclude:
+// - readCsvFileSync (requires Node.js fs/path)
