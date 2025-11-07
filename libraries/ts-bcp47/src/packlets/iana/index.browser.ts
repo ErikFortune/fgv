@@ -32,5 +32,5 @@ import * as Validate from './validate';
 
 export { DefaultRegistries } from './defaultRegistries';
 export * from './languageRegistries';
-export * from './languageRegistriesLoaderBrowser';
+export * from './languageRegistriesLoader';
 export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

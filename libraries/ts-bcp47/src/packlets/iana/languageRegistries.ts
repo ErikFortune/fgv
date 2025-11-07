@@ -28,7 +28,7 @@ import {
   loadLanguageRegistriesFromZipBuffer,
   loadLanguageRegistriesFromIanaOrg,
   loadLanguageRegistriesFromUrls
-} from './languageRegistriesLoaderBrowser';
+} from './languageRegistriesLoader';
 import { getIanaDataBuffer } from './iana-data-embedded';
 
 /**

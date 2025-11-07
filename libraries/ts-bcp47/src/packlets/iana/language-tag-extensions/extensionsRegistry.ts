@@ -26,7 +26,7 @@ import * as JarConverters from './jarConverters';
 
 import { Result, captureResult } from '@fgv/ts-utils';
 import { getIanaDataBuffer } from '../iana-data-embedded';
-import { loadLanguageRegistriesFromZipBuffer } from '../languageRegistriesLoaderBrowser';
+import { loadLanguageRegistriesFromZipBuffer } from '../languageRegistriesLoader';
 
 import { YearMonthDaySpec } from '../model';
 import { TagExtensionsScope } from './extensionsScope';
