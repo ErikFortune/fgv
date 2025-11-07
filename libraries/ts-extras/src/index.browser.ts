@@ -21,13 +21,17 @@
  */
 
 /* c8 ignore start - Browser-specific export used conditionally in package.json */
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as Csv from './packlets/csv/index.browser';
 import * as Experimental from './packlets/experimental';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import * as Hash from './packlets/hash/index.browser';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import * as RecordJar from './packlets/record-jar/index.browser';
 import * as ZipFileTree from './packlets/zip-file-tree';
 
 import { Converters } from './packlets/conversion';
 
-// Browser-safe exports - excludes CSV, RecordJar, and Node.js crypto-based hash
-export { Converters, Experimental, Hash, ZipFileTree };
+// Browser-safe exports - Node.js crypto-based hash excluded (using CRC32 instead)
+export { Converters, Csv, Experimental, Hash, RecordJar, ZipFileTree };
 /* c8 ignore stop */

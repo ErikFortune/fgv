@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2023 Erik Fortune
+ * Copyright (c) 2025 Erik Fortune
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,9 @@
 
 import * as Converters from './converters';
 import * as Model from './model';
-import * as FileSystem from './filesystem';
 
-export { Converters, Model, FileSystem };
+export { Converters, Model };
+
+// Export both filesystem and FileTree helpers
+export { loadJsonPuzzlesFileSync } from './filesystem';
+export { loadJsonPuzzlesFromTree } from './fileTreeHelpers';

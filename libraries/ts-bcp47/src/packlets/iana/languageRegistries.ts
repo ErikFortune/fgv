@@ -24,7 +24,11 @@ import { Result, captureResult } from '@fgv/ts-utils';
 
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
-import * as LanguageRegistriesLoader from './languageRegistriesLoader';
+import {
+  loadLanguageRegistriesFromZipBuffer,
+  loadLanguageRegistriesFromIanaOrg,
+  loadLanguageRegistriesFromUrls
+} from './languageRegistriesLoader';
 import { getIanaDataBuffer } from './iana-data-embedded';
 
 /**
@@ -59,7 +63,7 @@ export class LanguageRegistries {
   public static loadDefaultCompressed(): Result<LanguageRegistries> {
     return captureResult(() => {
       const zipBuffer = getIanaDataBuffer();
-      return LanguageRegistriesLoader.loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
+      return loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
     });
   }
 
@@ -69,7 +73,7 @@ export class LanguageRegistries {
    * @public
    */
   public static loadFromIanaOrg(): Promise<Result<LanguageRegistries>> {
-    return LanguageRegistriesLoader.loadLanguageRegistriesFromIanaOrg();
+    return loadLanguageRegistriesFromIanaOrg();
   }
 
   /**
@@ -80,17 +84,7 @@ export class LanguageRegistries {
    * @public
    */
   public static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>> {
-    return LanguageRegistriesLoader.loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl);
-  }
-
-  /**
-   * Loads language registries from a compressed ZIP file.
-   * @param zipPath - Path to the ZIP file containing the registry data.
-   * @returns A Result containing the loaded LanguageRegistries or an error.
-   * @public
-   */
-  public static loadFromZip(zipPath: string): Result<LanguageRegistries> {
-    return LanguageRegistriesLoader.loadLanguageRegistriesFromZip(zipPath);
+    return loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl);
   }
 
   /**
@@ -100,6 +94,6 @@ export class LanguageRegistries {
    * @public
    */
   public static loadFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array): Result<LanguageRegistries> {
-    return LanguageRegistriesLoader.loadLanguageRegistriesFromZipBuffer(zipBuffer);
+    return loadLanguageRegistriesFromZipBuffer(zipBuffer);
   }
 }

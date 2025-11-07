@@ -22,7 +22,44 @@
 
 import { HashingNormalizer } from './hashingNormalizer';
 
-const textEncoder: TextEncoder = new TextEncoder();
+function encodeUtf8(input: string): Uint8Array {
+  // Prefer built-in TextEncoder when available (browsers and modern Node)
+  // @ts-ignore - global TextEncoder may be unavailable in some environments
+  const GlobalTextEncoder = typeof TextEncoder !== 'undefined' ? TextEncoder : undefined;
+  if (GlobalTextEncoder) {
+    return new GlobalTextEncoder().encode(input);
+  }
+  // Very small manual UTF-8 encoder as a last resort
+  /* eslint-disable no-bitwise */
+  const bytes: number[] = [];
+  for (let i = 0; i < input.length; i++) {
+    let codePoint = input.charCodeAt(i);
+    if (codePoint >= 0xd800 && codePoint <= 0xdbff && i + 1 < input.length) {
+      const next = input.charCodeAt(i + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        codePoint = ((codePoint - 0xd800) << 10) + (next - 0xdc00) + 0x10000;
+        i++;
+      }
+    }
+    if (codePoint < 0x80) {
+      bytes.push(codePoint);
+    } else if (codePoint < 0x800) {
+      bytes.push(0xc0 | (codePoint >> 6));
+      bytes.push(0x80 | (codePoint & 0x3f));
+    } else if (codePoint < 0x10000) {
+      bytes.push(0xe0 | (codePoint >> 12));
+      bytes.push(0x80 | ((codePoint >> 6) & 0x3f));
+      bytes.push(0x80 | (codePoint & 0x3f));
+    } else {
+      bytes.push(0xf0 | (codePoint >> 18));
+      bytes.push(0x80 | ((codePoint >> 12) & 0x3f));
+      bytes.push(0x80 | ((codePoint >> 6) & 0x3f));
+      bytes.push(0x80 | (codePoint & 0x3f));
+    }
+  }
+  /* eslint-enable no-bitwise */
+  return new Uint8Array(bytes);
+}
 
 const POLYNOMIAL: number = 0xedb88320;
 
@@ -74,7 +111,7 @@ export class Crc32Normalizer extends HashingNormalizer {
   }
 
   public static crc32Hash(parts: string[]): string {
-    return crc32(textEncoder.encode(parts.join('|')))
+    return crc32(encodeUtf8(parts.join('|')))
       .toString(16)
       .padStart(8, '0');
   }

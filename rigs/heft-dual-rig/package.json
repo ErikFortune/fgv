@@ -1,0 +1,23 @@
+{
+  "name": "@fgv/heft-dual-rig",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Heft rig configuration to dual-emit CJS (lib) and ESM (dist)",
+  "license": "MIT",
+  "keywords": [
+    "heft",
+    "rig",
+    "typescript",
+    "esm",
+    "commonjs"
+  ],
+  "scripts": {
+    "build": "echo nothing to build",
+    "test": "echo nothing to test",
+    "build-docs": "echo nothing to build"
+  },
+  "dependencies": {
+    "@rushstack/heft-node-rig": "2.11.4",
+    "@rushstack/heft": "1.1.3"
+  }
+}

@@ -3,6 +3,16 @@
   "version": "5.0.1",
   "description": "Custom matchers for ts-utils result class",
   "main": "lib/index.js",
+  "module": "dist/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",
@@ -53,7 +63,9 @@
     "@rushstack/heft-node-rig": "2.11.4",
     "@types/heft-jest": "1.0.6",
     "eslint-plugin-n": "^17.23.1",
-    "eslint-plugin-tsdoc": "~0.4.0"
+    "eslint-plugin-tsdoc": "~0.4.0",
+    "@fgv/heft-dual-rig": "workspace:*",
+    "@microsoft/api-extractor": "^7.53.3"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"

@@ -199,16 +199,11 @@ declare namespace Files {
     export {
         Converters_2 as Converters,
         Model,
-        FileSystem_2 as FileSystem
+        loadJsonPuzzlesFileSync,
+        loadJsonPuzzlesFromTree
     }
 }
 export { Files }
-
-declare namespace FileSystem_2 {
-    export {
-        loadJsonPuzzlesFileSync
-    }
-}
 
 // @public
 export function getCageTotalBounds(cageSize: number, maxValue: number): {
@@ -624,6 +619,11 @@ class KillerSudokuPuzzle extends Puzzle {
 //
 // @public
 function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "FileTree"
+//
+// @public
+function loadJsonPuzzlesFromTree(fileTree: FileTree.FileTree, filePath: string): Result<IPuzzlesFile>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

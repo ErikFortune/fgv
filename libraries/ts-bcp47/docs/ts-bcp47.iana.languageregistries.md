@@ -170,22 +170,6 @@ Loads language registries from custom URLs.
 </td></tr>
 <tr><td>
 
-[loadFromZip(zipPath)](./ts-bcp47.iana.languageregistries.loadfromzip.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Loads language registries from a compressed ZIP file.
-
-
-</td></tr>
-<tr><td>
-
 [loadFromZipBuffer(zipBuffer)](./ts-bcp47.iana.languageregistries.loadfromzipbuffer.md)
 
 
