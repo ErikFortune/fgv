@@ -258,12 +258,12 @@ declare namespace Iana {
         Validate_3 as Validate,
         nowAsYearMonthDay,
         LanguageRegistries,
-        loadLanguageRegistries,
         loadLanguageRegistriesFromTree,
-        loadLanguageRegistriesFromZip,
         loadLanguageRegistriesFromZipBuffer,
         loadLanguageRegistriesFromIanaOrg,
-        loadLanguageRegistriesFromUrls
+        loadLanguageRegistriesFromUrls,
+        loadLanguageRegistries,
+        loadLanguageRegistriesFromZip
     }
 }
 export { Iana }

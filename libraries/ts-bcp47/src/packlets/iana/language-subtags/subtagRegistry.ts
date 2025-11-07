@@ -28,7 +28,7 @@ import { Result, captureResult } from '@fgv/ts-utils';
 import { YearMonthDaySpec } from '../jar/language-subtags/registry/model';
 import { RegisteredItem, RegistryFile } from './model';
 import { getIanaDataBuffer } from '../iana-data-embedded';
-import { loadLanguageRegistriesFromZipBuffer } from '../languageRegistriesLoader';
+import { loadLanguageRegistriesFromZipBuffer } from '../languageRegistriesLoaderBrowser';
 
 /**
  * @public
