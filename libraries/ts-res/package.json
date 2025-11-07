@@ -31,6 +31,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res#readme",
   "sideEffects": false,
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@microsoft/api-documenter": "^7.27.3",
     "@microsoft/api-extractor": "^7.53.3",
@@ -67,5 +68,18 @@
     "@fgv/ts-json": "workspace:*",
     "luxon": "^3.7.2",
     "fflate": "~0.8.2"
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "dist/ts-res.d.ts"
+    }
   }
 }

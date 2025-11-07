@@ -32,5 +32,5 @@ import * as Validate from './validate';
 
 export { DefaultRegistries } from './defaultRegistries';
 export * from './languageRegistries';
-// Exclude: languageRegistriesLoader (requires Node.js fs/path)
+export * from './languageRegistriesLoader';
 export { Converters, Jar, Model, LanguageSubtags, LanguageTagExtensions, Validate, nowAsYearMonthDay };

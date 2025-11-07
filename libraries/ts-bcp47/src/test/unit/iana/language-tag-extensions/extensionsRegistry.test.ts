@@ -39,30 +39,33 @@ describe('TagExtensionRegistry class', () => {
 
   describe('load static methods', () => {
     test('loads JSON subtags', () => {
+      const data = Iana.LanguageTagExtensions.Converters.loadLanguageTagExtensionsJsonFileSync(
+        'src/data/iana/language-tag-extensions.json'
+      );
       expect(
-        Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.load(
-          'src/data/iana/language-tag-extensions.json'
-        )
+        data.onSuccess((d) => Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
         expect(tags.extensions.getAllKeys()).toHaveLength(2);
       });
     });
 
     test('loads JAR as JSON tag extension registry', () => {
+      const data = Iana.LanguageTagExtensions.JarConverters.loadJsonLanguageTagExtensionsRegistryFileSync(
+        'src/test/data/iana/language-tag-extension-registry.json'
+      );
       expect(
-        Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.loadJsonRegistryFile(
-          'src/test/data/iana/language-tag-extension-registry.json'
-        )
+        data.onSuccess((d) => Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
         expect(tags.extensions.getAllKeys()).toHaveLength(2);
       });
     });
 
     test('loads JAR tag extension registry', () => {
+      const data = Iana.LanguageTagExtensions.JarConverters.loadTxtLanguageTagExtensionsRegistryFileSync(
+        'src/test/data/iana/language-tag-extension-registry.txt'
+      );
       expect(
-        Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.loadTxtRegistryFile(
-          'src/test/data/iana/language-tag-extension-registry.txt'
-        )
+        data.onSuccess((d) => Iana.LanguageTagExtensions.LanguageTagExtensionRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
         expect(tags.extensions.getAllKeys()).toHaveLength(2);
       });

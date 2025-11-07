@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/heft/v0/typescript.schema.json",
+  "additionalModuleKindsToEmit": [
+    {
+      "moduleKind": "esnext",
+      "outFolderName": "dist"
+    }
+  ],
+  "emitMjsExtensionForESModule": false,
+  "staticAssetsToCopy": {
+    "fileExtensions": [".json"]
+  }
+}

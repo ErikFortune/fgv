@@ -1,6 +1,6 @@
 {
   "extends": "@rushstack/heft-node-rig/profiles/default/config/jest.config.json",
-  "coveragePathIgnorePatterns": ["index.js", "public.js", "internal.js", "Types.ts"],
+  "coveragePathIgnorePatterns": ["index.js", "index.browser.js", "public.js", "internal.js", "Types.ts"],
   "coverageThreshold": {
     "global": {
       "branches": 100,

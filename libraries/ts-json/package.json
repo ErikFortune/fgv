@@ -28,6 +28,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-json#readme",
   "sideEffects": false,
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@types/jest": "^29.5.14",
@@ -55,11 +56,25 @@
     "@fgv/ts-json-base": "workspace:*",
     "@rushstack/eslint-config": "4.5.3",
     "eslint-plugin-tsdoc": "~0.4.0",
-    "@rushstack/heft-jest-plugin": "1.1.3"
+    "@rushstack/heft-jest-plugin": "1.1.3",
+    "@microsoft/api-extractor": "^7.53.3"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
     "mustache": "^4.2.0"
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "dist/ts-json.d.ts"
+    }
   }
 }

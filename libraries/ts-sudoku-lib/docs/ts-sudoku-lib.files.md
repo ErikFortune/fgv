@@ -4,6 +4,43 @@
 
 ## Files namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[loadJsonPuzzlesFileSync(path)](./ts-sudoku-lib.files.loadjsonpuzzlesfilesync.md)
+
+
+</td><td>
+
+Loads an arbitrary JSON file and parses it to return a validated [IPuzzlesFile](./ts-sudoku-lib.files.model.ipuzzlesfile.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[loadJsonPuzzlesFromTree(fileTree, filePath)](./ts-sudoku-lib.files.loadjsonpuzzlesfromtree.md)
+
+
+</td><td>
+
+Loads a puzzles file from a .
+
+
+</td></tr>
+</tbody></table>
+
 ## Namespaces
 
 <table><thead><tr><th>
@@ -20,15 +57,6 @@ Description
 <tbody><tr><td>
 
 [Converters](./ts-sudoku-lib.files.converters.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[FileSystem](./ts-sudoku-lib.files.filesystem.md)
 
 
 </td><td>

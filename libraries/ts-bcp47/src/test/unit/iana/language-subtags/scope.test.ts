@@ -186,9 +186,10 @@ describe('IANA tag registry scope', () => {
   });
 
   describe('add method', () => {
-    const iana2 = Iana.LanguageSubtags.LanguageSubtagRegistry.load(
+    const data = Iana.LanguageSubtags.Converters.loadLanguageSubtagsJsonFileSync(
       'src/data/iana/language-subtags.json'
     ).orThrow();
+    const iana2 = Iana.LanguageSubtags.LanguageSubtagRegistry.create(data).orThrow();
     const languages = iana2.languages;
     test('fails to add an item with a non-canonical tag', () => {
       const validNonCanonical = 'DE' as Iana.LanguageSubtags.LanguageSubtag;

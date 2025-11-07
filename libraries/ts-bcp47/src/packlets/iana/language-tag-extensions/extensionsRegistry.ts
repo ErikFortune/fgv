@@ -73,27 +73,6 @@ export class LanguageTagExtensionRegistry {
     });
   }
 
-  public static load(path: string): Result<LanguageTagExtensionRegistry> {
-    return captureResult(() => {
-      const registry = Converters.loadLanguageTagExtensionsJsonFileSync(path).orThrow();
-      return new LanguageTagExtensionRegistry(registry);
-    });
-  }
-
-  public static loadJsonRegistryFile(path: string): Result<LanguageTagExtensionRegistry> {
-    return captureResult(() => {
-      const registry = JarConverters.loadJsonLanguageTagExtensionsRegistryFileSync(path).orThrow();
-      return new LanguageTagExtensionRegistry(registry);
-    });
-  }
-
-  public static loadTxtRegistryFile(path: string): Result<LanguageTagExtensionRegistry> {
-    return captureResult(() => {
-      const registry = JarConverters.loadTxtLanguageTagExtensionsRegistryFileSync(path).orThrow();
-      return new LanguageTagExtensionRegistry(registry);
-    });
-  }
-
   public static createFromTxtContent(content: string): Result<LanguageTagExtensionRegistry> {
     return JarConverters.loadTxtLanguageTagExtensionsRegistryFromString(content).onSuccess(
       LanguageTagExtensionRegistry.create

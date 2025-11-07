@@ -26,7 +26,9 @@
 import '@fgv/ts-utils-jest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { FileTree } from '@fgv/ts-json-base';
 import { loadJsonPuzzlesFileSync } from '../../../packlets/files/filesystem';
+import { loadJsonPuzzlesFromTree } from '../../../packlets/files/fileTreeHelpers';
 
 describe('filesystem', () => {
   describe('loadJsonPuzzlesFileSync', () => {
@@ -145,6 +147,80 @@ describe('filesystem', () => {
       } finally {
         if (fs.existsSync(emptyPuzzlesFile)) fs.unlinkSync(emptyPuzzlesFile);
       }
+    });
+  });
+
+  describe('loadJsonPuzzlesFromTree', () => {
+    test('should load and parse a valid puzzles file from FileTree', () => {
+      const validPuzzles = {
+        puzzles: [
+          {
+            id: 'test-puzzle-1',
+            description: 'Test puzzle 1',
+            type: 'sudoku',
+            level: 1,
+            cells: '.'.repeat(81),
+            dimensions: {
+              cageWidthInCells: 3,
+              cageHeightInCells: 3,
+              boardWidthInCages: 3,
+              boardHeightInCages: 3
+            }
+          }
+        ]
+      };
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/puzzles.json', contents: JSON.stringify(validPuzzles, null, 2) }
+      ];
+
+      const fileTree = FileTree.InMemoryTreeAccessors.create(files)
+        .onSuccess((acc) => FileTree.FileTree.create(acc))
+        .orThrow();
+
+      const result = loadJsonPuzzlesFromTree(fileTree, '/puzzles.json');
+
+      expect(result).toSucceedAndSatisfy((puzzlesFile) => {
+        expect(puzzlesFile.puzzles).toHaveLength(1);
+        expect(puzzlesFile.puzzles[0].id).toBe('test-puzzle-1');
+        expect(puzzlesFile.puzzles[0].type).toBe('sudoku');
+        expect(puzzlesFile.puzzles[0].level).toBe(1);
+      });
+    });
+
+    test('should fail when file does not exist in FileTree', () => {
+      const files: FileTree.IInMemoryFile[] = [{ path: '/other.json', contents: '{}' }];
+
+      const fileTree = FileTree.InMemoryTreeAccessors.create(files)
+        .onSuccess((acc) => FileTree.FileTree.create(acc))
+        .orThrow();
+
+      const result = loadJsonPuzzlesFromTree(fileTree, '/puzzles.json');
+
+      expect(result).toFailWith(/not found|does not exist/i);
+    });
+
+    test('should fail when loading invalid puzzle data from FileTree', () => {
+      const invalidPuzzles = {
+        puzzles: [
+          {
+            id: 'invalid-puzzle'
+            // Missing required fields
+          }
+        ]
+      };
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/invalid.json', contents: JSON.stringify(invalidPuzzles, null, 2) }
+      ];
+
+      const fileTree = FileTree.InMemoryTreeAccessors.create(files)
+        .onSuccess((acc) => FileTree.FileTree.create(acc))
+        .orThrow();
+
+      const result = loadJsonPuzzlesFromTree(fileTree, '/invalid.json');
+
+      expect(result).toFail();
     });
   });
 });

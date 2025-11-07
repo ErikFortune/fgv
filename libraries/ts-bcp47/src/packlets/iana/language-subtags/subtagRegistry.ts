@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-import * as path from 'path';
 import * as Converters from './converters';
 import * as JarConverters from './jarConverters';
 import * as Scope from './scope';
@@ -114,27 +113,6 @@ export class LanguageSubtagRegistry {
       const zipBuffer = getIanaDataBuffer();
       const registries = loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
       return registries.subtags;
-    });
-  }
-
-  public static load(root: string): Result<LanguageSubtagRegistry> {
-    return captureResult(() => {
-      const registry = Converters.loadLanguageSubtagsJsonFileSync(path.join(root)).orThrow();
-      return new LanguageSubtagRegistry(registry);
-    });
-  }
-
-  public static loadJsonRegistryFile(root: string): Result<LanguageSubtagRegistry> {
-    return captureResult(() => {
-      const registry = JarConverters.loadJsonSubtagRegistryFileSync(path.join(root)).orThrow();
-      return new LanguageSubtagRegistry(registry);
-    });
-  }
-
-  public static loadTxtRegistryFile(root: string): Result<LanguageSubtagRegistry> {
-    return captureResult(() => {
-      const registry = JarConverters.loadTxtSubtagRegistryFileSync(path.join(root)).orThrow();
-      return new LanguageSubtagRegistry(registry);
     });
   }
 

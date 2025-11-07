@@ -3,7 +3,16 @@
   "version": "5.0.1-9",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
+  "module": "dist/index.js",
   "types": "dist/ts-utils.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/ts-utils.d.ts",
+      "import": "./dist/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",
@@ -28,6 +37,7 @@
   },
   "homepage": "https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#readme",
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@jest/expect-utils": "^29.7.0",
     "@microsoft/api-documenter": "^7.27.3",
     "@microsoft/api-extractor": "^7.53.3",

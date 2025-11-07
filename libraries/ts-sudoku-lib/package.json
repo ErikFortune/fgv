@@ -28,6 +28,7 @@
   "homepage": "https://github.com/ErikFortune/fgv/libraries/ts-sudoku-lib#readme",
   "sideEffects": false,
   "devDependencies": {
+    "@fgv/heft-dual-rig": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-utils-jest": "workspace:*",
     "@microsoft/api-documenter": "^7.27.3",
@@ -61,5 +62,18 @@
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
+  },
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "dist/ts-sudoku-lib.d.ts"
+    }
   }
 }

@@ -22,12 +22,23 @@
 
 // Browser-safe JSON file exports - excludes Node.js filesystem dependencies
 
-// Export core JSON functionality (no filesystem deps)
-export * from './file';
+// Export browser-safe core functionality
 export * from './jsonLike';
 
 // Export FileTree-based helper (web-compatible)
 export * from './jsonTreeHelper';
 
+// Export type definitions only (for TypeScript compatibility)
+// Re-export types from jsonFsHelper without importing the implementation
+export type {
+  IJsonFsDirectoryOptions,
+  IReadDirectoryItem,
+  ItemNameTransformFunction,
+  IJsonFsDirectoryToMapOptions,
+  IJsonFsHelperConfig,
+  JsonFsHelperInitOptions
+} from './jsonFsHelper';
+
 // Exclude:
+// - file.ts (wraps jsonFsHelper - requires Node.js fs/path)
 // - jsonFsHelper (requires Node.js fs/path)

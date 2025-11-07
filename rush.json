@@ -507,10 +507,22 @@
       "tags": ["tools", "playground", "ui", "react"]
     },
     {
+      "packageName": "@fgv/heft-dual-rig",
+      "projectFolder": "rigs/heft-dual-rig",
+      "shouldPublish": false,
+      "tags": ["tools", "rig"]
+    },
+    {
       "packageName": "@fgv/sudoku-app",
       "projectFolder": "apps/sudoku",
       "shouldPublish": false,
       "tags": ["apps", "sudoku", "react", "ui"]
+    },
+    {
+      "packageName": "@fgv/ts-utils-browser-test",
+      "projectFolder": "apps/ts-utils-browser-test",
+      "shouldPublish": false,
+      "tags": ["apps", "tests", "vite"]
     }
   ]
 }
