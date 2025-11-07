@@ -22,19 +22,15 @@
  * SOFTWARE.
  */
 
-// Browser entry point - excludes Node.js filesystem dependencies
+// Browser-safe files exports - includes FileTree functions, excludes Node.js filesystem functions
 
-// eslint-disable-next-line @rushstack/packlets/mechanics -- browser-specific entry point excludes Node.js fs dependencies
-import * as Files from './packlets/files/index.browser';
-import * as Hints from './packlets/hints';
-import * as Puzzles from './packlets/puzzles';
+import * as Converters from './converters';
+import * as Model from './model';
 
-export * from './packlets/collections';
-export * from './packlets/common';
-export { Files, Hints, Puzzles };
+export { Converters, Model };
+
+// Re-export browser-compatible FileTree helpers
+export { loadJsonPuzzlesFromTree } from './fileTreeHelpers';
 
 // Excluded from browser:
-// - Files.loadJsonPuzzlesFileSync (requires Node.js fs via JsonFile.convertJsonFileSync)
-//
-// Included in browser (via FileTree):
-// - Files.loadJsonPuzzlesFromTree (browser-compatible via FileTree)
+// - loadJsonPuzzlesFileSync (requires Node.js fs via JsonFile.convertJsonFileSync)

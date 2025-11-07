@@ -22,19 +22,19 @@
  * SOFTWARE.
  */
 
-// Browser entry point - excludes Node.js filesystem dependencies
+import { Result } from '@fgv/ts-utils';
+import { IPuzzlesFile } from './model';
+import { puzzlesFile } from './converters';
+import { FileTree, JsonFile } from '@fgv/ts-json-base';
 
-// eslint-disable-next-line @rushstack/packlets/mechanics -- browser-specific entry point excludes Node.js fs dependencies
-import * as Files from './packlets/files/index.browser';
-import * as Hints from './packlets/hints';
-import * as Puzzles from './packlets/puzzles';
-
-export * from './packlets/collections';
-export * from './packlets/common';
-export { Files, Hints, Puzzles };
-
-// Excluded from browser:
-// - Files.loadJsonPuzzlesFileSync (requires Node.js fs via JsonFile.convertJsonFileSync)
-//
-// Included in browser (via FileTree):
-// - Files.loadJsonPuzzlesFromTree (browser-compatible via FileTree)
+/**
+ * Loads a puzzles file from a {@link FileTree.FileTree | FileTree}.
+ * @param fileTree - FileTree containing the file
+ * @param filePath - Path within the FileTree to the puzzles file
+ * @returns `Success` with the resulting file, or `Failure` with details if an
+ * error occurs.
+ * @public
+ */
+export function loadJsonPuzzlesFromTree(fileTree: FileTree.FileTree, filePath: string): Result<IPuzzlesFile> {
+  return JsonFile.DefaultJsonTreeHelper.convertJsonFromTree(fileTree, filePath, puzzlesFile);
+}
