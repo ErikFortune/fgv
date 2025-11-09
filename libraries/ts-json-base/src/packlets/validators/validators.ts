@@ -23,7 +23,7 @@
 import { Failure, Validation, Validator, fail } from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
 
-/* eslint-disable no-use-before-define, @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 /**
  * Validation context for in-place JSON validators.
@@ -40,7 +40,11 @@ export interface IJsonValidatorContext {
  */
 export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
   new Validation.Base.GenericValidator({
-    validator: (from: unknown, ctx?: IJsonValidatorContext): boolean | Failure<JsonPrimitive> => {
+    validator: (
+      from: unknown,
+      ctx?: IJsonValidatorContext,
+      self?: Validator<JsonPrimitive, IJsonValidatorContext>
+    ): boolean | Failure<JsonPrimitive> => {
       if (from === null) {
         return true;
       }
@@ -57,7 +61,7 @@ export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
       if (from === undefined && ctx?.ignoreUndefinedProperties === true) {
         return true;
       }
-      return fail(`"${String(from)}": not a valid JSON primitive.`);
+      return fail(`"${String(from)}": invalid JSON primitive.`);
     }
   });
 
@@ -69,9 +73,13 @@ export const jsonPrimitive: Validator<JsonPrimitive, IJsonValidatorContext> =
  * @public
  */
 export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Validation.Base.GenericValidator({
-  validator: (from: unknown, ctx?: IJsonValidatorContext) => {
+  validator: (
+    from: unknown,
+    ctx?: IJsonValidatorContext,
+    self?: Validator<JsonObject, IJsonValidatorContext>
+  ) => {
     if (!isJsonObject(from)) {
-      return fail('not a valid JSON object.');
+      return fail('invalid JSON object.');
     }
     const errors: string[] = [];
     for (const [name, value] of Object.entries(from)) {
@@ -81,7 +89,7 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
       });
     }
     if (errors.length > 0) {
-      return fail(`not a valid JSON object:\n${errors.join('\n')}`);
+      return fail(`invalid JSON object:\n${errors.join('\n')}`);
     }
     return true;
   }
@@ -95,7 +103,11 @@ export const jsonObject: Validator<JsonObject, IJsonValidatorContext> = new Vali
  * @public
  */
 export const jsonArray: Validator<JsonArray, IJsonValidatorContext> = new Validation.Base.GenericValidator({
-  validator: (from: unknown, ctx?: IJsonValidatorContext) => {
+  validator: (
+    from: unknown,
+    ctx?: IJsonValidatorContext,
+    self?: Validator<JsonArray, IJsonValidatorContext>
+  ) => {
     if (!isJsonArray(from)) {
       return fail('not an array');
     }
@@ -125,7 +137,11 @@ export const jsonValue: Validator<JsonValue, IJsonValidatorContext> = new Valida
   JsonValue,
   IJsonValidatorContext
 >({
-  validator: (from: unknown, ctx?: IJsonValidatorContext) => {
+  validator: (
+    from: unknown,
+    ctx?: IJsonValidatorContext,
+    self?: Validator<JsonValue, IJsonValidatorContext>
+  ) => {
     if (isJsonArray(from)) {
       const result = jsonArray.validate(from, ctx);
       return result.success === true ? true : result;
@@ -137,3 +153,73 @@ export const jsonValue: Validator<JsonValue, IJsonValidatorContext> = new Valida
     return result.success === true ? true : result;
   }
 });
+
+/**
+ * A {@link Validation.Classes.StringValidator | StringValidator} which validates a string in place.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * @public
+ */
+export const string: Validation.Classes.StringValidator<string, IJsonValidatorContext> =
+  new Validation.Classes.StringValidator<string, IJsonValidatorContext>();
+
+/**
+ * A {@link Validation.Classes.NumberValidator | NumberValidator} which validates a number in place.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * @public
+ */
+export const number: Validator<number, IJsonValidatorContext> = new Validation.Classes.NumberValidator<
+  number,
+  IJsonValidatorContext
+>();
+
+/**
+ * A {@link Validation.Classes.BooleanValidator | BooleanValidator} which validates a boolean in place.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * @public
+ */
+export const boolean: Validator<boolean, IJsonValidatorContext> =
+  new Validation.Classes.BooleanValidator<IJsonValidatorContext>();
+
+/**
+ * Helper to create a validator for a literal value.
+ * Accepts {@link Validators.IJsonValidatorContext | IJsonValidatorContext} but ignores it.
+ * Mirrors the behavior of `@fgv/ts-utils`.
+ * @public
+ */
+export function literal<T>(value: T): Validator<T, IJsonValidatorContext> {
+  return new Validation.Base.GenericValidator<T, IJsonValidatorContext>({
+    validator: (from: unknown): boolean | Failure<T> => {
+      return from === value ? true : fail(`Expected literal ${String(value)}, found ${JSON.stringify(from)}`);
+    }
+  });
+}
+
+/**
+ * Helper function to create a {@link Validator | Validator} which validates `unknown` to one of a set of
+ * supplied enumerated values. Anything else fails.
+ *
+ * @remarks
+ * This JSON variant accepts an {@link Validators.IJsonValidatorContext | IJsonValidatorContext} OR
+ * a `ReadonlyArray<T>` as its validation context. If the context is an array, it is used to override the
+ * allowed values for that validation; otherwise, the original `values` supplied at creation time are used.
+ *
+ * @param values - Array of allowed values.
+ * @param message - Optional custom failure message.
+ * @returns A new {@link Validator | Validator} returning `<T>`.
+ * @public
+ */
+export function enumeratedValue<T>(
+  values: ReadonlyArray<T>,
+  message?: string
+): Validator<T, IJsonValidatorContext | ReadonlyArray<T>> {
+  return new Validation.Base.GenericValidator<T, IJsonValidatorContext | ReadonlyArray<T>>({
+    validator: (from: unknown, context?: IJsonValidatorContext | ReadonlyArray<T>): boolean | Failure<T> => {
+      const effectiveValues = Array.isArray(context) ? (context as ReadonlyArray<T>) : values;
+      const index = effectiveValues.indexOf(from as T);
+      if (index >= 0) {
+        return true;
+      }
+      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+    }
+  });
+}

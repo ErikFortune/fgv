@@ -104,7 +104,7 @@ export interface IJsonReferenceMap {
    * with detail `'unknown'`  if no such object exists, or `Failure` with detail `'error'` if
    * the object was found but could not be formatted.
    */
-  // eslint-disable-next-line no-use-before-define
+
   getJsonObject(
     key: string,
     context?: IJsonContext
@@ -118,7 +118,7 @@ export interface IJsonReferenceMap {
    * with detail `'unknown'` if no such object exists, or `Failure` with detail `'error'` if
    * the object was found but could not be formatted.
    */
-  // eslint-disable-next-line no-use-before-define
+
   getJsonValue(key: string, context?: IJsonContext): DetailedResult<JsonValue, JsonReferenceMapFailureReason>;
 }
 

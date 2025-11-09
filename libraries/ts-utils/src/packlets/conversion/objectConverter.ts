@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-import { fail, isKeyOf, succeed } from '../base';
+import { fail, isKeyOf, Result, succeed } from '../base';
 import { Validator } from '../validation';
 import { BaseConverter } from './baseConverter';
 import { Converter } from './converter';
@@ -30,7 +30,7 @@ import { field, optionalField } from './converters';
  * Options for an {@link Conversion.ObjectConverter | ObjectConverter}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ObjectConverterOptions<T> {
   /**
    * If present, lists optional fields. Missing non-optional fields cause an error.
@@ -45,6 +45,11 @@ export interface ObjectConverterOptions<T> {
    * Optional description to be included in error messages.
    */
   description?: string;
+
+  /**
+   * Optional modifier to apply to the converter.
+   */
+  modifier?: 'partial' | 'required';
 }
 
 /**
@@ -58,7 +63,7 @@ export type FieldConverters<T, TC = unknown> = {
 };
 
 /**
- * A {@link Converter} which converts an object of type `<T>` without changing shape, given
+ * A {@link Converter | Converter} which converts an object of type `<T>` without changing shape, given
  * a {@link Conversion.FieldConverters | FieldConverters<T>} for the fields in the object.
  * @remarks
  * By default, if all of the required fields exist and can be converted, returns a new object with
@@ -94,6 +99,8 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * a {@link Converter} for each field.
    * @param optional - An array of `keyof T` listing fields that are not required.
    * {@label WITH_KEYS}
+   * @deprecated Use {@link Conversion.Converter.optional | .optional()} on the individual
+   * fields, or pass {@link Conversion.ObjectConverterOptions | ObjectConverterOptions<T>} to the constructor.
    */
   public constructor(fields: FieldConverters<T, TC>, optional?: (keyof T)[]);
   /**
@@ -101,50 +108,45 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * @internal
    */
   public constructor(fields: FieldConverters<T, TC>, opt?: ObjectConverterOptions<T> | (keyof T)[]) {
-    super((from: unknown, __self, context?: TC) => {
-      // eslint bug thinks key is used before defined
-      // eslint-disable-next-line no-use-before-define
-      const converted = {} as { [key in keyof T]: T[key] };
-      const errors: string[] = [];
-      for (const key in fields) {
-        if (fields[key]) {
-          const isOptional = (fields[key].isOptional || this.options.optionalFields?.includes(key)) ?? false;
-          const result = isOptional
-            ? optionalField(key, fields[key]).convert(from, context)
-            : field(key, fields[key]).convert(from, context);
-          if (result.isSuccess() && result.value !== undefined) {
-            converted[key] = result.value;
-          } else if (result.isFailure()) {
-            errors.push(result.message);
-          }
-        }
-      }
+    const options = Array.isArray(opt) ? { optionalFields: opt } : opt ?? { optionalFields: [] };
 
-      if (this.options.strict === true) {
-        if (typeof from === 'object' && !Array.isArray(from)) {
-          for (const key in from) {
-            if (from.hasOwnProperty(key) && (!isKeyOf(key, fields) || fields[key] === undefined)) {
-              errors.push(`${key}: unexpected property in source object`);
-            }
-          }
-        } else {
-          errors.push('source is not an object');
-        }
-      }
-      return errors.length === 0
-        ? succeed(converted)
-        : fail(
-            this.options.description ? `${this.options.description}: ${errors.join('\n')}` : errors.join('\n')
-          );
-    });
+    super((from: unknown, __self, context?: TC) => ObjectConverter._convert(from, context, fields, options));
 
     this.fields = fields;
-    if (Array.isArray(opt)) {
-      this.options = { optionalFields: opt };
-    } else {
-      this.options = opt ?? {};
-    }
+    this.options = options;
   }
+
+  /**
+   * Converts the supplied object using the {@link Conversion.ObjectConverter | ObjectConverter}
+   * with all fields optional.
+   * @param from - The object to be converted.
+   * @param context - An optional context object passed to the field converters.
+   * @returns A {@link Result} containing the converted object or an error message.
+   */
+  public convertPartial(from: unknown, context?: TC): Result<Partial<T>> {
+    const options: ObjectConverterOptions<T> = { ...this.options, modifier: 'partial' };
+    return ObjectConverter._convert(from, context, this.fields, options);
+  }
+
+  /**
+   * Converts the supplied object using the {@link Conversion.ObjectConverter | ObjectConverter}
+   * with all fields required.
+   * @param from - The object to be converted.
+   * @param context - An optional context object passed to the field converters.
+   * @returns A {@link Result} containing the converted object or an error message.
+   */
+  public convertRequired(from: unknown, context?: TC): Result<Required<T>> {
+    const options: ObjectConverterOptions<T> = { ...this.options, modifier: 'required' };
+    return ObjectConverter._convert(from, context, this.fields, options) as Result<Required<T>>;
+  }
+
+  /**
+   * Creates a new {@link Conversion.ObjectConverter | ObjectConverter} derived from this one but with
+   * all properties optional.
+   * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} with the additional optional source properties.
+   * {@label WITHOUT_OPTIONS}
+   */
+  public partial(): ObjectConverter<Partial<T>, TC>;
 
   /**
    * Creates a new {@link Conversion.ObjectConverter | ObjectConverter} derived from this one but with
@@ -153,6 +155,7 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * converter.
    * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} with the additional optional source properties.
    * {@label WITH_OPTIONS}
+   * @deprecated Pass just the keys to be made optional.
    */
   public partial(options: ObjectConverterOptions<T>): ObjectConverter<Partial<T>, TC>;
 
@@ -164,7 +167,8 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * properties.
    * {@label WITH_KEYS}
    */
-  public partial(optional?: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+  public partial(optional: (keyof T)[]): ObjectConverter<Partial<T>, TC>;
+
   /**
    * Concrete implementation of
    * {@link Conversion.ObjectConverter.(partial:1) | ObjectConverter.partial(ObjectConverterOptions)} and
@@ -172,10 +176,15 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * @internal
    */
   public partial(opt?: ObjectConverterOptions<T> | (keyof T)[]): ObjectConverter<Partial<T>, TC> {
-    return new ObjectConverter<Partial<T>, TC>(
-      this.fields as FieldConverters<Partial<T>, TC>,
-      opt as ObjectConverterOptions<Partial<T>>
-    )._with(this._traits());
+    const options: ObjectConverterOptions<Partial<T>> =
+      opt === undefined
+        ? { ...this.options, modifier: 'partial' }
+        : Array.isArray(opt)
+        ? { ...this.options, optionalFields: [...opt] }
+        : (opt as ObjectConverterOptions<Partial<T>>);
+    return new ObjectConverter<Partial<T>, TC>(this.fields as FieldConverters<Partial<T>, TC>, options)._with(
+      this._traits()
+    );
   }
 
   /**
@@ -186,8 +195,65 @@ export class ObjectConverter<T, TC = unknown> extends BaseConverter<T, TC> {
    * properties.
    */
   public addPartial(addOptionalProperties: (keyof T)[]): ObjectConverter<Partial<T>, TC> {
-    return this.partial([...(this.options.optionalFields ?? []), ...addOptionalProperties])._with(
-      this._traits()
-    );
+    /* c8 ignore next 1 - coverage having a bad day */
+    const myOptional = this.options.optionalFields ?? [];
+    const optional = [...myOptional, ...addOptionalProperties];
+    return this.partial(optional)._with(this._traits());
+  }
+
+  /**
+   * Creates a new {@link Conversion.ObjectConverter | ObjectConverter} derived from this one but with
+   * all properties required.
+   * @returns A new {@link Conversion.ObjectConverter | ObjectConverter} with the additional required source properties.
+   */
+  public required(): ObjectConverter<Required<T>, TC> {
+    const options: ObjectConverterOptions<Required<T>> = { ...this.options, modifier: 'required' };
+    return new ObjectConverter<Required<T>, TC>(
+      this.fields as FieldConverters<Required<T>, TC>,
+      options
+    )._with(this._traits());
+  }
+
+  private static _convert<T, TC>(
+    from: unknown,
+    context: TC | undefined,
+    fields: FieldConverters<T, TC>,
+    options: ObjectConverterOptions<T>
+  ): Result<T> {
+    // eslint bug thinks key is used before defined
+
+    const converted = {} as { [key in keyof T]: T[key] };
+    const errors: string[] = [];
+    for (const key in fields) {
+      if (fields[key]) {
+        const isOptional =
+          options.modifier === 'partial' ||
+          (options.modifier !== 'required' &&
+            (fields[key].isOptional === true || options.optionalFields?.includes(key) === true));
+        const result = isOptional
+          ? optionalField(key, fields[key]).convert(from, context)
+          : field(key, fields[key]).convert(from, context);
+        if (result.isSuccess() && result.value !== undefined) {
+          converted[key] = result.value;
+        } else if (result.isFailure()) {
+          errors.push(result.message);
+        }
+      }
+    }
+
+    if (options.strict === true) {
+      if (typeof from === 'object' && !Array.isArray(from)) {
+        for (const key in from) {
+          if (from.hasOwnProperty(key) && (!isKeyOf(key, fields) || fields[key] === undefined)) {
+            errors.push(`${key}: unexpected property in source object`);
+          }
+        }
+      } else {
+        errors.push('source is not an object');
+      }
+    }
+    return errors.length === 0
+      ? succeed(converted)
+      : fail(options.description ? `${options.description}: ${errors.join('\n')}` : errors.join('\n'));
   }
 }

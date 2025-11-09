@@ -4,6 +4,43 @@
 
 ## Converters namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[enumeratedValue(values, message)](./ts-json-base.converters.enumeratedvalue.md)
+
+
+</td><td>
+
+Helper function to create a  which converts `unknown` to one of a set of supplied enumerated values. Anything else fails.
+
+
+</td></tr>
+<tr><td>
+
+[literal(value)](./ts-json-base.converters.literal.md)
+
+
+</td><td>
+
+Helper to create a converter for a literal value. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -44,6 +81,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[boolean](./ts-json-base.converters.boolean.md)
+
+
+</td><td>
+
+A  which converts `unknown` to a `boolean`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+
+
+</td></tr>
+<tr><td>
 
 [jsonArray](./ts-json-base.converters.jsonarray.md)
 
@@ -91,4 +139,27 @@ An copying converter which converts a supplied `unknown` value to a valid [JsonV
 
 
 </td></tr>
+<tr><td>
+
+[number](./ts-json-base.converters.number.md)
+
+
+</td><td>
+
+A  which converts `unknown` to a `number`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[string](./ts-json-base.converters.string.md)
+
+
+</td><td>
+
+A  which converts `unknown` to a `string`<!-- -->. Accepts [IJsonConverterContext](./ts-json-base.converters.ijsonconvertercontext.md) but ignores it.
+
+
+</td></tr>
 </tbody></table>
+

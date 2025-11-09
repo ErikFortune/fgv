@@ -1,0 +1,478 @@
+/*
+ * Copyright (c) 2025 Erik Fortune
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+import '@fgv/ts-utils-jest';
+import * as TsRes from '../../../index';
+import { TestQualifierType } from '../qualifier-types/testQualifierType';
+import { mapResults } from '@fgv/ts-utils';
+import { sanitizeJsonObject } from '@fgv/ts-json-base';
+
+describe('ConditionSet', () => {
+  const defaultQualifierDecls: TsRes.Qualifiers.IQualifierDecl[] = [
+    { name: 'homeTerritory', typeName: 'territory', defaultPriority: 800 },
+    { name: 'currentTerritory', typeName: 'territory', defaultPriority: 700 },
+    { name: 'language', typeName: 'language', defaultPriority: 600 },
+    { name: 'some_thing', typeName: 'literal', defaultPriority: 500 },
+    { name: 'testThing', typeName: 'test', defaultPriority: 400 }
+  ];
+  const defaultConditionDecls: TsRes.Conditions.IConditionDecl[] = [
+    { qualifierName: 'homeTerritory', value: 'CA' },
+    { qualifierName: 'currentTerritory', value: 'US' },
+    { qualifierName: 'language', value: 'en' },
+    { qualifierName: 'some_thing', value: 'some_value' },
+    { qualifierName: 'testThing', value: 'test-value' }
+  ];
+
+  let qualifierDecls: TsRes.Qualifiers.IQualifierDecl[];
+  let conditionDecls: TsRes.Conditions.IConditionDecl[];
+  let qualifierTypes: TsRes.QualifierTypes.QualifierTypeCollector;
+  let qualifiers: TsRes.Qualifiers.QualifierCollector;
+  let conditions: TsRes.Conditions.ConditionCollector;
+  let allConditions: TsRes.Conditions.Condition[];
+
+  beforeEach(() => {
+    qualifierDecls = sanitizeJsonObject(defaultQualifierDecls).orThrow();
+    conditionDecls = sanitizeJsonObject(defaultConditionDecls).orThrow();
+    qualifierTypes = TsRes.QualifierTypes.QualifierTypeCollector.create({
+      qualifierTypes: [
+        TsRes.QualifierTypes.LanguageQualifierType.create().orThrow(),
+        TsRes.QualifierTypes.TerritoryQualifierType.create().orThrow(),
+        TsRes.QualifierTypes.LiteralQualifierType.create().orThrow(),
+        new TestQualifierType()
+      ]
+    }).orThrow();
+
+    qualifiers = TsRes.Qualifiers.QualifierCollector.create({
+      qualifierTypes,
+      qualifiers: qualifierDecls
+    }).orThrow();
+
+    conditions = TsRes.Conditions.ConditionCollector.create({
+      qualifiers,
+      conditions: conditionDecls
+    }).orThrow();
+
+    allConditions = Array.from(conditions.values());
+  });
+
+  describe('create static method', () => {
+    test('creates a condition set from a list of conditions', () => {
+      const expectedKey = Array.from(allConditions)
+        .sort(TsRes.Conditions.Condition.compare)
+        .reverse()
+        .map((c) => c.key)
+        .join('+');
+      const expectedToken = mapResults(
+        Array.from(allConditions)
+          .sort(TsRes.Conditions.Condition.compare)
+          .reverse()
+          .map((c) => c.toToken())
+      )
+        .orThrow()
+        .join(',');
+
+      expect(TsRes.Conditions.ConditionSet.create({ conditions: allConditions })).toSucceedAndSatisfy(
+        (cs) => {
+          expect(cs.size).toBe(allConditions.length);
+          expect(cs.key).toBe(expectedKey);
+          expect(cs.toKey()).toBe(cs.key);
+          expect(cs.toString()).toBe(cs.key);
+          expect(cs.toToken()).toSucceedWith(expectedToken);
+        }
+      );
+    });
+
+    test('normalizes the conditions in the set', () => {
+      const cs1 = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const cs2 = TsRes.Conditions.ConditionSet.create({
+        conditions: Array.from(allConditions).reverse()
+      }).orThrow();
+      expect(cs1.key).toBe(cs2.key);
+      expect(cs1.toHash()).toBe(cs2.toHash());
+      for (let i = 0; i < cs1.size; i++) {
+        expect(cs1.conditions[i].key).toBe(cs2.conditions[i].key);
+      }
+    });
+
+    test('creates an empty (unconditional) condition set', () => {
+      expect(TsRes.Conditions.ConditionSet.create({ conditions: [] })).toSucceedAndSatisfy((cs) => {
+        expect(cs.size).toBe(0);
+        expect(cs.key).toBe('');
+        expect(cs.toKey()).toBe(cs.key);
+        expect(cs.toString()).toBe(cs.key);
+        expect(cs.toToken()).toSucceedWith('');
+      });
+    });
+
+    test('fails if there are duplicate conditions for the same qualifier', () => {
+      const cExtra = conditions.validating
+        .add({
+          qualifierName: 'homeTerritory',
+          value: 'AQ'
+        })
+        .orThrow();
+      allConditions.push(cExtra);
+      expect(TsRes.Conditions.ConditionSet.create({ conditions: allConditions })).toFailWith(
+        /duplicate conditions/i
+      );
+    });
+  });
+
+  describe('toConditionSetRecordDecl method', () => {
+    test('returns a condition set record declaration', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const decl = cs.toConditionSetRecordDecl();
+      expect(decl).toEqual({
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'some_value',
+        testThing: 'test-value'
+      });
+    });
+
+    test('filters conditions with qualifiersToReduce option', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+
+      // Filter out language and homeTerritory qualifiers
+      const qualifiersToReduce = new Set(['language', 'homeTerritory'] as unknown as TsRes.QualifierName[]);
+      const decl = cs.toConditionSetRecordDecl({ qualifiersToReduce });
+
+      expect(decl).toEqual({
+        currentTerritory: 'US',
+        some_thing: 'some_value',
+        testThing: 'test-value'
+      });
+
+      // Verify excluded qualifiers are not present
+      expect(decl).not.toHaveProperty('language');
+      expect(decl).not.toHaveProperty('homeTerritory');
+    });
+
+    test('returns all conditions when qualifiersToReduce is empty', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+
+      const qualifiersToReduce = new Set<TsRes.QualifierName>(); // Empty set
+      const decl = cs.toConditionSetRecordDecl({ qualifiersToReduce });
+
+      expect(decl).toEqual({
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'some_value',
+        testThing: 'test-value'
+      });
+    });
+
+    test('filters all conditions when all qualifiers are in qualifiersToReduce', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+
+      // Filter out all qualifiers
+      const qualifiersToReduce = new Set([
+        'language',
+        'homeTerritory',
+        'currentTerritory',
+        'some_thing',
+        'testThing'
+      ] as unknown as TsRes.QualifierName[]);
+      const decl = cs.toConditionSetRecordDecl({ qualifiersToReduce });
+
+      expect(decl).toEqual({});
+    });
+  });
+
+  describe('toConditionSetArrayDecl method', () => {
+    test('returns a condition set array declaration', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const decl = cs.toConditionSetArrayDecl();
+      expect(decl).toEqual([
+        { qualifierName: 'homeTerritory', value: 'CA' },
+        { qualifierName: 'currentTerritory', value: 'US' },
+        { qualifierName: 'language', value: 'en' },
+        { qualifierName: 'some_thing', value: 'some_value' },
+        { qualifierName: 'testThing', value: 'test-value' }
+      ]);
+    });
+
+    test('filters conditions with qualifiersToReduce option', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+
+      // Filter out language and homeTerritory qualifiers
+      const qualifiersToReduce = new Set(['language', 'homeTerritory'] as unknown as TsRes.QualifierName[]);
+      const decl = cs.toConditionSetArrayDecl({ qualifiersToReduce });
+
+      expect(decl).toEqual([
+        { qualifierName: 'currentTerritory', value: 'US' },
+        { qualifierName: 'some_thing', value: 'some_value' },
+        { qualifierName: 'testThing', value: 'test-value' }
+      ]);
+
+      // Verify excluded qualifiers are not present in any array element
+      expect(decl.some((item) => item.qualifierName === 'language')).toBe(false);
+      expect(decl.some((item) => item.qualifierName === 'homeTerritory')).toBe(false);
+    });
+
+    test('returns all conditions when qualifiersToReduce is empty', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+
+      const qualifiersToReduce = new Set<TsRes.QualifierName>(); // Empty set
+      const decl = cs.toConditionSetArrayDecl({ qualifiersToReduce });
+
+      expect(decl).toEqual([
+        { qualifierName: 'homeTerritory', value: 'CA' },
+        { qualifierName: 'currentTerritory', value: 'US' },
+        { qualifierName: 'language', value: 'en' },
+        { qualifierName: 'some_thing', value: 'some_value' },
+        { qualifierName: 'testThing', value: 'test-value' }
+      ]);
+    });
+
+    test('returns empty array when all qualifiers are in qualifiersToReduce', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+
+      // Filter out all qualifiers
+      const qualifiersToReduce = new Set([
+        'language',
+        'homeTerritory',
+        'currentTerritory',
+        'some_thing',
+        'testThing'
+      ] as unknown as TsRes.QualifierName[]);
+      const decl = cs.toConditionSetArrayDecl({ qualifiersToReduce });
+
+      expect(decl).toEqual([]);
+    });
+  });
+
+  describe('compare static method', () => {
+    test('chooses the condition set with highest priority', () => {
+      const normalized1 = Array.from(allConditions).sort(TsRes.Conditions.Condition.compare).reverse();
+      const normalized2 = Array.from(normalized1).splice(1);
+      const cs1 = TsRes.Conditions.ConditionSet.create({ conditions: normalized1 }).orThrow();
+      const cs2 = TsRes.Conditions.ConditionSet.create({ conditions: normalized2 }).orThrow();
+      expect(TsRes.Conditions.ConditionSet.compare(cs1, cs2)).toBeGreaterThan(0);
+    });
+
+    test('chooses the longest condition set if priorities are equal', () => {
+      const normalized1 = Array.from(allConditions).sort(TsRes.Conditions.Condition.compare).reverse();
+      const normalized2 = Array.from(normalized1);
+      normalized2.pop();
+      const cs1 = TsRes.Conditions.ConditionSet.create({ conditions: normalized1 }).orThrow();
+      const cs2 = TsRes.Conditions.ConditionSet.create({ conditions: normalized2 }).orThrow();
+      expect(TsRes.Conditions.ConditionSet.compare(cs1, cs2)).toBeGreaterThan(0);
+      expect(TsRes.Conditions.ConditionSet.compare(cs2, cs1)).toBeLessThan(0);
+    });
+
+    test('returns 0 if condition sets are equal', () => {
+      const normalized1 = Array.from(allConditions).sort(TsRes.Conditions.Condition.compare).reverse();
+      const normalized2 = Array.from(normalized1);
+      const cs1 = TsRes.Conditions.ConditionSet.create({ conditions: normalized1 }).orThrow();
+      const cs2 = TsRes.Conditions.ConditionSet.create({ conditions: normalized2 }).orThrow();
+      expect(TsRes.Conditions.ConditionSet.compare(cs1, cs2)).toBe(0);
+    });
+  });
+
+  describe('index properties and methods', () => {
+    test('sets the index for a condition set on creation', () => {
+      const index = 10;
+      const cs = TsRes.Conditions.ConditionSet.create({
+        conditions: allConditions,
+        index
+      }).orThrow();
+      expect(cs.index).toBe(index);
+    });
+
+    test('succeeds and sets index if not already set', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const index = 10;
+      expect(cs.setIndex(index)).toSucceedWith(index as TsRes.ConditionSetIndex);
+      expect(cs.index).toBe(index);
+    });
+
+    test('fails if index is already set', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions, index: 10 }).orThrow();
+      expect(cs.setIndex(20)).toFailWith(/cannot be change/i);
+    });
+
+    test('succeeds if set to the current index', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions, index: 10 }).orThrow();
+      expect(cs.setIndex(10)).toSucceedWith(10 as TsRes.ConditionSetIndex);
+    });
+  });
+
+  describe('toCompiled method', () => {
+    test('converts condition set to compiled representation without metadata by default', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [allConditions[0], allConditions[1]],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled();
+      expect(compiled).toEqual({
+        conditions: conditionSet.conditions.map((c) => c.index!)
+      });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('converts condition set to compiled representation with metadata when requested', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [allConditions[0], allConditions[1]],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled({ includeMetadata: true });
+      expect(compiled).toEqual({
+        conditions: conditionSet.conditions.map((c) => c.index!),
+        metadata: {
+          key: conditionSet.key
+        }
+      });
+    });
+
+    test('excludes metadata when explicitly disabled', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [allConditions[0]],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled({ includeMetadata: false });
+      expect(compiled.metadata).toBeUndefined();
+    });
+
+    test('handles empty condition set', () => {
+      const conditionSet = TsRes.Conditions.ConditionSet.create({
+        conditions: [],
+        index: 1 as TsRes.ConditionSetIndex
+      }).orThrow();
+
+      const compiled = conditionSet.toCompiled();
+      expect(compiled).toEqual({
+        conditions: []
+      });
+    });
+  });
+
+  describe('canMatchPartialContext method', () => {
+    test('returns true when all conditions are satisfied or not present in context', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const context = {
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'some_value',
+        testThing: 'test-value'
+      };
+      expect(cs.canMatchPartialContext(context)).toBe(true);
+    });
+
+    test('returns false when at least one condition is present and not satisfied', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const context = {
+        homeTerritory: 'CA',
+        currentTerritory: 'US',
+        language: 'en',
+        some_thing: 'wrong_value', // does not match
+        testThing: 'test-value'
+      };
+      expect(cs.canMatchPartialContext(context)).toBe(false);
+    });
+
+    test('returns true when no matching qualifiers are present in context', () => {
+      const cs = TsRes.Conditions.ConditionSet.create({ conditions: allConditions }).orThrow();
+      const context = {
+        unrelated: 'value'
+      };
+      expect(cs.canMatchPartialContext(context)).toBe(true);
+    });
+  });
+
+  describe('getKeyFromLooseDecl static method', () => {
+    test('should return unconditional key for undefined condition set', () => {
+      expect(TsRes.Conditions.ConditionSet.getKeyFromLooseDecl(undefined, conditions)).toSucceedWith(
+        TsRes.Conditions.ConditionSet.UnconditionalKey
+      );
+    });
+
+    test('should handle array format (ConditionSetDeclAsArray)', () => {
+      const arrayDecl: TsRes.ResourceJson.Json.ConditionSetDeclAsArray = [
+        { qualifierName: 'language', value: 'en' },
+        { qualifierName: 'homeTerritory', value: 'US' }
+      ];
+
+      expect(TsRes.Conditions.ConditionSet.getKeyFromLooseDecl(arrayDecl, conditions)).toSucceedAndSatisfy(
+        (key) => {
+          expect(key).toContain('language');
+          expect(key).toContain('homeTerritory');
+        }
+      );
+    });
+
+    test('should handle record format with string values', () => {
+      const recordDecl: TsRes.ResourceJson.Json.ConditionSetDeclAsRecord = {
+        language: 'en',
+        homeTerritory: 'US'
+      };
+
+      expect(TsRes.Conditions.ConditionSet.getKeyFromLooseDecl(recordDecl, conditions)).toSucceedAndSatisfy(
+        (key) => {
+          expect(key).toContain('language');
+          expect(key).toContain('homeTerritory');
+        }
+      );
+    });
+
+    test('should handle record format with IChildConditionDecl objects', () => {
+      const recordDecl: TsRes.ResourceJson.Json.ConditionSetDeclAsRecord = {
+        language: 'en',
+        homeTerritory: { value: 'US', priority: 200 }
+      };
+
+      expect(TsRes.Conditions.ConditionSet.getKeyFromLooseDecl(recordDecl, conditions)).toSucceedAndSatisfy(
+        (key) => {
+          expect(key).toContain('language');
+          expect(key).toContain('homeTerritory');
+          expect(key).toContain('@200'); // Should include the custom priority
+        }
+      );
+    });
+
+    test('should fail with invalid qualifier name', () => {
+      const invalidDecl: TsRes.ResourceJson.Json.ConditionSetDeclAsArray = [
+        { qualifierName: 'invalidQualifier', value: 'someValue' }
+      ];
+
+      expect(TsRes.Conditions.ConditionSet.getKeyFromLooseDecl(invalidDecl, conditions)).toFailWith(
+        /invalidQualifier.*not found/i
+      );
+    });
+
+    test('should fail with invalid qualifier value', () => {
+      const invalidDecl: TsRes.ResourceJson.Json.ConditionSetDeclAsArray = [
+        { qualifierName: 'language', value: 'invalid-language-tag' }
+      ];
+
+      expect(TsRes.Conditions.ConditionSet.getKeyFromLooseDecl(invalidDecl, conditions)).toFailWith(
+        /invalid.*language/i
+      );
+    });
+  });
+});

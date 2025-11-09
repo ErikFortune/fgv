@@ -315,7 +315,7 @@ Description
 </td></tr>
 <tr><td>
 
-[load(root)](./ts-bcp47.iana.languagesubtags.languagesubtagregistry.load.md)
+[createFromTxtContent(content)](./ts-bcp47.iana.languagesubtags.languagesubtagregistry.createfromtxtcontent.md)
 
 
 </td><td>
@@ -341,32 +341,5 @@ Description
 
 
 </td></tr>
-<tr><td>
-
-[loadJsonRegistryFile(root)](./ts-bcp47.iana.languagesubtags.languagesubtagregistry.loadjsonregistryfile.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[loadTxtRegistryFile(root)](./ts-bcp47.iana.languagesubtags.languagesubtagregistry.loadtxtregistryfile.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-
-</td></tr>
 </tbody></table>
+

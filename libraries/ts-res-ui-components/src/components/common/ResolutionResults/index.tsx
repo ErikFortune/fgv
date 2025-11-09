@@ -1,0 +1,459 @@
+import React, { useCallback } from 'react';
+import { JsonValue } from '@fgv/ts-json-base';
+import { Result } from '@fgv/ts-utils';
+import {
+  ICandidateInfo,
+  IResolutionActions,
+  IResolutionState,
+  IResourceEditorFactory,
+  IResolutionResult
+} from '../../../types';
+import { EditableJsonView } from '../../views/ResolutionView/EditableJsonView';
+import { useObservability } from '../../../contexts';
+
+/**
+ * Props for the ResolutionResults component.
+ *
+ * @public
+ */
+export interface IResolutionResultsProps {
+  /** The resolution result data to display */
+  result: IResolutionResult;
+  /** View mode determining how resolution results are presented */
+  viewMode: 'composed' | 'best' | 'all' | 'raw';
+  /** Current context values used for resolution */
+  contextValues: Record<string, string | undefined>;
+  /** Optional resolution actions for interactive features */
+  resolutionActions?: IResolutionActions;
+  /** Optional resolution state for editing features */
+  resolutionState?: IResolutionState;
+  /** Optional factory for creating custom resource editors */
+  resourceEditorFactory?: IResourceEditorFactory;
+}
+
+/**
+ * A comprehensive component for displaying resource resolution results with multiple view modes.
+ *
+ * ResolutionResults provides a flexible interface for presenting resource resolution data
+ * in various formats including composed values, best candidate selection, all candidates,
+ * and raw resolution data. It supports interactive editing when provided with appropriate
+ * actions and state, and can be customized with resource editor factories.
+ *
+ * @example
+ * ```tsx
+ * import { ResolutionResults, ObservabilityProvider } from '@fgv/ts-res-ui-components';
+ *
+ * function BasicResolutionDisplay() {
+ *   const [viewMode, setViewMode] = useState<'composed' | 'best' | 'all' | 'raw'>('composed');
+ *   const resolutionResult = { value: 'Hello World', candidates: [...] };
+ *   const context = { language: 'en-US', platform: 'web' };
+ *
+ *   return (
+ *     <ObservabilityProvider>
+ *       <div>
+ *         <div className="view-controls">
+ *           <button onClick={() => setViewMode('composed')}>Composed</button>
+ *           <button onClick={() => setViewMode('best')}>Best</button>
+ *           <button onClick={() => setViewMode('all')}>All</button>
+ *           <button onClick={() => setViewMode('raw')}>Raw</button>
+ *         </div>
+ *         <ResolutionResults
+ *           result={resolutionResult}
+ *           viewMode={viewMode}
+ *           contextValues={context}
+ *         />
+ *       </div>
+ *     </ObservabilityProvider>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Using with resolution state and editing capabilities
+ * import { ResolutionTools, ObservabilityProvider } from '@fgv/ts-res-ui-components';
+ *
+ * function InteractiveResolutionResults() {
+ *   const { state: resolutionState, actions: resolutionActions } = ResolutionTools.useResolutionState();
+ *
+ *   const customEditorFactory = {
+ *     createEditor: (resourceId: string, value: JsonValue) => ({
+ *       success: true,
+ *       editor: MyCustomEditor
+ *     })
+ *   };
+ *
+ *   return (
+ *     <ObservabilityProvider>
+ *       <ResolutionResults
+ *         result={resolutionState.currentResult}
+ *         viewMode={resolutionState.viewMode}
+ *         contextValues={resolutionState.context}
+ *         resolutionActions={resolutionActions}
+ *         resolutionState={resolutionState}
+ *         resourceEditorFactory={customEditorFactory}
+ *       />
+ *     </ObservabilityProvider>
+ *   );
+ * }
+ * ```
+ *
+ * @example
+ * ```tsx
+ * // Advanced usage with orchestrator integration
+ * import { ResourceTools } from '@fgv/ts-res-ui-components';
+ *
+ * function OrchestratorResolutionDisplay() {
+ *   const { state, actions } = ResourceTools.useResourceData();
+ *   const [selectedResourceId, setSelectedResourceId] = useState<string | null>(null);
+ *
+ *   const handleResourceResolve = async (resourceId: string) => {
+ *     const result = await actions.resolveResource(resourceId, state.resolutionState.context);
+ *     if (result.isSuccess()) {
+ *       setSelectedResourceId(resourceId);
+ *     }
+ *   };
+ *
+ *   if (!selectedResourceId || !state.resolutionState.currentResult) {
+ *     return <div>Select a resource to see resolution results</div>;
+ *   }
+ *
+ *   return (
+ *     <div className="resolution-display">
+ *       <div className="resource-info">
+ *         <h3>Resolution for: {selectedResourceId}</h3>
+ *         <p>Context: {JSON.stringify(state.resolutionState.context)}</p>
+ *       </div>
+ *       <ResolutionResults
+ *         result={state.resolutionState.currentResult}
+ *         viewMode={state.resolutionState.viewMode}
+ *         contextValues={state.resolutionState.context}
+ *         resolutionActions={{
+ *           ...state.resolutionState,
+ *           setViewMode: actions.setResolutionViewMode,
+ *           saveEdit: actions.saveResourceEdit
+ *         }}
+ *         resolutionState={state.resolutionState}
+ *       />
+ *     </div>
+ *   );
+ * }
+ * ```
+ *
+ * @public
+ */
+export const ResolutionResults: React.FC<IResolutionResultsProps> = ({
+  result,
+  viewMode,
+  contextValues,
+  resolutionActions,
+  resolutionState,
+  resourceEditorFactory
+}) => {
+  const o11y = useObservability();
+
+  // Helper function to create the appropriate resource editor
+  const createResourceEditor = useCallback(
+    (
+      value: JsonValue,
+      resourceId: string,
+      isEdited: boolean,
+      editedValue: JsonValue | undefined,
+      onSave?: (resourceId: string, editedValue: JsonValue, originalValue?: JsonValue) => Result<void>,
+      onCancel?: (resourceId: string) => void,
+      disabled?: boolean,
+      className?: string
+    ) => {
+      // Try to get resource type from the result
+      const resourceType = result?.resource?.resourceType?.key ?? 'unknown';
+
+      // Try the factory first if provided
+      if (resourceEditorFactory) {
+        try {
+          const factoryResult = resourceEditorFactory.createEditor(resourceId, resourceType, value);
+          if (factoryResult.success) {
+            const CustomEditor = factoryResult.editor;
+            return (
+              <CustomEditor
+                value={value}
+                resourceId={resourceId}
+                isEdited={isEdited}
+                editedValue={editedValue}
+                onSave={onSave}
+                onCancel={onCancel}
+                disabled={disabled}
+                className={className}
+              />
+            );
+          } else {
+            // Factory couldn't create editor, log and fall back to JSON editor
+            if (factoryResult.message) {
+              o11y.diag.info(`default-editor: Using default JSON editor - ${factoryResult.message}`);
+            }
+            // Continue to fallback JSON editor below
+          }
+        } catch (error) {
+          // Factory threw an error, log and fall back to JSON editor
+          o11y.diag.warn(
+            `editor-factory: Failed to create editor - ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+          // Continue to fallback JSON editor below
+        }
+      }
+
+      // Fall back to the default JSON editor
+      return (
+        <EditableJsonView
+          value={value}
+          resourceId={resourceId}
+          isEdited={isEdited}
+          editedValue={editedValue}
+          onSave={onSave}
+          onCancel={onCancel}
+          disabled={disabled}
+          className={className}
+        />
+      );
+    },
+    [resourceEditorFactory, result, o11y]
+  );
+
+  if (!result.success) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h4 className="font-medium text-red-800 mb-2">Resolution Failed</h4>
+        <p className="text-sm text-red-600">{result.error}</p>
+      </div>
+    );
+  }
+
+  if (viewMode === 'raw') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="font-medium text-gray-800 mb-2">Raw Resolution Data</h4>
+          <pre className="text-xs bg-white p-3 rounded border overflow-x-auto">
+            {JSON.stringify(
+              {
+                context: contextValues,
+                resource: result.resource
+                  ? {
+                      id: result.resource.id,
+                      candidateCount: result.resource.candidates.length
+                    }
+                  : null,
+                bestCandidate: result.bestCandidate?.json,
+                allCandidates: result.allCandidates?.map((c) => c.json),
+                composedValue: result.composedValue,
+                error: result.error
+              },
+              null,
+              2
+            )}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
+  if (viewMode === 'composed') {
+    return (
+      <div className="space-y-4">
+        {result.composedValue ? (
+          createResourceEditor(
+            result.composedValue,
+            result.resourceId,
+            resolutionActions?.hasEdit?.(result.resourceId) || false,
+            resolutionActions?.getEditedValue?.(result.resourceId),
+            resolutionActions?.saveEdit,
+            () => {}, // Could add cancel functionality if needed
+            resolutionState?.isApplyingEdits || false
+          )
+        ) : (
+          <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+            <p className="text-sm text-yellow-800">No composed value available for the current context.</p>
+            {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
+          </div>
+        )}
+
+        {result.resource && (
+          <div>
+            <h4 className="font-medium text-gray-800 mb-2">Resource Info</h4>
+            <div className="bg-white p-3 rounded border text-sm">
+              <div>
+                <strong>ID:</strong> {result.resource.id}
+              </div>
+              <div>
+                <strong>Type:</strong> {result.resource.resourceType.key}
+              </div>
+              <div>
+                <strong>Total Candidates:</strong> {result.resource.candidates.length}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (viewMode === 'best') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="font-medium text-gray-800 mb-2">Best Match</h4>
+          {result.bestCandidate ? (
+            <div className="bg-white p-3 rounded border border-green-200">
+              <div className="text-sm font-medium text-gray-700 mb-2">
+                Selected candidate for current context
+              </div>
+              <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                {JSON.stringify(result.bestCandidate.json, null, 2)}
+              </pre>
+            </div>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+              <p className="text-sm text-yellow-800">No best candidate found for the current context.</p>
+              {result.error && <p className="text-xs text-yellow-600 mt-1">{result.error}</p>}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 'all' view mode
+  const regularMatchingCandidates =
+    result.candidateDetails?.filter((c: ICandidateInfo) => c.matched && !c.isDefaultMatch) || [];
+  const defaultMatchingCandidates =
+    result.candidateDetails?.filter((c: ICandidateInfo) => c.matched && c.isDefaultMatch) || [];
+  const nonMatchingCandidates = result.candidateDetails?.filter((c: ICandidateInfo) => !c.matched) || [];
+
+  const getMatchTypeColor = (type: string): string => {
+    switch (type) {
+      case 'match':
+        return 'bg-green-100 text-green-800';
+      case 'matchAsDefault':
+        return 'bg-amber-100 text-amber-800';
+      case 'noMatch':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getMatchTypeIcon = (type: string): string => {
+    switch (type) {
+      case 'match':
+        return '✓';
+      case 'matchAsDefault':
+        return '≈';
+      case 'noMatch':
+        return '✗';
+      default:
+        return '?';
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Regular Matching Candidates */}
+      {regularMatchingCandidates.length > 0 && (
+        <div>
+          <h4 className="font-medium text-gray-800 mb-2">Regular Matches</h4>
+          <div className="space-y-2">
+            {regularMatchingCandidates.map((candidateInfo: ICandidateInfo, index: number) => (
+              <div
+                key={`regular-${candidateInfo.candidateIndex}`}
+                className="bg-white p-3 rounded border border-green-200"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <span>
+                      Candidate {candidateInfo.candidateIndex + 1} {index === 0 ? '(Best Match)' : ''}
+                    </span>
+                    <span
+                      className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(candidateInfo.matchType)}`}
+                    >
+                      {getMatchTypeIcon(candidateInfo.matchType)} {candidateInfo.matchType}
+                    </span>
+                  </div>
+                </div>
+                <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                  {JSON.stringify(candidateInfo.candidate.json, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Default Matching Candidates */}
+      {defaultMatchingCandidates.length > 0 && (
+        <div>
+          <h4 className="font-medium text-gray-800 mb-2">Default Matches</h4>
+          <div className="space-y-2">
+            {defaultMatchingCandidates.map((candidateInfo: ICandidateInfo) => (
+              <div
+                key={`default-${candidateInfo.candidateIndex}`}
+                className="bg-white p-3 rounded border border-amber-200"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium text-gray-700 flex items-center space-x-2">
+                    <span>Candidate {candidateInfo.candidateIndex + 1}</span>
+                    <span
+                      className={`px-2 py-1 rounded text-xs ${getMatchTypeColor(candidateInfo.matchType)}`}
+                    >
+                      {getMatchTypeIcon(candidateInfo.matchType)} {candidateInfo.matchType}
+                    </span>
+                  </div>
+                </div>
+                <pre className="text-xs bg-gray-50 p-2 rounded overflow-x-auto">
+                  {JSON.stringify(candidateInfo.candidate.json, null, 2)}
+                </pre>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Show message when no matches */}
+      {regularMatchingCandidates.length === 0 && defaultMatchingCandidates.length === 0 && (
+        <div>
+          <h4 className="font-medium text-gray-800 mb-2">Matching Candidates</h4>
+          <p className="text-sm text-gray-600">No candidates matched the current context.</p>
+        </div>
+      )}
+
+      {/* Non-matching Candidates */}
+      {nonMatchingCandidates.length > 0 && (
+        <div>
+          <h4 className="font-medium text-gray-500 mb-2">Non-matching Candidates</h4>
+          <div className="space-y-2">
+            {nonMatchingCandidates.slice(0, 3).map((candidateInfo: ICandidateInfo) => (
+              <div
+                key={`non-matching-${candidateInfo.candidateIndex}`}
+                className="bg-gray-50 p-3 rounded border border-gray-200 opacity-75"
+              >
+                <div className="text-sm font-medium text-gray-500 mb-2">
+                  Candidate {candidateInfo.candidateIndex + 1}
+                </div>
+                <pre className="text-xs bg-gray-100 p-2 rounded overflow-x-auto text-gray-600">
+                  {JSON.stringify(candidateInfo.candidate.json, null, 2)}
+                </pre>
+              </div>
+            ))}
+            {nonMatchingCandidates.length > 3 && (
+              <div className="text-center text-sm text-gray-500">
+                ... and {nonMatchingCandidates.length - 3} more non-matching candidates
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ResolutionResults;

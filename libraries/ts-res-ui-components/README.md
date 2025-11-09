@@ -1,0 +1,2092 @@
+# @fgv/ts-res-ui-components
+
+React components for building user interfaces that work with the [ts-res](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res) multidimensional resource management library.
+
+## Overview
+
+This library provides a complete set of React components, hooks, and utilities for creating applications that visualize, manage, and interact with ts-res resource systems. It supports the full workflow from importing configurations to resolving resources with dynamic context.
+
+## Warning
+This packlet is largely AI written, and it shows.
+
+## Features
+
+- **🔄 Resource Management**: Import, process, and manage ts-res configurations and bundles
+- **🔍 Advanced Filtering**: Filter resources by context with qualifier reduction
+- **🎯 Resource Resolution**: Test resource resolution with dynamic context values
+- **➕ Resource Creation**: Create new resources with pending/apply workflow and template support
+- **🔒 View Mode Locking**: Lock to single view mode for simplified interfaces
+- **📊 Visualization**: Multiple views for exploring resource structures and compiled output
+- **⚙️ Configuration**: Visual configuration management for qualifier types, qualifiers, and resource types
+- **🎛️ Host Control**: Programmatic control of qualifier values and resource types
+- **📁 File Handling**: Support for directory imports, ZIP files, and bundle loading
+- **🐛 Built-in Debugging**: Comprehensive logging and observability throughout operations
+- **🎨 Modern UI**: Built with Tailwind CSS and Heroicons for a clean, responsive interface
+
+## Installation
+
+```bash
+npm install @fgv/ts-res-ui-components
+```
+
+### Peer Dependencies
+
+This library requires the following peer dependencies:
+
+```json
+{
+  "@fgv/ts-res": ">=5.0.0",
+  "@fgv/ts-utils": ">=5.0.0", 
+  "@fgv/ts-json-base": ">=5.0.0",
+  "@fgv/ts-json": ">=5.0.0",
+  "react": ">=18.0.0",
+  "react-dom": ">=18.0.0"
+}
+```
+
+## Quick Start
+
+### Basic Setup
+
+```tsx
+import React from 'react';
+import { ResourceOrchestrator, ObservabilityProvider, ObservabilityTools } from '@fgv/ts-res-ui-components';
+
+function App() {
+  // Set up observability context for development
+  const observabilityContext = ObservabilityTools.createConsoleObservabilityContext('info', 'info');
+  
+  return (
+    <ObservabilityProvider observabilityContext={observabilityContext}>
+      <ResourceOrchestrator />
+    </ObservabilityProvider>
+  );
+}
+```
+
+The `ResourceOrchestrator` provides a complete resource management interface with import, filtering, resolution, and editing capabilities. The `ObservabilityProvider` enables built-in logging and debugging features throughout the component tree.
+
+## Core Concepts
+
+### Resource Orchestrator
+The central component that coordinates all resource operations. It manages the complete workflow:
+
+- **Configuration Management**: Set up qualifier types, qualifiers, and resource types
+- **Resource Import**: Load resources from files, ZIP archives, or bundles
+- **Resource Filtering**: Filter resources by context to create deployment subsets
+- **Resource Resolution**: Test how resources resolve for different contexts
+- **Resource Editing**: Create and modify resources with real-time validation
+
+### Component Architecture
+The library is organized into specialized namespaces, each containing related components and utilities:
+
+- **FilterTools**: Resource filtering with context-aware capabilities
+- **ResolutionTools**: Resource resolution testing and editing
+- **ConfigurationTools**: System configuration management
+- **GridTools**: Advanced data grid for tabular resource management
+- **ImportTools**: File and archive import capabilities
+- **ObservabilityTools**: Logging and debugging infrastructure
+
+### Built-in Observability
+All operations include comprehensive logging for debugging and user feedback through the enhanced observability context system:
+
+- **Smart Observability**: `useSmartObservability()` hook automatically detects and connects to observability contexts
+- **Unified Logging**: `o11y.user.*` for user-facing messages, `o11y.diag.*` for diagnostic information
+- **ViewState Integration**: Automatic connection to ViewState message system when available
+- **No Breaking Changes**: Components work with or without observability context
+- **Configurable Contexts**: Console output for development, silent for production, or custom loggers
+
+#### Quick Observability Reference
+
+**For Component Developers:**
+```tsx
+// Add observability to any component
+import { useSmartObservability } from '@fgv/ts-res-ui-components';
+
+function MyComponent() {
+  const o11y = useSmartObservability();
+  o11y.user.info('User message');     // Shows in UI
+  o11y.diag.info('Debug message');    // Shows in console/logs
+}
+```
+
+**For Host Applications:**
+```tsx
+// Provide observability context
+import { ObservabilityProvider, ObservabilityTools } from '@fgv/ts-res-ui-components';
+
+<ObservabilityProvider observabilityContext={myContext}>
+  <MyComponents />
+</ObservabilityProvider>
+```
+
+#### Quick Observability Setup
+
+```tsx
+import { ObservabilityProvider, ObservabilityTools } from '@fgv/ts-res-ui-components';
+
+// Development: Console logging
+const devContext = ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+
+// Production: Silent operation
+const prodContext = ObservabilityTools.createNoOpObservabilityContext();
+
+// With ViewState integration (recommended)
+function App() {
+  const { viewState } = useViewState();
+  const observabilityContext = ObservabilityTools.createViewStateObservabilityContext(
+    viewState.addMessage
+  );
+  
+  return (
+    <ObservabilityProvider observabilityContext={observabilityContext}>
+      <YourComponents />
+    </ObservabilityProvider>
+  );
+}
+
+// Simple development setup
+<ObservabilityProvider observabilityContext={devContext}>
+  <ResourceOrchestrator />
+</ObservabilityProvider>
+```
+
+#### Building Observability-Aware Components
+
+When creating new components, opt into observability with the `useSmartObservability()` hook:
+
+```tsx
+import { useSmartObservability } from '@fgv/ts-res-ui-components';
+
+function MyCustomComponent({ data }: { data: any[] }) {
+  const o11y = useSmartObservability();
+  
+  const handleOperation = async () => {
+    try {
+      o11y.user.info('Starting data processing...');
+      o11y.diag.info('Processing items:', data.length);
+      
+      const result = await processData(data);
+      
+      o11y.user.success(`Successfully processed ${result.length} items`);
+      o11y.diag.info('Processing result:', result);
+      return result;
+    } catch (error) {
+      o11y.user.error(`Processing failed: ${error.message}`);
+      o11y.diag.error('Full error details:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={handleOperation}>Process Data</button>
+      {/* Component automatically sends messages to observability context */}
+    </div>
+  );
+}
+```
+
+**Key Guidelines:**
+- Use `o11y.user.*` for messages users should see (success, error, warnings)
+- Use `o11y.diag.*` for developer/debugging information
+- Components work automatically whether observability context is provided or not
+
+#### Custom Observability Contexts
+
+Hosts can provide their own observability implementation for complete control over logging:
+
+```tsx
+import { IObservabilityContext, ObservabilityProvider } from '@fgv/ts-res-ui-components';
+
+// Create custom observability context
+const customObservabilityContext: IObservabilityContext = {
+  user: {
+    info: (message: string) => myNotificationSystem.showInfo(message),
+    success: (message: string) => myNotificationSystem.showSuccess(message),
+    warn: (message: string) => myNotificationSystem.showWarning(message),
+    error: (message: string) => myNotificationSystem.showError(message)
+  },
+  diag: {
+    info: (message: string, ...args: any[]) => myLogger.info(message, ...args),
+    warn: (message: string, ...args: any[]) => myLogger.warn(message, ...args),
+    error: (message: string, ...args: any[]) => myLogger.error(message, ...args)
+  }
+};
+
+// Use your custom context
+function App() {
+  return (
+    <ObservabilityProvider observabilityContext={customObservabilityContext}>
+      <MyComponents />
+    </ObservabilityProvider>
+  );
+}
+```
+
+**Built-in Context Factories:**
+```tsx
+// Console logging for development
+const devContext = ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+
+// Silent operation for production
+const prodContext = ObservabilityTools.createNoOpObservabilityContext();
+
+// Integration with external message system
+const customContext = ObservabilityTools.createViewStateObservabilityContext(
+  (type, message) => myMessageHandler(type, message)
+);
+```
+
+#### Advanced Observability Patterns
+
+**Conditional Observability in Libraries:**
+```tsx
+// For library components that may or may not have observability
+function MyLibraryComponent() {
+  const o11y = useSmartObservability();
+  
+  const handleCriticalOperation = () => {
+    // This will work whether observability context exists or not
+    o11y.user.info('Operation started');
+    
+    try {
+      const result = performOperation();
+      o11y.user.success('Operation completed');
+      return result;
+    } catch (error) {
+      // Always log errors, even without observability context
+      o11y.user.error('Operation failed');
+      o11y.diag.error('Details:', error);
+      throw error;
+    }
+  };
+}
+```
+
+**Multi-Level Observability (Host + ViewState):**
+```tsx
+function App() {
+  // Host-level notifications for critical errors
+  const hostObservability: IObservabilityContext = {
+    user: {
+      error: (msg) => showCriticalAlert(msg),
+      // Other messages go to ViewState
+      info: (msg) => viewState.addMessage('info', msg),
+      success: (msg) => viewState.addMessage('success', msg),
+      warn: (msg) => viewState.addMessage('warning', msg)
+    },
+    diag: {
+      error: (msg, ...args) => console.error(msg, ...args),
+      warn: (msg, ...args) => console.warn(msg, ...args),
+      info: (msg, ...args) => console.info(msg, ...args)
+    }
+  };
+
+  return (
+    <ObservabilityProvider observabilityContext={hostObservability}>
+      <MyApplication />
+    </ObservabilityProvider>
+  );
+}
+```
+
+**Environment-Specific Contexts:**
+```tsx
+const observabilityContext = process.env.NODE_ENV === 'production'
+  ? ObservabilityTools.createNoOpObservabilityContext()
+  : ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+```
+
+## Architecture
+
+### Component Hierarchy
+
+```
+ResourceOrchestrator (state management)
+├── ImportView (file/bundle/ZIP import)
+├── SourceView (resource collection display)
+├── FilterView (context filtering)
+├── CompiledView (compiled resource structure)
+├── ResolutionView (resource resolution testing)
+└── ConfigurationView (system configuration)
+```
+
+### Data Flow
+
+1. **Configuration Phase**: System configuration is created or managed via `ConfigurationView`
+   - Define qualifier types (language, territory, platform, etc.)
+   - Configure qualifiers and their default values
+   - Set up resource types and validation rules
+2. **Import Phase**: Resources are imported via `ImportView` or programmatically
+   - Individual JSON files, directories, ZIP bundles, or pre-compiled collections
+   - Configuration can be imported alongside resources or applied separately
+3. **Processing Phase**: Raw files are processed into a `ProcessedResources` object containing:
+   - `ResourceManagerBuilder` for build-time operations
+   - `CompiledResourceCollection` for runtime efficiency
+   - `ResourceResolver` for resource resolution
+4. **Interaction Phase**: Users can filter, explore, and test resource resolution
+   - Filter resources with context values using `FilterView`
+   - Browse source and compiled structures with `SourceView` and `CompiledView`
+   - Test resolution with different contexts using `ResolutionView`
+5. **Export Phase**: Processed resources can be exported as JSON or compiled bundles
+
+### Key Concepts
+
+- **ProcessedResources**: The main data structure containing both build-time and runtime representations
+- **ResourceManagerBuilder**: Build-time resource manager for constructing and modifying resources
+- **CompiledResourceCollection**: Runtime-optimized representation for efficient resolution
+- **Filter Context**: Dynamic context values used to filter and resolve resources
+- **Resolution State**: Testing environment for resource resolution with different contexts
+
+## Core Components
+
+### ResourceOrchestrator
+
+The main orchestration component that manages all state and provides actions via render props.
+
+> 📚 **[See ResourceOrchestrator documentation →](./docs/ts-res-ui-components.resourceorchestrator.md)**
+
+```tsx
+<ResourceOrchestrator
+  initialConfiguration={myConfig}
+  onStateChange={(state) => console.log('State changed:', state)}
+>
+  {({ state, actions }) => (
+    // Your UI components
+  )}
+</ResourceOrchestrator>
+```
+
+### ConfigurationView
+
+Visual configuration management for ts-res system settings including qualifier types, qualifiers, and resource types.
+
+> 📚 **[See ConfigurationView documentation →](./docs/ts-res-ui-components.configurationview.md)**
+
+```tsx
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <ConfigurationView
+    configuration={state.activeConfiguration}
+    onConfigurationChange={actions.applyConfiguration}
+    onSave={actions.saveConfiguration}
+    hasUnsavedChanges={state.hasConfigurationChanges}
+  />
+</ObservabilityProvider>
+```
+
+**Key features:**
+- **Qualifier type management**: Define language, territory, platform, and custom qualifier types
+- **Qualifier configuration**: Set up specific qualifiers with default values and validation
+- **Resource type management**: Configure resource types and their validation rules
+- **Import/export**: Load configurations from files or export current settings
+- **Real-time validation**: Validate configuration changes as you edit
+- **Change tracking**: Visual indicators for unsaved changes
+
+### ImportView
+
+Handles importing resource files, directories, bundles, and ZIP files. Uses the ts-res zip-archive packlet for all ZIP operations.
+
+> 📚 **[See ImportView documentation →](./docs/ts-res-ui-components.importview.md)**
+
+```tsx
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <ImportView
+    onImport={actions.importDirectory}
+    onBundleImport={actions.importBundle}
+    onZipImport={(zipData, config) => {
+      // zipData contains files and directory structure from ZIP
+      // config contains any configuration found in the ZIP
+      actions.importDirectory(zipData, config);
+    }}
+    acceptedFileTypes={['.json', '.ts', '.js']}
+  />
+</ObservabilityProvider>
+```
+
+### ResourcePicker
+
+Core component for browsing and selecting resources with advanced features like search, annotations, and pending resource support.  The resource picker
+is a generic component used by all of the views, which can also be used to power other application-specific views.
+
+> 📚 **[See complete ResourcePicker documentation →](./docs/ts-res-ui-components.resourcepicker.md)**
+
+```tsx
+<ResourcePicker
+  resources={state.processedResources}
+  selectedResourceId={selectedId}
+  onResourceSelect={(selection) => {
+    setSelectedId(selection.resourceId);
+    // Access resource data directly without additional lookups
+    if (selection.resourceData) {
+      handleResourceData(selection.resourceData);
+    }
+    // Handle pending resources
+    if (selection.isPending) {
+      console.log(`Pending ${selection.pendingType} operation`);
+    }
+  }}
+  options={{
+    defaultView: "tree",
+    enableSearch: true,
+    searchPlaceholder: "Search resources...",
+    height: "500px"
+  }}
+  resourceAnnotations={{
+    'user.welcome': { 
+      badge: { text: '3', variant: 'info' },
+      suffix: '(3 candidates)'
+    }
+  }}
+  pendingResources={pendingChanges}
+/>
+```
+
+**Key features:**
+- **Enhanced callbacks**: Get resource data and metadata in selection callback
+- **Multiple view modes**: List and tree views with search
+- **Visual annotations**: Badges, indicators, and suffixes
+- **Pending resources**: Show unsaved changes with visual distinction
+- **Branch isolation**: Focus on specific parts of large resource trees
+- **Type safety**: Full TypeScript support with generic resource types
+- **Debug controls**: Optional ResourcePickerOptionsControl for development and debugging
+
+#### ResourcePicker Configuration
+
+The ResourcePicker supports two distinct configuration mechanisms:
+
+1. **`pickerOptions`** - Controls actual picker behavior (defaultView, rootPath, search settings, etc.)
+2. **`pickerOptionsPanelPresentation`** - Controls whether/how the debug options control panel is displayed
+
+```tsx
+// Example: Configure picker behavior programmatically
+<SourceView
+  resources={state.processedResources}
+  pickerOptions={{
+    defaultView: 'tree',
+    rootPath: 'user.messages',  // Focus on specific branch
+    hideRootNode: true,         // Hide the root node itself
+    enableSearch: true,
+    searchPlaceholder: 'Search user messages...',
+    height: '500px'
+  }}
+  pickerOptionsPanelPresentation="hidden"  // Hide debug controls in production
+/>
+
+// Example: Enable debug controls during development
+<SourceView
+  resources={state.processedResources}
+  pickerOptions={{
+    defaultView: 'list',
+    enableSearch: true
+  }}
+  pickerOptionsPanelPresentation={isDevelopment ? 'collapsible' : 'hidden'}
+/>
+```
+
+#### ResourcePickerOptionsControl
+
+A debugging/design tool for interactively configuring ResourcePicker behavior. Hidden by default for production use, but can be enabled in development:
+
+```tsx
+// All view components support pickerOptionsPanelPresentation
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <SourceView
+    resources={state.processedResources}
+    pickerOptionsPanelPresentation="collapsible"  // Enable picker options UI
+  />
+</ObservabilityProvider>
+
+// Direct usage in custom components
+<PickerTools.ResourcePickerOptionsControl
+  options={pickerOptions}
+  onOptionsChange={setPickerOptions}
+  presentation="popup"  // 'hidden' | 'inline' | 'collapsible' | 'popup' | 'popover'
+  title="Picker Configuration"
+  showAdvanced={true}
+/>
+```
+
+**Presentation modes:**
+- `'hidden'`: Not displayed (default for production)
+- `'inline'`: Always visible with expanded controls
+- `'collapsible'`: Expandable/collapsible section
+- `'popup'`: Full modal dialog overlay
+- `'popover'`: Small dropdown overlay
+
+### SourceView
+
+Displays the source resource collection with search and navigation capabilities using the enhanced ResourcePicker.
+
+> 📚 **[See SourceView documentation →](./docs/ts-res-ui-components.sourceview.md)**
+
+```tsx
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <SourceView
+    resources={state.processedResources}
+    onExport={actions.exportData}
+    pickerOptions={{
+      defaultView: "list",
+      enableSearch: true,
+      searchPlaceholder: "Search resources..."
+    }}
+  />
+</ObservabilityProvider>
+```
+
+### FilterView
+
+Provides filtering capabilities with context value specification and dual-resource comparison.
+
+> 📚 **[See FilterView documentation →](./docs/ts-res-ui-components.filterview.md)**
+
+```tsx
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <FilterView
+    resources={state.processedResources}
+    filterState={filterState}
+    filterActions={filterActions}
+    filterResult={filterResult}
+    onFilterResult={setFilterResult}
+    pickerOptions={{
+      enableSearch: true,
+      searchPlaceholder: "Search resources..."
+    }}
+  />
+</ObservabilityProvider>
+```
+
+### CompiledView
+
+Shows the compiled resource structure with detailed candidate information using the enhanced ResourcePicker.
+
+> 📚 **[See CompiledView documentation →](./docs/ts-res-ui-components.compiledview.md)**
+
+```tsx
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <CompiledView
+    resources={state.processedResources}
+    filterResult={filterResult}
+    useNormalization={true}
+    onExport={(data, type) => exportData(data, type)}
+    pickerOptions={{
+      defaultView: "tree",
+      enableSearch: true
+    }}
+  />
+</ObservabilityProvider>
+```
+
+### ResolutionView
+
+Interactive resource resolution testing with context management and support for custom resource editors via the ResourceEditorFactory pattern. Supports locking to a single view mode to simplify the interface for specific use cases. Now includes host-controlled resolution support for programmatic qualifier value management and the ability to create new resources with a pending/apply workflow.
+
+> 📚 **[See ResolutionView documentation →](./docs/ts-res-ui-components.resolutionview.md)**
+
+```tsx
+<ObservabilityProvider observabilityContext={myObservabilityContext}>
+  <ResolutionView
+    resources={state.processedResources}
+    resolutionState={resolutionState}
+    resolutionActions={resolutionActions}
+    availableQualifiers={availableQualifiers}
+    resourceEditorFactory={myResourceEditorFactory}
+    pickerOptions={{
+      defaultView: "list",
+      enableSearch: true,
+      searchPlaceholder: "Search resources for resolution testing..."
+    }}
+    // Optional: Host-controlled resolution
+    contextOptions={{
+      hostManagedValues: {
+        language: 'en-US',
+        platform: 'web',
+        market: 'eastern-europe'
+      },
+      showContextControls: true  // Can hide controls for host-only resolution
+    }}
+    // Optional: Resource creation with pending/apply workflow
+    allowResourceCreation={true}
+    defaultResourceType="json"  // Optional: Host-controlled resource type
+    showPendingResourcesInList={true}  // Show pending resources in the picker (default: true)
+    onPendingResourcesApplied={(added, deleted) => {
+      console.log(`Applied ${added.length} new resources, ${deleted.length} deletions`);
+    }}
+  />
+</ObservabilityProvider>
+```
+
+#### Host-Controlled Resolution
+
+The ResolutionView now supports a three-layer context system that allows host applications to programmatically control qualifier values while still allowing user interaction:
+
+1. **Host-Managed Values**: Values controlled by the host application that are applied automatically
+2. **Applied User Values**: User values that have been explicitly applied via the "Apply Changes" button
+3. **Pending User Values**: User edits that haven't been applied yet
+
+This is particularly useful when:
+- The UI needs to be hidden but resolution still needs to work
+- Certain qualifier values should be controlled by the application logic
+- You want to provide default values that users can optionally override
+
+```tsx
+// Example: Host-controlled resolution with hidden UI
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  availableQualifiers={['language', 'platform', 'market']}
+  contextOptions={{
+    hostManagedValues: {
+      language: userProfile.language,
+      platform: detectPlatform(),
+      market: userProfile.region
+    },
+    showContextControls: false,  // Hide the context controls
+    qualifierOptions: {
+      language: { visible: false },  // Hide specific qualifiers
+      platform: { visible: false }
+    }
+  }}
+/>
+
+// Example: Mixed host and user control
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  availableQualifiers={availableQualifiers}
+  contextOptions={{
+    hostManagedValues: {
+      platform: 'web'  // Platform is always controlled by host
+    },
+    qualifierOptions: {
+      platform: { 
+        visible: true,
+        hostValue: 'web',  // Shows as read-only in UI
+        disabled: true
+      }
+    }
+  }}
+/>
+```
+
+**Key features of host-controlled resolution:**
+- Host values are applied automatically when they change
+- User values require explicit "Apply Changes" action
+- Host values override user values when both are set
+- Flexible UI control - can hide all controls, specific qualifiers, or show as read-only
+- Works seamlessly with the existing resolution state management
+
+#### Resource Creation
+
+ResolutionView supports both atomic and sequential resource creation workflows:
+
+##### Atomic Resource Creation (Recommended)
+
+Use the new `createPendingResource` API for simple, robust resource creation:
+
+```tsx
+// Single atomic call to create a pending resource
+const result = await actions.createPendingResource({
+  id: 'platform.languages.az-AZ',           // Full resource ID (required)
+  resourceTypeName: 'json',                 // Resource type (required)
+  json: { text: 'Welcome', locale: 'az-AZ' } // JSON content (optional - uses base template if omitted)
+});
+
+if (result.isSuccess()) {
+  console.log('Resource created and added to pending resources');
+  // Apply all pending changes when ready
+  await actions.applyPendingResources();
+} else {
+  console.error('Failed to create resource:', result.message);
+}
+
+// Example: Creating a resource with base template (no JSON content)
+const baseTemplateResult = await actions.createPendingResource({
+  id: 'platform.languages.fr-FR',
+  resourceTypeName: 'json'
+  // json omitted - resource type will provide base template (typically {})
+});
+
+if (baseTemplateResult.isSuccess()) {
+  console.log('Resource created using base template from resource type');
+  // You can then edit the resource using the UI or saveEdit()
+}
+```
+
+**Benefits of the atomic API:**
+- **Single Operation**: No multi-step sequencing required
+- **Better Error Handling**: Returns `Result<void>` with detailed error messages
+- **Validation**: Comprehensive validation of ID, type, and JSON content
+- **Safe**: Prevents temporary IDs and ensures uniqueness
+- **Context Stamping**: Automatically applies current context as conditions
+
+##### Sequential Resource Creation (Legacy)
+
+The traditional step-by-step workflow is still available:
+
+```tsx
+// Step 1: Start a new resource
+const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+if (startResult.isFailure()) {
+  console.error('Failed to start resource:', startResult.message);
+  return;
+}
+
+// Step 2: Set the final resource ID
+const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
+if (idResult.isFailure()) {
+  console.error('Invalid resource ID:', idResult.message);
+  return;
+}
+
+// Step 3: Update JSON content (optional)
+const jsonResult = actions.updateNewResourceJson({ 
+  text: 'Welcome', 
+  locale: 'az-AZ' 
+});
+if (jsonResult.isFailure()) {
+  console.error('Invalid JSON:', jsonResult.message);
+  return;
+}
+
+// Step 4: Save as pending
+const saveResult = actions.saveNewResourceAsPending();
+if (saveResult.isFailure()) {
+  console.error('Failed to save:', saveResult.message);
+  return;
+}
+
+// Step 5: Apply all pending changes
+await actions.applyPendingResources();
+```
+
+**Enhanced Action Return Values:**
+
+All resource creation actions now return `Result<T>` objects following the standard Result pattern:
+- Use `.isSuccess()` and `.isFailure()` to check status
+- Access success values with `.value` property (contains `draft`/`pendingResources` and `diagnostics`)
+- Access error messages with `.message` property
+- Multiline error messages include diagnostic information
+
+```tsx
+// Example: Working with Result values
+const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+if (startResult.isSuccess()) {
+  console.log('Started draft:', startResult.value.draft);
+  console.log('Diagnostics:', startResult.value.diagnostics);
+} else {
+  console.error('Error:', startResult.message); // May include diagnostics
+}
+```
+
+##### UI Integration Example
+
+```tsx
+<ResolutionView
+  resources={state.processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  allowResourceCreation={true}
+  defaultResourceType="json"  // Optional: Host-controlled resource type
+  showPendingResourcesInList={true}  // Show pending resources with visual distinction
+  onPendingResourcesApplied={(added, deleted) => {
+    console.log(`Applied ${added.length} additions, ${deleted.length} deletions`);
+    // Rebuild resource manager with new resources
+    const updatedResources = rebuildWithResources(added, deleted);
+    setState({ processedResources: updatedResources });
+  }}
+/>
+```
+
+**Unified Change Workflow (Edits, Additions, Deletions):**
+1. Use `createPendingResource()` or the traditional UI workflow to create resources
+2. Edit existing resources from the results pane using the JSON or custom editors
+3. Mark resources for deletion where supported
+4. All changes appear in a single "Pending Changes" bar with counts (edits/additions/deletions)
+5. Click "Apply Changes" to commit everything in one atomic rebuild
+6. Or click "Discard Changes" to remove all pending changes
+
+**Key features:**
+- **Atomic Creation**: Single API call creates complete resources
+- **Enhanced Error Handling**: Detailed validation and error messages
+- **Template-based creation**: Resource types provide default templates for new resources
+- **Pending workflow**: Resources aren't added immediately, allowing review before applying
+- **Host control**: Can specify a default resource type to hide the type selector
+- **Batch operations**: Create multiple resources before applying
+- **Visual feedback**: Pending resources shown with distinct styling
+- **ID Validation**: Comprehensive resource ID validation and uniqueness checking
+
+##### Resource ID Requirements
+
+**IMPORTANT**: All pending resources use **full resource IDs** as keys, never leaf IDs:
+
+```tsx
+// ✅ Correct: Full resource IDs
+createPendingResource({
+  id: 'platform.languages.az-AZ',    // Full path
+  resourceTypeName: 'json',
+  json: { text: 'Azərbaycan dili' }
+});
+
+// ❌ Wrong: Leaf IDs
+createPendingResource({
+  id: 'az-AZ',                       // Just the leaf - will be rejected
+  resourceTypeName: 'json', 
+  json: { text: 'Azərbaycan dili' }
+});
+```
+
+##### Helper Functions for Pending Resources
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Get pending resources by type
+const jsonResources = ResolutionTools.getPendingAdditionsByType(
+  resolutionState.pendingResources, 
+  'json'
+);
+
+// Check if a resource is pending
+const isPending = ResolutionTools.isPendingAddition(
+  'platform.languages.az-AZ', 
+  resolutionState.pendingResources
+);
+
+// Work with resource IDs
+const leafIdResult = ResolutionTools.deriveLeafId('platform.languages.az-AZ');
+console.log(leafIdResult.value); // 'az-AZ'
+
+const fullIdResult = ResolutionTools.deriveFullId('platform.languages', 'az-AZ');
+console.log(fullIdResult.value); // 'platform.languages.az-AZ'
+
+// Get statistics
+const stats = ResolutionTools.getPendingResourceStats(resolutionState.pendingResources);
+console.log(`${stats.totalCount} pending resources`);
+console.log(`Types: ${Object.keys(stats.byType).join(', ')}`);
+
+// Validate pending resource keys (diagnostic)
+const validation = ResolutionTools.validatePendingResourceKeys(resolutionState.pendingResources);
+if (validation.isFailure()) {
+  console.error('Key validation failed:', validation.message);
+}
+```
+
+#### Custom Resource Editors
+
+The ResolutionView supports custom editors for specific resource types through the `ResourceEditorFactory` interface:
+
+```tsx
+import { ResourceEditorFactory, ResourceEditorResult, ResourceEditorProps } from '@fgv/ts-res-ui-components';
+
+// Custom editor component
+const MarketInfoEditor: React.FC<ResourceEditorProps> = ({
+  value,
+  resourceId,
+  isEdited,
+  editedValue,
+  onSave,
+  onCancel,
+  disabled,
+  className
+}) => {
+  // Custom form-based editor implementation
+  return (
+    <div className={`market-info-editor ${className}`}>
+      {/* Custom editing interface for market information */}
+    </div>
+  );
+};
+
+// Resource editor factory
+class MyResourceEditorFactory implements ResourceEditorFactory {
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult {
+    if (resourceType === 'marketInfo') {
+      return {
+        success: true,
+        editor: MarketInfoEditor
+      };
+    }
+    
+    return {
+      success: false,
+      message: `No custom editor available for resource type '${resourceType}'`
+    };
+  }
+}
+
+// Usage
+const editorFactory = new MyResourceEditorFactory();
+
+<ResolutionView
+  resources={resources}
+  resourceEditorFactory={editorFactory}
+  // ... other props
+/>
+```
+
+**Benefits of Custom Editors:**
+- **Type-Specific UX**: Provide structured editing interfaces for different resource types
+- **Graceful Fallback**: Unknown resource types automatically fall back to JSON editor
+- **Extensible**: Easy to add new editors for new resource types
+- **Error Handling**: Factory failures are caught and reported to users
+
+#### Context Control Extensibility
+
+ResolutionView provides comprehensive control over the context configuration UI, allowing hosts to customize which qualifiers are editable, provide external values, and control the presentation. This is especially useful for applications that need to drive context externally or provide selective user control.
+
+**Hide Context UI Entirely (Host-Driven Context):**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  contextOptions={{
+    showContextControls: false  // Hide all context UI
+  }}
+/>
+```
+
+**Lock to Single View Mode:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  lockedViewMode="composed"  // Lock to composed view, hide view selector
+/>
+```
+
+**Lock to Best View Mode:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  lockedViewMode="best"  // Lock to best view, hide view selector
+/>
+```
+
+**Custom Section Titles:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  sectionTitles={{
+    resources: "Available Items",  // Custom title for resources picker
+    results: "Resolution Output"   // Custom title for results section
+  }}
+/>
+```
+
+**Fine-Grained Qualifier Control:**
+```tsx
+<ResolutionView
+  resources={processedResources}
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+  contextOptions={{
+    // Panel visibility control
+    showContextControls: true,
+    showCurrentContext: true,
+    showContextActions: true,
+    
+    // Per-qualifier configuration
+    qualifierOptions: {
+      language: { 
+        editable: true, 
+        placeholder: "Select language..." 
+      },
+      platform: { 
+        editable: false, 
+        hostValue: "web", 
+        showHostValue: true 
+      },
+      environment: { 
+        visible: false  // Hidden from UI entirely
+      }
+    },
+    
+    // Host-managed values (invisible but active in context)
+    hostManagedValues: { 
+      environment: "production",
+      deployment: "us-east-1"
+    },
+    
+    // Appearance customization
+    contextPanelTitle: "Resolution Context",
+    globalPlaceholder: "Enter {qualifierName}..."
+  }}
+/>
+```
+
+**Visual Indicators:**
+- **🔵 Blue border + light blue background** - Host-managed qualifiers have subtle visual styling
+- **🖱️ Hover tooltip** - "Host-managed value - controlled externally" appears on hover
+- **🎯 Actual values displayed** - Shows real host values instead of generic "Disabled" text
+- **📋 Current context** - Displays combined user + host-managed values
+
+**Development & Debug Controls:**
+Enable the context options gear icon during development for interactive configuration:
+
+```tsx
+<ResolutionView
+  resources={processedResources}
+  pickerOptionsPanelPresentation="collapsible"  // Shows both picker & context gear icons
+  resolutionState={resolutionState}
+  resolutionActions={resolutionActions}
+/>
+```
+
+The gear icon provides a live configuration interface for:
+- **Context Panel Visibility** - Show/hide controls, current context display, action buttons
+- **Global Defaults** - Set default visibility and editability for all qualifiers
+- **Per-Qualifier Settings** - Configure visibility, editability, host values, and custom placeholders
+- **Host-Managed Values** - Set external values that override user input
+
+This extensibility is perfect for:
+- **Embedded applications** where the host drives context from sidebar controls
+- **Guided workflows** where only specific qualifiers should be user-editable
+- **Multi-tenant applications** where some context is determined by tenant configuration
+- **Progressive disclosure** where advanced qualifiers are hidden from basic users
+
+### FilterView
+
+Provides context-based resource filtering with candidate count analysis and export functionality.
+
+> 📚 **[See FilterView documentation →](./docs/ts-res-ui-components.filterview.md)**
+
+```tsx
+import { FilterView, ResourceTools } from '@fgv/ts-res-ui-components';
+
+function MyFilterTool() {
+  const { state, actions } = ResourceTools.useResourceData();
+
+  return (
+    <FilterView
+      resources={state.resources}
+      filterState={state.filterState}
+      filterActions={{
+        updateFilterEnabled: (enabled) => actions.updateFilterState({ enabled }),
+        updateFilterValues: (values) => actions.updateFilterState({ values }),
+        applyFilterValues: () => actions.applyFilter(),
+        resetFilterValues: () => actions.resetFilter(),
+        updateReduceQualifiers: (reduce) => actions.updateFilterState({ reduceQualifiers: reduce })
+      }}
+      filterResult={state.filterResult}
+    />
+  );
+}
+```
+
+#### FilterView Context Control Extensibility
+
+FilterView provides the same comprehensive context control features as ResolutionView, allowing hosts to customize which qualifiers are editable for filtering, provide external values, and control the presentation. This is especially useful for filtering applications that need to drive filter context externally or provide selective user control.
+
+**Hide Context UI Entirely (Host-Driven Filtering):**
+```tsx
+<FilterView
+  resources={processedResources}
+  filterState={filterState}
+  filterActions={filterActions}
+  filterResult={filterResult}
+  contextOptions={{
+    showContextControls: false  // Hide all context filter controls
+  }}
+/>
+```
+
+**Fine-Grained Filter Context Control:**
+```tsx
+<FilterView
+  resources={processedResources}
+  filterState={filterState}
+  filterActions={filterActions}
+  filterResult={filterResult}
+  contextOptions={{
+    // Panel appearance
+    contextPanelTitle: "Filter Criteria",
+    globalPlaceholder: "Filter by {qualifierName}...",
+    
+    // Per-qualifier configuration
+    qualifierOptions: {
+      language: { 
+        editable: true, 
+        placeholder: "Filter by language..." 
+      },
+      platform: { 
+        editable: false, 
+        hostValue: "web", 
+        showHostValue: true 
+      },
+      environment: { 
+        visible: false  // Hidden from filter UI entirely
+      }
+    },
+    
+    // Host-managed filter values (invisible but active in filter context)
+    hostManagedValues: { 
+      environment: "production",
+      deployment: "us-east-1"
+    },
+    
+    // UI visibility control
+    showCurrentContext: true,  // Show pending/applied filter summary
+    showContextActions: true   // Show filter reset/apply buttons
+  }}
+/>
+```
+
+**Combined with External Filter Logic:**
+```tsx
+function SmartFilterView() {
+  const [externalContext, setExternalContext] = useState({
+    userRole: 'admin',
+    tenant: 'enterprise'
+  });
+
+  return (
+    <FilterView
+      resources={processedResources}
+      filterState={filterState}
+      filterActions={filterActions}
+      contextOptions={{
+        contextPanelTitle: "Available Filters",
+        qualifierOptions: {
+          // Hide sensitive qualifiers from basic users
+          environment: { 
+            visible: externalContext.userRole === 'admin' 
+          },
+          // Lock tenant-specific qualifiers
+          tenant: { 
+            editable: false,
+            hostValue: externalContext.tenant
+          }
+        }
+      }}
+    />
+  );
+}
+```
+
+**Development & Debug Controls:**
+Enable the context options gear icon during development for interactive filter configuration:
+
+```tsx
+<FilterView
+  resources={processedResources}
+  pickerOptionsPanelPresentation="collapsible"  // Shows both picker & context gear icons
+  filterState={filterState}
+  filterActions={filterActions}
+/>
+```
+
+The gear icon provides a live configuration interface for:
+- **Context Panel Visibility** - Show/hide filter controls, current context display, action buttons
+- **Global Defaults** - Set default visibility and editability for all filter qualifiers
+- **Per-Qualifier Settings** - Configure visibility, editability, host values, and custom placeholders
+- **Host-Managed Values** - Set external filter values that override user input
+
+This filter extensibility is perfect for:
+- **Dashboard applications** where filters are driven from external controls
+- **Multi-tenant systems** where filter options vary by tenant or user role
+- **Guided filter workflows** where only specific criteria should be user-selectable
+- **Advanced/basic user modes** where filter complexity adapts to user expertise
+- **Integration scenarios** where filter context comes from external systems
+
+### MessagesWindow
+
+Displays and manages application messages with filtering, search, and copy functionality. Perfect for debugging interfaces and development tools where message visibility is critical.
+
+> 📚 **[See MessagesWindow documentation →](./docs/ts-res-ui-components.messageswindow.md)**
+
+```tsx
+import { MessagesWindow, ViewTools } from '@fgv/ts-res-ui-components';
+
+function MyApplication() {
+  const [messages, setMessages] = useState<ViewTools.Message[]>([]);
+
+  const addMessage = (type: ViewTools.Message['type'], text: string) => {
+    const newMessage: ViewTools.Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      type,
+      message: text,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1">
+        {/* Main application content */}
+        <button onClick={() => addMessage('info', 'Processing started')}>
+          Add Info Message
+        </button>
+        <button onClick={() => addMessage('success', 'Operation completed')}>
+          Add Success Message  
+        </button>
+        <button onClick={() => addMessage('error', 'Something went wrong')}>
+          Add Error Message
+        </button>
+      </div>
+      
+      {/* Messages window at bottom */}
+      <MessagesWindow 
+        messages={messages}
+        onClearMessages={clearMessages}
+      />
+    </div>
+  );
+}
+```
+
+**Key features:**
+- **Message filtering**: Filter by type (info, warning, error, success) with count indicators
+- **Search functionality**: Full-text search across message content
+- **Copy functionality**: Copy all filtered messages to clipboard with timestamps
+- **Collapsible interface**: Minimize/maximize to save screen space
+- **Auto-hide when empty**: Component automatically hides when no messages exist
+- **Visual indicators**: Color-coded message types with appropriate icons
+- **Timestamp formatting**: Human-readable timestamp display
+
+#### Adding Messages to Your Application
+
+To integrate MessagesWindow into your application and provide user feedback during operations:
+
+```tsx
+import { ViewTools } from '@fgv/ts-res-ui-components';
+
+function useMessages() {
+  const [messages, setMessages] = useState<ViewTools.Message[]>([]);
+
+  const addMessage = useCallback((type: ViewTools.Message['type'], message: string) => {
+    const newMessage: ViewTools.Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      type,
+      message,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, newMessage]);
+  }, []);
+
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+  }, []);
+
+  return { messages, addMessage, clearMessages };
+}
+
+function MyResourceTool() {
+  const { messages, addMessage, clearMessages } = useMessages();
+  const [resources, setResources] = useState(null);
+
+  const handleFileImport = async (files) => {
+    try {
+      addMessage('info', 'Starting file import...');
+      const processed = await processFiles(files);
+      setResources(processed);
+      addMessage('success', `Successfully imported ${files.length} files`);
+    } catch (error) {
+      addMessage('error', `Import failed: ${error.message}`);
+    }
+  };
+
+  const handleResourceFilter = (filterValues) => {
+    if (Object.keys(filterValues).length === 0) {
+      addMessage('warning', 'No filter values provided');
+      return;
+    }
+    
+    try {
+      const filtered = applyFilters(resources, filterValues);
+      addMessage('success', `Filtered to ${filtered.length} resources`);
+    } catch (error) {
+      addMessage('error', `Filter failed: ${error.message}`);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <div className="flex-1">
+        <ObservabilityProvider observabilityContext={observabilityContext}>
+          <ImportView onImport={handleFileImport} />
+          <FilterView onFilter={handleResourceFilter} />
+          {/* Components automatically use observability context */}
+        </ObservabilityProvider>
+      </div>
+      
+      <ViewTools.MessagesWindow 
+        messages={messages}
+        onClearMessages={clearMessages}
+      />
+    </div>
+  );
+}
+```
+
+**Common patterns for adding messages:**
+- **info**: Operation started, processing steps, configuration loaded
+- **success**: Operations completed successfully, files imported, resources processed
+- **warning**: Non-critical issues, fallback behaviors, deprecated features used
+- **error**: Operation failures, validation errors, unexpected conditions
+
+**Observability Integration:**
+All components in this library automatically use the observability context when available. This provides consistent feedback across all operations through the unified `o11y.user.*` and `o11y.diag.*` patterns.
+
+## Hooks API
+
+> 📚 **[See complete hooks documentation →](./docs/ts-res-ui-components.md)** for detailed examples and patterns
+
+All hooks are organized within their respective namespaces alongside their related components and utilities for better discoverability and logical grouping.
+
+### Core Data Management
+
+#### ResourceTools.useResourceData
+
+Main orchestrator hook for resource processing, configuration, and resolution.
+
+> 📚 **[useResourceData documentation →](./docs/ts-res-ui-components.resourcetools.useresourcedata.md)**
+
+```tsx
+import { ResourceTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions } = ResourceTools.useResourceData();
+
+// Process files
+await actions.processFiles(importedFiles);
+
+// Resolve a resource
+const result = await actions.resolveResource('my.resource', {
+  language: 'en-US',
+  environment: 'production'
+});
+
+// Apply configuration
+actions.applyConfiguration(newConfig);
+
+// Check processing state
+if (state.isProcessing) {
+  console.log('Processing resources...');
+} else if (state.error) {
+  console.error('Processing failed:', state.error);
+} else if (state.processedResources) {
+  console.log('Resources ready!');
+}
+```
+
+### View State Management
+
+#### ViewTools.useViewState
+
+Manages view state including messages and resource selection.
+
+> 📚 **[useViewState documentation →](./docs/ts-res-ui-components.viewtools.useviewstate.md)**
+
+```tsx
+import { ViewTools } from '@fgv/ts-res-ui-components';
+
+const { messages, selectedResourceId, addMessage, clearMessages, selectResource } = ViewTools.useViewState();
+
+// Display operation feedback
+const handleOperation = async () => {
+  try {
+    await someAsyncOperation();
+    addMessage('success', 'Operation completed successfully');
+  } catch (error) {
+    addMessage('error', `Operation failed: ${error.message}`);
+  }
+};
+
+// Use with MessagesWindow component
+return (
+  <div>
+    <button onClick={handleOperation}>Run Operation</button>
+    <ViewTools.MessagesWindow 
+      messages={messages}
+      onClearMessages={clearMessages}
+    />
+  </div>
+);
+```
+
+### Domain-Specific Hooks
+
+#### FilterTools.useFilterState
+
+Manages resource filtering state with change tracking and validation.
+
+> 📚 **[useFilterState documentation →](./docs/ts-res-ui-components.filtertools.usefilterstate.md)**
+
+```tsx
+import { FilterTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions } = FilterTools.useFilterState({
+  enabled: true,
+  values: { platform: 'web', locale: 'en' }
+});
+
+// Update filter values with change tracking
+actions.updateFilterValue('language', 'en-US');
+actions.updateFilterValue('environment', 'prod');
+
+// Apply filters when ready
+if (state.hasPendingChanges) {
+  actions.applyFilters();
+}
+```
+
+#### ResolutionTools.useResolutionState
+
+Comprehensive state management for resource resolution and editing.
+
+> 📚 **[useResolutionState documentation →](./docs/ts-res-ui-components.resolutiontools.useresolutionstate.md)**
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions, availableQualifiers } = ResolutionTools.useResolutionState(
+  processedResources,
+  (type, message) => addMessage(type, message),
+  (updatedResources) => setProcessedResources(updatedResources)
+);
+
+// Set context for resolution testing
+actions.updateContext({ language: 'en-US', platform: 'web' });
+
+// Start editing a resource
+actions.selectResource('user.welcome');
+actions.startEditing();
+
+// Save edits with validation
+actions.saveEdit(editedValue);
+```
+
+#### ConfigurationTools.useConfigurationState
+
+Manages system configuration state with change tracking and import/export capabilities.
+
+> 📚 **[useConfigurationState documentation →](./docs/ts-res-ui-components.configurationtools.useconfigurationstate.md)**
+
+```tsx
+import { ConfigurationTools } from '@fgv/ts-res-ui-components';
+
+const { state, actions, templates } = ConfigurationTools.useConfigurationState(
+  undefined,
+  (config) => console.log('Configuration changed:', config),
+  (hasChanges) => setHasUnsavedChanges(hasChanges)
+);
+
+// Load a template
+const loadResult = actions.loadTemplate('minimal');
+
+// Add a new qualifier with validation
+actions.addQualifier({
+  name: 'language',
+  typeName: 'language',
+  defaultPriority: 100
+});
+
+// Check for unsaved changes
+if (state.hasUnsavedChanges) {
+  actions.applyConfiguration();
+}
+
+// Export configuration
+const exportResult = actions.exportToJson({ pretty: true });
+if (exportResult.isSuccess()) {
+  downloadFile(exportResult.value, 'configuration.json');
+}
+```
+
+### Hook Organization
+
+All hooks are organized within logical namespaces alongside their related components and utilities:
+
+- **`ResourceTools.useResourceData`** - Core data orchestration (import, processing, configuration, resolution)
+- **`ViewTools.useViewState`** - View state management (messages, resource selection)
+- **`FilterTools.useFilterState`** - Resource filtering with change tracking
+- **`ResolutionTools.useResolutionState`** - Resource resolution and editing
+- **`ConfigurationTools.useConfigurationState`** - System configuration management
+
+This organization provides:
+- **Better discoverability** - Related functionality grouped together
+- **Logical imports** - `FilterTools.useFilterState` is self-documenting
+- **Namespace consistency** - Matches the existing component organization pattern
+- **Clear separation of concerns** - Each namespace has a specific domain focus
+
+## Styling
+
+This library uses Tailwind CSS for styling. Make sure to include Tailwind CSS in your project:
+
+```bash
+npm install -D tailwindcss
+```
+
+### Tailwind Configuration
+
+Add the library's source files to your Tailwind content configuration:
+
+```js
+// tailwind.config.js
+module.exports = {
+  content: [
+    './src/**/*.{js,jsx,ts,tsx}',
+    './node_modules/@fgv/ts-res-ui-components/**/*.{js,jsx,ts,tsx}'
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+### Custom Styling
+
+All components accept a `className` prop for custom styling:
+
+```tsx
+<SourceView 
+  className="my-custom-class"
+  resources={resources}
+/>
+```
+
+## Detailed Examples
+
+### Canonical New Resource Flow
+
+The recommended approach for programmatic resource creation:
+
+```tsx
+import { ResolutionTools } from '@fgv/ts-res-ui-components';
+
+// Single atomic operation (recommended)
+async function createResourceAtomic(actions) {
+  const result = await actions.createPendingResource({
+    id: 'platform.languages.az-AZ',
+    resourceTypeName: 'json',
+    json: { text: 'Welcome', locale: 'az-AZ' }
+  });
+
+  if (result.isSuccess()) {
+    console.log('Resource created successfully');
+    await actions.applyPendingResources();
+  } else {
+    console.error('Creation failed:', result.message);
+  }
+}
+
+// Step-by-step workflow (if needed)
+function createResourceStepByStep(actions) {
+  // 1) Start new resource
+  const startResult = actions.startNewResource({ defaultTypeName: 'json' });
+  if (!startResult.success) return;
+
+  // 2) Update resource ID  
+  const idResult = actions.updateNewResourceId('platform.languages.az-AZ');
+  if (!idResult.success) return;
+
+  // 3) Select resource type (if step 1 didn't set it)
+  const typeResult = actions.selectResourceType('json');
+  if (!typeResult.success) return;
+
+  // 4) Update JSON content (optional, recommended)
+  const jsonResult = actions.updateNewResourceJson({ 
+    text: 'Welcome', 
+    locale: 'az-AZ' 
+  });
+  if (!jsonResult.success) return;
+
+  // 5) Save as pending
+  const saveResult = actions.saveNewResourceAsPending();
+  if (!saveResult.success) return;
+
+  // Note: Do NOT call saveResourceEdit for brand-new resources
+}
+```
+
+### Minimal Editing App (Unified Apply)
+
+```tsx
+import React from 'react';
+import { ResourceOrchestrator, ResolutionView } from '@fgv/ts-res-ui-components';
+
+export default function App() {
+  return (
+    <ResourceOrchestrator>
+      {({ state, actions }) => (
+        <ResolutionView
+          resources={state.resources}
+          resolutionState={state.resolutionState}
+          resolutionActions={{
+            updateContextValue: actions.updateResolutionContext,
+            applyContext: actions.applyResolutionContext,
+            selectResource: actions.selectResourceForResolution,
+            setViewMode: actions.setResolutionViewMode,
+            resetCache: actions.resetResolutionCache,
+            saveEdit: actions.saveResourceEdit,
+            getEditedValue: actions.getEditedValue,
+            hasEdit: actions.hasResourceEdit,
+            clearEdits: actions.clearResourceEdits,
+            discardEdits: actions.discardResourceEdits,
+            // Enhanced resource creation actions with atomic API
+            createPendingResource: actions.createPendingResource,
+            startNewResource: actions.startNewResource,
+            updateNewResourceId: actions.updateNewResourceId,
+            selectResourceType: actions.selectResourceType,
+            updateNewResourceJson: actions.updateNewResourceJson,
+            saveNewResourceAsPending: actions.saveNewResourceAsPending,
+            cancelNewResource: actions.cancelNewResource,
+            removePendingResource: actions.removePendingResource,
+            markResourceForDeletion: actions.markResourceForDeletion,
+            applyPendingResources: actions.applyPendingResources,
+            discardPendingResources: actions.discardPendingResources
+          }}
+          allowResourceCreation
+          defaultResourceType="json"
+          showPendingResourcesInList
+        />
+      )}
+    </ResourceOrchestrator>
+  );
+}
+```
+
+### Basic Usage with ResourceOrchestrator
+
+The `ResourceOrchestrator` component provides centralized state management for all ts-res UI functionality:
+
+```tsx
+import React from 'react';
+import { ResourceOrchestrator, ImportView, SourceView } from '@fgv/ts-res-ui-components';
+
+function App() {
+  return (
+    <ResourceOrchestrator>
+      {({ state, actions }) => (
+        <div className="min-h-screen bg-gray-50">
+          <div className="container mx-auto px-4 py-8">
+            <h1 className="text-3xl font-bold mb-8">Resource Manager</h1>
+            
+            {!state.processedResources ? (
+              <ImportView
+                onImport={actions.importDirectory}
+                onBundleImport={actions.importBundle}
+                onZipImport={(zipData, config) => {
+                  if (config) actions.applyConfiguration(config);
+                  if (zipData.directory) actions.importDirectory(zipData.directory);
+                  else if (zipData.files?.length) actions.importFiles(zipData.files);
+                }}
+              />
+            ) : (
+              <SourceView
+                resources={state.processedResources}
+                onExport={actions.exportData}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </ResourceOrchestrator>
+  );
+}
+
+export default App;
+```
+
+### Using Individual Hooks
+
+For more granular control, you can use individual hooks:
+
+```tsx
+import React from 'react';
+import { useResourceData, SourceView } from '@fgv/ts-res-ui-components';
+
+function MyResourceViewer() {
+  const { state, actions } = useResourceData();
+
+  const handleFileImport = async (files: File[]) => {
+    const importedFiles = await processFiles(files); // Your file processing logic
+    await actions.processFiles(importedFiles);
+  };
+
+  return (
+    <div>
+      {state.isProcessing && <div>Processing...</div>}
+      {state.error && <div className="error">{state.error}</div>}
+      {state.processedResources && (
+        <SourceView 
+          resources={state.processedResources}
+          onExport={(data) => console.log('Export:', data)}
+        />
+      )}
+    </div>
+  );
+}
+```
+
+## Advanced Usage
+
+### Custom Resource Processing
+
+```tsx
+import { TsResTools } from '@fgv/ts-res-ui-components';
+
+// Custom processing pipeline
+const customProcessor = async (files: ImportedFile[]) => {
+  // Pre-process files
+  const processedFiles = files.map(transformFile);
+  
+  // Create configuration
+  const config = await createConfigFromFiles(processedFiles);
+  
+  // Create ts-res system
+  const system = await TsResTools.createTsResSystemFromConfig(config);
+  
+  return system;
+};
+```
+
+### Resource Resolution with Custom Context
+
+```tsx
+const { state, actions } = useResourceData();
+
+// Complex context resolution
+const resolveWithComplexContext = async (resourceId: string) => {
+  const context = {
+    language: getUserLanguage(),
+    region: getUserRegion(),
+    theme: getThemePreference(),
+    featureFlags: await getFeatureFlags()
+  };
+  
+  return await actions.resolveResource(resourceId, context);
+};
+```
+
+### Bundle Creation and Export
+
+```tsx
+const { state, actions } = useResourceData();
+
+// Create and export bundle
+const exportBundle = async () => {
+  if (state.processedResources) {
+    const bundleData = {
+      ...state.processedResources.compiledCollection,
+      metadata: {
+        version: '1.0.0',
+        created: new Date().toISOString(),
+        description: 'My resource bundle'
+      }
+    };
+    
+    actions.exportData(bundleData, 'bundle');
+  }
+};
+```
+
+## Error Handling
+
+The library provides comprehensive error handling through the state management system:
+
+```tsx
+<ResourceOrchestrator>
+  {({ state, actions }) => (
+    <div>
+      {state.error && (
+        <div className="bg-red-50 border border-red-200 rounded p-4 mb-4">
+          <h3 className="text-red-800 font-medium">Error</h3>
+          <p className="text-red-600">{state.error}</p>
+          <button 
+            onClick={actions.clearError}
+            className="mt-2 px-3 py-1 bg-red-600 text-white rounded text-sm"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+      
+      {/* Rest of your UI */}
+    </div>
+  )}
+</ResourceOrchestrator>
+```
+
+## Organized Tool Namespaces
+
+For better organization and discoverability, utility functions are organized into logical namespaces alongside their related view components:
+
+```tsx
+import { 
+  FilterTools,        // FilterView + filtering utilities
+  ResolutionTools,    // ResolutionView + resolution utilities  
+  ConfigurationTools, // ConfigurationView + configuration utilities
+  TsResTools,         // SourceView, CompiledView + ts-res utilities
+  ViewStateTools,     // MessagesWindow + view state utilities
+  ZipTools,           // ImportView + ZIP processing helpers
+  ObservabilityTools, // Observability context and loggers
+  GridTools,          // GridView + data grid utilities
+  PickerTools,        // ResourcePicker + picker utilities
+  ImportTools         // Import utilities and types
+} from '@fgv/ts-res-ui-components';
+
+// Use view components from namespaces
+<FilterTools.FilterView {...filterProps} />
+<ResolutionTools.ResolutionView {...resolutionProps} />
+<ViewStateTools.MessagesWindow {...messageProps} />
+<TsResTools.SourceView {...sourceProps} />
+<ZipTools.ImportView {...importProps} />
+<GridTools.GridView {...gridProps} />
+
+// Use utility functions from namespaces  
+const hasFilters = FilterTools.hasFilterValues(filterState.values);
+const resolver = ResolutionTools.createResolverWithContext(resources, context);
+const system = await TsResTools.createTsResSystemFromConfig(config);
+
+// ZIP processing helpers for ts-res-ui-components integration
+const processResult = await ZipTools.processZipLoadResult(zipData, config);
+
+// Observability context and loggers
+const consoleContext = ObservabilityTools.createConsoleObservabilityContext('debug', 'info');
+const noOpContext = ObservabilityTools.createNoOpObservabilityContext();
+const customLogger = new ObservabilityTools.ConsoleUserLogger('info');
+
+// Grid utilities and selectors
+const gridSelector = new GridTools.ResourceSelector();
+const validation = GridTools.validateCellValue(value, rules);
+```
+
+### Namespace Contents
+
+- **[FilterTools](./docs/ts-res-ui-components.filtertools.md)**: FilterView, filter analysis, filtered resource creation
+- **[ResolutionTools](./docs/ts-res-ui-components.resolutiontools.md)**: ResolutionView, resolution testing, context management
+- **[ConfigurationTools](./docs/ts-res-ui-components.configurationtools.md)**: ConfigurationView, configuration validation, import/export
+- **[TsResTools](./docs/ts-res-ui-components.tsrestools.md)**: SourceView, CompiledView, ts-res system integration
+- **[ViewTools](./docs/ts-res-ui-components.viewtools.md)**: MessagesWindow, message management, view state utilities
+- **[ZipTools](./docs/ts-res-ui-components.ziptools.md)**: ImportView, ZIP processing helpers, uses ts-res zip-archive packlet
+- **[FileTools](./docs/ts-res-ui-components.filetools.md)**: File processing, import/export utilities
+
+All components are also available at the top level for backward compatibility.
+
+## TypeScript Support
+
+This library is written in TypeScript and provides comprehensive type definitions with enhanced support for resource selection and generic resource data.
+
+> 📚 **[See complete type documentation →](./docs/ts-res-ui-components.md)**
+
+```tsx
+import type {
+  ProcessedResources,
+  FilterState,
+  ResolutionResult,
+  Message,
+  ImportedFile,
+  // Enhanced ResourcePicker types
+  ResourceSelection,
+  ResourcePickerProps,
+  ResourceAnnotation,
+  ResourceAnnotations,
+  PendingResource,
+  // Custom editor factory types
+  ResourceEditorFactory,
+  ResourceEditorResult,
+  ResourceEditorProps,
+  // Hook return types
+  UseViewStateReturn,
+  UseFilterStateReturn,
+  UseResolutionStateReturn
+} from '@fgv/ts-res-ui-components';
+
+// Import organized namespaces for components and utilities
+import {
+  FilterTools,
+  ResolutionTools,
+  TsResTools,
+  ZipTools
+} from '@fgv/ts-res-ui-components';
+
+// Type-safe component with enhanced resource selection
+interface MyResourceViewProps<T = unknown> {
+  resources: ProcessedResources;
+  onResourceSelect: (selection: ResourceSelection<T>) => void;
+}
+
+const MyResourceView = <T = unknown>({ resources, onResourceSelect }: MyResourceViewProps<T>) => {
+  return (
+    <ResourcePicker<T>
+      resources={resources}
+      onResourceSelect={(selection) => {
+        // TypeScript knows selection has resourceId, resourceData, isPending, etc.
+        onResourceSelect(selection);
+      }}
+      resourceAnnotations={{
+        'user.welcome': {
+          badge: { text: 'NEW', variant: 'new' },
+          suffix: '(3 candidates)'
+        }
+      }}
+    />
+  );
+};
+
+// Type-safe custom editor factory
+class TypedResourceEditorFactory implements ResourceEditorFactory {
+  createEditor(resourceId: string, resourceType: string, value: any): ResourceEditorResult {
+    // Full type safety for factory pattern
+    if (resourceType === 'marketInfo') {
+      return { success: true, editor: MarketInfoEditor };
+    }
+    return { success: false, message: `No editor for ${resourceType}` };
+  }
+}
+```
+
+## Performance Considerations
+
+- **Lazy Loading**: Components are designed for lazy loading and code splitting
+- **Memoization**: Internal state updates are optimized with React.memo and useMemo
+- **Virtual Scrolling**: Large resource lists use virtual scrolling for performance
+- **Compiled Resources**: Runtime resolution uses pre-compiled structures for efficiency
+
+## Browser Support
+
+- Chrome/Edge: >= 88
+- Firefox: >= 85  
+- Safari: >= 14
+- Modern browsers with ES2020 support
+
+## Development
+
+This library is part of a [Rush.js](https://rushjs.io/) monorepo. Rush is a build orchestrator for JavaScript monorepos that provides scalable build performance and consistent package management.
+
+### Rush Monorepo Setup
+
+If you're new to this monorepo, follow these steps to get started:
+
+1. **Install Rush globally** (if not already installed):
+   ```bash
+   npm install -g @microsoft/rush
+   ```
+
+2. **Clone the repository and install dependencies**:
+   ```bash
+   git clone https://github.com/ErikFortune/fgv.git
+   cd fgv
+   rush install
+   ```
+
+3. **Build all projects** (including dependencies):
+   ```bash
+   rush build
+   ```
+
+> 📚 **Learn more about Rush**: [Official Rush Documentation](https://rushjs.io/pages/intro/get_started/)
+
+### Development Commands
+
+All development commands use Rush's `rushx` tool to run scripts within this specific project:
+
+#### Building
+
+```bash
+# Build this project only
+rushx build
+
+# Build all projects in the monorepo (from root)
+rush build
+```
+
+#### Testing
+
+```bash
+# Test this project (includes coverage by default)
+rushx test
+
+# Test all projects in the monorepo (from root)
+rush test
+
+# Test specific projects with dependencies
+rush test --to ts-res-ui-components
+
+# Test only this project without dependencies
+rush test --only ts-res-ui-components
+```
+
+#### Linting
+
+```bash
+# Lint this project
+rushx lint
+
+# Fix lint issues automatically
+rushx fixlint
+
+# Lint all projects in the monorepo (from root)  
+rush prettier
+```
+
+#### Other Useful Commands
+
+```bash
+# Clean build artifacts
+rushx clean
+
+# Update dependencies (from repository root)
+rush update
+
+# Add a new dependency to this project (from repository root)
+rush add -p <package-name>
+
+# Check for security vulnerabilities (from repository root)
+rush audit
+```
+
+### Monorepo Structure
+
+This library is located at `libraries/ts-res-ui-components/` within the monorepo and depends on several other libraries in the workspace:
+
+- `@fgv/ts-res` - Core resource management library
+- `@fgv/ts-utils` - Utility functions and Result pattern
+- `@fgv/ts-json-base` - JSON validation and processing
+- `@fgv/ts-bcp47` - BCP47 language tag processing
+
+All workspace dependencies use `workspace:*` version ranges for automatic version resolution.
+
+## License
+
+MIT License - see [LICENSE](./LICENSE) file for details.
+
+## Contributing
+
+Please read [CONTRIBUTING.md](./CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+
+## API Documentation
+
+Comprehensive API documentation is available in the [docs](./docs) directory:
+
+- **[API Overview](./docs/index.md)** - Complete API reference
+- **[Components](./docs/ts-res-ui-components.md)** - All available components and their props
+- **[Hooks](./docs/ts-res-ui-components.md)** - State management hooks (useViewState, useResolutionState, etc.)
+- **[Types](./docs/ts-res-ui-components.md)** - TypeScript interfaces and type definitions
+- **[Tool Namespaces](./docs/ts-res-ui-components.md)** - Organized tool namespaces with view components and utility functions
+
+The API documentation includes detailed examples, usage patterns, and type information for all public APIs.
+
+## Support
+
+For questions and support, please:
+
+1. Check the [API documentation](./docs/index.md) for detailed component usage
+2. Review the [ts-res documentation](https://github.com/ErikFortune/fgv/tree/main/libraries/ts-res) for core concepts
+3. Search [existing issues](https://github.com/ErikFortune/fgv/issues)
+4. Create a [new issue](https://github.com/ErikFortune/fgv/issues/new)

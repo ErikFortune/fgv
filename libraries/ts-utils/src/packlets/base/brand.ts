@@ -24,5 +24,5 @@
  * Helper type to brand a simple type to prevent inappropriate use
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export type Brand<T, B> = T & { __brand: B };

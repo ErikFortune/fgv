@@ -20,10 +20,18 @@
  * SOFTWARE.
  */
 
-import { Conversion, Converter, Result, fail, succeed } from '@fgv/ts-utils';
+import {
+  Conversion,
+  Converter,
+  Converters as BaseConverters,
+  Result,
+  StringConverter,
+  fail,
+  succeed
+} from '@fgv/ts-utils';
 import { JsonArray, JsonObject, JsonPrimitive, JsonValue, isJsonArray, isJsonObject } from '../json';
 
-/* eslint-disable no-use-before-define, @typescript-eslint/no-use-before-define */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 
 /**
  * Conversion context for JSON converters.
@@ -56,7 +64,7 @@ export const jsonPrimitive: Converter<JsonPrimitive, IJsonConverterContext> = ne
         }
         break;
     }
-    return fail(`"${String(from)}": not a valid JSON primitive.`);
+    return fail(`"${String(from)}": invalid JSON primitive.`);
   }
 );
 
@@ -76,7 +84,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
     ctx?: IJsonConverterContext
   ): Result<JsonObject> => {
     if (!isJsonObject(from)) {
-      return fail('not a valid JSON object.');
+      return fail('invalid JSON object.');
     }
     const obj: JsonObject = {};
     const errors: string[] = [];
@@ -97,7 +105,7 @@ export const jsonObject: Converter<JsonObject, IJsonConverterContext> = new Conv
         });
     }
     if (errors.length > 0) {
-      return fail(`not a valid JSON object:\n${errors.join('\n')}`);
+      return fail(`invalid JSON object:\n${errors.join('\n')}`);
     }
     return succeed(obj);
   }
@@ -172,3 +180,79 @@ export const jsonValue: Converter<JsonValue, IJsonConverterContext> = new Conver
     return jsonPrimitive.convert(from, ctx);
   }
 );
+
+/**
+ * A {@link Converter | Converter} which converts `unknown` to a `string`.
+ * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * @public
+ */
+export const string: StringConverter<string, IJsonConverterContext> = new StringConverter<
+  string,
+  IJsonConverterContext
+>();
+
+/**
+ * A {@link Converter | Converter} which converts `unknown` to a `number`.
+ * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * Mirrors the behavior of `@fgv/ts-utils`.
+ * @public
+ */
+export const number: Converter<number, IJsonConverterContext> = new Conversion.BaseConverter<
+  number,
+  IJsonConverterContext
+>((from: unknown): Result<number> => BaseConverters.number.convert(from));
+
+/**
+ * A {@link Converter | Converter} which converts `unknown` to a `boolean`.
+ * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * Mirrors the behavior of `@fgv/ts-utils`.
+ * @public
+ */
+export const boolean: Converter<boolean, IJsonConverterContext> = new Conversion.BaseConverter<
+  boolean,
+  IJsonConverterContext
+>((from: unknown): Result<boolean> => BaseConverters.boolean.convert(from));
+
+/**
+ * Helper to create a converter for a literal value.
+ * Accepts {@link Converters.IJsonConverterContext | IJsonConverterContext} but ignores it.
+ * Mirrors the behavior of `@fgv/ts-utils`.
+ * @public
+ */
+export function literal<T>(value: T): Converter<T, IJsonConverterContext> {
+  return BaseConverters.literal<T, IJsonConverterContext>(value);
+}
+
+/**
+ * Helper function to create a {@link Converter | Converter} which converts `unknown` to one of a set of
+ * supplied enumerated values. Anything else fails.
+ *
+ * @remarks
+ * This JSON variant accepts an {@link Converters.IJsonConverterContext | IJsonConverterContext} OR
+ * a `ReadonlyArray<T>` as its conversion context. If the context is an array, it is used to override the
+ * allowed values for that conversion; otherwise, the original `values` supplied at creation time are used.
+ *
+ * @param values - Array of allowed values.
+ * @param message - Optional custom failure message.
+ * @returns A new {@link Converter | Converter} returning `<T>`.
+ * @public
+ */
+export function enumeratedValue<T>(
+  values: ReadonlyArray<T>,
+  message?: string
+): Converter<T, IJsonConverterContext | ReadonlyArray<T>> {
+  return new Conversion.BaseConverter<T, IJsonConverterContext | ReadonlyArray<T>>(
+    (
+      from: unknown,
+      __self: Converter<T, IJsonConverterContext | ReadonlyArray<T>>,
+      context?: IJsonConverterContext | ReadonlyArray<T>
+    ): Result<T> => {
+      const effectiveValues = Array.isArray(context) ? (context as ReadonlyArray<T>) : values;
+      const index = effectiveValues.indexOf(from as T);
+      if (index >= 0) {
+        return succeed(effectiveValues[index]);
+      }
+      return fail(message ?? `Invalid enumerated value ${JSON.stringify(from)}`);
+    }
+  );
+}

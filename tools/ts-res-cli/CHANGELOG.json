@@ -1,0 +1,23 @@
+{
+  "name": "@fgv/ts-res-cli",
+  "entries": [
+    {
+      "version": "5.0.1",
+      "tag": "@fgv/ts-res-cli_v5.0.1",
+      "date": "Tue, 23 Sep 2025 03:13:55 GMT",
+      "comments": {}
+    },
+    {
+      "version": "5.0.0",
+      "tag": "@fgv/ts-res-cli_v5.0.0",
+      "date": "Tue, 23 Sep 2025 02:54:20 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "initial checkin"
+          }
+        ]
+      }
+    }
+  ]
+}

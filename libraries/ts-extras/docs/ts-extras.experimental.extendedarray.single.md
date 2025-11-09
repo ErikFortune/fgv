@@ -50,6 +50,7 @@ _(Optional)_ The predicate function to be applied.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;T&gt;

@@ -47,9 +47,10 @@ The `unknown` to be tested.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 from is [JsonObject](./ts-json-base.jsonobject.md)
 
-`true` if the supplied parameter is a non-array, non-special object, `false` otherwise.
+`true` if the supplied parameter is a non-array, non-special object with no symbol keys, `false` otherwise.
 

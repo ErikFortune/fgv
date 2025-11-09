@@ -122,7 +122,7 @@ export class JsonEditorState {
       return succeed(options);
     }
     return JsonContextHelper.mergeContext(options.context, context).onSuccess((merged) => {
-      return succeed({ context: merged, validation: options.validation });
+      return succeed({ context: merged, validation: options.validation, merge: options.merge });
     });
   }
 

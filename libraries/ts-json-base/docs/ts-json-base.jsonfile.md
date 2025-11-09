@@ -28,6 +28,17 @@ Helper class to simplify common filesystem operations involving JSON (or JSON-li
 
 
 </td></tr>
+<tr><td>
+
+[JsonTreeHelper](./ts-json-base.jsonfile.jsontreehelper.md)
+
+
+</td><td>
+
+Helper class to work with JSON files using FileTree API (web-compatible).
+
+
+</td></tr>
 </tbody></table>
 
 ## Functions
@@ -213,6 +224,16 @@ Default configuration for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.md
 
 
 </td></tr>
+<tr><td>
+
+[DefaultJsonTreeHelper](./ts-json-base.jsonfile.defaultjsontreehelper.md)
+
+
+</td><td>
+
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -291,3 +312,4 @@ Initialization options for [JsonFsHelper](./ts-json-base.jsonfile.jsonfshelper.m
 
 </td></tr>
 </tbody></table>
+

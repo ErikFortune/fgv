@@ -101,7 +101,7 @@ Description
 </td></tr>
 <tr><td>
 
-[sectionCageId(row, col)](./ts-sudoku-lib.ids.sectioncageid.md)
+[sectionCageId(row, col, cageHeight, cageWidth)](./ts-sudoku-lib.ids.sectioncageid.md)
 
 
 </td><td>
@@ -114,3 +114,4 @@ Description
 
 </td></tr>
 </tbody></table>
+

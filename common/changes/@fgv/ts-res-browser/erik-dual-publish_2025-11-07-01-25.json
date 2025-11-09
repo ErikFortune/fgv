@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "comment": "dual-publish",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-res-browser"
+}

@@ -4,6 +4,43 @@
 
 ## Validators namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[enumeratedValue(values, message)](./ts-json-base.validators.enumeratedvalue.md)
+
+
+</td><td>
+
+Helper function to create a  which validates `unknown` to one of a set of supplied enumerated values. Anything else fails.
+
+
+</td></tr>
+<tr><td>
+
+[literal(value)](./ts-json-base.validators.literal.md)
+
+
+</td><td>
+
+Helper to create a validator for a literal value. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it. Mirrors the behavior of `@fgv/ts-utils`<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -44,6 +81,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[boolean](./ts-json-base.validators.boolean.md)
+
+
+</td><td>
+
+A  which validates a boolean in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+
+
+</td></tr>
+<tr><td>
 
 [jsonArray](./ts-json-base.validators.jsonarray.md)
 
@@ -87,4 +135,27 @@ An in-place validator which validates that a supplied `unknown` value is a valid
 
 
 </td></tr>
+<tr><td>
+
+[number](./ts-json-base.validators.number.md)
+
+
+</td><td>
+
+A  which validates a number in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+
+
+</td></tr>
+<tr><td>
+
+[string](./ts-json-base.validators.string.md)
+
+
+</td><td>
+
+A  which validates a string in place. Accepts [IJsonValidatorContext](./ts-json-base.validators.ijsonvalidatorcontext.md) but ignores it.
+
+
+</td></tr>
 </tbody></table>
+

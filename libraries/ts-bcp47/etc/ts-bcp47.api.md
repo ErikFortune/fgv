@@ -7,6 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Conversion } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 import { RecordJar } from '@fgv/ts-extras';
 import { Result } from '@fgv/ts-utils';
 import { Validation } from '@fgv/ts-utils';
@@ -220,9 +221,6 @@ const extlangSubtag: Conversion.Converter<ExtLangSubtag, unknown>;
 // @public (undocumented)
 const extlangSubtag_2: RegExpValidationHelpers<ExtLangSubtag, unknown>;
 
-// @internal (undocumented)
-type ExtLangSubtagRegistryEntry = IRegistrySubtagEntry<'extlang', ExtLangSubtag>;
-
 // Warning: (ae-incompatible-release-tags) The symbol "fileDateEntry" is marked as @public, but its signature references "IFileDateEntry" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "fileDateEntry" is marked as @public, but its signature references "IFileDateEntry" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "fileDateEntry" is marked as @public, but its signature references "IFileDateEntry" which is marked as @internal
@@ -243,9 +241,6 @@ const grandfatheredTag: Conversion.Converter<GrandfatheredTag, unknown>;
 // @public (undocumented)
 const grandfatheredTag_2: TagValidationHelpers<GrandfatheredTag, unknown>;
 
-// @internal (undocumented)
-type GrandfatheredTagRegistryEntry = IRegistryTagEntry<'grandfathered', GrandfatheredTag>;
-
 declare namespace Helpers {
     export {
         TagValidationHelpers
@@ -262,7 +257,13 @@ declare namespace Iana {
         LanguageTagExtensions_2 as LanguageTagExtensions,
         Validate_3 as Validate,
         nowAsYearMonthDay,
-        LanguageRegistries
+        LanguageRegistries,
+        loadLanguageRegistriesFromTree,
+        loadLanguageRegistriesFromZipBuffer,
+        loadLanguageRegistriesFromIanaOrg,
+        loadLanguageRegistriesFromUrls,
+        loadLanguageRegistries,
+        loadLanguageRegistriesFromZip
     }
 }
 export { Iana }
@@ -306,6 +307,32 @@ interface IExtensionSubtagValue {
 }
 
 // @internal
+interface IExtLangSubtagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value': ExtendedLanguageRange;
+    // (undocumented)
+    'Suppress-Script'?: ScriptSubtag;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Macrolanguage?: LanguageSubtag;
+    // (undocumented)
+    Prefix: LanguageSubtag[];
+    // (undocumented)
+    Scope?: RegistryEntryScope;
+    // (undocumented)
+    Subtag: ExtLangSubtag;
+    // (undocumented)
+    Type: 'extlang';
+}
+
+// @internal
 interface IFileDateEntry extends RecordJar.JarRecord {
     // (undocumented)
     'File-Date': YearMonthDaySpec_2;
@@ -323,6 +350,24 @@ interface IGlobalRegion {
     regions: IIntermediateRegion[];
     // (undocumented)
     tier: 'global';
+}
+
+// @internal
+interface IGrandfatheredTagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value'?: ExtendedLanguageRange;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Tag: GrandfatheredTag;
+    // (undocumented)
+    Type: 'grandfathered';
 }
 
 // @public (undocumented)
@@ -349,6 +394,30 @@ interface ILanguageChooserOptions {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     ultimateFallback?: string | ISubtags | LanguageTag;
     use?: 'desiredLanguage' | 'availableLanguage';
+}
+
+// @internal
+interface ILanguageSubtagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value'?: LanguageSubtag;
+    // (undocumented)
+    'Suppress-Script'?: ScriptSubtag;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Macrolanguage?: LanguageSubtag;
+    // (undocumented)
+    Scope?: RegistryEntryScope;
+    // (undocumented)
+    Subtag: LanguageSubtag | LanguageSubtag[];
+    // (undocumented)
+    Type: 'language';
 }
 
 // @internal (undocumented)
@@ -421,6 +490,42 @@ interface IM49CsvRow {
 
 // @public (undocumented)
 type IntermediateRegionTier = 'region' | 'subRegion' | 'intermediateRegion';
+
+// @internal
+interface IRedundantTagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value'?: ExtendedLanguageRange;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Tag: RedundantTag;
+    // (undocumented)
+    Type: 'redundant';
+}
+
+// @internal
+interface IRegionSubtagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value'?: RegionSubtag;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Subtag: RegionSubtag | RegionSubtag[];
+    // (undocumented)
+    Type: 'region';
+}
 
 // @public (undocumented)
 interface IRegisteredExtLang extends IRegisteredSubtag<'extlang', ExtLangSubtag> {
@@ -616,6 +721,24 @@ interface IRegistryTagEntry<TTYPE extends RegistryEntryType = RegistryEntryType,
     Tag: TTAG | TTAG[];
 }
 
+// @internal
+interface IScriptSubtagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value'?: ScriptSubtag;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Subtag: ScriptSubtag | ScriptSubtag[];
+    // (undocumented)
+    Type: 'script';
+}
+
 // @public
 type IsoAlpha2RegionCode = Brand<string, 'IsoAlpha2RegionCode'>;
 
@@ -694,6 +817,26 @@ interface IValidationHelpersConstructorParams<T extends string, TC = unknown> {
     toCanonical?: Normalizer<T, TC>;
 }
 
+// @internal
+interface IVariantSubtagRegistryEntry {
+    // (undocumented)
+    'Preferred-Value'?: VariantSubtag;
+    // (undocumented)
+    Added: YearMonthDaySpec;
+    // (undocumented)
+    Comments?: string[];
+    // (undocumented)
+    Deprecated?: YearMonthDaySpec;
+    // (undocumented)
+    Description: string[];
+    // (undocumented)
+    Prefix?: ExtendedLanguageRange[];
+    // (undocumented)
+    Subtag: VariantSubtag;
+    // (undocumented)
+    Type: 'variant';
+}
+
 declare namespace Jar {
     export {
         datedRegistryFromJarRecords,
@@ -719,6 +862,9 @@ declare namespace JarConverters {
     export {
         loadJsonSubtagRegistryFileSync,
         loadTxtSubtagRegistryFileSync,
+        loadTxtSubtagRegistryFromString,
+        loadRawSubtagRegistryFileSync,
+        loadRawSubtagRegistryFromString,
         registeredLanguage_2 as registeredLanguage,
         registeredExtLang_2 as registeredExtLang,
         registeredScript_2 as registeredScript,
@@ -735,19 +881,50 @@ declare namespace JarConverters_2 {
     export {
         loadJsonLanguageTagExtensionsRegistryFileSync,
         loadTxtLanguageTagExtensionsRegistryFileSync,
+        loadTxtLanguageTagExtensionsRegistryFromString,
+        loadRawLanguageTagExtensionsRegistryFileSync,
+        loadRawLanguageTagExtensionsRegistryFromString,
         languageTagExtension_2 as languageTagExtension,
         languageTagExtensions_2 as languageTagExtensions
     }
 }
 
+// @internal
+const jarExtLangSubtagEntry: Converter<Model.IExtLangSubtagRegistryEntry, unknown>;
+
+// @internal
+const jarGrandfatheredTagEntry: Converter<Model.IGrandfatheredTagRegistryEntry, unknown>;
+
+// @internal
+const jarLanguageSubtagEntry: Converter<Model.ILanguageSubtagRegistryEntry, unknown>;
+
+// @internal
+const jarRedundantTagEntry: Converter<Model.IRedundantTagRegistryEntry, unknown>;
+
+// @internal
+const jarRegionSubtagEntry: Converter<Model.IRegionSubtagRegistryEntry, unknown>;
+
+// @internal
+const jarRegistryEntry: Converter<Model.RegistryEntry, unknown>;
+
+// @internal
+const jarScriptSubtagEntry: Converter<Model.IScriptSubtagRegistryEntry, unknown>;
+
+// @internal
+const jarVariantSubtagEntry: Converter<Model.IVariantSubtagRegistryEntry, unknown>;
+
 // @public (undocumented)
 class LanguageRegistries {
     // (undocumented)
+    static create(subtags: LanguageSubtagRegistry, extensions: LanguageTagExtensionRegistry): Result<LanguageRegistries>;
+    // (undocumented)
     readonly extensions: LanguageTagExtensionRegistry;
     // (undocumented)
-    static load(root: string): Result<LanguageRegistries>;
-    // (undocumented)
     static loadDefault(): Result<LanguageRegistries>;
+    static loadDefaultCompressed(): Result<LanguageRegistries>;
+    static loadFromIanaOrg(): Promise<Result<LanguageRegistries>>;
+    static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
+    static loadFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array): Result<LanguageRegistries>;
     // (undocumented)
     readonly subtags: LanguageSubtagRegistry;
 }
@@ -807,6 +984,8 @@ class LanguageSubtagRegistry {
     // (undocumented)
     static createFromJson(from: unknown): Result<LanguageSubtagRegistry>;
     // (undocumented)
+    static createFromTxtContent(content: string): Result<LanguageSubtagRegistry>;
+    // (undocumented)
     readonly extlangs: Scope.ExtLangSubtagScope;
     // (undocumented)
     readonly fileDate: YearMonthDaySpec;
@@ -817,13 +996,7 @@ class LanguageSubtagRegistry {
     // (undocumented)
     readonly languages: Scope.LanguageSubtagScope;
     // (undocumented)
-    static load(root: string): Result<LanguageSubtagRegistry>;
-    // (undocumented)
     static loadDefault(): Result<LanguageSubtagRegistry>;
-    // (undocumented)
-    static loadJsonRegistryFile(root: string): Result<LanguageSubtagRegistry>;
-    // (undocumented)
-    static loadTxtRegistryFile(root: string): Result<LanguageSubtagRegistry>;
     // (undocumented)
     readonly macrolanguages: Scope.LanguageSubtagScope;
     // (undocumented)
@@ -839,9 +1012,6 @@ class LanguageSubtagRegistry {
     // (undocumented)
     readonly variants: Scope.VariantSubtagScope;
 }
-
-// @internal (undocumented)
-type LanguageSubtagRegistryEntry = IRegistrySubtagEntry<'language', LanguageSubtag>;
 
 declare namespace LanguageSubtags {
     export {
@@ -1000,6 +1170,8 @@ class LanguageTagExtensionRegistry {
     static create(registry: Model_2.LanguageTagExtensions): Result<LanguageTagExtensionRegistry>;
     // (undocumented)
     static createFromJson(from: unknown): Result<LanguageTagExtensionRegistry>;
+    // (undocumented)
+    static createFromTxtContent(content: string): Result<LanguageTagExtensionRegistry>;
     // Warning: (ae-forgotten-export) The symbol "TagExtensionsScope" needs to be exported by the entry point index.d.ts
     //
     // (undocumented)
@@ -1007,13 +1179,7 @@ class LanguageTagExtensionRegistry {
     // (undocumented)
     readonly fileDate: YearMonthDaySpec_2;
     // (undocumented)
-    static load(path: string): Result<LanguageTagExtensionRegistry>;
-    // (undocumented)
     static loadDefault(): Result<LanguageTagExtensionRegistry>;
-    // (undocumented)
-    static loadJsonRegistryFile(path: string): Result<LanguageTagExtensionRegistry>;
-    // (undocumented)
-    static loadTxtRegistryFile(path: string): Result<LanguageTagExtensionRegistry>;
 }
 
 // @internal (undocumented)
@@ -1037,6 +1203,9 @@ interface LanguageTagExtensionRegistryEntry {
     // (undocumented)
     URL: string;
 }
+
+// @internal
+type LanguageTagExtensionRegistryFile = IDatedRegistry<LanguageTagExtensionRegistryEntry>;
 
 // @internal (undocumented)
 type LanguageTagExtensions = IDatedRegistry<ILanguageTagExtension>;
@@ -1065,6 +1234,24 @@ function loadJsonLanguageTagExtensionsRegistryFileSync(path: string): Result<Mod
 // @internal
 function loadJsonSubtagRegistryFileSync(path: string): Result<Items.RegistryFile>;
 
+// @public
+function loadLanguageRegistries(root: string): Result<LanguageRegistries>;
+
+// @public
+function loadLanguageRegistriesFromIanaOrg(): Promise<Result<LanguageRegistries>>;
+
+// @public
+function loadLanguageRegistriesFromTree(fileTree: FileTree.FileTree, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
+
+// @public
+function loadLanguageRegistriesFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>>;
+
+// @public
+function loadLanguageRegistriesFromZip(zipPath: string, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
+
+// @public
+function loadLanguageRegistriesFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array, subtagsPath?: string, extensionsPath?: string): Result<LanguageRegistries>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public (undocumented)
@@ -1076,13 +1263,33 @@ function loadLanguageTagExtensionsJsonFileSync(path: string): Result<Model_2.Lan
 // @internal
 function loadM49csvFileSync(csvPath: string): Result<Model_6.IM49CsvRow[]>;
 
+// @public
+function loadRawLanguageTagExtensionsRegistryFileSync(path: string): Result<Model_2.LanguageTagExtensionRegistryFile>;
+
+// @public
+function loadRawLanguageTagExtensionsRegistryFromString(content: string): Result<Model_2.LanguageTagExtensionRegistryFile>;
+
+// @public
+function loadRawSubtagRegistryFileSync(path: string): Result<Model.RegistryFile>;
+
+// @public
+function loadRawSubtagRegistryFromString(content: string): Result<Model.RegistryFile>;
+
 // @internal
 function loadTxtLanguageTagExtensionsRegistryFileSync(path: string): Result<Model_2.LanguageTagExtensions>;
+
+// @public
+function loadTxtLanguageTagExtensionsRegistryFromString(content: string): Result<Model_2.LanguageTagExtensions>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @internal
 function loadTxtSubtagRegistryFileSync(path: string): Result<Items.RegistryFile>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function loadTxtSubtagRegistryFromString(content: string): Result<Items.RegistryFile>;
 
 // @internal (undocumented)
 const m49CsvFile: Converter<Model_6.IM49CsvRow[], unknown>;
@@ -1099,13 +1306,13 @@ declare namespace Model {
         YearMonthDaySpec,
         IRegistrySubtagEntry,
         IRegistryTagEntry,
-        LanguageSubtagRegistryEntry,
-        ExtLangSubtagRegistryEntry,
-        ScriptSubtagRegistryEntry,
-        RegionSubtagRegistryEntry,
-        VariantSubtagRegistryEntry,
-        GrandfatheredTagRegistryEntry,
-        RedundantTagRegistryEntry,
+        ILanguageSubtagRegistryEntry,
+        IExtLangSubtagRegistryEntry,
+        IScriptSubtagRegistryEntry,
+        IRegionSubtagRegistryEntry,
+        IVariantSubtagRegistryEntry,
+        IGrandfatheredTagRegistryEntry,
+        IRedundantTagRegistryEntry,
         RegistryEntry,
         RegistryFile
     }
@@ -1116,7 +1323,8 @@ declare namespace Model_2 {
         ExtensionSingleton_2 as ExtensionSingleton,
         LanguageTagExtensionRegistryEntry,
         ILanguageTagExtension,
-        LanguageTagExtensions
+        LanguageTagExtensions,
+        LanguageTagExtensionRegistryFile
     }
 }
 
@@ -1246,9 +1454,6 @@ const redundantTag: Conversion.Converter<RedundantTag, unknown>;
 // @public (undocumented)
 const redundantTag_2: TagValidationHelpers<RedundantTag, unknown>;
 
-// @internal (undocumented)
-type RedundantTagRegistryEntry = IRegistryTagEntry<'redundant', RedundantTag>;
-
 // @public (undocumented)
 type Region = IGlobalRegion | IIntermediateRegion;
 
@@ -1291,14 +1496,11 @@ const regionSubtag: Conversion.Converter<RegionSubtag, unknown>;
 // @public (undocumented)
 const regionSubtag_2: RegExpValidationHelpers<RegionSubtag, unknown>;
 
-// @internal (undocumented)
-type RegionSubtagRegistryEntry = IRegistrySubtagEntry<'region', RegionSubtag>;
-
 // @public (undocumented)
 type RegionTier = 'global' | IntermediateRegionTier;
 
 // @internal (undocumented)
-const regionTier: Converter<RegionTier, RegionTier[]>;
+const regionTier: Converter<RegionTier, readonly RegionTier[]>;
 
 // @internal (undocumented)
 const registeredExtLang: Converter<Items.IRegisteredExtLang, unknown>;
@@ -1363,12 +1565,20 @@ const registeredVariant_2: Converter<Items.IRegisteredVariant, unknown>;
 declare namespace Registry {
     export {
         registryEntryType,
-        registryScopeType
+        registryScopeType,
+        jarLanguageSubtagEntry,
+        jarExtLangSubtagEntry,
+        jarScriptSubtagEntry,
+        jarRegionSubtagEntry,
+        jarVariantSubtagEntry,
+        jarGrandfatheredTagEntry,
+        jarRedundantTagEntry,
+        jarRegistryEntry
     }
 }
 
 // @internal (undocumented)
-type RegistryEntry = LanguageSubtagRegistryEntry | ExtLangSubtagRegistryEntry | ScriptSubtagRegistryEntry | RegionSubtagRegistryEntry | VariantSubtagRegistryEntry | GrandfatheredTagRegistryEntry | RedundantTagRegistryEntry;
+type RegistryEntry = ILanguageSubtagRegistryEntry | IExtLangSubtagRegistryEntry | IScriptSubtagRegistryEntry | IRegionSubtagRegistryEntry | IVariantSubtagRegistryEntry | IGrandfatheredTagRegistryEntry | IRedundantTagRegistryEntry;
 
 // @internal (undocumented)
 type RegistryEntryScope = 'collection' | 'macrolanguage' | 'private-use' | 'special';
@@ -1377,7 +1587,7 @@ type RegistryEntryScope = 'collection' | 'macrolanguage' | 'private-use' | 'spec
 type RegistryEntryType = 'extlang' | 'grandfathered' | 'language' | 'redundant' | 'region' | 'script' | 'variant';
 
 // @internal (undocumented)
-const registryEntryType: Converter<Model.RegistryEntryType, Model.RegistryEntryType[]>;
+const registryEntryType: Converter<Model.RegistryEntryType, readonly Model.RegistryEntryType[]>;
 
 // @internal (undocumented)
 type RegistryFile = IDatedRegistry<RegistryEntry>;
@@ -1392,7 +1602,7 @@ type RegistryFile_2 = IDatedRegistry<RegisteredItem>;
 const registryFile_2: Converter<IDatedRegistry<Items.RegisteredItem>, unknown>;
 
 // @internal (undocumented)
-const registryScopeType: Converter<Model.RegistryEntryScope, Model.RegistryEntryScope[]>;
+const registryScopeType: Converter<Model.RegistryEntryScope, readonly Model.RegistryEntryScope[]>;
 
 // @public
 type ScriptSubtag = Brand<string, 'ScriptSubtag'>;
@@ -1402,9 +1612,6 @@ const scriptSubtag: Conversion.Converter<ScriptSubtag, unknown>;
 
 // @public (undocumented)
 const scriptSubtag_2: RegExpValidationHelpers<ScriptSubtag, unknown>;
-
-// @internal (undocumented)
-type ScriptSubtagRegistryEntry = IRegistrySubtagEntry<'script', ScriptSubtag>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1665,9 +1872,6 @@ const variantSubtag: Conversion.Converter<VariantSubtag, unknown>;
 
 // @public (undocumented)
 const variantSubtag_2: RegExpValidationHelpers<VariantSubtag, unknown>;
-
-// @internal (undocumented)
-type VariantSubtagRegistryEntry = IRegistrySubtagEntry<'variant', VariantSubtag>;
 
 // @public (undocumented)
 const yearMonthDateSpec: RegExpValidationHelpers<Model_5.YearMonthDaySpec, unknown>;

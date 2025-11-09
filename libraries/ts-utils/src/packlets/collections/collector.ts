@@ -54,6 +54,12 @@ export interface IReadOnlyCollector<
    * with an error if the index is out of range.
    */
   getAt(index: number): Result<TITEM>;
+
+  /**
+   * Gets all items in the collection, ordered by index.
+   * @returns An array of items in the collection, ordered by index.
+   */
+  valuesByIndex(): ReadonlyArray<TITEM>;
 }
 
 /**
@@ -147,7 +153,7 @@ export class Collector<
   /**
    * {@inheritdoc Collections.ResultMap.entries}
    */
-  public entries(): MapIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
+  public entries(): IterableIterator<KeyValueEntry<CollectibleKey<TITEM>, TITEM>> {
     return this._byKey.entries();
   }
 
@@ -172,9 +178,21 @@ export class Collector<
    * {@inheritdoc Collections.IReadOnlyCollector.getAt}
    */
   public getAt(index: number): Result<TITEM> {
-    if (index < 0 || index >= this._byIndex.length) {
-      return fail(`${index}: out of range.`);
+    if (typeof index !== 'number') {
+      // Handle Symbol conversion safely
+      const indexStr = typeof index === 'symbol' ? (index as symbol).toString() : String(index);
+      return fail(`${indexStr}: collector index must be a number.`);
     }
+
+    // Check that the number is a finite integer (handles NaN, Infinity, and non-integers)
+    if (!Number.isFinite(index) || !Number.isInteger(index)) {
+      return fail(`${index}: collector index must be a finite integer.`);
+    }
+
+    if (index < 0 || index >= this._byIndex.length) {
+      return fail(`${index}: collector index out of range.`);
+    }
+
     return succeed(this._byIndex[index]);
   }
 
@@ -250,6 +268,13 @@ export class Collector<
    */
   public values(): IterableIterator<TITEM> {
     return this._byKey.values();
+  }
+
+  /**
+   * {@inheritdoc Collections.IReadOnlyCollector.valuesByIndex}
+   */
+  public valuesByIndex(): ReadonlyArray<TITEM> {
+    return this._byIndex;
   }
 
   /**

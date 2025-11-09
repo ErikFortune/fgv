@@ -39,6 +39,17 @@ Reads a record-jar file from a supplied path.
 
 
 </td></tr>
+<tr><td>
+
+[readRecordJarFromTree(fileTree, filePath, options)](./ts-extras.recordjar.readrecordjarfromtree.md)
+
+
+</td><td>
+
+Reads a record-jar file from a FileTree.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -102,3 +113,4 @@ Represents a single record in a JAR file
 
 </td></tr>
 </tbody></table>
+

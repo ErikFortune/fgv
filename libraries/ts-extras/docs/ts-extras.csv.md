@@ -19,12 +19,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[parseCsvString(body, options)](./ts-extras.csv.parsecsvstring.md)
+
+
+</td><td>
+
+**_(BETA)_** Parses CSV data from a string.
+
+
+</td></tr>
+<tr><td>
+
 [readCsvFileSync(srcPath, options)](./ts-extras.csv.readcsvfilesync.md)
 
 
 </td><td>
 
 **_(BETA)_** Reads a CSV file from a supplied path.
+
+
+</td></tr>
+<tr><td>
+
+[readCsvFromTree(fileTree, filePath, options)](./ts-extras.csv.readcsvfromtree.md)
+
+
+</td><td>
+
+**_(BETA)_** Reads a CSV file from a FileTree.
 
 
 </td></tr>
@@ -55,3 +77,4 @@ Description
 
 </td></tr>
 </tbody></table>
+

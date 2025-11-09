@@ -20,10 +20,7 @@
  * SOFTWARE.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-
-import { Result, captureResult, fail, isKeyOf, succeed } from '@fgv/ts-utils';
+import { Result, fail, isKeyOf, succeed } from '@fgv/ts-utils';
 
 interface IRecordBody {
   body: string;
@@ -59,7 +56,6 @@ class RecordParser {
   protected _name: string | undefined = undefined;
   protected _body: IRecordBody | undefined = undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   private constructor(options?: JarRecordParserOptions) {
     this.options = options ?? {};
   }
@@ -255,24 +251,4 @@ class RecordParser {
  */
 export function parseRecordJarLines(lines: string[], options?: JarRecordParserOptions): Result<JarRecord[]> {
   return RecordParser.parse(lines, options);
-}
-
-/**
- * Reads a record-jar file from a supplied path.
- * @param srcPath - Source path from which the file is read.
- * @param options - Optional parser configuration
- * @returns The contents of the file as an array of `Record<string, string>`
- * @see https://datatracker.ietf.org/doc/html/draft-phillips-record-jar-01
- * @public
- */
-export function readRecordJarFileSync(
-  srcPath: string,
-  options?: JarRecordParserOptions
-): Result<JarRecord[]> {
-  return captureResult(() => {
-    const fullPath = path.resolve(srcPath);
-    return fs.readFileSync(fullPath, 'utf8').toString().split(/\r?\n/);
-  }).onSuccess((lines) => {
-    return parseRecordJarLines(lines, options);
-  });
 }

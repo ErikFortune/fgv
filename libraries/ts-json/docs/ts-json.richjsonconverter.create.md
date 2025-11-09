@@ -47,6 +47,7 @@ _(Optional)_ Optional partial [configuration or context](./ts-json.richjsonconve
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[JsonConverter](./ts-json.jsonconverter.md)<!-- -->&gt;

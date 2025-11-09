@@ -24,7 +24,12 @@ import { Result, captureResult } from '@fgv/ts-utils';
 
 import { LanguageSubtagRegistry } from './language-subtags';
 import { LanguageTagExtensionRegistry } from './language-tag-extensions';
-import path from 'path';
+import {
+  loadLanguageRegistriesFromZipBuffer,
+  loadLanguageRegistriesFromIanaOrg,
+  loadLanguageRegistriesFromUrls
+} from './languageRegistriesLoader';
+import { getIanaDataBuffer } from './iana-data-embedded';
 
 /**
  * @public
@@ -37,21 +42,58 @@ export class LanguageRegistries {
     this.extensions = extensions;
   }
 
-  public static load(root: string): Result<LanguageRegistries> {
-    return captureResult(() => {
-      const subtags = LanguageSubtagRegistry.load(path.join(root, 'language-subtags.json')).orThrow();
-      const extensions = LanguageTagExtensionRegistry.load(
-        path.join(root, 'language-tag-extensions.json')
-      ).orThrow();
-      return new LanguageRegistries(subtags, extensions);
-    });
+  public static create(
+    subtags: LanguageSubtagRegistry,
+    extensions: LanguageTagExtensionRegistry
+  ): Result<LanguageRegistries> {
+    return captureResult(() => new LanguageRegistries(subtags, extensions));
   }
 
   public static loadDefault(): Result<LanguageRegistries> {
+    return LanguageRegistries.loadDefaultCompressed();
+  }
+
+  /**
+   * Loads language registries from embedded compressed data.
+   * This method uses embedded compressed ZIP data that works in both Node.js and browser environments
+   * without requiring polyfills. This is the preferred loading method for published packages.
+   * @returns A Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadDefaultCompressed(): Result<LanguageRegistries> {
     return captureResult(() => {
-      const subtags = LanguageSubtagRegistry.loadDefault().orThrow();
-      const extensions = LanguageTagExtensionRegistry.loadDefault().orThrow();
-      return new LanguageRegistries(subtags, extensions);
+      const zipBuffer = getIanaDataBuffer();
+      return loadLanguageRegistriesFromZipBuffer(zipBuffer).orThrow();
     });
+  }
+
+  /**
+   * Loads language registries from the IANA.org online registries.
+   * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromIanaOrg(): Promise<Result<LanguageRegistries>> {
+    return loadLanguageRegistriesFromIanaOrg();
+  }
+
+  /**
+   * Loads language registries from custom URLs.
+   * @param subtagsUrl - URL to the language subtags registry.
+   * @param extensionsUrl - URL to the language tag extensions registry.
+   * @returns A Promise with a Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromUrls(subtagsUrl: string, extensionsUrl: string): Promise<Result<LanguageRegistries>> {
+    return loadLanguageRegistriesFromUrls(subtagsUrl, extensionsUrl);
+  }
+
+  /**
+   * Loads language registries from a compressed ZIP buffer (web-compatible).
+   * @param zipBuffer - ArrayBuffer or Uint8Array containing the ZIP file data.
+   * @returns A Result containing the loaded LanguageRegistries or an error.
+   * @public
+   */
+  public static loadFromZipBuffer(zipBuffer: ArrayBuffer | Uint8Array): Result<LanguageRegistries> {
+    return loadLanguageRegistriesFromZipBuffer(zipBuffer);
   }
 }

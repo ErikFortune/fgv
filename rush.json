@@ -417,6 +417,13 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-web-extras",
+      "projectFolder": "libraries/ts-web-extras",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
       "packageName": "@fgv/ts-json",
       "projectFolder": "libraries/ts-json",
       "shouldPublish": true,
@@ -431,11 +438,32 @@
       "tags": ["libraries"]
     },
     {
+      "packageName": "@fgv/ts-res",
+      "projectFolder": "libraries/ts-res",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-res-ui-components",
+      "projectFolder": "libraries/ts-res-ui-components",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
+    },
+    {
       "packageName": "@fgv/ts-sudoku-lib",
       "projectFolder": "libraries/ts-sudoku-lib",
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/ts-sudoku-ui",
+      "projectFolder": "libraries/ts-sudoku-ui",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries", "ui", "react"]
     },
     {
       "packageName": "@fgv/ts-utils",
@@ -450,6 +478,51 @@
       "shouldPublish": true,
       "versionPolicyName": "base-utils",
       "tags": ["libraries", "test", "jest"]
+    },
+    {
+      "packageName": "@fgv/ts-res-cli",
+      "projectFolder": "tools/ts-res-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "cli"]
+    },
+    {
+      "packageName": "@fgv/ts-res-ui-playground",
+      "projectFolder": "tools/ts-res-ui-playground",
+      "shouldPublish": false,
+      "tags": ["tools", "playground", "ui", "react"]
+    },
+    {
+      "packageName": "@fgv/ts-res-browser-cli",
+      "projectFolder": "tools/ts-res-browser-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "cli", "browser"]
+    },
+    {
+      "packageName": "@fgv/ts-res-browser",
+      "projectFolder": "tools/ts-res-browser",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "ui", "browser"]
+    },
+    {
+      "packageName": "@fgv/heft-dual-rig",
+      "projectFolder": "rigs/heft-dual-rig",
+      "shouldPublish": false,
+      "tags": ["tools", "rig"]
+    },
+    {
+      "packageName": "@fgv/sudoku-app",
+      "projectFolder": "apps/sudoku",
+      "shouldPublish": false,
+      "tags": ["apps", "sudoku", "react", "ui"]
+    },
+    {
+      "packageName": "@fgv/ts-utils-browser-test",
+      "projectFolder": "apps/ts-utils-browser-test",
+      "shouldPublish": false,
+      "tags": ["apps", "tests", "vite"]
     }
   ]
 }

@@ -173,11 +173,13 @@ export class LanguageSimilarityMatcher {
       /* c8 ignore next 2 */
       const a1 = o1.affinity?.get(r1) ?? o1.defaultAffinity;
       const a2 = o2.affinity?.get(r2) ?? o2.defaultAffinity;
-      if (a1 && a2 && a1 === a2) {
-        if (r1 === a1.toUpperCase() || r2 === a2.toUpperCase()) {
+      if (a1 && a2) {
+        if (r1 === a2.toUpperCase() || r2 === a1.toUpperCase()) {
           return tagSimilarity.preferredAffinity;
         }
-        return tagSimilarity.affinity;
+        if (a1 === a2) {
+          return tagSimilarity.affinity;
+        }
       }
     }
 

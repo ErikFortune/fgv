@@ -22,93 +22,77 @@
 
 import '@fgv/ts-utils-jest';
 import * as Iana from '../../../../packlets/iana';
+import { EXPECTED_REGISTRY_COUNTS, TEST_DATA_PATHS } from '../testConstants';
+
+/**
+ * Helper function to verify that a LanguageSubtagRegistry has the expected counts
+ * for all registry categories.
+ */
+function expectRegistryToHaveExpectedCounts(tags: Iana.LanguageSubtags.LanguageSubtagRegistry): void {
+  expect(tags.languages.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.languages);
+  expect(tags.extlangs.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.extlangs);
+  expect(tags.scripts.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.scripts);
+  expect(tags.regions.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.regions);
+  expect(tags.variants.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.variants);
+
+  expect(tags.collections.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.collections);
+  expect(tags.macrolanguages.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.macrolanguages);
+  expect(tags.privateUse.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.privateUse);
+  expect(tags.special.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.special);
+
+  expect(tags.grandfathered.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.grandfathered);
+  expect(tags.redundant.getAllKeys()).toHaveLength(EXPECTED_REGISTRY_COUNTS.redundant);
+}
 
 describe('LanguageSubtagRegistry class', () => {
   describe('create static method', () => {
     test('creates from a supplied a tag registry', () => {
       const registry = Iana.LanguageSubtags.JarConverters.loadJsonSubtagRegistryFileSync(
-        'src/test/data/iana/language-subtag-registry.json'
+        TEST_DATA_PATHS.registryJson
       ).orThrow();
       expect(Iana.LanguageSubtags.LanguageSubtagRegistry.create(registry)).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
-
-        expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
-        expect(tags.privateUse.getAllKeys()).toHaveLength(520);
-        expect(tags.special.getAllKeys()).toHaveLength(4);
-
-        expect(tags.grandfathered.getAllKeys()).toHaveLength(26);
-        expect(tags.redundant.getAllKeys()).toHaveLength(67);
+        expectRegistryToHaveExpectedCounts(tags);
       });
     });
   });
 
   describe('load static methods', () => {
     test('loads JSON subtags', () => {
+      const data = Iana.LanguageSubtags.Converters.loadLanguageSubtagsJsonFileSync(
+        TEST_DATA_PATHS.subtagsJson
+      );
       expect(
-        Iana.LanguageSubtags.LanguageSubtagRegistry.load('src/data/iana/language-subtags.json')
+        data.onSuccess((d) => Iana.LanguageSubtags.LanguageSubtagRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
-
-        expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
-        expect(tags.privateUse.getAllKeys()).toHaveLength(520);
-        expect(tags.special.getAllKeys()).toHaveLength(4);
-
-        expect(tags.grandfathered.getAllKeys()).toHaveLength(26);
-        expect(tags.redundant.getAllKeys()).toHaveLength(67);
+        expectRegistryToHaveExpectedCounts(tags);
       });
     });
 
     test('loads JAR as JSON subtag registry', () => {
+      const data = Iana.LanguageSubtags.JarConverters.loadJsonSubtagRegistryFileSync(
+        TEST_DATA_PATHS.registryJson
+      );
       expect(
-        Iana.LanguageSubtags.LanguageSubtagRegistry.loadJsonRegistryFile(
-          'src/test/data/iana/language-subtag-registry.json'
-        )
+        data.onSuccess((d) => Iana.LanguageSubtags.LanguageSubtagRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
-
-        expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
-        expect(tags.privateUse.getAllKeys()).toHaveLength(520);
-        expect(tags.special.getAllKeys()).toHaveLength(4);
-
-        expect(tags.grandfathered.getAllKeys()).toHaveLength(26);
-        expect(tags.redundant.getAllKeys()).toHaveLength(67);
+        expectRegistryToHaveExpectedCounts(tags);
       });
     });
 
     test('loads JAR subtag registry', () => {
+      const data = Iana.LanguageSubtags.JarConverters.loadTxtSubtagRegistryFileSync(
+        TEST_DATA_PATHS.registryTxt
+      );
       expect(
-        Iana.LanguageSubtags.LanguageSubtagRegistry.loadTxtRegistryFile(
-          'src/test/data/iana/language-subtag-registry.txt'
-        )
+        data.onSuccess((d) => Iana.LanguageSubtags.LanguageSubtagRegistry.create(d))
       ).toSucceedAndSatisfy((tags) => {
-        expect(tags.languages.getAllKeys()).toHaveLength(8759);
-        expect(tags.extlangs.getAllKeys()).toHaveLength(252);
-        expect(tags.scripts.getAllKeys()).toHaveLength(261);
-        expect(tags.regions.getAllKeys()).toHaveLength(342);
-        expect(tags.variants.getAllKeys()).toHaveLength(110);
+        expectRegistryToHaveExpectedCounts(tags);
+      });
+    });
 
-        expect(tags.collections.getAllKeys()).toHaveLength(116);
-        expect(tags.macrolanguages.getAllKeys()).toHaveLength(62);
-        expect(tags.privateUse.getAllKeys()).toHaveLength(520);
-        expect(tags.special.getAllKeys()).toHaveLength(4);
-
-        expect(tags.grandfathered.getAllKeys()).toHaveLength(26);
-        expect(tags.redundant.getAllKeys()).toHaveLength(67);
+    test('loads default subtag registry from embedded zip data', () => {
+      expect(Iana.LanguageSubtags.LanguageSubtagRegistry.loadDefault()).toSucceedAndSatisfy((tags) => {
+        expectRegistryToHaveExpectedCounts(tags);
       });
     });
   });

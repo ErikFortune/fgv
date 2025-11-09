@@ -125,7 +125,7 @@ Description
 </td></tr>
 <tr><td>
 
-[load(path)](./ts-bcp47.iana.languagetagextensions.languagetagextensionregistry.load.md)
+[createFromTxtContent(content)](./ts-bcp47.iana.languagetagextensions.languagetagextensionregistry.createfromtxtcontent.md)
 
 
 </td><td>
@@ -151,32 +151,5 @@ Description
 
 
 </td></tr>
-<tr><td>
-
-[loadJsonRegistryFile(path)](./ts-bcp47.iana.languagetagextensions.languagetagextensionregistry.loadjsonregistryfile.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[loadTxtRegistryFile(path)](./ts-bcp47.iana.languagetagextensions.languagetagextensionregistry.loadtxtregistryfile.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-
-</td></tr>
 </tbody></table>
+

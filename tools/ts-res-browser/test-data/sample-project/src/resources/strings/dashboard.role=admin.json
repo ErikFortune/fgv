@@ -1,0 +1,23 @@
+{
+  "candidates": [
+    {
+      "id": "dashboard",
+      "resourceTypeName": "json",
+      "json": {
+        "title": "Admin Dashboard",
+        "overview": "System Overview",
+        "stats": "System Statistics",
+        "recent_activity": "System Activity",
+        "notifications": "System Notifications",
+        "settings": "System Settings",
+        "profile": "Admin Profile",
+        "logout": "Admin Logout",
+        "user_management": "User Management",
+        "system_logs": "System Logs",
+        "monitoring": "System Monitoring",
+        "reports": "Reports",
+        "maintenance": "Maintenance Mode"
+      }
+    }
+  ]
+}

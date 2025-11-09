@@ -1,0 +1,19 @@
+{
+  "resources": {
+    "ui-terms": {
+      "resourceTypeName": "json",
+      "candidates": [
+        {
+          "json": {
+            "ShoppingCart": "Shopping cart",
+            "ZipCode": "Postal code",
+            "Color": "Colour",
+            "Favorite": "Favourite",
+            "Email": "Courriel"
+          },
+          "isPartial": true
+        }
+      ]
+    }
+  }
+}

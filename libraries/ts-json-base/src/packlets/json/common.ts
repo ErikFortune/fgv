@@ -22,8 +22,6 @@
 
 import { Result, captureResult, fail, succeed } from '@fgv/ts-utils';
 
-/* eslint-disable no-use-before-define */
-
 /**
  * Primitive (terminal) values allowed in by JSON.
  * @public
@@ -52,7 +50,7 @@ export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
  * A {@link JsonArray | JsonArray} is an array containing only valid {@link JsonValue | JsonValues}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/naming-convention
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export interface JsonArray extends Array<JsonValue> {}
 
 /**
@@ -60,6 +58,71 @@ export interface JsonArray extends Array<JsonValue> {}
  * @public
  */
 export type JsonValueType = 'primitive' | 'object' | 'array';
+
+/**
+ * Helper type to detect if T is exactly unknown.
+ */
+type IsUnknown<T> = unknown extends T ? ([T] extends [unknown] ? true : false) : false;
+
+/**
+ * A constrained type that is compatible with JSON serialization.
+ *
+ * This type transforms input types to ensure they can be safely serialized to JSON:
+ * - JSON primitives (string, number, boolean, null) are preserved as-is
+ * - `undefined` is allowed for TypeScript compatibility with optional properties
+ * - Objects are recursively transformed with all properties made JSON-compatible
+ * - Arrays are transformed to contain only JSON-compatible elements
+ * - Functions are transformed to error types
+ * - Other non-JSON types are transformed to error types
+ *
+ * Note: While `undefined` is technically not JSON-serializable, it's allowed here
+ * to support TypeScript's optional property patterns. Use `sanitizeJsonObject`
+ * to remove undefined properties before actual JSON serialization.
+ *
+ * @param T - The type to be constrained
+ * @returns A constrained type that is compatible with JSON serialization.
+ *
+ * @example
+ * ```typescript
+ * interface IUser {
+ *   name: string;
+ *   email?: string; // Optional property can be undefined
+ * }
+ *
+ * type UserCompatible = JsonCompatibleType<IUser>; // Allows undefined for email
+ *
+ * const user: UserCompatible = {
+ *   name: "John",
+ *   email: undefined // This works
+ * };
+ *
+ * // Before JSON serialization, sanitize to remove undefined:
+ * const sanitized = sanitizeJsonObject(user); // Removes undefined properties
+ * JSON.stringify(sanitized.value); // Safe to serialize
+ * ```
+ *
+ * @public
+ */
+export type JsonCompatibleType<T> = IsUnknown<T> extends true
+  ? JsonValue
+  : T extends JsonPrimitive | undefined
+  ? T
+  : T extends Array<unknown>
+  ? JsonCompatibleArray<T[number]>
+  : // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  T extends Function
+  ? ['Error: Function is not JSON-compatible']
+  : T extends object
+  ? { [K in keyof T]: JsonCompatibleType<T[K]> }
+  : ['Error: Non-JSON type'];
+
+/**
+ * A type that represents an array of JSON-compatible values.
+ * @param T - The type to be constrained
+ * @returns A constrained type that is compatible with JSON serialization.
+ * @public
+ */
+export type JsonCompatibleArray<T> = Array<JsonCompatibleType<T>>;
 
 /**
  * Test if an `unknown` is a {@link JsonValue | JsonValue}.
@@ -75,8 +138,8 @@ export function isJsonPrimitive(from: unknown): from is JsonPrimitive {
 /**
  * Test if an `unknown` is potentially a {@link JsonObject | JsonObject}.
  * @param from - The `unknown` to be tested.
- * @returns `true` if the supplied parameter is a non-array, non-special object,
- * `false` otherwise.
+ * @returns `true` if the supplied parameter is a non-array, non-special object
+ * with no symbol keys, `false` otherwise.
  * @public
  */
 export function isJsonObject(from: unknown): from is JsonObject {
@@ -85,7 +148,11 @@ export function isJsonObject(from: unknown): from is JsonObject {
     from !== null &&
     !Array.isArray(from) &&
     !(from instanceof RegExp) &&
-    !(from instanceof Date)
+    !(from instanceof Date) &&
+    !(from instanceof Map) &&
+    !(from instanceof Set) &&
+    !(from instanceof Error) &&
+    Object.getOwnPropertySymbols(from).length === 0
   );
 }
 
@@ -171,5 +238,17 @@ export function pickJsonObject(src: JsonObject, path: string): Result<JsonObject
  * @public
  */
 export function sanitizeJson(from: unknown): Result<JsonValue> {
+  return captureResult(() => JSON.parse(JSON.stringify(from)));
+}
+
+/**
+ * Sanitizes some value using JSON stringification and parsing, returning an
+ * returning a matching strongly-typed value.
+ * @param from - The value to be sanitized.
+ * @returns `Success` with a {@link JsonObject | JsonObject} if conversion succeeds,
+ * `Failure` with details if an error occurs.
+ * @public
+ */
+export function sanitizeJsonObject<T>(from: T): Result<T> {
   return captureResult(() => JSON.parse(JSON.stringify(from)));
 }

@@ -58,12 +58,13 @@ export class HashingNormalizer extends Normalizer {
           });
         } else if (Array.isArray(from)) {
           return mapResults(from.map((e) => this.computeHash(e))).onSuccess((a) => {
-            return captureResult(() => this._hash(a));
+            return captureResult(() => this._hash(['array', ...a]));
           });
         } else if (from instanceof Map || from instanceof Set) {
-          return this.computeHash(this.normalizeEntries(from.entries()));
+          const type = from instanceof Map ? 'map' : 'set';
+          return this.computeHash([type, ...this.normalizeEntries(from.entries())]);
         }
-        return this.computeHash(this.normalizeEntries(Object.entries(from)));
+        return this.computeHash(['object', ...this.normalizeEntries(Object.entries(from))]);
     }
     return fail(`computeHash: Unexpected type - cannot hash '${typeof from}'`);
   }

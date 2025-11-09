@@ -1,9 +1,22 @@
 {
   "name": "@fgv/ts-bcp47",
-  "version": "4.5.0",
+  "version": "5.0.1",
   "description": "BCP-47 Tag Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-bcp47.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "import": "./lib/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./lib/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "./dist/ts-bcp47.d.ts"
+    }
+  },
   "scripts": {
     "build": "heft build --clean",
     "clean": "heft clean",
@@ -14,7 +27,10 @@
     "clean-jest": "jest --clear-cache",
     "coverage": "jest --coverage",
     "lint": "eslint src --ext .ts",
-    "fixlint": "eslint src --ext .ts --fix"
+    "fixlint": "eslint src --ext .ts --fix",
+    "update-iana-data": "node scripts/update-iana-data.js",
+    "update-iana-data:dry-run": "node scripts/update-iana-data.js --dry-run",
+    "generate-embedded-data": "node scripts/generate-embedded-data.js"
   },
   "keywords": [
     "bcp-47",
@@ -34,36 +50,36 @@
     "@fgv/ts-utils-jest": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
-    "@microsoft/api-documenter": "^7.26.29",
-    "@microsoft/api-extractor": "^7.49.1",
+    "@microsoft/api-documenter": "^7.27.3",
+    "@microsoft/api-extractor": "^7.53.3",
     "@types/jest": "^29.5.14",
-    "@types/luxon": "^3.4.2",
+    "@types/luxon": "^3.7.1",
     "@types/node": "^20.14.9",
-    "@typescript-eslint/eslint-plugin": "^7.14.1",
-    "@typescript-eslint/parser": "^7.14.1",
-    "axios": "^1.7.9",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^9.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "axios": "^1.11.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-node": "^11.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-promise": "^6.2.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "eslint-plugin-promise": "^7.2.1",
     "jest": "^29.7.0",
-    "prettier": "^3.4.2",
-    "rimraf": "^5.0.7",
-    "ts-jest": "^29.4.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.1.0",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.3",
-    "eslint-plugin-n": "^16.6.2",
-    "@rushstack/eslint-config": "~4.4.0",
-    "@rushstack/heft": "~0.74.0",
-    "@rushstack/heft-jest-plugin": "~0.16.9",
-    "@rushstack/heft-node-rig": "~2.9.0",
+    "typescript": "5.9.3",
+    "eslint-plugin-n": "^17.23.1",
+    "@rushstack/eslint-config": "4.5.3",
+    "@rushstack/heft": "1.1.3",
+    "@rushstack/heft-jest-plugin": "1.1.3",
+    "@rushstack/heft-node-rig": "2.11.4",
     "@types/heft-jest": "1.0.6",
     "eslint-plugin-tsdoc": "~0.4.0"
   },
   "dependencies": {
-    "luxon": "^3.5.0"
+    "luxon": "^3.7.2"
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*",

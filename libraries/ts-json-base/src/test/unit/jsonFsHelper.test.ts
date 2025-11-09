@@ -22,10 +22,13 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters as ExtraConverters } from '@fgv/ts-extras';
-import { Converters, Validators, succeed } from '@fgv/ts-utils';
-import { IMockFileConfig, MockFileSystem } from '@fgv/ts-utils-jest/lib/helpers/fsHelpers';
+import { Converters, Validators, succeed, fail } from '@fgv/ts-utils';
+import { DateTime } from 'luxon';
+import { MockFs } from '@fgv/ts-utils-jest';
 import fs from 'fs';
+
+type IMockFileConfig = MockFs.IMockFileConfig;
+const { MockFileSystem } = MockFs;
 import { JsonFile, JsonValue } from '../..';
 
 describe('JsonFsHelper class', () => {
@@ -76,7 +79,7 @@ describe('JsonFsHelper class', () => {
 
     test('propagates any error', () => {
       const path = 'path/to/some/file.json';
-      jest.spyOn(fs, 'readFileSync').mockImplementation((gotPath: unknown) => {
+      const spy = jest.spyOn(fs, 'readFileSync').mockImplementation((gotPath: unknown) => {
         if (typeof gotPath !== 'string') {
           throw new Error('Mock implementation only accepts string');
         }
@@ -85,6 +88,7 @@ describe('JsonFsHelper class', () => {
       });
 
       expect(helper.readJsonFileSync(path)).toFailWith(/mock error/i);
+      spy.mockRestore();
     });
   });
 
@@ -93,7 +97,20 @@ describe('JsonFsHelper class', () => {
       const mockConverter = Converters.object({
         someProperty: Converters.string,
         prop: Converters.arrayOf(Converters.number),
-        now: ExtraConverters.isoDate
+        now: Converters.generic((from: unknown) => {
+          if (typeof from === 'string') {
+            const dt = DateTime.fromISO(from);
+            if (dt.isValid) {
+              return succeed(dt.toJSDate());
+            }
+            return fail(`Invalid date: ${dt.invalidExplanation}`);
+          } else if (typeof from === 'number') {
+            return succeed(new Date(from));
+          } else if (from instanceof Date) {
+            return succeed(from);
+          }
+          return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
+        })
       });
       const mockConverted = {
         ...mockGoodPayload,

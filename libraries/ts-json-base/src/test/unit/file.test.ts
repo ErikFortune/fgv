@@ -22,10 +22,13 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters as ExtraConverters } from '@fgv/ts-extras';
-import { Converters, succeed } from '@fgv/ts-utils';
-import { IMockFileConfig, MockFileSystem } from '@fgv/ts-utils-jest/lib/helpers/fsHelpers';
+import { Converters, succeed, fail } from '@fgv/ts-utils';
+import { DateTime } from 'luxon';
+import { MockFs } from '@fgv/ts-utils-jest';
 import fs from 'fs';
+
+type IMockFileConfig = MockFs.IMockFileConfig;
+const { MockFileSystem } = MockFs;
 import { JsonFile } from '../..';
 
 describe('JsonFile module', () => {
@@ -86,7 +89,20 @@ describe('JsonFile module', () => {
     const mockConverter = Converters.object({
       someProperty: Converters.string,
       prop: Converters.arrayOf(Converters.number),
-      now: ExtraConverters.isoDate
+      now: Converters.generic((from: unknown) => {
+        if (typeof from === 'string') {
+          const dt = DateTime.fromISO(from);
+          if (dt.isValid) {
+            return succeed(dt.toJSDate());
+          }
+          return fail(`Invalid date: ${dt.invalidExplanation}`);
+        } else if (typeof from === 'number') {
+          return succeed(new Date(from));
+        } else if (from instanceof Date) {
+          return succeed(from);
+        }
+        return fail(`Cannot convert ${JSON.stringify(from)} to Date`);
+      })
     });
     const mockConverted = {
       ...mockGoodPayload,

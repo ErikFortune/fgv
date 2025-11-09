@@ -67,7 +67,7 @@ export interface IMockFileSystemOptions {
 /**
  * @public
  */
-// eslint-disable-next-line @rushstack/no-new-null
+
 type ReadFunc = (
   path: string | number | Buffer | URL,
   // eslint-disable-next-line @rushstack/no-new-null

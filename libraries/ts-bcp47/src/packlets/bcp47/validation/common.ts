@@ -32,7 +32,6 @@ export type TagValidity = 'unknown' | 'well-formed' | 'valid' | 'strictly-valid'
  * @public
  */
 const validityRank: Record<TagValidity, number> = {
-  /* eslint-disable @typescript-eslint/naming-convention */
   /**
    * No validation has been performed.
    */
@@ -54,7 +53,6 @@ const validityRank: Record<TagValidity, number> = {
    * the registry.
    */
   'strictly-valid': 1.0
-  /* eslint-enable @typescript-eslint/naming-convention */
 };
 
 /**

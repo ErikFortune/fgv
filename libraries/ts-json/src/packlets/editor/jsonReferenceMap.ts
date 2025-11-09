@@ -319,7 +319,7 @@ export abstract class SimpleJsonMapBase<T> implements IJsonReferenceMap {
    * if no such object exists, or failure with detail 'error' if the object was found but
    * could not be formatted.
    */
-  // eslint-disable-next-line no-use-before-define
+
   public abstract getJsonValue(
     key: string,
     context?: IJsonContext

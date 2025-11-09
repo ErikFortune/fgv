@@ -168,7 +168,7 @@ describe('ValidatingCollector', () => {
 
       test('fails with detail invalid-key if the key is not valid', () => {
         const collector = new ValidatingCollector(testCollectorParams);
-        expect(collector.validating.get('thingamajig1')).toFailWithDetail(/not a valid/, 'invalid-key');
+        expect(collector.validating.get('thingamajig1')).toFailWithDetail(/invalid/, 'invalid-key');
       });
 
       test('fails with detail not-found if the key is not in the collector', () => {
@@ -240,7 +240,7 @@ describe('ValidatingCollector', () => {
           const collector = new ValidatingCollector(testCollectorParams);
           expect(
             collector.validating.getOrAdd('thingamajig1', () => fail('should not be called'))
-          ).toFailWithDetail(/not a valid/, 'invalid-key');
+          ).toFailWithDetail(/invalid/, 'invalid-key');
         });
 
         test('fails with detail invalid-value if the factory fails', () => {

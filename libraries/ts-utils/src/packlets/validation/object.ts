@@ -36,7 +36,7 @@ export type FieldValidators<T, TC = unknown> = { [key in keyof T]: Validator<T[k
  * Options for an {@link Validation.Classes.ObjectValidator | ObjectValidator}.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
   /**
    * If present, lists optional fields. Missing non-optional fields cause an error.
@@ -53,7 +53,7 @@ export interface ObjectValidatorOptions<T, TC> extends ValidatorOptions<TC> {
  * Options for the {@link Validation.Classes.ObjectValidator | ObjectValidator} constructor.
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 export interface ObjectValidatorConstructorParams<T, TC> extends ValidatorBaseConstructorParams<T, TC> {
   /**
    * A {@link Validation.Classes.FieldValidators | FieldValidators} object specifying a
@@ -179,13 +179,13 @@ export class ObjectValidator<T, TC = unknown> extends ValidatorBase<T, TC> {
    * {@inheritdoc Validation.ValidatorBase._validate}
    * @internal
    */
-  protected _validate(from: unknown, context?: TC): boolean | Failure<T> {
+  protected _validate(from: unknown, context?: TC, self?: Validator<T, TC>): boolean | Failure<T> {
     if (typeof from !== 'object' || from === null || Array.isArray(from)) {
       return fail('source is not an object');
     }
 
     // eslint bug thinks key is used before defined
-    // eslint-disable-next-line no-use-before-define
+
     const converted = {} as { [key in keyof T]: T[key] };
     const errors: string[] = [];
     for (const key in this._innerValidators) {

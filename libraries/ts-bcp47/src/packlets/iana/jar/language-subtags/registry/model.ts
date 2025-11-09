@@ -22,6 +22,7 @@
 
 import {
   ExtLangSubtag,
+  ExtendedLanguageRange,
   GrandfatheredTag,
   LanguageSubtag,
   RedundantTag,
@@ -82,7 +83,6 @@ export type YearMonthDaySpec = Brand<string, 'YearMonthDaySpec'>;
  * @internal
  */
 interface IRegistryEntryBase<TTYPE extends RegistryEntryType = RegistryEntryType> {
-  /* eslint-disable @typescript-eslint/naming-convention */
   Type: TTYPE;
   Description: string[];
   Added: YearMonthDaySpec;
@@ -93,7 +93,6 @@ interface IRegistryEntryBase<TTYPE extends RegistryEntryType = RegistryEntryType
   Prefix?: string[];
   Scope?: RegistryEntryScope;
   Comments?: string[];
-  /* eslint-enable @typescript-eslint/naming-convention */
 }
 
 /**
@@ -103,7 +102,6 @@ export interface IRegistrySubtagEntry<
   TTYPE extends RegistryEntryType = RegistryEntryType,
   TSUBTAG extends string = string
 > extends IRegistryEntryBase<TTYPE> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   Subtag: TSUBTAG | TSUBTAG[];
 }
 
@@ -114,56 +112,126 @@ export interface IRegistryTagEntry<
   TTYPE extends RegistryEntryType = RegistryEntryType,
   TTAG extends string = string
 > extends IRegistryEntryBase<TTYPE> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   Tag: TTAG | TTAG[];
+}
+
+/**
+ * Strongly-typed JAR format language subtag entry
+ * @internal
+ */
+export interface ILanguageSubtagRegistryEntry {
+  Type: 'language';
+  Subtag: LanguageSubtag | LanguageSubtag[];
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  Macrolanguage?: LanguageSubtag;
+  'Preferred-Value'?: LanguageSubtag;
+  Scope?: RegistryEntryScope;
+  'Suppress-Script'?: ScriptSubtag;
+}
+
+/**
+ * Strongly-typed JAR format extlang subtag entry
+ * @internal
+ */
+export interface IExtLangSubtagRegistryEntry {
+  Type: 'extlang';
+  Subtag: ExtLangSubtag;
+  'Preferred-Value': ExtendedLanguageRange;
+  Prefix: LanguageSubtag[];
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  Macrolanguage?: LanguageSubtag;
+  Scope?: RegistryEntryScope;
+  'Suppress-Script'?: ScriptSubtag;
+}
+
+/**
+ * Strongly-typed JAR format script subtag entry
+ * @internal
+ */
+export interface IScriptSubtagRegistryEntry {
+  Type: 'script';
+  Subtag: ScriptSubtag | ScriptSubtag[];
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  'Preferred-Value'?: ScriptSubtag;
+}
+
+/**
+ * Strongly-typed JAR format region subtag entry
+ * @internal
+ */
+export interface IRegionSubtagRegistryEntry {
+  Type: 'region';
+  Subtag: RegionSubtag | RegionSubtag[];
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  'Preferred-Value'?: RegionSubtag;
+}
+
+/**
+ * Strongly-typed JAR format variant subtag entry
+ * @internal
+ */
+export interface IVariantSubtagRegistryEntry {
+  Type: 'variant';
+  Subtag: VariantSubtag;
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  'Preferred-Value'?: VariantSubtag;
+  Prefix?: ExtendedLanguageRange[];
+}
+
+/**
+ * Strongly-typed JAR format grandfathered tag entry
+ * @internal
+ */
+export interface IGrandfatheredTagRegistryEntry {
+  Type: 'grandfathered';
+  Tag: GrandfatheredTag;
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  'Preferred-Value'?: ExtendedLanguageRange;
+}
+
+/**
+ * Strongly-typed JAR format redundant tag entry
+ * @internal
+ */
+export interface IRedundantTagRegistryEntry {
+  Type: 'redundant';
+  Tag: RedundantTag;
+  Description: string[];
+  Added: YearMonthDaySpec;
+  Comments?: string[];
+  Deprecated?: YearMonthDaySpec;
+  'Preferred-Value'?: ExtendedLanguageRange;
 }
 
 /**
  * @internal
  */
-export type LanguageSubtagRegistryEntry = IRegistrySubtagEntry<'language', LanguageSubtag>;
-
-/**
- * @internal
- */
-export type ExtLangSubtagRegistryEntry = IRegistrySubtagEntry<'extlang', ExtLangSubtag>;
-
-/**
- * @internal
- */
-export type ScriptSubtagRegistryEntry = IRegistrySubtagEntry<'script', ScriptSubtag>;
-
-/**
- * @internal
- */
-export type RegionSubtagRegistryEntry = IRegistrySubtagEntry<'region', RegionSubtag>;
-
-/**
- * @internal
- */
-export type VariantSubtagRegistryEntry = IRegistrySubtagEntry<'variant', VariantSubtag>;
-
-/**
- * @internal
- */
-export type GrandfatheredTagRegistryEntry = IRegistryTagEntry<'grandfathered', GrandfatheredTag>;
-
-/**
- * @internal
- */
-export type RedundantTagRegistryEntry = IRegistryTagEntry<'redundant', RedundantTag>;
-
-/**
- * @internal
- */
 export type RegistryEntry =
-  | LanguageSubtagRegistryEntry
-  | ExtLangSubtagRegistryEntry
-  | ScriptSubtagRegistryEntry
-  | RegionSubtagRegistryEntry
-  | VariantSubtagRegistryEntry
-  | GrandfatheredTagRegistryEntry
-  | RedundantTagRegistryEntry;
+  | ILanguageSubtagRegistryEntry
+  | IExtLangSubtagRegistryEntry
+  | IScriptSubtagRegistryEntry
+  | IRegionSubtagRegistryEntry
+  | IVariantSubtagRegistryEntry
+  | IGrandfatheredTagRegistryEntry
+  | IRedundantTagRegistryEntry;
 
 /**
  * @internal

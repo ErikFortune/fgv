@@ -47,6 +47,7 @@ The string ID of the puzzle to be returned.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Result&lt;[PuzzleSession](./ts-sudoku-lib.puzzlesession.md)<!-- -->&gt;

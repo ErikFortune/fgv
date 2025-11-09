@@ -96,6 +96,7 @@ export function tagOrRange<TTAG extends string>(tagConverter: Converter<TTAG>): 
  * @internal
  */
 export function tagOrStartOfTagRange<TTAG extends string>(tagConverter: Converter<TTAG>): Converter<TTAG> {
+  /* c8 ignore next 1 - tested but coverage intermittently missed */
   return tagOrRange(tagConverter).map((t) => (Array.isArray(t) ? succeed(t[0]) : succeed(t)));
 }
 
@@ -112,6 +113,7 @@ export function endOfTagRangeOrUndefined<TTAG extends string>(
  * @internal
  */
 export const extlangPrefix = Converters.arrayOf(languageSubtag).map((tags) => {
+  /* c8 ignore next 3 - defense in depth */
   if (tags.length !== 1) {
     return fail<LanguageSubtag>(`[${tags.join(', ')}]: malformed extlang prefix`);
   }

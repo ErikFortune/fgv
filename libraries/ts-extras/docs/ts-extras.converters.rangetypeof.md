@@ -63,6 +63,7 @@ Static constructor to instantiate the object.
 
 </td></tr>
 </tbody></table>
+
 **Returns:**
 
 Converter&lt;RT, TC&gt;

@@ -1,0 +1,128 @@
+{
+  "qualifierTypes": [
+    {
+      "name": "language",
+      "systemType": "language",
+      "configuration": {
+        "allowContextList": true
+      }
+    },
+    {
+      "name": "territory",
+      "systemType": "territory",
+      "configuration": {
+        "allowContextList": false,
+        "acceptLowercase": false
+      }
+    },
+    {
+      "name": "contrast",
+      "systemType": "contrast",
+      "configuration": {
+        "allowContextList": false,
+        "highContrastValues": ["high", "black", "white"],
+        "defaultValue": "standard"
+      }
+    },
+    {
+      "name": "theme",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["light", "dark", "auto"]
+      }
+    },
+    {
+      "name": "component",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": [
+          "button",
+          "input",
+          "card",
+          "navigation",
+          "background",
+          "text",
+          "header",
+          "footer",
+          "sidebar"
+        ]
+      }
+    },
+    {
+      "name": "size",
+      "systemType": "literal",
+      "configuration": {
+        "allowContextList": false,
+        "caseSensitive": false,
+        "enumeratedValues": ["small", "medium", "large", "extra-large"]
+      }
+    }
+  ],
+  "qualifiers": [
+    {
+      "name": "language",
+      "typeName": "language",
+      "defaultPriority": 950,
+      "token": "lang",
+      "tokenIsOptional": false,
+      "defaultValue": "en-US"
+    },
+    {
+      "name": "territory",
+      "typeName": "territory",
+      "defaultPriority": 900,
+      "token": "region"
+    },
+    {
+      "name": "contrast",
+      "typeName": "contrast",
+      "defaultPriority": 850,
+      "token": "contrast",
+      "tokenIsOptional": false,
+      "defaultValue": "standard"
+    },
+    {
+      "name": "theme",
+      "typeName": "theme",
+      "defaultPriority": 800,
+      "token": "theme",
+      "tokenIsOptional": false,
+      "defaultValue": "auto"
+    },
+    {
+      "name": "component",
+      "typeName": "component",
+      "defaultPriority": 700,
+      "token": "comp"
+    },
+    {
+      "name": "size",
+      "typeName": "size",
+      "defaultPriority": 600,
+      "token": "size",
+      "defaultValue": "medium"
+    }
+  ],
+  "resourceTypes": [
+    {
+      "name": "color",
+      "typeName": "json"
+    },
+    {
+      "name": "spacing",
+      "typeName": "json"
+    },
+    {
+      "name": "typography",
+      "typeName": "json"
+    },
+    {
+      "name": "json",
+      "typeName": "json"
+    }
+  ]
+}
