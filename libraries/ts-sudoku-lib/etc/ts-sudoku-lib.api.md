@@ -6,17 +6,42 @@
 
 import { Brand } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 
 // @public
 export const allPuzzleTypes: PuzzleType[];
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "PuzzleDescription"
-//
 // @internal
 class AnyPuzzle {
     // (undocumented)
-    static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+    static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
+}
+
+// @public
+abstract class BaseHintProvider implements IHintProvider {
+    protected constructor(config: IBaseHintProviderConfig);
+    abstract canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
+    protected createCellAction(cellId: CellId, action: ICellAction['action'], value?: number, reason?: string): ICellAction;
+    protected createExplanation(level: ExplanationLevel, title: string, description: string, steps?: readonly string[], tips?: readonly string[]): IHintExplanation;
+    protected createHint(cellActions: readonly ICellAction[], relevantCells: IRelevantCells, explanations: readonly IHintExplanation[], confidence?: ConfidenceLevel): IHint;
+    protected createRelevantCells(primary: readonly CellId[], secondary?: readonly CellId[], affected?: readonly CellId[]): IRelevantCells;
+    // (undocumented)
+    protected readonly defaultConfidence: ConfidenceLevel;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    protected filterHints(hints: readonly IHint[], options?: IHintGenerationOptions): readonly IHint[];
+    abstract generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    protected getCandidates(cellId: CellId, puzzle: Puzzle, state: PuzzleState): number[];
+    protected getEmptyCells(puzzle: Puzzle, state: PuzzleState): CellId[];
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+    protected validateOptions(options?: IHintGenerationOptions): Result<void>;
 }
 
 // Warning: (ae-internal-missing-underscore) The name "Cage" should be prefixed with an underscore because the declaration is marked as @internal
@@ -90,35 +115,198 @@ export class Cell implements ICellInit, ICell {
 }
 
 // @public
+type CellAction = 'set-value' | 'eliminate-candidate' | 'add-candidate' | 'highlight';
+
+// @public
 export type CellId = Brand<string, 'CellId'>;
 
 // @public
 const cellId: Converter<CellId>;
 
+// @public
+type ConfidenceLevel = Brand<1 | 2 | 3 | 4 | 5, 'ConfidenceLevel'>;
+
+// @public
+const ConfidenceLevels: {
+    readonly LOW: ConfidenceLevel;
+    readonly MEDIUM_LOW: ConfidenceLevel;
+    readonly MEDIUM: ConfidenceLevel;
+    readonly MEDIUM_HIGH: ConfidenceLevel;
+    readonly HIGH: ConfidenceLevel;
+};
+
 declare namespace Converters {
     export {
         cageId,
         cellId,
-        puzzleType,
-        puzzleDescription
+        puzzleType
     }
 }
 export { Converters }
 
 declare namespace Converters_2 {
     export {
-        loadJsonPuzzlesFileSync,
+        loadPuzzlesFile,
+        puzzleFileDimensions,
+        puzzleFileData,
         puzzlesFile
     }
 }
 
-declare namespace File_2 {
+// @public
+class DefaultHintApplicator implements IHintApplicator {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(logger?: Logging.LogReporter<unknown>);
+    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
+    canApplyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+}
+
+// @public
+export const DefaultSudokuLogger: Logging.LogReporter<unknown>;
+
+// @public
+type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
+
+// @public
+class EducationalContent {
+    static createBeginnerGuide(): string;
+    static getDifficultyProgression(): readonly string[];
+    static getGeneralSolvingTips(): readonly string[];
+    static getTechniqueIntroduction(techniqueId: TechniqueId): Result<string>;
+    static getTechniqueOverview(techniqueId: TechniqueId): Result<string>;
+    static getTechniqueRelationships(techniqueId: TechniqueId): Result<readonly string[]>;
+}
+
+// @public
+class ExplanationFormatter {
+    static createLevelSummary(explanations: readonly IHintExplanation[]): string;
+    static formatAllExplanations(explanations: readonly IHintExplanation[]): string;
+    static formatExplanation(explanation: IHintExplanation, includeSteps?: boolean, includeTips?: boolean): string;
+}
+
+// @public
+type ExplanationLevel = 'brief' | 'detailed' | 'educational';
+
+// @public
+class ExplanationRegistry {
+    constructor();
+    getExplanationAtLevel(hint: IHint, level: ExplanationLevel, puzzle: Puzzle, state: PuzzleState): Result<IHintExplanation>;
+    getExplanations(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly IHintExplanation[]>;
+    registerProvider(provider: IHintExplanationProvider): Result<void>;
+}
+
+declare namespace Files {
     export {
         Converters_2 as Converters,
-        Model
+        Model,
+        loadJsonPuzzlesFileSync,
+        loadJsonPuzzlesFromTree
     }
 }
-export { File_2 as File }
+export { Files }
+
+// @public
+export function getCageTotalBounds(cageSize: number, maxValue: number): {
+    min: number;
+    max: number;
+};
+
+// @public
+class HiddenSinglesProvider extends BaseHintProvider {
+    constructor();
+    canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
+    static create(): Result<HiddenSinglesProvider>;
+    generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+}
+
+// @public
+class HintRegistry implements IHintRegistry {
+    constructor();
+    clear(): Result<void>;
+    static create(providers?: readonly IHintProvider[]): Result<HintRegistry>;
+    generateAllHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+    getProvider(techniqueId: TechniqueId): Result<IHintProvider>;
+    getProviders(options?: IHintGenerationOptions): readonly IHintProvider[];
+    getProvidersByDifficulty(): Map<DifficultyLevel, readonly IHintProvider[]>;
+    getRegisteredTechniques(): readonly TechniqueId[];
+    hasProvider(techniqueId: TechniqueId): boolean;
+    get providerCount(): number;
+    registerProvider(provider: IHintProvider): Result<void>;
+    unregisterProvider(techniqueId: TechniqueId): Result<void>;
+}
+
+declare namespace Hints {
+    export {
+        TechniqueId,
+        ConfidenceLevel,
+        CellAction,
+        ExplanationLevel,
+        DifficultyLevel,
+        ICellAction,
+        IRelevantCells,
+        IHintExplanation,
+        IHint,
+        IHintGenerationOptions,
+        TechniqueIds,
+        ConfidenceLevels,
+        IHintProvider,
+        IHintRegistry,
+        IHintExplanationProvider,
+        IHintApplicator,
+        IBaseHintProviderConfig,
+        BaseHintProvider,
+        HintRegistry,
+        NakedSinglesProvider,
+        HiddenSinglesProvider,
+        ExplanationRegistry,
+        ExplanationFormatter,
+        EducationalContent,
+        IHintSystemConfig,
+        DefaultHintApplicator,
+        HintSystem,
+        IPuzzleSessionHintsConfig,
+        PuzzleSessionHints
+    }
+}
+export { Hints }
+
+// @public
+class HintSystem {
+    constructor(registry: IHintRegistry, applicator: IHintApplicator, config: IHintSystemConfig);
+    get applicator(): IHintApplicator;
+    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
+    get config(): IHintSystemConfig;
+    static create(config?: IHintSystemConfig): Result<HintSystem>;
+    formatHintExplanation(hint: IHint, level?: ExplanationLevel): string;
+    generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+    getHintStatistics(puzzle: Puzzle, state: PuzzleState): Result<{
+        totalHints: number;
+        hintsByTechnique: Map<string, number>;
+        hintsByDifficulty: Map<string, number>;
+    }>;
+    getSystemSummary(): string;
+    hasHints(puzzle: Puzzle, state: PuzzleState): Result<boolean>;
+    get registry(): IHintRegistry;
+    validateHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IBaseHintProviderConfig {
+    // (undocumented)
+    readonly defaultConfidence?: ConfidenceLevel;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+}
 
 // @public
 export interface ICage {
@@ -138,6 +326,18 @@ export interface ICell {
     readonly immutable: boolean;
     readonly immutableValue?: number;
     readonly row: number;
+}
+
+// @public
+interface ICellAction {
+    // (undocumented)
+    readonly action: CellAction;
+    // (undocumented)
+    readonly cellId: CellId;
+    // (undocumented)
+    readonly reason?: string;
+    // (undocumented)
+    readonly value?: number;
 }
 
 // @public
@@ -166,9 +366,7 @@ export interface ICellState extends ICellContents {
     readonly id: CellId;
 }
 
-// Warning: (ae-internal-missing-underscore) The name "ICellUpdate" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
+// @public
 export interface ICellUpdate {
     // (undocumented)
     from: ICellState;
@@ -189,36 +387,194 @@ export class Ids {
     // (undocumented)
     static rowCageId(row: number): CageId;
     // (undocumented)
-    static sectionCageId(row: number, col: number): CageId;
+    static sectionCageId(row: number, col: number, cageHeight?: number, cageWidth?: number): CageId;
 }
 
 // @public
-export interface IPuzzleDescription {
+interface IHint {
+    // (undocumented)
+    readonly cellActions: readonly ICellAction[];
+    // (undocumented)
+    readonly confidence: ConfidenceLevel;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    // (undocumented)
+    readonly explanations: readonly IHintExplanation[];
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly relevantCells: IRelevantCells;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+}
+
+// @public
+interface IHintApplicator {
+    applyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly ICellState[]>;
+    canApplyHint(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<void>;
+}
+
+// @public
+interface IHintExplanation {
+    // (undocumented)
+    readonly description: string;
+    // (undocumented)
+    readonly level: ExplanationLevel;
+    // (undocumented)
+    readonly steps?: readonly string[];
+    // (undocumented)
+    readonly tips?: readonly string[];
+    // (undocumented)
+    readonly title: string;
+}
+
+// @public
+interface IHintExplanationProvider {
+    generateExplanations(hint: IHint, puzzle: Puzzle, state: PuzzleState): Result<readonly IHintExplanation[]>;
+    readonly techniqueId: TechniqueId;
+}
+
+// @public
+interface IHintGenerationOptions {
+    // (undocumented)
+    readonly enabledTechniques?: readonly TechniqueId[];
+    // (undocumented)
+    readonly explanationLevel?: ExplanationLevel;
+    // (undocumented)
+    readonly maxHints?: number;
+    // (undocumented)
+    readonly minConfidence?: ConfidenceLevel;
+    // (undocumented)
+    readonly preferredDifficulty?: DifficultyLevel;
+}
+
+// @public
+interface IHintProvider {
+    canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
+    // (undocumented)
+    readonly difficulty: DifficultyLevel;
+    generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    // (undocumented)
+    readonly priority: number;
+    // (undocumented)
+    readonly techniqueId: TechniqueId;
+    // (undocumented)
+    readonly techniqueName: string;
+}
+
+// @public
+interface IHintRegistry {
+    generateAllHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getBestHint(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<IHint>;
+    getProvider(techniqueId: TechniqueId): Result<IHintProvider>;
+    getProviders(options?: IHintGenerationOptions): readonly IHintProvider[];
+    getRegisteredTechniques(): readonly TechniqueId[];
+    registerProvider(provider: IHintProvider): Result<void>;
+    unregisterProvider(techniqueId: TechniqueId): Result<void>;
+}
+
+// @public
+interface IHintSystemConfig {
+    // (undocumented)
+    readonly defaultExplanationLevel?: ExplanationLevel;
+    // (undocumented)
+    readonly enableHiddenSingles?: boolean;
+    // (undocumented)
+    readonly enableNakedSingles?: boolean;
+    // (undocumented)
+    readonly logger?: Logging.LogReporter<unknown>;
+}
+
+// @public
+interface IKillerConstraints {
+    readonly excludedNumbers?: readonly number[];
+    readonly requiredNumbers?: readonly number[];
+}
+
+// @public
+export interface IPuzzleDefinition extends IPuzzleDimensions {
+    // (undocumented)
+    readonly basicCageTotal: number;
+    // (undocumented)
+    readonly cages?: ICage[];
+    // (undocumented)
+    readonly cells: string;
+    // (undocumented)
+    readonly description: string;
+    // (undocumented)
+    readonly id?: string;
+    // (undocumented)
+    readonly level: number;
+    // (undocumented)
+    readonly maxValue: number;
+    // (undocumented)
+    readonly totalCages: number;
+    // (undocumented)
+    readonly totalColumns: number;
+    // (undocumented)
+    readonly totalRows: number;
+    // (undocumented)
+    readonly type: PuzzleType;
+}
+
+// @public
+export interface IPuzzleDimensions {
+    readonly boardHeightInCages: number;
+    readonly boardWidthInCages: number;
+    readonly cageHeightInCells: number;
+    readonly cageWidthInCells: number;
+}
+
+// @public
+interface IPuzzleFileData {
     // (undocumented)
     cells: string;
     // (undocumented)
-    cols: number;
-    // (undocumented)
     description: string;
+    // (undocumented)
+    dimensions: IPuzzleFileDimensions;
     // (undocumented)
     id?: string;
     // (undocumented)
     level: number;
     // (undocumented)
-    rows: number;
-    // (undocumented)
     type: PuzzleType;
+}
+
+// @public
+interface IPuzzleFileDimensions {
+    // (undocumented)
+    boardHeightInCages: number;
+    // (undocumented)
+    boardWidthInCages: number;
+    // (undocumented)
+    cageHeightInCells: number;
+    // (undocumented)
+    cageWidthInCells: number;
+}
+
+// @public
+interface IPuzzleSessionHintsConfig extends IHintSystemConfig {
+    // (undocumented)
+    readonly cacheTimeoutMs?: number;
+    // (undocumented)
+    readonly maxCacheEntries?: number;
 }
 
 // @public
 interface IPuzzlesFile {
     // (undocumented)
-    puzzles: IPuzzleDescription[];
+    puzzles: IPuzzleFileData[];
 }
 
-// Warning: (ae-internal-missing-underscore) The name "IPuzzleUpdate" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
+// @public
+export interface IPuzzleTypeValidator {
+    validateCells(cells: string, dimensions: IPuzzleDimensions): Result<true>;
+}
+
+// @public
 export interface IPuzzleUpdate {
     // (undocumented)
     cells: ICellUpdate[];
@@ -229,6 +585,16 @@ export interface IPuzzleUpdate {
 }
 
 // @public
+interface IRelevantCells {
+    // (undocumented)
+    readonly affected: readonly CellId[];
+    // (undocumented)
+    readonly primary: readonly CellId[];
+    // (undocumented)
+    readonly secondary: readonly CellId[];
+}
+
+// @public
 export interface IRowColumn {
     // (undocumented)
     col: number;
@@ -236,13 +602,17 @@ export interface IRowColumn {
     row: number;
 }
 
-// Warning: (ae-incompatible-release-tags) The symbol "KillerSudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "KillerSudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-//
+// @public
+class KillerCombinations {
+    static getCellPossibilities(puzzle: Puzzle, state: PuzzleState, cage: ICage): Result<Map<CellId, number[]>>;
+    static getCombinations(cageSize: number, total: number, constraints?: IKillerConstraints, maxValue?: number): Result<number[][]>;
+    static getPossibleTotals(cageSize: number, maxValue?: number): Result<number[]>;
+}
+
 // @public (undocumented)
 class KillerSudokuPuzzle extends Puzzle {
     // (undocumented)
-    static create(desc: IPuzzleDescription): Result<Puzzle>;
+    static create(desc: IPuzzleDefinition): Result<Puzzle>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -250,10 +620,30 @@ class KillerSudokuPuzzle extends Puzzle {
 // @public
 function loadJsonPuzzlesFileSync(path: string): Result<IPuzzlesFile>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-sudoku-lib" does not have an export "FileTree"
+//
+// @public
+function loadJsonPuzzlesFromTree(fileTree: FileTree.FileTree, filePath: string): Result<IPuzzlesFile>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function loadPuzzlesFile(file: FileTree.IFileTreeFileItem): Result<IPuzzlesFile>;
+
 declare namespace Model {
     export {
+        IPuzzleFileDimensions,
+        IPuzzleFileData,
         IPuzzlesFile
     }
+}
+
+// @public
+class NakedSinglesProvider extends BaseHintProvider {
+    constructor();
+    canProvideHints(puzzle: Puzzle, state: PuzzleState): boolean;
+    static create(): Result<NakedSinglesProvider>;
+    generateHints(puzzle: Puzzle, state: PuzzleState, options?: IHintGenerationOptions): Result<readonly IHint[]>;
 }
 
 // @public
@@ -262,35 +652,55 @@ export type NavigationDirection = 'down' | 'left' | 'right' | 'up';
 // @public
 export type NavigationWrap = 'none' | 'wrap-around' | 'wrap-next';
 
-// Warning: (ae-internal-missing-underscore) The name "Puzzle" should be prefixed with an underscore because the declaration is marked as @internal
-//
-// @internal (undocumented)
+// @public
+export function parseCellId(cellId: string): IRowColumn | undefined;
+
+// @public
 export class Puzzle {
-    protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]);
+    // Warning: (ae-incompatible-release-tags) The symbol "__constructor" is marked as @public, but its signature references "Cage" which is marked as @internal
+    protected constructor(puzzle: IPuzzleDefinition, extraCages?: [CageId, Cage][]);
+    // Warning: (ae-incompatible-release-tags) The symbol "cages" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get cages(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_cages" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _cages: Map<CageId, Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "cells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     get cells(): Cell[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_cells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _cells: Map<CellId, Cell>;
     // (undocumented)
     checkIsSolved(state: PuzzleState): boolean;
     // (undocumented)
     checkIsValid(state: PuzzleState): boolean;
+    // Warning: (ae-incompatible-release-tags) The symbol "cols" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get cols(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_columns" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _columns: Map<CageId, Cage>;
-    // (undocumented)
-    protected static _createColumnCages(numRows: number, numCols: number): Result<[CageId, Cage][]>;
-    // (undocumented)
-    protected static _createRowCages(numRows: number, numCols: number): Result<[CageId, Cage][]>;
+    // @internal (undocumented)
+    protected static _createColumnCages(numRows: number, numCols: number, basicCageTotal: number): Result<[CageId, Cage][]>;
+    // @internal (undocumented)
+    protected static _createRowCages(numRows: number, numCols: number, basicCageTotal: number): Result<[CageId, Cage][]>;
     // (undocumented)
     readonly description: string;
     // (undocumented)
+    readonly dimensions: IPuzzleDefinition;
+    // Warning: (ae-incompatible-release-tags) The symbol "getCage" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
+    // (undocumented)
     getCage(id: CageId): Result<Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getCell" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     getCell(spec: string | IRowColumn | ICell): Result<Cell>;
     // (undocumented)
@@ -300,14 +710,24 @@ export class Puzzle {
     }>;
     // (undocumented)
     getCellNeighbor(spec: string | IRowColumn | ICell, direction: NavigationDirection, wrap: NavigationWrap): Result<ICell>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getColumn" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getColumn(col: CageId | number): Result<Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getEmptyCells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     getEmptyCells(state: PuzzleState): Cell[];
+    // Warning: (ae-incompatible-release-tags) The symbol "getInvalidCells" is marked as @public, but its signature references "Cell" which is marked as @internal
+    //
     // (undocumented)
     getInvalidCells(state: PuzzleState): Cell[];
+    // Warning: (ae-incompatible-release-tags) The symbol "getRow" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getRow(row: CageId | number): Result<Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getSection" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     getSection(spec: CageId | IRowColumn): Result<Cage>;
     // (undocumented)
@@ -318,18 +738,28 @@ export class Puzzle {
     get numColumns(): number;
     // (undocumented)
     get numRows(): number;
+    // Warning: (ae-incompatible-release-tags) The symbol "rows" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get rows(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_rows" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _rows: Map<CageId, Cage>;
+    // Warning: (ae-incompatible-release-tags) The symbol "sections" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     get sections(): Cage[];
+    // Warning: (ae-incompatible-release-tags) The symbol "_sections" is marked as @public, but its signature references "Cage" which is marked as @internal
+    //
     // (undocumented)
     protected readonly _sections: Map<CageId, Cage>;
     // (undocumented)
     toString(state: PuzzleState): string;
     // (undocumented)
     toStrings(state: PuzzleState): string[];
+    // (undocumented)
+    readonly type: string;
     // (undocumented)
     updateCellNotes(want: string | IRowColumn, notes: number[], state: PuzzleState): Result<IPuzzleUpdate>;
     // (undocumented)
@@ -346,11 +776,11 @@ export class Puzzle {
 export class PuzzleCollection {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    static create(from: File_2.Model.IPuzzlesFile): Result<PuzzleCollection>;
-    getDescription(id: string): Result<IPuzzleDescription>;
+    static create(from: Files.Model.IPuzzlesFile): Result<PuzzleCollection>;
+    getDescription(id: string): Result<Files.Model.IPuzzleFileData>;
     getPuzzle(id: string): Result<PuzzleSession>;
-    static load(path: string): Result<PuzzleCollection>;
-    readonly puzzles: readonly IPuzzleDescription[];
+    static load(file: FileTree.IFileTreeFileItem): Result<PuzzleCollection>;
+    readonly puzzles: readonly Files.Model.IPuzzleFileData[];
 }
 
 // @public
@@ -359,14 +789,39 @@ export class PuzzleCollections {
 }
 
 // @public
-const puzzleDescription: Converter<IPuzzleDescription>;
+export class PuzzleDefinitionFactory {
+    static create(dimensions: IPuzzleDimensions, options?: Partial<IPuzzleDefinition>): Result<IPuzzleDefinition>;
+    static createKiller(dimensions: IPuzzleDimensions, description: Omit<IPuzzleDefinition, 'cageWidthInCells' | 'cageHeightInCells' | 'boardWidthInCages' | 'boardHeightInCages' | 'totalRows' | 'totalColumns' | 'maxValue' | 'totalCages' | 'basicCageTotal' | 'cages'> & {
+        killerCages: Array<{
+            id: string;
+            cellPositions: Array<{
+                row: number;
+                col: number;
+            }>;
+            sum: number;
+        }>;
+    }): Result<IPuzzleDefinition>;
+    static getStandardConfig(name: StandardConfigName): IPuzzleDimensions;
+    static getStandardConfigs(): Record<StandardConfigName, IPuzzleDimensions>;
+    static getValidator(puzzleType: PuzzleType): IPuzzleTypeValidator | undefined;
+    static registerValidator(puzzleType: PuzzleType, validator: IPuzzleTypeValidator): void;
+    static validate(dimensions: IPuzzleDimensions): Result<true>;
+}
+
+// @public
+const puzzleFileData: Converter<IPuzzleFileData>;
+
+// @public
+const puzzleFileDimensions: Converter<IPuzzleFileDimensions>;
 
 declare namespace Puzzles {
     export {
         AnyPuzzle as Any,
         KillerSudokuPuzzle as Killer,
+        KillerCombinations,
         SudokuPuzzle as Sudoku,
-        SudokuXPuzzle as SudokuX
+        SudokuXPuzzle as SudokuX,
+        IKillerConstraints
     }
 }
 export { Puzzles }
@@ -386,7 +841,6 @@ export class PuzzleSession {
     checkIsSolved(): boolean;
     checkIsValid(): boolean;
     get cols(): ICage[];
-    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "Puzzle" which is marked as @internal
     static create(puzzle: Puzzle): Result<PuzzleSession>;
     get description(): string;
     getCellContents(spec: string | IRowColumn): Result<{
@@ -406,8 +860,7 @@ export class PuzzleSession {
     get numSteps(): number;
     // (undocumented)
     protected _numSteps: number;
-    // Warning: (ae-incompatible-release-tags) The symbol "_puzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-    //
+    get puzzle(): Puzzle;
     // (undocumented)
     protected readonly _puzzle: Puzzle;
     redo(): Result<this>;
@@ -419,10 +872,66 @@ export class PuzzleSession {
     // (undocumented)
     protected _steps: IPuzzleStep[];
     toStrings(): string[];
+    get type(): string;
     undo(): Result<this>;
     updateCellNotes(spec: string | IRowColumn | ICell, notes: number[]): Result<this>;
     updateCells(updates: ICellState[]): Result<this>;
     updateCellValue(spec: string | IRowColumn | ICell, value: number | undefined): Result<this>;
+}
+
+// @public
+class PuzzleSessionHints {
+    applyHint(hint: IHint): Result<this>;
+    cageContainedValues(spec: string | ICage): Set<number>;
+    cageContainsValue(spec: string | ICage, value: number): boolean;
+    get cages(): ICage[];
+    get canRedo(): boolean;
+    get canUndo(): boolean;
+    cellHasValue(spec: string | IRowColumn | ICell): boolean;
+    cellIsValid(spec: string | IRowColumn | ICell): boolean;
+    get cells(): ICell[];
+    checkIsSolved(): boolean;
+    checkIsValid(): boolean;
+    get cols(): ICage[];
+    get config(): IPuzzleSessionHintsConfig;
+    static create(session: PuzzleSession, config?: IPuzzleSessionHintsConfig): Result<PuzzleSessionHints>;
+    get description(): string;
+    getAllHints(options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getCellContents(spec: string | IRowColumn): Result<{
+        cell: ICell;
+        contents: ICellContents;
+    }>;
+    getCellNeighbor(spec: string | IRowColumn | ICell, direction: NavigationDirection, wrap: NavigationWrap): Result<ICell>;
+    getEmptyCells(): ICell[];
+    getExplanation(hint: IHint, level?: ExplanationLevel): string;
+    getHint(options?: IHintGenerationOptions): Result<IHint>;
+    getHintsForCell(spec: string | IRowColumn | ICell, options?: IHintGenerationOptions): Result<readonly IHint[]>;
+    getHintStatistics(options?: IHintGenerationOptions): Result<{
+        totalHints: number;
+        hintsByTechnique: Map<string, number>;
+        hintsByDifficulty: Map<string, number>;
+    }>;
+    getInvalidCells(): ICell[];
+    getSystemSummary(): string;
+    hasHints(options?: IHintGenerationOptions): Result<boolean>;
+    get hintSystem(): HintSystem;
+    get id(): string | undefined;
+    isValidForCell(spec: string | IRowColumn | ICell, value: number): boolean;
+    get nextStep(): number;
+    get numColumns(): number;
+    get numRows(): number;
+    get numSteps(): number;
+    redo(): Result<this>;
+    get rows(): ICage[];
+    get sections(): ICage[];
+    get session(): PuzzleSession;
+    get state(): PuzzleState;
+    toStrings(): string[];
+    undo(): Result<this>;
+    updateCellNotes(spec: string | IRowColumn | ICell, notes: number[]): Result<this>;
+    updateCells(updates: ICellState[]): Result<this>;
+    updateCellValue(spec: string | IRowColumn | ICell, value: number | undefined): Result<this>;
+    validateHint(hint: IHint): Result<void>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -448,31 +957,69 @@ export class PuzzleState {
 export type PuzzleType = 'killer-sudoku' | 'sudoku' | 'sudoku-x';
 
 // @public
-const puzzleType: Converter<PuzzleType, PuzzleType[]>;
+const puzzleType: Converter<PuzzleType, ReadonlyArray<PuzzleType>>;
 
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-//
+// @public
+export const STANDARD_CONFIGS: {
+    readonly puzzle4x4: {
+        readonly cageWidthInCells: 2;
+        readonly cageHeightInCells: 2;
+        readonly boardWidthInCages: 2;
+        readonly boardHeightInCages: 2;
+    };
+    readonly puzzle6x6: {
+        readonly cageWidthInCells: 3;
+        readonly cageHeightInCells: 2;
+        readonly boardWidthInCages: 2;
+        readonly boardHeightInCages: 3;
+    };
+    readonly puzzle9x9: {
+        readonly cageWidthInCells: 3;
+        readonly cageHeightInCells: 3;
+        readonly boardWidthInCages: 3;
+        readonly boardHeightInCages: 3;
+    };
+    readonly puzzle12x12: {
+        readonly cageWidthInCells: 4;
+        readonly cageHeightInCells: 3;
+        readonly boardWidthInCages: 3;
+        readonly boardHeightInCages: 4;
+    };
+};
+
+// @public
+export type StandardConfigName = keyof typeof STANDARD_CONFIGS;
+
 // @public (undocumented)
 class SudokuPuzzle extends Puzzle {
     // (undocumented)
-    static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+    static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
 }
 
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuXPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "SudokuXPuzzle" is marked as @public, but its signature references "Puzzle" which is marked as @internal
-//
 // @public (undocumented)
 class SudokuXPuzzle extends Puzzle {
     // (undocumented)
-    static create(puzzle: IPuzzleDescription): Result<Puzzle>;
+    static create(puzzle: IPuzzleDefinition): Result<Puzzle>;
 }
+
+// @public
+type TechniqueId = Brand<string, 'TechniqueId'>;
+
+// @public
+const TechniqueIds: {
+    readonly NAKED_SINGLES: TechniqueId;
+    readonly HIDDEN_SINGLES: TechniqueId;
+};
 
 // @public
 export const totalsByCageSize: readonly {
     min: number;
     max: number;
 }[];
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/common/puzzle.ts:347:15 - (ae-incompatible-release-tags) The symbol "cell" is marked as @public, but its signature references "Cell" which is marked as @internal
 
 // (No @packageDocumentation comment for this package)
 

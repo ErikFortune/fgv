@@ -36,14 +36,13 @@ import {
 import { Cage } from './cage';
 import { Cell } from './cell';
 import { Ids } from './ids';
-import { IPuzzleDescription } from './model';
+import { IPuzzleDefinition } from './puzzleDefinitions';
 import { ICell } from './public';
 import { PuzzleState } from './puzzleState';
 
-const basicCageTotal: number = 45;
-
 /**
- * @internal
+ * Describes a single cell update.
+ * @public
  */
 export interface ICellUpdate {
   from: ICellState;
@@ -51,7 +50,8 @@ export interface ICellUpdate {
 }
 
 /**
- * @internal
+ * Describes a single puzzle update.
+ * @public
  */
 export interface IPuzzleUpdate {
   from: PuzzleState;
@@ -60,56 +60,55 @@ export interface IPuzzleUpdate {
 }
 
 /**
- * @internal
+ * Abstract base class for all puzzles.
+ * @public
  */
 export class Puzzle {
   public readonly id?: string;
   public readonly description: string;
+  public readonly type: string;
   public readonly initialState: PuzzleState;
+  public readonly dimensions: IPuzzleDefinition;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _rows: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _columns: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _sections: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _cages: Map<CageId, Cage>;
 
   /**
-   * @internal
+   * @public
    */
   protected readonly _cells: Map<CellId, Cell>;
 
   /**
    * Constructs a new puzzle state.
-   * @param puzzle - {@Link IPuzzleDescription | Puzzle description} from which this puzzle state
+   * @param puzzle - {@Link IPuzzleDefinition | Puzzle definition} from which this puzzle state
    * is to be initialized.
    */
-  protected constructor(puzzle: IPuzzleDescription, extraCages?: [CageId, Cage][]) {
+  protected constructor(puzzle: IPuzzleDefinition, extraCages?: [CageId, Cage][]) {
     /* c8 ignore next - ?? is defense in depth */
     extraCages = extraCages ?? [];
 
-    if (puzzle.rows !== 9) {
-      throw new Error(`Puzzle '${puzzle.description}' unsupported row count ${puzzle.rows}`);
-    }
-    if (puzzle.cols !== 9) {
-      throw new Error(`Puzzle '${puzzle.description}' unsupported column count ${puzzle.cols}`);
-    }
-    if (puzzle.cells.length !== puzzle.rows * puzzle.cols) {
+    // Validate cell count matches grid size
+    /* c8 ignore next 7 - defensive test - not reachable in practice */
+    if (puzzle.cells.length !== puzzle.totalRows * puzzle.totalColumns) {
       throw new Error(
-        `Puzzle '${puzzle.description}" expected ${puzzle.rows * puzzle.cols} cells, found ${
+        `Puzzle '${puzzle.description}" expected ${puzzle.totalRows * puzzle.totalColumns} cells, found ${
           puzzle.cells.length
         }`
       );
@@ -117,10 +116,20 @@ export class Puzzle {
 
     this.id = puzzle.id;
     this.description = puzzle.description;
+    this.type = puzzle.type;
+    this.dimensions = puzzle;
 
-    const rows = Puzzle._createRowCages(puzzle.rows, puzzle.cols).orThrow();
-    const columns = Puzzle._createColumnCages(puzzle.rows, puzzle.cols).orThrow();
-    const sections = Puzzle._createSectionCages(puzzle.rows, puzzle.cols).orThrow();
+    const rows = Puzzle._createRowCages(
+      puzzle.totalRows,
+      puzzle.totalColumns,
+      puzzle.basicCageTotal
+    ).orThrow();
+    const columns = Puzzle._createColumnCages(
+      puzzle.totalRows,
+      puzzle.totalColumns,
+      puzzle.basicCageTotal
+    ).orThrow();
+    const sections = Puzzle._createSectionCages(puzzle).orThrow();
     const cages = [...rows, ...columns, ...sections, ...extraCages];
     this._rows = new Map(rows);
     this._columns = new Map(columns);
@@ -139,10 +148,10 @@ export class Puzzle {
 
         const init = cellInit.shift();
         /* c8 ignore next - defense in depth/make type check happy. undefined init should never happen */
-        const immutableValue = init === '.' ? undefined : Number.parseInt(init ?? '0');
+        const immutableValue = init === '.' ? undefined : this._parseAlphanumericValue(init ?? '0');
         if (
           immutableValue !== undefined &&
-          (Number.isNaN(immutableValue) || immutableValue < 1 || immutableValue > 9)
+          (Number.isNaN(immutableValue) || immutableValue < 1 || immutableValue > puzzle.maxValue)
         ) {
           throw new Error(`Puzzle ${puzzle.description} illegal value "${init}" for cell ${id}`);
         }
@@ -190,7 +199,11 @@ export class Puzzle {
   /**
    * @internal
    */
-  protected static _createRowCages(numRows: number, numCols: number): Result<[CageId, Cage][]> {
+  protected static _createRowCages(
+    numRows: number,
+    numCols: number,
+    basicCageTotal: number
+  ): Result<[CageId, Cage][]> {
     const cages: [CageId, Cage][] = [];
     for (let r = 0; r < numRows; r++) {
       const id = Ids.rowCageId(r);
@@ -215,7 +228,11 @@ export class Puzzle {
   /**
    * @internal
    */
-  protected static _createColumnCages(numRows: number, numCols: number): Result<[CageId, Cage][]> {
+  protected static _createColumnCages(
+    numRows: number,
+    numCols: number,
+    basicCageTotal: number
+  ): Result<[CageId, Cage][]> {
     const cages: [CageId, Cage][] = [];
     for (let c = 0; c < numCols; c++) {
       const id = Ids.columnCageId(c);
@@ -238,20 +255,49 @@ export class Puzzle {
   }
 
   /**
+   * Parse alphanumeric cell value (1-9, A-Z for values 10-35)
    * @internal
    */
-  private static _createSectionCages(numRows: number, numCols: number): Result<[CageId, Cage][]> {
+  private _parseAlphanumericValue(char: string): number {
+    // Handle digits 1-9
+    if (char >= '1' && char <= '9') {
+      return Number.parseInt(char, 10);
+    }
+    // Handle uppercase A-Z for values 10-35
+    if (char >= 'A' && char <= 'Z') {
+      return char.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+    }
+    // Handle lowercase a-z for values 10-35
+    if (char >= 'a' && char <= 'z') {
+      return char.charCodeAt(0) - 'a'.charCodeAt(0) + 10;
+    }
+    // Invalid character, return NaN to trigger error handling
+    return Number.NaN;
+  }
+
+  /**
+   * @internal
+   */
+  private static _createSectionCages(puzzle: IPuzzleDefinition): Result<[CageId, Cage][]> {
     const cages: [CageId, Cage][] = [];
-    for (let r = 0; r < numRows; r += 3) {
-      for (let c = 0; c < numCols; c += 3) {
-        const id = Ids.sectionCageId(r, c);
-        const cellIds = Ids.cellIds(r, 3, c, 3);
+    const cageWidth = puzzle.cageWidthInCells;
+    const cageHeight = puzzle.cageHeightInCells;
+    const boardWidth = puzzle.boardWidthInCages;
+    const boardHeight = puzzle.boardHeightInCages;
+
+    for (let boardRow = 0; boardRow < boardHeight; boardRow++) {
+      for (let boardCol = 0; boardCol < boardWidth; boardCol++) {
+        const startRow = boardRow * cageHeight;
+        const startCol = boardCol * cageWidth;
+        const id = Ids.sectionCageId(startRow, startCol, cageHeight, cageWidth);
+        const cellIds = Ids.cellIds(startRow, cageHeight, startCol, cageWidth);
+
         /* c8 ignore next 3 - defense in depth should never happen */
         if (cellIds.isFailure()) {
           return fail(cellIds.message);
         }
 
-        const result = Cage.create(id, 'section', basicCageTotal, cellIds.value).onSuccess((cage) => {
+        const result = Cage.create(id, 'section', puzzle.basicCageTotal, cellIds.value).onSuccess((cage) => {
           cages.push([id, cage]);
           return succeed(cage);
         });
@@ -439,7 +485,15 @@ export class Puzzle {
   }
 
   public getSection(spec: CageId | IRowColumn): Result<Cage> {
-    const id = typeof spec === 'object' ? Ids.sectionCageId(spec.row, spec.col) : spec;
+    const id =
+      typeof spec === 'object'
+        ? Ids.sectionCageId(
+            spec.row,
+            spec.col,
+            this.dimensions.cageHeightInCells,
+            this.dimensions.cageWidthInCells
+          )
+        : spec;
     const cage = this._sections.get(id);
     return cage ? succeed(cage) : fail(`Section ${id} not found`);
   }

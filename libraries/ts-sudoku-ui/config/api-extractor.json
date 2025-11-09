@@ -1,0 +1,89 @@
+/**
+ * Config file for API Extractor.  For more info, please visit: https://api-extractor.com
+ */
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+
+  /**
+   * The path to the project folder, relative to the config file location
+   */
+  "projectFolder": "..",
+
+  /**
+   * The entry point for the API extraction (must be a .d.ts file)
+   */
+  "mainEntryPointFilePath": "<projectFolder>/lib/index.d.ts",
+
+  /**
+   * NPM packages to be treated as part of this package
+   */
+  "bundledPackages": [],
+
+  /**
+   * Compiler configuration
+   */
+  "compiler": {
+    // Use the default tsconfig.json location
+  },
+
+  /**
+   * API report file generation
+   */
+  "apiReport": {
+    "enabled": true,
+    "reportFolder": "<projectFolder>/etc/",
+    "reportTempFolder": "<projectFolder>/temp/"
+  },
+
+  /**
+   * Doc model file generation (for API Documenter)
+   */
+  "docModel": {
+    "enabled": true,
+    "apiJsonFilePath": "<projectFolder>/temp/<unscopedPackageName>.api.json"
+  },
+
+  /**
+   * .d.ts rollup file generation
+   */
+  "dtsRollup": {
+    "enabled": true,
+    "untrimmedFilePath": "<projectFolder>/dist/<unscopedPackageName>.d.ts"
+  },
+
+  /**
+   * TSDoc metadata file generation
+   */
+  "tsdocMetadata": {
+    "enabled": true
+  },
+
+  /**
+   * Message reporting configuration
+   */
+  "messages": {
+    "compilerMessageReporting": {
+      "default": {
+        "logLevel": "warning"
+      }
+    },
+    "extractorMessageReporting": {
+      "default": {
+        "logLevel": "warning"
+      },
+      "ae-unresolved-link": {
+        "logLevel": "none",
+        "addToApiReportFile": true
+      },
+      "ae-forgotten-export": {
+        "logLevel": "warning",
+        "addToApiReportFile": true
+      }
+    },
+    "tsdocMessageReporting": {
+      "default": {
+        "logLevel": "warning"
+      }
+    }
+  }
+}

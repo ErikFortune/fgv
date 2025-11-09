@@ -4,7 +4,7 @@
 
 ## totalsByCageSize variable
 
-The minimum and maximum possible values for a [cage](./ts-sudoku-lib.icage.md)<!-- -->, by cage size in [cells](./ts-sudoku-lib.icell.md)<!-- -->.
+Legacy array for backward compatibility - supports standard 9x9 Sudoku
 
 **Signature:**
 

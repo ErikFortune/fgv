@@ -1,0 +1,29 @@
+# Source files
+src/
+config/
+temp/
+
+# Development files
+*.tsbuildinfo
+tsconfig.json
+eslint.config.js
+
+# Test files
+**/*.test.*
+**/*.spec.*
+coverage/
+
+# Documentation source
+docs/
+
+# Editor
+.vscode/
+*.swp
+*.swo
+
+# Rush
+.rushstack/
+rush-logs/
+
+# Logs
+*.log

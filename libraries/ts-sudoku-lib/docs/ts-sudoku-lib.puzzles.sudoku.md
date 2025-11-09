@@ -10,7 +10,7 @@
 ```typescript
 export declare class SudokuPuzzle extends Puzzle 
 ```
-**Extends:** Puzzle
+**Extends:** [Puzzle](./ts-sudoku-lib.puzzle.md)
 
 ## Methods
 
@@ -45,3 +45,4 @@ Description
 
 </td></tr>
 </tbody></table>
+
