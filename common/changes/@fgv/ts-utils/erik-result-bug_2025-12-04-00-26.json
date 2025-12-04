@@ -1,0 +1,10 @@
+{
+  "changes": [
+    {
+      "packageName": "@fgv/ts-utils",
+      "comment": "add variance annotations to result types",
+      "type": "none"
+    }
+  ],
+  "packageName": "@fgv/ts-utils"
+}

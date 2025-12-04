@@ -1894,4 +1894,52 @@ describe('Result module', () => {
       });
     });
   });
+
+  describe('type compatibility', () => {
+    interface IFakeResponse<TBody = unknown> {
+      status: number;
+      body?: TBody;
+    }
+
+    interface IProfile {
+      name: string;
+    }
+
+    test('nested generic variance', () => {
+      // Test 1: Direct interface assignment
+      const r1: IFakeResponse<IProfile> = { status: 200, body: { name: 'x' } };
+      const r2: IFakeResponse<unknown> = r1;
+      expect(r2.status).toBe(200);
+
+      // Test 2: Via Result
+      const r3: Result<IFakeResponse<IProfile>> = succeed({ status: 200, body: { name: 'x' } });
+      const r4: Result<IFakeResponse<unknown>> = r3;
+      expect(r4.isSuccess()).toBe(true);
+    });
+
+    test('DetailedResult to Result with nested generics', () => {
+      // Test 1: DetailedResult<string> to Result<unknown>
+      const d1 = succeed('test').withDetail('info');
+      const r1: Result<unknown> = d1;
+      expect(r1.isSuccess()).toBe(true);
+
+      // Test 2: DetailedResult<IFakeResponse<IProfile>> to Result<IFakeResponse<unknown>>
+      const d2 = succeed<IFakeResponse<IProfile>>({ status: 200, body: { name: 'x' } }).withDetail('info');
+      const r2: Result<IFakeResponse<unknown>> = d2;
+      expect(r2.isSuccess()).toBe(true);
+    });
+
+    type Handler<TResponse = unknown> = () => Result<IFakeResponse<TResponse>>;
+
+    test('function type variance with nested generics', () => {
+      const specificHandler: Handler<IProfile> = () => {
+        return succeed({ status: 200, body: { name: 'x' } });
+      };
+
+      const genericHandler: Handler<unknown> = specificHandler;
+
+      const result = genericHandler();
+      expect(result.isSuccess()).toBe(true);
+    });
+  });
 });
