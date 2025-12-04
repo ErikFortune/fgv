@@ -23,7 +23,7 @@
 import '@fgv/ts-utils-jest';
 
 import { JsonCompatibleType, JsonValue, sanitizeJsonObject } from '../../packlets/json';
-import { Brand } from '@fgv/ts-utils';
+import { Brand, succeed, Result } from '@fgv/ts-utils';
 
 describe('jsonCompatible from json/common module', () => {
   describe('JsonCompatible type', () => {
@@ -1912,6 +1912,68 @@ describe('jsonCompatible from json/common module', () => {
         optional2: 42
         // optional1 is removed because it was undefined
       });
+    });
+  });
+
+  describe('nesting compatibility', () => {
+    // Keep interfaces covariant with plain TBody
+    interface IFakeResponse<out TBody = unknown> {
+      status: number;
+      body?: TBody;
+    }
+
+    interface IFakeRequest<out TBody = unknown> {
+      body?: TBody;
+    }
+
+    interface IProfile {
+      name: string;
+    }
+
+    type ActionId = 'profiles.get' | 'profiles.list';
+
+    // SOLUTION: Enforce JsonCompatibleType in the Handler signature
+    // This ensures type safety while keeping interfaces covariant
+    type Handler<TReq = unknown, TRes = unknown> = (
+      request: IFakeRequest<JsonCompatibleType<TReq>>
+    ) => Result<IFakeResponse<JsonCompatibleType<TRes>>>;
+
+    // Handler implementation - returns JsonCompatibleType<IProfile>
+    function handleGet(
+      request: IFakeRequest<JsonCompatibleType<unknown>>
+    ): Result<IFakeResponse<JsonCompatibleType<IProfile>>> {
+      return succeed<IFakeResponse<JsonCompatibleType<IProfile>>>({
+        status: 200,
+        body: { name: 'x' }
+      });
+    }
+
+    test('Record with handler wrappers - JsonCompatibleType enforced', () => {
+      // This now works! Handler type enforces JsonCompatibleType
+      // while Result<IFakeResponse<T>> remains covariant
+      const actions: Record<ActionId, Handler> = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'profiles.get': (request) => handleGet(request),
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'profiles.list': (request) => handleGet(request)
+      };
+
+      expect(actions['profiles.get']({}).isSuccess()).toBe(true);
+    });
+
+    test('Type safety is enforced at Handler level', () => {
+      // The Handler type signature enforces JsonCompatibleType
+      type ProfileHandler = Handler<unknown, IProfile>;
+
+      const handler: ProfileHandler = (request) => {
+        // request.body is typed as JsonCompatibleType<unknown>
+        return succeed<IFakeResponse<JsonCompatibleType<IProfile>>>({
+          status: 200,
+          body: { name: 'test' }
+        });
+      };
+
+      expect(handler({}).isSuccess()).toBe(true);
     });
   });
 });
