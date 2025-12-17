@@ -9,7 +9,7 @@ A [DetailedFailure&lt;T, TD&gt;](./ts-utils.detailedfailure.md) extends [Failure
 **Signature:**
 
 ```typescript
-export declare class DetailedFailure<T, TD> extends Failure<T> 
+export declare class DetailedFailure<out T, out TD> extends Failure<T> 
 ```
 **Extends:** [Failure](./ts-utils.failure.md)<!-- -->&lt;T&gt;
 

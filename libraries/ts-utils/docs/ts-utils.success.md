@@ -9,7 +9,7 @@ Reports a successful [result](./ts-utils.iresult.md) from some operation and the
 **Signature:**
 
 ```typescript
-export declare class Success<T> implements IResult<T> 
+export declare class Success<out T> implements IResult<T> 
 ```
 **Implements:** [IResult](./ts-utils.iresult.md)<!-- -->&lt;T&gt;
 

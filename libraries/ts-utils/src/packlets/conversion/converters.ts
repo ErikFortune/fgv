@@ -134,14 +134,7 @@ export const number: Converter<number, unknown> = new BaseConverter<number, unkn
   return succeed(from);
 });
 
-/**
- * A {@link Converter | Converter} which converts `unknown` to `boolean`.
- * @remarks
- * Boolean values or the case-insensitive strings `'true'` and `'false'` succeed.
- * Anything else fails.
- * @public
- */
-export const boolean: Converter<boolean, unknown> = new BaseConverter<boolean, unknown>((from: unknown) => {
+const booleanConverter: Converter<boolean, unknown> = new BaseConverter<boolean, unknown>((from: unknown) => {
   if (typeof from === 'boolean') {
     return succeed(from as boolean);
   } else if (typeof from === 'string') {
@@ -154,6 +147,15 @@ export const boolean: Converter<boolean, unknown> = new BaseConverter<boolean, u
   }
   return fail(`Not a boolean: ${JSON.stringify(from)}`);
 });
+
+/**
+ * A {@link Converter | Converter} which converts `unknown` to `boolean`.
+ * @remarks
+ * Boolean values or the case-insensitive strings `'true'` and `'false'` succeed.
+ * Anything else fails.
+ * @public
+ */
+export const boolean: Converter<boolean, unknown> = booleanConverter;
 
 /**
  * A {@link Converter | Converter} which converts an optional `string` value. Values of type
@@ -249,7 +251,7 @@ export const optionalNumber: Converter<number | undefined, unknown> = number.opt
  * with value `undefined`.
  * @public
  */
-export const optionalBoolean: Converter<boolean | undefined, unknown> = boolean.optional();
+export const optionalBoolean: Converter<boolean | undefined, unknown> = booleanConverter.optional();
 
 /**
  * A helper function to create a {@link Converter | Converter} for polymorphic values.
