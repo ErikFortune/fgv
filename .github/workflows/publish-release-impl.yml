@@ -1,0 +1,42 @@
+name: Publish Release (Implementation)
+
+on:
+  workflow_call:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish-release
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Git config user
+        uses: snow-actions/git-config-user@v1.0.0
+        with:
+          name: ${{ secrets.GH_USER_NAME }}
+          email: ${{ secrets.GH_USER_EMAIL }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest && npm --version
+
+      - name: Verify Change Logs
+        run: node common/scripts/install-run-rush.js change --verify --target-branch origin/${GITHUB_REF_NAME}
+
+      - name: Rush Install
+        run: node common/scripts/install-run-rush.js install
+
+      - name: Rush rebuild
+        run: node common/scripts/install-run-rush.js rebuild --verbose
+
+      - name: Rush Publish
+        run: node common/scripts/install-run-rush.js publish --publish --include-all --target-branch ${GITHUB_REF_NAME} --add-commit-details --ignore-git-hooks

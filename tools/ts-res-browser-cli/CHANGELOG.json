@@ -2,9 +2,9 @@
   "name": "@fgv/ts-res-browser-cli",
   "entries": [
     {
-      "version": "5.1.0",
-      "tag": "@fgv/ts-res-browser-cli_v5.1.0",
-      "date": "Wed, 17 Dec 2025 03:44:15 GMT",
+      "version": "5.0.2",
+      "tag": "@fgv/ts-res-browser-cli_v5.0.2",
+      "date": "Wed, 17 Dec 2025 18:08:09 GMT",
       "comments": {}
     },
     {
