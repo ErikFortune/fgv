@@ -1,0 +1,17 @@
+{
+  "name": "@fgv/ts-sudoku-ui",
+  "entries": [
+    {
+      "version": "5.1.0",
+      "tag": "@fgv/ts-sudoku-ui_v5.1.0",
+      "date": "Wed, 17 Dec 2025 03:44:15 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "ui components for sudoku lib"
+          }
+        ]
+      }
+    }
+  ]
+}
