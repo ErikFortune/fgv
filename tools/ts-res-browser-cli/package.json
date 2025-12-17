@@ -45,5 +45,9 @@
     "eslint": "^9.39.0",
     "jest": "^29.7.0",
     "typescript": "5.9.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }
