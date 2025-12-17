@@ -1,31 +1,42 @@
-name: NPM Publish
+name: Publish to npm
+
 on:
   workflow_dispatch:
-    branches: ['main']
+    inputs:
+      release_type:
+        description: 'Release type'
+        required: true
+        type: choice
+        options:
+          - release
+          - alpha
+          - major
+
+permissions:
+  id-token: write # Required for npm OIDC
+  contents: write # Required for git commits (version bumps)
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  publish-release:
+    if: ${{ github.event.inputs.release_type == 'release' }}
+    uses: ./.github/workflows/publish-release-impl.yml
     permissions:
+      id-token: write
       contents: write
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-      - name: Git config user
-        uses: snow-actions/git-config-user@v1.0.0
-        with:
-          name: ${{secrets.GH_USER_NAME}}
-          email: $${secrets.GH_USER_EMAIL}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-      - name: Verify Change Logs
-        run: node common/scripts/install-run-rush.js change --verify --target-branch ${GITHUB_REF_NAME}
-      - name: Rush Install
-        run: node common/scripts/install-run-rush.js install
-      - name: Rush rebuild
-        run: node common/scripts/install-run-rush.js rebuild --verbose
-      - name: Rush Publish
-        env:
-          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-        run: node common/scripts/install-run-rush.js publish --publish --include-all --target-branch ${GITHUB_REF_NAME} --add-commit-details --ignore-git-hooks
+    secrets: inherit
+
+  publish-alpha:
+    if: ${{ github.event.inputs.release_type == 'alpha' }}
+    uses: ./.github/workflows/publish-alpha-impl.yml
+    permissions:
+      id-token: write
+      contents: write
+    secrets: inherit
+
+  publish-major:
+    if: ${{ github.event.inputs.release_type == 'major' }}
+    uses: ./.github/workflows/publish-major-impl.yml
+    permissions:
+      id-token: write
+      contents: write
+    secrets: inherit
