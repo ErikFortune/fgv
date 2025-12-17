@@ -1,6 +1,14 @@
 # Change Log - @fgv/ts-res-ui-components
 
-This log was last generated on Tue, 23 Sep 2025 03:13:55 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Dec 2025 03:44:15 GMT and should not be manually modified.
+
+## 5.1.0
+Wed, 17 Dec 2025 03:44:15 GMT
+
+### Updates
+
+- minor cleanup
+- remove lurking node dependencies
 
 ## 5.0.1
 Tue, 23 Sep 2025 03:13:55 GMT

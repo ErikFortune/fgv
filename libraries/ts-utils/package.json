@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-utils",
-  "version": "5.0.2-0",
+  "version": "5.1.0",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "module": "dist/index.js",
