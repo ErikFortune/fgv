@@ -359,7 +359,7 @@ export interface IResult<T> {
  * corresponding value.
  * @public
  */
-export class Success<T> implements IResult<T> {
+export class Success<out T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.success}
    */
@@ -513,7 +513,7 @@ export class Success<T> implements IResult<T> {
  * Reports a failed {@link IResult | result} from some operation, with an error message.
  * @public
  */
-export class Failure<T> implements IResult<T> {
+export class Failure<out T> implements IResult<T> {
   /**
    * {@inheritdoc IResult.success}
    */
@@ -760,7 +760,7 @@ export type DetailedFailureContinuation<T, TD> = (message: string, detail?: TD) 
  * details in addition to the error message.
  * @public
  */
-export class DetailedSuccess<T, TD> extends Success<T> {
+export class DetailedSuccess<out T, out TD> extends Success<T> {
   /**
    * @internal
    */
@@ -866,7 +866,7 @@ export class DetailedSuccess<T, TD> extends Success<T> {
  * failure details in addition to the error message.
  * @public
  */
-export class DetailedFailure<T, TD> extends Failure<T> {
+export class DetailedFailure<out T, out TD> extends Failure<T> {
   /**
    * @internal
    */

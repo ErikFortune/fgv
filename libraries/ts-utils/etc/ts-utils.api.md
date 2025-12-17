@@ -612,7 +612,7 @@ export type DeferredResult<T> = () => Result<T>;
 function delimitedString(delimiter: string, options?: 'filtered' | 'all'): Converter<string[], string>;
 
 // @public
-export class DetailedFailure<T, TD> extends Failure<T> {
+export class DetailedFailure<out T, out TD> extends Failure<T> {
     constructor(message: string, detail?: TD);
     aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter<TD>): this;
     get asResult(): Result<T>;
@@ -643,7 +643,7 @@ export type DetailedFailureContinuation<T, TD> = (message: string, detail?: TD) 
 export type DetailedResult<T, TD> = DetailedSuccess<T, TD> | DetailedFailure<T, TD>;
 
 // @public
-export class DetailedSuccess<T, TD> extends Success<T> {
+export class DetailedSuccess<out T, out TD> extends Success<T> {
     constructor(value: T, detail?: TD);
     get asResult(): Result<T>;
     get detail(): TD | undefined;
@@ -699,7 +699,7 @@ export function fails<T>(message: string): Failure<T>;
 export function failsWithDetail<T, TD>(message: string, detail?: TD): DetailedFailure<T, TD>;
 
 // @public
-export class Failure<T> implements IResult<T> {
+export class Failure<out T> implements IResult<T> {
     constructor(message: string);
     aggregateError(errors: IMessageAggregator, formatter?: ErrorFormatter): this;
     // @deprecated
@@ -2055,7 +2055,7 @@ export function succeedsWithDetail<T, TD>(value: T, detail?: TD): DetailedSucces
 export function succeedWithDetail<T, TD>(value: T, detail?: TD): DetailedSuccess<T, TD>;
 
 // @public
-export class Success<T> implements IResult<T> {
+export class Success<out T> implements IResult<T> {
     constructor(value: T);
     aggregateError(__errors: IMessageAggregator, __formatter?: ErrorFormatter): this;
     // @deprecated
