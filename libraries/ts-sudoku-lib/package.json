@@ -75,5 +75,9 @@
       },
       "types": "dist/ts-sudoku-lib.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }
