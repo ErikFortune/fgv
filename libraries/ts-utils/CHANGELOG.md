@@ -1,6 +1,16 @@
 # Change Log - @fgv/ts-utils
 
-This log was last generated on Tue, 23 Sep 2025 03:13:55 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+
+## 5.0.2
+Wed, 17 Dec 2025 18:08:09 GMT
+
+### Updates
+
+- dual-publish
+- add variance annotations to result types
+- minor additions
+- work around apparent babel bug
 
 ## 5.0.1
 Tue, 23 Sep 2025 03:13:55 GMT

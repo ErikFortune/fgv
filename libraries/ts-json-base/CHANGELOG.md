@@ -1,6 +1,16 @@
 # Change Log - @fgv/ts-json-base
 
-This log was last generated on Tue, 23 Sep 2025 03:13:55 GMT and should not be manually modified.
+This log was last generated on Wed, 17 Dec 2025 18:08:09 GMT and should not be manually modified.
+
+## 5.0.2
+Wed, 17 Dec 2025 18:08:09 GMT
+
+### Updates
+
+- dual-publish
+- add converters that take json context
+- minor cleanup
+- export JsonCompatible for web consumers as well
 
 ## 5.0.1
 Tue, 23 Sep 2025 03:13:55 GMT
