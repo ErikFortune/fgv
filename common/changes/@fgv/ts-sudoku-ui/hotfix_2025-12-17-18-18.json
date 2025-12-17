@@ -2,7 +2,7 @@
   "changes": [
     {
       "packageName": "@fgv/ts-sudoku-ui",
-      "comment": "ui components for sudoku lib",
+      "comment": "",
       "type": "none"
     }
   ],

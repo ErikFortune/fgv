@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-utils",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "module": "dist/index.js",
@@ -66,5 +66,9 @@
     "@types/heft-jest": "1.0.6",
     "@rushstack/heft-jest-plugin": "1.1.3",
     "eslint-plugin-tsdoc": "~0.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

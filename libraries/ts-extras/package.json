@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-extras",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Assorted Typescript Utilities",
   "main": "lib/index.js",
   "types": "dist/ts-extras.d.ts",
@@ -93,5 +93,9 @@
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

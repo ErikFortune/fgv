@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-sudoku-lib",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Sudoku rules library",
   "main": "lib/index.js",
   "types": "dist/ts-sudoku-lib.d.ts",
@@ -75,5 +75,9 @@
       },
       "types": "dist/ts-sudoku-lib.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

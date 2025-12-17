@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-res",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Multi-dimensional Resource Runtime",
   "main": "lib/index.js",
   "types": "dist/ts-res.d.ts",
@@ -81,5 +81,9 @@
       },
       "types": "dist/ts-res.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

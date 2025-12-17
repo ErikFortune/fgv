@@ -2,6 +2,27 @@
   "name": "@fgv/ts-json-base",
   "entries": [
     {
+      "version": "5.0.2",
+      "tag": "@fgv/ts-json-base_v5.0.2",
+      "date": "Wed, 17 Dec 2025 18:08:09 GMT",
+      "comments": {
+        "none": [
+          {
+            "comment": "dual-publish"
+          },
+          {
+            "comment": "add converters that take json context"
+          },
+          {
+            "comment": "minor cleanup"
+          },
+          {
+            "comment": "export JsonCompatible for web consumers as well"
+          }
+        ]
+      }
+    },
+    {
       "version": "5.0.1",
       "tag": "@fgv/ts-json-base_v5.0.1",
       "date": "Tue, 23 Sep 2025 03:13:55 GMT",

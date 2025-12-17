@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-json",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Typescript utilities for working with JSON",
   "main": "lib/index.js",
   "types": "dist/ts-json.d.ts",
@@ -76,5 +76,9 @@
       },
       "types": "dist/ts-json.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

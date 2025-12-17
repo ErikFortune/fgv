@@ -1,6 +1,6 @@
 {
   "name": "@fgv/ts-utils-jest",
-  "version": "5.0.1",
+  "version": "5.0.2",
   "description": "Custom matchers for ts-utils result class",
   "main": "lib/index.js",
   "module": "dist/index.js",
@@ -69,5 +69,9 @@
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }
