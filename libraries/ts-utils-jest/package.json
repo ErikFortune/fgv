@@ -69,5 +69,9 @@
   },
   "peerDependencies": {
     "@fgv/ts-utils": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

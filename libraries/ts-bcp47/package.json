@@ -85,5 +85,9 @@
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-extras": "workspace:*",
     "@fgv/ts-json-base": "workspace:*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

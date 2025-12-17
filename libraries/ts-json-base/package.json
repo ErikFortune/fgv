@@ -75,5 +75,9 @@
   },
   "dependencies": {
     "luxon": "^3.7.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }

@@ -81,5 +81,9 @@
       },
       "types": "dist/ts-res.d.ts"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErikFortune/fgv.git"
   }
 }
