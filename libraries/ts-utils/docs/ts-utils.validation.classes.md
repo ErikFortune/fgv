@@ -41,6 +41,17 @@ An in-place [Validator](./ts-utils.validation.validator.md) for `boolean` values
 </td></tr>
 <tr><td>
 
+[CompositeIdValidator](./ts-utils.validation.classes.compositeidvalidator.md)
+
+
+</td><td>
+
+An in-place [Validator](./ts-utils.validation.validator.md) for a strongly-typed composite ID.
+
+
+</td></tr>
+<tr><td>
+
 [NumberValidator](./ts-utils.validation.classes.numbervalidator.md)
 
 
@@ -117,6 +128,17 @@ Description
 </td><td>
 
 Parameters used to construct a [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[CompositeIdValidatorConstructorParams](./ts-utils.validation.classes.compositeidvalidatorconstructorparams.md)
+
+
+</td><td>
+
+Parameters used to construct a [StringValidator](./ts-utils.validation.classes.stringvalidator.md)<!-- -->.
 
 
 </td></tr>

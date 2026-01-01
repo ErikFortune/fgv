@@ -24,6 +24,7 @@
 
 export { ArrayValidator, ArrayValidatorConstructorParams } from './array';
 export { BooleanValidator, BooleanValidatorConstructorParams } from './boolean';
+export { CompositeIdValidator, CompositeIdValidatorConstructorParams } from './compositeId';
 export { NumberValidator, NumberValidatorConstructorParams } from './number';
 export {
   FieldValidators,

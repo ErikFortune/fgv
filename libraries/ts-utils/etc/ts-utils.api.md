@@ -121,6 +121,8 @@ declare namespace Classes {
         ArrayValidatorConstructorParams,
         BooleanValidator,
         BooleanValidatorConstructorParams,
+        CompositeIdValidator,
+        CompositeIdValidatorConstructorParams,
         NumberValidator,
         NumberValidatorConstructorParams,
         FieldValidators,
@@ -357,6 +359,43 @@ class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadO
     //
     // (undocumented)
     toReadOnly(): IReadOnlyCollectorValidator<TITEM>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function compositeId<T extends string = string, TCOLLECTIONID extends string = string, TITEMID extends string = string, TC = unknown>(params: CompositeIdValidatorConstructorParams<T, TCOLLECTIONID, TITEMID, TC>): CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class CompositeIdValidator<T extends string = string, TCOLLECTIONID extends string = string, TITEMID extends string = string, TC = unknown> extends ValidatorBase<T, TC> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: CompositeIdValidatorConstructorParams<T, TCOLLECTIONID, TITEMID, TC>);
+    // (undocumented)
+    protected readonly _collectionIdValidator: Validator<TCOLLECTIONID, TC>;
+    // (undocumented)
+    protected readonly _itemIdValidator: Validator<TITEMID, TC>;
+    // (undocumented)
+    protected readonly _separator: string;
+    // (undocumented)
+    protected _validate(value: unknown, context?: TC): boolean | Failure<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface CompositeIdValidatorConstructorParams<T extends string = string, TCOLLECTIONID extends string = string, TITEMID extends string = string, TC = unknown> extends ValidatorBaseConstructorParams<T, TC> {
+    // (undocumented)
+    readonly collectionId: Validator<TCOLLECTIONID, TC>;
+    // (undocumented)
+    readonly itemId: Validator<TITEMID, TC>;
+    // (undocumented)
+    readonly separator: string;
 }
 
 // @public
@@ -2271,6 +2310,7 @@ declare namespace Validators {
         recordOf_2 as recordOf,
         enumeratedValue_2 as enumeratedValue,
         literal_2 as literal,
+        compositeId,
         oneOf_2 as oneOf,
         isA_2 as isA,
         generic_2 as generic,
