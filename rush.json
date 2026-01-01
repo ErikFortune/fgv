@@ -523,6 +523,26 @@
       "projectFolder": "apps/ts-utils-browser-test",
       "shouldPublish": false,
       "tags": ["apps", "tests", "vite"]
+    },
+    {
+      "packageName": "@fgv/ts-chocolate",
+      "projectFolder": "libraries/ts-chocolate",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["libraries"]
+    },
+    {
+      "packageName": "@fgv/chocolate-cli",
+      "projectFolder": "tools/chocolate-cli",
+      "shouldPublish": true,
+      "versionPolicyName": "base-utils",
+      "tags": ["tools", "cli"]
+    },
+    {
+      "packageName": "chocolate-web",
+      "projectFolder": "apps/chocolate-web",
+      "shouldPublish": false,
+      "tags": ["apps", "chocolate", "react", "ui"]
     }
   ]
 }
