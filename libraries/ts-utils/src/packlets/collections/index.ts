@@ -35,5 +35,6 @@ export * from './resultMap';
 export * from './resultMapValidator';
 export * from './validatingCollector';
 export * from './validatingResultMap';
+export * from './aggregatedResultMap';
 
 export { Utils };

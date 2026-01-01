@@ -5,6 +5,94 @@
 ```ts
 
 // @public
+export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    add(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "addCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "addCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    addCollection(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
+    get collectionCount(): number;
+    collections(): IterableIterator<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
+    static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    delete(key: TCOMPOSITEID): DetailedResult<TITEM, ResultMapResultDetail>;
+    entries(): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
+    forEach(cb: ResultMapForEachCb<TCOMPOSITEID, TITEM>, thisArg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TCOMPOSITEID): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getCollection(collectionId: TCOLLECTIONID): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getOrAdd(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    getOrAdd(key: TCOMPOSITEID, factory: (key: TITEMID) => Result<TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
+    has(key: TCOMPOSITEID): boolean;
+    hasCollection(collectionId: TCOLLECTIONID): boolean;
+    keys(): IterableIterator<TCOMPOSITEID>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    set(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
+    get size(): number;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    update(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
+    get validating(): IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM>;
+    values(): IterableIterator<TITEM>;
+}
+
+// @public
+type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM> = IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>;
+
+// @public
+type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM> = AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
+
+// @public
+type AggregatedResultMapJsonEntry<TCOLLECTIONID extends string = string> = IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID> | IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID>;
+
+// @public
+class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM> {
+    constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    add(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
+    // (undocumented)
+    readonly converters: KeyValueConverters<TCOMPOSITEID, TITEM>;
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    delete(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
+    // (undocumented)
+    has(key: string): boolean;
+    // (undocumented)
+    get map(): IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>;
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    set(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    //
+    // (undocumented)
+    update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
+}
+
+// @public
 export function allSucceed<T>(results: Iterable<Result<unknown>>, successValue: T, aggregatedErrors?: IMessageAggregator): Result<T>;
 
 // @public
@@ -252,7 +340,17 @@ declare namespace Collections {
         ValidatingCollector,
         IReadOnlyValidatingResultMap,
         IValidatingResultMapConstructorParams,
-        ValidatingResultMap
+        ValidatingResultMap,
+        IReadonlyAggregatedResultMapEntry,
+        IMutableAggregatedResultMapEntry,
+        AggregatedResultMapEntry,
+        IAggregatedResultMapJsonEntryWithEntries,
+        IAggregatedResultMapJsonEntryWithItems,
+        AggregatedResultMapJsonEntry,
+        AggregatedResultMapEntryInit,
+        IAggregatedResultMapConstructorParams,
+        AggregatedResultMapValidator,
+        AggregatedResultMap
     }
 }
 export { Collections }
@@ -460,6 +558,8 @@ declare namespace Conversion {
         Converters,
         Infer,
         ConvertedToType,
+        ConverterResultType,
+        ConverterResultTypes,
         ConverterFunc,
         BaseConverter,
         OnError,
@@ -481,7 +581,10 @@ export { Conversion }
 // @public
 type ConversionErrorFormatter<TC = unknown> = (val: unknown, message?: string, context?: TC) => string;
 
-// @internal @deprecated
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public @deprecated
 type ConvertedToType<TCONV> = Infer<TCONV>;
 
 // @public
@@ -508,6 +611,16 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
 
 // @public
 type ConverterFunc<T, TC> = (from: unknown, self: Converter<T, TC>, context?: TC) => Result<T>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type ConverterResultType<C> = C extends Converter<infer T, unknown> ? T : never;
+
+// @public
+type ConverterResultTypes<T extends readonly Converter<unknown, unknown>[]> = {
+    [K in keyof T]: T[K] extends Converter<infer R, unknown> ? R : never;
+};
 
 declare namespace Converters {
     export {
@@ -551,6 +664,7 @@ declare namespace Converters {
         compositeIdString,
         transform,
         transformObject,
+        tuple,
         ICompositeId,
         FieldTransformers,
         TransformObjectOptions
@@ -1009,6 +1123,42 @@ class HashingNormalizer extends Normalizer {
 }
 
 // @public
+interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> {
+    // (undocumented)
+    readonly collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>;
+    // (undocumented)
+    readonly collections?: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>[];
+    // (undocumented)
+    readonly compositeIdValidator: Validator<TCOMPOSITEID, unknown>;
+    // (undocumented)
+    readonly delimiter?: string;
+    // (undocumented)
+    readonly itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
+    // (undocumented)
+    readonly itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
+}
+
+// @public
+interface IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID extends string = string> {
+    // (undocumented)
+    readonly entries: Iterable<KeyValueEntry<string, unknown>>;
+    // (undocumented)
+    readonly id: TCOLLECTIONID;
+    // (undocumented)
+    readonly isMutable: boolean;
+}
+
+// @public
+interface IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID extends string = string> {
+    // (undocumented)
+    readonly id: TCOLLECTIONID;
+    // (undocumented)
+    readonly isMutable: boolean;
+    // (undocumented)
+    readonly items: Record<string, unknown>;
+}
+
+// @public
 export interface ICollectible<TKEY extends string = string, TINDEX extends number = number> {
     // (undocumented)
     readonly index: TINDEX | undefined;
@@ -1144,9 +1294,19 @@ export interface IMessageReportDetail<TD = unknown> {
     message?: ErrorFormatter<TD>;
 }
 
+// @public
+interface IMutableAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown> {
+    // (undocumented)
+    readonly id: TCOLLECTIONID;
+    // (undocumented)
+    readonly isMutable: true;
+    // (undocumented)
+    readonly items: ValidatingResultMap<TITEMID, TITEM>;
+}
+
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
 //
-// @beta
+// @public
 type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
 // @public
@@ -1163,6 +1323,16 @@ class InMemoryLogger extends LoggerBase {
     //
     // @internal (undocumented)
     protected _suppressLog(level: MessageLogLevel, message?: unknown, ...parameters: unknown[]): Success<undefined>;
+}
+
+// @public
+interface IReadonlyAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown> {
+    // (undocumented)
+    readonly id: TCOLLECTIONID;
+    // (undocumented)
+    readonly isMutable: false;
+    // (undocumented)
+    readonly items: IReadOnlyValidatingResultMap<TITEMID, TITEM>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2212,6 +2382,9 @@ interface TransformObjectOptions<TSRC> {
     ignore?: (keyof TSRC)[];
     strict: true;
 }
+
+// @public
+function tuple<T extends readonly Converter<unknown, TC>[], TC = unknown>(converters: [...T]): Converter<ConverterResultTypes<T>, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

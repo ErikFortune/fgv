@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { fail, isKeyOf, succeed } from '../base';
+import { fail, isKeyOf, mapResults, succeed } from '../base';
 import { Validator } from '../validation';
-import { BaseConverter } from './baseConverter';
+import { BaseConverter, ConverterResultTypes } from './baseConverter';
 import { Converter } from './converter';
 import { literal } from './basicConverters';
 import { FieldConverters, ObjectConverter } from './objectConverter';
@@ -299,4 +299,52 @@ export function transformObject<TSRC, TDEST, TC = unknown>(
       ? succeed(converted)
       : fail(options?.description ? `${options.description}:\n  ${errors.join('\n  ')}` : errors.join('\n'));
   });
+}
+
+/**
+ * Creates a {@link Converter | Converter} that converts an array to a strongly-typed tuple,
+ * using the supplied tuple of {@link Converter | Converters} to convert each element.
+ *
+ * @remarks
+ * The resulting {@link Converter | Converter} returns {@link Success | Success} with a tuple
+ * containing the converted values if all conversions succeed. Returns {@link Failure | Failure}
+ * with an error message if the source is not an array, has the wrong number of elements, or
+ * any element conversion fails.
+ *
+ * @example
+ * ```typescript
+ * const converter = tuple([Converters.string, Converters.number, Converters.boolean]);
+ * // Type is Converter<[string, number, boolean]>
+ *
+ * converter.convert(['hello', 42, true]);
+ * // Returns Success with ['hello', 42, true]
+ * ```
+ *
+ * @param converters - A tuple of {@link Converter | Converters} defining the expected types
+ * for each element of the tuple.
+ * @returns A {@link Converter | Converter} that returns a strongly-typed tuple.
+ * @public
+ */
+export function tuple<T extends readonly Converter<unknown, TC>[], TC = unknown>(
+  converters: [...T]
+): Converter<ConverterResultTypes<T>, TC> {
+  return new BaseConverter<ConverterResultTypes<T>, TC>(
+    (from: unknown, __self: Converter<ConverterResultTypes<T>, TC>, context?: TC) => {
+      if (!Array.isArray(from)) {
+        return fail(`Not an array: ${JSON.stringify(from)}`);
+      }
+
+      if (from.length !== converters.length) {
+        return fail(
+          `Expected array of length ${converters.length}, got ${from.length}: ${JSON.stringify(from)}`
+        );
+      }
+
+      const results = converters.map((converter, index) => {
+        return converter.convert(from[index], context);
+      });
+
+      return mapResults(results) as ReturnType<Converter<ConverterResultTypes<T>, TC>['convert']>;
+    }
+  );
 }

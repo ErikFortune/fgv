@@ -360,6 +360,17 @@ Helper to create a strongly-typed [Converter](./ts-utils.converter.md) which con
 </td></tr>
 <tr><td>
 
+[tuple(converters)](./ts-utils.conversion.converters.tuple.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) that converts an array to a strongly-typed tuple, using the supplied tuple of [Converters](./ts-utils.converter.md) to convert each element.
+
+
+</td></tr>
+<tr><td>
+
 [validated(converterOrValidator)](./ts-utils.conversion.converters.validated.md)
 
 

@@ -31,7 +31,8 @@ import {
 import { GenericDefaultingConverter } from './defaultingConverter';
 
 /**
- * internal
+ * Internal helper that recursively unwraps converter and array types.
+ * @internal
  */
 type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
   ? TTO extends Array<infer TTOELEM>
@@ -42,19 +43,35 @@ type InnerInferredType<TCONV> = TCONV extends Converter<infer TTO>
   : TCONV;
 
 /**
- * Infers the type that will be returned by an instantiated converter.  Works
- * for complex as well as simple types.
+ * Infers the type that will be returned by an instantiated converter. Works
+ * for complex as well as simple types, including nested arrays.
  * @example `Infer<typeof Converters.mapOf(Converters.stringArray)>` is `Map<string, string[]>`
- * @beta
+ * @public
  */
 export type Infer<TCONV> = TCONV extends Converter<infer TTO, unknown> ? InnerInferredType<TTO> : never;
 
 /**
- * Deprecated name for Infer<T> retained for compatibility
- * @deprecated use @see Infer instead
- * @internal
+ * Deprecated name for {@link Conversion.Infer | Infer
+ * } retained for compatibility.
+ * @deprecated Use {@link Conversion.Infer | Infer} instead.
+ * @public
  */
 export type ConvertedToType<TCONV> = Infer<TCONV>;
+
+/**
+ * Helper type to extract the result type from a {@link Converter | Converter}.
+ * For simple single-level extraction. For complex nested types, use {@link Conversion.Infer | Infer}.
+ * @public
+ */
+export type ConverterResultType<C> = C extends Converter<infer T, unknown> ? T : never;
+
+/**
+ * Helper type to map a tuple of {@link Converter | Converters} to a tuple of their result types.
+ * @public
+ */
+export type ConverterResultTypes<T extends readonly Converter<unknown, unknown>[]> = {
+  [K in keyof T]: T[K] extends Converter<infer R, unknown> ? R : never;
+};
 
 /**
  * Function signature for a converter function.

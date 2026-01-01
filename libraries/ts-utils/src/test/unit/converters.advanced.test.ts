@@ -605,4 +605,126 @@ describe('Advanced converters', () => {
       });
     });
   });
+
+  describe('tuple converter', () => {
+    describe('basic functionality', () => {
+      test('converts a tuple with different types', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number, Converters.boolean]);
+
+        expect(converter.convert(['hello', 42, true])).toSucceedWith(['hello', 42, true]);
+      });
+
+      test('converts numeric strings in number positions', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number]);
+
+        expect(converter.convert(['hello', '42'])).toSucceedWith(['hello', 42]);
+      });
+
+      test('converts boolean strings in boolean positions', () => {
+        const converter = Converters.tuple([Converters.boolean, Converters.string]);
+
+        expect(converter.convert(['true', 'world'])).toSucceedWith([true, 'world']);
+      });
+
+      test('handles single-element tuples', () => {
+        const converter = Converters.tuple([Converters.string]);
+
+        expect(converter.convert(['only'])).toSucceedWith(['only']);
+      });
+
+      test('handles empty tuples', () => {
+        const converter = Converters.tuple([]);
+
+        expect(converter.convert([])).toSucceedWith([]);
+      });
+    });
+
+    describe('type safety', () => {
+      test('infers correct tuple type', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number, Converters.boolean]);
+
+        // TypeScript should infer this as Converter<[string, number, boolean]>
+        const result = converter.convert(['test', 123, false]);
+        expect(result).toSucceedAndSatisfy((tuple) => {
+          // These type assertions should compile without error
+          const str: string = tuple[0];
+          const num: number = tuple[1];
+          const bool: boolean = tuple[2];
+          expect(str).toBe('test');
+          expect(num).toBe(123);
+          expect(bool).toBe(false);
+        });
+      });
+
+      test('works with nested converters', () => {
+        const converter = Converters.tuple([
+          Converters.string,
+          Converters.arrayOf(Converters.number),
+          Converters.object({ name: Converters.string })
+        ]);
+
+        const input = ['hello', [1, 2, 3], { name: 'test' }];
+        expect(converter.convert(input)).toSucceedWith(['hello', [1, 2, 3], { name: 'test' }]);
+      });
+    });
+
+    describe('error handling', () => {
+      test('fails for non-array input', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number]);
+
+        expect(converter.convert('not an array')).toFailWith(/not an array/i);
+        expect(converter.convert(123)).toFailWith(/not an array/i);
+        expect(converter.convert({ first: 'a', second: 1 })).toFailWith(/not an array/i);
+        expect(converter.convert(null)).toFailWith(/not an array/i);
+        expect(converter.convert(undefined)).toFailWith(/not an array/i);
+      });
+
+      test('fails when array is too short', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number, Converters.boolean]);
+
+        expect(converter.convert(['hello', 42])).toFailWith(/expected array of length 3, got 2/i);
+      });
+
+      test('fails when array is too long', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number]);
+
+        expect(converter.convert(['hello', 42, true])).toFailWith(/expected array of length 2, got 3/i);
+      });
+
+      test('fails when element conversion fails', () => {
+        const converter = Converters.tuple([Converters.string, Converters.number]);
+
+        expect(converter.convert(['hello', 'not a number'])).toFailWith(/not a number/i);
+      });
+
+      test('fails on first element conversion error', () => {
+        const converter = Converters.tuple([Converters.number, Converters.number]);
+
+        expect(converter.convert(['not a number', 'also not'])).toFailWith(/not a number/i);
+      });
+    });
+
+    describe('with context', () => {
+      test('passes context to element converters', () => {
+        // Create a converter that uses context
+        const contextConverter = Converters.enumeratedValue<string>(['a', 'b', 'c']);
+        const tupleConverter = Converters.tuple([contextConverter, Converters.number]);
+
+        // The enumeratedValue converter can accept context
+        expect(tupleConverter.convert(['a', 42])).toSucceedWith(['a', 42]);
+        expect(tupleConverter.convert(['invalid', 42])).toFailWith(/invalid enumerated value/i);
+      });
+    });
+
+    describe('type inference with Infer', () => {
+      test('Infer extracts correct tuple type', () => {
+        const tupleConverter = Converters.tuple([Converters.string, Converters.number]);
+        type InferredType = Infer<typeof tupleConverter>;
+
+        // This is a compile-time check - if the type is wrong, this won't compile
+        const value: InferredType = ['test', 42];
+        expect(tupleConverter.convert(value)).toSucceedWith(['test', 42]);
+      });
+    });
+  });
 });

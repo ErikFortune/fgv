@@ -193,12 +193,45 @@ Formats an incoming error message and value that failed validation.
 </td></tr>
 <tr><td>
 
+[ConvertedToType](./ts-utils.conversion.convertedtotype.md)
+
+
+</td><td>
+
+Deprecated name for [Infer](./ts-utils.conversion.infer.md) retained for compatibility.
+
+
+</td></tr>
+<tr><td>
+
 [ConverterFunc](./ts-utils.conversion.converterfunc.md)
 
 
 </td><td>
 
 Function signature for a converter function.
+
+
+</td></tr>
+<tr><td>
+
+[ConverterResultType](./ts-utils.conversion.converterresulttype.md)
+
+
+</td><td>
+
+Helper type to extract the result type from a [Converter](./ts-utils.converter.md)<!-- -->. For simple single-level extraction. For complex nested types, use [Infer](./ts-utils.conversion.infer.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[ConverterResultTypes](./ts-utils.conversion.converterresulttypes.md)
+
+
+</td><td>
+
+Helper type to map a tuple of [Converters](./ts-utils.converter.md) to a tuple of their result types.
 
 
 </td></tr>
@@ -220,7 +253,7 @@ Per-property converters or validators for each of the properties in type T.
 
 </td><td>
 
-**_(BETA)_** Infers the type that will be returned by an instantiated converter. Works for complex as well as simple types.
+Infers the type that will be returned by an instantiated converter. Works for complex as well as simple types, including nested arrays.
 
 
 </td></tr>
