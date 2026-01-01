@@ -24,7 +24,7 @@ import { fail, isKeyOf, succeed } from '../base';
 import { Validator } from '../validation';
 import { BaseConverter } from './baseConverter';
 import { Converter } from './converter';
-import { literal, oneOf } from './basicConverters';
+import { literal } from './basicConverters';
 import { FieldConverters, ObjectConverter } from './objectConverter';
 
 /**
@@ -109,10 +109,9 @@ export function compositeId<TCOLLECTIONID extends string, TITEMID extends string
   separator: string,
   itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
 ): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
-  return oneOf<ICompositeId<TCOLLECTIONID, TITEMID>, TC>([
-    compositeIdFromString(collectionIdConverter, separator, itemIdConverter),
-    compositeIdFromObject(collectionIdConverter, separator, itemIdConverter)
-  ]);
+  return compositeIdFromObject(collectionIdConverter, separator, itemIdConverter).or(
+    compositeIdFromString(collectionIdConverter, separator, itemIdConverter)
+  );
 }
 
 /**

@@ -182,6 +182,13 @@ export class GenericDefaultingConverter<T, TD = T, TC = unknown> implements Defa
     return new GenericDefaultingConverter(this._converter, dflt);
   }
 
+  /**
+   * {@inheritdoc Converter.or}
+   */
+  public or(__converter: Converter<T, TC>): DefaultingConverter<T, TD, TC> {
+    return this;
+  }
+
   private _applyDefault<T2 = T>(converted: Result<T2>): Success<T2 | TD> {
     return converted.success ? converted : succeed(this.defaultValue);
   }

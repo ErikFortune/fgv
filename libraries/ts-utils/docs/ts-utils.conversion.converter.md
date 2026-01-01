@@ -172,6 +172,17 @@ Creates a [Converter](./ts-utils.converter.md) for an optional value.
 </td></tr>
 <tr><td>
 
+[or(other)](./ts-utils.conversion.converter.or.md)
+
+
+</td><td>
+
+Chains this converter with another of the same type, to be attempted if this converter fails.
+
+
+</td></tr>
+<tr><td>
+
 [withAction(action)](./ts-utils.conversion.converter.withaction.md)
 
 

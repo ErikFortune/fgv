@@ -289,6 +289,14 @@ export class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     return new GenericDefaultingConverter<T, TD, TC>(this, defaultValue);
   }
 
+  public or(other: Converter<T, TC>): Converter<T, TC> {
+    return new BaseConverter<T, TC>((from: unknown, __self: Converter<T, TC>, context?: TC) => {
+      return this._converter(from, this, this._context(context)).onFailure(() => {
+        return other.convert(from, this._context(context));
+      });
+    });
+  }
+
   /**
    * @internal
    */

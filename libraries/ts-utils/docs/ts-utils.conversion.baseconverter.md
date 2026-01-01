@@ -232,6 +232,18 @@ Creates a [Converter](./ts-utils.converter.md) for an optional value.
 </td></tr>
 <tr><td>
 
+[or(other)](./ts-utils.conversion.baseconverter.or.md)
+
+
+</td><td>
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [withAction(action)](./ts-utils.conversion.baseconverter.withaction.md)
 
 

@@ -79,6 +79,8 @@ class BaseConverter<T, TC = unknown> implements Converter<T, TC> {
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
     mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
+    // (undocumented)
+    or(other: Converter<T, TC>): Converter<T, TC>;
     // @internal (undocumented)
     protected _traits(traits?: Partial<ConverterTraits>): ConverterTraits;
     // @internal (undocumented)
@@ -493,6 +495,7 @@ export interface Converter<T, TC = unknown> extends ConverterTraits {
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
     mapItems<TI>(mapper: (from: unknown, context?: TC) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: OnError): Converter<T | undefined, TC>;
+    or(other: Converter<T, TC>): Converter<T, TC>;
     withAction<T2>(action: (result: Result<T>, context?: TC) => Result<T2>): Converter<T2, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -891,6 +894,7 @@ class GenericDefaultingConverter<T, TD = T, TC = unknown> implements DefaultingC
     mapConvertItems<TI>(mapConverter: Converter<TI, unknown>): Converter<TI[], TC>;
     mapItems<TI>(mapper: (from: unknown) => Result<TI>): Converter<TI[], TC>;
     optional(onError?: ('failOnError' | 'ignoreErrors') | undefined): Converter<T | TD | undefined, TC>;
+    or(__converter: Converter<T, TC>): DefaultingConverter<T, TD, TC>;
     withAction<T2>(action: (result: Result<T | TD>) => Result<T2>): Converter<T2, TC>;
     withBrand<B extends string>(brand: B): Converter<Brand<T | TD, B>, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -933,6 +937,10 @@ class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
     optional(): Validator<T | undefined, TC>;
     // @internal (undocumented)
     protected readonly _options: ValidatorOptions<TC>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    or(other: Validator<T, TC>): Validator<T, TC>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -2337,6 +2345,8 @@ export interface Validator<T, TC = unknown> {
     readonly isOptional: boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     optional(): Validator<T | undefined, TC>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    or(other: Validator<T, TC>): Validator<T, TC>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly traits: ValidatorTraits;
     validate(from: unknown, context?: TC): Result<T>;
