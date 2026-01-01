@@ -185,7 +185,7 @@ describe('CompositeIdValidator class', () => {
     });
 
     test('fails when there are multiple separators', () => {
-      expect(validator.validate('collection:item:extra')).toFailWith(/separator ':' not found/i);
+      expect(validator.validate('collection:item:extra')).toFailWith(/multiple separators/i);
     });
 
     test('fails for empty string', () => {

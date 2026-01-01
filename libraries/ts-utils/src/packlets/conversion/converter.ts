@@ -69,6 +69,7 @@ export interface ConstraintOptions {
 
 export interface Converter<T, TC = unknown> extends ConverterTraits {
   /**
+   *
    * Indicates whether this element is explicitly optional.
    */
   readonly isOptional: boolean;

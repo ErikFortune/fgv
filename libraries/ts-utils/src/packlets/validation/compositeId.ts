@@ -79,8 +79,10 @@ export class CompositeIdValidator<
       return fail(`${value}: invalid non-string composite ID.`);
     }
     const parts = value.split(this._separator);
-    if (parts.length !== 2) {
+    if (parts.length < 2) {
       return fail(`${value}: invalid composite ID - separator '${this._separator}' not found.`);
+    } else if (parts.length > 2) {
+      return fail(`${value}: invalid composite ID - multiple separators '${this._separator}.' found.`);
     }
     const [collectionId, itemId] = parts;
     const result = this._collectionIdValidator

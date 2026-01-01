@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-import { Result, fail, isKeyOf, succeed } from '../base';
-import { TypeGuardWithContext, Validator } from '../validation';
+import { Failure, Result, fail, isKeyOf, succeed } from '../base';
+import { TypeGuardWithContext, Validator, Base as ValidationBase } from '../validation';
 import { BaseConverter, ConverterFunc } from './baseConverter';
 import { Converter, OnError } from './converter';
 import { FieldConverters, ObjectConverter, ObjectConverterOptions } from './objectConverter';
@@ -193,14 +193,54 @@ export function delimitedString(
 }
 
 /**
+ * Determines if a supplied {@link Conversion.Converter | Converter} or {@link Validation.Validator | Validator} is
+ * a {@link Validation.Validator | Validator}.
+ * @param converterOrValidator - The {@link Conversion.Converter | Converter} or {@link Validation.Validator | Validator} to be tested.
+ * @returns `true` if `converterOrValidator` is a {@link Validation.Validator | Validator}, `false` otherwise.
+ * @public
+ */
+export function isValidator<T, TC>(
+  converterOrValidator: Converter<T, TC> | Validator<T, TC>
+): converterOrValidator is Validator<T, TC> {
+  return 'validate' in converterOrValidator;
+}
+
+/**
  * Helper function to create a {@link Converter | Converter} from any {@link Validation.Validator}
- * @param validator - the validator to be wrapped
+ * @param validator - the {@link Validation.Validator} to be wrapped or {@link Converter | Converter}
+ * to be used directly.
  * @returns A {@link Converter | Converter} which uses the supplied validator.
  * @public
  */
-export function validated<T, TC = unknown>(validator: Validator<T, TC>): Converter<T, TC> {
+export function validated<T, TC = unknown>(
+  converterOrValidator: Validator<T, TC> | Converter<T, TC>
+): Converter<T, TC> {
+  if (!isValidator(converterOrValidator)) {
+    return converterOrValidator;
+  }
   return new BaseConverter((from: unknown, __self?: Converter<T, TC>, context?: TC) => {
-    return validator.validate(from, context);
+    return converterOrValidator.validate(from, context);
+  });
+}
+
+/**
+ * Helper function to create a {@link Validation.Validator | Validator} from any {@link Conversion.Converter | Converter}
+ * or {@link Validation.Validator | Validator}.
+ * @param converterOrValidator - the {@link Conversion.Converter | Converter} to be wrappped or {@link Validation.Validator | Validator} to be used directly.
+ * @returns A {@link Validation.Validator | Validator} which uses the supplied converter or validator.
+ * @public
+ */
+export function asValidator<T, TC = unknown>(
+  converterOrValidator: Converter<T, TC> | Validator<T, TC>
+): Validator<T, TC> {
+  if (isValidator(converterOrValidator)) {
+    return converterOrValidator;
+  }
+  return new ValidationBase.GenericValidator<T, TC>({
+    validator: (from: unknown, context?: TC): boolean | Failure<T> => {
+      const result = converterOrValidator.convert(from, context);
+      return result.isSuccess() ? true : fail(result.message);
+    }
   });
 }
 
@@ -346,6 +386,125 @@ export const stringArray: Converter<string[], unknown> = arrayOf(string);
  * @public
  */
 export const numberArray: Converter<number[], unknown> = arrayOf(number);
+
+/**
+ * Represents a composite ID constructed of two strongly-typed string IDs
+ * separated by a delimiter.
+ * @public
+ */
+export interface ICompositeId<TCOLLECTIONID extends string, TITEMID extends string> {
+  readonly collectionId: TCOLLECTIONID;
+  readonly separator: string;
+  readonly itemId: TITEMID;
+}
+
+/**
+ * Creates an {@link ObjectConverter | ObjectConverter} for a strongly-typed {@link Converters.ICompositeId | CompositeId}.
+ * @param collectionIdValidator - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
+ * @param separator - The separator string.
+ * @param itemIdValidator - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
+ * @returns An {@link ObjectConverter | ObjectConverter} for the strongly-typed composite ICompositeId.
+ * @public
+ */
+export function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(
+  collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
+  separator: string,
+  itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>
+): ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
+  return new ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>({
+    collectionId: collectionIdValidator,
+    separator: literal(separator),
+    itemId: itemIdValidator
+  });
+}
+
+/**
+ * Converts a composite ID string into a strongly-typed {@link Converters.ICompositeId | CompositeId}.
+ * @param collectionIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
+ * @param separator - The separator string.
+ * @param itemIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
+ * @returns A {@link Converter | Converter} for the strongly-typed {@link Converters.ICompositeId | CompositeId}.
+ * @public
+ */
+export function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(
+  collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
+  separator: string,
+  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
+): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
+  return new BaseConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>(
+    (from: unknown, __self?: Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>, context?: TC) => {
+      if (typeof from !== 'string') {
+        return fail(`${from}: invalid non-string composite ID.`);
+      }
+      const parts = from.split(separator);
+      if (parts.length < 2) {
+        return fail(`${from}: invalid composite ID - separator '${separator}' not found.`);
+      } else if (parts.length > 2) {
+        return fail(`${from}: invalid composite ID - multiple separators '${separator}.' found.`);
+      }
+      return collectionIdConverter.convert(parts[0], context).onSuccess((collectionId) => {
+        return itemIdConverter.convert(parts[1], context).onSuccess((itemId) => {
+          return succeed({
+            collectionId,
+            separator,
+            itemId
+          });
+        });
+      });
+    }
+  );
+}
+
+/**
+ * Creates a {@link Converter | Converter} for a strongly-typed {@link Converters.ICompositeId | CompositeId} from
+ * either a string or an object representation.
+ * @param collectionIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
+ * @param separator - The separator string.
+ * @param itemIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
+ * @returns A {@link Converter | Converter} for the strongly-typed {@link Converters.ICompositeId | CompositeId}.
+ * @public
+ */
+export function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(
+  collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
+  separator: string,
+  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
+): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC> {
+  return oneOf<ICompositeId<TCOLLECTIONID, TITEMID>, TC>([
+    compositeIdFromString(collectionIdConverter, separator, itemIdConverter),
+    compositeIdFromObject(collectionIdConverter, separator, itemIdConverter)
+  ]);
+}
+
+/**
+ * Converts a strongly-typed {@link Converters.ICompositeId | CompositeId} into a string.
+ * @param compositeIdValidator - {@link Converter | Converter} or {@link Validator | Validator} for the strongly-typed {@link Converters.ICompositeId | CompositeId}.
+ * @param collectionIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the collection ID portion.
+ * @param separator - The separator string.
+ * @param itemIdConverter - {@link Converter | Converter} or {@link Validator | Validator} for the item ID portion.
+ * @returns A {@link Converter | Converter} which produces a composite ID string.
+ * @public
+ */
+export function compositeIdString<
+  T extends string,
+  TCOLLECTIONID extends string,
+  TITEMID extends string,
+  TC = unknown
+>(
+  compositeIdValidator: Validator<T, TC>,
+  collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>,
+  separator: string,
+  itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>
+): Converter<T, TC> {
+  const objectConverter = compositeIdFromObject(collectionIdConverter, separator, itemIdConverter);
+  return new BaseConverter<T, TC>((from: unknown, __self?: Converter<T, TC>, context?: TC) => {
+    if (typeof from === 'string') {
+      return compositeIdValidator.validate(from, context);
+    }
+    return objectConverter.convert(from, context).onSuccess((compositeId) => {
+      return compositeIdValidator.validate(`${compositeId.collectionId}${separator}${compositeId.itemId}`);
+    });
+  });
+}
 
 /**
  * Options for {@link Converters.(recordOf:3) | Converters.recordOf} and

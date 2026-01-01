@@ -23,8 +23,8 @@
 import '../helpers/jest';
 
 import { Validation } from '../../index';
-import { omit, Result, succeed } from '../../packlets/base';
-import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
+import { Failure, fail, omit, Result, succeed } from '../../packlets/base';
+import { Converter, Converters, FieldConverters, Infer } from '../../packlets/conversion';
 
 describe('Converters module', () => {
   describe('string converter', () => {
@@ -1722,6 +1722,343 @@ describe('Converters module', () => {
 
     test('fails if source is not an object', () => {
       expect(converter.convert(10)).toFailWith(/not an object/i);
+    });
+  });
+
+  describe('isValidator helper', () => {
+    test('returns true for a validator', () => {
+      const validator = Validation.Validators.string;
+      expect(Converters.isValidator(validator)).toBe(true);
+    });
+
+    test('returns false for a converter', () => {
+      const converter = Converters.string;
+      expect(Converters.isValidator(converter)).toBe(false);
+    });
+
+    test('returns true for object validator', () => {
+      const validator = Validation.Validators.object({
+        name: Validation.Validators.string
+      });
+      expect(Converters.isValidator(validator)).toBe(true);
+    });
+
+    test('returns false for object converter', () => {
+      const converter = Converters.object({
+        name: Converters.string
+      });
+      expect(Converters.isValidator(converter)).toBe(false);
+    });
+  });
+
+  describe('validated converter (extended)', () => {
+    test('returns the converter as-is when passed a converter', () => {
+      const converter = Converters.string;
+      const result = Converters.validated(converter);
+      expect(result).toBe(converter);
+    });
+
+    test('wraps a validator into a converter', () => {
+      const validator = Validation.Validators.string;
+      const converter = Converters.validated(validator);
+
+      expect(Converters.isValidator(converter)).toBe(false);
+      expect(converter.convert('test')).toSucceedWith('test');
+      expect(converter.convert(123)).toFailWith(/not a string/i);
+    });
+
+    test('preserves validation behavior with complex validators', () => {
+      interface ITestObj {
+        name: string;
+        value: number;
+      }
+      const validator = Validation.Validators.object<ITestObj>({
+        name: Validation.Validators.string,
+        value: Validation.Validators.number
+      });
+      const converter = Converters.validated(validator);
+
+      const validObj = { name: 'test', value: 42 };
+      expect(converter.convert(validObj)).toSucceedWith(validObj);
+      expect(converter.convert({ name: 'test', value: 'not a number' })).toFailWith(/not a number/i);
+    });
+  });
+
+  describe('asValidator helper', () => {
+    test('returns the validator as-is when passed a validator', () => {
+      const validator = Validation.Validators.string;
+      const result = Converters.asValidator(validator);
+      expect(result).toBe(validator);
+    });
+
+    test('wraps a converter into a validator', () => {
+      const converter = Converters.string;
+      const validator = Converters.asValidator(converter);
+
+      expect(Converters.isValidator(validator)).toBe(true);
+      expect(validator.validate('test')).toSucceedWith('test');
+      expect(validator.validate(123)).toFailWith(/not a string/i);
+    });
+
+    test('preserves conversion behavior with complex converters', () => {
+      interface ITestObj {
+        name: string;
+        value: number;
+      }
+      const converter = Converters.object<ITestObj>({
+        name: Converters.string,
+        value: Converters.number
+      });
+      const validator = Converters.asValidator(converter);
+
+      const validObj = { name: 'test', value: 42 };
+      expect(validator.validate(validObj)).toSucceedWith(validObj);
+      expect(validator.validate({ name: 'test', value: 'not a number' })).toFailWith(/not a number/i);
+    });
+
+    test('handles converters that transform values', () => {
+      // Number converter accepts numeric strings and converts them
+      const converter = Converters.number;
+      const validator = Converters.asValidator(converter);
+
+      // As a validator, it should still succeed (value passes conversion)
+      expect(validator.validate(42)).toSucceed();
+      expect(validator.validate('not a number')).toFailWith(/not a number/i);
+    });
+  });
+
+  describe('compositeId converters', () => {
+    // Branded types for testing
+    type CollectionId = string & { __brand: 'CollectionId' };
+    type ItemId = string & { __brand: 'ItemId' };
+
+    const collectionIdConverter = Converters.string as unknown as Converter<CollectionId>;
+    const itemIdConverter = Converters.string as unknown as Converter<ItemId>;
+
+    // More restrictive validators for testing validation errors
+    const restrictedCollectionValidator = Validation.Validators.generic<CollectionId>(
+      (from: unknown): boolean | Failure<CollectionId> => {
+        if (typeof from !== 'string') {
+          return fail('not a string');
+        }
+        if (!/^[a-z]+$/i.test(from)) {
+          return fail('collection ID must be alphabetic');
+        }
+        return true;
+      }
+    );
+
+    const restrictedItemValidator = Validation.Validators.generic<ItemId>(
+      (from: unknown): boolean | Failure<ItemId> => {
+        if (typeof from !== 'string') {
+          return fail('not a string');
+        }
+        if (!/^[0-9]+$/.test(from)) {
+          return fail('item ID must be numeric');
+        }
+        return true;
+      }
+    );
+
+    describe('compositeIdFromObject', () => {
+      const converter = Converters.compositeIdFromObject(collectionIdConverter, ':', itemIdConverter);
+
+      test('converts a valid object representation', () => {
+        const input = { collectionId: 'users', separator: ':', itemId: '123' };
+        expect(converter.convert(input)).toSucceedAndSatisfy((result) => {
+          expect(result.collectionId).toBe('users');
+          expect(result.separator).toBe(':');
+          expect(result.itemId).toBe('123');
+        });
+      });
+
+      test('fails for invalid separator', () => {
+        const input = { collectionId: 'users', separator: '/', itemId: '123' };
+        expect(converter.convert(input)).toFailWith(/does not match/i);
+      });
+
+      test('fails for missing fields', () => {
+        expect(converter.convert({ collectionId: 'users' })).toFail();
+        expect(converter.convert({ itemId: '123' })).toFail();
+        expect(converter.convert({})).toFail();
+      });
+
+      test('fails for non-object input', () => {
+        expect(converter.convert('users:123')).toFail();
+        expect(converter.convert(null)).toFail();
+        expect(converter.convert(undefined)).toFail();
+      });
+
+      test('works with validators', () => {
+        const validatorConverter = Converters.compositeIdFromObject(
+          restrictedCollectionValidator,
+          ':',
+          restrictedItemValidator
+        );
+
+        expect(
+          validatorConverter.convert({ collectionId: 'users', separator: ':', itemId: '123' })
+        ).toSucceed();
+        expect(
+          validatorConverter.convert({ collectionId: '123invalid', separator: ':', itemId: '123' })
+        ).toFailWith(/alphabetic/i);
+        expect(
+          validatorConverter.convert({ collectionId: 'users', separator: ':', itemId: 'abc' })
+        ).toFailWith(/numeric/i);
+      });
+    });
+
+    describe('compositeIdFromString', () => {
+      const converter = Converters.compositeIdFromString(collectionIdConverter, ':', itemIdConverter);
+
+      test('converts a valid string representation', () => {
+        expect(converter.convert('users:123')).toSucceedAndSatisfy((result) => {
+          expect(result.collectionId).toBe('users');
+          expect(result.separator).toBe(':');
+          expect(result.itemId).toBe('123');
+        });
+      });
+
+      test('handles different separators', () => {
+        const slashConverter = Converters.compositeIdFromString(collectionIdConverter, '/', itemIdConverter);
+        expect(slashConverter.convert('users/123')).toSucceedAndSatisfy((result) => {
+          expect(result.collectionId).toBe('users');
+          expect(result.separator).toBe('/');
+          expect(result.itemId).toBe('123');
+        });
+      });
+
+      test('handles multi-character separators', () => {
+        const multiSepConverter = Converters.compositeIdFromString(
+          collectionIdConverter,
+          '::',
+          itemIdConverter
+        );
+        expect(multiSepConverter.convert('users::123')).toSucceedAndSatisfy((result) => {
+          expect(result.collectionId).toBe('users');
+          expect(result.separator).toBe('::');
+          expect(result.itemId).toBe('123');
+        });
+      });
+
+      test('fails for non-string input', () => {
+        expect(converter.convert(123)).toFailWith(/invalid non-string composite ID/i);
+        expect(converter.convert(null)).toFailWith(/invalid non-string composite ID/i);
+        expect(converter.convert({ collectionId: 'users', itemId: '123' })).toFailWith(
+          /invalid non-string composite ID/i
+        );
+      });
+
+      test('fails when separator not found', () => {
+        expect(converter.convert('usersNoSeparator')).toFailWith(/separator.*not found/i);
+      });
+
+      test('fails when multiple separators found', () => {
+        expect(converter.convert('users:123:extra')).toFailWith(/multiple separators/i);
+      });
+
+      test('works with validators', () => {
+        const validatorConverter = Converters.compositeIdFromString(
+          restrictedCollectionValidator,
+          ':',
+          restrictedItemValidator
+        );
+
+        expect(validatorConverter.convert('users:123')).toSucceed();
+        expect(validatorConverter.convert('123invalid:456')).toFailWith(/alphabetic/i);
+        expect(validatorConverter.convert('users:abc')).toFailWith(/numeric/i);
+      });
+    });
+
+    describe('compositeId (combined)', () => {
+      const converter = Converters.compositeId(collectionIdConverter, ':', itemIdConverter);
+
+      test('converts string representation', () => {
+        expect(converter.convert('users:123')).toSucceedAndSatisfy((result) => {
+          expect(result.collectionId).toBe('users');
+          expect(result.separator).toBe(':');
+          expect(result.itemId).toBe('123');
+        });
+      });
+
+      test('converts object representation', () => {
+        const input = { collectionId: 'users', separator: ':', itemId: '123' };
+        expect(converter.convert(input)).toSucceedAndSatisfy((result) => {
+          expect(result.collectionId).toBe('users');
+          expect(result.separator).toBe(':');
+          expect(result.itemId).toBe('123');
+        });
+      });
+
+      test('fails for invalid input', () => {
+        expect(converter.convert(123)).toFail();
+        expect(converter.convert(null)).toFail();
+        expect(converter.convert('noSeparator')).toFail();
+      });
+    });
+
+    describe('compositeIdString', () => {
+      type CompositeId = `${CollectionId}:${ItemId}` & { __brand: 'CompositeId' };
+
+      const compositeIdValidator = Validation.Validators.generic<CompositeId>(
+        (from: unknown): boolean | Failure<CompositeId> => {
+          if (typeof from !== 'string') {
+            return fail('not a string');
+          }
+          const parts = from.split(':');
+          if (parts.length !== 2) {
+            return fail('invalid composite ID format');
+          }
+          if (!/^[a-z]+$/i.test(parts[0])) {
+            return fail('collection ID must be alphabetic');
+          }
+          if (!/^[0-9]+$/.test(parts[1])) {
+            return fail('item ID must be numeric');
+          }
+          return true;
+        }
+      );
+
+      const converter = Converters.compositeIdString(
+        compositeIdValidator,
+        restrictedCollectionValidator,
+        ':',
+        restrictedItemValidator
+      );
+
+      test('validates a string representation directly', () => {
+        expect(converter.convert('users:123')).toSucceedWith('users:123' as CompositeId);
+      });
+
+      test('converts object to string representation', () => {
+        const input = { collectionId: 'users', separator: ':', itemId: '123' };
+        expect(converter.convert(input)).toSucceedWith('users:123' as CompositeId);
+      });
+
+      test('fails for invalid string format', () => {
+        expect(converter.convert('123invalid:456')).toFailWith(/alphabetic/i);
+        expect(converter.convert('users:abc')).toFailWith(/numeric/i);
+      });
+
+      test('fails for invalid object fields', () => {
+        expect(converter.convert({ collectionId: '123', separator: ':', itemId: '456' })).toFailWith(
+          /alphabetic/i
+        );
+        expect(converter.convert({ collectionId: 'users', separator: ':', itemId: 'abc' })).toFailWith(
+          /numeric/i
+        );
+      });
+
+      test('fails for wrong separator in object', () => {
+        expect(converter.convert({ collectionId: 'users', separator: '/', itemId: '123' })).toFailWith(
+          /does not match/i
+        );
+      });
+
+      test('fails for non-string, non-object input', () => {
+        expect(converter.convert(123)).toFail();
+        expect(converter.convert(null)).toFail();
+      });
     });
   });
 });

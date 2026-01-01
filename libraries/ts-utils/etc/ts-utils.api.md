@@ -41,6 +41,16 @@ interface ArrayValidatorConstructorParams<T, TC = unknown> extends ValidatorBase
     validateElement: Validator<T, TC>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function asValidator<T, TC = unknown>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): Validator<T, TC>;
+
 declare namespace Base {
     export {
         GenericValidatorConstructorParams,
@@ -363,10 +373,33 @@ class CollectorValidator<TITEM extends ICollectible<any, any>> implements IReadO
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function compositeId<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function compositeId<T extends string = string, TCOLLECTIONID extends string = string, TITEMID extends string = string, TC = unknown>(params: CompositeIdValidatorConstructorParams<T, TCOLLECTIONID, TITEMID, TC>): CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC>;
+function compositeId_2<T extends string = string, TCOLLECTIONID extends string = string, TITEMID extends string = string, TC = unknown>(params: CompositeIdValidatorConstructorParams<T, TCOLLECTIONID, TITEMID, TC>): CompositeIdValidator<T, TCOLLECTIONID, TITEMID, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function compositeIdFromObject<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdValidator: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdValidator: Converter<TITEMID, TC> | Validator<TITEMID, TC>): ObjectConverter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function compositeIdFromString<TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<ICompositeId<TCOLLECTIONID, TITEMID>, TC>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function compositeIdString<T extends string, TCOLLECTIONID extends string, TITEMID extends string, TC = unknown>(compositeIdValidator: Validator<T, TC>, collectionIdConverter: Converter<TCOLLECTIONID, TC> | Validator<TCOLLECTIONID, TC>, separator: string, itemIdConverter: Converter<TITEMID, TC> | Validator<TITEMID, TC>): Converter<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -479,11 +512,17 @@ declare namespace Converters {
         mappedEnumeratedValue,
         literal,
         delimitedString,
+        isValidator,
         validated,
+        asValidator,
         generic,
         isA,
         oneOf,
         arrayOf,
+        compositeIdFromObject,
+        compositeIdFromString,
+        compositeId,
+        compositeIdString,
         recordOf,
         mapOf,
         validateWith,
@@ -506,6 +545,7 @@ declare namespace Converters {
         optionalBoolean,
         stringArray,
         numberArray,
+        ICompositeId,
         KeyedConverterOptions,
         StrictObjectConverterOptions,
         DiscriminatedObjectConverters,
@@ -1015,6 +1055,16 @@ interface ICollectorValidatorCreateParams<TITEM extends ICollectible<any, any>> 
     readonly converters: KeyValueConverters<CollectibleKey<TITEM>, TITEM>;
 }
 
+// @public
+interface ICompositeId<TCOLLECTIONID extends string, TITEMID extends string> {
+    // (undocumented)
+    readonly collectionId: TCOLLECTIONID;
+    // (undocumented)
+    readonly itemId: TITEMID;
+    // (undocumented)
+    readonly separator: string;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -1315,6 +1365,16 @@ function isIterable<TE = unknown, TI extends Iterable<TE> = Iterable<TE>, TO = u
 
 // @public
 export function isKeyOf<T extends object>(key: string | number | symbol, item: T): key is keyof T;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function isValidator<T, TC>(converterOrValidator: Converter<T, TC> | Validator<T, TC>): converterOrValidator is Validator<T, TC>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -2186,9 +2246,10 @@ declare namespace Utils {
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function validated<T, TC = unknown>(validator: Validator<T, TC>): Converter<T, TC>;
+function validated<T, TC = unknown>(converterOrValidator: Validator<T, TC> | Converter<T, TC>): Converter<T, TC>;
 
 // @public
 function validateWith<T, TC = unknown>(validator: (from: unknown) => from is T, description?: string): Converter<T, TC>;
@@ -2310,7 +2371,7 @@ declare namespace Validators {
         recordOf_2 as recordOf,
         enumeratedValue_2 as enumeratedValue,
         literal_2 as literal,
-        compositeId,
+        compositeId_2 as compositeId,
         oneOf_2 as oneOf,
         isA_2 as isA,
         generic_2 as generic,

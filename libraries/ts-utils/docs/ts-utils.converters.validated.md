@@ -9,7 +9,7 @@ Helper function to create a [Converter](./ts-utils.converter.md) from any [Valid
 **Signature:**
 
 ```typescript
-export declare function validated<T, TC = unknown>(validator: Validator<T, TC>): Converter<T, TC>;
+export declare function validated<T, TC = unknown>(converterOrValidator: Validator<T, TC> | Converter<T, TC>): Converter<T, TC>;
 ```
 
 ## Parameters
@@ -32,17 +32,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-validator
+converterOrValidator
 
 
 </td><td>
 
-[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt;
+[Validator](./ts-utils.validator.md)<!-- -->&lt;T, TC&gt; \| [Converter](./ts-utils.converter.md)<!-- -->&lt;T, TC&gt;
 
 
 </td><td>
-
-the validator to be wrapped
 
 
 </td></tr>
