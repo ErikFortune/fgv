@@ -388,6 +388,17 @@ A read-only interface exposing non-mutating methods of a [ValidatingResultMap](.
 </td></tr>
 <tr><td>
 
+[IResultMap](./ts-utils.collections.iresultmap.md)
+
+
+</td><td>
+
+Interface for a mutable [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IResultMapConstructorParams](./ts-utils.collections.iresultmapconstructorparams.md)
 
 

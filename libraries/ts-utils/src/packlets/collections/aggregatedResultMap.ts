@@ -34,8 +34,8 @@ import { Validator } from '../validation';
 import { KeyValueEntry } from './common';
 import { KeyValueConverters } from './keyValueConverters';
 import { IReadOnlyResultMapValidator } from './resultMapValidator';
-import { ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
-import { ResultMap } from './resultMap';
+import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
+import { IResultMap, ResultMap, ResultMapValueFactory } from './resultMap';
 import { IReadOnlyValidatingResultMap, ValidatingResultMap } from './validatingResultMap';
 
 /**
@@ -224,7 +224,7 @@ export class AggregatedResultMap<
   TCOLLECTIONID extends string,
   TITEMID extends string,
   TITEM
-> implements IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>
+> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>
 {
   private readonly _childKvConverters: KeyValueConverters<TITEMID, TITEM>;
   private readonly _collections: ResultMap<
@@ -493,22 +493,128 @@ export class AggregatedResultMap<
   /**
    * Gets an existing item or adds a new one using a factory.
    * @param key - The composite ID of the item.
-   * @param factory - A factory function to create the value if not found.
+   * @param factory - A factory function to create the value if not found. Receives the composite ID.
    * @returns `Success` with the existing or new value.
    */
   public getOrAdd(
     key: TCOMPOSITEID,
-    factory: (key: TITEMID) => Result<TITEM>
+    factory: ResultMapValueFactory<TCOMPOSITEID, TITEM>
   ): DetailedResult<TITEM, ResultMapResultDetail>;
 
   public getOrAdd(
     key: TCOMPOSITEID,
-    valueOrFactory: TITEM | ((key: TITEMID) => Result<TITEM>)
+    valueOrFactory: TITEM | ResultMapValueFactory<TCOMPOSITEID, TITEM>
   ): DetailedResult<TITEM, ResultMapResultDetail> {
     return this._splitCompositeId(key).onSuccess(({ collectionId, itemId }) => {
       return this._getOrCreateMutableCollection(collectionId).onSuccess((collection) => {
-        return collection.getOrAdd(itemId, valueOrFactory as TITEM);
+        // If it's a factory, wrap it to convert composite ID to item ID
+        if (typeof valueOrFactory === 'function') {
+          const factory = valueOrFactory as ResultMapValueFactory<TCOMPOSITEID, TITEM>;
+          return collection.getOrAdd(itemId, () => factory(key));
+        }
+        return collection.getOrAdd(itemId, valueOrFactory);
       });
+    });
+  }
+
+  /**
+   * Clears all items from all mutable collections.
+   * Immutable collections are not affected.
+   */
+  public clear(): void {
+    for (const entry of Array.from(this._collections.values())) {
+      if (entry.isMutable) {
+        entry.items.clear();
+      }
+    }
+  }
+
+  /**
+   * Returns a read-only view of this map.
+   */
+  public toReadOnly(): IReadOnlyResultMap<TCOMPOSITEID, TITEM> {
+    return this;
+  }
+
+  // ==================== Convenience methods for split IDs ====================
+
+  /**
+   * Composes a collection ID and item ID into a composite ID.
+   * @param collectionId - The collection ID.
+   * @param itemId - The item ID.
+   * @returns The composite ID string.
+   */
+  public composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): TCOMPOSITEID {
+    return `${collectionId}${this._delimiter}${itemId}` as TCOMPOSITEID;
+  }
+
+  /**
+   * Adds an item using separate collection and item IDs.
+   * @param collectionId - The collection ID.
+   * @param itemId - The item ID.
+   * @param value - The value to add.
+   * @returns `Success` with the composite ID if added, `Failure` otherwise.
+   */
+  public addToCollection(
+    collectionId: TCOLLECTIONID,
+    itemId: TITEMID,
+    value: TITEM
+  ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
+    const compositeId = this.composeId(collectionId, itemId);
+    return this.add(compositeId, value).onSuccess(() => {
+      return succeedWithDetail(compositeId, 'added');
+    });
+  }
+
+  /**
+   * Sets an item using separate collection and item IDs.
+   * @param collectionId - The collection ID.
+   * @param itemId - The item ID.
+   * @param value - The value to set.
+   * @returns `Success` with the composite ID if set, `Failure` otherwise.
+   */
+  public setInCollection(
+    collectionId: TCOLLECTIONID,
+    itemId: TITEMID,
+    value: TITEM
+  ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
+    const compositeId = this.composeId(collectionId, itemId);
+    return this.set(compositeId, value).onSuccess((_, detail) => {
+      return succeedWithDetail(compositeId, detail);
+    });
+  }
+
+  /**
+   * Updates an item using separate collection and item IDs.
+   * @param collectionId - The collection ID.
+   * @param itemId - The item ID.
+   * @param value - The new value.
+   * @returns `Success` with the composite ID if updated, `Failure` otherwise.
+   */
+  public updateInCollection(
+    collectionId: TCOLLECTIONID,
+    itemId: TITEMID,
+    value: TITEM
+  ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
+    const compositeId = this.composeId(collectionId, itemId);
+    return this.update(compositeId, value).onSuccess(() => {
+      return succeedWithDetail(compositeId, 'updated');
+    });
+  }
+
+  /**
+   * Deletes an item using separate collection and item IDs.
+   * @param collectionId - The collection ID.
+   * @param itemId - The item ID.
+   * @returns `Success` with the composite ID if deleted, `Failure` otherwise.
+   */
+  public deleteFromCollection(
+    collectionId: TCOLLECTIONID,
+    itemId: TITEMID
+  ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
+    const compositeId = this.composeId(collectionId, itemId);
+    return this.delete(compositeId).onSuccess(() => {
+      return succeedWithDetail(compositeId, 'deleted');
     });
   }
 

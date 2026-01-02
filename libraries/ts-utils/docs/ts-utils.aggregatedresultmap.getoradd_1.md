@@ -9,7 +9,7 @@ Gets an existing item or adds a new one using a factory.
 **Signature:**
 
 ```typescript
-getOrAdd(key: TCOMPOSITEID, factory: (key: TITEMID) => Result<TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
+getOrAdd(key: TCOMPOSITEID, factory: ResultMapValueFactory<TCOMPOSITEID, TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -53,12 +53,12 @@ factory
 
 </td><td>
 
-(key: TITEMID) =&gt; [Result](./ts-utils.result.md)<!-- -->&lt;TITEM&gt;
+[ResultMapValueFactory](./ts-utils.collections.resultmapvaluefactory.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;
 
 
 </td><td>
 
-A factory function to create the value if not found.
+A factory function to create the value if not found. Receives the composite ID.
 
 
 </td></tr>

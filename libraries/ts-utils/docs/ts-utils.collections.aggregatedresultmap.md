@@ -9,9 +9,9 @@ An aggregated result map that wraps a collection of [ValidatingResultMap](./ts-u
 **Signature:**
 
 ```typescript
-export declare class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> 
+export declare class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> 
 ```
-**Implements:** [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;
+**Implements:** [IResultMap](./ts-utils.collections.iresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;, [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;
 
 ## Properties
 
@@ -163,6 +163,34 @@ Adds a new collection.
 </td></tr>
 <tr><td>
 
+[addToCollection(collectionId, itemId, value)](./ts-utils.collections.aggregatedresultmap.addtocollection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds an item using separate collection and item IDs.
+
+
+</td></tr>
+<tr><td>
+
+[clear()](./ts-utils.collections.aggregatedresultmap.clear.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Clears all items from all mutable collections. Immutable collections are not affected.
+
+
+</td></tr>
+<tr><td>
+
 [collections()](./ts-utils.collections.aggregatedresultmap.collections.md)
 
 
@@ -172,6 +200,20 @@ Adds a new collection.
 </td><td>
 
 Iterates over all collections.
+
+
+</td></tr>
+<tr><td>
+
+[composeId(collectionId, itemId)](./ts-utils.collections.aggregatedresultmap.composeid.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Composes a collection ID and item ID into a composite ID.
 
 
 </td></tr>
@@ -202,6 +244,20 @@ Creates a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
 </td><td>
 
 Deletes an item by its composite ID.
+
+
+</td></tr>
+<tr><td>
+
+[deleteFromCollection(collectionId, itemId)](./ts-utils.collections.aggregatedresultmap.deletefromcollection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Deletes an item using separate collection and item IDs.
 
 
 </td></tr>
@@ -347,6 +403,34 @@ Sets an item by its composite ID. Creates the collection if it doesn't exist and
 </td></tr>
 <tr><td>
 
+[setInCollection(collectionId, itemId, value)](./ts-utils.collections.aggregatedresultmap.setincollection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets an item using separate collection and item IDs.
+
+
+</td></tr>
+<tr><td>
+
+[toReadOnly()](./ts-utils.collections.aggregatedresultmap.toreadonly.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Returns a read-only view of this map.
+
+
+</td></tr>
+<tr><td>
+
 [update(key, value)](./ts-utils.collections.aggregatedresultmap.update.md)
 
 
@@ -356,6 +440,20 @@ Sets an item by its composite ID. Creates the collection if it doesn't exist and
 </td><td>
 
 Updates an existing item by its composite ID. Fails if the item doesn't exist.
+
+
+</td></tr>
+<tr><td>
+
+[updateInCollection(collectionId, itemId, value)](./ts-utils.collections.aggregatedresultmap.updateincollection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Updates an item using separate collection and item IDs.
 
 
 </td></tr>

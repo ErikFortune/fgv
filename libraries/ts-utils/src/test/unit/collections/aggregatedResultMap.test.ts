@@ -602,16 +602,16 @@ describe('AggregatedResultMap', () => {
       });
 
       test('works with factory function', () => {
-        const factory = jest.fn((_key: ItemId) => succeed({ name: 'factory', value: 42 }));
+        const factory = jest.fn((_key: CompositeId) => succeed({ name: 'factory', value: 42 }));
         expect(map.getOrAdd('alpha.2' as CompositeId, factory)).toSucceedWith({
           name: 'factory',
           value: 42
         });
-        expect(factory).toHaveBeenCalled();
+        expect(factory).toHaveBeenCalledWith('alpha.2');
       });
 
       test('does not call factory for existing item', () => {
-        const factory = jest.fn((_key: ItemId) => succeed({ name: 'factory', value: 42 }));
+        const factory = jest.fn((_key: CompositeId) => succeed({ name: 'factory', value: 42 }));
         expect(map.getOrAdd('alpha.1' as CompositeId, factory)).toSucceedWith({
           name: 'a1',
           value: 1
@@ -621,6 +621,177 @@ describe('AggregatedResultMap', () => {
 
       test('fails for immutable collection', () => {
         expect(map.getOrAdd('beta.2' as CompositeId, { name: 'b2', value: 20 })).toFailWith(
+          /cannot modify immutable collection/i
+        );
+      });
+    });
+
+    describe('clear', () => {
+      test('clears all items from mutable collections', () => {
+        expect(map.size).toBe(2); // 1 in alpha, 1 in beta
+        map.clear();
+        // Alpha (mutable) should be cleared
+        expect(map.has('alpha.1' as CompositeId)).toBe(false);
+        // Beta (immutable) should still have its item
+        expect(map.has('beta.1' as CompositeId)).toBe(true);
+        expect(map.size).toBe(1);
+      });
+
+      test('does not affect immutable collections', () => {
+        map.clear();
+        expect(map.get('beta.1' as CompositeId)).toSucceedWith({ name: 'b1', value: 10 });
+      });
+    });
+
+    describe('toReadOnly', () => {
+      test('returns the map itself', () => {
+        const readOnly = map.toReadOnly();
+        expect(readOnly).toBe(map);
+      });
+    });
+  });
+
+  describe('convenience methods for split IDs', () => {
+    let map: AggregatedResultMap<CompositeId, CollectionId, ItemId, ITestItem>;
+
+    beforeEach(() => {
+      map = AggregatedResultMap.create({
+        ...defaultParams,
+        collections: [
+          {
+            isMutable: true,
+            id: 'alpha' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'a1', value: 1 } }
+          },
+          {
+            isMutable: false,
+            id: 'beta' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'b1', value: 10 } }
+          }
+        ]
+      }).orThrow();
+    });
+
+    describe('composeId', () => {
+      test('composes collection ID and item ID into composite ID', () => {
+        const compositeId = map.composeId('alpha' as CollectionId, '1' as ItemId);
+        expect(compositeId).toBe('alpha.1');
+      });
+
+      test('uses the configured delimiter', () => {
+        const colonValidator = Validators.compositeId<CompositeId, CollectionId, ItemId>({
+          collectionId: collectionIdValidator,
+          separator: ':',
+          itemId: itemIdValidator
+        });
+
+        const colonMap = AggregatedResultMap.create({
+          compositeIdValidator: colonValidator,
+          collectionIdConverter: collectionIdValidator,
+          itemIdConverter: itemIdValidator,
+          itemConverter,
+          delimiter: ':'
+        }).orThrow();
+
+        expect(colonMap.composeId('alpha' as CollectionId, '1' as ItemId)).toBe('alpha:1');
+      });
+    });
+
+    describe('addToCollection', () => {
+      test('adds item and returns composite ID', () => {
+        expect(
+          map.addToCollection('alpha' as CollectionId, '2' as ItemId, { name: 'a2', value: 2 })
+        ).toSucceedAndSatisfy((id) => {
+          expect(id).toBe('alpha.2');
+        });
+        expect(map.get('alpha.2' as CompositeId)).toSucceedWith({ name: 'a2', value: 2 });
+      });
+
+      test('creates new collection if needed', () => {
+        expect(
+          map.addToCollection('gamma' as CollectionId, '1' as ItemId, { name: 'g1', value: 100 })
+        ).toSucceedWith('gamma.1' as CompositeId);
+        expect(map.hasCollection('gamma' as CollectionId)).toBe(true);
+      });
+
+      test('fails if item already exists', () => {
+        expect(
+          map.addToCollection('alpha' as CollectionId, '1' as ItemId, { name: 'new', value: 99 })
+        ).toFail();
+      });
+
+      test('fails for immutable collection', () => {
+        expect(
+          map.addToCollection('beta' as CollectionId, '2' as ItemId, { name: 'b2', value: 20 })
+        ).toFailWith(/cannot modify immutable collection/i);
+      });
+    });
+
+    describe('setInCollection', () => {
+      test('sets item and returns composite ID', () => {
+        expect(
+          map.setInCollection('alpha' as CollectionId, '2' as ItemId, { name: 'a2', value: 2 })
+        ).toSucceedAndSatisfy((id) => {
+          expect(id).toBe('alpha.2');
+        });
+      });
+
+      test('returns added detail for new items', () => {
+        expect(
+          map.setInCollection('alpha' as CollectionId, '2' as ItemId, { name: 'a2', value: 2 })
+        ).toSucceedWithDetail('alpha.2' as CompositeId, 'added');
+      });
+
+      test('returns updated detail for existing items', () => {
+        expect(
+          map.setInCollection('alpha' as CollectionId, '1' as ItemId, { name: 'updated', value: 99 })
+        ).toSucceedWithDetail('alpha.1' as CompositeId, 'updated');
+      });
+
+      test('fails for immutable collection', () => {
+        expect(
+          map.setInCollection('beta' as CollectionId, '2' as ItemId, { name: 'b2', value: 20 })
+        ).toFailWith(/cannot modify immutable collection/i);
+      });
+    });
+
+    describe('updateInCollection', () => {
+      test('updates item and returns composite ID', () => {
+        expect(
+          map.updateInCollection('alpha' as CollectionId, '1' as ItemId, { name: 'updated', value: 99 })
+        ).toSucceedWith('alpha.1' as CompositeId);
+        expect(map.get('alpha.1' as CompositeId)).toSucceedWith({ name: 'updated', value: 99 });
+      });
+
+      test('fails if item does not exist', () => {
+        expect(
+          map.updateInCollection('alpha' as CollectionId, '99' as ItemId, { name: 'new', value: 1 })
+        ).toFail();
+      });
+
+      test('fails for immutable collection', () => {
+        expect(
+          map.updateInCollection('beta' as CollectionId, '1' as ItemId, { name: 'new', value: 99 })
+        ).toFailWith(/cannot modify immutable collection/i);
+      });
+    });
+
+    describe('deleteFromCollection', () => {
+      test('deletes item and returns composite ID', () => {
+        expect(map.deleteFromCollection('alpha' as CollectionId, '1' as ItemId)).toSucceedWith(
+          'alpha.1' as CompositeId
+        );
+        expect(map.has('alpha.1' as CompositeId)).toBe(false);
+      });
+
+      test('fails if item does not exist', () => {
+        expect(map.deleteFromCollection('alpha' as CollectionId, '99' as ItemId)).toFail();
+      });
+
+      test('fails for immutable collection', () => {
+        expect(map.deleteFromCollection('beta' as CollectionId, '1' as ItemId)).toFailWith(
           /cannot modify immutable collection/i
         );
       });
