@@ -18,15 +18,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+export * from './model';
+
+import * as Converters from './converters';
+
 /**
- * Main exports for \@fgv/ts-chocolate library
- * @packageDocumentation
+ * Converters for ingredient types
+ * @public
  */
-
-// Common types, validation, and converters
-export * from './packlets/common';
-
-// Ingredient types and converters
-import * as Ingredients from './packlets/ingredients';
-
-export { Ingredients };
+export { Converters };

@@ -19,14 +19,15 @@
 // SOFTWARE.
 
 /**
- * Main exports for \@fgv/ts-chocolate library
+ * Common types, validation, and converters for the chocolate library
  * @packageDocumentation
  */
 
-// Common types, validation, and converters
-export * from './packlets/common';
+// Types and Enums
+export * from './model';
 
-// Ingredient types and converters
-import * as Ingredients from './packlets/ingredients';
+// Converters and Validation namespaces for organized access
+import * as Converters from './converters';
+import * as Validation from './validation';
 
-export { Ingredients };
+export { Converters, Validation };

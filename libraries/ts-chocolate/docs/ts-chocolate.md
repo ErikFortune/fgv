@@ -6,11 +6,11 @@
 
 Main exports for @<!-- -->fgv/ts-chocolate library
 
-## Interfaces
+## Namespaces
 
 <table><thead><tr><th>
 
-Interface
+Namespace
 
 
 </th><th>
@@ -21,12 +21,333 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IPlaceholder](./ts-chocolate.iplaceholder.md)
+[Converters](./ts-chocolate.converters.md)
 
 
 </td><td>
 
-Placeholder interface to ensure API extractor works
+
+</td></tr>
+<tr><td>
+
+[Ingredients](./ts-chocolate.ingredients.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Validation](./ts-chocolate.validation.md)
+
+
+</td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[allAllergens](./ts-chocolate.allallergens.md)
+
+
+</td><td>
+
+All possible common allergens
+
+
+</td></tr>
+<tr><td>
+
+[allBuiltInSources](./ts-chocolate.allbuiltinsources.md)
+
+
+</td><td>
+
+All possible built-in source identifiers
+
+
+</td></tr>
+<tr><td>
+
+[allChocolateTypes](./ts-chocolate.allchocolatetypes.md)
+
+
+</td><td>
+
+All possible chocolate types
+
+
+</td></tr>
+<tr><td>
+
+[allFluidityStars](./ts-chocolate.allfluiditystars.md)
+
+
+</td><td>
+
+All possible fluidity star ratings
+
+
+</td></tr>
+<tr><td>
+
+[allIngredientCategories](./ts-chocolate.allingredientcategories.md)
+
+
+</td><td>
+
+All possible ingredient categories
+
+
+</td></tr>
+<tr><td>
+
+[allWeightUnits](./ts-chocolate.allweightunits.md)
+
+
+</td><td>
+
+All possible weight units
+
+
+</td></tr>
+<tr><td>
+
+[BASE\_ID\_PATTERN](./ts-chocolate.base_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid base IDs (no dots allowed)
+
+
+</td></tr>
+<tr><td>
+
+[COMPOSITE\_ID\_PATTERN](./ts-chocolate.composite_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid composite IDs (exactly one dot)
+
+
+</td></tr>
+<tr><td>
+
+[ID\_SEPARATOR](./ts-chocolate.id_separator.md)
+
+
+</td><td>
+
+Separator character used in composite IDs
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[Allergen](./ts-chocolate.allergen.md)
+
+
+</td><td>
+
+Common allergens that may be present in ingredients
+
+
+</td></tr>
+<tr><td>
+
+[BaseIngredientId](./ts-chocolate.baseingredientid.md)
+
+
+</td><td>
+
+Ingredient identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[BaseRecipeId](./ts-chocolate.baserecipeid.md)
+
+
+</td><td>
+
+Recipe identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[BuiltInSource](./ts-chocolate.builtinsource.md)
+
+
+</td><td>
+
+Well-known built-in source identifiers
+
+
+</td></tr>
+<tr><td>
+
+[Celsius](./ts-chocolate.celsius.md)
+
+
+</td><td>
+
+Temperature in Celsius
+
+
+</td></tr>
+<tr><td>
+
+[ChocolateType](./ts-chocolate.chocolatetype.md)
+
+
+</td><td>
+
+Types of chocolate
+
+
+</td></tr>
+<tr><td>
+
+[DegreesMacMichael](./ts-chocolate.degreesmacmichael.md)
+
+
+</td><td>
+
+Viscosity in degrees MacMichael
+
+
+</td></tr>
+<tr><td>
+
+[FluidityStars](./ts-chocolate.fluiditystars.md)
+
+
+</td><td>
+
+Fluidity in Callebaut star ratings (1-5) Lower stars = more fluid, higher stars = more viscous
+
+
+</td></tr>
+<tr><td>
+
+[Grams](./ts-chocolate.grams.md)
+
+
+</td><td>
+
+Weight in grams (native internal unit)
+
+
+</td></tr>
+<tr><td>
+
+[IngredientCategory](./ts-chocolate.ingredientcategory.md)
+
+
+</td><td>
+
+Base categories of ingredients (discriminated union tag)
+
+
+</td></tr>
+<tr><td>
+
+[IngredientId](./ts-chocolate.ingredientid.md)
+
+
+</td><td>
+
+Globally unique ingredient identifier (composite) Format: "sourceId.baseIngredientId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[Percentage](./ts-chocolate.percentage.md)
+
+
+</td><td>
+
+Percentage value (0-100)
+
+
+</td></tr>
+<tr><td>
+
+[RecipeId](./ts-chocolate.recipeid.md)
+
+
+</td><td>
+
+Globally unique recipe identifier (composite) Format: "sourceId.baseRecipeId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[RecipeName](./ts-chocolate.recipename.md)
+
+
+</td><td>
+
+Non-unique recipe name used for display and grouping
+
+
+</td></tr>
+<tr><td>
+
+[SourceId](./ts-chocolate.sourceid.md)
+
+
+</td><td>
+
+Unique identifier for a source (collection of ingredients/recipes) Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[WeightUnit](./ts-chocolate.weightunit.md)
+
+
+</td><td>
+
+Supported weight units for output conversion
 
 
 </td></tr>

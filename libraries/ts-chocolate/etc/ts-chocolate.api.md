@@ -4,9 +4,397 @@
 
 ```ts
 
+import { Brand } from '@fgv/ts-utils';
+import { Converter } from '@fgv/ts-utils';
+import { Result } from '@fgv/ts-utils';
+
 // @public
-export interface IPlaceholder {
-    placeholder: string;
+export const allAllergens: Allergen[];
+
+// @public
+export const allBuiltInSources: BuiltInSource[];
+
+// @public
+export const allChocolateTypes: ChocolateType[];
+
+// @public
+export type Allergen = 'milk' | 'soy' | 'nuts' | 'gluten' | 'eggs' | 'peanuts';
+
+// @public
+const allergen: Converter<Allergen>;
+
+// @public
+export const allFluidityStars: FluidityStars[];
+
+// @public
+export const allIngredientCategories: IngredientCategory[];
+
+// @public
+export const allWeightUnits: WeightUnit[];
+
+// @public
+export const BASE_ID_PATTERN: RegExp;
+
+// @public
+const baseIngredient: Converter<IIngredient>;
+
+// @public
+export type BaseIngredientId = Brand<string, 'BaseIngredientId'>;
+
+// @public
+const baseIngredientId: Converter<BaseIngredientId>;
+
+// @public
+export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
+
+// @public
+const baseRecipeId: Converter<BaseRecipeId>;
+
+// @public
+export type BuiltInSource = 'built-in';
+
+// @public
+export type Celsius = Brand<number, 'Celsius'>;
+
+// @public
+const celsius: Converter<Celsius>;
+
+// @public
+const chocolateIngredient: Converter<IChocolateIngredient>;
+
+// @public
+export type ChocolateType = 'dark' | 'milk' | 'white' | 'caramelized' | 'ruby' | 'flavored';
+
+// @public
+const chocolateType: Converter<ChocolateType>;
+
+// @public
+export const COMPOSITE_ID_PATTERN: RegExp;
+
+declare namespace Converters {
+    export {
+        sourceId,
+        baseIngredientId,
+        baseRecipeId,
+        ingredientId,
+        recipeId,
+        recipeName,
+        grams,
+        percentage,
+        celsius,
+        degreesMacMichael,
+        ingredientCategory,
+        chocolateType,
+        fluidityStars,
+        weightUnit,
+        allergen
+    }
 }
+export { Converters }
+
+declare namespace Converters_2 {
+    export {
+        ganacheCharacteristics,
+        temperatureCurve,
+        baseIngredient,
+        chocolateIngredient,
+        sugarIngredient,
+        dairyIngredient,
+        fatIngredient,
+        ingredient
+    }
+}
+
+// @public
+function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
+
+// @public
+function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): RecipeId;
+
+// @public
+const dairyIngredient: Converter<IDairyIngredient>;
+
+// @public
+export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
+
+// @public
+const degreesMacMichael: Converter<DegreesMacMichael>;
+
+// @public
+const fatIngredient: Converter<IFatIngredient>;
+
+// @public
+export type FluidityStars = 1 | 2 | 3 | 4 | 5;
+
+// @public
+const fluidityStars: Converter<FluidityStars>;
+
+// @public
+const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
+
+// @public
+function getIngredientBaseId(id: IngredientId): BaseIngredientId;
+
+// @public
+function getIngredientSourceId(id: IngredientId): SourceId;
+
+// @public
+function getRecipeBaseId(id: RecipeId): BaseRecipeId;
+
+// @public
+function getRecipeSourceId(id: RecipeId): SourceId;
+
+// @public
+export type Grams = Brand<number, 'Grams'>;
+
+// @public
+const grams: Converter<Grams>;
+
+// @public
+interface IChocolateIngredient extends IIngredient {
+    readonly cacaoPercentage: Percentage;
+    readonly category: 'chocolate';
+    readonly chocolateType: ChocolateType;
+    readonly fluidityStars?: FluidityStars;
+    readonly temperatureCurve?: ITemperatureCurve;
+    readonly viscosityMcM?: DegreesMacMichael;
+}
+
+// @public
+export const ID_SEPARATOR: string;
+
+// @public
+interface IDairyIngredient extends IIngredient {
+    readonly category: 'dairy';
+    readonly fatContent?: Percentage;
+    readonly waterContent?: Percentage;
+}
+
+// @public
+interface IFatIngredient extends IIngredient {
+    readonly category: 'fat';
+    readonly meltingPoint?: Celsius;
+}
+
+// @public
+interface IGanacheCharacteristics {
+    readonly cacaoFat: Percentage;
+    readonly milkFat: Percentage;
+    readonly otherFats: Percentage;
+    readonly solids: Percentage;
+    readonly sugar: Percentage;
+    readonly water: Percentage;
+}
+
+// @public
+interface IIngredient {
+    readonly allergens?: ReadonlyArray<Allergen>;
+    readonly baseId: BaseIngredientId;
+    readonly category: IngredientCategory;
+    readonly description?: string;
+    readonly ganacheCharacteristics: IGanacheCharacteristics;
+    readonly name: string;
+    readonly tags?: ReadonlyArray<string>;
+    readonly vegan?: boolean;
+}
+
+// @public
+type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IIngredient;
+
+// @public
+const ingredient: Converter<Ingredient>;
+
+// @public
+export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'other';
+
+// @public
+const ingredientCategory: Converter<IngredientCategory>;
+
+// @public
+export type IngredientId = Brand<string, 'IngredientId'>;
+
+// @public
+const ingredientId: Converter<IngredientId>;
+
+declare namespace Ingredients {
+    export {
+        Converters_2 as Converters,
+        isChocolateIngredient,
+        isSugarIngredient,
+        isDairyIngredient,
+        isFatIngredient,
+        IGanacheCharacteristics,
+        ITemperatureCurve,
+        IIngredient,
+        IChocolateIngredient,
+        ISugarIngredient,
+        IDairyIngredient,
+        IFatIngredient,
+        Ingredient
+    }
+}
+export { Ingredients }
+
+// @public
+function isChocolateIngredient(ingredient: Ingredient): ingredient is IChocolateIngredient;
+
+// @public
+function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredient;
+
+// @public
+function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
+
+// @public
+function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
+
+// @public
+interface ISugarIngredient extends IIngredient {
+    readonly category: 'sugar';
+    readonly hydrationNumber?: number;
+    readonly sweetnessPotency?: number;
+}
+
+// @public
+function isValidBaseIngredientId(from: unknown): from is BaseIngredientId;
+
+// @public
+function isValidBaseRecipeId(from: unknown): from is BaseRecipeId;
+
+// @public
+function isValidCelsius(from: unknown): from is Celsius;
+
+// @public
+function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael;
+
+// @public
+function isValidGrams(from: unknown): from is Grams;
+
+// @public
+function isValidIngredientId(from: unknown): from is IngredientId;
+
+// @public
+function isValidPercentage(from: unknown): from is Percentage;
+
+// @public
+function isValidRecipeId(from: unknown): from is RecipeId;
+
+// @public
+function isValidRecipeName(from: unknown): from is RecipeName;
+
+// @public
+function isValidSourceId(from: unknown): from is SourceId;
+
+// @public
+interface ITemperatureCurve {
+    readonly cool: Celsius;
+    readonly melt: Celsius;
+    readonly working: Celsius;
+}
+
+// @public
+function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;
+
+// @public
+function parseRecipeId(id: RecipeId): Result<[SourceId, BaseRecipeId]>;
+
+// @public
+export type Percentage = Brand<number, 'Percentage'>;
+
+// @public
+const percentage: Converter<Percentage>;
+
+// @public
+export type RecipeId = Brand<string, 'RecipeId'>;
+
+// @public
+const recipeId: Converter<RecipeId>;
+
+// @public
+export type RecipeName = Brand<string, 'RecipeName'>;
+
+// @public
+const recipeName: Converter<RecipeName>;
+
+// @public
+export type SourceId = Brand<string, 'SourceId'>;
+
+// @public
+const sourceId: Converter<SourceId>;
+
+// @public
+const sugarIngredient: Converter<ISugarIngredient>;
+
+// @public
+const temperatureCurve: Converter<ITemperatureCurve>;
+
+// @public
+function toBaseIngredientId(from: unknown): Result<BaseIngredientId>;
+
+// @public
+function toBaseRecipeId(from: unknown): Result<BaseRecipeId>;
+
+// @public
+function toCelsius(from: unknown): Result<Celsius>;
+
+// @public
+function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael>;
+
+// @public
+function toGrams(from: unknown): Result<Grams>;
+
+// @public
+function toIngredientId(from: unknown): Result<IngredientId>;
+
+// @public
+function toPercentage(from: unknown): Result<Percentage>;
+
+// @public
+function toRecipeId(from: unknown): Result<RecipeId>;
+
+// @public
+function toRecipeName(from: unknown): Result<RecipeName>;
+
+// @public
+function toSourceId(from: unknown): Result<SourceId>;
+
+declare namespace Validation {
+    export {
+        isValidSourceId,
+        toSourceId,
+        isValidBaseIngredientId,
+        toBaseIngredientId,
+        isValidBaseRecipeId,
+        toBaseRecipeId,
+        isValidIngredientId,
+        toIngredientId,
+        isValidRecipeId,
+        toRecipeId,
+        isValidRecipeName,
+        toRecipeName,
+        isValidGrams,
+        toGrams,
+        isValidPercentage,
+        toPercentage,
+        isValidCelsius,
+        toCelsius,
+        isValidDegreesMacMichael,
+        toDegreesMacMichael,
+        createIngredientId,
+        parseIngredientId,
+        getIngredientSourceId,
+        getIngredientBaseId,
+        createRecipeId,
+        parseRecipeId,
+        getRecipeSourceId,
+        getRecipeBaseId
+    }
+}
+export { Validation }
+
+// @public
+export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
+
+// @public
+const weightUnit: Converter<WeightUnit>;
 
 ```
