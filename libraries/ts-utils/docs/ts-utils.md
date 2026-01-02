@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AggregatedResultMap](./ts-utils.aggregatedresultmap.md)
+
+
+</td><td>
+
+An aggregated result map that wraps a collection of [ValidatingResultMap](./ts-utils.validatingresultmap.md) instances, keyed by collection ID. Items are accessed via composite IDs that combine the collection ID and item ID with a delimiter.
+
+
+</td></tr>
+<tr><td>
+
 [Collector](./ts-utils.collector.md)
 
 

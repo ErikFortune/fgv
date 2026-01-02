@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AggregatedResultMap](./ts-utils.collections.aggregatedresultmap.md)
+
+
+</td><td>
+
+An aggregated result map that wraps a collection of [ValidatingResultMap](./ts-utils.validatingresultmap.md) instances, keyed by collection ID. Items are accessed via composite IDs that combine the collection ID and item ID with a delimiter.
+
+
+</td></tr>
+<tr><td>
+
+[AggregatedResultMapValidator](./ts-utils.collections.aggregatedresultmapvalidator.md)
+
+
+</td><td>
+
+A validator for weakly-typed access to an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [Collectible](./ts-utils.collections.collectible.md)
 
 
@@ -157,6 +179,50 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IAddCollectionWithItemsOptions](./ts-utils.collections.iaddcollectionwithitemsoptions.md)
+
+
+</td><td>
+
+Options for [AggregatedResultMap.addCollectionWithItems()](./ts-utils.aggregatedresultmap.addcollectionwithitems.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IAggregatedResultMapConstructorParams](./ts-utils.collections.iaggregatedresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IAggregatedResultMapJsonEntryWithEntries](./ts-utils.collections.iaggregatedresultmapjsonentrywithentries.md)
+
+
+</td><td>
+
+JSON format for an aggregated result map entry using an entries array.
+
+
+</td></tr>
+<tr><td>
+
+[IAggregatedResultMapJsonEntryWithItems](./ts-utils.collections.iaggregatedresultmapjsonentrywithitems.md)
+
+
+</td><td>
+
+JSON format for an aggregated result map entry using an items object.
+
+
+</td></tr>
+<tr><td>
+
 [ICollectible](./ts-utils.collections.icollectible.md)
 
 
@@ -245,6 +311,28 @@ Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyval
 </td></tr>
 <tr><td>
 
+[IMutableAggregatedResultMapEntry](./ts-utils.collections.imutableaggregatedresultmapentry.md)
+
+
+</td><td>
+
+A mutable entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadonlyAggregatedResultMapEntry](./ts-utils.collections.ireadonlyaggregatedresultmapentry.md)
+
+
+</td><td>
+
+A read-only entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyCollector](./ts-utils.collections.ireadonlycollector.md)
 
 
@@ -306,6 +394,17 @@ A read-only interface exposing non-mutating methods of a [ValidatingCollector](.
 </td><td>
 
 A read-only interface exposing non-mutating methods of a [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IResultMap](./ts-utils.collections.iresultmap.md)
+
+
+</td><td>
+
+Interface for a mutable [ResultMap](./ts-utils.collections.resultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -404,6 +503,39 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)
+
+
+</td><td>
+
+An entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->, either mutable or read-only.
+
+
+</td></tr>
+<tr><td>
+
+[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)
+
+
+</td><td>
+
+Any valid input format for an aggregated result map entry.
+
+
+</td></tr>
+<tr><td>
+
+[AggregatedResultMapJsonEntry](./ts-utils.collections.aggregatedresultmapjsonentry.md)
+
+
+</td><td>
+
+JSON format for an aggregated result map entry - supports both entries array and items object.
+
+
+</td></tr>
+<tr><td>
 
 [CollectibleFactory](./ts-utils.collections.collectiblefactory.md)
 

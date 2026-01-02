@@ -40,12 +40,58 @@ export interface IResultMapConstructorParams<TK extends string = string, TV = un
 export type ResultMapValueFactory<TK extends string = string, TV = unknown> = (key: TK) => Result<TV>;
 
 /**
+ * Interface for a mutable {@link Collections.ResultMap | ResultMap}.
+ * @public
+ */
+export interface IResultMap<TK extends string = string, TV = unknown> extends IReadOnlyResultMap<TK, TV> {
+  /**
+   * Sets a key/value pair in the map if the key does not already exist.
+   */
+  add(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Sets a key/value pair in the map.
+   */
+  set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Updates an existing key in the map.
+   */
+  update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Deletes a key from the map.
+   */
+  delete(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Gets a value from the map, or adds a supplied value if it does not exist.
+   */
+  getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Gets a value from the map, or adds a value created by a factory function if it does not exist.
+   */
+  getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
+
+  /**
+   * Clears all entries from the map.
+   */
+  clear(): void;
+
+  /**
+   * Gets a readonly version of this map.
+   */
+  toReadOnly(): IReadOnlyResultMap<TK, TV>;
+}
+
+/**
  * A {@link Collections.ResultMap | ResultMap} class as a `Map<TK, TV>`-like object which
  * reports success or failure with additional details using the
  * {@link https://github.com/ErikFortune/fgv/tree/main/libraries/ts-utils#the-result-pattern | result pattern}.
  * @public
  */
-export class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> {
+export class ResultMap<TK extends string = string, TV = unknown> implements IResultMap<TK, TV> {
   /**
    * Protected raw access to the inner `Map<TK, TV>` object.
    * @public

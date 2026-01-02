@@ -30,6 +30,61 @@ A helper function to create a [Converter](./ts-utils.converter.md) which convert
 </td></tr>
 <tr><td>
 
+[asValidator(converterOrValidator)](./ts-utils.converters.asvalidator.md)
+
+
+</td><td>
+
+Helper function to create a [Validator](./ts-utils.validation.validator.md) from any [Converter](./ts-utils.conversion.converter.md) or [Validator](./ts-utils.validation.validator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[compositeId(collectionIdConverter, separator, itemIdConverter)](./ts-utils.converters.compositeid.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) for a strongly-typed [CompositeId](./ts-utils.converters.icompositeid.md) from either a string or an object representation.
+
+
+</td></tr>
+<tr><td>
+
+[compositeIdFromObject(collectionIdValidator, separator, itemIdValidator)](./ts-utils.converters.compositeidfromobject.md)
+
+
+</td><td>
+
+Creates an [ObjectConverter](./ts-utils.objectconverter.md) for a strongly-typed [CompositeId](./ts-utils.converters.icompositeid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[compositeIdFromString(collectionIdConverter, separator, itemIdConverter)](./ts-utils.converters.compositeidfromstring.md)
+
+
+</td><td>
+
+Converts a composite ID string into a strongly-typed [CompositeId](./ts-utils.converters.icompositeid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[compositeIdString(compositeIdValidator, collectionIdConverter, separator, itemIdConverter)](./ts-utils.converters.compositeidstring.md)
+
+
+</td><td>
+
+Converts a strongly-typed [CompositeId](./ts-utils.converters.icompositeid.md) into a string.
+
+
+</td></tr>
+<tr><td>
+
 [delimitedString(delimiter, options)](./ts-utils.converters.delimitedstring.md)
 
 
@@ -102,6 +157,17 @@ Helper function to create a [Converter](./ts-utils.converter.md) from a supplied
 </td><td>
 
 Helper function to create a [Converter](./ts-utils.converter.md) from a supplied type guard function.
+
+
+</td></tr>
+<tr><td>
+
+[isValidator(converterOrValidator)](./ts-utils.converters.isvalidator.md)
+
+
+</td><td>
+
+Determines if a supplied [Converter](./ts-utils.conversion.converter.md) or [Validator](./ts-utils.validation.validator.md) is a [Validator](./ts-utils.validation.validator.md)<!-- -->.
 
 
 </td></tr>
@@ -294,7 +360,18 @@ Helper to create a strongly-typed [Converter](./ts-utils.converter.md) which con
 </td></tr>
 <tr><td>
 
-[validated(validator)](./ts-utils.converters.validated.md)
+[tuple(converters)](./ts-utils.converters.tuple.md)
+
+
+</td><td>
+
+Creates a [Converter](./ts-utils.converter.md) that converts an array to a strongly-typed tuple, using the supplied tuple of [Converters](./ts-utils.converter.md) to convert each element.
+
+
+</td></tr>
+<tr><td>
+
+[validated(converterOrValidator)](./ts-utils.converters.validated.md)
 
 
 </td><td>
@@ -330,6 +407,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ICompositeId](./ts-utils.converters.icompositeid.md)
+
+
+</td><td>
+
+Represents a composite ID constructed of two strongly-typed string IDs separated by a delimiter.
+
+
+</td></tr>
+<tr><td>
 
 [KeyedConverterOptions](./ts-utils.converters.keyedconverteroptions.md)
 

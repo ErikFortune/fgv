@@ -251,6 +251,20 @@ Creates a [Converter](./ts-utils.converter.md) for an optional value.
 </td></tr>
 <tr><td>
 
+[or(\_\_converter)](./ts-utils.conversion.genericdefaultingconverter.or.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Chains this converter with another of the same type, to be attempted if this converter fails.
+
+
+</td></tr>
+<tr><td>
+
 [withAction(action)](./ts-utils.conversion.genericdefaultingconverter.withaction.md)
 
 

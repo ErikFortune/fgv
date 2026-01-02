@@ -9,9 +9,9 @@ A [ResultMap](./ts-utils.collections.resultmap.md) class as a `Map<TK, TV>`<!-- 
 **Signature:**
 
 ```typescript
-export declare class ResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> 
+export declare class ResultMap<TK extends string = string, TV = unknown> implements IResultMap<TK, TV> 
 ```
-**Implements:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TK, TV&gt;
+**Implements:** [IResultMap](./ts-utils.collections.iresultmap.md)<!-- -->&lt;TK, TV&gt;
 
 ## Constructors
 
