@@ -4,7 +4,7 @@
 
 ## AggregatedResultMap.addCollection() method
 
-Adds a new collection.
+Adds a new collection from a pre-built entry.
 
 **Signature:**
 

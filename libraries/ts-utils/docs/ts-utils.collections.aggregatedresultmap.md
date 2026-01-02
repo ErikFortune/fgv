@@ -59,6 +59,27 @@ The number of collections.
 </td></tr>
 <tr><td>
 
+[collections](./ts-utils.collections.aggregatedresultmap.collections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOLLECTIONID, [AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;&gt;
+
+
+</td><td>
+
+Provides read-only access to the underlying collections map. Use `collections.has(id)` and `collections.get(id)` to check existence and retrieve collections.
+
+
+</td></tr>
+<tr><td>
+
 [size](./ts-utils.collections.aggregatedresultmap.size.md)
 
 
@@ -157,7 +178,21 @@ Adds an item by its composite ID. Fails if the item already exists.
 
 </td><td>
 
-Adds a new collection.
+Adds a new collection from a pre-built entry.
+
+
+</td></tr>
+<tr><td>
+
+[addMutableCollection(id, entries)](./ts-utils.collections.aggregatedresultmap.addmutablecollection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a new empty mutable collection with the specified ID.
 
 
 </td></tr>
@@ -186,20 +221,6 @@ Adds an item using separate collection and item IDs.
 </td><td>
 
 Clears all items from all mutable collections. Immutable collections are not affected.
-
-
-</td></tr>
-<tr><td>
-
-[collections()](./ts-utils.collections.aggregatedresultmap.collections.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Iterates over all collections.
 
 
 </td></tr>
@@ -305,20 +326,6 @@ Gets an item by its composite ID.
 </td></tr>
 <tr><td>
 
-[getCollection(collectionId)](./ts-utils.collections.aggregatedresultmap.getcollection.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets a collection by its ID.
-
-
-</td></tr>
-<tr><td>
-
 [getOrAdd(key, value)](./ts-utils.collections.aggregatedresultmap.getoradd.md)
 
 
@@ -356,20 +363,6 @@ Gets an existing item or adds a new one using a factory.
 </td><td>
 
 Checks if an item exists by its composite ID.
-
-
-</td></tr>
-<tr><td>
-
-[hasCollection(collectionId)](./ts-utils.collections.aggregatedresultmap.hascollection.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Checks if a collection exists.
 
 
 </td></tr>

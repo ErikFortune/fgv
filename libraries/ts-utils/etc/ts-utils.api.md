@@ -13,12 +13,13 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
     // Warning: (ae-incompatible-release-tags) The symbol "addCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     addCollection(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
+    addMutableCollection(id: string, entries?: Iterable<KeyValueEntry<string, unknown>>): Result<TCOLLECTIONID>;
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     addToCollection(collectionId: TCOLLECTIONID, itemId: TITEMID, value: TITEM): DetailedResult<TCOMPOSITEID, ResultMapResultDetail>;
     clear(): void;
     get collectionCount(): number;
-    collections(): IterableIterator<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
+    get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
     composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): TCOMPOSITEID;
     static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -32,9 +33,6 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     get(key: TCOMPOSITEID): DetailedResult<TITEM, ResultMapResultDetail>;
-    // Warning: (ae-incompatible-release-tags) The symbol "getCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-incompatible-release-tags) The symbol "getCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    getCollection(collectionId: TCOLLECTIONID): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     getOrAdd(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -42,7 +40,6 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     getOrAdd(key: TCOMPOSITEID, factory: ResultMapValueFactory<TCOMPOSITEID, TITEM>): DetailedResult<TITEM, ResultMapResultDetail>;
     has(key: TCOMPOSITEID): boolean;
-    hasCollection(collectionId: TCOLLECTIONID): boolean;
     keys(): IterableIterator<TCOMPOSITEID>;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta

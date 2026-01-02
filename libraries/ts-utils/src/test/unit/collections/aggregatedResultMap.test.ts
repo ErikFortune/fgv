@@ -251,7 +251,7 @@ describe('AggregatedResultMap', () => {
             }
           ]
         })
-      ).toFailWith(/Failed to create AggregatedResultMap/i);
+      ).toFailWith(/invalid entry/i);
     });
 
     test('fails when collection has invalid collection ID', () => {
@@ -267,7 +267,7 @@ describe('AggregatedResultMap', () => {
             }
           ]
         })
-      ).toFailWith(/Failed to create AggregatedResultMap/i);
+      ).toFailWith(/collection ID must be alphabetic/i);
     });
   });
 
@@ -417,6 +417,12 @@ describe('AggregatedResultMap', () => {
       >;
     });
 
+    describe('map property', () => {
+      test('exposes the underlying map via map property', () => {
+        expect(validating.map).toBe(map);
+      });
+    });
+
     describe('get', () => {
       test('validates and retrieves item', () => {
         expect(validating.get('alpha.1')).toSucceedWith({ name: 'a1', value: 1 });
@@ -538,7 +544,7 @@ describe('AggregatedResultMap', () => {
 
       test('creates new collection if it does not exist', () => {
         expect(map.add('gamma.1' as CompositeId, { name: 'g1', value: 100 })).toSucceed();
-        expect(map.hasCollection('gamma' as CollectionId)).toBe(true);
+        expect(map.collections.has('gamma' as CollectionId)).toBe(true);
       });
 
       test('fails for immutable collection', () => {
@@ -598,7 +604,7 @@ describe('AggregatedResultMap', () => {
 
       test('creates new collection when needed', () => {
         expect(map.getOrAdd('gamma.1' as CompositeId, { name: 'g1', value: 100 })).toSucceed();
-        expect(map.hasCollection('gamma' as CollectionId)).toBe(true);
+        expect(map.collections.has('gamma' as CollectionId)).toBe(true);
       });
 
       test('works with factory function', () => {
@@ -713,7 +719,7 @@ describe('AggregatedResultMap', () => {
         expect(
           map.addToCollection('gamma' as CollectionId, '1' as ItemId, { name: 'g1', value: 100 })
         ).toSucceedWith('gamma.1' as CompositeId);
-        expect(map.hasCollection('gamma' as CollectionId)).toBe(true);
+        expect(map.collections.has('gamma' as CollectionId)).toBe(true);
       });
 
       test('fails if item already exists', () => {
@@ -815,26 +821,33 @@ describe('AggregatedResultMap', () => {
       }).orThrow();
     });
 
-    describe('getCollection', () => {
-      test('returns collection by ID', () => {
-        expect(map.getCollection('alpha' as CollectionId)).toSucceedAndSatisfy((entry) => {
+    describe('collections property', () => {
+      test('returns collection by ID via get', () => {
+        const result = map.collections.get('alpha' as CollectionId);
+        expect(result).toSucceedAndSatisfy((entry) => {
           expect(entry.id).toBe('alpha');
           expect(entry.isMutable).toBe(true);
         });
       });
 
-      test('fails for non-existent collection', () => {
-        expect(map.getCollection('gamma' as CollectionId)).toFailWithDetail(/not found/i, 'not-found');
-      });
-    });
-
-    describe('hasCollection', () => {
-      test('returns true for existing collection', () => {
-        expect(map.hasCollection('alpha' as CollectionId)).toBe(true);
+      test('fails for non-existent collection via get', () => {
+        expect(map.collections.get('gamma' as CollectionId)).toFailWithDetail(/not found/i, 'not-found');
       });
 
-      test('returns false for non-existent collection', () => {
-        expect(map.hasCollection('gamma' as CollectionId)).toBe(false);
+      test('returns true for existing collection via has', () => {
+        expect(map.collections.has('alpha' as CollectionId)).toBe(true);
+      });
+
+      test('returns false for non-existent collection via has', () => {
+        expect(map.collections.has('gamma' as CollectionId)).toBe(false);
+      });
+
+      test('provides access to validating interface', () => {
+        expect(map.collections.validating).toBeDefined();
+        const result = map.collections.validating.get('alpha');
+        expect(result).toSucceedAndSatisfy((entry) => {
+          expect(entry.id).toBe('alpha');
+        });
       });
     });
 
@@ -848,7 +861,7 @@ describe('AggregatedResultMap', () => {
             items: { '1': { name: 'b1', value: 10 } }
           })
         ).toSucceed();
-        expect(map.hasCollection('beta' as CollectionId)).toBe(true);
+        expect(map.collections.has('beta' as CollectionId)).toBe(true);
         expect(map.get('beta.1' as CompositeId)).toSucceedWith({ name: 'b1', value: 10 });
       });
 
@@ -886,8 +899,42 @@ describe('AggregatedResultMap', () => {
       });
     });
 
-    describe('collections', () => {
-      test('iterates over all collections', () => {
+    describe('addMutableCollection', () => {
+      test('adds empty mutable collection and returns validated ID', () => {
+        expect(map.addMutableCollection('beta')).toSucceedWith('beta' as CollectionId);
+        expect(map.collections.has('beta' as CollectionId)).toBe(true);
+        const result = map.collections.get('beta' as CollectionId);
+        expect(result).toSucceed();
+        expect(result.orThrow().isMutable).toBe(true);
+        expect(result.orThrow().items.size).toBe(0);
+      });
+
+      test('adds mutable collection with initial entries', () => {
+        const entries: [string, unknown][] = [
+          ['1', { name: 'b1', value: 10 }],
+          ['2', { name: 'b2', value: 20 }]
+        ];
+        expect(map.addMutableCollection('beta', entries)).toSucceedWith('beta' as CollectionId);
+        expect(map.get('beta.1' as CompositeId)).toSucceedWith({ name: 'b1', value: 10 });
+        expect(map.get('beta.2' as CompositeId)).toSucceedWith({ name: 'b2', value: 20 });
+      });
+
+      test('fails if collection already exists', () => {
+        expect(map.addMutableCollection('alpha')).toFailWith(/already exists/i);
+      });
+
+      test('fails with invalid collection ID', () => {
+        expect(map.addMutableCollection('123invalid')).toFailWith(/invalid collection id/i);
+      });
+
+      test('fails with invalid entries', () => {
+        const entries: [string, unknown][] = [['invalid-item-id', { name: 'test', value: 1 }]];
+        expect(map.addMutableCollection('beta', entries)).toFailWith(/invalid entries/i);
+      });
+    });
+
+    describe('collections iteration', () => {
+      test('iterates over all collections via values()', () => {
         map.addCollection({
           isMutable: false,
           id: 'beta' as CollectionId,
@@ -895,10 +942,26 @@ describe('AggregatedResultMap', () => {
           items: { '1': { name: 'b1', value: 10 } }
         });
 
-        const collections = Array.from(map.collections());
+        const collections = Array.from(map.collections.values());
         expect(collections).toHaveLength(2);
 
-        const ids = collections.map((c: { id: CollectionId }) => c.id);
+        const ids = collections.map((c) => c.id);
+        expect(ids).toContain('alpha');
+        expect(ids).toContain('beta');
+      });
+
+      test('iterates over all collections via entries()', () => {
+        map.addCollection({
+          isMutable: false,
+          id: 'beta' as CollectionId,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          items: { '1': { name: 'b1', value: 10 } }
+        });
+
+        const entries = Array.from(map.collections.entries());
+        expect(entries).toHaveLength(2);
+
+        const ids = entries.map(([id]) => id);
         expect(ids).toContain('alpha');
         expect(ids).toContain('beta');
       });
@@ -919,21 +982,20 @@ describe('AggregatedResultMap', () => {
 
   describe('edge cases', () => {
     test('handles empty collections correctly', () => {
-      expect(
-        AggregatedResultMap.create({
-          ...defaultParams,
-          collections: [
-            {
-              isMutable: true,
-              id: 'empty' as CollectionId,
-              items: {}
-            }
-          ]
-        })
-      ).toSucceedAndSatisfy((map) => {
-        expect(map.size).toBe(0);
-        expect(map.collectionCount).toBe(1);
-        expect(map.hasCollection('empty' as CollectionId)).toBe(true);
+      const result = AggregatedResultMap.create({
+        ...defaultParams,
+        collections: [
+          {
+            isMutable: true,
+            id: 'empty' as CollectionId,
+            items: {}
+          }
+        ]
+      });
+      expect(result).toSucceedAndSatisfy((m) => {
+        expect(m.size).toBe(0);
+        expect(m.collectionCount).toBe(1);
+        expect(m.collections.has('empty' as CollectionId)).toBe(true);
       });
     });
 
@@ -989,6 +1051,59 @@ describe('AggregatedResultMap', () => {
 
       // Cannot modify immutable
       expect(map.set('immutable.2' as CompositeId, { name: 'i2', value: 2 })).toFail();
+    });
+
+    test('creates immutable collection from entries array format', () => {
+      const entries: [ItemId, ITestItem][] = [
+        ['1' as ItemId, { name: 'r1', value: 1 }],
+        ['2' as ItemId, { name: 'r2', value: 2 }]
+      ];
+      const result = AggregatedResultMap.create({
+        ...defaultParams,
+        collections: [
+          {
+            isMutable: false,
+            id: 'readonly' as CollectionId,
+            entries
+          }
+        ]
+      });
+      expect(result).toSucceedAndSatisfy((map) => {
+        // Verify items are accessible
+        expect(map.get('readonly.1' as CompositeId)).toSucceedWith({ name: 'r1', value: 1 });
+        expect(map.get('readonly.2' as CompositeId)).toSucceedWith({ name: 'r2', value: 2 });
+        // Verify collection is immutable
+        expect(map.set('readonly.3' as CompositeId, { name: 'r3', value: 3 })).toFail();
+      });
+    });
+
+    test('fails when items is an array instead of object', () => {
+      const result = AggregatedResultMap.create({
+        ...defaultParams,
+        collections: [
+          {
+            isMutable: true,
+            id: 'bad' as CollectionId,
+            items: [{ name: 'test', value: 1 }] as unknown as Record<string, unknown>
+          }
+        ]
+      });
+      expect(result).toFailWith(/expected an object/i);
+    });
+
+    test('fails when entries array contains invalid entries', () => {
+      const entries: [string, ITestItem][] = [['invalid_key', { name: 'test', value: 1 }]];
+      const result = AggregatedResultMap.create({
+        ...defaultParams,
+        collections: [
+          {
+            isMutable: true,
+            id: 'alpha' as CollectionId,
+            entries
+          }
+        ]
+      });
+      expect(result).toFailWith(/item ID must be numeric/i);
     });
   });
 });

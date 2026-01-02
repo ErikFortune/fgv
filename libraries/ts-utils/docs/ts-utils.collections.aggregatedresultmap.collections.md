@@ -2,16 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-utils](./ts-utils.md) &gt; [Collections](./ts-utils.collections.md) &gt; [AggregatedResultMap](./ts-utils.collections.aggregatedresultmap.md) &gt; [collections](./ts-utils.collections.aggregatedresultmap.collections.md)
 
-## Collections.AggregatedResultMap.collections() method
+## Collections.AggregatedResultMap.collections property
 
-Iterates over all collections.
+Provides read-only access to the underlying collections map. Use `collections.has(id)` and `collections.get(id)` to check existence and retrieve collections.
 
 **Signature:**
 
 ```typescript
-collections(): IterableIterator<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
+get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
 ```
-**Returns:**
-
-IterableIterator&lt;[AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;&gt;
-

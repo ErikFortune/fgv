@@ -20,22 +20,14 @@
  * SOFTWARE.
  */
 
-import {
-  DetailedResult,
-  MessageAggregator,
-  Result,
-  fail,
-  failWithDetail,
-  succeed,
-  succeedWithDetail
-} from '../base';
+import { DetailedResult, Result, fail, failWithDetail, succeed, succeedWithDetail } from '../base';
 import { Converter, Converters } from '../conversion';
 import { Validator } from '../validation';
 import { KeyValueEntry } from './common';
 import { KeyValueConverters } from './keyValueConverters';
 import { IReadOnlyResultMapValidator } from './resultMapValidator';
 import { IReadOnlyResultMap, ResultMapForEachCb, ResultMapResultDetail } from './readonlyResultMap';
-import { IResultMap, ResultMap, ResultMapValueFactory } from './resultMap';
+import { IResultMap, ResultMapValueFactory } from './resultMap';
 import { IReadOnlyValidatingResultMap, ValidatingResultMap } from './validatingResultMap';
 
 /**
@@ -209,7 +201,14 @@ interface IAggregatedResultMapInternalParams<
   readonly delimiter: string;
   readonly childKvConverters: KeyValueConverters<TITEMID, TITEM>;
   readonly compositeIdConverter: Converter<Converters.ICompositeId<TCOLLECTIONID, TITEMID>, unknown>;
-  readonly collections: ResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
+  readonly collections: ValidatingResultMap<
+    TCOLLECTIONID,
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+  >;
+  readonly collectionKvConverters: KeyValueConverters<
+    TCOLLECTIONID,
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+  >;
   readonly kvConverters: KeyValueConverters<TCOMPOSITEID, TITEM>;
 }
 
@@ -227,7 +226,11 @@ export class AggregatedResultMap<
 > implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>
 {
   private readonly _childKvConverters: KeyValueConverters<TITEMID, TITEM>;
-  private readonly _collections: ResultMap<
+  private readonly _collections: ValidatingResultMap<
+    TCOLLECTIONID,
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+  >;
+  private readonly _collectionKvConverters: KeyValueConverters<
     TCOLLECTIONID,
     AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
   >;
@@ -252,6 +255,7 @@ export class AggregatedResultMap<
     this._childKvConverters = params.childKvConverters;
     this._compositeIdConverter = params.compositeIdConverter;
     this._collections = params.collections;
+    this._collectionKvConverters = params.collectionKvConverters;
     this._validating = new AggregatedResultMapValidator<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>(
       this,
       params.kvConverters
@@ -295,30 +299,28 @@ export class AggregatedResultMap<
       childKvConverters
     );
 
-    // Convert all input collections
-    const aggregator = new MessageAggregator();
-    const convertedEntries: AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>[] = [];
-
-    for (const entry of initCollections) {
-      const result = entryConverter.convert(entry);
-      if (result.isSuccess()) {
-        convertedEntries.push(result.value);
-      } else {
-        aggregator.addMessage(result.message);
-      }
-    }
-
-    if (aggregator.hasMessages) {
-      return fail(`Failed to create AggregatedResultMap: ${aggregator.toString()}`);
-    }
-
-    // Build the inner ResultMap
-    const collectionsMapResult = ResultMap.create<
+    // Create KeyValueConverters for the collections map
+    const collectionKvConverters = new KeyValueConverters<
       TCOLLECTIONID,
       AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
-    >(convertedEntries.map((e) => [e.id, e]));
+    >({
+      key: params.collectionIdConverter,
+      value: entryConverter
+    });
 
-    return collectionsMapResult.onSuccess((collections) => {
+    // Convert all input collections to [id, entry] pairs for ValidatingResultMap
+    const initEntries: KeyValueEntry<string, unknown>[] = initCollections.map((entry) => {
+      return [entry.id, entry];
+    });
+
+    // Build the inner ValidatingResultMap
+    return ValidatingResultMap.createValidatingResultMap<
+      TCOLLECTIONID,
+      AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+    >({
+      converters: collectionKvConverters,
+      entries: initEntries
+    }).onSuccess((collections) => {
       return succeed(
         new AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>({
           compositeIdValidator: params.compositeIdValidator,
@@ -329,6 +331,7 @@ export class AggregatedResultMap<
           childKvConverters,
           compositeIdConverter,
           collections,
+          collectionKvConverters,
           kvConverters
         })
       );
@@ -621,27 +624,25 @@ export class AggregatedResultMap<
   // ==================== Collection-level methods ====================
 
   /**
-   * Gets a collection by its ID.
-   * @param collectionId - The ID of the collection.
-   * @returns `Success` with the collection if found, `Failure` otherwise.
+   * Provides read-only access to the underlying collections map.
+   * Use `collections.has(id)` and `collections.get(id)` to check existence and retrieve collections.
    */
-  public getCollection(
-    collectionId: TCOLLECTIONID
-  ): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail> {
-    return this._collections.get(collectionId);
+  public get collections(): IReadOnlyValidatingResultMap<
+    TCOLLECTIONID,
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+  > {
+    return this._collections;
   }
 
   /**
-   * Checks if a collection exists.
-   * @param collectionId - The ID of the collection.
-   * @returns `true` if the collection exists, `false` otherwise.
+   * The number of collections.
    */
-  public hasCollection(collectionId: TCOLLECTIONID): boolean {
-    return this._collections.has(collectionId);
+  public get collectionCount(): number {
+    return this._collections.size;
   }
 
   /**
-   * Adds a new collection.
+   * Adds a new collection from a pre-built entry.
    * @param entry - The collection entry to add.
    * @returns `Success` with the entry if added, `Failure` otherwise.
    */
@@ -660,17 +661,52 @@ export class AggregatedResultMap<
   }
 
   /**
-   * Iterates over all collections.
+   * Adds a new empty mutable collection with the specified ID.
+   * @param id - The collection ID as a string (will be validated).
+   * @param entries - Optional initial entries for the collection.
+   * @returns `Success` with the validated collection ID if added, `Failure` otherwise.
    */
-  public collections(): IterableIterator<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>> {
-    return this._collections.values();
-  }
+  public addMutableCollection(
+    id: string,
+    entries?: Iterable<KeyValueEntry<string, unknown>>
+  ): Result<TCOLLECTIONID> {
+    // Validate the collection ID
+    const idResult = this._collectionKvConverters.convertKey(id);
+    if (idResult.isFailure()) {
+      return fail(`Invalid collection ID: ${idResult.message}`);
+    }
+    const collectionId = idResult.value;
 
-  /**
-   * The number of collections.
-   */
-  public get collectionCount(): number {
-    return this._collections.size;
+    // Check if collection already exists
+    if (this._collections.has(collectionId)) {
+      return fail(`Collection '${collectionId}' already exists`);
+    }
+
+    // Convert entries if provided
+    let convertedEntries: Iterable<KeyValueEntry<TITEMID, TITEM>> | undefined;
+    if (entries) {
+      const entriesResult = this._childKvConverters.convertEntries(entries);
+      if (entriesResult.isFailure()) {
+        return fail(`Invalid entries: ${entriesResult.message}`);
+      }
+      convertedEntries = entriesResult.value;
+    }
+
+    // Create the mutable collection
+    const items = new ValidatingResultMap<TITEMID, TITEM>({
+      converters: this._childKvConverters,
+      entries: convertedEntries ? Array.from(convertedEntries) : undefined
+    });
+
+    const entry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> = {
+      isMutable: true,
+      id: collectionId,
+      items
+    };
+
+    return this._collections.add(collectionId, entry).onSuccess(() => {
+      return succeedWithDetail(collectionId, 'added');
+    });
   }
 
   // ==================== Private helpers ====================
@@ -678,11 +714,7 @@ export class AggregatedResultMap<
   private _splitCompositeId(
     key: TCOMPOSITEID
   ): DetailedResult<Converters.ICompositeId<TCOLLECTIONID, TITEMID>, ResultMapResultDetail> {
-    const result = this._compositeIdConverter.convert(key);
-    if (result.isFailure()) {
-      return failWithDetail(result.message, 'invalid-key');
-    }
-    return succeedWithDetail(result.value, 'success');
+    return this._compositeIdConverter.convert(key).withDetail('invalid-key', 'success');
   }
 
   private _splitAndLookup(
@@ -712,17 +744,6 @@ export class AggregatedResultMap<
         { entry: entry as IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, itemId },
         'success'
       );
-    });
-  }
-
-  private _getMutableCollection(
-    collectionId: TCOLLECTIONID
-  ): DetailedResult<ValidatingResultMap<TITEMID, TITEM>, ResultMapResultDetail> {
-    return this._collections.get(collectionId).onSuccess((entry) => {
-      if (!entry.isMutable) {
-        return failWithDetail(`Cannot modify immutable collection '${collectionId}'`, 'failure');
-      }
-      return succeedWithDetail(entry.items, 'exists');
     });
   }
 
