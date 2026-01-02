@@ -11,10 +11,10 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     add(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
-    // Warning: (ae-incompatible-release-tags) The symbol "addCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    // Warning: (ae-incompatible-release-tags) The symbol "addCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    addCollection(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
-    addMutableCollection(id: string, entries?: Iterable<KeyValueEntry<string, unknown>>): Result<TCOLLECTIONID>;
+    // Warning: (ae-incompatible-release-tags) The symbol "addCollectionEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "addCollectionEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    addCollectionEntry(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
+    addCollectionWithItems(collectionId: string, items?: Iterable<KeyValueEntry<string, unknown>>, options?: IAddCollectionWithItemsOptions): Result<TCOLLECTIONID>;
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     addToCollection(collectionId: TCOLLECTIONID, itemId: TITEMID, value: TITEM): DetailedResult<TCOMPOSITEID, ResultMapResultDetail>;
@@ -362,6 +362,7 @@ declare namespace Collections {
         IAggregatedResultMapJsonEntryWithItems,
         AggregatedResultMapJsonEntry,
         AggregatedResultMapEntryInit,
+        IAddCollectionWithItemsOptions,
         IAggregatedResultMapConstructorParams,
         AggregatedResultMapValidator,
         AggregatedResultMap
@@ -1134,6 +1135,11 @@ class HashingNormalizer extends Normalizer {
     computeHash(from: unknown): Result<string>;
     // @internal
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
+}
+
+// @public
+interface IAddCollectionWithItemsOptions {
+    readonly isImmutable?: boolean;
 }
 
 // @public

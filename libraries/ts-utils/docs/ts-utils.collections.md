@@ -179,6 +179,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IAddCollectionWithItemsOptions](./ts-utils.collections.iaddcollectionwithitemsoptions.md)
+
+
+</td><td>
+
+Options for [AggregatedResultMap.addCollectionWithItems()](./ts-utils.aggregatedresultmap.addcollectionwithitems.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IAggregatedResultMapConstructorParams](./ts-utils.collections.iaggregatedresultmapconstructorparams.md)
 
 

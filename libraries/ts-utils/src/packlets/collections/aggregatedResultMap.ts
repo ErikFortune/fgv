@@ -27,7 +27,8 @@ import {
   fail,
   failWithDetail,
   succeed,
-  succeedWithDetail
+  succeedWithDetail,
+  Success
 } from '../base';
 import { Converter, Converters } from '../conversion';
 import { Validator } from '../validation';
@@ -109,6 +110,18 @@ export type AggregatedResultMapJsonEntry<TCOLLECTIONID extends string = string> 
 export type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM> =
   | AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
   | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
+
+/**
+ * Options for {@link AggregatedResultMap.addCollectionWithItems}.
+ * @public
+ */
+export interface IAddCollectionWithItemsOptions {
+  /**
+   * If true, the collection will be immutable (read-only).
+   * Defaults to false (mutable).
+   */
+  readonly isImmutable?: boolean;
+}
 
 /**
  * Parameters for constructing an {@link AggregatedResultMap}.
@@ -633,71 +646,38 @@ export class AggregatedResultMap<
   }
 
   /**
-   * Adds a new collection from a pre-built entry.
-   * @param entry - The collection entry to add.
+   * Adds a new collection from a pre-built entry object.
+   * @param entry - The collection entry to add (JSON with items/entries, or pre-instantiated).
    * @returns `Success` with the entry if added, `Failure` otherwise.
    */
-  public addCollection(
+  public addCollectionEntry(
     entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>
   ): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail> {
-    const entryConverter = AggregatedResultMap._entryConverter(
-      this._collectionIdConverter,
-      this._childKvConverters
-    );
-    const convertResult = entryConverter.convert(entry);
-    if (convertResult.isFailure()) {
-      return failWithDetail(convertResult.message, 'invalid-value');
-    }
-    return this._collections.add(convertResult.value.id, convertResult.value);
+    return AggregatedResultMap._entryConverter(this._collectionIdConverter, this._childKvConverters)
+      .convert(entry)
+      .withFailureDetail<ResultMapResultDetail>('invalid-value')
+      .onSuccess((c) => this._collections.add(c.id, c));
   }
 
   /**
-   * Adds a new empty mutable collection with the specified ID.
-   * @param id - The collection ID as a string (will be validated).
-   * @param entries - Optional initial entries for the collection.
+   * Adds a new collection with the specified ID and optional initial entries.
+   * @param collectionId - The collection ID as a string (will be validated).
+   * @param items - Optional initial entries for the collection.
+   * @param options - Optional settings (isImmutable defaults to false).
    * @returns `Success` with the validated collection ID if added, `Failure` otherwise.
    */
-  public addMutableCollection(
-    id: string,
-    entries?: Iterable<KeyValueEntry<string, unknown>>
+  public addCollectionWithItems(
+    collectionId: string,
+    items?: Iterable<KeyValueEntry<string, unknown>>,
+    options?: IAddCollectionWithItemsOptions
   ): Result<TCOLLECTIONID> {
-    // Validate the collection ID
-    const idResult = this._collectionKvConverters.convertKey(id);
-    if (idResult.isFailure()) {
-      return fail(`Invalid collection ID: ${idResult.message}`);
-    }
-    const collectionId = idResult.value;
-
-    // Check if collection already exists
-    if (this._collections.has(collectionId)) {
-      return fail(`Collection '${collectionId}' already exists`);
-    }
-
-    // Convert entries if provided
-    let convertedEntries: Iterable<KeyValueEntry<TITEMID, TITEM>> | undefined;
-    if (entries) {
-      const entriesResult = this._childKvConverters.convertEntries(entries);
-      if (entriesResult.isFailure()) {
-        return fail(`Invalid entries: ${entriesResult.message}`);
-      }
-      convertedEntries = entriesResult.value;
-    }
-
-    // Create the mutable collection
-    const items = new ValidatingResultMap<TITEMID, TITEM>({
-      converters: this._childKvConverters,
-      entries: convertedEntries ? Array.from(convertedEntries) : undefined
-    });
-
-    const entry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> = {
-      isMutable: true,
-      id: collectionId,
-      items
-    };
-
-    return this._collections.add(collectionId, entry).onSuccess(() => {
-      return succeedWithDetail(collectionId, 'added');
-    });
+    const isMutable = options?.isImmutable !== true;
+    const entries = items ? Array.from(items) : [];
+    return this._collectionIdConverter
+      .convert(collectionId)
+      .onSuccess((id) =>
+        this.addCollectionEntry({ isMutable, id, entries }).asResult.onSuccess(() => Success.with(id))
+      );
   }
 
   // ==================== Private helpers ====================

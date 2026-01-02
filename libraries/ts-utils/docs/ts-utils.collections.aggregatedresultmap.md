@@ -204,7 +204,7 @@ Adds an item by its composite ID. Fails if the item already exists.
 </td></tr>
 <tr><td>
 
-[addCollection(entry)](./ts-utils.collections.aggregatedresultmap.addcollection.md)
+[addCollectionEntry(entry)](./ts-utils.collections.aggregatedresultmap.addcollectionentry.md)
 
 
 </td><td>
@@ -212,13 +212,13 @@ Adds an item by its composite ID. Fails if the item already exists.
 
 </td><td>
 
-Adds a new collection from a pre-built entry.
+Adds a new collection from a pre-built entry object.
 
 
 </td></tr>
 <tr><td>
 
-[addMutableCollection(id, entries)](./ts-utils.collections.aggregatedresultmap.addmutablecollection.md)
+[addCollectionWithItems(collectionId, items, options)](./ts-utils.collections.aggregatedresultmap.addcollectionwithitems.md)
 
 
 </td><td>
@@ -226,7 +226,7 @@ Adds a new collection from a pre-built entry.
 
 </td><td>
 
-Adds a new empty mutable collection with the specified ID.
+Adds a new collection with the specified ID and optional initial entries.
 
 
 </td></tr>
