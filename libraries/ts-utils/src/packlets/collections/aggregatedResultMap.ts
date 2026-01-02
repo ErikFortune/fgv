@@ -552,12 +552,7 @@ export class AggregatedResultMap<
   ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
     return this._getOrCreateMutableCollection(collectionId).onSuccess((collection) => {
       return collection.add(itemId, value).onSuccess(() => {
-        const compositeIdResult = this.composeId(collectionId, itemId);
-        /* c8 ignore next 3 - defensive: IDs already validated by collection operations */
-        if (compositeIdResult.isFailure()) {
-          return failWithDetail(compositeIdResult.message, 'invalid-key');
-        }
-        return succeedWithDetail(compositeIdResult.value, 'added');
+        return this.composeId(collectionId, itemId).withDetail('invalid-key', 'added');
       });
     });
   }
@@ -576,12 +571,7 @@ export class AggregatedResultMap<
   ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
     return this._getOrCreateMutableCollection(collectionId).onSuccess((collection) => {
       return collection.set(itemId, value).onSuccess((_, detail) => {
-        const compositeIdResult = this.composeId(collectionId, itemId);
-        /* c8 ignore next 3 - defensive: IDs already validated by collection operations */
-        if (compositeIdResult.isFailure()) {
-          return failWithDetail(compositeIdResult.message, 'invalid-key');
-        }
-        return succeedWithDetail(compositeIdResult.value, detail);
+        return this.composeId(collectionId, itemId).withDetail('invalid-key', detail);
       });
     });
   }
@@ -600,12 +590,7 @@ export class AggregatedResultMap<
   ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
     return this._getMutableCollection(collectionId).onSuccess((collection) => {
       return collection.update(itemId, value).onSuccess(() => {
-        const compositeIdResult = this.composeId(collectionId, itemId);
-        /* c8 ignore next 3 - defensive: IDs already validated by collection operations */
-        if (compositeIdResult.isFailure()) {
-          return failWithDetail(compositeIdResult.message, 'invalid-key');
-        }
-        return succeedWithDetail(compositeIdResult.value, 'updated');
+        return this.composeId(collectionId, itemId).withDetail('invalid-key', 'updated');
       });
     });
   }
@@ -622,12 +607,7 @@ export class AggregatedResultMap<
   ): DetailedResult<TCOMPOSITEID, ResultMapResultDetail> {
     return this._getMutableCollection(collectionId).onSuccess((collection) => {
       return collection.delete(itemId).onSuccess(() => {
-        const compositeIdResult = this.composeId(collectionId, itemId);
-        /* c8 ignore next 3 - defensive: IDs already validated by collection operations */
-        if (compositeIdResult.isFailure()) {
-          return failWithDetail(compositeIdResult.message, 'invalid-key');
-        }
-        return succeedWithDetail(compositeIdResult.value, 'deleted');
+        return this.composeId(collectionId, itemId).withDetail('invalid-key', 'deleted');
       });
     });
   }
