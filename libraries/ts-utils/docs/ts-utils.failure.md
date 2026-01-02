@@ -9,7 +9,7 @@ Reports a failed [result](./ts-utils.iresult.md) from some operation, with an er
 **Signature:**
 
 ```typescript
-export declare class Failure<T> implements IResult<T> 
+export declare class Failure<out T> implements IResult<T> 
 ```
 **Implements:** [IResult](./ts-utils.iresult.md)<!-- -->&lt;T&gt;
 

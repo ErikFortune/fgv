@@ -9,7 +9,7 @@ A [DetailedSuccess](./ts-utils.detailedsuccess.md) extends [Success](./ts-utils.
 **Signature:**
 
 ```typescript
-export declare class DetailedSuccess<T, TD> extends Success<T> 
+export declare class DetailedSuccess<out T, out TD> extends Success<T> 
 ```
 **Extends:** [Success](./ts-utils.success.md)<!-- -->&lt;T&gt;
 

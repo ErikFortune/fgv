@@ -197,6 +197,20 @@ Creates an [in-place validator](./ts-utils.validation.validator.md) which is der
 </td></tr>
 <tr><td>
 
+[or(other)](./ts-utils.validation.base.genericvalidator.or.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Chains this validator with another of the same type, to be attempted if this validator fails.
+
+
+</td></tr>
+<tr><td>
+
 [validate(from, context)](./ts-utils.validation.base.genericvalidator.validate.md)
 
 

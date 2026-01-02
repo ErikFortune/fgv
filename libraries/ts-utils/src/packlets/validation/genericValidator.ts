@@ -193,6 +193,21 @@ export class GenericValidator<T, TC = unknown> implements Validator<T, TC> {
   }
 
   /**
+   * {@inheritdoc Validation.Validator.or}
+   */
+  public or(other: Validator<T, TC>): Validator<T, TC> {
+    return new GenericValidator<T, TC>({
+      validator: (from: unknown, context?: TC, __self?: Validator<T, TC>): boolean | Failure<T> => {
+        if (this._validator(from, this._context(context), this) === true) {
+          return true;
+        }
+        const otherResult = other.validate(from, this._context(context));
+        return otherResult.isSuccess() ? true : otherResult;
+      }
+    });
+  }
+
+  /**
    * Gets a default or explicit context.
    * @param explicitContext - Optional explicit context.
    * @returns The appropriate context to use.

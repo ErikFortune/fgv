@@ -30,6 +30,17 @@ Helper function to create a [ArrayValidator](./ts-utils.validation.classes.array
 </td></tr>
 <tr><td>
 
+[compositeId(params)](./ts-utils.validators.compositeid.md)
+
+
+</td><td>
+
+Helper function to create a [Validator](./ts-utils.validation.validator.md) which validates a strongly-typed composite ID.
+
+
+</td></tr>
+<tr><td>
+
 [enumeratedValue(values)](./ts-utils.validators.enumeratedvalue.md)
 
 

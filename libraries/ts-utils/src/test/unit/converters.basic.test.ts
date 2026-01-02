@@ -24,9 +24,9 @@ import '../helpers/jest';
 
 import { Validation } from '../../index';
 import { omit, Result, succeed } from '../../packlets/base';
-import { Converters, FieldConverters, Infer } from '../../packlets/conversion';
+import { Converters, FieldConverters } from '../../packlets/conversion';
 
-describe('Converters module', () => {
+describe('Basic converters', () => {
   describe('string converter', () => {
     test('converts valid strings', () => {
       ['A string', '1', 'true', ''].forEach((s) => {
@@ -398,47 +398,6 @@ describe('Converters module', () => {
       expect(converter.convert(['val3'])).toSucceedWith(['val3']);
       expect(converter.convert(['val3'], context)).toFailWith(/invalid enumerated value/i);
     });
-  });
-
-  describe('type inference from converter with Infer', () => {
-    // This doesn't actually test anything per se, but you can hover
-    // over the various local variables for intellisense to show
-    // that typescript is correctly inferring types.
-    // Note that it seems to be losing 'undefined' for optional
-    // fields
-    type TestEnum = 'tv1' | 'tv2' | 'tv3';
-    const s: Infer<typeof Converters.string> = 'hello';
-    // n correctly fails because 'number' doesn't extend Converter.
-    // const n: Infer<number> = 10;
-    const narc = Converters.arrayOf(Converters.number);
-    // cSpell: disable
-    const narr: Infer<typeof narc> = [1, 2, 3];
-    const objc = Converters.object({
-      str: Converters.string,
-      numbers: Converters.arrayOf(Converters.number),
-      enum: Converters.enumeratedValue<TestEnum>(['tv1', 'tv2', 'tv3']),
-      child: Converters.object<{ bool?: boolean; map: Map<string, string[]> }, unknown>({
-        bool: Converters.optionalBoolean,
-        map: Converters.mapOf(Converters.arrayOf(Converters.string))
-      })
-    });
-    const objt: Infer<typeof objc> | undefined = {
-      str: 'string',
-      numbers: [1, 2, 3],
-      enum: 'tv3',
-      child: {
-        bool: true,
-        map: new Map<string, string[]>()
-      }
-    };
-    expect(s).toBeDefined();
-    expect(narc).toBeDefined();
-    expect(narr).toBeDefined();
-    expect(objc).toBeDefined();
-    expect(objt).toBeDefined();
-    expect(narc).toBeDefined();
-    expect(objc).toBeDefined();
-    // cSpell: enable
   });
 
   describe('recordOf converter', () => {
@@ -1422,306 +1381,105 @@ describe('Converters module', () => {
     });
   });
 
-  describe('transform converter', () => {
-    interface IWant {
-      stringField: string;
-      optionalStringField?: string;
-      numField: number;
-      boolField: boolean;
-      numbers?: number[];
-    }
-
-    const converter = Converters.transform<IWant>({
-      stringField: Converters.field('string1', Converters.string),
-      optionalStringField: Converters.optionalField('string2', Converters.string),
-      numField: Converters.field('num1', Converters.number),
-      boolField: Converters.field('b1', Converters.boolean),
-      numbers: Converters.optionalField('nums', Converters.arrayOf(Converters.number))
+  describe('isValidator helper', () => {
+    test('returns true for a validator', () => {
+      const validator = Validation.Validators.string;
+      expect(Converters.isValidator(validator)).toBe(true);
     });
 
-    test('converts a valid object with empty optional fields', () => {
-      const src = {
-        string1: 'string1',
-        num1: -1,
-        b1: true
-      };
-
-      const expected: IWant = {
-        stringField: 'string1',
-        numField: -1,
-        boolField: true
-      };
-
-      expect(converter.convert(src)).toSucceedWith(expected);
+    test('returns false for a converter', () => {
+      const converter = Converters.string;
+      expect(Converters.isValidator(converter)).toBe(false);
     });
 
-    test('converts a valid object with optional fields present', () => {
-      const src = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, '2']
-      };
-
-      const expected: IWant = {
-        stringField: 'string1',
-        optionalStringField: 'optional string',
-        numField: -1,
-        boolField: true,
-        numbers: [-1, 0, 1, 2]
-      };
-
-      expect(converter.convert(src)).toSucceedWith(expected);
-    });
-
-    test('fails if any non-optional fields are missing', () => {
-      const src = {
-        misnamedString1: 'string1',
-        num1: -1,
-        b1: true
-      };
-
-      expect(converter.convert(src)).toFailWith(/string1 not found/i);
-    });
-
-    test('fails if any non-optional fields are mistyped', () => {
-      const src = {
-        string1: 'string1',
-        num1: true,
-        b1: -1
-      };
-
-      expect(converter.convert(src)).toFailWith(/not a number/i);
-    });
-
-    test('fails for mistyped optional fields', () => {
-      const src = {
-        string1: 'string1',
-        string2: true,
-        num1: -1,
-        b1: true
-      };
-
-      expect(converter.convert(src)).toFailWith(/not a string/i);
-    });
-
-    test('silently ignores fields without a converter', () => {
-      const partialConverter = Converters.transform<IWant>({
-        stringField: Converters.field('string1', Converters.string),
-        optionalStringField: Converters.optionalField('string2', Converters.string),
-        numField: Converters.field('num1', Converters.number),
-        boolField: Converters.field('b1', Converters.boolean),
-        numbers: undefined
+    test('returns true for object validator', () => {
+      const validator = Validation.Validators.object({
+        name: Validation.Validators.string
       });
+      expect(Converters.isValidator(validator)).toBe(true);
+    });
 
-      const src = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, '2']
-      };
-
-      const expected: IWant = {
-        stringField: 'string1',
-        optionalStringField: 'optional string',
-        numField: -1,
-        boolField: true
-      };
-
-      expect(partialConverter.convert(src)).toSucceedWith(expected);
+    test('returns false for object converter', () => {
+      const converter = Converters.object({
+        name: Converters.string
+      });
+      expect(Converters.isValidator(converter)).toBe(false);
     });
   });
 
-  describe('transformObject converter', () => {
-    interface ISourceThing {
-      string1: string;
-      string2?: string;
-      num1: number;
-      b1: boolean;
-      nums?: number[];
-      extra?: string;
-    }
+  describe('validated converter (extended)', () => {
+    test('returns the converter as-is when passed a converter', () => {
+      const converter = Converters.string;
+      const result = Converters.validated(converter);
+      expect(result).toBe(converter);
+    });
 
-    interface IDestinationThing {
-      stringField: string;
-      optionalStringField?: string;
-      numField: number;
-      boolField: boolean;
-      numbers?: number[];
-    }
+    test('wraps a validator into a converter', () => {
+      const validator = Validation.Validators.string;
+      const converter = Converters.validated(validator);
 
-    const transformers: Converters.FieldTransformers<ISourceThing, IDestinationThing> = {
-      stringField: {
-        from: 'string1',
-        converter: Converters.string
-      },
-      optionalStringField: {
-        from: 'string2',
-        converter: Converters.optionalString,
-        optional: true
-      },
-      numField: {
-        from: 'num1',
-        converter: Converters.number
-      },
-      boolField: {
-        from: 'b1',
-        converter: Converters.boolean
-      },
-      numbers: {
-        from: 'nums',
-        converter: Converters.arrayOf(Converters.number),
-        optional: true
+      expect(Converters.isValidator(converter)).toBe(false);
+      expect(converter.convert('test')).toSucceedWith('test');
+      expect(converter.convert(123)).toFailWith(/not a string/i);
+    });
+
+    test('preserves validation behavior with complex validators', () => {
+      interface ITestObj {
+        name: string;
+        value: number;
       }
-    };
+      const validator = Validation.Validators.object<ITestObj>({
+        name: Validation.Validators.string,
+        value: Validation.Validators.number
+      });
+      const converter = Converters.validated(validator);
 
-    const converter = Converters.transformObject(transformers);
-    const strict = Converters.transformObject(transformers, { strict: true });
-    const strict2 = Converters.transformObject(transformers, {
-      strict: true,
-      ignore: ['extra'],
-      description: 'strict2'
+      const validObj = { name: 'test', value: 42 };
+      expect(converter.convert(validObj)).toSucceedWith(validObj);
+      expect(converter.convert({ name: 'test', value: 'not a number' })).toFailWith(/not a number/i);
+    });
+  });
+
+  describe('asValidator helper', () => {
+    test('returns the validator as-is when passed a validator', () => {
+      const validator = Validation.Validators.string;
+      const result = Converters.asValidator(validator);
+      expect(result).toBe(validator);
     });
 
-    test('converts a valid object with empty optional fields', () => {
-      const src: ISourceThing = {
-        string1: 'string1',
-        num1: -1,
-        b1: true
-      };
+    test('wraps a converter into a validator', () => {
+      const converter = Converters.string;
+      const validator = Converters.asValidator(converter);
 
-      const expected: IDestinationThing = {
-        stringField: 'string1',
-        numField: -1,
-        boolField: true
-      };
-
-      expect(converter.convert(src)).toSucceedWith(expected);
+      expect(Converters.isValidator(validator)).toBe(true);
+      expect(validator.validate('test')).toSucceedWith('test');
+      expect(validator.validate(123)).toFailWith(/not a string/i);
     });
 
-    test('converts a valid object with optional fields present', () => {
-      const src: ISourceThing = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, 2]
-      };
+    test('preserves conversion behavior with complex converters', () => {
+      interface ITestObj {
+        name: string;
+        value: number;
+      }
+      const converter = Converters.object<ITestObj>({
+        name: Converters.string,
+        value: Converters.number
+      });
+      const validator = Converters.asValidator(converter);
 
-      const expected: IDestinationThing = {
-        stringField: 'string1',
-        optionalStringField: 'optional string',
-        numField: -1,
-        boolField: true,
-        numbers: [-1, 0, 1, 2]
-      };
-
-      expect(converter.convert(src)).toSucceedWith(expected);
+      const validObj = { name: 'test', value: 42 };
+      expect(validator.validate(validObj)).toSucceedWith(validObj);
+      expect(validator.validate({ name: 'test', value: 'not a number' })).toFailWith(/not a number/i);
     });
 
-    test('ignores unused source fields by default', () => {
-      const src: ISourceThing = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, 2],
-        extra: 'this is an extra field'
-      };
+    test('handles converters that transform values', () => {
+      // Number converter accepts numeric strings and converts them
+      const converter = Converters.number;
+      const validator = Converters.asValidator(converter);
 
-      const expected: IDestinationThing = {
-        stringField: 'string1',
-        optionalStringField: 'optional string',
-        numField: -1,
-        boolField: true,
-        numbers: [-1, 0, 1, 2]
-      };
-
-      expect(converter.convert(src)).toSucceedWith(expected);
-    });
-
-    test('fails in strict mode if unused fields are present in the source object', () => {
-      const src: ISourceThing = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, 2],
-        extra: 'this is an extra field'
-      };
-
-      expect(strict.convert(src)).toFailWith(/extra: unexpected property/i);
-    });
-
-    test('succeeds in strict mode if unused fields in the source object are listed in options.ignore', () => {
-      const src: ISourceThing = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, 2],
-        extra: 'this is an extra field'
-      };
-
-      const expected: IDestinationThing = {
-        stringField: 'string1',
-        optionalStringField: 'optional string',
-        numField: -1,
-        boolField: true,
-        numbers: [-1, 0, 1, 2]
-      };
-
-      expect(strict2.convert(src)).toSucceedWith(expected);
-    });
-
-    test('displays description in error messages if supplied', () => {
-      const src = {
-        string1: 'string1',
-        string2: 'optional string',
-        num1: -1,
-        b1: true,
-        nums: [-1, 0, 1, 2],
-        extra2: 'this is an extra field'
-      };
-
-      expect(strict2.convert(src)).toFailWith(/strict2:/i);
-    });
-
-    test('fails if any non-optional fields are missing', () => {
-      const src = {
-        misnamedString1: 'string1',
-        num1: -1,
-        b1: true
-      };
-
-      expect(converter.convert(src)).toFailWith(/string1: required property missing/i);
-    });
-
-    test('fails if any non-optional fields are mistyped', () => {
-      const src = {
-        string1: 'string1',
-        num1: true,
-        b1: -1
-      };
-
-      expect(converter.convert(src)).toFailWith(/not a number/i);
-    });
-
-    test('fails for mistyped optional fields', () => {
-      const src = {
-        string1: 'string1',
-        string2: true,
-        num1: -1,
-        b1: true
-      };
-
-      expect(converter.convert(src)).toFailWith(/not a string/i);
-    });
-
-    test('fails if source is not an object', () => {
-      expect(converter.convert(10)).toFailWith(/not an object/i);
+      // As a validator, it should still succeed (value passes conversion)
+      expect(validator.validate(42)).toSucceed();
+      expect(validator.validate('not a number')).toFailWith(/not a number/i);
     });
   });
 });
