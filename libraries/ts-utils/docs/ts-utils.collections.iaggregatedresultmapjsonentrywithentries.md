@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-Iterable&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;string, unknown&gt;&gt;
+[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;string, unknown&gt;\[\]
 
 
 </td><td>

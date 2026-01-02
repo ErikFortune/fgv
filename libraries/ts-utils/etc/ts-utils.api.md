@@ -7,6 +7,7 @@
 // @public
 export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
     [Symbol.iterator](): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
+    constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     add(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -20,7 +21,7 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
     clear(): void;
     get collectionCount(): number;
     get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
-    composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): TCOMPOSITEID;
+    composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): Result<TCOMPOSITEID>;
     static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -1154,7 +1155,7 @@ interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCO
 // @public
 interface IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID extends string = string> {
     // (undocumented)
-    readonly entries: Iterable<KeyValueEntry<string, unknown>>;
+    readonly entries: KeyValueEntry<string, unknown>[];
     // (undocumented)
     readonly id: TCOLLECTIONID;
     // (undocumented)

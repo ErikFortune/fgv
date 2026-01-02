@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly entries: Iterable<KeyValueEntry<string, unknown>>;
+readonly entries: KeyValueEntry<string, unknown>[];
 ```

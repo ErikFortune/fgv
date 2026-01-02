@@ -9,7 +9,7 @@ Composes a collection ID and item ID into a composite ID.
 **Signature:**
 
 ```typescript
-composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): TCOMPOSITEID;
+composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): Result<TCOMPOSITEID>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ The item ID.
 
 **Returns:**
 
-TCOMPOSITEID
+[Result](./ts-utils.result.md)<!-- -->&lt;TCOMPOSITEID&gt;
 
-The composite ID string.
+`Success` with the composite ID if valid, `Failure` otherwise.
 

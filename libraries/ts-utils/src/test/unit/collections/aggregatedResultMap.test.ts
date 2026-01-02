@@ -682,8 +682,7 @@ describe('AggregatedResultMap', () => {
 
     describe('composeId', () => {
       test('composes collection ID and item ID into composite ID', () => {
-        const compositeId = map.composeId('alpha' as CollectionId, '1' as ItemId);
-        expect(compositeId).toBe('alpha.1');
+        expect(map.composeId('alpha' as CollectionId, '1' as ItemId)).toSucceedWith('alpha.1' as CompositeId);
       });
 
       test('uses the configured delimiter', () => {
@@ -701,7 +700,23 @@ describe('AggregatedResultMap', () => {
           delimiter: ':'
         }).orThrow();
 
-        expect(colonMap.composeId('alpha' as CollectionId, '1' as ItemId)).toBe('alpha:1');
+        expect(colonMap.composeId('alpha' as CollectionId, '1' as ItemId)).toSucceedWith(
+          'alpha:1' as CompositeId
+        );
+      });
+
+      test('fails for invalid collection ID', () => {
+        // Collection ID must be alphabetic - '123' is numeric so it should fail
+        expect(map.composeId('123' as CollectionId, '1' as ItemId)).toFailWith(
+          /collection id must be alphabetic/i
+        );
+      });
+
+      test('fails for invalid item ID', () => {
+        // Item ID must be numeric - 'abc' is alphabetic so it should fail
+        expect(map.composeId('alpha' as CollectionId, 'abc' as ItemId)).toFailWith(
+          /item id must be numeric/i
+        );
       });
     });
 

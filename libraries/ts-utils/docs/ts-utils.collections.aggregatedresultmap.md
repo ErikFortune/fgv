@@ -13,6 +13,40 @@ export declare class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIO
 ```
 **Implements:** [IResultMap](./ts-utils.collections.iresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;, [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;
 
+## Constructors
+
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(params)](./ts-utils.collections.aggregatedresultmap._constructor_.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Constructs a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->. Use [AggregatedResultMap.create()](./ts-utils.aggregatedresultmap.create.md) for safe construction with error handling.
+
+
+</td></tr>
+</tbody></table>
+
 ## Properties
 
 <table><thead><tr><th>
