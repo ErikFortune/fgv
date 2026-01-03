@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../packlets/common';
 
@@ -27,6 +28,7 @@ import {
   Ingredient,
   IIngredient,
   IGanacheCharacteristics,
+  IIngredientFileTreeSource,
   isChocolateIngredient,
   isDairyIngredient,
   isFatIngredient,
@@ -387,6 +389,312 @@ describe('IngredientsLibrary', () => {
       const collections = library.collections;
       expect(collections.validating.has('common')).toBe(true);
       expect(collections.validating.has('felchlin')).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // File Source Loading Tests
+  // ============================================================================
+
+  describe('fileSources parameter', () => {
+    // Valid ingredient JSON data for testing
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const validIngredientData = {
+      'test-chocolate': {
+        baseId: 'test-chocolate',
+        name: 'Test Chocolate',
+        category: 'chocolate',
+        chocolateType: 'dark',
+        cacaoPercentage: 65,
+        ganacheCharacteristics: {
+          cacaoFat: 36,
+          sugar: 34,
+          milkFat: 0,
+          water: 1,
+          solids: 29,
+          otherFats: 0
+        }
+      }
+    };
+
+    const secondIngredientData = {
+      'other-chocolate': {
+        baseId: 'other-chocolate',
+        name: 'Other Chocolate',
+        category: 'chocolate',
+        chocolateType: 'milk',
+        cacaoPercentage: 40,
+        ganacheCharacteristics: {
+          cacaoFat: 30,
+          sugar: 40,
+          milkFat: 5,
+          water: 1,
+          solids: 24,
+          otherFats: 0
+        }
+      }
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const getLibraryDir = (files: FileTree.IInMemoryFile[]): FileTree.IFileTreeDirectoryItem => {
+      const tree = FileTree.inMemory(files).orThrow();
+      const libraryItem = tree.getItem('/library').orThrow();
+      return libraryItem as FileTree.IFileTreeDirectoryItem;
+    };
+
+    test('creates library with single file source', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/test-source.json', contents: validIngredientData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: { directory: root }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.size).toBe(1);
+        expect(lib.validating.has('test-source.test-chocolate')).toBe(true);
+      });
+    });
+
+    test('creates library with array of file sources', () => {
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/source1.json', contents: validIngredientData }
+      ];
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/source2.json', contents: secondIngredientData }
+      ];
+      const root1 = getLibraryDir(files1);
+      const root2 = getLibraryDir(files2);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: [{ directory: root1 }, { directory: root2 }]
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.size).toBe(2);
+        expect(lib.validating.has('source1.test-chocolate')).toBe(true);
+        expect(lib.validating.has('source2.other-chocolate')).toBe(true);
+      });
+    });
+
+    test('merges file sources with builtins', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/custom-source.json', contents: validIngredientData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: true,
+          fileSources: { directory: root }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        // 4 builtins + 1 custom
+        expect(lib.collectionCount).toBe(5);
+        expect(lib.validating.has('custom-source.test-chocolate')).toBe(true);
+        expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
+      });
+    });
+
+    test('fails on collection ID collision', () => {
+      // Create two file sources with the same collection ID
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/duplicate.json', contents: validIngredientData }
+      ];
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/duplicate.json', contents: secondIngredientData }
+      ];
+      const root1 = getLibraryDir(files1);
+      const root2 = getLibraryDir(files2);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: [{ directory: root1 }, { directory: root2 }]
+        })
+      ).toFailWith(/duplicate.*conflict/i);
+    });
+
+    test('respects mutable setting from file source', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/mutable-source.json', contents: validIngredientData }
+      ];
+      const root = getLibraryDir(files);
+      const source: IIngredientFileTreeSource = {
+        directory: root,
+        mutable: true
+      };
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: source
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        const collection = lib.collections.validating.get('mutable-source');
+        expect(collection).toSucceedAndSatisfy((coll) => {
+          expect(coll.isMutable).toBe(true);
+        });
+      });
+    });
+
+    test('respects load: false for file source', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/skipped.json', contents: validIngredientData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: { directory: root, load: false }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(0);
+        expect(lib.size).toBe(0);
+      });
+    });
+
+    test('fails when ingredients directory does not exist and source is enabled', () => {
+      // Create a file tree without data/ingredients directory
+      const files: FileTree.IInMemoryFile[] = [{ path: '/library/readme.txt', contents: 'empty' }];
+      const root = getLibraryDir(files);
+
+      expect(
+        IngredientsLibrary.create({
+          builtin: false,
+          fileSources: { directory: root }
+        })
+      ).toFail();
+    });
+  });
+
+  // ============================================================================
+  // Instance Method: loadFromFileTreeSource Tests
+  // ============================================================================
+
+  describe('loadFromFileTreeSource instance method', () => {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const validIngredientData = {
+      'test-chocolate': {
+        baseId: 'test-chocolate',
+        name: 'Test Chocolate',
+        category: 'chocolate',
+        chocolateType: 'dark',
+        cacaoPercentage: 65,
+        ganacheCharacteristics: {
+          cacaoFat: 36,
+          sugar: 34,
+          milkFat: 0,
+          water: 1,
+          solids: 29,
+          otherFats: 0
+        }
+      }
+    };
+
+    const secondIngredientData = {
+      'other-chocolate': {
+        baseId: 'other-chocolate',
+        name: 'Other Chocolate',
+        category: 'chocolate',
+        chocolateType: 'milk',
+        cacaoPercentage: 40,
+        ganacheCharacteristics: {
+          cacaoFat: 30,
+          sugar: 40,
+          milkFat: 5,
+          water: 1,
+          solids: 24,
+          otherFats: 0
+        }
+      }
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const getLibraryDir = (files: FileTree.IInMemoryFile[]): FileTree.IFileTreeDirectoryItem => {
+      const tree = FileTree.inMemory(files).orThrow();
+      const libraryItem = tree.getItem('/library').orThrow();
+      return libraryItem as FileTree.IFileTreeDirectoryItem;
+    };
+
+    test('loads collections into existing library', () => {
+      // Start with an empty library
+      const library = IngredientsLibrary.create({ builtin: false }).orThrow();
+      expect(library.collectionCount).toBe(0);
+
+      // Load from file source
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/test-source.json', contents: validIngredientData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(library.loadFromFileTreeSource({ directory: root })).toSucceedWith(1);
+      expect(library.collectionCount).toBe(1);
+      expect(library.validating.has('test-source.test-chocolate')).toBe(true);
+    });
+
+    test('can load multiple file sources incrementally', () => {
+      const library = IngredientsLibrary.create({ builtin: false }).orThrow();
+
+      // Load first source
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/source1.json', contents: validIngredientData }
+      ];
+      const root1 = getLibraryDir(files1);
+      expect(library.loadFromFileTreeSource({ directory: root1 })).toSucceedWith(1);
+
+      // Load second source
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/source2.json', contents: secondIngredientData }
+      ];
+      const root2 = getLibraryDir(files2);
+      expect(library.loadFromFileTreeSource({ directory: root2 })).toSucceedWith(1);
+
+      expect(library.collectionCount).toBe(2);
+      expect(library.validating.has('source1.test-chocolate')).toBe(true);
+      expect(library.validating.has('source2.other-chocolate')).toBe(true);
+    });
+
+    test('fails on collection ID collision with existing collection', () => {
+      // Create library with one collection
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/duplicate.json', contents: validIngredientData }
+      ];
+      const root1 = getLibraryDir(files1);
+      const library = IngredientsLibrary.create({
+        builtin: false,
+        fileSources: { directory: root1 }
+      }).orThrow();
+
+      expect(library.collectionCount).toBe(1);
+
+      // Try to load a source with the same collection ID
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/duplicate.json', contents: secondIngredientData }
+      ];
+      const root2 = getLibraryDir(files2);
+
+      expect(library.loadFromFileTreeSource({ directory: root2 })).toFailWith(/duplicate.*already exists/i);
+    });
+
+    test('returns 0 when load: false is specified', () => {
+      const library = IngredientsLibrary.create({ builtin: false }).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/ingredients/test.json', contents: validIngredientData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(library.loadFromFileTreeSource({ directory: root, load: false })).toSucceedWith(0);
+      expect(library.collectionCount).toBe(0);
     });
   });
 });

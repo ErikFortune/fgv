@@ -23,19 +23,38 @@
  * @packageDocumentation
  */
 
-import { captureResult, Collections, Result, Success } from '@fgv/ts-utils';
+import { captureResult, Collections, fail, mapResults, Result, succeed, Success } from '@fgv/ts-utils';
 
 import { BaseIngredientId, IngredientId, SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { Ingredient } from './model';
 import { ingredient as ingredientConverter } from './converters';
 import { IngredientCollectionEntryInit } from './ingredientsCollection';
-import { CollectionLoader, LibraryLoadSpec } from '../library-data';
+import {
+  checkForCollisionIds,
+  CollectionLoader,
+  getIngredientsDirectory,
+  ICollectionSet,
+  IFileTreeSource,
+  LibraryLoadSpec,
+  normalizeFileSources,
+  specToLoadParams
+} from '../library-data';
 import { BuiltInData, builtInSpecToLoadParams } from '../built-in';
 
 // ============================================================================
 // Parameters Interface
 // ============================================================================
+
+/**
+ * File tree source for ingredient data.
+ *
+ * Navigates to the standard path (data/ingredients) within the tree
+ * and loads collections according to the load spec.
+ *
+ * @public
+ */
+export type IIngredientFileTreeSource = IFileTreeSource<SourceId>;
 
 /**
  * Parameters for creating an IngredientsLibrary instance
@@ -52,6 +71,13 @@ export interface IIngredientsLibraryParams {
    * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
    */
   readonly builtin?: LibraryLoadSpec<SourceId>;
+
+  /**
+   * File tree sources to load collections from.
+   * Collections are loaded and merged with built-in collections.
+   * Duplicate collection IDs across sources cause an error.
+   */
+  readonly fileSources?: IIngredientFileTreeSource | ReadonlyArray<IIngredientFileTreeSource>;
 
   /**
    * Optional additional collections of ingredients
@@ -117,6 +143,31 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
   }
 
   /**
+   * Loads collections from a single file tree source.
+   * @param source - The file tree source to load from.
+   * @returns Success with collections or Failure with error.
+   */
+  private static _loadFromFileTreeSource(
+    source: IIngredientFileTreeSource
+  ): Result<ReadonlyArray<IngredientCollectionEntryInit>> {
+    const loadParams = specToLoadParams(source.load ?? true, source.mutable ?? false);
+    if (loadParams === undefined) {
+      return Success.with([]);
+    }
+
+    const loader = new CollectionLoader<Ingredient, SourceId, BaseIngredientId>({
+      itemConverter: ingredientConverter,
+      collectionIdConverter: CommonConverters.sourceId,
+      itemIdConverter: CommonConverters.baseIngredientId,
+      mutable: loadParams.mutable
+    });
+
+    return getIngredientsDirectory(source.directory).onSuccess((ingredientsDir) => {
+      return loader.loadFromFileTree(ingredientsDir, loadParams);
+    });
+  }
+
+  /**
    * Creates a new IngredientsLibrary instance
    * @param params - Optional creation parameters with initial collections
    * @returns Success with new instance, or Failure with error message
@@ -124,14 +175,72 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
    */
   public static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary> {
     const builtin = params?.builtin ?? true;
+    const fileSources = normalizeFileSources(params?.fileSources);
     const additionalCollections = params?.collections ?? [];
 
+    // Load built-in collections
     return IngredientsLibrary._loadBuiltInCollections(builtin).onSuccess((builtInCollections) => {
-      const allCollections: IngredientCollectionEntryInit[] = [
-        ...builtInCollections,
-        ...additionalCollections
-      ];
-      return captureResult(() => new IngredientsLibrary(allCollections));
+      // Load file source collections
+      const fileSourceResults = fileSources.map((source, i) =>
+        IngredientsLibrary._loadFromFileTreeSource(source).onSuccess((collections) =>
+          succeed<ICollectionSet<SourceId>>({
+            source: `fileSource[${i}]`,
+            collections
+          })
+        )
+      );
+
+      return mapResults(fileSourceResults).onSuccess((fileSourceData) => {
+        // Check for collisions between all sources
+        const builtinCollectionSet: ICollectionSet<SourceId> = {
+          source: 'builtin',
+          collections: builtInCollections
+        };
+        const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [builtinCollectionSet, ...fileSourceData];
+
+        return checkForCollisionIds(allSets).onSuccess(() => {
+          // Merge all collections - fileSourceData.collections contains full IngredientCollectionEntryInit objects
+          const fileCollections = fileSourceData.flatMap(
+            (d) => d.collections as ReadonlyArray<IngredientCollectionEntryInit>
+          );
+          const allCollections: IngredientCollectionEntryInit[] = [
+            ...builtInCollections,
+            ...fileCollections,
+            ...additionalCollections
+          ];
+          return captureResult(() => new IngredientsLibrary(allCollections));
+        });
+      });
+    });
+  }
+
+  // ============================================================================
+  // Instance Methods
+  // ============================================================================
+
+  /**
+   * Loads ingredients from a file tree source and adds them to this library.
+   *
+   * @param source - The file tree source to load from
+   * @returns Success with the number of collections added, or Failure with error message
+   * @public
+   */
+  public loadFromFileTreeSource(source: IIngredientFileTreeSource): Result<number> {
+    return IngredientsLibrary._loadFromFileTreeSource(source).onSuccess((collections) => {
+      // Check for collisions with existing collections
+      const existingIds = new Set(this.collections.keys());
+      for (const coll of collections) {
+        if (existingIds.has(coll.id)) {
+          return fail(`Collection ID '${coll.id}' already exists in this library`);
+        }
+      }
+
+      // Add each collection
+      for (const coll of collections) {
+        this.addCollectionEntry(coll);
+      }
+
+      return succeed(collections.length);
     });
   }
 }

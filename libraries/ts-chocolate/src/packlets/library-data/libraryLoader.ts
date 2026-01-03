@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, succeed } from '@fgv/ts-utils';
+import { Result, fail, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import {
@@ -217,4 +217,74 @@ export function resolveBuiltInSpec<TCollectionId extends string = string>(
 ): LibraryLoadSpec<TCollectionId> {
   const fullSpec = spec ?? true;
   return resolveSubLibraryLoadSpec(fullSpec, subLibraryId) as LibraryLoadSpec<TCollectionId>;
+}
+
+// ============================================================================
+// Collision Detection
+// ============================================================================
+
+/**
+ * A collection set for collision detection.
+ * @public
+ */
+export interface ICollectionSet<TCollectionId extends string = string> {
+  /**
+   * Identifier for this source (for error messages)
+   */
+  readonly source: string;
+
+  /**
+   * Collections from this source
+   */
+  readonly collections: ReadonlyArray<{ readonly id: TCollectionId }>;
+}
+
+/**
+ * Checks for duplicate collection IDs across multiple sources.
+ *
+ * @param collectionSets - Array of collection sets to check
+ * @returns Success(true) if no collisions, Failure with details if collision found
+ * @public
+ */
+export function checkForCollisionIds<TCollectionId extends string>(
+  collectionSets: ReadonlyArray<ICollectionSet<TCollectionId>>
+): Result<true> {
+  const seen = new Map<TCollectionId, string>(); // id -> source
+  for (const { source, collections } of collectionSets) {
+    for (const coll of collections) {
+      const existing = seen.get(coll.id);
+      if (existing !== undefined) {
+        return fail(`Collection ID '${coll.id}' conflict: found in both '${existing}' and '${source}'`);
+      }
+      seen.set(coll.id, source);
+    }
+  }
+  return succeed(true);
+}
+
+// ============================================================================
+// File Source Normalization
+// ============================================================================
+
+/**
+ * Normalizes a file sources parameter to an array.
+ *
+ * Accepts either a single source or an array of sources,
+ * and always returns a readonly array.
+ *
+ * @param sources - Single source, array of sources, or undefined
+ * @returns Readonly array of sources (empty if undefined)
+ * @public
+ */
+export function normalizeFileSources<T extends { readonly directory: FileTree.IFileTreeDirectoryItem }>(
+  sources: T | ReadonlyArray<T> | undefined
+): ReadonlyArray<T> {
+  if (sources === undefined) {
+    return [];
+  }
+  // Check if it's a single source by testing for 'directory' property
+  if ('directory' in sources) {
+    return [sources as T];
+  }
+  return sources;
 }

@@ -20,6 +20,8 @@
 
 import '@fgv/ts-utils-jest';
 
+import { FileTree } from '@fgv/ts-json-base';
+
 import {
   BaseRecipeId,
   Grams,
@@ -33,6 +35,8 @@ import {
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
 
 import { IRecipe, IRecipeVersion, RecipesLibrary } from '../../../packlets/recipes';
+
+import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
 import { ChocolateLibrary } from '../../../packlets/runtime';
 
@@ -296,6 +300,197 @@ describe('ChocolateLibrary', () => {
     test('calculateGanacheForRecipe calculates for recipe object', () => {
       expect(library.calculateGanacheForRecipe(testRecipe)).toSucceedAndSatisfy((calc) => {
         expect(calc.analysis.totalWeight).toBe(100);
+      });
+    });
+  });
+
+  // ============================================================================
+  // File Source Loading Tests
+  // ============================================================================
+
+  describe('file source loading', () => {
+    // Valid ingredient JSON data for file tree
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const fileIngredientData = {
+      'file-chocolate': {
+        baseId: 'file-chocolate',
+        name: 'File Source Chocolate',
+        category: 'chocolate',
+        chocolateType: 'dark',
+        cacaoPercentage: 70,
+        ganacheCharacteristics: {
+          cacaoFat: 38,
+          sugar: 28,
+          milkFat: 0,
+          water: 1,
+          solids: 33,
+          otherFats: 0
+        }
+      }
+    };
+
+    // Valid recipe JSON data for file tree
+    const fileRecipeData = {
+      'file-recipe': {
+        baseId: 'file-recipe',
+        name: 'File Source Recipe',
+        description: 'A recipe from file source',
+        tags: ['file'],
+        goldenVersionId: '2026-01-01-01',
+        usage: [],
+        versions: [
+          {
+            versionId: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            ingredients: [{ ingredientId: 'file-source.file-chocolate', amount: 100 }],
+            baseWeight: 100
+          }
+        ]
+      }
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    // Helper to create file tree directory
+    const createFileTreeSource = (ingredientData: object, recipeData: object): ILibraryFileTreeSource => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/data/ingredients/file-source.json', contents: ingredientData },
+        { path: '/data/recipes/file-source.json', contents: recipeData }
+      ];
+      const tree = FileTree.inMemory(files).orThrow();
+      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+      return { directory: root };
+    };
+
+    test('creates with single file source', () => {
+      const fileSource = createFileTreeSource(fileIngredientData, fileRecipeData);
+
+      expect(
+        ChocolateLibrary.create({
+          builtin: false,
+          fileSources: fileSource
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.ingredients.size).toBe(1);
+        expect(lib.hasIngredient('file-source.file-chocolate' as IngredientId)).toBe(true);
+        expect(lib.recipes.size).toBe(1);
+        expect(lib.hasRecipe('file-source.file-recipe' as RecipeId)).toBe(true);
+      });
+    });
+
+    test('creates with array of file sources', () => {
+      // Create two separate file sources
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/data/ingredients/source1.json', contents: fileIngredientData },
+        { path: '/data/recipes/source1.json', contents: fileRecipeData }
+      ];
+      const tree1 = FileTree.inMemory(files1).orThrow();
+      const root1 = tree1.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const secondIngredientData = {
+        'second-chocolate': {
+          baseId: 'second-chocolate',
+          name: 'Second Source Chocolate',
+          category: 'chocolate',
+          ganacheCharacteristics: {
+            cacaoFat: 35,
+            sugar: 35,
+            milkFat: 0,
+            water: 1,
+            solids: 29,
+            otherFats: 0
+          }
+        }
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/data/ingredients/source2.json', contents: secondIngredientData }
+      ];
+      const tree2 = FileTree.inMemory(files2).orThrow();
+      const root2 = tree2.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      expect(
+        ChocolateLibrary.create({
+          builtin: false,
+          fileSources: [
+            { directory: root1 },
+            { directory: root2, load: { ingredients: true, recipes: false } } // No recipes in second source
+          ]
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.ingredients.size).toBe(2);
+        expect(lib.hasIngredient('source1.file-chocolate' as IngredientId)).toBe(true);
+        expect(lib.hasIngredient('source2.second-chocolate' as IngredientId)).toBe(true);
+      });
+    });
+
+    test('merges file source with builtin collections', () => {
+      const fileSource = createFileTreeSource(fileIngredientData, fileRecipeData);
+
+      expect(
+        ChocolateLibrary.create({
+          builtin: true,
+          fileSources: fileSource
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        // Should have both builtin and file source ingredients
+        expect(lib.hasIngredient('felchlin.maracaibo-65' as IngredientId)).toBe(true);
+        expect(lib.hasIngredient('file-source.file-chocolate' as IngredientId)).toBe(true);
+      });
+    });
+
+    test('fails on collection ID collision between builtin and file source', () => {
+      // Create a file source with 'felchlin' collection ID (same as builtin)
+      /* eslint-disable @typescript-eslint/naming-convention */
+      const conflictingData = {
+        'conflict-chocolate': {
+          baseId: 'conflict-chocolate',
+          name: 'Conflicting Chocolate',
+          category: 'chocolate',
+          ganacheCharacteristics: {
+            cacaoFat: 35,
+            sugar: 35,
+            milkFat: 0,
+            water: 1,
+            solids: 29,
+            otherFats: 0
+          }
+        }
+      };
+      /* eslint-enable @typescript-eslint/naming-convention */
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/data/ingredients/felchlin.json', contents: conflictingData }
+      ];
+      const tree = FileTree.inMemory(files).orThrow();
+      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      expect(
+        ChocolateLibrary.create({
+          builtin: { ingredients: true },
+          fileSources: { directory: root }
+        })
+      ).toFailWith(/felchlin.*conflict/);
+    });
+
+    test('handles file source with empty collections gracefully', () => {
+      // Create file source with directories but no matching .json files
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/data/ingredients/readme.txt', contents: 'empty' },
+        { path: '/data/recipes/readme.txt', contents: 'empty' }
+      ];
+      const tree = FileTree.inMemory(files).orThrow();
+      const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+
+      expect(
+        ChocolateLibrary.create({
+          builtin: true,
+          fileSources: { directory: root }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        // Should still have builtin collections
+        expect(lib.hasIngredient('felchlin.maracaibo-65' as IngredientId)).toBe(true);
       });
     });
   });

@@ -79,5 +79,26 @@ _(Optional)_ Optional additional collections of recipes Each collection can be p
 
 
 </td></tr>
+<tr><td>
+
+[fileSources?](./ts-chocolate.recipes.irecipeslibraryparams.filesources.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeFileTreeSource](./ts-chocolate.recipes.irecipefiletreesource.md) \| ReadonlyArray&lt;[IRecipeFileTreeSource](./ts-chocolate.recipes.irecipefiletreesource.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ File tree sources to load collections from. Collections are loaded and merged with built-in collections. Duplicate collection IDs across sources cause an error.
+
+
+</td></tr>
 </tbody></table>
 

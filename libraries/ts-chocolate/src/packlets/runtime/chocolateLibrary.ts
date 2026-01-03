@@ -29,7 +29,14 @@ import { Grams, IngredientId, RecipeId, RecipeVersionId, SourceId } from '../com
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, IScaledRecipeVersion, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
-import { FullLibraryLoadSpec, ILibraryFileTreeSource, resolveBuiltInSpec } from '../library-data';
+import {
+  FullLibraryLoadSpec,
+  IFileTreeSource,
+  ILibraryFileTreeSource,
+  normalizeFileSources,
+  resolveBuiltInSpec,
+  SubLibraryId
+} from '../library-data';
 
 // ============================================================================
 // Parameters Interface
@@ -121,45 +128,47 @@ export class ChocolateLibrary {
    * @public
    */
   public static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary> {
-    // If pre-instantiated libraries are provided, use them directly
-    if (params?.libraries !== undefined) {
-      const { ingredients, recipes } = params.libraries;
-
-      // Create any missing libraries with the specified builtin settings
-      const ingredientsResult: Result<IngredientsLibrary> =
-        ingredients !== undefined
-          ? succeed(ingredients)
-          : IngredientsLibrary.create({
-              builtin: resolveBuiltInSpec<SourceId>(params.builtin, 'ingredients')
-            });
-
-      const recipesResult: Result<RecipesLibrary> =
-        recipes !== undefined
-          ? succeed(recipes)
-          : RecipesLibrary.create({
-              builtin: resolveBuiltInSpec<SourceId>(params.builtin, 'recipes')
-            });
-
-      return ingredientsResult.onSuccess((ing) =>
-        recipesResult.onSuccess((rec) => succeed(new ChocolateLibrary(ing, rec)))
-      );
-    }
-
-    // Standard path: create libraries based on builtin spec
-    // File tree sources will be supported in a future iteration
     const builtinSpec = params?.builtin ?? true;
+    const fileSources = normalizeFileSources(params?.fileSources);
 
-    const ingredientsResult = IngredientsLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients')
-    });
+    // --- INGREDIENTS ---
+    // If pre-instantiated library provided, use it directly (ignores builtin/fileSources)
+    const ingredientsResult: Result<IngredientsLibrary> =
+      params?.libraries?.ingredients !== undefined
+        ? succeed(params.libraries.ingredients)
+        : IngredientsLibrary.create({
+            builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients'),
+            fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients')
+          });
 
-    const recipesResult = RecipesLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes')
-    });
+    // --- RECIPES ---
+    // If pre-instantiated library provided, use it directly (ignores builtin/fileSources)
+    const recipesResult: Result<RecipesLibrary> =
+      params?.libraries?.recipes !== undefined
+        ? succeed(params.libraries.recipes)
+        : RecipesLibrary.create({
+            builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes'),
+            fileSources: ChocolateLibrary._toFileSources(fileSources, 'recipes')
+          });
 
+    // Combine results
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) => succeed(new ChocolateLibrary(ingredients, recipes)))
     );
+  }
+
+  /**
+   * Converts full library file sources to sub-library-specific file sources
+   */
+  private static _toFileSources(
+    sources: ReadonlyArray<ILibraryFileTreeSource>,
+    subLibraryId: SubLibraryId
+  ): ReadonlyArray<IFileTreeSource<SourceId>> {
+    return sources.map((source) => ({
+      directory: source.directory,
+      load: resolveBuiltInSpec<SourceId>(source.load, subLibraryId),
+      mutable: source.mutable
+    }));
   }
 
   // ============================================================================

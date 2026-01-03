@@ -56,6 +56,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[checkForCollisionIds(collectionSets)](./ts-chocolate.librarydata.checkforcollisionids.md)
+
+
+</td><td>
+
+Checks for duplicate collection IDs across multiple sources.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory(tree)](./ts-chocolate.librarydata.getingredientsdirectory.md)
 
 
@@ -106,6 +117,19 @@ Navigates to a subdirectory within a FileTree by path.
 </td><td>
 
 Navigates to a sub-library directory within a file tree.
+
+
+</td></tr>
+<tr><td>
+
+[normalizeFileSources(sources)](./ts-chocolate.librarydata.normalizefilesources.md)
+
+
+</td><td>
+
+Normalizes a file sources parameter to an array.
+
+Accepts either a single source or an array of sources, and always returns a readonly array.
 
 
 </td></tr>
@@ -214,6 +238,30 @@ Parameters used to initialize a [CollectionLoader](./ts-chocolate.librarydata.co
 </td></tr>
 <tr><td>
 
+[ICollectionSet](./ts-chocolate.librarydata.icollectionset.md)
+
+
+</td><td>
+
+A collection set for collision detection.
+
+
+</td></tr>
+<tr><td>
+
+[IFileTreeSource](./ts-chocolate.librarydata.ifiletreesource.md)
+
+
+</td><td>
+
+Specifies a file tree source for a single sub-library (ingredients or recipes).
+
+This is the common base type for sub-library-specific file tree sources. Each sub-library navigates to its standard path within the tree and loads collections according to the load spec.
+
+
+</td></tr>
+<tr><td>
+
 [IFilterDirectoryParams](./ts-chocolate.librarydata.ifilterdirectoryparams.md)
 
 
@@ -241,7 +289,7 @@ Result of filtering a collection of items.
 
 </td><td>
 
-Specifies a file tree source for library data.
+Specifies a file tree source for the full library (all sub-libraries).
 
 Navigates to standard paths (data/ingredients, data/recipes) within the tree and loads collections according to the specified load spec.
 

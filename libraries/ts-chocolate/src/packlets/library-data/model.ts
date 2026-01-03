@@ -156,7 +156,41 @@ export function resolveSubLibraryLoadSpec(
 // ============================================================================
 
 /**
- * Specifies a file tree source for library data.
+ * Specifies a file tree source for a single sub-library (ingredients or recipes).
+ *
+ * This is the common base type for sub-library-specific file tree sources.
+ * Each sub-library navigates to its standard path within the tree and
+ * loads collections according to the load spec.
+ *
+ * @typeParam TCollectionId - The type of collection identifiers (defaults to SourceId)
+ * @public
+ */
+export interface IFileTreeSource<TCollectionId extends string = string> {
+  /**
+   * Root directory of the library tree.
+   * The loader will navigate to the appropriate sub-path (e.g., 'data/ingredients' or 'data/recipes').
+   */
+  readonly directory: FileTree.IFileTreeDirectoryItem;
+
+  /**
+   * Controls which collections to load from this source.
+   *
+   * - `true` (default): Load all collections.
+   * - `false`: Load no collections.
+   * - `TCollectionId[]`: Load only the specified collections by name.
+   * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
+   */
+  readonly load?: LibraryLoadSpec<TCollectionId>;
+
+  /**
+   * Mutability specification for collections from this source.
+   * Default: false (all collections immutable)
+   */
+  readonly mutable?: MutabilitySpec;
+}
+
+/**
+ * Specifies a file tree source for the full library (all sub-libraries).
  *
  * Navigates to standard paths (data/ingredients, data/recipes) within the tree
  * and loads collections according to the specified load spec.

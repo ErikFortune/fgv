@@ -19,11 +19,13 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseRecipeId, Grams, IngredientId, RecipeId, RecipeName, SourceId } from '../../../packlets/common';
 
 import {
   IRecipe,
+  IRecipeFileTreeSource,
   IRecipeVersion,
   Recipe,
   RecipesLibrary,
@@ -308,6 +310,312 @@ describe('RecipesLibrary', () => {
 
     test('collections returns readonly map', () => {
       expect(library.collections.has('user' as SourceId)).toBe(true);
+    });
+  });
+
+  // ============================================================================
+  // File Source Loading Tests
+  // ============================================================================
+
+  describe('fileSources parameter', () => {
+    // Valid recipe JSON data for testing
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const validRecipeData = {
+      'test-recipe': {
+        baseId: 'test-recipe',
+        name: 'Test Recipe',
+        description: 'A test recipe',
+        tags: ['test'],
+        goldenVersionId: '2026-01-01-01',
+        usage: [],
+        versions: [
+          {
+            versionId: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
+            baseWeight: 100
+          }
+        ]
+      }
+    };
+
+    const secondRecipeData = {
+      'other-recipe': {
+        baseId: 'other-recipe',
+        name: 'Other Recipe',
+        goldenVersionId: '2026-01-01-01',
+        usage: [],
+        versions: [
+          {
+            versionId: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
+            baseWeight: 200
+          }
+        ]
+      }
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const getLibraryDir = (files: FileTree.IInMemoryFile[]): FileTree.IFileTreeDirectoryItem => {
+      const tree = FileTree.inMemory(files).orThrow();
+      const libraryItem = tree.getItem('/library').orThrow();
+      return libraryItem as FileTree.IFileTreeDirectoryItem;
+    };
+
+    test('creates library with single file source', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/test-source.json', contents: validRecipeData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          fileSources: { directory: root }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.size).toBe(1);
+        expect(lib.validating.has('test-source.test-recipe')).toBe(true);
+      });
+    });
+
+    test('creates library with array of file sources', () => {
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/source1.json', contents: validRecipeData }
+      ];
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/source2.json', contents: secondRecipeData }
+      ];
+      const root1 = getLibraryDir(files1);
+      const root2 = getLibraryDir(files2);
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          fileSources: [{ directory: root1 }, { directory: root2 }]
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.size).toBe(2);
+        expect(lib.validating.has('source1.test-recipe')).toBe(true);
+        expect(lib.validating.has('source2.other-recipe')).toBe(true);
+      });
+    });
+
+    test('merges file sources with builtins', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/custom-source.json', contents: validRecipeData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(
+        RecipesLibrary.create({
+          builtin: true,
+          fileSources: { directory: root }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        // 1 builtin + 1 custom
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.validating.has('custom-source.test-recipe')).toBe(true);
+        expect(lib.validating.has('common.dark-ganache-classic')).toBe(true);
+      });
+    });
+
+    test('fails on collection ID collision', () => {
+      // Create two file sources with the same collection ID
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/duplicate.json', contents: validRecipeData }
+      ];
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/duplicate.json', contents: secondRecipeData }
+      ];
+      const root1 = getLibraryDir(files1);
+      const root2 = getLibraryDir(files2);
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          fileSources: [{ directory: root1 }, { directory: root2 }]
+        })
+      ).toFailWith(/duplicate.*conflict/i);
+    });
+
+    test('respects mutable setting from file source', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/mutable-source.json', contents: validRecipeData }
+      ];
+      const root = getLibraryDir(files);
+      const source: IRecipeFileTreeSource = {
+        directory: root,
+        mutable: true
+      };
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          fileSources: source
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        const collection = lib.collections.validating.get('mutable-source');
+        expect(collection).toSucceedAndSatisfy((coll) => {
+          expect(coll.isMutable).toBe(true);
+        });
+      });
+    });
+
+    test('respects load: false for file source', () => {
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/skipped.json', contents: validRecipeData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          fileSources: { directory: root, load: false }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(0);
+        expect(lib.size).toBe(0);
+      });
+    });
+
+    test('fails when recipes directory does not exist and source is enabled', () => {
+      // Create a file tree without data/recipes directory
+      const files: FileTree.IInMemoryFile[] = [{ path: '/library/readme.txt', contents: 'empty' }];
+      const root = getLibraryDir(files);
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          fileSources: { directory: root }
+        })
+      ).toFail();
+    });
+  });
+
+  // ============================================================================
+  // Instance Method: loadFromFileTreeSource Tests
+  // ============================================================================
+
+  describe('loadFromFileTreeSource instance method', () => {
+    /* eslint-disable @typescript-eslint/naming-convention */
+    const validRecipeData = {
+      'test-recipe': {
+        baseId: 'test-recipe',
+        name: 'Test Recipe',
+        description: 'A test recipe',
+        tags: ['test'],
+        goldenVersionId: '2026-01-01-01',
+        usage: [],
+        versions: [
+          {
+            versionId: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
+            baseWeight: 100
+          }
+        ]
+      }
+    };
+
+    const secondRecipeData = {
+      'other-recipe': {
+        baseId: 'other-recipe',
+        name: 'Other Recipe',
+        goldenVersionId: '2026-01-01-01',
+        usage: [],
+        versions: [
+          {
+            versionId: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
+            baseWeight: 200
+          }
+        ]
+      }
+    };
+    /* eslint-enable @typescript-eslint/naming-convention */
+
+    const getLibraryDir = (files: FileTree.IInMemoryFile[]): FileTree.IFileTreeDirectoryItem => {
+      const tree = FileTree.inMemory(files).orThrow();
+      const libraryItem = tree.getItem('/library').orThrow();
+      return libraryItem as FileTree.IFileTreeDirectoryItem;
+    };
+
+    test('loads collections into existing library', () => {
+      // Start with an empty library
+      const library = RecipesLibrary.create({ builtin: false }).orThrow();
+      expect(library.collectionCount).toBe(0);
+
+      // Load from file source
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/test-source.json', contents: validRecipeData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(library.loadFromFileTreeSource({ directory: root })).toSucceedWith(1);
+      expect(library.collectionCount).toBe(1);
+      expect(library.validating.has('test-source.test-recipe')).toBe(true);
+    });
+
+    test('can load multiple file sources incrementally', () => {
+      const library = RecipesLibrary.create({ builtin: false }).orThrow();
+
+      // Load first source
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/source1.json', contents: validRecipeData }
+      ];
+      const root1 = getLibraryDir(files1);
+      expect(library.loadFromFileTreeSource({ directory: root1 })).toSucceedWith(1);
+
+      // Load second source
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/source2.json', contents: secondRecipeData }
+      ];
+      const root2 = getLibraryDir(files2);
+      expect(library.loadFromFileTreeSource({ directory: root2 })).toSucceedWith(1);
+
+      expect(library.collectionCount).toBe(2);
+      expect(library.validating.has('source1.test-recipe')).toBe(true);
+      expect(library.validating.has('source2.other-recipe')).toBe(true);
+    });
+
+    test('fails on collection ID collision with existing collection', () => {
+      // Create library with one collection
+      const files1: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/duplicate.json', contents: validRecipeData }
+      ];
+      const root1 = getLibraryDir(files1);
+      const library = RecipesLibrary.create({
+        builtin: false,
+        fileSources: { directory: root1 }
+      }).orThrow();
+
+      expect(library.collectionCount).toBe(1);
+
+      // Try to load a source with the same collection ID
+      const files2: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/duplicate.json', contents: secondRecipeData }
+      ];
+      const root2 = getLibraryDir(files2);
+
+      expect(library.loadFromFileTreeSource({ directory: root2 })).toFailWith(/duplicate.*already exists/i);
+    });
+
+    test('returns 0 when load: false is specified', () => {
+      const library = RecipesLibrary.create({ builtin: false }).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/test.json', contents: validRecipeData }
+      ];
+      const root = getLibraryDir(files);
+
+      expect(library.loadFromFileTreeSource({ directory: root, load: false })).toSucceedWith(0);
+      expect(library.collectionCount).toBe(0);
     });
   });
 });

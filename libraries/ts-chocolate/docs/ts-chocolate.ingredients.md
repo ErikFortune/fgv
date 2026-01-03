@@ -255,6 +255,19 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IIngredientFileTreeSource](./ts-chocolate.ingredients.iingredientfiletreesource.md)
+
+
+</td><td>
+
+File tree source for ingredient data.
+
+Navigates to the standard path (data/ingredients) within the tree and loads collections according to the load spec.
+
+
+</td></tr>
+<tr><td>
+
 [Ingredient](./ts-chocolate.ingredients.ingredient.md)
 
 

@@ -325,6 +325,19 @@ Union type for consumers who can work with either scaled or unscaled versions
 </td></tr>
 <tr><td>
 
+[IRecipeFileTreeSource](./ts-chocolate.recipes.irecipefiletreesource.md)
+
+
+</td><td>
+
+File tree source for recipe data.
+
+Navigates to the standard path (data/recipes) within the tree and loads collections according to the load spec.
+
+
+</td></tr>
+<tr><td>
+
 [RatingCategory](./ts-chocolate.recipes.ratingcategory.md)
 
 

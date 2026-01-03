@@ -148,6 +148,9 @@ export type Certification = 'all-natural' | 'fair-trade' | 'gluten-free' | 'hala
 const certification: Converter<Certification>;
 
 // @public
+function checkForCollisionIds<TCollectionId extends string>(collectionSets: ReadonlyArray<ICollectionSet<TCollectionId>>): Result<true>;
+
+// @public
 export type ChocolateApplication = 'baking' | 'confectionary' | 'cremeux' | 'drinks' | 'enrobing' | 'ganache' | 'ice-cream' | 'molding' | 'mousse' | 'sorbet';
 
 // @public
@@ -418,6 +421,14 @@ interface ICollectionLoaderInitParams<T, TCOLLECTIONID extends string = string, 
 }
 
 // @public
+interface ICollectionSet<TCollectionId extends string = string> {
+    readonly collections: ReadonlyArray<{
+        readonly id: TCollectionId;
+    }>;
+    readonly source: string;
+}
+
+// @public
 export const ID_SEPARATOR: string;
 
 // @public
@@ -431,6 +442,13 @@ interface IDairyIngredient extends IIngredient {
 interface IFatIngredient extends IIngredient {
     readonly category: 'fat';
     readonly meltingPoint?: Celsius;
+}
+
+// @public
+interface IFileTreeSource<TCollectionId extends string = string> {
+    readonly directory: FileTree.IFileTreeDirectoryItem;
+    readonly load?: LibraryLoadSpec<TCollectionId>;
+    readonly mutable?: MutabilitySpec;
 }
 
 // @public
@@ -497,9 +515,13 @@ interface IIngredient {
 }
 
 // @public
+type IIngredientFileTreeSource = IFileTreeSource<SourceId>;
+
+// @public
 interface IIngredientsLibraryParams {
     readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
+    readonly fileSources?: IIngredientFileTreeSource | ReadonlyArray<IIngredientFileTreeSource>;
 }
 
 // @public
@@ -586,6 +608,7 @@ declare namespace Ingredients {
         IngredientCollectionEntryInit,
         IngredientCollectionValidator,
         IngredientCollection,
+        IIngredientFileTreeSource,
         IIngredientsLibraryParams,
         IngredientsLibrary
     }
@@ -595,6 +618,7 @@ export { Ingredients }
 // @public
 class IngredientsLibrary extends Collections.AggregatedResultMapBase<IngredientId, SourceId, BaseIngredientId, Ingredient> {
     static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary>;
+    loadFromFileTreeSource(source: IIngredientFileTreeSource): Result<number>;
 }
 
 // @public
@@ -607,6 +631,9 @@ interface IRecipe {
     readonly usage: ReadonlyArray<IRecipeUsage>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
+
+// @public
+type IRecipeFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
 interface IRecipeIngredient {
@@ -627,6 +654,7 @@ interface IRecipeScaleOptions {
 interface IRecipesLibraryParams {
     readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
+    readonly fileSources?: IRecipeFileTreeSource | ReadonlyArray<IRecipeFileTreeSource>;
 }
 
 // @public
@@ -780,6 +808,7 @@ declare namespace LibraryData {
         SubLibraryId,
         allSubLibraryIds,
         FullLibraryLoadSpec,
+        IFileTreeSource,
         ILibraryFileTreeSource,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
@@ -798,7 +827,10 @@ declare namespace LibraryData {
         resolveFileTreeSourceForSubLibrary,
         resolveFileTreeSource,
         resolveBuiltInSpec,
-        IResolvedSubLibrarySource
+        checkForCollisionIds,
+        normalizeFileSources,
+        IResolvedSubLibrarySource,
+        ICollectionSet
     }
 }
 export { LibraryData }
@@ -822,6 +854,11 @@ function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<
 
 // @public
 function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function normalizeFileSources<T extends {
+    readonly directory: FileTree.IFileTreeDirectoryItem;
+}>(sources: T | ReadonlyArray<T> | undefined): ReadonlyArray<T>;
 
 // @public
 function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;
@@ -935,6 +972,7 @@ declare namespace Recipes {
         RecipeCollectionValidator,
         RecipeCollection,
         RecipesDetailedResult,
+        IRecipeFileTreeSource,
         IRecipesLibraryParams,
         RecipesLibrary,
         scaleRecipe,
@@ -952,6 +990,7 @@ type RecipesDetailedResult<T> = DetailedResult<T, RecipeId>;
 // @public
 class RecipesLibrary extends Collections.AggregatedResultMapBase<RecipeId, SourceId, BaseRecipeId, Recipe> {
     static create(params?: IRecipesLibraryParams): Result<RecipesLibrary>;
+    loadFromFileTreeSource(source: IRecipeFileTreeSource): Result<number>;
 }
 
 // @public

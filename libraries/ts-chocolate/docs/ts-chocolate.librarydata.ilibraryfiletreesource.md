@@ -4,7 +4,7 @@
 
 ## LibraryData.ILibraryFileTreeSource interface
 
-Specifies a file tree source for library data.
+Specifies a file tree source for the full library (all sub-libraries).
 
 Navigates to standard paths (data/ingredients, data/recipes) within the tree and loads collections according to the specified load spec.
 

@@ -49,5 +49,19 @@ Creates a new RecipesLibrary instance
 
 
 </td></tr>
+<tr><td>
+
+[loadFromFileTreeSource(source)](./ts-chocolate.recipes.recipeslibrary.loadfromfiletreesource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Loads recipes from a file tree source and adds them to this library.
+
+
+</td></tr>
 </tbody></table>
 

@@ -29,9 +29,14 @@ import {
   resolveFileTreeSourceForSubLibrary,
   resolveFileTreeSource,
   resolveBuiltInSpec,
+  checkForCollisionIds,
+  normalizeFileSources,
   ILibraryFileTreeSource,
+  IFileTreeSource,
+  ICollectionSet,
   LibraryPaths
 } from '../../../packlets/library-data';
+import { SourceId } from '../../../packlets/common';
 
 describe('libraryLoader', () => {
   // ============================================================================
@@ -277,6 +282,116 @@ describe('libraryLoader', () => {
     test('returns false when no default and sub-library not specified', () => {
       const spec = { ingredients: true };
       expect(resolveBuiltInSpec(spec, 'recipes')).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // checkForCollisionIds Tests
+  // ============================================================================
+
+  describe('checkForCollisionIds', () => {
+    test('succeeds with no collections', () => {
+      expect(checkForCollisionIds([])).toSucceedWith(true);
+    });
+
+    test('succeeds with single source', () => {
+      const sets: ICollectionSet<SourceId>[] = [
+        {
+          source: 'builtin',
+          collections: [{ id: 'felchlin' as SourceId }, { id: 'valrhona' as SourceId }]
+        }
+      ];
+      expect(checkForCollisionIds(sets)).toSucceedWith(true);
+    });
+
+    test('succeeds with multiple sources and unique IDs', () => {
+      const sets: ICollectionSet<SourceId>[] = [
+        {
+          source: 'builtin',
+          collections: [{ id: 'felchlin' as SourceId }]
+        },
+        {
+          source: 'fileSource[0]',
+          collections: [{ id: 'custom' as SourceId }]
+        }
+      ];
+      expect(checkForCollisionIds(sets)).toSucceedWith(true);
+    });
+
+    test('fails when same ID appears in different sources', () => {
+      const sets: ICollectionSet<SourceId>[] = [
+        {
+          source: 'builtin',
+          collections: [{ id: 'felchlin' as SourceId }]
+        },
+        {
+          source: 'fileSource[0]',
+          collections: [{ id: 'felchlin' as SourceId }]
+        }
+      ];
+      expect(checkForCollisionIds(sets)).toFailWith(/felchlin.*conflict.*builtin.*fileSource/);
+    });
+
+    test('fails with collision within same source', () => {
+      const sets: ICollectionSet<SourceId>[] = [
+        {
+          source: 'source1',
+          collections: [{ id: 'duplicate' as SourceId }, { id: 'duplicate' as SourceId }]
+        }
+      ];
+      expect(checkForCollisionIds(sets)).toFailWith(/duplicate.*conflict.*source1.*source1/);
+    });
+  });
+
+  // ============================================================================
+  // normalizeFileSources Tests
+  // ============================================================================
+
+  describe('normalizeFileSources', () => {
+    const mockDirectory = FileTree.inMemory([{ path: '/test/file.json', contents: {} }])
+      .orThrow()
+      .getItem('/test')
+      .orThrow() as FileTree.IFileTreeDirectoryItem;
+
+    test('returns empty array for undefined', () => {
+      const result = normalizeFileSources<IFileTreeSource>(undefined);
+      expect(result).toEqual([]);
+    });
+
+    test('wraps single source in array', () => {
+      const source: IFileTreeSource = { directory: mockDirectory };
+      const result = normalizeFileSources(source);
+      expect(result).toEqual([source]);
+      expect(result.length).toBe(1);
+    });
+
+    test('returns array unchanged', () => {
+      const sources: IFileTreeSource[] = [
+        { directory: mockDirectory },
+        { directory: mockDirectory, load: false }
+      ];
+      const result = normalizeFileSources(sources);
+      expect(result).toBe(sources);
+      expect(result.length).toBe(2);
+    });
+
+    test('works with ILibraryFileTreeSource', () => {
+      const source: ILibraryFileTreeSource = {
+        directory: mockDirectory,
+        load: { ingredients: true, recipes: false },
+        mutable: true
+      };
+      const result = normalizeFileSources(source);
+      expect(result).toEqual([source]);
+    });
+
+    test('works with array of ILibraryFileTreeSource', () => {
+      const sources: ILibraryFileTreeSource[] = [
+        { directory: mockDirectory, load: true },
+        { directory: mockDirectory, mutable: true }
+      ];
+      const result = normalizeFileSources(sources);
+      expect(result).toBe(sources);
     });
   });
 });
