@@ -344,6 +344,9 @@ importers:
       '@fgv/ts-json':
         specifier: workspace:*
         version: link:../ts-json
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../ts-json-base
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils

@@ -18,17 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * Main exports for \@fgv/ts-chocolate library
- * @packageDocumentation
- */
+import * as Converters from './converters';
 
-export * from './packlets/common';
+export * from './model';
+export * from './collectionFilter';
+export * from './collectionLoader';
 
-import * as Ingredients from './packlets/ingredients';
-import * as Recipes from './packlets/recipes';
-import * as Calculations from './packlets/calculations';
-import * as LibraryData from './packlets/library-data';
-import * as Runtime from './packlets/runtime';
-
-export { Ingredients, Recipes, Calculations, LibraryData, Runtime };
+export { Converters };

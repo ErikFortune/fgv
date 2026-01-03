@@ -48,6 +48,15 @@ Description
 </td></tr>
 <tr><td>
 
+[LibraryData](./ts-chocolate.librarydata.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Recipes](./ts-chocolate.recipes.md)
 
 

@@ -8,7 +8,10 @@ import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { DetailedResult } from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
+import { JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
+import { Validator } from '@fgv/ts-utils';
 
 // @public
 export const allAllergens: Allergen[];
@@ -147,6 +150,40 @@ const chocolateType: Converter<ChocolateType>;
 // @public
 const chocolateVariety: Converter<CacaoVariety>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function collection<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: ICollectionConverterParams<TCOLLECTIONID, TITEMID, TITEM>): Converter<ICollection<TITEM, TCOLLECTIONID, TITEMID>>;
+
+// @public
+class CollectionFilter<T extends string> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: ICollectionFilterInitParams<T>);
+    // (undocumented)
+    readonly errorOnInvalidName: boolean;
+    // (undocumented)
+    readonly excluded: ReadonlyArray<string>;
+    filterDirectory(dir: FileTree.FileTreeItem, params?: IFilterDirectoryParams): Result<ReadonlyArray<IFilteredItem<FileTree.IFileTreeFileItem, T>>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    filterItems<TITEM>(items: ReadonlyArray<TITEM>, extractName: (item: TITEM) => Result<string>): Result<ReadonlyArray<IFilteredItem<TITEM, T>>>;
+    // (undocumented)
+    static getFileTreeItemName(item: FileTree.FileTreeItem, prefix?: string): Result<string>;
+    // (undocumented)
+    readonly included: ReadonlyArray<string> | undefined;
+    // (undocumented)
+    readonly nameConverter: Converter<T> | Validator<T>;
+}
+
+// @public
+class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
+    constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>);
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    loadFromFileTree(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>;
+}
+
 // @public
 export const COMPOSITE_ID_PATTERN: RegExp;
 
@@ -195,6 +232,15 @@ declare namespace Converters_3 {
         recipe,
         scaledRecipeIngredient,
         recipeConverter
+    }
+}
+
+declare namespace Converters_4 {
+    export {
+        removeExtension,
+        collection,
+        removeJsonExtension,
+        ICollectionConverterParams
     }
 }
 
@@ -264,6 +310,55 @@ interface IChocolateLibraryParams {
 }
 
 // @public
+interface ICollection<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
+    // (undocumented)
+    readonly id: TCOLLECTIONID;
+    // (undocumented)
+    readonly isMutable: boolean;
+    // (undocumented)
+    readonly items: Record<TITEMID, T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICollectionConverterParams<TCOLLECTIONID extends string, TITEMID extends string, TITEM> {
+    // (undocumented)
+    collectionIdConverter: Converter<TCOLLECTIONID>;
+    // (undocumented)
+    itemConverter: Converter<TITEM> | Validator<TITEM>;
+    // (undocumented)
+    itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
+}
+
+// @public
+interface ICollectionFilterInitParams<T extends string> {
+    // (undocumented)
+    readonly errorOnInvalidName?: boolean;
+    // (undocumented)
+    readonly excluded?: ReadonlyArray<string>;
+    // (undocumented)
+    readonly included?: ReadonlyArray<string>;
+    // (undocumented)
+    readonly nameConverter: Converter<T> | Validator<T>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ICollectionLoaderInitParams<T, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
+    // (undocumented)
+    readonly collectionIdConverter: Converter<TCOLLECTIONID>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly fileNameConverter?: Converter<string>;
+    // (undocumented)
+    readonly itemConverter: Converter<T>;
+    // (undocumented)
+    readonly itemIdConverter: Converter<TITEMID>;
+    readonly mutable?: MutabilitySpec;
+}
+
+// @public
 export const ID_SEPARATOR: string;
 
 // @public
@@ -277,6 +372,22 @@ interface IDairyIngredient extends IIngredient {
 interface IFatIngredient extends IIngredient {
     readonly category: 'fat';
     readonly meltingPoint?: Celsius;
+}
+
+// @public
+interface IFilterDirectoryParams {
+    // (undocumented)
+    readonly prefix?: string;
+    // (undocumented)
+    readonly recurseWithDelimiter?: string;
+}
+
+// @public
+interface IFilteredItem<T, TID extends string = string> {
+    // (undocumented)
+    readonly item: T;
+    // (undocumented)
+    readonly name: TID;
 }
 
 // @public
@@ -329,6 +440,13 @@ interface IIngredient {
 // @public
 interface IIngredientsLibraryParams {
     readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
+}
+
+// @public
+interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extends Omit<ICollectionFilterInitParams<TCOLLECTIONID>, 'nameConverter'> {
+    readonly mutable?: MutabilitySpec;
+    // (undocumented)
+    readonly recurseWithDelimiter?: string;
 }
 
 // @public
@@ -518,6 +636,27 @@ interface ITemperatureCurve {
     readonly working: Celsius;
 }
 
+declare namespace LibraryData {
+    export {
+        Converters_4 as Converters,
+        MutabilitySpec,
+        ICollection,
+        ICollectionFilterInitParams,
+        IFilterDirectoryParams,
+        IFilteredItem,
+        CollectionFilter,
+        ICollectionLoaderInitParams,
+        ILoadCollectionFromFileTreeParams,
+        CollectionLoader
+    }
+}
+export { LibraryData }
+
+// @public
+type MutabilitySpec = boolean | ReadonlyArray<string> | {
+    readonly immutable: ReadonlyArray<string>;
+};
+
 // @public
 function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;
 
@@ -608,6 +747,12 @@ class RecipesLibrary extends Collections.AggregatedResultMapBase<RecipeId, Sourc
 
 // @public
 const recipeUsage: Converter<IRecipeUsage>;
+
+// @public
+function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
+
+// @public
+const removeJsonExtension: Converter<string>;
 
 declare namespace Runtime {
     export {

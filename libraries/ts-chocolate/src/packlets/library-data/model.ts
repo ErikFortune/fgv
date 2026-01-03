@@ -18,17 +18,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+import { JsonObject } from '@fgv/ts-json-base';
+
 /**
- * Main exports for \@fgv/ts-chocolate library
- * @packageDocumentation
+ * Specifies which collections should be mutable.
+ * - `true`: All collections are mutable.
+ * - `false`: All collections are immutable.
+ * - `ReadonlyArray<string>`: Only the specified collections are mutable, all others are immutable.
+ * - `{ immutable: ReadonlyArray<string> }`: Only the specified collections are immutable, all others are mutable.
+ * @public
  */
+export type MutabilitySpec = boolean | ReadonlyArray<string> | { readonly immutable: ReadonlyArray<string> };
 
-export * from './packlets/common';
-
-import * as Ingredients from './packlets/ingredients';
-import * as Recipes from './packlets/recipes';
-import * as Calculations from './packlets/calculations';
-import * as LibraryData from './packlets/library-data';
-import * as Runtime from './packlets/runtime';
-
-export { Ingredients, Recipes, Calculations, LibraryData, Runtime };
+/**
+ * Representation of a collection of items loaded from a file tree.
+ * @public
+ */
+export interface ICollection<
+  T = JsonObject,
+  TCOLLECTIONID extends string = string,
+  TITEMID extends string = string
+> {
+  readonly id: TCOLLECTIONID;
+  readonly isMutable: boolean;
+  readonly items: Record<TITEMID, T>;
+}
