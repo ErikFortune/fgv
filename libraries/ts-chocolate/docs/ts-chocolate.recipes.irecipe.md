@@ -58,27 +58,6 @@ Base recipe identifier (unique within source)
 </td></tr>
 <tr><td>
 
-[currentVersion](./ts-chocolate.recipes.irecipe.currentversion.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRecipeDetails](./ts-chocolate.recipes.irecipedetails.md)
-
-
-</td><td>
-
-Convenience accessor for the current (most recent) version
-
-
-</td></tr>
-<tr><td>
-
 [description?](./ts-chocolate.recipes.irecipe.description.md)
 
 
@@ -95,6 +74,27 @@ string
 </td><td>
 
 _(Optional)_ Optional description of the recipe
+
+
+</td></tr>
+<tr><td>
+
+[goldenVersionId](./ts-chocolate.recipes.irecipe.goldenversionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+The ID of the golden (approved default) version
 
 
 </td></tr>
@@ -142,6 +142,27 @@ _(Optional)_ Optional tags for categorization and search
 </td></tr>
 <tr><td>
 
+[usage](./ts-chocolate.recipes.irecipe.usage.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)<!-- -->&gt;
+
+
+</td><td>
+
+Usage history for all versions of this recipe
+
+
+</td></tr>
+<tr><td>
+
 [versions](./ts-chocolate.recipes.irecipe.versions.md)
 
 
@@ -152,12 +173,12 @@ _(Optional)_ Optional tags for categorization and search
 
 </td><td>
 
-ReadonlyArray&lt;[IRecipeDetails](./ts-chocolate.recipes.irecipedetails.md)<!-- -->&gt;
+ReadonlyArray&lt;[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-Version history (newest first)
+Version history
 
 
 </td></tr>

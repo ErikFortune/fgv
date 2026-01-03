@@ -9,7 +9,7 @@ Performs complete ganache calculation with validation
 **Signature:**
 
 ```typescript
-export declare function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionIndex?: number): Result<IGanacheCalculation>;
+export declare function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
 ```
 
 ## Parameters
@@ -64,17 +64,17 @@ Function to resolve ingredient IDs to full data
 </td></tr>
 <tr><td>
 
-versionIndex
+versionId
 
 
 </td><td>
 
-number
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
 
 
 </td><td>
 
-_(Optional)_ Optional version index (default: current version)
+_(Optional)_ Optional version ID (default: golden version)
 
 
 </td></tr>

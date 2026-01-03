@@ -4,10 +4,10 @@
 
 ## Recipes.Converters.recipe variable
 
-Converter for IRecipe Adds currentVersion as computed accessor from versions array
+Converter for Recipe Validates that goldenVersionId exists in versions and creates Recipe instance
 
 **Signature:**
 
 ```typescript
-recipe: Converter<IRecipe>
+recipe: Converter<Recipe>
 ```

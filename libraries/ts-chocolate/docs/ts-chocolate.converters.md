@@ -173,6 +173,17 @@ Converter for Percentage
 </td></tr>
 <tr><td>
 
+[ratingScore](./ts-chocolate.converters.ratingscore.md)
+
+
+</td><td>
+
+Converter for RatingScore (1-5)
+
+
+</td></tr>
+<tr><td>
+
 [recipeId](./ts-chocolate.converters.recipeid.md)
 
 
@@ -190,6 +201,17 @@ Converter for RecipeId (composite)
 </td><td>
 
 Converter for RecipeName
+
+
+</td></tr>
+<tr><td>
+
+[recipeVersionId](./ts-chocolate.converters.recipeversionid.md)
+
+
+</td><td>
+
+Converter for RecipeVersionId
 
 
 </td></tr>

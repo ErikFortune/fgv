@@ -27,12 +27,13 @@ import {
   Grams,
   IngredientId,
   Percentage,
-  RecipeName
+  RecipeName,
+  RecipeVersionId
 } from '../../../packlets/common';
 
 import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/ingredients';
 
-import { IRecipe, IRecipeDetails, IRecipeIngredient } from '../../../packlets/recipes';
+import { IRecipe, IRecipeVersion, IRecipeIngredient, Recipe } from '../../../packlets/recipes';
 
 import {
   calculateFromIngredients,
@@ -209,36 +210,65 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateForRecipe', () => {
-    const testDetails: IRecipeDetails = {
+    const testVersion: IRecipeVersion = {
+      versionId: '2026-01-01-01' as RecipeVersionId,
+      createdDate: '2026-01-01',
       ingredients: [
         { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
         { ingredientId: 'test.cream' as IngredientId, amount: 50 as Grams }
       ],
-      baseWeight: 150 as Grams,
-      usage: []
+      baseWeight: 150 as Grams
     };
 
     const testRecipe: IRecipe = {
       baseId: 'test-ganache' as BaseRecipeId,
       name: 'Test Ganache' as RecipeName,
-      versions: [testDetails],
-      currentVersion: testDetails
+      versions: [testVersion],
+      goldenVersionId: '2026-01-01-01' as RecipeVersionId,
+      usage: []
     };
 
-    test('calculates for current version by default', () => {
+    test('calculates for golden version by default', () => {
       expect(calculateForRecipe(testRecipe, testResolver)).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
     });
 
-    test('calculates for specific version', () => {
-      expect(calculateForRecipe(testRecipe, testResolver, 0)).toSucceedAndSatisfy((analysis) => {
+    test('calculates for specific version by ID', () => {
+      expect(
+        calculateForRecipe(testRecipe, testResolver, '2026-01-01-01' as RecipeVersionId)
+      ).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
     });
 
-    test('fails for invalid version index', () => {
-      expect(calculateForRecipe(testRecipe, testResolver, 99)).toFailWith(/Invalid version index/);
+    test('fails for invalid version ID', () => {
+      expect(calculateForRecipe(testRecipe, testResolver, '2026-12-31-99' as RecipeVersionId)).toFailWith(
+        /not found/
+      );
+    });
+
+    test('calculates for Recipe instance using golden version', () => {
+      const recipe = Recipe.create(testRecipe).orThrow();
+      expect(calculateForRecipe(recipe, testResolver)).toSucceedAndSatisfy((analysis) => {
+        expect(analysis.totalWeight).toBe(150);
+      });
+    });
+
+    test('calculates for Recipe instance with specific version ID', () => {
+      const recipe = Recipe.create(testRecipe).orThrow();
+      expect(
+        calculateForRecipe(recipe, testResolver, '2026-01-01-01' as RecipeVersionId)
+      ).toSucceedAndSatisfy((analysis) => {
+        expect(analysis.totalWeight).toBe(150);
+      });
+    });
+
+    test('fails for Recipe instance with invalid version ID', () => {
+      const recipe = Recipe.create(testRecipe).orThrow();
+      expect(calculateForRecipe(recipe, testResolver, '2026-12-31-99' as RecipeVersionId)).toFailWith(
+        /not found/
+      );
     });
   });
 
@@ -382,20 +412,22 @@ describe('Ganache Calculator', () => {
   // ============================================================================
 
   describe('calculateGanache', () => {
-    const testDetails: IRecipeDetails = {
+    const testVersion: IRecipeVersion = {
+      versionId: '2026-01-01-01' as RecipeVersionId,
+      createdDate: '2026-01-01',
       ingredients: [
         { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
         { ingredientId: 'test.cream' as IngredientId, amount: 50 as Grams }
       ],
-      baseWeight: 150 as Grams,
-      usage: []
+      baseWeight: 150 as Grams
     };
 
     const testRecipe: IRecipe = {
       baseId: 'test' as BaseRecipeId,
       name: 'Test' as RecipeName,
-      versions: [testDetails],
-      currentVersion: testDetails
+      versions: [testVersion],
+      goldenVersionId: '2026-01-01-01' as RecipeVersionId,
+      usage: []
     };
 
     test('returns complete calculation with analysis and validation', () => {

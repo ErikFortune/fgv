@@ -4,12 +4,12 @@
 
 ## Recipes.calculateBaseWeight() function
 
-Calculates the base weight from recipe details (sum of ingredient amounts)
+Calculates the base weight from recipe version (sum of ingredient amounts)
 
 **Signature:**
 
 ```typescript
-export declare function calculateBaseWeight(details: IRecipeDetails): Grams;
+export declare function calculateBaseWeight(version: IRecipeVersion): Grams;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-details
+version
 
 
 </td><td>
 
-[IRecipeDetails](./ts-chocolate.recipes.irecipedetails.md)
+[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)
 
 
 </td><td>
 
-Recipe details to calculate weight for
+Recipe version to calculate weight for
 
 
 </td></tr>

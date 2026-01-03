@@ -19,12 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ratingCategory](./ts-chocolate.recipes.converters.ratingcategory.md)
+
+
+</td><td>
+
+Converter for RatingCategory
+
+
+</td></tr>
+<tr><td>
+
 [recipe](./ts-chocolate.recipes.converters.recipe.md)
 
 
 </td><td>
 
-Converter for IRecipe Adds currentVersion as computed accessor from versions array
+Converter for Recipe Validates that goldenVersionId exists in versions and creates Recipe instance
 
 
 </td></tr>
@@ -41,12 +52,12 @@ Converter for Recipe type (currently same as IRecipe, extensible)
 </td></tr>
 <tr><td>
 
-[recipeDetails](./ts-chocolate.recipes.converters.recipedetails.md)
+[recipeData](./ts-chocolate.recipes.converters.recipedata.md)
 
 
 </td><td>
 
-Converter for IRecipeDetails
+Converter for IRecipe data structure
 
 
 </td></tr>
@@ -74,12 +85,34 @@ Converter for IRecipeUsage
 </td></tr>
 <tr><td>
 
+[recipeVersion](./ts-chocolate.recipes.converters.recipeversion.md)
+
+
+</td><td>
+
+Converter for IRecipeVersion
+
+
+</td></tr>
+<tr><td>
+
 [scaledRecipeIngredient](./ts-chocolate.recipes.converters.scaledrecipeingredient.md)
 
 
 </td><td>
 
 Converter for IScaledRecipeIngredient
+
+
+</td></tr>
+<tr><td>
+
+[versionRating](./ts-chocolate.recipes.converters.versionrating.md)
+
+
+</td><td>
+
+Converter for IVersionRating
 
 
 </td></tr>

@@ -238,6 +238,17 @@ Separator character used in composite IDs
 
 
 </td></tr>
+<tr><td>
+
+[RECIPE\_VERSION\_ID\_PATTERN](./ts-chocolate.recipe_version_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid recipe version IDs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -420,6 +431,17 @@ Percentage value (0-100)
 </td></tr>
 <tr><td>
 
+[RatingScore](./ts-chocolate.ratingscore.md)
+
+
+</td><td>
+
+Rating score (1-5 scale)
+
+
+</td></tr>
+<tr><td>
+
 [RecipeId](./ts-chocolate.recipeid.md)
 
 
@@ -437,6 +459,17 @@ Globally unique recipe identifier (composite) Format: "sourceId.baseRecipeId" Mu
 </td><td>
 
 Non-unique recipe name used for display and grouping
+
+
+</td></tr>
+<tr><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+Unique identifier for a recipe version Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
 
 
 </td></tr>

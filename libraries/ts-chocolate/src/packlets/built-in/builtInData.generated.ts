@@ -742,8 +742,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.',
       tags: ['classic', 'dark', 'truffle', 'bonbon'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'cacao-barry.guayaquil-64',
@@ -762,8 +766,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 620,
           yield: '~50 bonbons',
-          versionNotes: 'Standard 2:1 ratio with butter finish',
-          usage: []
+          notes: 'Standard 2:1 ratio with butter finish'
         }
       ]
     },
@@ -773,8 +776,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.',
       tags: ['classic', 'milk', 'truffle', 'bonbon'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'guittard.soleil-dor-38',
@@ -792,8 +799,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 570,
           yield: '~45 bonbons',
-          versionNotes: '1.75:1 ratio for proper set with milk chocolate',
-          usage: []
+          notes: '1.75:1 ratio for proper set with milk chocolate'
         }
       ]
     },
@@ -803,8 +809,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.',
       tags: ['classic', 'white', 'truffle', 'bonbon'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'cacao-barry.zephyr-white-34',
@@ -822,8 +832,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 715,
           yield: '~55 bonbons',
-          versionNotes: '2.5:1 ratio essential for white chocolate emulsion',
-          usage: []
+          notes: '2.5:1 ratio essential for white chocolate emulsion'
         }
       ]
     },
@@ -833,8 +842,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.',
       tags: ['vegan', 'dairy-free', 'dark', 'coconut'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'cacao-barry.guayaquil-64',
@@ -848,8 +861,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 600,
           yield: '~48 bonbons',
-          versionNotes: 'Coconut cream provides fat and moisture similar to dairy cream',
-          usage: []
+          notes: 'Coconut cream provides fat and moisture similar to dairy cream'
         }
       ]
     },
@@ -859,8 +871,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.',
       tags: ['vegan', 'dairy-free', 'dark', 'neutral'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'cacao-barry.guayaquil-64',
@@ -879,8 +895,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 580,
           yield: '~46 bonbons',
-          versionNotes: 'Oil-based method gives firmer set and neutral flavor',
-          usage: []
+          notes: 'Oil-based method gives firmer set and neutral flavor'
         }
       ]
     },
@@ -890,8 +905,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.',
       tags: ['caramelized', 'blonde', 'truffle', 'bonbon', 'salted-caramel'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'cacao-barry.zephyr-caramel-35',
@@ -909,8 +928,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 650,
           yield: '~52 bonbons',
-          versionNotes: 'Slightly higher chocolate ratio for caramelized varieties',
-          usage: []
+          notes: 'Slightly higher chocolate ratio for caramelized varieties'
         }
       ]
     },
@@ -919,8 +937,12 @@ export const recipeCollections: Record<string, JsonObject> = {
       name: 'Basic Gianduja',
       description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
       tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
+      goldenVersionId: '2026-01-01-01',
+      usage: [],
       versions: [
         {
+          versionId: '2026-01-01-01',
+          createdDate: '2026-01-01',
           ingredients: [
             {
               ingredientId: 'felchlin.sao-palme-43',
@@ -939,8 +961,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ],
           baseWeight: 550,
           yield: '~44 bonbons',
-          versionNotes: 'Traditional 60:40 chocolate to hazelnut ratio',
-          usage: []
+          notes: 'Traditional 60:40 chocolate to hazelnut ratio'
         }
       ]
     }

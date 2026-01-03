@@ -23,7 +23,9 @@
  * @packageDocumentation
  */
 
-import { BaseRecipeId, Grams, IngredientId, RecipeName } from '../common';
+import { Result, fail, succeed } from '@fgv/ts-utils';
+
+import { BaseRecipeId, Grams, IngredientId, RatingScore, RecipeName, RecipeVersionId } from '../common';
 
 // ============================================================================
 // Recipe Ingredient Reference
@@ -57,6 +59,50 @@ export interface IRecipeIngredient {
 }
 
 // ============================================================================
+// Version Rating
+// ============================================================================
+
+/**
+ * Categories for rating a recipe version
+ * @public
+ */
+export type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
+
+/**
+ * All possible rating categories
+ * @public
+ */
+export const allRatingCategories: RatingCategory[] = [
+  'overall',
+  'taste',
+  'texture',
+  'shelf-life',
+  'appearance',
+  'workability'
+];
+
+/**
+ * Rating for a specific category of a recipe version
+ * @public
+ */
+export interface IVersionRating {
+  /**
+   * The category being rated
+   */
+  readonly category: RatingCategory;
+
+  /**
+   * Score from 1-5
+   */
+  readonly score: RatingScore;
+
+  /**
+   * Optional notes about the rating
+   */
+  readonly notes?: string;
+}
+
+// ============================================================================
 // Recipe Usage Tracking
 // ============================================================================
 
@@ -71,25 +117,51 @@ export interface IRecipeUsage {
   readonly date: string;
 
   /**
+   * Which version was used
+   */
+  readonly versionId: RecipeVersionId;
+
+  /**
    * Scaled weight used for this production run
    */
   readonly scaledWeight: Grams;
 
   /**
+   * Optional scale factor for reference
+   */
+  readonly scaleFactor?: number;
+
+  /**
    * Optional notes about this usage
    */
   readonly notes?: string;
+
+  /**
+   * If modifications were made during this usage that created a new version,
+   * this is the ID of that new version
+   */
+  readonly modifiedVersionId?: RecipeVersionId;
 }
 
 // ============================================================================
-// Recipe Version Details
+// Recipe Version
 // ============================================================================
 
 /**
  * Complete details for a single version of a recipe
  * @public
  */
-export interface IRecipeDetails {
+export interface IRecipeVersion {
+  /**
+   * Unique identifier for this version
+   */
+  readonly versionId: RecipeVersionId;
+
+  /**
+   * Date this version was created (ISO 8601 format)
+   */
+  readonly createdDate: string;
+
   /**
    * Ingredients used in this version of the recipe
    */
@@ -108,12 +180,12 @@ export interface IRecipeDetails {
   /**
    * Optional notes about this version
    */
-  readonly versionNotes?: string;
+  readonly notes?: string;
 
   /**
-   * Usage history for this version
+   * Optional ratings for this version
    */
-  readonly usage: ReadonlyArray<IRecipeUsage>;
+  readonly ratings?: ReadonlyArray<IVersionRating>;
 }
 
 // ============================================================================
@@ -146,14 +218,19 @@ export interface IRecipe {
   readonly tags?: ReadonlyArray<string>;
 
   /**
-   * Version history (newest first)
+   * Version history
    */
-  readonly versions: ReadonlyArray<IRecipeDetails>;
+  readonly versions: ReadonlyArray<IRecipeVersion>;
 
   /**
-   * Convenience accessor for the current (most recent) version
+   * The ID of the golden (approved default) version
    */
-  readonly currentVersion: IRecipeDetails;
+  readonly goldenVersionId: RecipeVersionId;
+
+  /**
+   * Usage history for all versions of this recipe
+   */
+  readonly usage: ReadonlyArray<IRecipeUsage>;
 }
 
 // ============================================================================
@@ -203,11 +280,96 @@ export interface IScaledRecipe {
 }
 
 // ============================================================================
-// Recipe Type (discriminated union for future extension)
+// Recipe Class
 // ============================================================================
 
 /**
- * Recipe type for ganache-based confections
+ * Recipe class with helper methods for accessing versions
  * @public
  */
-export type Recipe = IRecipe;
+export class Recipe implements IRecipe {
+  /**
+   * Base recipe identifier (unique within source)
+   */
+  public readonly baseId: BaseRecipeId;
+
+  /**
+   * Human-readable recipe name
+   */
+  public readonly name: RecipeName;
+
+  /**
+   * Optional description of the recipe
+   */
+  public readonly description?: string;
+
+  /**
+   * Optional tags for categorization and search
+   */
+  public readonly tags?: ReadonlyArray<string>;
+
+  /**
+   * Version history
+   */
+  public readonly versions: ReadonlyArray<IRecipeVersion>;
+
+  /**
+   * The ID of the golden (approved default) version
+   */
+  public readonly goldenVersionId: RecipeVersionId;
+
+  /**
+   * Usage history for all versions of this recipe
+   */
+  public readonly usage: ReadonlyArray<IRecipeUsage>;
+
+  private constructor(data: IRecipe) {
+    this.baseId = data.baseId;
+    this.name = data.name;
+    this.description = data.description;
+    this.tags = data.tags;
+    this.versions = data.versions;
+    this.goldenVersionId = data.goldenVersionId;
+    this.usage = data.usage;
+  }
+
+  /**
+   * Returns the golden (approved default) version
+   */
+  public get goldenVersion(): IRecipeVersion {
+    const version = this.versions.find((v) => v.versionId === this.goldenVersionId);
+    /* c8 ignore next 3 - defensive coding: validated in create() */
+    if (!version) {
+      throw new Error(`Golden version ${this.goldenVersionId} not found in recipe ${this.baseId}`);
+    }
+    return version;
+  }
+
+  /**
+   * Find a version by its ID
+   * @param versionId - The version ID to find
+   * @returns Result with the version or error
+   */
+  public getVersion(versionId: RecipeVersionId): Result<IRecipeVersion> {
+    const version = this.versions.find((v) => v.versionId === versionId);
+    if (!version) {
+      return fail(`Version ${versionId} not found in recipe ${this.baseId}`);
+    }
+    return succeed(version);
+  }
+
+  /**
+   * Creates a new Recipe instance
+   * @param data - The recipe data
+   * @returns Result with the Recipe or error if validation fails
+   */
+  public static create(data: IRecipe): Result<Recipe> {
+    // Validate that goldenVersionId exists in versions
+    const goldenExists = data.versions.some((v) => v.versionId === data.goldenVersionId);
+    /* c8 ignore next 3 - tested in converters.test.ts */
+    if (!goldenExists) {
+      return fail(`Golden version ${data.goldenVersionId} not found in versions for recipe ${data.baseId}`);
+    }
+    return succeed(new Recipe(data));
+  }
+}

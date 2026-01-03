@@ -23,15 +23,18 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, fail } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../common';
 import {
+  allRatingCategories,
   IRecipe,
-  IRecipeDetails,
   IRecipeIngredient,
   IRecipeUsage,
+  IRecipeVersion,
   IScaledRecipeIngredient,
+  IVersionRating,
+  RatingCategory,
   Recipe
 } from './model';
 
@@ -51,6 +54,26 @@ export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<
 });
 
 // ============================================================================
+// Version Rating Converter
+// ============================================================================
+
+/**
+ * Converter for RatingCategory
+ * @public
+ */
+export const ratingCategory: Converter<RatingCategory> = Converters.enumeratedValue(allRatingCategories);
+
+/**
+ * Converter for IVersionRating
+ * @public
+ */
+export const versionRating: Converter<IVersionRating> = Converters.object<IVersionRating>({
+  category: ratingCategory,
+  score: CommonConverters.ratingScore,
+  notes: Converters.string.optional()
+});
+
+// ============================================================================
 // Recipe Usage Converter
 // ============================================================================
 
@@ -60,24 +83,29 @@ export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<
  */
 export const recipeUsage: Converter<IRecipeUsage> = Converters.object<IRecipeUsage>({
   date: Converters.string, // ISO 8601 date string
+  versionId: CommonConverters.recipeVersionId,
   scaledWeight: CommonConverters.grams,
-  notes: Converters.string.optional()
+  scaleFactor: Converters.number.optional(),
+  notes: Converters.string.optional(),
+  modifiedVersionId: CommonConverters.recipeVersionId.optional()
 });
 
 // ============================================================================
-// Recipe Details Converter
+// Recipe Version Converter
 // ============================================================================
 
 /**
- * Converter for IRecipeDetails
+ * Converter for IRecipeVersion
  * @public
  */
-export const recipeDetails: Converter<IRecipeDetails> = Converters.object<IRecipeDetails>({
+export const recipeVersion: Converter<IRecipeVersion> = Converters.object<IRecipeVersion>({
+  versionId: CommonConverters.recipeVersionId,
+  createdDate: Converters.string, // ISO 8601 date string
   ingredients: Converters.arrayOf(recipeIngredient),
   baseWeight: CommonConverters.grams,
   yield: Converters.string.optional(),
-  versionNotes: Converters.string.optional(),
-  usage: Converters.arrayOf(recipeUsage)
+  notes: Converters.string.optional(),
+  ratings: Converters.arrayOf(versionRating).optional()
 });
 
 // ============================================================================
@@ -85,48 +113,37 @@ export const recipeDetails: Converter<IRecipeDetails> = Converters.object<IRecip
 // ============================================================================
 
 /**
- * Internal converter for recipe data without currentVersion accessor
- * @internal
+ * Converter for IRecipe data structure
+ * @public
  */
-interface IRecipeData {
-  readonly baseId: unknown;
-  readonly name: unknown;
-  readonly description?: string;
-  readonly tags?: ReadonlyArray<string>;
-  readonly versions: ReadonlyArray<IRecipeDetails>;
-}
-
-const recipeData: Converter<IRecipeData> = Converters.object<IRecipeData>({
+export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
   baseId: CommonConverters.baseRecipeId,
   name: CommonConverters.recipeName,
   description: Converters.string.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
-  versions: Converters.arrayOf(recipeDetails)
+  versions: Converters.arrayOf(recipeVersion),
+  goldenVersionId: CommonConverters.recipeVersionId,
+  usage: Converters.arrayOf(recipeUsage)
 });
 
 /**
- * Converter for IRecipe
- * Adds currentVersion as computed accessor from versions array
+ * Converter for Recipe
+ * Validates that goldenVersionId exists in versions and creates Recipe instance
  * @public
  */
-export const recipe: Converter<IRecipe> = Converters.generic<IRecipe>((from: unknown): Result<IRecipe> => {
+export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unknown): Result<Recipe> => {
   return recipeData.convert(from).onSuccess((data) => {
     if (data.versions.length === 0) {
       return fail('Recipe must have at least one version');
     }
 
-    // Create the full recipe with currentVersion accessor
-    const fullRecipe: IRecipe = {
-      baseId: data.baseId,
-      name: data.name,
-      description: data.description,
-      tags: data.tags,
-      versions: data.versions,
-      // Current version is the first (most recent) version
-      currentVersion: data.versions[0]
-    } as IRecipe;
+    // Validate that goldenVersionId exists in versions
+    const goldenExists = data.versions.some((v) => v.versionId === data.goldenVersionId);
+    if (!goldenExists) {
+      return fail(`Golden version ${data.goldenVersionId} not found in versions for recipe ${data.baseId}`);
+    }
 
-    return succeed(fullRecipe);
+    return Recipe.create(data);
   });
 });
 
@@ -141,6 +158,7 @@ export const recipe: Converter<IRecipe> = Converters.generic<IRecipe>((from: unk
 export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
   Converters.object<IScaledRecipeIngredient>({
     ingredientId: CommonConverters.ingredientId,
+    alternateIngredientIds: Converters.arrayOf(CommonConverters.ingredientId).optional(),
     amount: CommonConverters.grams,
     notes: Converters.string.optional(),
     originalAmount: CommonConverters.grams,

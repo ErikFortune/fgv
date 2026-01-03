@@ -2,14 +2,257 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Recipes](./ts-chocolate.recipes.md) &gt; [Recipe](./ts-chocolate.recipes.recipe.md)
 
-## Recipes.Recipe type
+## Recipes.Recipe class
 
-Recipe type for ganache-based confections
+Recipe class with helper methods for accessing versions
 
 **Signature:**
 
 ```typescript
-export type Recipe = IRecipe;
+export declare class Recipe implements IRecipe 
 ```
-**References:** [IRecipe](./ts-chocolate.recipes.irecipe.md)
+**Implements:** [IRecipe](./ts-chocolate.recipes.irecipe.md)
+
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[baseId](./ts-chocolate.recipes.recipe.baseid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[BaseRecipeId](./ts-chocolate.baserecipeid.md)
+
+
+</td><td>
+
+Base recipe identifier (unique within source)
+
+
+</td></tr>
+<tr><td>
+
+[description?](./ts-chocolate.recipes.recipe.description.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional description of the recipe
+
+
+</td></tr>
+<tr><td>
+
+[goldenVersion](./ts-chocolate.recipes.recipe.goldenversion.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)
+
+
+</td><td>
+
+Returns the golden (approved default) version
+
+
+</td></tr>
+<tr><td>
+
+[goldenVersionId](./ts-chocolate.recipes.recipe.goldenversionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+The ID of the golden (approved default) version
+
+
+</td></tr>
+<tr><td>
+
+[name](./ts-chocolate.recipes.recipe.name.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeName](./ts-chocolate.recipename.md)
+
+
+</td><td>
+
+Human-readable recipe name
+
+
+</td></tr>
+<tr><td>
+
+[tags?](./ts-chocolate.recipes.recipe.tags.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;string&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional tags for categorization and search
+
+
+</td></tr>
+<tr><td>
+
+[usage](./ts-chocolate.recipes.recipe.usage.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)<!-- -->&gt;
+
+
+</td><td>
+
+Usage history for all versions of this recipe
+
+
+</td></tr>
+<tr><td>
+
+[versions](./ts-chocolate.recipes.recipe.versions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->&gt;
+
+
+</td><td>
+
+Version history
+
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[create(data)](./ts-chocolate.recipes.recipe.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new Recipe instance
+
+
+</td></tr>
+<tr><td>
+
+[getVersion(versionId)](./ts-chocolate.recipes.recipe.getversion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Find a version by its ID
+
+
+</td></tr>
+</tbody></table>
 

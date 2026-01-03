@@ -79,7 +79,7 @@ _(Optional)_ Number of decimal places for scaled amounts (default: 1)
 </td></tr>
 <tr><td>
 
-[versionIndex?](./ts-chocolate.recipes.irecipescaleoptions.versionindex.md)
+[versionId?](./ts-chocolate.recipes.irecipescaleoptions.versionid.md)
 
 
 </td><td>
@@ -89,12 +89,12 @@ _(Optional)_ Number of decimal places for scaled amounts (default: 1)
 
 </td><td>
 
-number
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
 
 
 </td><td>
 
-_(Optional)_ Recipe version to scale (default: current version / index 0)
+_(Optional)_ Recipe version to scale (default: golden version)
 
 
 </td></tr>

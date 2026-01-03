@@ -162,6 +162,17 @@ Type guard for Percentage
 </td></tr>
 <tr><td>
 
+[isValidRatingScore(from)](./ts-chocolate.validation.isvalidratingscore.md)
+
+
+</td><td>
+
+Type guard for RatingScore
+
+
+</td></tr>
+<tr><td>
+
 [isValidRecipeId(from)](./ts-chocolate.validation.isvalidrecipeid.md)
 
 
@@ -179,6 +190,17 @@ Type guard for RecipeId
 </td><td>
 
 Type guard for RecipeName
+
+
+</td></tr>
+<tr><td>
+
+[isValidRecipeVersionId(from)](./ts-chocolate.validation.isvalidrecipeversionid.md)
+
+
+</td><td>
+
+Type guard for RecipeVersionId
 
 
 </td></tr>
@@ -294,6 +316,17 @@ Converts unknown value to Percentage
 </td></tr>
 <tr><td>
 
+[toRatingScore(from)](./ts-chocolate.validation.toratingscore.md)
+
+
+</td><td>
+
+Converts unknown value to RatingScore
+
+
+</td></tr>
+<tr><td>
+
 [toRecipeId(from)](./ts-chocolate.validation.torecipeid.md)
 
 
@@ -311,6 +344,17 @@ Converts unknown value to RecipeId
 </td><td>
 
 Converts unknown value to RecipeName
+
+
+</td></tr>
+<tr><td>
+
+[toRecipeVersionId(from)](./ts-chocolate.validation.torecipeversionid.md)
+
+
+</td><td>
+
+Converts unknown value to RecipeVersionId
 
 
 </td></tr>

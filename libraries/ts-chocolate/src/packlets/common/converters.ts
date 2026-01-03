@@ -35,8 +35,10 @@ import {
   IngredientCategory,
   IngredientId,
   Percentage,
+  RatingScore,
   RecipeId,
   RecipeName,
+  RecipeVersionId,
   SourceId,
   FluidityStars,
   WeightUnit,
@@ -61,8 +63,10 @@ import {
   toGrams,
   toIngredientId,
   toPercentage,
+  toRatingScore,
   toRecipeId,
   toRecipeName,
+  toRecipeVersionId,
   toSourceId
 } from './validation';
 
@@ -106,6 +110,12 @@ export const recipeId: Converter<RecipeId> = Converters.generic(toRecipeId);
  */
 export const recipeName: Converter<RecipeName> = Converters.generic(toRecipeName);
 
+/**
+ * Converter for RecipeVersionId
+ * @public
+ */
+export const recipeVersionId: Converter<RecipeVersionId> = Converters.generic(toRecipeVersionId);
+
 // ============================================================================
 // Numeric Converters
 // ============================================================================
@@ -133,6 +143,12 @@ export const celsius: Converter<Celsius> = Converters.generic(toCelsius);
  * @public
  */
 export const degreesMacMichael: Converter<DegreesMacMichael> = Converters.generic(toDegreesMacMichael);
+
+/**
+ * Converter for RatingScore (1-5)
+ * @public
+ */
+export const ratingScore: Converter<RatingScore> = Converters.generic(toRatingScore);
 
 // ============================================================================
 // Enum Converters

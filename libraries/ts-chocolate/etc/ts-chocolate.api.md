@@ -47,6 +47,9 @@ export const allFluidityStars: FluidityStars[];
 export const allIngredientCategories: IngredientCategory[];
 
 // @public
+const allRatingCategories: RatingCategory[];
+
+// @public
 export const allWeightUnits: WeightUnit[];
 
 // @public
@@ -96,10 +99,10 @@ function builtInSpecToLoadParams<TCollectionId extends string>(spec: LibraryLoad
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
 
 // @public
-function calculateBaseWeight(details: IRecipeDetails): Grams;
+function calculateBaseWeight(version: IRecipeVersion): Grams;
 
 // @public
-function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionIndex?: number): Result<IGanacheAnalysis>;
+function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionId?: RecipeVersionId): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
@@ -108,7 +111,7 @@ function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIn
 function calculateFromRecipeIngredients(recipeIngredients: ReadonlyArray<IRecipeIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 
 // @public
-function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionIndex?: number): Result<IGanacheCalculation>;
+function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
 
 declare namespace Calculations {
     export {
@@ -149,8 +152,8 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 
 // @public
 class ChocolateLibrary {
-    calculateGanache(id: RecipeId, versionIndex?: number): Result<IGanacheCalculation>;
-    calculateGanacheForRecipe(recipe: IRecipe, versionIndex?: number): Result<IGanacheCalculation>;
+    calculateGanache(id: RecipeId, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
+    calculateGanacheForRecipe(recipe: IRecipe, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
     static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary>;
     createIngredientResolver(): IngredientResolver;
     getIngredient(id: IngredientId): Result<Ingredient>;
@@ -217,10 +220,12 @@ declare namespace Converters {
         ingredientId,
         recipeId,
         recipeName,
+        recipeVersionId,
         grams,
         percentage,
         celsius,
         degreesMacMichael,
+        ratingScore,
         ingredientCategory,
         chocolateType,
         chocolateVariety,
@@ -259,8 +264,11 @@ declare namespace Converters_3 {
 declare namespace Converters_4 {
     export {
         recipeIngredient,
+        ratingCategory,
+        versionRating,
         recipeUsage,
-        recipeDetails,
+        recipeVersion,
+        recipeData,
         recipe,
         scaledRecipeIngredient,
         recipeConverter
@@ -565,20 +573,12 @@ class IngredientsLibrary extends Collections.AggregatedResultMapBase<IngredientI
 // @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
-    readonly currentVersion: IRecipeDetails;
     readonly description?: string;
+    readonly goldenVersionId: RecipeVersionId;
     readonly name: RecipeName;
     readonly tags?: ReadonlyArray<string>;
-    readonly versions: ReadonlyArray<IRecipeDetails>;
-}
-
-// @public
-interface IRecipeDetails {
-    readonly baseWeight: Grams;
-    readonly ingredients: ReadonlyArray<IRecipeIngredient>;
     readonly usage: ReadonlyArray<IRecipeUsage>;
-    readonly versionNotes?: string;
-    readonly yield?: string;
+    readonly versions: ReadonlyArray<IRecipeVersion>;
 }
 
 // @public
@@ -593,7 +593,7 @@ interface IRecipeIngredient {
 interface IRecipeScaleOptions {
     readonly minimumAmount?: Grams;
     readonly precision?: number;
-    readonly versionIndex?: number;
+    readonly versionId?: RecipeVersionId;
 }
 
 // @public
@@ -605,8 +605,22 @@ interface IRecipesLibraryParams {
 // @public
 interface IRecipeUsage {
     readonly date: string;
+    readonly modifiedVersionId?: RecipeVersionId;
     readonly notes?: string;
     readonly scaledWeight: Grams;
+    readonly scaleFactor?: number;
+    readonly versionId: RecipeVersionId;
+}
+
+// @public
+interface IRecipeVersion {
+    readonly baseWeight: Grams;
+    readonly createdDate: string;
+    readonly ingredients: ReadonlyArray<IRecipeIngredient>;
+    readonly notes?: string;
+    readonly ratings?: ReadonlyArray<IVersionRating>;
+    readonly versionId: RecipeVersionId;
+    readonly yield?: string;
 }
 
 // @public
@@ -675,10 +689,16 @@ function isValidIngredientId(from: unknown): from is IngredientId;
 function isValidPercentage(from: unknown): from is Percentage;
 
 // @public
+function isValidRatingScore(from: unknown): from is RatingScore;
+
+// @public
 function isValidRecipeId(from: unknown): from is RecipeId;
 
 // @public
 function isValidRecipeName(from: unknown): from is RecipeName;
+
+// @public
+function isValidRecipeVersionId(from: unknown): from is RecipeVersionId;
 
 // @public
 function isValidSourceId(from: unknown): from is SourceId;
@@ -688,6 +708,13 @@ interface ITemperatureCurve {
     readonly cool: Celsius;
     readonly melt: Celsius;
     readonly working: Celsius;
+}
+
+// @public
+interface IVersionRating {
+    readonly category: RatingCategory;
+    readonly notes?: string;
+    readonly score: RatingScore;
 }
 
 declare namespace LibraryData {
@@ -743,13 +770,39 @@ export type Percentage = Brand<number, 'Percentage'>;
 const percentage: Converter<Percentage>;
 
 // @public
-function recalculateRecipeDetails(details: IRecipeDetails): IRecipeDetails;
+type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
 
 // @public
-type Recipe = IRecipe;
+const ratingCategory: Converter<RatingCategory>;
 
 // @public
-const recipe: Converter<IRecipe>;
+export type RatingScore = Brand<number, 'RatingScore'>;
+
+// @public
+const ratingScore: Converter<RatingScore>;
+
+// @public
+function recalculateRecipeVersion(version: IRecipeVersion): IRecipeVersion;
+
+// @public
+class Recipe implements IRecipe {
+    readonly baseId: BaseRecipeId;
+    static create(data: IRecipe): Result<Recipe>;
+    readonly description?: string;
+    getVersion(versionId: RecipeVersionId): Result<IRecipeVersion>;
+    get goldenVersion(): IRecipeVersion;
+    readonly goldenVersionId: RecipeVersionId;
+    readonly name: RecipeName;
+    readonly tags?: ReadonlyArray<string>;
+    readonly usage: ReadonlyArray<IRecipeUsage>;
+    readonly versions: ReadonlyArray<IRecipeVersion>;
+}
+
+// @public
+const recipe: Converter<Recipe>;
+
+// @public
+export const RECIPE_VERSION_ID_PATTERN: RegExp;
 
 // @public
 type RecipeCollection = Collections.IReadOnlyValidatingResultMap<SourceId, RecipeCollectionEntry>;
@@ -770,7 +823,7 @@ type RecipeCollectionValidator = Collections.IReadOnlyResultMapValidator<RecipeI
 const recipeConverter: Converter<Recipe>;
 
 // @public
-const recipeDetails: Converter<IRecipeDetails>;
+const recipeData: Converter<IRecipe>;
 
 // @public
 export type RecipeId = Brand<string, 'RecipeId'>;
@@ -791,8 +844,11 @@ declare namespace Recipes {
     export {
         Converters_4 as Converters,
         IRecipeIngredient,
+        RatingCategory,
+        allRatingCategories,
+        IVersionRating,
         IRecipeUsage,
-        IRecipeDetails,
+        IRecipeVersion,
         IRecipe,
         IScaledRecipeIngredient,
         IScaledRecipe,
@@ -807,7 +863,7 @@ declare namespace Recipes {
         scaleRecipe,
         scaleRecipeByFactor,
         calculateBaseWeight,
-        recalculateRecipeDetails,
+        recalculateRecipeVersion,
         IRecipeScaleOptions
     }
 }
@@ -823,6 +879,15 @@ class RecipesLibrary extends Collections.AggregatedResultMapBase<RecipeId, Sourc
 
 // @public
 const recipeUsage: Converter<IRecipeUsage>;
+
+// @public
+const recipeVersion: Converter<IRecipeVersion>;
+
+// @public
+export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
+
+// @public
+const recipeVersionId: Converter<RecipeVersionId>;
 
 // @public
 function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
@@ -881,10 +946,16 @@ function toIngredientId(from: unknown): Result<IngredientId>;
 function toPercentage(from: unknown): Result<Percentage>;
 
 // @public
+function toRatingScore(from: unknown): Result<RatingScore>;
+
+// @public
 function toRecipeId(from: unknown): Result<RecipeId>;
 
 // @public
 function toRecipeName(from: unknown): Result<RecipeName>;
+
+// @public
+function toRecipeVersionId(from: unknown): Result<RecipeVersionId>;
 
 // @public
 function toSourceId(from: unknown): Result<SourceId>;
@@ -906,6 +977,8 @@ declare namespace Validation {
         toRecipeId,
         isValidRecipeName,
         toRecipeName,
+        isValidRecipeVersionId,
+        toRecipeVersionId,
         isValidGrams,
         toGrams,
         isValidPercentage,
@@ -914,6 +987,8 @@ declare namespace Validation {
         toCelsius,
         isValidDegreesMacMichael,
         toDegreesMacMichael,
+        isValidRatingScore,
+        toRatingScore,
         createIngredientId,
         parseIngredientId,
         getIngredientSourceId,
@@ -925,6 +1000,9 @@ declare namespace Validation {
     }
 }
 export { Validation }
+
+// @public
+const versionRating: Converter<IVersionRating>;
 
 // @public
 export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';

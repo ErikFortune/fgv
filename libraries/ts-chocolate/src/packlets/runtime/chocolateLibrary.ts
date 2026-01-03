@@ -25,7 +25,7 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, RecipeId } from '../common';
+import { Grams, IngredientId, RecipeId, RecipeVersionId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, IScaledRecipe, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
@@ -200,12 +200,13 @@ export class ChocolateLibrary {
     options?: IRecipeScaleOptions
   ): Result<IScaledRecipe> {
     return this.getRecipe(id).onSuccess((recipe) => {
-      const version =
-        options?.versionIndex !== undefined ? recipe.versions[options.versionIndex] : recipe.currentVersion;
+      // Get the version to scale (default to golden version)
+      const versionId = options?.versionId ?? recipe.goldenVersionId;
+      const version = recipe.versions.find((v) => v.versionId === versionId);
 
       /* c8 ignore next 3 - tested in chocolateLibrary.test.ts but coverage intermittently missed */
       if (!version) {
-        return fail(`Invalid version index: ${options?.versionIndex}`);
+        return fail(`Version ${versionId} not found in recipe ${recipe.baseId}`);
       }
 
       const targetWeight = (version.baseWeight * factor) as Grams;
@@ -229,12 +230,12 @@ export class ChocolateLibrary {
    * Calculates ganache characteristics for a recipe
    *
    * @param id - Recipe ID to analyze
-   * @param versionIndex - Optional version index (default: current version)
+   * @param versionId - Optional version ID (default: golden version)
    * @returns Success with ganache calculation, or Failure if recipe not found or ingredients missing
    */
-  public calculateGanache(id: RecipeId, versionIndex?: number): Result<IGanacheCalculation> {
+  public calculateGanache(id: RecipeId, versionId?: RecipeVersionId): Result<IGanacheCalculation> {
     return this.getRecipe(id).onSuccess((recipe) =>
-      calculateGanache(recipe, this.createIngredientResolver(), versionIndex)
+      calculateGanache(recipe, this.createIngredientResolver(), versionId)
     );
   }
 
@@ -243,10 +244,13 @@ export class ChocolateLibrary {
    * Useful when working with recipes not yet added to the library
    *
    * @param recipe - Recipe to analyze
-   * @param versionIndex - Optional version index (default: current version)
+   * @param versionId - Optional version ID (default: golden version)
    * @returns Success with ganache calculation, or Failure if ingredients missing
    */
-  public calculateGanacheForRecipe(recipe: IRecipe, versionIndex?: number): Result<IGanacheCalculation> {
-    return calculateGanache(recipe, this.createIngredientResolver(), versionIndex);
+  public calculateGanacheForRecipe(
+    recipe: IRecipe,
+    versionId?: RecipeVersionId
+  ): Result<IGanacheCalculation> {
+    return calculateGanache(recipe, this.createIngredientResolver(), versionId);
   }
 }

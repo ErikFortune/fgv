@@ -36,8 +36,11 @@ import {
   ID_SEPARATOR,
   IngredientId,
   Percentage,
+  RatingScore,
+  RECIPE_VERSION_ID_PATTERN,
   RecipeId,
   RecipeName,
+  RecipeVersionId,
   SourceId
 } from './model';
 
@@ -195,6 +198,31 @@ export function toRecipeName(from: unknown): Result<RecipeName> {
   return fail('Invalid RecipeName: must be a non-empty string');
 }
 
+/**
+ * Type guard for RecipeVersionId
+ * @param from - Value to check
+ * @returns True if the value is a valid RecipeVersionId
+ * @public
+ */
+export function isValidRecipeVersionId(from: unknown): from is RecipeVersionId {
+  return typeof from === 'string' && RECIPE_VERSION_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to RecipeVersionId
+ * @param from - Value to convert
+ * @returns Result with RecipeVersionId or error
+ * @public
+ */
+export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
+  if (isValidRecipeVersionId(from)) {
+    return succeed(from);
+  }
+  return fail(
+    'Invalid RecipeVersionId: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+  );
+}
+
 // ============================================================================
 // Numeric Validators
 // ============================================================================
@@ -289,6 +317,29 @@ export function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael> {
     return succeed(from);
   }
   return fail('Invalid DegreesMacMichael: must be a non-negative finite number');
+}
+
+/**
+ * Type guard for RatingScore
+ * @param from - Value to check
+ * @returns True if the value is a valid RatingScore (1-5)
+ * @public
+ */
+export function isValidRatingScore(from: unknown): from is RatingScore {
+  return typeof from === 'number' && Number.isInteger(from) && from >= 1 && from <= 5;
+}
+
+/**
+ * Converts unknown value to RatingScore
+ * @param from - Value to convert
+ * @returns Result with RatingScore or error
+ * @public
+ */
+export function toRatingScore(from: unknown): Result<RatingScore> {
+  if (isValidRatingScore(from)) {
+    return succeed(from);
+  }
+  return fail(`${from}: Invalid RatingScore: must be an integer between 1 and 5`);
 }
 
 // ============================================================================

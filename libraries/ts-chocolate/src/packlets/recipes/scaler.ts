@@ -25,8 +25,8 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { Grams } from '../common';
-import { IRecipe, IRecipeDetails, IRecipeIngredient, IScaledRecipe, IScaledRecipeIngredient } from './model';
+import { Grams, RecipeVersionId } from '../common';
+import { IRecipe, IRecipeVersion, IRecipeIngredient, IScaledRecipe, IScaledRecipeIngredient } from './model';
 
 // ============================================================================
 // Scaling Options
@@ -49,9 +49,9 @@ export interface IRecipeScaleOptions {
   readonly minimumAmount?: Grams;
 
   /**
-   * Recipe version to scale (default: current version / index 0)
+   * Recipe version to scale (default: golden version)
    */
-  readonly versionIndex?: number;
+  readonly versionId?: RecipeVersionId;
 }
 
 // ============================================================================
@@ -106,15 +106,12 @@ export function scaleRecipe(
     return fail('Target weight must be greater than zero');
   }
 
-  // Get the version to scale
-  const versionIndex = options.versionIndex ?? 0;
-  if (versionIndex < 0 || versionIndex >= recipe.versions.length) {
-    return fail(
-      `Version index ${versionIndex} out of bounds. Recipe has ${recipe.versions.length} version(s).`
-    );
+  // Get the version to scale (default to golden version)
+  const versionId = options.versionId ?? recipe.goldenVersionId;
+  const version = recipe.versions.find((v) => v.versionId === versionId);
+  if (!version) {
+    return fail(`Version ${versionId} not found in recipe ${recipe.baseId}`);
   }
-
-  const version = recipe.versions[versionIndex];
 
   // Validate base weight
   if (version.baseWeight <= 0) {
@@ -155,41 +152,40 @@ export function scaleRecipeByFactor(
     return fail('Scale factor must be greater than zero');
   }
 
-  const versionIndex = options.versionIndex ?? 0;
-  if (versionIndex < 0 || versionIndex >= recipe.versions.length) {
-    return fail(
-      `Version index ${versionIndex} out of bounds. Recipe has ${recipe.versions.length} version(s).`
-    );
+  // Get the version to scale (default to golden version)
+  const versionId = options.versionId ?? recipe.goldenVersionId;
+  const version = recipe.versions.find((v) => v.versionId === versionId);
+  if (!version) {
+    return fail(`Version ${versionId} not found in recipe ${recipe.baseId}`);
   }
 
-  const version = recipe.versions[versionIndex];
   const targetWeight = (version.baseWeight * factor) as Grams;
 
   return scaleRecipe(recipe, targetWeight, options);
 }
 
 /**
- * Calculates the base weight from recipe details (sum of ingredient amounts)
+ * Calculates the base weight from recipe version (sum of ingredient amounts)
  *
- * @param details - Recipe details to calculate weight for
+ * @param version - Recipe version to calculate weight for
  * @returns Total weight in grams
  * @public
  */
-export function calculateBaseWeight(details: IRecipeDetails): Grams {
-  const total = details.ingredients.reduce((sum, ingredient) => sum + ingredient.amount, 0);
+export function calculateBaseWeight(version: IRecipeVersion): Grams {
+  const total = version.ingredients.reduce((sum: number, ingredient) => sum + ingredient.amount, 0);
   return total as Grams;
 }
 
 /**
- * Recalculates base weight for recipe details and returns updated details
+ * Recalculates base weight for recipe version and returns updated version
  *
- * @param details - Recipe details to update
- * @returns New recipe details with recalculated base weight
+ * @param version - Recipe version to update
+ * @returns New recipe version with recalculated base weight
  * @public
  */
-export function recalculateRecipeDetails(details: IRecipeDetails): IRecipeDetails {
+export function recalculateRecipeVersion(version: IRecipeVersion): IRecipeVersion {
   return {
-    ...details,
-    baseWeight: calculateBaseWeight(details)
+    ...version,
+    baseWeight: calculateBaseWeight(version)
   };
 }

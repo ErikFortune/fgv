@@ -25,9 +25,9 @@
 
 import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, Percentage } from '../common';
+import { Grams, IngredientId, Percentage, RecipeVersionId } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
-import { IRecipe, IRecipeIngredient } from '../recipes';
+import { IRecipe, IRecipeIngredient, Recipe } from '../recipes';
 
 // ============================================================================
 // Analysis Result Types
@@ -279,19 +279,27 @@ export function calculateFromRecipeIngredients(
  *
  * @param recipe - The recipe to analyze
  * @param resolver - Function to resolve ingredient IDs to full data
- * @param versionIndex - Optional version index (default: current version)
+ * @param versionId - Optional version ID (default: golden version)
  * @returns Success with ganache analysis, or Failure if resolution fails
  * @public
  */
 export function calculateForRecipe(
   recipe: IRecipe,
   resolver: IngredientResolver,
-  versionIndex?: number
+  versionId?: RecipeVersionId
 ): Result<IGanacheAnalysis> {
-  const version = versionIndex !== undefined ? recipe.versions[versionIndex] : recipe.currentVersion;
+  // If a Recipe instance, use helper methods; otherwise find the version manually
+  if (recipe instanceof Recipe) {
+    const version = versionId ? recipe.getVersion(versionId) : succeed(recipe.goldenVersion);
+    return version.onSuccess((v) => calculateFromRecipeIngredients(v.ingredients, resolver));
+  }
+
+  // For plain IRecipe objects
+  const targetVersionId = versionId ?? recipe.goldenVersionId;
+  const version = recipe.versions.find((v) => v.versionId === targetVersionId);
 
   if (!version) {
-    return fail(`Invalid version index: ${versionIndex}`);
+    return fail(`Version ${targetVersionId} not found in recipe ${recipe.baseId}`);
   }
 
   return calculateFromRecipeIngredients(version.ingredients, resolver);
@@ -409,16 +417,16 @@ export function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation 
  *
  * @param recipe - The recipe to analyze
  * @param resolver - Function to resolve ingredient IDs to full data
- * @param versionIndex - Optional version index (default: current version)
+ * @param versionId - Optional version ID (default: golden version)
  * @returns Success with complete calculation, or Failure if resolution fails
  * @public
  */
 export function calculateGanache(
   recipe: IRecipe,
   resolver: IngredientResolver,
-  versionIndex?: number
+  versionId?: RecipeVersionId
 ): Result<IGanacheCalculation> {
-  return calculateForRecipe(recipe, resolver, versionIndex).onSuccess((analysis) =>
+  return calculateForRecipe(recipe, resolver, versionId).onSuccess((analysis) =>
     succeed({
       analysis,
       validation: validateGanache(analysis)

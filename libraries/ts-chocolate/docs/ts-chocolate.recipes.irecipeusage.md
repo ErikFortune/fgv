@@ -58,6 +58,27 @@ Date of use in ISO 8601 format
 </td></tr>
 <tr><td>
 
+[modifiedVersionId?](./ts-chocolate.recipes.irecipeusage.modifiedversionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+_(Optional)_ If modifications were made during this usage that created a new version, this is the ID of that new version
+
+
+</td></tr>
+<tr><td>
+
 [notes?](./ts-chocolate.recipes.irecipeusage.notes.md)
 
 
@@ -95,6 +116,48 @@ _(Optional)_ Optional notes about this usage
 </td><td>
 
 Scaled weight used for this production run
+
+
+</td></tr>
+<tr><td>
+
+[scaleFactor?](./ts-chocolate.recipes.irecipeusage.scalefactor.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ Optional scale factor for reference
+
+
+</td></tr>
+<tr><td>
+
+[versionId](./ts-chocolate.recipes.irecipeusage.versionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+Which version was used
 
 
 </td></tr>

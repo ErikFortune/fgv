@@ -81,6 +81,14 @@ export type RecipeId = Brand<string, 'RecipeId'>;
  */
 export type RecipeName = Brand<string, 'RecipeName'>;
 
+/**
+ * Unique identifier for a recipe version
+ * Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter
+ * Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+ * @public
+ */
+export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
+
 // ============================================================================
 // Branded Numeric Types
 // ============================================================================
@@ -108,6 +116,12 @@ export type Celsius = Brand<number, 'Celsius'>;
  * @public
  */
 export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
+
+/**
+ * Rating score (1-5 scale)
+ * @public
+ */
+export type RatingScore = Brand<number, 'RatingScore'>;
 
 // ============================================================================
 // Enumerations
@@ -315,3 +329,10 @@ export const BASE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+$/;
  * @public
  */
 export const COMPOSITE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
+
+/**
+ * Pattern for valid recipe version IDs
+ * Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+ * @public
+ */
+export const RECIPE_VERSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;

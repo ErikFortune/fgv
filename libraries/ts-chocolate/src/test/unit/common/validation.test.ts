@@ -26,7 +26,9 @@ import {
   Grams,
   IngredientId,
   Percentage,
+  RatingScore,
   RecipeId,
+  RecipeVersionId,
   SourceId,
   Validation
 } from '../../../packlets/common';
@@ -38,6 +40,8 @@ const {
   isValidIngredientId,
   isValidRecipeId,
   isValidRecipeName,
+  isValidRecipeVersionId,
+  isValidRatingScore,
   isValidGrams,
   isValidPercentage,
   isValidCelsius,
@@ -48,6 +52,8 @@ const {
   toIngredientId,
   toRecipeId,
   toRecipeName,
+  toRecipeVersionId,
+  toRatingScore,
   toGrams,
   toPercentage,
   toCelsius,
@@ -145,6 +151,24 @@ describe('Common validation', () => {
     });
   });
 
+  describe('isValidRecipeVersionId', () => {
+    test.each([
+      ['basic version', '2026-01-03-01', true],
+      ['with label', '2026-01-03-02-tweaked', true],
+      ['with longer label', '2026-01-03-05-less-sugar', true],
+      ['with numbers in label', '2026-12-31-99-v2', true],
+      ['missing counter', '2026-01-03', false],
+      ['invalid date format', '26-01-03-01', false],
+      ['uppercase label', '2026-01-03-01-TWEAKED', false],
+      ['spaces in label', '2026-01-03-01-less sugar', false],
+      ['empty string', '', false],
+      ['number', 123, false],
+      ['null', null, false]
+    ])('%s: isValidRecipeVersionId(%p) returns %p', (_desc, input, expected) => {
+      expect(isValidRecipeVersionId(input)).toBe(expected);
+    });
+  });
+
   // ============================================================================
   // Numeric Type Guards
   // ============================================================================
@@ -204,6 +228,24 @@ describe('Common validation', () => {
         ['string', '100', false]
       ])('%s: isValidDegreesMacMichael(%p) returns %p', (_desc, input, expected) => {
         expect(isValidDegreesMacMichael(input)).toBe(expected);
+      });
+    });
+
+    describe('isValidRatingScore', () => {
+      test.each([
+        ['minimum (1)', 1, true],
+        ['middle (3)', 3, true],
+        ['maximum (5)', 5, true],
+        ['zero', 0, false],
+        ['negative', -1, false],
+        ['above max (6)', 6, false],
+        ['decimal', 3.5, false],
+        ['infinity', Infinity, false],
+        ['NaN', NaN, false],
+        ['string', '3', false],
+        ['null', null, false]
+      ])('%s: isValidRatingScore(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidRatingScore(input)).toBe(expected);
       });
     });
   });
@@ -271,6 +313,38 @@ describe('Common validation', () => {
     });
   });
 
+  describe('toRecipeVersionId', () => {
+    test('succeeds with valid basic version ID', () => {
+      expect(toRecipeVersionId('2026-01-03-01')).toSucceedWith('2026-01-03-01' as RecipeVersionId);
+    });
+
+    test('succeeds with version ID with label', () => {
+      expect(toRecipeVersionId('2026-01-03-02-tweaked')).toSucceedWith(
+        '2026-01-03-02-tweaked' as RecipeVersionId
+      );
+    });
+
+    test('fails with missing counter', () => {
+      expect(toRecipeVersionId('2026-01-03')).toFailWith(/Invalid RecipeVersionId/);
+    });
+
+    test('fails with invalid format', () => {
+      expect(toRecipeVersionId('invalid')).toFailWith(/Invalid RecipeVersionId/);
+    });
+
+    test('fails with uppercase label', () => {
+      expect(toRecipeVersionId('2026-01-03-01-WRONG')).toFailWith(/Invalid RecipeVersionId/);
+    });
+
+    test('fails with empty string', () => {
+      expect(toRecipeVersionId('')).toFailWith(/Invalid RecipeVersionId/);
+    });
+
+    test('fails with non-string', () => {
+      expect(toRecipeVersionId(123)).toFailWith(/Invalid RecipeVersionId/);
+    });
+  });
+
   // ============================================================================
   // Numeric Converters
   // ============================================================================
@@ -324,6 +398,29 @@ describe('Common validation', () => {
 
       test('fails with negative value', () => {
         expect(toDegreesMacMichael(-1)).toFailWith(/Invalid DegreesMacMichael/);
+      });
+    });
+
+    describe('toRatingScore', () => {
+      test.each([
+        ['minimum (1)', 1, 1],
+        ['middle (3)', 3, 3],
+        ['maximum (5)', 5, 5]
+      ])('succeeds with %s', (_desc, input, expected) => {
+        expect(toRatingScore(input)).toSucceedWith(expected as RatingScore);
+      });
+
+      test.each([
+        ['zero', 0],
+        ['negative', -1],
+        ['above max (6)', 6],
+        ['decimal', 3.5]
+      ])('fails with %s', (_desc, input) => {
+        expect(toRatingScore(input)).toFailWith(/Invalid RatingScore/);
+      });
+
+      test('fails with non-number', () => {
+        expect(toRatingScore('3')).toFailWith(/Invalid RatingScore/);
       });
     });
   });

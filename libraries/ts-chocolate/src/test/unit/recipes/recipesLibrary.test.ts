@@ -24,12 +24,13 @@ import { BaseRecipeId, Grams, IngredientId, RecipeId, RecipeName, SourceId } fro
 
 import {
   IRecipe,
-  IRecipeDetails,
+  IRecipeVersion,
+  Recipe,
   RecipesLibrary,
   scaleRecipe,
   scaleRecipeByFactor,
   calculateBaseWeight,
-  recalculateRecipeDetails
+  recalculateRecipeVersion
 } from '../../../packlets/recipes';
 
 describe('RecipesLibrary', () => {
@@ -37,24 +38,28 @@ describe('RecipesLibrary', () => {
   // Test Data
   // ============================================================================
 
-  const testRecipeDetails: IRecipeDetails = {
+  const testRecipeVersion: IRecipeVersion = {
+    versionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    createdDate: '2026-01-01',
     ingredients: [
       { ingredientId: 'felchlin.maracaibo-65' as IngredientId, amount: 100 as Grams },
       { ingredientId: 'common.heavy-cream-35' as IngredientId, amount: 50 as Grams }
     ],
     baseWeight: 150 as Grams,
-    yield: '10 bonbons',
-    usage: []
+    yield: '10 bonbons'
   };
 
-  const testRecipe: IRecipe = {
+  const testRecipeData: IRecipe = {
     baseId: 'test-ganache' as BaseRecipeId,
     name: 'Test Ganache' as RecipeName,
     description: 'A test ganache recipe',
     tags: ['test', 'dark'],
-    versions: [testRecipeDetails],
-    currentVersion: testRecipeDetails
+    versions: [testRecipeVersion],
+    goldenVersionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    usage: []
   };
+
+  const testRecipe = Recipe.create(testRecipeData).orThrow();
 
   // ============================================================================
   // Creation Tests
@@ -210,19 +215,23 @@ describe('RecipesLibrary', () => {
       }).orThrow();
     });
 
-    test.each([
-      ['add', (lib: RecipesLibrary, id: RecipeId) => lib.add(id, testRecipe)],
-      ['set', (lib: RecipesLibrary, id: RecipeId) => lib.set(id, testRecipe)]
-    ])('%s adds new recipe', (_name, fn) => {
+    test('add adds new recipe', () => {
       const id = 'user.newRecipe' as RecipeId;
-      expect(fn(library, id)).toSucceed();
+      expect(library.add(id, testRecipe)).toSucceed();
+      expect(library.has(id)).toBe(true);
+    });
+
+    test('set adds new recipe', () => {
+      const id = 'user.newRecipe' as RecipeId;
+      expect(library.set(id, testRecipe)).toSucceed();
       expect(library.has(id)).toBe(true);
     });
 
     test('update succeeds for existing recipe', () => {
       const id = 'user.updateTest' as RecipeId;
       library.add(id, testRecipe).orThrow();
-      const updated = { ...testRecipe, description: 'Updated' };
+      const updatedData: IRecipe = { ...testRecipeData, description: 'Updated' };
+      const updated = Recipe.create(updatedData).orThrow();
       expect(library.update(id, updated)).toSucceed();
     });
 
@@ -305,20 +314,22 @@ describe('RecipesLibrary', () => {
 // ============================================================================
 
 describe('Recipe scaling', () => {
-  const testDetails: IRecipeDetails = {
+  const testVersion: IRecipeVersion = {
+    versionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    createdDate: '2026-01-01',
     ingredients: [
       { ingredientId: 'source.choco' as IngredientId, amount: 100 as Grams },
       { ingredientId: 'source.cream' as IngredientId, amount: 50 as Grams }
     ],
-    baseWeight: 150 as Grams,
-    usage: []
+    baseWeight: 150 as Grams
   };
 
   const testRecipe: IRecipe = {
     baseId: 'test' as BaseRecipeId,
     name: 'Test' as RecipeName,
-    versions: [testDetails],
-    currentVersion: testDetails
+    versions: [testVersion],
+    goldenVersionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    usage: []
   };
 
   describe('scaleRecipe', () => {
@@ -345,8 +356,12 @@ describe('Recipe scaling', () => {
       expect(scaleRecipe(testRecipe, -100 as Grams)).toFailWith(/greater than zero/);
     });
 
-    test('fails with invalid version index', () => {
-      expect(scaleRecipe(testRecipe, 300 as Grams, { versionIndex: 99 })).toFailWith(/out of bounds/);
+    test('fails with invalid version ID', () => {
+      expect(
+        scaleRecipe(testRecipe, 300 as Grams, {
+          versionId: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionId
+        })
+      ).toFailWith(/not found/);
     });
 
     test('respects precision option', () => {
@@ -382,27 +397,29 @@ describe('Recipe scaling', () => {
       expect(scaleRecipeByFactor(testRecipe, -1)).toFailWith(/greater than zero/);
     });
 
-    test('fails with invalid version index', () => {
-      expect(scaleRecipeByFactor(testRecipe, 0.5, { versionIndex: 99 })).toFailWith(/out of bounds/);
-    });
-
-    test('fails with negative version index', () => {
-      expect(scaleRecipeByFactor(testRecipe, 0.5, { versionIndex: -1 })).toFailWith(/out of bounds/);
+    test('fails with invalid version ID', () => {
+      expect(
+        scaleRecipeByFactor(testRecipe, 0.5, {
+          versionId: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionId
+        })
+      ).toFailWith(/not found/);
     });
   });
 
   describe('edge cases', () => {
     test('scaleRecipe fails with zero baseWeight', () => {
-      const zeroWeightDetails: IRecipeDetails = {
+      const zeroWeightVersion: IRecipeVersion = {
+        versionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+        createdDate: '2026-01-01',
         ingredients: [],
-        baseWeight: 0 as Grams,
-        usage: []
+        baseWeight: 0 as Grams
       };
       const zeroWeightRecipe: IRecipe = {
         baseId: 'zero' as BaseRecipeId,
         name: 'Zero' as RecipeName,
-        versions: [zeroWeightDetails],
-        currentVersion: zeroWeightDetails
+        versions: [zeroWeightVersion],
+        goldenVersionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+        usage: []
       };
       expect(scaleRecipe(zeroWeightRecipe, 100 as Grams)).toFailWith(/base weight must be greater than zero/);
     });
@@ -410,17 +427,17 @@ describe('Recipe scaling', () => {
 
   describe('calculateBaseWeight', () => {
     test('sums ingredient amounts', () => {
-      expect(calculateBaseWeight(testDetails)).toBe(150);
+      expect(calculateBaseWeight(testVersion)).toBe(150);
     });
   });
 
-  describe('recalculateRecipeDetails', () => {
+  describe('recalculateRecipeVersion', () => {
     test('updates baseWeight from ingredients', () => {
-      const details: IRecipeDetails = {
-        ...testDetails,
+      const version: IRecipeVersion = {
+        ...testVersion,
         baseWeight: 999 as Grams // Wrong value
       };
-      const recalced = recalculateRecipeDetails(details);
+      const recalced = recalculateRecipeVersion(version);
       expect(recalced.baseWeight).toBe(150);
     });
   });

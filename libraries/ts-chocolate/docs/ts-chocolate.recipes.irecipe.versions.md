@@ -4,10 +4,10 @@
 
 ## Recipes.IRecipe.versions property
 
-Version history (newest first)
+Version history
 
 **Signature:**
 
 ```typescript
-readonly versions: ReadonlyArray<IRecipeDetails>;
+readonly versions: ReadonlyArray<IRecipeVersion>;
 ```

@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Recipe](./ts-chocolate.recipes.recipe.md)
+
+
+</td><td>
+
+Recipe class with helper methods for accessing versions
+
+
+</td></tr>
+<tr><td>
+
 [RecipesLibrary](./ts-chocolate.recipes.recipeslibrary.md)
 
 
@@ -47,23 +58,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[calculateBaseWeight(details)](./ts-chocolate.recipes.calculatebaseweight.md)
+[calculateBaseWeight(version)](./ts-chocolate.recipes.calculatebaseweight.md)
 
 
 </td><td>
 
-Calculates the base weight from recipe details (sum of ingredient amounts)
+Calculates the base weight from recipe version (sum of ingredient amounts)
 
 
 </td></tr>
 <tr><td>
 
-[recalculateRecipeDetails(details)](./ts-chocolate.recipes.recalculaterecipedetails.md)
+[recalculateRecipeVersion(version)](./ts-chocolate.recipes.recalculaterecipeversion.md)
 
 
 </td><td>
 
-Recalculates base weight for recipe details and returns updated details
+Recalculates base weight for recipe version and returns updated version
 
 
 </td></tr>
@@ -117,17 +128,6 @@ Complete recipe with version history
 </td></tr>
 <tr><td>
 
-[IRecipeDetails](./ts-chocolate.recipes.irecipedetails.md)
-
-
-</td><td>
-
-Complete details for a single version of a recipe
-
-
-</td></tr>
-<tr><td>
-
 [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)
 
 
@@ -172,6 +172,17 @@ Record of a recipe being used (for production tracking)
 </td></tr>
 <tr><td>
 
+[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)
+
+
+</td><td>
+
+Complete details for a single version of a recipe
+
+
+</td></tr>
+<tr><td>
+
 [IScaledRecipe](./ts-chocolate.recipes.iscaledrecipe.md)
 
 
@@ -189,6 +200,17 @@ Result of scaling a recipe to a target weight
 </td><td>
 
 Scaled ingredient with original and scaled amounts
+
+
+</td></tr>
+<tr><td>
+
+[IVersionRating](./ts-chocolate.recipes.iversionrating.md)
+
+
+</td><td>
+
+Rating for a specific category of a recipe version
 
 
 </td></tr>
@@ -218,6 +240,32 @@ Description
 </td></tr>
 </tbody></table>
 
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[allRatingCategories](./ts-chocolate.recipes.allratingcategories.md)
+
+
+</td><td>
+
+All possible rating categories
+
+
+</td></tr>
+</tbody></table>
+
 ## Type Aliases
 
 <table><thead><tr><th>
@@ -233,12 +281,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Recipe](./ts-chocolate.recipes.recipe.md)
+[RatingCategory](./ts-chocolate.recipes.ratingcategory.md)
 
 
 </td><td>
 
-Recipe type for ganache-based confections
+Categories for rating a recipe version
 
 
 </td></tr>

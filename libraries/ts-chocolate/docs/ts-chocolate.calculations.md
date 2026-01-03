@@ -19,7 +19,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[calculateForRecipe(recipe, resolver, versionIndex)](./ts-chocolate.calculations.calculateforrecipe.md)
+[calculateForRecipe(recipe, resolver, versionId)](./ts-chocolate.calculations.calculateforrecipe.md)
 
 
 </td><td>
@@ -52,7 +52,7 @@ Resolves recipe ingredients and calculates blended characteristics
 </td></tr>
 <tr><td>
 
-[calculateGanache(recipe, resolver, versionIndex)](./ts-chocolate.calculations.calculateganache.md)
+[calculateGanache(recipe, resolver, versionId)](./ts-chocolate.calculations.calculateganache.md)
 
 
 </td><td>

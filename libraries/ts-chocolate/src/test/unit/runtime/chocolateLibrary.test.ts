@@ -32,7 +32,7 @@ import {
 
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
 
-import { IRecipe, IRecipeDetails, RecipesLibrary } from '../../../packlets/recipes';
+import { IRecipe, IRecipeVersion, RecipesLibrary } from '../../../packlets/recipes';
 
 import { ChocolateLibrary } from '../../../packlets/runtime';
 
@@ -57,17 +57,19 @@ describe('ChocolateLibrary', () => {
     ganacheCharacteristics: testChars
   };
 
-  const testRecipeDetails: IRecipeDetails = {
+  const testRecipeVersion: IRecipeVersion = {
+    versionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    createdDate: '2026-01-01',
     ingredients: [{ ingredientId: 'test.testChoco' as IngredientId, amount: 100 as Grams }],
-    baseWeight: 100 as Grams,
-    usage: []
+    baseWeight: 100 as Grams
   };
 
   const testRecipe: IRecipe = {
     baseId: 'testRecipe' as BaseRecipeId,
     name: 'Test Recipe' as RecipeName,
-    versions: [testRecipeDetails],
-    currentVersion: testRecipeDetails
+    versions: [testRecipeVersion],
+    goldenVersionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    usage: []
   };
 
   // ============================================================================
@@ -246,8 +248,10 @@ describe('ChocolateLibrary', () => {
 
     test('scaleRecipeByFactor fails for invalid version', () => {
       expect(
-        library.scaleRecipeByFactor('test.testRecipe' as RecipeId, 0.5, { versionIndex: 99 })
-      ).toFailWith(/Invalid version index/);
+        library.scaleRecipeByFactor('test.testRecipe' as RecipeId, 0.5, {
+          versionId: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionId
+        })
+      ).toFailWith(/not found/);
     });
   });
 

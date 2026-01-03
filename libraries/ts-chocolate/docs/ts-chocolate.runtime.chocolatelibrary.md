@@ -101,7 +101,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[calculateGanache(id, versionIndex)](./ts-chocolate.runtime.chocolatelibrary.calculateganache.md)
+[calculateGanache(id, versionId)](./ts-chocolate.runtime.chocolatelibrary.calculateganache.md)
 
 
 </td><td>
@@ -115,7 +115,7 @@ Calculates ganache characteristics for a recipe
 </td></tr>
 <tr><td>
 
-[calculateGanacheForRecipe(recipe, versionIndex)](./ts-chocolate.runtime.chocolatelibrary.calculateganacheforrecipe.md)
+[calculateGanacheForRecipe(recipe, versionId)](./ts-chocolate.runtime.chocolatelibrary.calculateganacheforrecipe.md)
 
 
 </td><td>
