@@ -66,6 +66,7 @@ const baseRecipeId: Converter<BaseRecipeId>;
 
 declare namespace BuiltIn {
     export {
+        ingredientCollections,
         BuiltInData
     }
 }
@@ -500,6 +501,9 @@ type IngredientCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, 
 
 // @public
 type IngredientCollectionEntryInit = Collections.AggregatedResultMapEntryInit<SourceId, BaseIngredientId, Ingredient>;
+
+// @public
+const ingredientCollections: Record<string, JsonObject>;
 
 // @public
 type IngredientCollectionValidator = Collections.IReadOnlyResultMapValidator<IngredientId, Ingredient>;

@@ -1,0 +1,146 @@
+# Common ingredients - dairy, fats, and sugars
+
+heavy-cream-35:
+  baseId: heavy-cream-35
+  name: Heavy Cream (35% fat)
+  category: dairy
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 0
+    milkFat: 35
+    water: 60
+    solids: 5
+    otherFats: 0
+  fatContent: 35
+  waterContent: 60
+  allergens: [milk]
+  vegan: false
+
+heavy-cream-38:
+  baseId: heavy-cream-38
+  name: Heavy Cream (38% fat)
+  category: dairy
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 0
+    milkFat: 38
+    water: 57
+    solids: 5
+    otherFats: 0
+  fatContent: 38
+  waterContent: 57
+  allergens: [milk]
+  vegan: false
+
+butter-82:
+  baseId: butter-82
+  name: Unsalted Butter (82% fat)
+  category: fat
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 0
+    milkFat: 0
+    water: 16
+    solids: 2
+    otherFats: 82
+  meltingPoint: 32
+  allergens: [milk]
+  vegan: false
+
+clarified-butter:
+  baseId: clarified-butter
+  name: Clarified Butter (Ghee)
+  category: fat
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 0
+    milkFat: 0
+    water: 0
+    solids: 0
+    otherFats: 100
+  meltingPoint: 35
+  allergens: [milk]
+
+coconut-oil:
+  baseId: coconut-oil
+  name: Coconut Oil
+  category: fat
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 0
+    milkFat: 0
+    water: 0
+    solids: 0
+    otherFats: 100
+  meltingPoint: 24
+  vegan: true
+
+glucose-de43:
+  baseId: glucose-de43
+  name: Glucose Syrup (DE 43)
+  category: sugar
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 80
+    milkFat: 0
+    water: 20
+    solids: 0
+    otherFats: 0
+  sweetnessPotency: 0.4
+  vegan: true
+
+invert-sugar:
+  baseId: invert-sugar
+  name: Invert Sugar (Trimoline)
+  category: sugar
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 77
+    milkFat: 0
+    water: 23
+    solids: 0
+    otherFats: 0
+  sweetnessPotency: 1.2
+  vegan: true
+
+sorbitol:
+  baseId: sorbitol
+  name: Sorbitol (70% solution)
+  category: sugar
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 70
+    milkFat: 0
+    water: 30
+    solids: 0
+    otherFats: 0
+  sweetnessPotency: 0.6
+  vegan: true
+
+granulated-sugar:
+  baseId: granulated-sugar
+  name: Granulated Sugar
+  category: sugar
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 100
+    milkFat: 0
+    water: 0
+    solids: 0
+    otherFats: 0
+  sweetnessPotency: 1.0
+  vegan: true
+
+muscovado-sugar:
+  baseId: muscovado-sugar
+  name: Muscovado Sugar
+  category: sugar
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 95
+    milkFat: 0
+    water: 3
+    solids: 2
+    otherFats: 0
+  sweetnessPotency: 1.0
+  vegan: true

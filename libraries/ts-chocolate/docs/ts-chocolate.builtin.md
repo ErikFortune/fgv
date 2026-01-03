@@ -30,3 +30,29 @@ Provides access to built-in chocolate library data as an InMemoryFileTree.
 </td></tr>
 </tbody></table>
 
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ingredientCollections](./ts-chocolate.builtin.ingredientcollections.md)
+
+
+</td><td>
+
+Generated ingredient collections from source YAML files.
+
+
+</td></tr>
+</tbody></table>
+

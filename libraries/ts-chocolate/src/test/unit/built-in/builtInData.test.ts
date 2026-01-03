@@ -20,7 +20,11 @@
 
 import '@fgv/ts-utils-jest';
 
-import { BuiltInData } from '../../../packlets/built-in';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as yaml from 'yaml';
+
+import { BuiltInData, ingredientCollections } from '../../../packlets/built-in';
 
 describe('BuiltInData', () => {
   beforeEach(() => {
@@ -145,6 +149,53 @@ describe('BuiltInData', () => {
     test('fails because recipes directory does not exist yet', () => {
       // Currently no recipes are defined in the built-in data
       expect(BuiltInData.getRecipesDirectory()).toFailWith(/directory not found/i);
+    });
+  });
+
+  // ============================================================================
+  // Source Data Validation Tests
+  // ============================================================================
+
+  describe('source data validation', () => {
+    // The test runs from lib/test/unit/built-in/, so we need to go up to the library root
+    const libraryRoot = path.resolve(__dirname, '..', '..', '..', '..');
+    const sourceDir = path.join(libraryRoot, 'data', 'ingredients');
+
+    test('generated data matches source YAML files', () => {
+      // Read source YAML files directly
+      const sourceFiles = fs.readdirSync(sourceDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+
+      // Compare collection names
+      const generatedNames = Object.keys(ingredientCollections).sort();
+      const sourceNames = sourceFiles.map((f) => path.basename(f, path.extname(f))).sort();
+      expect(generatedNames).toEqual(sourceNames);
+
+      // Compare each collection's content
+      for (const file of sourceFiles) {
+        const name = path.basename(file, path.extname(file));
+        const sourceContent = yaml.parse(fs.readFileSync(path.join(sourceDir, file), 'utf-8'));
+        expect(ingredientCollections[name]).toEqual(sourceContent);
+      }
+    });
+
+    test('all source YAML files are valid', () => {
+      const sourceFiles = fs.readdirSync(sourceDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+
+      for (const file of sourceFiles) {
+        const filePath = path.join(sourceDir, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+
+        // Should parse without error
+        expect(() => yaml.parse(content)).not.toThrow();
+
+        // Each ingredient should have required fields
+        const data = yaml.parse(content) as Record<string, Record<string, unknown>>;
+        for (const [id, ingredient] of Object.entries(data)) {
+          expect(ingredient.baseId).toBe(id);
+          expect(ingredient.name).toBeDefined();
+          expect(ingredient.category).toBeDefined();
+        }
+      }
     });
   });
 });
