@@ -27,11 +27,11 @@ import { captureResult, Collections, Result, Success } from '@fgv/ts-utils';
 
 import { BaseIngredientId, IngredientId, SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { BuiltInSpec, IBuiltInLoadParams, Ingredient } from './model';
+import { Ingredient } from './model';
 import { ingredient as ingredientConverter } from './converters';
 import { IngredientCollectionEntryInit } from './ingredientsCollection';
-import { CollectionLoader, ILoadCollectionFromFileTreeParams } from '../library-data';
-import { BuiltInData } from '../built-in';
+import { CollectionLoader, LibraryLoadSpec } from '../library-data';
+import { BuiltInData, builtInSpecToLoadParams } from '../built-in';
 
 // ============================================================================
 // Parameters Interface
@@ -49,9 +49,9 @@ export interface IIngredientsLibraryParams {
    * - `true` (default): Load all built-in collections.
    * - `false`: Load no built-in collections.
    * - `SourceId[]`: Load only the specified built-in collections by name.
-   * - `IBuiltInLoadParams`: Fine-grained control using include/exclude patterns.
+   * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
    */
-  readonly builtin?: BuiltInSpec;
+  readonly builtin?: LibraryLoadSpec<SourceId>;
 
   /**
    * Optional additional collections of ingredients
@@ -92,52 +92,14 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
   }
 
   /**
-   * Converts BuiltInSpec to ILoadCollectionFromFileTreeParams for the CollectionLoader.
-   * @param spec - The BuiltInSpec to convert.
-   * @returns The loading parameters, or undefined if no built-ins should be loaded.
-   */
-  private static _builtInSpecToLoadParams(
-    spec: BuiltInSpec
-  ): ILoadCollectionFromFileTreeParams<SourceId> | undefined {
-    // false means no built-ins
-    if (spec === false) {
-      return undefined;
-    }
-
-    // true means load all with default settings
-    if (spec === true) {
-      return {
-        mutable: false // Built-ins are always immutable
-      };
-    }
-
-    // Array of SourceId means load only those collections
-    if (Array.isArray(spec)) {
-      return {
-        included: spec,
-        mutable: false
-      };
-    }
-
-    // IBuiltInLoadParams - fine-grained control
-    const params = spec as IBuiltInLoadParams;
-    return {
-      included: params.included,
-      excluded: params.excluded,
-      recurseWithDelimiter: params.recurseWithDelimiter,
-      mutable: false // Built-ins are always immutable
-    };
-  }
-
-  /**
-   * Loads built-in ingredient collections based on the BuiltInSpec.
-   * @param spec - The BuiltInSpec controlling which built-ins to load.
+   * Loads built-in ingredient collections based on the LibraryLoadSpec.
+   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
    * @returns Success with collections or Failure with error.
    */
   private static _loadBuiltInCollections(
-    spec: BuiltInSpec
+    spec: LibraryLoadSpec<SourceId>
   ): Result<ReadonlyArray<IngredientCollectionEntryInit>> {
-    const loadParams = IngredientsLibrary._builtInSpecToLoadParams(spec);
+    const loadParams = builtInSpecToLoadParams(spec);
     if (loadParams === undefined) {
       return Success.with([]);
     }

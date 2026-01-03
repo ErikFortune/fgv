@@ -34,10 +34,8 @@ import {
   Allergen,
   Certification,
   CacaoVariety,
-  ChocolateApplication,
-  SourceId
+  ChocolateApplication
 } from '../common';
-import { FilterPattern } from '../library-data';
 
 // ============================================================================
 // Ganache Characteristics
@@ -262,42 +260,3 @@ export function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngre
 export function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient {
   return ingredient.category === 'alcohol';
 }
-
-// ============================================================================
-// Built-In Spec
-// ============================================================================
-
-/**
- * Fine-grained parameters for loading built-in ingredient collections.
- * Omits 'mutable' since built-ins are always immutable.
- * @public
- */
-export interface IBuiltInLoadParams {
-  /**
-   * Patterns to include. If specified, only collection names matching at least one pattern are included.
-   * Strings are matched exactly, RegExp patterns use `.test()`.
-   */
-  readonly included?: ReadonlyArray<FilterPattern>;
-  /**
-   * Patterns to exclude. Collection names matching any pattern are excluded (takes precedence over included).
-   * Strings are matched exactly, RegExp patterns use `.test()`.
-   */
-  readonly excluded?: ReadonlyArray<FilterPattern>;
-  /**
-   * Whether to recurse into subdirectories and use a delimiter to form composite collection names.
-   */
-  readonly recurseWithDelimiter?: string;
-}
-
-/**
- * Specifies which built-in ingredient collections should be loaded.
- * Built-in collections are always immutable regardless of this setting.
- *
- * - `true`: Load all built-in collections (default).
- * - `false`: Load no built-in collections.
- * - `ReadonlyArray<SourceId>`: Load only the specified built-in collections by name.
- * - `IBuiltInLoadParams`: Fine-grained control using include/exclude patterns.
- *
- * @public
- */
-export type BuiltInSpec = boolean | ReadonlyArray<SourceId> | IBuiltInLoadParams;

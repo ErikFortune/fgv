@@ -71,7 +71,8 @@ declare namespace BuiltIn {
     export {
         ingredientCollections,
         recipeCollections,
-        BuiltInData
+        BuiltInData,
+        builtInSpecToLoadParams
     }
 }
 export { BuiltIn }
@@ -89,10 +90,7 @@ class BuiltInData {
 export type BuiltInSource = 'built-in';
 
 // @public
-type BuiltInSpec = boolean | ReadonlyArray<SourceId> | IBuiltInLoadParams;
-
-// @public
-type BuiltInSpec_2 = boolean | ReadonlyArray<SourceId> | IBuiltInLoadParams_2;
+function builtInSpecToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
 
 // @public
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
@@ -331,20 +329,6 @@ interface IAlcoholIngredient extends IIngredient {
 }
 
 // @public
-interface IBuiltInLoadParams {
-    readonly excluded?: ReadonlyArray<FilterPattern>;
-    readonly included?: ReadonlyArray<FilterPattern>;
-    readonly recurseWithDelimiter?: string;
-}
-
-// @public
-interface IBuiltInLoadParams_2 {
-    readonly excluded?: ReadonlyArray<FilterPattern>;
-    readonly included?: ReadonlyArray<FilterPattern>;
-    readonly recurseWithDelimiter?: string;
-}
-
-// @public
 interface IChocolateIngredient extends IIngredient {
     readonly applications?: ReadonlyArray<ChocolateApplication>;
     readonly beanVarieties?: ReadonlyArray<CacaoVariety>;
@@ -492,8 +476,15 @@ interface IIngredient {
 
 // @public
 interface IIngredientsLibraryParams {
-    readonly builtin?: BuiltInSpec;
+    readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
+}
+
+// @public
+interface ILibraryLoadParams {
+    readonly excluded?: ReadonlyArray<FilterPattern>;
+    readonly included?: ReadonlyArray<FilterPattern>;
+    readonly recurseWithDelimiter?: string;
 }
 
 // @public
@@ -556,8 +547,6 @@ declare namespace Ingredients {
         IFatIngredient,
         IAlcoholIngredient,
         Ingredient,
-        IBuiltInLoadParams,
-        BuiltInSpec,
         IngredientCollectionEntry,
         IngredientCollectionEntryInit,
         IngredientCollectionValidator,
@@ -608,7 +597,7 @@ interface IRecipeScaleOptions {
 
 // @public
 interface IRecipesLibraryParams {
-    readonly builtin?: BuiltInSpec_2;
+    readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
 }
 
@@ -704,6 +693,8 @@ declare namespace LibraryData {
     export {
         Converters_3 as Converters,
         FilterPattern,
+        ILibraryLoadParams,
+        LibraryLoadSpec,
         MutabilitySpec,
         ICollection,
         ICollectionFilterInitParams,
@@ -720,6 +711,9 @@ declare namespace LibraryData {
     }
 }
 export { LibraryData }
+
+// @public
+type LibraryLoadSpec<TCollectionId extends string = string> = boolean | ReadonlyArray<TCollectionId> | ILibraryLoadParams;
 
 // @public
 const LibraryPaths: {
@@ -802,8 +796,6 @@ declare namespace Recipes {
         IScaledRecipeIngredient,
         IScaledRecipe,
         Recipe,
-        IBuiltInLoadParams_2 as IBuiltInLoadParams,
-        BuiltInSpec_2 as BuiltInSpec,
         RecipeCollectionEntry,
         RecipeCollectionEntryInit,
         RecipeCollectionValidator,

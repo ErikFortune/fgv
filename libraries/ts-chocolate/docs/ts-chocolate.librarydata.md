@@ -159,6 +159,17 @@ Result of filtering a collection of items.
 </td></tr>
 <tr><td>
 
+[ILibraryLoadParams](./ts-chocolate.librarydata.ilibraryloadparams.md)
+
+
+</td><td>
+
+Fine-grained parameters for controlling which collections from a library to load.
+
+
+</td></tr>
+<tr><td>
+
 [ILoadCollectionFromFileTreeParams](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.md)
 
 
@@ -241,6 +252,19 @@ Description
 </td><td>
 
 A pattern for matching collection or item names. Can be a string (exact match) or RegExp.
+
+
+</td></tr>
+<tr><td>
+
+[LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)
+
+
+</td><td>
+
+Specifies which collections from a library should be loaded.
+
+- `true`<!-- -->: Load all collections (default). - `false`<!-- -->: Load no collections. - `ReadonlyArray<TCollectionId>`<!-- -->: Load only the specified collections by name. - `ILibraryLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
 
 
 </td></tr>

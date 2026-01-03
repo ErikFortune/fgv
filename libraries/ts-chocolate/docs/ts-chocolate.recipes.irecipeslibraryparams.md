@@ -47,14 +47,14 @@ Description
 
 </td><td>
 
-BuiltInSpec
+[LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)<!-- -->&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
 
 
 </td><td>
 
 _(Optional)_ Controls which built-in recipe collections are loaded. Built-in collections are always immutable.
 
-- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `IBuiltInLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
+- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `ILibraryLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
 
 
 </td></tr>

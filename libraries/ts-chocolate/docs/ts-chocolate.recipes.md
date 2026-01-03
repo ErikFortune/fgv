@@ -106,17 +106,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IBuiltInLoadParams](./ts-chocolate.recipes.ibuiltinloadparams.md)
-
-
-</td><td>
-
-Fine-grained parameters for loading built-in recipe collections. Omits 'mutable' since built-ins are always immutable.
-
-
-</td></tr>
-<tr><td>
-
 [IRecipe](./ts-chocolate.recipes.irecipe.md)
 
 
@@ -243,19 +232,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[BuiltInSpec](./ts-chocolate.recipes.builtinspec.md)
-
-
-</td><td>
-
-Specifies which built-in recipe collections should be loaded. Built-in collections are always immutable regardless of this setting.
-
-- `true`<!-- -->: Load all built-in collections (default). - `false`<!-- -->: Load no built-in collections. - `ReadonlyArray<SourceId>`<!-- -->: Load only the specified built-in collections by name. - `IBuiltInLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
-
-
-</td></tr>
-<tr><td>
 
 [Recipe](./ts-chocolate.recipes.recipe.md)
 

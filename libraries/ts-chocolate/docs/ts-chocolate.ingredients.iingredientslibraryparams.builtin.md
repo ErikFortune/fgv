@@ -6,10 +6,10 @@
 
 Controls which built-in ingredient collections are loaded. Built-in collections are always immutable.
 
-- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `IBuiltInLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
+- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `ILibraryLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
 
 **Signature:**
 
 ```typescript
-readonly builtin?: BuiltInSpec;
+readonly builtin?: LibraryLoadSpec<SourceId>;
 ```

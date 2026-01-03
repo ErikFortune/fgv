@@ -26,6 +26,46 @@ import { JsonObject } from '@fgv/ts-json-base';
  */
 export type FilterPattern = string | RegExp;
 
+// ============================================================================
+// Library Loading Types
+// ============================================================================
+
+/**
+ * Fine-grained parameters for controlling which collections from a library to load.
+ * @public
+ */
+export interface ILibraryLoadParams {
+  /**
+   * Patterns to include. If specified, only collection names matching at least one pattern are included.
+   * Strings are matched exactly, RegExp patterns use `.test()`.
+   */
+  readonly included?: ReadonlyArray<FilterPattern>;
+  /**
+   * Patterns to exclude. Collection names matching any pattern are excluded (takes precedence over included).
+   * Strings are matched exactly, RegExp patterns use `.test()`.
+   */
+  readonly excluded?: ReadonlyArray<FilterPattern>;
+  /**
+   * Whether to recurse into subdirectories and use a delimiter to form composite collection names.
+   */
+  readonly recurseWithDelimiter?: string;
+}
+
+/**
+ * Specifies which collections from a library should be loaded.
+ *
+ * - `true`: Load all collections (default).
+ * - `false`: Load no collections.
+ * - `ReadonlyArray<TCollectionId>`: Load only the specified collections by name.
+ * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
+ *
+ * @public
+ */
+export type LibraryLoadSpec<TCollectionId extends string = string> =
+  | boolean
+  | ReadonlyArray<TCollectionId>
+  | ILibraryLoadParams;
+
 /**
  * Specifies which collections should be mutable.
  * - `true`: All collections are mutable.

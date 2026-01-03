@@ -128,17 +128,6 @@ Alcohol-specific ingredient
 </td></tr>
 <tr><td>
 
-[IBuiltInLoadParams](./ts-chocolate.ingredients.ibuiltinloadparams.md)
-
-
-</td><td>
-
-Fine-grained parameters for loading built-in ingredient collections. Omits 'mutable' since built-ins are always immutable.
-
-
-</td></tr>
-<tr><td>
-
 [IChocolateIngredient](./ts-chocolate.ingredients.ichocolateingredient.md)
 
 
@@ -265,19 +254,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[BuiltInSpec](./ts-chocolate.ingredients.builtinspec.md)
-
-
-</td><td>
-
-Specifies which built-in ingredient collections should be loaded. Built-in collections are always immutable regardless of this setting.
-
-- `true`<!-- -->: Load all built-in collections (default). - `false`<!-- -->: Load no built-in collections. - `ReadonlyArray<SourceId>`<!-- -->: Load only the specified built-in collections by name. - `IBuiltInLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
-
-
-</td></tr>
-<tr><td>
 
 [Ingredient](./ts-chocolate.ingredients.ingredient.md)
 
