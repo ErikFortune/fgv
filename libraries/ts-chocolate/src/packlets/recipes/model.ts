@@ -41,6 +41,11 @@ export interface IRecipeIngredient {
   readonly ingredientId: IngredientId;
 
   /**
+   * Optional alternate ingredient IDs that can be used in place of the primary ingredient
+   */
+  readonly alternateIngredientIds?: IngredientId[];
+
+  /**
    * Amount of this ingredient in grams
    */
   readonly amount: Grams;

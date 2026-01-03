@@ -45,6 +45,7 @@ import {
  */
 export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<IRecipeIngredient>({
   ingredientId: CommonConverters.ingredientId,
+  alternateIngredientIds: Converters.arrayOf(CommonConverters.ingredientId).optional(),
   amount: CommonConverters.grams,
   notes: Converters.string.optional()
 });

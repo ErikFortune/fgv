@@ -300,6 +300,59 @@ export const ingredientCollections: Record<string, JsonObject> = {
       vegan: true,
       tags: ['vegan', 'dairy-free', 'coconut']
     },
+    'generic-dark-64': {
+      baseId: 'generic-dark-64',
+      name: 'Generic Dark Chocolate (64%)',
+      description: 'Reference dark chocolate for recipe substitution. Use any quality 64% dark couverture.',
+      category: 'chocolate',
+      chocolateType: 'dark',
+      cacaoPercentage: 64,
+      ganacheCharacteristics: {
+        cacaoFat: 38,
+        sugar: 32,
+        milkFat: 0,
+        water: 1,
+        solids: 29,
+        otherFats: 0
+      },
+      tags: ['generic', 'dark', 'substitutable']
+    },
+    'generic-milk-38': {
+      baseId: 'generic-milk-38',
+      name: 'Generic Milk Chocolate (38%)',
+      description: 'Reference milk chocolate for recipe substitution. Use any quality 38% milk couverture.',
+      category: 'chocolate',
+      chocolateType: 'milk',
+      cacaoPercentage: 38,
+      ganacheCharacteristics: {
+        cacaoFat: 22,
+        sugar: 42,
+        milkFat: 6,
+        water: 1,
+        solids: 26,
+        otherFats: 3
+      },
+      allergens: ['milk'],
+      tags: ['generic', 'milk', 'substitutable']
+    },
+    'generic-white-34': {
+      baseId: 'generic-white-34',
+      name: 'Generic White Chocolate (34%)',
+      description: 'Reference white chocolate for recipe substitution. Use any quality 34% white couverture.',
+      category: 'chocolate',
+      chocolateType: 'white',
+      cacaoPercentage: 34,
+      ganacheCharacteristics: {
+        cacaoFat: 34,
+        sugar: 40,
+        milkFat: 5,
+        water: 1,
+        solids: 18,
+        otherFats: 2
+      },
+      allergens: ['milk'],
+      tags: ['generic', 'white', 'substitutable']
+    },
     'hazelnut-paste': {
       baseId: 'hazelnut-paste',
       name: 'Hazelnut Paste (100% Hazelnuts)',
@@ -694,6 +747,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ingredients: [
             {
               ingredientId: 'cacao-barry.guayaquil-64',
+              alternateIngredientIds: ['common.generic-dark-64', 'felchlin.arriba-72'],
               amount: 400
             },
             {

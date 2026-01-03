@@ -583,6 +583,7 @@ interface IRecipeDetails {
 
 // @public
 interface IRecipeIngredient {
+    readonly alternateIngredientIds?: IngredientId[];
     readonly amount: Grams;
     readonly ingredientId: IngredientId;
     readonly notes?: string;

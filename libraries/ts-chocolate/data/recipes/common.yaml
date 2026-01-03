@@ -9,6 +9,9 @@ dark-ganache-classic:
   versions:
     - ingredients:
         - ingredientId: cacao-barry.guayaquil-64
+          alternateIngredientIds:
+            - common.generic-dark-64
+            - felchlin.arriba-72
           amount: 400
         - ingredientId: common.heavy-cream-35
           amount: 200

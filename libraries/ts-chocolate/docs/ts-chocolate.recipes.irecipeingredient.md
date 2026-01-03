@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[alternateIngredientIds?](./ts-chocolate.recipes.irecipeingredient.alternateingredientids.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->\[\]
+
+
+</td><td>
+
+_(Optional)_ Optional alternate ingredient IDs that can be used in place of the primary ingredient
+
+
+</td></tr>
+<tr><td>
+
 [amount](./ts-chocolate.recipes.irecipeingredient.amount.md)
 
 
