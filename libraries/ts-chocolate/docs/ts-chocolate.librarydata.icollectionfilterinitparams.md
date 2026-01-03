@@ -68,12 +68,12 @@ _(Optional)_
 
 </td><td>
 
-ReadonlyArray&lt;string&gt;
+ReadonlyArray&lt;[FilterPattern](./ts-chocolate.librarydata.filterpattern.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Patterns to exclude. Names matching any pattern are excluded (takes precedence over included). Strings are matched exactly, RegExp patterns use `.test()`<!-- -->.
 
 
 </td></tr>
@@ -89,12 +89,12 @@ _(Optional)_
 
 </td><td>
 
-ReadonlyArray&lt;string&gt;
+ReadonlyArray&lt;[FilterPattern](./ts-chocolate.librarydata.filterpattern.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Patterns to include. If specified, only names matching at least one pattern are included. Strings are matched exactly, RegExp patterns use `.test()`<!-- -->.
 
 
 </td></tr>

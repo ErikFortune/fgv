@@ -165,6 +165,137 @@ describe('CollectionFilter', () => {
   });
 
   // ============================================================================
+  // Include/Exclude Filtering Tests
+  // ============================================================================
+
+  describe('include/exclude filtering', () => {
+    test('includes only items matching string patterns in included list', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        included: ['item-a', 'item-c']
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(2);
+        expect(filtered[0].name).toBe('item-a');
+        expect(filtered[1].name).toBe('item-c');
+      });
+    });
+
+    test('includes items matching RegExp patterns in included list', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        included: [/^item-[ac]$/]
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(2);
+        expect(filtered[0].name).toBe('item-a');
+        expect(filtered[1].name).toBe('item-c');
+      });
+    });
+
+    test('excludes items matching string patterns in excluded list', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        excluded: ['item-b']
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(2);
+        expect(filtered[0].name).toBe('item-a');
+        expect(filtered[1].name).toBe('item-c');
+      });
+    });
+
+    test('excludes items matching RegExp patterns in excluded list', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        excluded: [/^item-b$/]
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(2);
+        expect(filtered[0].name).toBe('item-a');
+        expect(filtered[1].name).toBe('item-c');
+      });
+    });
+
+    test('excluded takes precedence over included', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        included: ['item-a', 'item-b', 'item-c'],
+        excluded: ['item-b']
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(2);
+        expect(filtered[0].name).toBe('item-a');
+        expect(filtered[1].name).toBe('item-c');
+      });
+    });
+
+    test('supports mixed string and RegExp patterns', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        included: ['item-a', /^item-[cd]$/]
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }, { value: 'd' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(3);
+        const names = filtered.map((f) => f.name);
+        expect(names).toEqual(['item-a', 'item-c', 'item-d']);
+      });
+    });
+
+    test('empty excluded array has no effect', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        excluded: []
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(2);
+      });
+    });
+
+    test('empty included array excludes all items', () => {
+      const filter = new CollectionFilter<TestId>({
+        nameConverter: testIdConverter,
+        included: []
+      });
+
+      const items = [{ value: 'a' }, { value: 'b' }];
+      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+
+      expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
+        expect(filtered).toHaveLength(0);
+      });
+    });
+  });
+
+  // ============================================================================
   // filterDirectory Tests
   // ============================================================================
 

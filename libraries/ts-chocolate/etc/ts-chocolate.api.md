@@ -165,14 +165,14 @@ class CollectionFilter<T extends string> {
     // (undocumented)
     readonly errorOnInvalidName: boolean;
     // (undocumented)
-    readonly excluded: ReadonlyArray<string>;
+    readonly excluded: ReadonlyArray<FilterPattern>;
     filterDirectory(dir: FileTree.FileTreeItem, params?: IFilterDirectoryParams): Result<ReadonlyArray<IFilteredItem<FileTree.IFileTreeFileItem, T>>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     filterItems<TITEM>(items: ReadonlyArray<TITEM>, extractName: (item: TITEM) => Result<string>): Result<ReadonlyArray<IFilteredItem<TITEM, T>>>;
     // (undocumented)
     static getFileTreeItemName(item: FileTree.FileTreeItem, prefix?: string): Result<string>;
     // (undocumented)
-    readonly included: ReadonlyArray<string> | undefined;
+    readonly included: ReadonlyArray<FilterPattern> | undefined;
     // (undocumented)
     readonly nameConverter: Converter<T> | Validator<T>;
 }
@@ -263,6 +263,9 @@ const degreesMacMichael: Converter<DegreesMacMichael>;
 const fatIngredient: Converter<IFatIngredient>;
 
 // @public
+type FilterPattern = string | RegExp;
+
+// @public
 export type FluidityStars = 1 | 2 | 3 | 4 | 5;
 
 // @public
@@ -335,10 +338,8 @@ interface ICollectionConverterParams<TCOLLECTIONID extends string, TITEMID exten
 interface ICollectionFilterInitParams<T extends string> {
     // (undocumented)
     readonly errorOnInvalidName?: boolean;
-    // (undocumented)
-    readonly excluded?: ReadonlyArray<string>;
-    // (undocumented)
-    readonly included?: ReadonlyArray<string>;
+    readonly excluded?: ReadonlyArray<FilterPattern>;
+    readonly included?: ReadonlyArray<FilterPattern>;
     // (undocumented)
     readonly nameConverter: Converter<T> | Validator<T>;
 }
@@ -639,6 +640,7 @@ interface ITemperatureCurve {
 declare namespace LibraryData {
     export {
         Converters_4 as Converters,
+        FilterPattern,
         MutabilitySpec,
         ICollection,
         ICollectionFilterInitParams,

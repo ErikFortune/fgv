@@ -20,14 +20,23 @@
 
 import { Converter, Failure, mapResults, MessageAggregator, Result, Success, Validator } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
+import { FilterPattern } from './model';
 
 /**
  * Parameters used to filter and validate collections imported from a file tree.
  * @public
  */
 export interface ICollectionFilterInitParams<T extends string> {
-  readonly included?: ReadonlyArray<string>;
-  readonly excluded?: ReadonlyArray<string>;
+  /**
+   * Patterns to include. If specified, only names matching at least one pattern are included.
+   * Strings are matched exactly, RegExp patterns use `.test()`.
+   */
+  readonly included?: ReadonlyArray<FilterPattern>;
+  /**
+   * Patterns to exclude. Names matching any pattern are excluded (takes precedence over included).
+   * Strings are matched exactly, RegExp patterns use `.test()`.
+   */
+  readonly excluded?: ReadonlyArray<FilterPattern>;
   readonly nameConverter: Converter<T> | Validator<T>;
   readonly errorOnInvalidName?: boolean;
 }
@@ -55,8 +64,8 @@ export interface IFilteredItem<T, TID extends string = string> {
  * @public
  */
 export class CollectionFilter<T extends string> {
-  public readonly included: ReadonlyArray<string> | undefined;
-  public readonly excluded: ReadonlyArray<string>;
+  public readonly included: ReadonlyArray<FilterPattern> | undefined;
+  public readonly excluded: ReadonlyArray<FilterPattern>;
   public readonly nameConverter: Converter<T> | Validator<T>;
   public readonly errorOnInvalidName: boolean;
 
@@ -70,6 +79,47 @@ export class CollectionFilter<T extends string> {
     this.excluded = params.excluded ?? [];
     this.nameConverter = params.nameConverter;
     this.errorOnInvalidName = params.errorOnInvalidName ?? false;
+  }
+
+  /**
+   * Tests if a name matches a pattern.
+   * @param name - The name to test.
+   * @param pattern - The pattern to match against (string for exact match, RegExp for pattern match).
+   * @returns `true` if the name matches the pattern.
+   */
+  private static _matchesPattern(name: string, pattern: FilterPattern): boolean {
+    if (typeof pattern === 'string') {
+      return name === pattern;
+    }
+    return pattern.test(name);
+  }
+
+  /**
+   * Tests if a name matches any pattern in a list.
+   * @param name - The name to test.
+   * @param patterns - The patterns to match against.
+   * @returns `true` if the name matches any pattern.
+   */
+  private static _matchesAnyPattern(name: string, patterns: ReadonlyArray<FilterPattern>): boolean {
+    return patterns.some((pattern) => CollectionFilter._matchesPattern(name, pattern));
+  }
+
+  /**
+   * Tests if a name should be included based on the include/exclude patterns.
+   * @param name - The name to test.
+   * @returns `true` if the name should be included.
+   */
+  private _shouldInclude(name: string): boolean {
+    // Excluded patterns take precedence
+    if (CollectionFilter._matchesAnyPattern(name, this.excluded)) {
+      return false;
+    }
+    // If no include patterns specified, include all (that aren't excluded)
+    if (this.included === undefined) {
+      return true;
+    }
+    // Otherwise, must match at least one include pattern
+    return CollectionFilter._matchesAnyPattern(name, this.included);
   }
 
   /**
@@ -88,6 +138,10 @@ export class CollectionFilter<T extends string> {
       extractName(item)
         .onSuccess((extracted) => this.nameConverter.convert(extracted))
         .onSuccess((name) => {
+          // Apply include/exclude filtering
+          if (!this._shouldInclude(name)) {
+            return Success.with(undefined);
+          }
           const filteredItem = { name, item };
           results.push(filteredItem);
           return Success.with(filteredItem);

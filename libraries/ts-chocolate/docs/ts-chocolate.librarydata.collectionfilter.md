@@ -100,7 +100,7 @@ boolean
 
 </td><td>
 
-ReadonlyArray&lt;string&gt;
+ReadonlyArray&lt;[FilterPattern](./ts-chocolate.librarydata.filterpattern.md)<!-- -->&gt;
 
 
 </td><td>
@@ -119,7 +119,7 @@ ReadonlyArray&lt;string&gt;
 
 </td><td>
 
-ReadonlyArray&lt;string&gt; \| undefined
+ReadonlyArray&lt;[FilterPattern](./ts-chocolate.librarydata.filterpattern.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

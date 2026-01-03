@@ -161,6 +161,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[FilterPattern](./ts-chocolate.librarydata.filterpattern.md)
+
+
+</td><td>
+
+A pattern for matching collection or item names. Can be a string (exact match) or RegExp.
+
+
+</td></tr>
+<tr><td>
+
 [MutabilitySpec](./ts-chocolate.librarydata.mutabilityspec.md)
 
 

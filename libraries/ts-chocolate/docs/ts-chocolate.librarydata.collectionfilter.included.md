@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly included: ReadonlyArray<string> | undefined;
+readonly included: ReadonlyArray<FilterPattern> | undefined;
 ```

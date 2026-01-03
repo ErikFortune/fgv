@@ -21,6 +21,12 @@
 import { JsonObject } from '@fgv/ts-json-base';
 
 /**
+ * A pattern for matching collection or item names. Can be a string (exact match) or RegExp.
+ * @public
+ */
+export type FilterPattern = string | RegExp;
+
+/**
  * Specifies which collections should be mutable.
  * - `true`: All collections are mutable.
  * - `false`: All collections are immutable.

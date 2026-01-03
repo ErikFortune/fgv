@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly excluded: ReadonlyArray<string>;
+readonly excluded: ReadonlyArray<FilterPattern>;
 ```

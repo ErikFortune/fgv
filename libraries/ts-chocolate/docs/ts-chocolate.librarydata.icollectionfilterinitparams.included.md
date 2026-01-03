@@ -4,8 +4,10 @@
 
 ## LibraryData.ICollectionFilterInitParams.included property
 
+Patterns to include. If specified, only names matching at least one pattern are included. Strings are matched exactly, RegExp patterns use `.test()`<!-- -->.
+
 **Signature:**
 
 ```typescript
-readonly included?: ReadonlyArray<string>;
+readonly included?: ReadonlyArray<FilterPattern>;
 ```
