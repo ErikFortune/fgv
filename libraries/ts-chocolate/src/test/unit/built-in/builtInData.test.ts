@@ -24,7 +24,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'yaml';
 
-import { BuiltInData, ingredientCollections } from '../../../packlets/built-in';
+import { BuiltInData, ingredientCollections, recipeCollections } from '../../../packlets/built-in';
 
 describe('BuiltInData', () => {
   beforeEach(() => {
@@ -146,9 +146,40 @@ describe('BuiltInData', () => {
   // ============================================================================
 
   describe('getRecipesDirectory', () => {
-    test('fails because recipes directory does not exist yet', () => {
-      // Currently no recipes are defined in the built-in data
-      expect(BuiltInData.getRecipesDirectory()).toFailWith(/directory not found/i);
+    test('returns the recipes directory', () => {
+      expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.type).toBe('directory');
+        expect(dir.name).toBe('recipes');
+      });
+    });
+
+    test('recipes directory contains expected collections', () => {
+      expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const names = children.map((c) => c.name).sort();
+          expect(names).toEqual(['common.json']);
+        });
+      });
+    });
+
+    test('common.json contains expected recipes', () => {
+      expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const commonFile = children.find((c) => c.name === 'common.json');
+          expect(commonFile).toBeDefined();
+          expect(commonFile?.type).toBe('file');
+
+          if (commonFile?.type === 'file') {
+            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
+              const data = contents as Record<string, unknown>;
+              expect(data['dark-ganache-classic']).toBeDefined();
+              expect(data['milk-ganache-classic']).toBeDefined();
+              expect(data['white-ganache-classic']).toBeDefined();
+              expect(data['vegan-ganache-coconut-cream']).toBeDefined();
+            });
+          }
+        });
+      });
     });
   });
 
@@ -159,11 +190,14 @@ describe('BuiltInData', () => {
   describe('source data validation', () => {
     // The test runs from lib/test/unit/built-in/, so we need to go up to the library root
     const libraryRoot = path.resolve(__dirname, '..', '..', '..', '..');
-    const sourceDir = path.join(libraryRoot, 'data', 'ingredients');
+    const ingredientsSourceDir = path.join(libraryRoot, 'data', 'ingredients');
+    const recipesSourceDir = path.join(libraryRoot, 'data', 'recipes');
 
-    test('generated data matches source YAML files', () => {
+    test('generated ingredient data matches source YAML files', () => {
       // Read source YAML files directly
-      const sourceFiles = fs.readdirSync(sourceDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+      const sourceFiles = fs
+        .readdirSync(ingredientsSourceDir)
+        .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
 
       // Compare collection names
       const generatedNames = Object.keys(ingredientCollections).sort();
@@ -173,16 +207,37 @@ describe('BuiltInData', () => {
       // Compare each collection's content
       for (const file of sourceFiles) {
         const name = path.basename(file, path.extname(file));
-        const sourceContent = yaml.parse(fs.readFileSync(path.join(sourceDir, file), 'utf-8'));
+        const sourceContent = yaml.parse(fs.readFileSync(path.join(ingredientsSourceDir, file), 'utf-8'));
         expect(ingredientCollections[name]).toEqual(sourceContent);
       }
     });
 
-    test('all source YAML files are valid', () => {
-      const sourceFiles = fs.readdirSync(sourceDir).filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+    test('generated recipe data matches source YAML files', () => {
+      // Read source YAML files directly
+      const sourceFiles = fs
+        .readdirSync(recipesSourceDir)
+        .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+
+      // Compare collection names
+      const generatedNames = Object.keys(recipeCollections).sort();
+      const sourceNames = sourceFiles.map((f) => path.basename(f, path.extname(f))).sort();
+      expect(generatedNames).toEqual(sourceNames);
+
+      // Compare each collection's content
+      for (const file of sourceFiles) {
+        const name = path.basename(file, path.extname(file));
+        const sourceContent = yaml.parse(fs.readFileSync(path.join(recipesSourceDir, file), 'utf-8'));
+        expect(recipeCollections[name]).toEqual(sourceContent);
+      }
+    });
+
+    test('all source ingredient YAML files are valid', () => {
+      const sourceFiles = fs
+        .readdirSync(ingredientsSourceDir)
+        .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
 
       for (const file of sourceFiles) {
-        const filePath = path.join(sourceDir, file);
+        const filePath = path.join(ingredientsSourceDir, file);
         const content = fs.readFileSync(filePath, 'utf-8');
 
         // Should parse without error
@@ -194,6 +249,28 @@ describe('BuiltInData', () => {
           expect(ingredient.baseId).toBe(id);
           expect(ingredient.name).toBeDefined();
           expect(ingredient.category).toBeDefined();
+        }
+      }
+    });
+
+    test('all source recipe YAML files are valid', () => {
+      const sourceFiles = fs
+        .readdirSync(recipesSourceDir)
+        .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
+
+      for (const file of sourceFiles) {
+        const filePath = path.join(recipesSourceDir, file);
+        const content = fs.readFileSync(filePath, 'utf-8');
+
+        // Should parse without error
+        expect(() => yaml.parse(content)).not.toThrow();
+
+        // Each recipe should have required fields
+        const data = yaml.parse(content) as Record<string, Record<string, unknown>>;
+        for (const [id, recipe] of Object.entries(data)) {
+          expect(recipe.baseId).toBe(id);
+          expect(recipe.name).toBeDefined();
+          expect(recipe.versions).toBeDefined();
         }
       }
     });

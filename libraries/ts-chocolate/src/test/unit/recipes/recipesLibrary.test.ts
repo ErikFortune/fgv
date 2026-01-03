@@ -61,8 +61,17 @@ describe('RecipesLibrary', () => {
   // ============================================================================
 
   describe('create', () => {
-    test('creates empty library with no params', () => {
+    test('creates library with built-ins by default', () => {
       expect(RecipesLibrary.create()).toSucceedAndSatisfy((lib) => {
+        // Built-in recipes are loaded by default
+        expect(lib.size).toBeGreaterThan(0);
+        expect(lib.collectionCount).toBe(1); // 'common' collection
+        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+      });
+    });
+
+    test('creates empty library with builtin: false', () => {
+      expect(RecipesLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
         expect(lib.size).toBe(0);
         expect(lib.collectionCount).toBe(0);
       });
@@ -70,6 +79,7 @@ describe('RecipesLibrary', () => {
 
     test('creates library with initial collections', () => {
       const result = RecipesLibrary.create({
+        builtin: false,
         collections: [
           {
             id: 'user' as SourceId,
@@ -86,6 +96,59 @@ describe('RecipesLibrary', () => {
         expect(lib.collectionCount).toBe(1);
       });
     });
+
+    test('creates library with built-ins and additional collections', () => {
+      const result = RecipesLibrary.create({
+        builtin: true,
+        collections: [
+          {
+            id: 'user' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2); // 'common' + 'user'
+        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+        expect(lib.has('user.testGanache' as RecipeId)).toBe(true);
+      });
+    });
+
+    test('creates library with specific built-in collections', () => {
+      const result = RecipesLibrary.create({
+        builtin: ['common' as SourceId]
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+      });
+    });
+
+    test('creates library with IBuiltInLoadParams include filter', () => {
+      const result = RecipesLibrary.create({
+        builtin: { included: ['common' as SourceId] }
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+      });
+    });
+
+    test('creates library with IBuiltInLoadParams exclude filter', () => {
+      const result = RecipesLibrary.create({
+        builtin: { excluded: ['nonexistent' as SourceId] }
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        // Should load all collections since nonexistent isn't present
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+      });
+    });
   });
 
   // ============================================================================
@@ -97,6 +160,7 @@ describe('RecipesLibrary', () => {
 
     beforeEach(() => {
       library = RecipesLibrary.create({
+        builtin: false,
         collections: [
           {
             id: 'user' as SourceId,
@@ -141,6 +205,7 @@ describe('RecipesLibrary', () => {
 
     beforeEach(() => {
       library = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'user' as SourceId, isMutable: true, items: {} }]
       }).orThrow();
     });
@@ -181,7 +246,7 @@ describe('RecipesLibrary', () => {
     let library: RecipesLibrary;
 
     beforeEach(() => {
-      library = RecipesLibrary.create().orThrow();
+      library = RecipesLibrary.create({ builtin: false }).orThrow();
     });
 
     test('addCollectionEntry adds collection', () => {
@@ -216,6 +281,7 @@ describe('RecipesLibrary', () => {
 
     beforeEach(() => {
       library = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'user' as SourceId, isMutable: true, items: { testGanache: testRecipe } }]
       }).orThrow();
     });

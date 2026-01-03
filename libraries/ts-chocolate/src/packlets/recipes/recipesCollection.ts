@@ -18,15 +18,39 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-export * from './model';
-export * from './recipesCollection';
-export * from './recipesLibrary';
-export * from './scaler';
+// ============================================================================
+// Type aliases for Collections types
+// ============================================================================
 
-import * as Converters from './converters';
+import { Collections } from '@fgv/ts-utils';
+
+import { BaseRecipeId, RecipeId, SourceId } from '../common';
+import { Recipe } from './model';
 
 /**
- * Converters for recipe types
+ * A single entry in a recipes collection.
  * @public
  */
-export { Converters };
+export type RecipeCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, BaseRecipeId, Recipe>;
+
+/**
+ * Initialization type for a RecipesLibrary collection entry.
+ * @public
+ */
+export type RecipeCollectionEntryInit = Collections.AggregatedResultMapEntryInit<
+  SourceId,
+  BaseRecipeId,
+  Recipe
+>;
+
+/**
+ * Validator type for RecipesLibrary collections.
+ * @public
+ */
+export type RecipeCollectionValidator = Collections.IReadOnlyResultMapValidator<RecipeId, Recipe>;
+
+/**
+ * Type for the collections in a RecipesLibrary.
+ * @public
+ */
+export type RecipeCollection = Collections.IReadOnlyValidatingResultMap<SourceId, RecipeCollectionEntry>;

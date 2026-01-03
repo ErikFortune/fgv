@@ -70,6 +70,7 @@ const baseRecipeId: Converter<BaseRecipeId>;
 declare namespace BuiltIn {
     export {
         ingredientCollections,
+        recipeCollections,
         BuiltInData
     }
 }
@@ -89,6 +90,9 @@ export type BuiltInSource = 'built-in';
 
 // @public
 type BuiltInSpec = boolean | ReadonlyArray<SourceId> | IBuiltInLoadParams;
+
+// @public
+type BuiltInSpec_2 = boolean | ReadonlyArray<SourceId> | IBuiltInLoadParams_2;
 
 // @public
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
@@ -328,6 +332,13 @@ interface IAlcoholIngredient extends IIngredient {
 
 // @public
 interface IBuiltInLoadParams {
+    readonly excluded?: ReadonlyArray<FilterPattern>;
+    readonly included?: ReadonlyArray<FilterPattern>;
+    readonly recurseWithDelimiter?: string;
+}
+
+// @public
+interface IBuiltInLoadParams_2 {
     readonly excluded?: ReadonlyArray<FilterPattern>;
     readonly included?: ReadonlyArray<FilterPattern>;
     readonly recurseWithDelimiter?: string;
@@ -597,7 +608,8 @@ interface IRecipeScaleOptions {
 
 // @public
 interface IRecipesLibraryParams {
-    readonly collections?: RecipeCollectionEntryInit[];
+    readonly builtin?: BuiltInSpec_2;
+    readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
 }
 
 // @public
@@ -754,6 +766,9 @@ type RecipeCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, Base
 type RecipeCollectionEntryInit = Collections.AggregatedResultMapEntryInit<SourceId, BaseRecipeId, Recipe>;
 
 // @public
+const recipeCollections: Record<string, JsonObject>;
+
+// @public
 type RecipeCollectionValidator = Collections.IReadOnlyResultMapValidator<RecipeId, Recipe>;
 
 // @public
@@ -787,11 +802,13 @@ declare namespace Recipes {
         IScaledRecipeIngredient,
         IScaledRecipe,
         Recipe,
+        IBuiltInLoadParams_2 as IBuiltInLoadParams,
+        BuiltInSpec_2 as BuiltInSpec,
         RecipeCollectionEntry,
-        RecipesDetailedResult,
         RecipeCollectionEntryInit,
         RecipeCollectionValidator,
         RecipeCollection,
+        RecipesDetailedResult,
         IRecipesLibraryParams,
         RecipesLibrary,
         scaleRecipe,

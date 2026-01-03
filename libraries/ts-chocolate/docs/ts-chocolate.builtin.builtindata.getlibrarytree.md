@@ -15,7 +15,7 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   ├── cacao-barry.json
     │   └── guittard.json
     └── recipes/
-        └── (future)
+        └── common.json
 ```
 
 **Signature:**

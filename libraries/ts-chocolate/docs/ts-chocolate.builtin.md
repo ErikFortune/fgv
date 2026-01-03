@@ -54,5 +54,16 @@ Generated ingredient collections from source YAML files.
 
 
 </td></tr>
+<tr><td>
+
+[recipeCollections](./ts-chocolate.builtin.recipecollections.md)
+
+
+</td><td>
+
+Generated recipe collections from source YAML files.
+
+
+</td></tr>
 </tbody></table>
 

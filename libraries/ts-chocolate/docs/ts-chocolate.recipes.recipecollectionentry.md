@@ -4,7 +4,7 @@
 
 ## Recipes.RecipeCollectionEntry type
 
-A single entry in a RecipesLibrary collection.
+A single entry in a recipes collection.
 
 **Signature:**
 

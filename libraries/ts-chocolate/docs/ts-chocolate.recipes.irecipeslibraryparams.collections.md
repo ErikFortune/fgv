@@ -4,10 +4,10 @@
 
 ## Recipes.IRecipesLibraryParams.collections property
 
-Optional initial collections of recipes Each collection can be provided as a JSON entry or pre-built entry
+Optional additional collections of recipes Each collection can be provided as a JSON entry or pre-built entry
 
 **Signature:**
 
 ```typescript
-readonly collections?: RecipeCollectionEntryInit[];
+readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
 ```

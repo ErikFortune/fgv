@@ -1,11 +1,12 @@
 // AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
-// Run 'rushx build:data' to regenerate from source YAML files in data/ingredients/
+// Run 'rushx build:data' to regenerate from source YAML files
 //
 // Source files:
 //   - data/ingredients/cacao-barry.yaml
 //   - data/ingredients/common.yaml
 //   - data/ingredients/felchlin.yaml
 //   - data/ingredients/guittard.yaml
+//   - data/recipes/common.yaml
 
 import { JsonObject } from '@fgv/ts-json-base';
 
@@ -282,6 +283,39 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       sweetnessPotency: 1,
       vegan: true
+    },
+    'coconut-cream': {
+      baseId: 'coconut-cream',
+      name: 'Coconut Cream (Full Fat)',
+      category: 'fat',
+      ganacheCharacteristics: {
+        cacaoFat: 0,
+        sugar: 2,
+        milkFat: 0,
+        water: 53,
+        solids: 5,
+        otherFats: 40
+      },
+      meltingPoint: 24,
+      vegan: true,
+      tags: ['vegan', 'dairy-free', 'coconut']
+    },
+    'hazelnut-paste': {
+      baseId: 'hazelnut-paste',
+      name: 'Hazelnut Paste (100% Hazelnuts)',
+      category: 'fat',
+      ganacheCharacteristics: {
+        cacaoFat: 0,
+        sugar: 4,
+        milkFat: 0,
+        water: 3,
+        solids: 38,
+        otherFats: 55
+      },
+      meltingPoint: 30,
+      vegan: true,
+      allergens: ['nuts'],
+      tags: ['gianduja', 'praline', 'hazelnut']
     }
   },
   felchlin: {
@@ -639,6 +673,222 @@ export const ingredientCollections: Record<string, JsonObject> = {
         workingTemperature: 30
       },
       vegan: false
+    }
+  }
+};
+
+/**
+ * Generated recipe collections from source YAML files.
+ * @public
+ */
+export const recipeCollections: Record<string, JsonObject> = {
+  common: {
+    'dark-ganache-classic': {
+      baseId: 'dark-ganache-classic',
+      name: 'Classic Dark Ganache',
+      description:
+        'Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.',
+      tags: ['classic', 'dark', 'truffle', 'bonbon'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'cacao-barry.guayaquil-64',
+              amount: 400
+            },
+            {
+              ingredientId: 'common.heavy-cream-35',
+              amount: 200
+            },
+            {
+              ingredientId: 'common.butter-82',
+              amount: 20,
+              notes: 'Added at 35°C for shine'
+            }
+          ],
+          baseWeight: 620,
+          yield: '~50 bonbons',
+          versionNotes: 'Standard 2:1 ratio with butter finish',
+          usage: []
+        }
+      ]
+    },
+    'milk-ganache-classic': {
+      baseId: 'milk-ganache-classic',
+      name: 'Classic Milk Ganache',
+      description:
+        'Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.',
+      tags: ['classic', 'milk', 'truffle', 'bonbon'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'guittard.soleil-dor-38',
+              amount: 350
+            },
+            {
+              ingredientId: 'common.heavy-cream-35',
+              amount: 200
+            },
+            {
+              ingredientId: 'common.butter-82',
+              amount: 20,
+              notes: 'Added at 35°C for shine'
+            }
+          ],
+          baseWeight: 570,
+          yield: '~45 bonbons',
+          versionNotes: '1.75:1 ratio for proper set with milk chocolate',
+          usage: []
+        }
+      ]
+    },
+    'white-ganache-classic': {
+      baseId: 'white-ganache-classic',
+      name: 'Classic White Ganache',
+      description:
+        'Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.',
+      tags: ['classic', 'white', 'truffle', 'bonbon'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'cacao-barry.zephyr-white-34',
+              amount: 500
+            },
+            {
+              ingredientId: 'common.heavy-cream-35',
+              amount: 200
+            },
+            {
+              ingredientId: 'common.butter-82',
+              amount: 15,
+              notes: 'Added at 32°C for shine'
+            }
+          ],
+          baseWeight: 715,
+          yield: '~55 bonbons',
+          versionNotes: '2.5:1 ratio essential for white chocolate emulsion',
+          usage: []
+        }
+      ]
+    },
+    'vegan-ganache-coconut-cream': {
+      baseId: 'vegan-ganache-coconut-cream',
+      name: 'Vegan Ganache (Coconut Cream)',
+      description:
+        'Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.',
+      tags: ['vegan', 'dairy-free', 'dark', 'coconut'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'cacao-barry.guayaquil-64',
+              amount: 400
+            },
+            {
+              ingredientId: 'common.coconut-cream',
+              amount: 200,
+              notes: 'Use full-fat, refrigerate and use solid portion'
+            }
+          ],
+          baseWeight: 600,
+          yield: '~48 bonbons',
+          versionNotes: 'Coconut cream provides fat and moisture similar to dairy cream',
+          usage: []
+        }
+      ]
+    },
+    'vegan-ganache-coconut-oil': {
+      baseId: 'vegan-ganache-coconut-oil',
+      name: 'Vegan Ganache (Coconut Oil)',
+      description:
+        'Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.',
+      tags: ['vegan', 'dairy-free', 'dark', 'neutral'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'cacao-barry.guayaquil-64',
+              amount: 400
+            },
+            {
+              ingredientId: 'common.coconut-oil',
+              amount: 150,
+              notes: 'Melted, at 35°C'
+            },
+            {
+              ingredientId: 'common.glucose-de43',
+              amount: 30,
+              notes: 'For texture and shelf life'
+            }
+          ],
+          baseWeight: 580,
+          yield: '~46 bonbons',
+          versionNotes: 'Oil-based method gives firmer set and neutral flavor',
+          usage: []
+        }
+      ]
+    },
+    'caramelized-ganache': {
+      baseId: 'caramelized-ganache',
+      name: 'Caramelized Ganache',
+      description:
+        'Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.',
+      tags: ['caramelized', 'blonde', 'truffle', 'bonbon', 'salted-caramel'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'cacao-barry.zephyr-caramel-35',
+              amount: 450
+            },
+            {
+              ingredientId: 'common.heavy-cream-35',
+              amount: 180
+            },
+            {
+              ingredientId: 'common.butter-82',
+              amount: 20,
+              notes: 'Salted butter works beautifully here'
+            }
+          ],
+          baseWeight: 650,
+          yield: '~52 bonbons',
+          versionNotes: 'Slightly higher chocolate ratio for caramelized varieties',
+          usage: []
+        }
+      ]
+    },
+    'gianduja-basic': {
+      baseId: 'gianduja-basic',
+      name: 'Basic Gianduja',
+      description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
+      tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
+      versions: [
+        {
+          ingredients: [
+            {
+              ingredientId: 'felchlin.sao-palme-43',
+              amount: 300
+            },
+            {
+              ingredientId: 'common.hazelnut-paste',
+              amount: 200,
+              notes: '100% roasted hazelnuts, finely ground'
+            },
+            {
+              ingredientId: 'common.butter-82',
+              amount: 50,
+              notes: 'For smoothness'
+            }
+          ],
+          baseWeight: 550,
+          yield: '~44 bonbons',
+          versionNotes: 'Traditional 60:40 chocolate to hazelnut ratio',
+          usage: []
+        }
+      ]
     }
   }
 };

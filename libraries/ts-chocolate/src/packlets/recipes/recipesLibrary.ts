@@ -23,50 +23,32 @@
  * @packageDocumentation
  */
 
-import { Collections, DetailedResult, Result, captureResult } from '@fgv/ts-utils';
+import { captureResult, Collections, DetailedResult, Result, Success } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeId, SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { Recipe } from './model';
+import { BuiltInSpec, IBuiltInLoadParams, Recipe } from './model';
 import { recipe as recipeConverter } from './converters';
+import { RecipeCollectionEntryInit } from './recipesCollection';
+import { CollectionLoader, ILoadCollectionFromFileTreeParams } from '../library-data';
+import { BuiltInData } from '../built-in';
 
 // ============================================================================
-// Type aliases for Collections types
+// Re-export collection types for convenience
 // ============================================================================
 
-/**
- * A single entry in a RecipesLibrary collection.
- * @public
- */
-export type RecipeCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, BaseRecipeId, Recipe>;
+export {
+  RecipeCollectionEntry,
+  RecipeCollectionEntryInit,
+  RecipeCollectionValidator,
+  RecipeCollection
+} from './recipesCollection';
 
 /**
  * Detailed result for recipe operations.
  * @public
  */
 export type RecipesDetailedResult<T> = DetailedResult<T, RecipeId>;
-
-/**
- * Initialization type for a RecipesLibrary collection entry.
- * @public
- */
-export type RecipeCollectionEntryInit = Collections.AggregatedResultMapEntryInit<
-  SourceId,
-  BaseRecipeId,
-  Recipe
->;
-
-/**
- * Validator type for RecipesLibrary collections.
- * @public
- */
-export type RecipeCollectionValidator = Collections.IReadOnlyResultMapValidator<RecipeId, Recipe>;
-
-/**
- * Type for the collections in a RecipesLibrary.
- * @public
- */
-export type RecipeCollection = Collections.IReadOnlyValidatingResultMap<SourceId, RecipeCollectionEntry>;
 
 // ============================================================================
 // Parameters Interface
@@ -78,10 +60,21 @@ export type RecipeCollection = Collections.IReadOnlyValidatingResultMap<SourceId
  */
 export interface IRecipesLibraryParams {
   /**
-   * Optional initial collections of recipes
+   * Controls which built-in recipe collections are loaded.
+   * Built-in collections are always immutable.
+   *
+   * - `true` (default): Load all built-in collections.
+   * - `false`: Load no built-in collections.
+   * - `SourceId[]`: Load only the specified built-in collections by name.
+   * - `IBuiltInLoadParams`: Fine-grained control using include/exclude patterns.
+   */
+  readonly builtin?: BuiltInSpec;
+
+  /**
+   * Optional additional collections of recipes
    * Each collection can be provided as a JSON entry or pre-built entry
    */
-  readonly collections?: RecipeCollectionEntryInit[];
+  readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
 }
 
 // ============================================================================
@@ -105,13 +98,76 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
   BaseRecipeId,
   Recipe
 > {
-  private constructor(params?: IRecipesLibraryParams) {
+  private constructor(collections: ReadonlyArray<RecipeCollectionEntryInit>) {
     super({
       collectionIdConverter: CommonConverters.sourceId,
       itemIdConverter: CommonConverters.baseRecipeId,
       itemConverter: recipeConverter,
       separator: '.',
-      collections: params?.collections
+      collections
+    });
+  }
+
+  /**
+   * Converts BuiltInSpec to ILoadCollectionFromFileTreeParams for the CollectionLoader.
+   * @param spec - The BuiltInSpec to convert.
+   * @returns The loading parameters, or undefined if no built-ins should be loaded.
+   */
+  private static _builtInSpecToLoadParams(
+    spec: BuiltInSpec
+  ): ILoadCollectionFromFileTreeParams<SourceId> | undefined {
+    // false means no built-ins
+    if (spec === false) {
+      return undefined;
+    }
+
+    // true means load all with default settings
+    if (spec === true) {
+      return {
+        mutable: false // Built-ins are always immutable
+      };
+    }
+
+    // Array of SourceId means load only those collections
+    if (Array.isArray(spec)) {
+      return {
+        included: spec,
+        mutable: false
+      };
+    }
+
+    // IBuiltInLoadParams - fine-grained control
+    const params = spec as IBuiltInLoadParams;
+    return {
+      included: params.included,
+      excluded: params.excluded,
+      recurseWithDelimiter: params.recurseWithDelimiter,
+      mutable: false // Built-ins are always immutable
+    };
+  }
+
+  /**
+   * Loads built-in recipe collections based on the BuiltInSpec.
+   * @param spec - The BuiltInSpec controlling which built-ins to load.
+   * @returns Success with collections or Failure with error.
+   */
+  private static _loadBuiltInCollections(
+    spec: BuiltInSpec
+  ): Result<ReadonlyArray<RecipeCollectionEntryInit>> {
+    const loadParams = RecipesLibrary._builtInSpecToLoadParams(spec);
+    if (loadParams === undefined) {
+      return Success.with([]);
+    }
+
+    const loader = new CollectionLoader<Recipe, SourceId, BaseRecipeId>({
+      itemConverter: recipeConverter,
+      collectionIdConverter: CommonConverters.sourceId,
+      itemIdConverter: CommonConverters.baseRecipeId,
+      mutable: false // Default for this loader
+    });
+
+    return BuiltInData.getRecipesDirectory().onSuccess((recipesDir) => {
+      return loader.loadFromFileTree(recipesDir, loadParams);
     });
   }
 
@@ -122,6 +178,12 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
    * @public
    */
   public static create(params?: IRecipesLibraryParams): Result<RecipesLibrary> {
-    return captureResult(() => new RecipesLibrary(params));
+    const builtin = params?.builtin ?? true;
+    const additionalCollections = params?.collections ?? [];
+
+    return RecipesLibrary._loadBuiltInCollections(builtin).onSuccess((builtInCollections) => {
+      const allCollections: RecipeCollectionEntryInit[] = [...builtInCollections, ...additionalCollections];
+      return captureResult(() => new RecipesLibrary(allCollections));
+    });
   }
 }

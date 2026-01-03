@@ -19,4 +19,4 @@
 // SOFTWARE.
 
 export * from './builtInData';
-export { ingredientCollections } from './builtInData.generated';
+export { ingredientCollections, recipeCollections } from './builtInData.generated';

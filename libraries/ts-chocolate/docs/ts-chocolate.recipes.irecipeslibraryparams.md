@@ -37,6 +37,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[builtin?](./ts-chocolate.recipes.irecipeslibraryparams.builtin.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+BuiltInSpec
+
+
+</td><td>
+
+_(Optional)_ Controls which built-in recipe collections are loaded. Built-in collections are always immutable.
+
+- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `IBuiltInLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
+
+
+</td></tr>
+<tr><td>
+
 [collections?](./ts-chocolate.recipes.irecipeslibraryparams.collections.md)
 
 
@@ -47,12 +70,12 @@ Description
 
 </td><td>
 
-[RecipeCollectionEntryInit](./ts-chocolate.recipes.recipecollectionentryinit.md)<!-- -->\[\]
+ReadonlyArray&lt;[RecipeCollectionEntryInit](./ts-chocolate.recipes.recipecollectionentryinit.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional initial collections of recipes Each collection can be provided as a JSON entry or pre-built entry
+_(Optional)_ Optional additional collections of recipes Each collection can be provided as a JSON entry or pre-built entry
 
 
 </td></tr>

@@ -75,10 +75,10 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('create', () => {
-    test('creates with built-in ingredients by default', () => {
+    test('creates with built-in ingredients and recipes by default', () => {
       expect(ChocolateLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBeGreaterThan(0);
-        expect(lib.recipes.size).toBe(0);
+        expect(lib.recipes.size).toBeGreaterThan(0);
       });
     });
 
@@ -101,6 +101,7 @@ describe('ChocolateLibrary', () => {
 
     test('creates with provided recipes library', () => {
       const recipes = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 

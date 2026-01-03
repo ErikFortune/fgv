@@ -21,19 +21,23 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { getIngredientsDirectory, getRecipesDirectory } from '../library-data';
-import { ingredientCollections } from './builtInData.generated';
+import { ingredientCollections, recipeCollections } from './builtInData.generated';
 
 /**
  * Built-in library file specifications for creating the InMemoryFileTree.
- * Transforms the generated ingredient collections into file tree entries.
+ * Transforms the generated ingredient and recipe collections into file tree entries.
  * @internal
  */
-const builtInLibraryFiles: FileTree.IInMemoryFile[] = Object.entries(ingredientCollections).map(
-  ([name, data]) => ({
+const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
+  ...Object.entries(ingredientCollections).map(([name, data]) => ({
     path: `/data/ingredients/${name}.json`,
     contents: data
-  })
-);
+  })),
+  ...Object.entries(recipeCollections).map(([name, data]) => ({
+    path: `/data/recipes/${name}.json`,
+    contents: data
+  }))
+];
 
 // Cached tree instance
 let cachedTree: FileTree.IFileTreeDirectoryItem | undefined;
@@ -55,7 +59,7 @@ export class BuiltInData {
    *     │   ├── cacao-barry.json
    *     │   └── guittard.json
    *     └── recipes/
-   *         └── (future)
+   *         └── common.json
    * ```
    * @returns `Success` with the library tree root directory, or `Failure` with an error message.
    */

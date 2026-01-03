@@ -144,3 +144,38 @@ muscovado-sugar:
     otherFats: 0
   sweetnessPotency: 1.0
   vegan: true
+
+# Vegan/specialty fats
+
+coconut-cream:
+  baseId: coconut-cream
+  name: Coconut Cream (Full Fat)
+  category: fat
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 2
+    milkFat: 0
+    water: 53
+    solids: 5
+    otherFats: 40
+  meltingPoint: 24
+  vegan: true
+  tags: [vegan, dairy-free, coconut]
+
+# Nut pastes
+
+hazelnut-paste:
+  baseId: hazelnut-paste
+  name: Hazelnut Paste (100% Hazelnuts)
+  category: fat
+  ganacheCharacteristics:
+    cacaoFat: 0
+    sugar: 4
+    milkFat: 0
+    water: 3
+    solids: 38
+    otherFats: 55
+  meltingPoint: 30
+  vegan: true
+  allergens: [nuts]
+  tags: [gianduja, praline, hazelnut]
