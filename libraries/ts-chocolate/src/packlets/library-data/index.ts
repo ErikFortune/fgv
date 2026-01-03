@@ -24,5 +24,6 @@ export * from './model';
 export * from './collectionFilter';
 export * from './collectionLoader';
 export * from './navigation';
+export * from './libraryLoader';
 
 export { Converters };

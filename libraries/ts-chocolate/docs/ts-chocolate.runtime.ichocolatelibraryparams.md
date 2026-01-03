@@ -6,6 +6,10 @@
 
 Parameters for creating a ChocolateLibrary
 
+Sources are processed in order: 1. Built-in collections (if enabled) 2. File tree sources (in array order) 3. Pre-instantiated libraries (merged in)
+
+When multiple sources provide the same collection ID within a sub-library, an error is returned (strict mode - no overwrites).
+
 **Signature:**
 
 ```typescript
@@ -37,7 +41,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[includeBuiltInIngredients?](./ts-chocolate.runtime.ichocolatelibraryparams.includebuiltiningredients.md)
+[builtin?](./ts-chocolate.runtime.ichocolatelibraryparams.builtin.md)
 
 
 </td><td>
@@ -47,18 +51,20 @@ Description
 
 </td><td>
 
-boolean
+[FullLibraryLoadSpec](./ts-chocolate.librarydata.fulllibraryloadspec.md)
 
 
 </td><td>
 
-_(Optional)_ Whether to include built-in ingredients (default: true) Ignored if ingredients library is provided
+_(Optional)_ Controls built-in data loading for each sub-library.
+
+- `true` (default): Load all built-ins for all sub-libraries - `false`<!-- -->: Load no built-ins - Per-sub-library control with `ingredients`<!-- -->, `recipes`<!-- -->, or `default` keys
 
 
 </td></tr>
 <tr><td>
 
-[ingredients?](./ts-chocolate.runtime.ichocolatelibraryparams.ingredients.md)
+[fileSources?](./ts-chocolate.runtime.ichocolatelibraryparams.filesources.md)
 
 
 </td><td>
@@ -68,18 +74,18 @@ _(Optional)_ Whether to include built-in ingredients (default: true) Ignored if 
 
 </td><td>
 
-[IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)
+[ILibraryFileTreeSource](./ts-chocolate.librarydata.ilibraryfiletreesource.md) \| ReadonlyArray&lt;[ILibraryFileTreeSource](./ts-chocolate.librarydata.ilibraryfiletreesource.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Pre-built ingredients library (optional, will create with built-ins if not provided)
+_(Optional)_ File tree sources to load data from. Each source navigates to standard paths (data/ingredients, data/recipes) and loads collections according to the source's load spec.
 
 
 </td></tr>
 <tr><td>
 
-[recipes?](./ts-chocolate.runtime.ichocolatelibraryparams.recipes.md)
+[libraries?](./ts-chocolate.runtime.ichocolatelibraryparams.libraries.md)
 
 
 </td><td>
@@ -89,12 +95,12 @@ _(Optional)_ Pre-built ingredients library (optional, will create with built-ins
 
 </td><td>
 
-[RecipesLibrary](./ts-chocolate.recipes.recipeslibrary.md)
+[IInstantiatedLibrarySource](./ts-chocolate.runtime.iinstantiatedlibrarysource.md)
 
 
 </td><td>
 
-_(Optional)_ Pre-built recipes library (optional, will create empty if not provided)
+_(Optional)_ Pre-instantiated library instances. Used for advanced scenarios like testing or custom library construction. If provided along with other sources, collections are combined.
 
 
 </td></tr>

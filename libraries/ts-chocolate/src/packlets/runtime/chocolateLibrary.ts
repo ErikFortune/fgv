@@ -25,35 +25,69 @@
 
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, RecipeId, RecipeVersionId } from '../common';
+import { Grams, IngredientId, RecipeId, RecipeVersionId, SourceId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
-import { IRecipe, IScaledRecipe, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
+import { IRecipe, IScaledRecipeVersion, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
+import { FullLibraryLoadSpec, ILibraryFileTreeSource, resolveBuiltInSpec } from '../library-data';
 
 // ============================================================================
 // Parameters Interface
 // ============================================================================
 
 /**
- * Parameters for creating a ChocolateLibrary
+ * Pre-built library instances to include.
+ * Useful for testing or when libraries are constructed through other means.
  * @public
  */
-export interface IChocolateLibraryParams {
+export interface IInstantiatedLibrarySource {
   /**
-   * Pre-built ingredients library (optional, will create with built-ins if not provided)
+   * Pre-built ingredients library
    */
   readonly ingredients?: IngredientsLibrary;
 
   /**
-   * Pre-built recipes library (optional, will create empty if not provided)
+   * Pre-built recipes library
    */
   readonly recipes?: RecipesLibrary;
+}
+
+/**
+ * Parameters for creating a ChocolateLibrary
+ *
+ * Sources are processed in order:
+ * 1. Built-in collections (if enabled)
+ * 2. File tree sources (in array order)
+ * 3. Pre-instantiated libraries (merged in)
+ *
+ * When multiple sources provide the same collection ID within a sub-library,
+ * an error is returned (strict mode - no overwrites).
+ *
+ * @public
+ */
+export interface IChocolateLibraryParams {
+  /**
+   * Controls built-in data loading for each sub-library.
+   *
+   * - `true` (default): Load all built-ins for all sub-libraries
+   * - `false`: Load no built-ins
+   * - Per-sub-library control with `ingredients`, `recipes`, or `default` keys
+   */
+  readonly builtin?: FullLibraryLoadSpec;
 
   /**
-   * Whether to include built-in ingredients (default: true)
-   * Ignored if ingredients library is provided
+   * File tree sources to load data from.
+   * Each source navigates to standard paths (data/ingredients, data/recipes)
+   * and loads collections according to the source's load spec.
    */
-  readonly includeBuiltInIngredients?: boolean;
+  readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+
+  /**
+   * Pre-instantiated library instances.
+   * Used for advanced scenarios like testing or custom library construction.
+   * If provided along with other sources, collections are combined.
+   */
+  readonly libraries?: IInstantiatedLibrarySource;
 }
 
 // ============================================================================
@@ -87,17 +121,41 @@ export class ChocolateLibrary {
    * @public
    */
   public static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary> {
-    // Get or create ingredients library
-    const ingredientsResult: Result<IngredientsLibrary> =
-      params?.ingredients !== undefined
-        ? succeed(params.ingredients)
-        : IngredientsLibrary.create({
-            builtin: params?.includeBuiltInIngredients ?? true
-          });
+    // If pre-instantiated libraries are provided, use them directly
+    if (params?.libraries !== undefined) {
+      const { ingredients, recipes } = params.libraries;
 
-    // Get or create recipes library
-    const recipesResult: Result<RecipesLibrary> =
-      params?.recipes !== undefined ? succeed(params.recipes) : RecipesLibrary.create();
+      // Create any missing libraries with the specified builtin settings
+      const ingredientsResult: Result<IngredientsLibrary> =
+        ingredients !== undefined
+          ? succeed(ingredients)
+          : IngredientsLibrary.create({
+              builtin: resolveBuiltInSpec<SourceId>(params.builtin, 'ingredients')
+            });
+
+      const recipesResult: Result<RecipesLibrary> =
+        recipes !== undefined
+          ? succeed(recipes)
+          : RecipesLibrary.create({
+              builtin: resolveBuiltInSpec<SourceId>(params.builtin, 'recipes')
+            });
+
+      return ingredientsResult.onSuccess((ing) =>
+        recipesResult.onSuccess((rec) => succeed(new ChocolateLibrary(ing, rec)))
+      );
+    }
+
+    // Standard path: create libraries based on builtin spec
+    // File tree sources will be supported in a future iteration
+    const builtinSpec = params?.builtin ?? true;
+
+    const ingredientsResult = IngredientsLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients')
+    });
+
+    const recipesResult = RecipesLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes')
+    });
 
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) => succeed(new ChocolateLibrary(ingredients, recipes)))
@@ -176,13 +234,13 @@ export class ChocolateLibrary {
    * @param id - Recipe ID to scale
    * @param targetWeight - Target total weight in grams
    * @param options - Optional scaling options
-   * @returns Success with scaled recipe, or Failure if recipe not found or invalid
+   * @returns Success with scaled recipe version, or Failure if recipe not found or invalid
    */
   public scaleRecipe(
     id: RecipeId,
     targetWeight: Grams,
     options?: IRecipeScaleOptions
-  ): Result<IScaledRecipe> {
+  ): Result<IScaledRecipeVersion> {
     return this.getRecipe(id).onSuccess((recipe) => scaleRecipe(recipe, targetWeight, options));
   }
 
@@ -192,13 +250,13 @@ export class ChocolateLibrary {
    * @param id - Recipe ID to scale
    * @param factor - Multiplicative factor (e.g., 2.0 for double)
    * @param options - Optional scaling options
-   * @returns Success with scaled recipe, or Failure if recipe not found or invalid
+   * @returns Success with scaled recipe version, or Failure if recipe not found or invalid
    */
   public scaleRecipeByFactor(
     id: RecipeId,
     factor: number,
     options?: IRecipeScaleOptions
-  ): Result<IScaledRecipe> {
+  ): Result<IScaledRecipeVersion> {
     return this.getRecipe(id).onSuccess((recipe) => {
       // Get the version to scale (default to golden version)
       const versionId = options?.versionId ?? recipe.goldenVersionId;

@@ -50,7 +50,13 @@ export const allIngredientCategories: IngredientCategory[];
 const allRatingCategories: RatingCategory[];
 
 // @public
+const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
+
+// @public
 export const allWeightUnits: WeightUnit[];
+
+// @public
+type AnyRecipeVersion = IRecipeVersion | IScaledRecipeVersion;
 
 // @public
 export const BASE_ID_PATTERN: RegExp;
@@ -162,8 +168,8 @@ class ChocolateLibrary {
     hasRecipe(id: RecipeId): boolean;
     get ingredients(): IngredientsLibrary;
     get recipes(): RecipesLibrary;
-    scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipe>;
-    scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipe>;
+    scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+    scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
 }
 
 // @public
@@ -271,6 +277,8 @@ declare namespace Converters_4 {
         recipeData,
         recipe,
         scaledRecipeIngredient,
+        scalingSource,
+        scaledRecipeVersion,
         recipeConverter
     }
 }
@@ -303,6 +311,9 @@ export type FluidityStars = 1 | 2 | 3 | 4 | 5;
 const fluidityStars: Converter<FluidityStars>;
 
 // @public
+type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', LibraryLoadSpec>>;
+
+// @public
 const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
 
 // @public
@@ -322,6 +333,9 @@ function getRecipesDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFile
 
 // @public
 function getRecipeSourceId(id: RecipeId): SourceId;
+
+// @public
+function getSubLibraryPath(subLibraryId: SubLibraryId): string;
 
 // @public
 export type Grams = Brand<number, 'Grams'>;
@@ -351,9 +365,9 @@ interface IChocolateIngredient extends IIngredient {
 
 // @public
 interface IChocolateLibraryParams {
-    readonly includeBuiltInIngredients?: boolean;
-    readonly ingredients?: IngredientsLibrary;
-    readonly recipes?: RecipesLibrary;
+    readonly builtin?: FullLibraryLoadSpec;
+    readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+    readonly libraries?: IInstantiatedLibrarySource;
 }
 
 // @public
@@ -486,6 +500,19 @@ interface IIngredient {
 interface IIngredientsLibraryParams {
     readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
+}
+
+// @public
+interface IInstantiatedLibrarySource {
+    readonly ingredients?: IngredientsLibrary;
+    readonly recipes?: RecipesLibrary;
+}
+
+// @public
+interface ILibraryFileTreeSource {
+    readonly directory: FileTree.IFileTreeDirectoryItem;
+    readonly load?: FullLibraryLoadSpec;
+    readonly mutable?: MutabilitySpec;
 }
 
 // @public
@@ -632,20 +659,38 @@ interface IResolvedIngredient {
 }
 
 // @public
-function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient;
+interface IResolvedSubLibrarySource {
+    readonly directory: FileTree.IFileTreeDirectoryItem;
+    readonly loadParams: ILoadCollectionFromFileTreeParams<string>;
+    readonly subLibraryId: SubLibraryId;
+}
 
 // @public
-interface IScaledRecipe {
-    readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
-    readonly recipe: IRecipe;
-    readonly scaleFactor: number;
-    readonly targetWeight: Grams;
-}
+function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient;
 
 // @public
 interface IScaledRecipeIngredient extends IRecipeIngredient {
     readonly originalAmount: Grams;
     readonly scaleFactor: number;
+}
+
+// @public
+interface IScaledRecipeVersion {
+    readonly baseWeight: Grams;
+    readonly createdDate: string;
+    readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
+    readonly notes?: string;
+    readonly ratings?: ReadonlyArray<IVersionRating>;
+    readonly scaledFrom: IScalingSource;
+    readonly yield?: string;
+}
+
+// @public
+interface IScalingSource {
+    readonly recipeId: BaseRecipeId;
+    readonly scaleFactor: number;
+    readonly targetWeight: Grams;
+    readonly versionId: RecipeVersionId;
 }
 
 // @public
@@ -656,6 +701,12 @@ function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredie
 
 // @public
 function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
+
+// @public
+function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion;
+
+// @public
+function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRecipeVersion;
 
 // @public
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
@@ -720,11 +771,16 @@ interface IVersionRating {
 declare namespace LibraryData {
     export {
         Converters_3 as Converters,
+        resolveSubLibraryLoadSpec,
         FilterPattern,
         ILibraryLoadParams,
         LibraryLoadSpec,
         MutabilitySpec,
         ICollection,
+        SubLibraryId,
+        allSubLibraryIds,
+        FullLibraryLoadSpec,
+        ILibraryFileTreeSource,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
         IFilteredItem,
@@ -735,7 +791,14 @@ declare namespace LibraryData {
         navigateToDirectory,
         getIngredientsDirectory,
         getRecipesDirectory,
-        LibraryPaths
+        LibraryPaths,
+        specToLoadParams,
+        getSubLibraryPath,
+        navigateToSubLibrary,
+        resolveFileTreeSourceForSubLibrary,
+        resolveFileTreeSource,
+        resolveBuiltInSpec,
+        IResolvedSubLibrarySource
     }
 }
 export { LibraryData }
@@ -756,6 +819,9 @@ type MutabilitySpec = boolean | ReadonlyArray<string> | {
 
 // @public
 function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;
@@ -786,15 +852,22 @@ function recalculateRecipeVersion(version: IRecipeVersion): IRecipeVersion;
 
 // @public
 class Recipe implements IRecipe {
+    // (undocumented)
     readonly baseId: BaseRecipeId;
     static create(data: IRecipe): Result<Recipe>;
+    // (undocumented)
     readonly description?: string;
     getVersion(versionId: RecipeVersionId): Result<IRecipeVersion>;
     get goldenVersion(): IRecipeVersion;
+    // (undocumented)
     readonly goldenVersionId: RecipeVersionId;
+    // (undocumented)
     readonly name: RecipeName;
+    // (undocumented)
     readonly tags?: ReadonlyArray<string>;
+    // (undocumented)
     readonly usage: ReadonlyArray<IRecipeUsage>;
+    // (undocumented)
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
 
@@ -843,6 +916,8 @@ const recipeName: Converter<RecipeName>;
 declare namespace Recipes {
     export {
         Converters_4 as Converters,
+        isScaledRecipeVersion,
+        isRecipeVersion,
         IRecipeIngredient,
         RatingCategory,
         allRatingCategories,
@@ -851,7 +926,9 @@ declare namespace Recipes {
         IRecipeVersion,
         IRecipe,
         IScaledRecipeIngredient,
-        IScaledRecipe,
+        IScalingSource,
+        IScaledRecipeVersion,
+        AnyRecipeVersion,
         Recipe,
         RecipeCollectionEntry,
         RecipeCollectionEntryInit,
@@ -895,8 +972,21 @@ function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
 // @public
 const removeJsonExtension: Converter<string>;
 
+// @public
+function resolveBuiltInSpec<TCollectionId extends string = string>(spec: FullLibraryLoadSpec | undefined, subLibraryId: SubLibraryId): LibraryLoadSpec<TCollectionId>;
+
+// @public
+function resolveFileTreeSource(source: ILibraryFileTreeSource): Result<ReadonlyArray<IResolvedSubLibrarySource>>;
+
+// @public
+function resolveFileTreeSourceForSubLibrary(source: ILibraryFileTreeSource, subLibraryId: SubLibraryId): Result<IResolvedSubLibrarySource | undefined>;
+
+// @public
+function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
+
 declare namespace Runtime {
     export {
+        IInstantiatedLibrarySource,
         IChocolateLibraryParams,
         ChocolateLibrary
     }
@@ -907,16 +997,28 @@ export { Runtime }
 const scaledRecipeIngredient: Converter<IScaledRecipeIngredient>;
 
 // @public
-function scaleRecipe(recipe: IRecipe, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipe>;
+const scaledRecipeVersion: Converter<IScaledRecipeVersion>;
 
 // @public
-function scaleRecipeByFactor(recipe: IRecipe, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipe>;
+function scaleRecipe(recipe: IRecipe, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+
+// @public
+function scaleRecipeByFactor(recipe: IRecipe, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+
+// @public
+const scalingSource: Converter<IScalingSource>;
 
 // @public
 export type SourceId = Brand<string, 'SourceId'>;
 
 // @public
 const sourceId: Converter<SourceId>;
+
+// @public
+function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
+
+// @public
+type SubLibraryId = 'ingredients' | 'recipes';
 
 // @public
 const sugarIngredient: Converter<ISugarIngredient>;

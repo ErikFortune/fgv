@@ -26,7 +26,14 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
 import { Grams, RecipeVersionId } from '../common';
-import { IRecipe, IRecipeVersion, IRecipeIngredient, IScaledRecipe, IScaledRecipeIngredient } from './model';
+import {
+  IRecipe,
+  IRecipeVersion,
+  IRecipeIngredient,
+  IScaledRecipeVersion,
+  IScaledRecipeIngredient,
+  IScalingSource
+} from './model';
 
 // ============================================================================
 // Scaling Options
@@ -93,14 +100,14 @@ function scaleIngredient(
  * @param recipe - The recipe to scale
  * @param targetWeight - Target total weight in grams
  * @param options - Optional scaling options
- * @returns Success with scaled recipe, or Failure if invalid
+ * @returns Success with scaled recipe version, or Failure if invalid
  * @public
  */
 export function scaleRecipe(
   recipe: IRecipe,
   targetWeight: Grams,
   options: IRecipeScaleOptions = {}
-): Result<IScaledRecipe> {
+): Result<IScaledRecipeVersion> {
   // Validate inputs
   if (targetWeight <= 0) {
     return fail('Target weight must be greater than zero');
@@ -126,11 +133,22 @@ export function scaleRecipe(
     scaleIngredient(ingredient, scaleFactor, options)
   );
 
-  return succeed({
-    recipe,
-    targetWeight,
+  // Build scaling source metadata
+  const scaledFrom: IScalingSource = {
+    recipeId: recipe.baseId,
+    versionId,
     scaleFactor,
-    ingredients: scaledIngredients
+    targetWeight
+  };
+
+  return succeed({
+    scaledFrom,
+    createdDate: new Date().toISOString().split('T')[0],
+    ingredients: scaledIngredients,
+    baseWeight: targetWeight,
+    yield: version.yield,
+    notes: version.notes,
+    ratings: version.ratings
   });
 }
 
@@ -140,14 +158,14 @@ export function scaleRecipe(
  * @param recipe - The recipe to scale
  * @param factor - Multiplicative factor (e.g., 2.0 for double, 0.5 for half)
  * @param options - Optional scaling options
- * @returns Success with scaled recipe, or Failure if invalid
+ * @returns Success with scaled recipe version, or Failure if invalid
  * @public
  */
 export function scaleRecipeByFactor(
   recipe: IRecipe,
   factor: number,
   options: IRecipeScaleOptions = {}
-): Result<IScaledRecipe> {
+): Result<IScaledRecipeVersion> {
   if (factor <= 0) {
     return fail('Scale factor must be greater than zero');
   }

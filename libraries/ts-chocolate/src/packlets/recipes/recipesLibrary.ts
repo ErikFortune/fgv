@@ -27,7 +27,7 @@ import { captureResult, Collections, DetailedResult, Result, Success } from '@fg
 
 import { BaseRecipeId, RecipeId, SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { Recipe } from './model';
+import { Recipe } from './recipe';
 import { recipe as recipeConverter } from './converters';
 import { RecipeCollectionEntryInit } from './recipesCollection';
 import { CollectionLoader, LibraryLoadSpec } from '../library-data';

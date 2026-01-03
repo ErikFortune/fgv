@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.name property
 
-Human-readable recipe name
-
 **Signature:**
 
 ```typescript

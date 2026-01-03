@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.versions property
 
-Version history
-
 **Signature:**
 
 ```typescript

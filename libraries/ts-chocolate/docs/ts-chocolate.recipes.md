@@ -24,7 +24,7 @@ Description
 
 </td><td>
 
-Recipe class with helper methods for accessing versions
+Recipe class with helper methods for version management
 
 
 </td></tr>
@@ -64,6 +64,28 @@ Description
 </td><td>
 
 Calculates the base weight from recipe version (sum of ingredient amounts)
+
+
+</td></tr>
+<tr><td>
+
+[isRecipeVersion(version)](./ts-chocolate.recipes.isrecipeversion.md)
+
+
+</td><td>
+
+Type guard to check if a version is a regular (unscaled) recipe version
+
+
+</td></tr>
+<tr><td>
+
+[isScaledRecipeVersion(version)](./ts-chocolate.recipes.isscaledrecipeversion.md)
+
+
+</td><td>
+
+Type guard to check if a version is a scaled recipe version
 
 
 </td></tr>
@@ -183,23 +205,34 @@ Complete details for a single version of a recipe
 </td></tr>
 <tr><td>
 
-[IScaledRecipe](./ts-chocolate.recipes.iscaledrecipe.md)
-
-
-</td><td>
-
-Result of scaling a recipe to a target weight
-
-
-</td></tr>
-<tr><td>
-
 [IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)
 
 
 </td><td>
 
 Scaled ingredient with original and scaled amounts
+
+
+</td></tr>
+<tr><td>
+
+[IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md)
+
+
+</td><td>
+
+A scaled recipe version - mirrors IRecipeVersion structure for interoperability
+
+
+</td></tr>
+<tr><td>
+
+[IScalingSource](./ts-chocolate.recipes.iscalingsource.md)
+
+
+</td><td>
+
+Information about the source of a scaled recipe
 
 
 </td></tr>
@@ -280,6 +313,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[AnyRecipeVersion](./ts-chocolate.recipes.anyrecipeversion.md)
+
+
+</td><td>
+
+Union type for consumers who can work with either scaled or unscaled versions
+
+
+</td></tr>
+<tr><td>
 
 [RatingCategory](./ts-chocolate.recipes.ratingcategory.md)
 

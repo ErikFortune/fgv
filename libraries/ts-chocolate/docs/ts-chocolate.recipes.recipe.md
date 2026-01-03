@@ -4,7 +4,7 @@
 
 ## Recipes.Recipe class
 
-Recipe class with helper methods for accessing versions
+Recipe class with helper methods for version management
 
 **Signature:**
 
@@ -53,8 +53,6 @@ Description
 
 </td><td>
 
-Base recipe identifier (unique within source)
-
 
 </td></tr>
 <tr><td>
@@ -74,7 +72,7 @@ string
 
 </td><td>
 
-_(Optional)_ Optional description of the recipe
+_(Optional)_
 
 
 </td></tr>
@@ -95,7 +93,7 @@ _(Optional)_ Optional description of the recipe
 
 </td><td>
 
-Returns the golden (approved default) version
+Gets the golden (approved default) version
 
 
 </td></tr>
@@ -116,8 +114,6 @@ Returns the golden (approved default) version
 
 </td><td>
 
-The ID of the golden (approved default) version
-
 
 </td></tr>
 <tr><td>
@@ -136,8 +132,6 @@ The ID of the golden (approved default) version
 
 
 </td><td>
-
-Human-readable recipe name
 
 
 </td></tr>
@@ -158,7 +152,7 @@ ReadonlyArray&lt;string&gt;
 
 </td><td>
 
-_(Optional)_ Optional tags for categorization and search
+_(Optional)_
 
 
 </td></tr>
@@ -179,8 +173,6 @@ ReadonlyArray&lt;[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)<!-- -->&
 
 </td><td>
 
-Usage history for all versions of this recipe
-
 
 </td></tr>
 <tr><td>
@@ -199,8 +191,6 @@ ReadonlyArray&lt;[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- 
 
 
 </td><td>
-
-Version history
 
 
 </td></tr>
@@ -236,7 +226,7 @@ Description
 
 </td><td>
 
-Creates a new Recipe instance
+Creates a Recipe instance from recipe data
 
 
 </td></tr>
@@ -250,7 +240,7 @@ Creates a new Recipe instance
 
 </td><td>
 
-Find a version by its ID
+Gets a specific version by ID
 
 
 </td></tr>

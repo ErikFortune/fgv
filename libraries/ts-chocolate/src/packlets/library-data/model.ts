@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { JsonObject } from '@fgv/ts-json-base';
+import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 /**
  * A pattern for matching collection or item names. Can be a string (exact match) or RegExp.
@@ -88,4 +88,97 @@ export interface ICollection<
   readonly id: TCOLLECTIONID;
   readonly isMutable: boolean;
   readonly items: Record<TITEMID, T>;
+}
+
+// ============================================================================
+// Full Library Loading Types
+// ============================================================================
+
+/**
+ * Identifiers for sub-libraries within the chocolate library system.
+ * @public
+ */
+export type SubLibraryId = 'ingredients' | 'recipes';
+
+/**
+ * All valid sub-library identifiers.
+ * @public
+ */
+export const allSubLibraryIds: ReadonlyArray<SubLibraryId> = ['ingredients', 'recipes'] as const;
+
+/**
+ * Controls loading for each sub-library within a library source.
+ *
+ * - `true`: Load all sub-libraries with default settings (all collections)
+ * - `false`: Load no sub-libraries
+ * - `Record<SubLibraryId | 'default', LibraryLoadSpec>`: Per-sub-library control
+ *   - Named sub-libraries get their specific spec
+ *   - 'default' applies to unspecified sub-libraries
+ *
+ * @public
+ */
+export type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', LibraryLoadSpec>>;
+
+/**
+ * Resolves a FullLibraryLoadSpec to a LibraryLoadSpec for a specific sub-library.
+ *
+ * @param spec - The full library load spec
+ * @param subLibraryId - The sub-library to resolve for
+ * @returns The resolved LibraryLoadSpec for the sub-library
+ * @public
+ */
+export function resolveSubLibraryLoadSpec(
+  spec: FullLibraryLoadSpec,
+  subLibraryId: SubLibraryId
+): LibraryLoadSpec {
+  if (typeof spec === 'boolean') {
+    return spec;
+  }
+
+  // Check for specific sub-library spec
+  const subSpec = spec[subLibraryId];
+  if (subSpec !== undefined) {
+    return subSpec;
+  }
+
+  // Fall back to default
+  const defaultSpec = spec.default;
+  if (defaultSpec !== undefined) {
+    return defaultSpec;
+  }
+
+  // If no default specified and sub-library not mentioned, load nothing
+  return false;
+}
+
+// ============================================================================
+// File Tree Source Types
+// ============================================================================
+
+/**
+ * Specifies a file tree source for library data.
+ *
+ * Navigates to standard paths (data/ingredients, data/recipes) within the tree
+ * and loads collections according to the specified load spec.
+ *
+ * @public
+ */
+export interface ILibraryFileTreeSource {
+  /**
+   * Root directory of the library tree.
+   * The loader will navigate to sub-paths like 'data/ingredients' and 'data/recipes'.
+   */
+  readonly directory: FileTree.IFileTreeDirectoryItem;
+
+  /**
+   * Which sub-libraries to load from this source.
+   * Default: true (load all sub-libraries)
+   */
+  readonly load?: FullLibraryLoadSpec;
+
+  /**
+   * Mutability specification for collections from this source.
+   * Default: false (all collections immutable)
+   */
+  readonly mutable?: MutabilitySpec;
 }

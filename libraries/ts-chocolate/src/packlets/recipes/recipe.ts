@@ -1,0 +1,94 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Recipe class implementation
+ * @packageDocumentation
+ */
+
+import { Result, fail, succeed } from '@fgv/ts-utils';
+
+import { BaseRecipeId, RecipeName, RecipeVersionId } from '../common';
+import { IRecipe, IRecipeUsage, IRecipeVersion } from './model';
+
+// ============================================================================
+// Recipe Class
+// ============================================================================
+
+/**
+ * Recipe class with helper methods for version management
+ * @public
+ */
+export class Recipe implements IRecipe {
+  public readonly baseId: BaseRecipeId;
+  public readonly name: RecipeName;
+  public readonly description?: string;
+  public readonly tags?: ReadonlyArray<string>;
+  public readonly versions: ReadonlyArray<IRecipeVersion>;
+  public readonly goldenVersionId: RecipeVersionId;
+  public readonly usage: ReadonlyArray<IRecipeUsage>;
+
+  private readonly _goldenVersion: IRecipeVersion;
+
+  private constructor(data: IRecipe, goldenVersion: IRecipeVersion) {
+    this.baseId = data.baseId;
+    this.name = data.name;
+    this.description = data.description;
+    this.tags = data.tags;
+    this.versions = data.versions;
+    this.goldenVersionId = data.goldenVersionId;
+    this.usage = data.usage;
+    this._goldenVersion = goldenVersion;
+  }
+
+  /**
+   * Creates a Recipe instance from recipe data
+   * @param data - Recipe data
+   * @returns Success with Recipe instance, or Failure if golden version not found
+   */
+  public static create(data: IRecipe): Result<Recipe> {
+    const goldenVersion = data.versions.find((v) => v.versionId === data.goldenVersionId);
+    /* c8 ignore next 3 - defensive: converter validates golden version exists before calling create */
+    if (!goldenVersion) {
+      return fail(`Golden version ${data.goldenVersionId} not found in recipe ${data.baseId}`);
+    }
+    return succeed(new Recipe(data, goldenVersion));
+  }
+
+  /**
+   * Gets the golden (approved default) version
+   */
+  public get goldenVersion(): IRecipeVersion {
+    return this._goldenVersion;
+  }
+
+  /**
+   * Gets a specific version by ID
+   * @param versionId - The version ID to find
+   * @returns Success with version, or Failure if not found
+   */
+  public getVersion(versionId: RecipeVersionId): Result<IRecipeVersion> {
+    const version = this.versions.find((v) => v.versionId === versionId);
+    if (!version) {
+      return fail(`Version ${versionId} not found in recipe ${this.baseId}`);
+    }
+    return succeed(version);
+  }
+}

@@ -25,7 +25,7 @@
 import { Collections } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeId, SourceId } from '../common';
-import { Recipe } from './model';
+import { Recipe } from './recipe';
 
 /**
  * A single entry in a recipes collection.

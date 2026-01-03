@@ -78,12 +78,89 @@ Gets the recipes directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getSubLibraryPath(subLibraryId)](./ts-chocolate.librarydata.getsublibrarypath.md)
+
+
+</td><td>
+
+Gets the directory path for a sub-library.
+
+
+</td></tr>
+<tr><td>
+
 [navigateToDirectory(tree, path)](./ts-chocolate.librarydata.navigatetodirectory.md)
 
 
 </td><td>
 
 Navigates to a subdirectory within a FileTree by path.
+
+
+</td></tr>
+<tr><td>
+
+[navigateToSubLibrary(tree, subLibraryId)](./ts-chocolate.librarydata.navigatetosublibrary.md)
+
+
+</td><td>
+
+Navigates to a sub-library directory within a file tree.
+
+
+</td></tr>
+<tr><td>
+
+[resolveBuiltInSpec(spec, subLibraryId)](./ts-chocolate.librarydata.resolvebuiltinspec.md)
+
+
+</td><td>
+
+Resolves a FullLibraryLoadSpec for built-in loading to individual sub-library specs.
+
+
+</td></tr>
+<tr><td>
+
+[resolveFileTreeSource(source)](./ts-chocolate.librarydata.resolvefiletreesource.md)
+
+
+</td><td>
+
+Resolves all sub-libraries from a file tree source.
+
+
+</td></tr>
+<tr><td>
+
+[resolveFileTreeSourceForSubLibrary(source, subLibraryId)](./ts-chocolate.librarydata.resolvefiletreesourceforsublibrary.md)
+
+
+</td><td>
+
+Resolves a file tree source for a specific sub-library.
+
+
+</td></tr>
+<tr><td>
+
+[resolveSubLibraryLoadSpec(spec, subLibraryId)](./ts-chocolate.librarydata.resolvesublibraryloadspec.md)
+
+
+</td><td>
+
+Resolves a FullLibraryLoadSpec to a LibraryLoadSpec for a specific sub-library.
+
+
+</td></tr>
+<tr><td>
+
+[specToLoadParams(spec, mutable)](./ts-chocolate.librarydata.spectoloadparams.md)
+
+
+</td><td>
+
+Converts a LibraryLoadSpec to ILoadCollectionFromFileTreeParams.
 
 
 </td></tr>
@@ -159,6 +236,19 @@ Result of filtering a collection of items.
 </td></tr>
 <tr><td>
 
+[ILibraryFileTreeSource](./ts-chocolate.librarydata.ilibraryfiletreesource.md)
+
+
+</td><td>
+
+Specifies a file tree source for library data.
+
+Navigates to standard paths (data/ingredients, data/recipes) within the tree and loads collections according to the specified load spec.
+
+
+</td></tr>
+<tr><td>
+
 [ILibraryLoadParams](./ts-chocolate.librarydata.ilibraryloadparams.md)
 
 
@@ -176,6 +266,17 @@ Fine-grained parameters for controlling which collections from a library to load
 </td><td>
 
 Parameters used to load collections from a file tree.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedSubLibrarySource](./ts-chocolate.librarydata.iresolvedsublibrarysource.md)
+
+
+</td><td>
+
+Result of resolving a file tree source for a specific sub-library.
 
 
 </td></tr>
@@ -220,6 +321,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[allSubLibraryIds](./ts-chocolate.librarydata.allsublibraryids.md)
+
+
+</td><td>
+
+All valid sub-library identifiers.
+
+
+</td></tr>
+<tr><td>
+
 [LibraryPaths](./ts-chocolate.librarydata.librarypaths.md)
 
 
@@ -257,6 +369,19 @@ A pattern for matching collection or item names. Can be a string (exact match) o
 </td></tr>
 <tr><td>
 
+[FullLibraryLoadSpec](./ts-chocolate.librarydata.fulllibraryloadspec.md)
+
+
+</td><td>
+
+Controls loading for each sub-library within a library source.
+
+- `true`<!-- -->: Load all sub-libraries with default settings (all collections) - `false`<!-- -->: Load no sub-libraries - `Record<SubLibraryId | 'default', LibraryLoadSpec>`<!-- -->: Per-sub-library control - Named sub-libraries get their specific spec - 'default' applies to unspecified sub-libraries
+
+
+</td></tr>
+<tr><td>
+
 [LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)
 
 
@@ -276,6 +401,17 @@ Specifies which collections from a library should be loaded.
 </td><td>
 
 Specifies which collections should be mutable. - `true`<!-- -->: All collections are mutable. - `false`<!-- -->: All collections are immutable. - `ReadonlyArray<string>`<!-- -->: Only the specified collections are mutable, all others are immutable. - `{ immutable: ReadonlyArray<string> }`<!-- -->: Only the specified collections are immutable, all others are mutable.
+
+
+</td></tr>
+<tr><td>
+
+[SubLibraryId](./ts-chocolate.librarydata.sublibraryid.md)
+
+
+</td><td>
+
+Identifiers for sub-libraries within the chocolate library system.
 
 
 </td></tr>

@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 export * from './model';
+export * from './recipe';
 export * from './recipesCollection';
 export * from './recipesLibrary';
 export * from './scaler';

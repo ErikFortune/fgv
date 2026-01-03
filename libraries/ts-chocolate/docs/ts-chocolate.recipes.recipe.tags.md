@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.tags property
 
-Optional tags for categorization and search
-
 **Signature:**
 
 ```typescript

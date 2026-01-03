@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.usage property
 
-Usage history for all versions of this recipe
-
 **Signature:**
 
 ```typescript

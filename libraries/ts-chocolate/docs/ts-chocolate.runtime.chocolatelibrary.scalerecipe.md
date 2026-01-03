@@ -9,7 +9,7 @@ Scales a recipe to a target weight
 **Signature:**
 
 ```typescript
-scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipe>;
+scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
 ```
 
 ## Parameters
@@ -82,7 +82,7 @@ _(Optional)_ Optional scaling options
 
 **Returns:**
 
-Result&lt;[IScaledRecipe](./ts-chocolate.recipes.iscaledrecipe.md)<!-- -->&gt;
+Result&lt;[IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md)<!-- -->&gt;
 
-Success with scaled recipe, or Failure if recipe not found or invalid
+Success with scaled recipe version, or Failure if recipe not found or invalid
 

@@ -4,7 +4,7 @@
 
 ## Recipes.Recipe.create() method
 
-Creates a new Recipe instance
+Creates a Recipe instance from recipe data
 
 **Signature:**
 
@@ -42,7 +42,7 @@ data
 
 </td><td>
 
-The recipe data
+Recipe data
 
 
 </td></tr>
@@ -52,5 +52,5 @@ The recipe data
 
 Result&lt;[Recipe](./ts-chocolate.recipes.recipe.md)<!-- -->&gt;
 
-Result with the Recipe or error if validation fails
+Success with Recipe instance, or Failure if golden version not found
 

@@ -54,6 +54,21 @@ Description
 
 Parameters for creating a ChocolateLibrary
 
+Sources are processed in order: 1. Built-in collections (if enabled) 2. File tree sources (in array order) 3. Pre-instantiated libraries (merged in)
+
+When multiple sources provide the same collection ID within a sub-library, an error is returned (strict mode - no overwrites).
+
+
+</td></tr>
+<tr><td>
+
+[IInstantiatedLibrarySource](./ts-chocolate.runtime.iinstantiatedlibrarysource.md)
+
+
+</td><td>
+
+Pre-built library instances to include. Useful for testing or when libraries are constructed through other means.
+
 
 </td></tr>
 </tbody></table>

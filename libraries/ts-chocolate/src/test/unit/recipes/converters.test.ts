@@ -26,7 +26,9 @@ import {
   recipeUsage,
   recipeVersion,
   recipe,
-  scaledRecipeIngredient
+  scaledRecipeIngredient,
+  scalingSource,
+  scaledRecipeVersion
 } from '../../../packlets/recipes/converters';
 
 describe('Recipe Converters', () => {
@@ -264,6 +266,108 @@ describe('Recipe Converters', () => {
       expect(scaledRecipeIngredient.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.notes).toBe('Tempered');
       });
+    });
+  });
+
+  // ============================================================================
+  // scalingSource Converter
+  // ============================================================================
+
+  describe('scalingSource', () => {
+    test('converts valid scaling source', () => {
+      const input = {
+        recipeId: 'test-recipe',
+        versionId: '2026-01-01-01',
+        scaleFactor: 2,
+        targetWeight: 300
+      };
+      expect(scalingSource.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.recipeId).toBe('test-recipe');
+        expect(result.versionId).toBe('2026-01-01-01');
+        expect(result.scaleFactor).toBe(2);
+        expect(result.targetWeight).toBe(300);
+      });
+    });
+
+    test('fails for invalid recipe ID', () => {
+      const input = {
+        recipeId: 'invalid.id',
+        versionId: '2026-01-01-01',
+        scaleFactor: 2,
+        targetWeight: 300
+      };
+      expect(scalingSource.convert(input)).toFail();
+    });
+
+    test('fails for invalid version ID', () => {
+      const input = {
+        recipeId: 'test-recipe',
+        versionId: 'invalid',
+        scaleFactor: 2,
+        targetWeight: 300
+      };
+      expect(scalingSource.convert(input)).toFail();
+    });
+  });
+
+  // ============================================================================
+  // scaledRecipeVersion Converter
+  // ============================================================================
+
+  describe('scaledRecipeVersion', () => {
+    const validScalingSource = {
+      recipeId: 'test-recipe',
+      versionId: '2026-01-01-01',
+      scaleFactor: 2,
+      targetWeight: 300
+    };
+
+    const validScaledIngredient = {
+      ingredientId: 'source.chocolate',
+      amount: 200,
+      originalAmount: 100,
+      scaleFactor: 2
+    };
+
+    test('converts valid scaled recipe version', () => {
+      const input = {
+        scaledFrom: validScalingSource,
+        createdDate: '2026-01-15',
+        ingredients: [validScaledIngredient],
+        baseWeight: 300
+      };
+      expect(scaledRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.scaledFrom.recipeId).toBe('test-recipe');
+        expect(result.scaledFrom.versionId).toBe('2026-01-01-01');
+        expect(result.createdDate).toBe('2026-01-15');
+        expect(result.ingredients.length).toBe(1);
+        expect(result.baseWeight).toBe(300);
+      });
+    });
+
+    test('converts with optional fields', () => {
+      const input = {
+        scaledFrom: validScalingSource,
+        createdDate: '2026-01-15',
+        ingredients: [validScaledIngredient],
+        baseWeight: 300,
+        yield: '40 bonbons',
+        notes: 'Scaled from original'
+      };
+      expect(scaledRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.yield).toBe('40 bonbons');
+        expect(result.notes).toBe('Scaled from original');
+      });
+    });
+
+    test('fails for invalid scaling source', () => {
+      const input = {
+        scaledFrom: { ...validScalingSource, recipeId: 'invalid.id' },
+        createdDate: '2026-01-15',
+        ingredients: [validScaledIngredient],
+        baseWeight: 300
+      };
+      expect(scaledRecipeVersion.convert(input)).toFail();
     });
   });
 

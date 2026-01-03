@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.goldenVersionId property
 
-The ID of the golden (approved default) version
-
 **Signature:**
 
 ```typescript

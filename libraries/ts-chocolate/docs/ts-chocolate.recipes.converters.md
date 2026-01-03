@@ -107,6 +107,28 @@ Converter for IScaledRecipeIngredient
 </td></tr>
 <tr><td>
 
+[scaledRecipeVersion](./ts-chocolate.recipes.converters.scaledrecipeversion.md)
+
+
+</td><td>
+
+Converter for IScaledRecipeVersion
+
+
+</td></tr>
+<tr><td>
+
+[scalingSource](./ts-chocolate.recipes.converters.scalingsource.md)
+
+
+</td><td>
+
+Converter for IScalingSource
+
+
+</td></tr>
+<tr><td>
+
 [versionRating](./ts-chocolate.recipes.converters.versionrating.md)
 
 

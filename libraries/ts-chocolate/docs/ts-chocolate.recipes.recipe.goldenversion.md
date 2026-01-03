@@ -4,7 +4,7 @@
 
 ## Recipes.Recipe.goldenVersion property
 
-Returns the golden (approved default) version
+Gets the golden (approved default) version
 
 **Signature:**
 

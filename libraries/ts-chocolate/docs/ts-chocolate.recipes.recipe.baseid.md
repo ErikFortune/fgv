@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.baseId property
 
-Base recipe identifier (unique within source)
-
 **Signature:**
 
 ```typescript

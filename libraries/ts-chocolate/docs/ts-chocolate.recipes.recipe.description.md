@@ -4,8 +4,6 @@
 
 ## Recipes.Recipe.description property
 
-Optional description of the recipe
-
 **Signature:**
 
 ```typescript

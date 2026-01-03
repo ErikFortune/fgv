@@ -4,7 +4,7 @@
 
 ## Recipes.Recipe.getVersion() method
 
-Find a version by its ID
+Gets a specific version by ID
 
 **Signature:**
 
@@ -52,5 +52,5 @@ The version ID to find
 
 Result&lt;[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->&gt;
 
-Result with the version or error
+Success with version, or Failure if not found
 

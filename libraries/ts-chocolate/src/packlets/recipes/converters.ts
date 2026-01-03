@@ -33,10 +33,12 @@ import {
   IRecipeUsage,
   IRecipeVersion,
   IScaledRecipeIngredient,
+  IScaledRecipeVersion,
+  IScalingSource,
   IVersionRating,
-  RatingCategory,
-  Recipe
+  RatingCategory
 } from './model';
+import { Recipe } from './recipe';
 
 // ============================================================================
 // Recipe Ingredient Converter
@@ -164,6 +166,39 @@ export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
     originalAmount: CommonConverters.grams,
     scaleFactor: Converters.number
   });
+
+// ============================================================================
+// Scaling Source Converter
+// ============================================================================
+
+/**
+ * Converter for IScalingSource
+ * @public
+ */
+export const scalingSource: Converter<IScalingSource> = Converters.object<IScalingSource>({
+  recipeId: CommonConverters.baseRecipeId,
+  versionId: CommonConverters.recipeVersionId,
+  scaleFactor: Converters.number,
+  targetWeight: CommonConverters.grams
+});
+
+// ============================================================================
+// Scaled Recipe Version Converter
+// ============================================================================
+
+/**
+ * Converter for IScaledRecipeVersion
+ * @public
+ */
+export const scaledRecipeVersion: Converter<IScaledRecipeVersion> = Converters.object<IScaledRecipeVersion>({
+  scaledFrom: scalingSource,
+  createdDate: Converters.string,
+  ingredients: Converters.arrayOf(scaledRecipeIngredient),
+  baseWeight: CommonConverters.grams,
+  yield: Converters.string.optional(),
+  notes: Converters.string.optional(),
+  ratings: Converters.arrayOf(versionRating).optional()
+});
 
 // ============================================================================
 // Recipe Discriminated Union

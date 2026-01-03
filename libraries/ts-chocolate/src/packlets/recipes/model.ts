@@ -23,8 +23,6 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
-
 import { BaseRecipeId, Grams, IngredientId, RatingScore, RecipeName, RecipeVersionId } from '../common';
 
 // ============================================================================
@@ -254,19 +252,19 @@ export interface IScaledRecipeIngredient extends IRecipeIngredient {
 }
 
 /**
- * Result of scaling a recipe to a target weight
+ * Information about the source of a scaled recipe
  * @public
  */
-export interface IScaledRecipe {
+export interface IScalingSource {
   /**
-   * Original recipe reference
+   * ID of the recipe this was scaled from
    */
-  readonly recipe: IRecipe;
+  readonly recipeId: BaseRecipeId;
 
   /**
-   * Target total weight
+   * Exact version that was scaled
    */
-  readonly targetWeight: Grams;
+  readonly versionId: RecipeVersionId;
 
   /**
    * Scaling factor applied
@@ -274,102 +272,74 @@ export interface IScaledRecipe {
   readonly scaleFactor: number;
 
   /**
-   * Scaled ingredients
+   * Resulting target weight
    */
-  readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
+  readonly targetWeight: Grams;
 }
 
-// ============================================================================
-// Recipe Class
-// ============================================================================
-
 /**
- * Recipe class with helper methods for accessing versions
+ * A scaled recipe version - mirrors IRecipeVersion structure for interoperability
  * @public
  */
-export class Recipe implements IRecipe {
+export interface IScaledRecipeVersion {
   /**
-   * Base recipe identifier (unique within source)
+   * Information about the source recipe and version that was scaled
    */
-  public readonly baseId: BaseRecipeId;
+  readonly scaledFrom: IScalingSource;
 
   /**
-   * Human-readable recipe name
+   * Date this scaled version was created (ISO 8601 format)
    */
-  public readonly name: RecipeName;
+  readonly createdDate: string;
 
   /**
-   * Optional description of the recipe
+   * Scaled ingredients with both original and scaled amounts
    */
-  public readonly description?: string;
+  readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
 
   /**
-   * Optional tags for categorization and search
+   * Base weight of the scaled recipe (same as targetWeight)
    */
-  public readonly tags?: ReadonlyArray<string>;
+  readonly baseWeight: Grams;
 
   /**
-   * Version history
+   * Optional yield description (may be scaled from original)
    */
-  public readonly versions: ReadonlyArray<IRecipeVersion>;
+  readonly yield?: string;
 
   /**
-   * The ID of the golden (approved default) version
+   * Optional notes from the source version
    */
-  public readonly goldenVersionId: RecipeVersionId;
+  readonly notes?: string;
 
   /**
-   * Usage history for all versions of this recipe
+   * Optional ratings from the source version
    */
-  public readonly usage: ReadonlyArray<IRecipeUsage>;
+  readonly ratings?: ReadonlyArray<IVersionRating>;
+}
 
-  private constructor(data: IRecipe) {
-    this.baseId = data.baseId;
-    this.name = data.name;
-    this.description = data.description;
-    this.tags = data.tags;
-    this.versions = data.versions;
-    this.goldenVersionId = data.goldenVersionId;
-    this.usage = data.usage;
-  }
+/**
+ * Union type for consumers who can work with either scaled or unscaled versions
+ * @public
+ */
+export type AnyRecipeVersion = IRecipeVersion | IScaledRecipeVersion;
 
-  /**
-   * Returns the golden (approved default) version
-   */
-  public get goldenVersion(): IRecipeVersion {
-    const version = this.versions.find((v) => v.versionId === this.goldenVersionId);
-    /* c8 ignore next 3 - defensive coding: validated in create() */
-    if (!version) {
-      throw new Error(`Golden version ${this.goldenVersionId} not found in recipe ${this.baseId}`);
-    }
-    return version;
-  }
+/**
+ * Type guard to check if a version is a scaled recipe version
+ * @param version - The version to check
+ * @returns True if this is a scaled recipe version
+ * @public
+ */
+export function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRecipeVersion {
+  return 'scaledFrom' in version;
+}
 
-  /**
-   * Find a version by its ID
-   * @param versionId - The version ID to find
-   * @returns Result with the version or error
-   */
-  public getVersion(versionId: RecipeVersionId): Result<IRecipeVersion> {
-    const version = this.versions.find((v) => v.versionId === versionId);
-    if (!version) {
-      return fail(`Version ${versionId} not found in recipe ${this.baseId}`);
-    }
-    return succeed(version);
-  }
-
-  /**
-   * Creates a new Recipe instance
-   * @param data - The recipe data
-   * @returns Result with the Recipe or error if validation fails
-   */
-  public static create(data: IRecipe): Result<Recipe> {
-    // Validate that goldenVersionId exists in versions
-    const goldenExists = data.versions.some((v) => v.versionId === data.goldenVersionId);
-    /* c8 ignore next 3 - tested in converters.test.ts */
-    if (!goldenExists) {
-      return fail(`Golden version ${data.goldenVersionId} not found in versions for recipe ${data.baseId}`);
-    }
-    return succeed(new Recipe(data));
-  }
+/**
+ * Type guard to check if a version is a regular (unscaled) recipe version
+ * @param version - The version to check
+ * @returns True if this is a regular recipe version
+ * @public
+ */
+export function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion {
+  return 'versionId' in version;
 }

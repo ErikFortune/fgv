@@ -30,7 +30,10 @@ import {
   scaleRecipe,
   scaleRecipeByFactor,
   calculateBaseWeight,
-  recalculateRecipeVersion
+  recalculateRecipeVersion,
+  isScaledRecipeVersion,
+  isRecipeVersion,
+  AnyRecipeVersion
 } from '../../../packlets/recipes';
 
 describe('RecipesLibrary', () => {
@@ -335,8 +338,9 @@ describe('Recipe scaling', () => {
   describe('scaleRecipe', () => {
     test('scales ingredients proportionally', () => {
       expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaleFactor).toBe(2);
-        expect(scaled.targetWeight).toBe(300);
+        expect(scaled.scaledFrom.scaleFactor).toBe(2);
+        expect(scaled.scaledFrom.targetWeight).toBe(300);
+        expect(scaled.baseWeight).toBe(300);
         expect(scaled.ingredients[0].amount).toBe(200);
         expect(scaled.ingredients[1].amount).toBe(100);
       });
@@ -345,6 +349,37 @@ describe('Recipe scaling', () => {
     test('preserves original amounts', () => {
       expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.ingredients[0].originalAmount).toBe(100);
+      });
+    });
+
+    test('includes scaling source information', () => {
+      expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.scaledFrom.recipeId).toBe('test');
+        expect(scaled.scaledFrom.versionId).toBe('2026-01-01-01');
+        expect(scaled.scaledFrom.scaleFactor).toBe(2);
+        expect(scaled.scaledFrom.targetWeight).toBe(300);
+      });
+    });
+
+    test('includes createdDate', () => {
+      expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.createdDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      });
+    });
+
+    test('preserves optional fields from source version', () => {
+      const versionWithNotes: IRecipeVersion = {
+        ...testVersion,
+        notes: 'Test notes',
+        yield: '20 bonbons'
+      };
+      const recipeWithNotes: IRecipe = {
+        ...testRecipe,
+        versions: [versionWithNotes]
+      };
+      expect(scaleRecipe(recipeWithNotes, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.notes).toBe('Test notes');
+        expect(scaled.yield).toBe('20 bonbons');
       });
     });
 
@@ -384,7 +419,7 @@ describe('Recipe scaling', () => {
   describe('scaleRecipeByFactor', () => {
     test('scales by factor', () => {
       expect(scaleRecipeByFactor(testRecipe, 0.5)).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaleFactor).toBe(0.5);
+        expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
         expect(scaled.ingredients[0].amount).toBe(50);
       });
     });
@@ -403,6 +438,36 @@ describe('Recipe scaling', () => {
           versionId: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionId
         })
       ).toFailWith(/not found/);
+    });
+  });
+
+  // ============================================================================
+  // Type Guards Tests
+  // ============================================================================
+
+  describe('type guards', () => {
+    test('isScaledRecipeVersion returns true for scaled versions', () => {
+      const scaled = scaleRecipe(testRecipe, 300 as Grams).orThrow();
+      expect(isScaledRecipeVersion(scaled)).toBe(true);
+      expect(isRecipeVersion(scaled)).toBe(false);
+    });
+
+    test('isRecipeVersion returns true for regular versions', () => {
+      expect(isRecipeVersion(testVersion)).toBe(true);
+      expect(isScaledRecipeVersion(testVersion)).toBe(false);
+    });
+
+    test('type guards work with AnyRecipeVersion union', () => {
+      const scaled = scaleRecipe(testRecipe, 300 as Grams).orThrow();
+      const versions: AnyRecipeVersion[] = [testVersion, scaled];
+
+      const regularVersions = versions.filter(isRecipeVersion);
+      const scaledVersions = versions.filter(isScaledRecipeVersion);
+
+      expect(regularVersions.length).toBe(1);
+      expect(scaledVersions.length).toBe(1);
+      expect(regularVersions[0].versionId).toBe('2026-01-01-01');
+      expect(scaledVersions[0].scaledFrom.versionId).toBe('2026-01-01-01');
     });
   });
 

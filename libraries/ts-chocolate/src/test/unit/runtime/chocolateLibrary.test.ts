@@ -85,7 +85,9 @@ describe('ChocolateLibrary', () => {
     });
 
     test('creates without built-in ingredients when specified', () => {
-      expect(ChocolateLibrary.create({ includeBuiltInIngredients: false })).toSucceedAndSatisfy((lib) => {
+      expect(
+        ChocolateLibrary.create({ builtin: { ingredients: false, recipes: false } })
+      ).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBe(0);
       });
     });
@@ -96,7 +98,7 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
-      expect(ChocolateLibrary.create({ ingredients })).toSucceedAndSatisfy((lib) => {
+      expect(ChocolateLibrary.create({ libraries: { ingredients } })).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBe(1);
       });
     });
@@ -107,7 +109,7 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      expect(ChocolateLibrary.create({ recipes })).toSucceedAndSatisfy((lib) => {
+      expect(ChocolateLibrary.create({ libraries: { recipes } })).toSucceedAndSatisfy((lib) => {
         expect(lib.recipes.size).toBe(1);
       });
     });
@@ -129,7 +131,7 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ ingredients, recipes }).orThrow();
+      library = ChocolateLibrary.create({ libraries: { ingredients, recipes } }).orThrow();
     });
 
     test('ingredients returns IngredientsLibrary', () => {
@@ -183,7 +185,7 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ recipes }).orThrow();
+      library = ChocolateLibrary.create({ libraries: { recipes } }).orThrow();
     });
 
     test('getRecipe returns existing recipe', () => {
@@ -217,14 +219,15 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ recipes }).orThrow();
+      library = ChocolateLibrary.create({ libraries: { recipes } }).orThrow();
     });
 
     test('scaleRecipe scales to target weight', () => {
       expect(library.scaleRecipe('test.testRecipe' as RecipeId, 200 as Grams)).toSucceedAndSatisfy(
         (scaled) => {
-          expect(scaled.targetWeight).toBe(200);
-          expect(scaled.scaleFactor).toBe(2);
+          expect(scaled.scaledFrom.targetWeight).toBe(200);
+          expect(scaled.scaledFrom.scaleFactor).toBe(2);
+          expect(scaled.baseWeight).toBe(200);
         }
       );
     });
@@ -236,8 +239,8 @@ describe('ChocolateLibrary', () => {
     test('scaleRecipeByFactor scales by factor', () => {
       expect(library.scaleRecipeByFactor('test.testRecipe' as RecipeId, 0.5)).toSucceedAndSatisfy(
         (scaled) => {
-          expect(scaled.scaleFactor).toBe(0.5);
-          expect(scaled.targetWeight).toBe(50);
+          expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
+          expect(scaled.scaledFrom.targetWeight).toBe(50);
         }
       );
     });
@@ -271,7 +274,7 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ ingredients, recipes }).orThrow();
+      library = ChocolateLibrary.create({ libraries: { ingredients, recipes } }).orThrow();
     });
 
     test('createIngredientResolver returns working resolver', () => {
