@@ -19,6 +19,9 @@
 // SOFTWARE.
 
 export * from './model';
+export * from './ingredientsCollection';
+export * from './ingredientsLibrary';
+export * from './builtInIngredients';
 
 import * as Converters from './converters';
 

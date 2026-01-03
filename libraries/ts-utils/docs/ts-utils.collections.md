@@ -30,6 +30,17 @@ An aggregated result map that wraps a collection of [ValidatingResultMap](./ts-u
 </td></tr>
 <tr><td>
 
+[AggregatedResultMapBase](./ts-utils.collections.aggregatedresultmapbase.md)
+
+
+</td><td>
+
+Base class for an aggregated result map that wraps a collection of [ValidatingResultMap](./ts-utils.validatingresultmap.md) instances, keyed by collection ID. Items are accessed via composite IDs that combine the collection ID and item ID with a delimiter.
+
+
+</td></tr>
+<tr><td>
+
 [AggregatedResultMapValidator](./ts-utils.collections.aggregatedresultmapvalidator.md)
 
 
@@ -184,7 +195,7 @@ Description
 
 </td><td>
 
-Options for [AggregatedResultMap.addCollectionWithItems()](./ts-utils.aggregatedresultmap.addcollectionwithitems.md)<!-- -->.
+Options for [Collections.AggregatedResultMapBase.addCollectionWithItems()](./ts-utils.collections.aggregatedresultmapbase.addcollectionwithitems.md)<!-- -->.
 
 
 </td></tr>

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly compositeIdValidator: Validator<TCOMPOSITEID, unknown>;
+readonly compositeIdValidator?: Validator<TCOMPOSITEID, unknown>;
 ```

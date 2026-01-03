@@ -4,6 +4,34 @@
 
 ## Ingredients namespace
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)
+
+
+</td><td>
+
+Multi-source ingredient library with type-safe access
+
+Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "felchlin.maracaibo-65") - Multi-source management (built-in, user, app-local, etc.) - Mutable vs immutable collection distinction - Weakly-typed validating access for external data
+
+
+</td></tr>
+</tbody></table>
+
 ## Functions
 
 <table><thead><tr><th>
@@ -133,6 +161,17 @@ Base ingredient interface All ingredients have these common properties
 </td></tr>
 <tr><td>
 
+[IIngredientsLibraryParams](./ts-chocolate.ingredients.iingredientslibraryparams.md)
+
+
+</td><td>
+
+Parameters for creating an IngredientsLibrary instance
+
+
+</td></tr>
+<tr><td>
+
 [ISugarIngredient](./ts-chocolate.ingredients.isugaringredient.md)
 
 
@@ -179,6 +218,32 @@ Description
 </td></tr>
 </tbody></table>
 
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[builtInIngredientCollections](./ts-chocolate.ingredients.builtiningredientcollections.md)
+
+
+</td><td>
+
+Built-in ingredient collections
+
+
+</td></tr>
+</tbody></table>
+
 ## Type Aliases
 
 <table><thead><tr><th>
@@ -200,6 +265,50 @@ Description
 </td><td>
 
 Discriminated union of all ingredient types
+
+
+</td></tr>
+<tr><td>
+
+[IngredientCollection](./ts-chocolate.ingredients.ingredientcollection.md)
+
+
+</td><td>
+
+Type for the collections in an IngredientsLibrary.
+
+
+</td></tr>
+<tr><td>
+
+[IngredientCollectionEntry](./ts-chocolate.ingredients.ingredientcollectionentry.md)
+
+
+</td><td>
+
+A single entry in an ingredients collection.
+
+
+</td></tr>
+<tr><td>
+
+[IngredientCollectionEntryInit](./ts-chocolate.ingredients.ingredientcollectionentryinit.md)
+
+
+</td><td>
+
+Initialization type for an IngredientsLibrary collection entry.
+
+
+</td></tr>
+<tr><td>
+
+[IngredientCollectionValidator](./ts-chocolate.ingredients.ingredientcollectionvalidator.md)
+
+
+</td><td>
+
+Validator type for IngredientsLibrary collections.
 
 
 </td></tr>

@@ -78,7 +78,10 @@ const commonIngredientFields: Conversion.FieldConverters<Omit<IIngredient, 'cate
   name: Converters.string,
   ganacheCharacteristics,
   description: Converters.string.optional(),
+  manufacturer: Converters.string.optional(),
   allergens: Converters.arrayOf(IngredientConverters.allergen).optional(),
+  traceAllergens: Converters.arrayOf(IngredientConverters.allergen).optional(),
+  certifications: Converters.arrayOf(IngredientConverters.certification).optional(),
   tags: Converters.arrayOf(Converters.string).optional()
 };
 
@@ -106,7 +109,10 @@ export const chocolateIngredient: Converter<IChocolateIngredient> = Converters.o
   cacaoPercentage: IngredientConverters.percentage,
   fluidityStars: IngredientConverters.fluidityStars.optional(),
   viscosityMcM: IngredientConverters.degreesMacMichael.optional(),
-  temperatureCurve: temperatureCurve.optional()
+  temperatureCurve: temperatureCurve.optional(),
+  origins: Converters.arrayOf(Converters.string).optional(),
+  beanVarieties: Converters.arrayOf(IngredientConverters.chocolateVariety).optional(),
+  applications: Converters.arrayOf(IngredientConverters.chocolateApplication).optional()
 });
 
 /**

@@ -5,9 +5,15 @@
 ```ts
 
 // @public
-export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
-    [Symbol.iterator](): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
+export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM> {
     constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>);
+    static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
+}
+
+// @public
+class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
+    protected constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     add(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -22,7 +28,6 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
     get collectionCount(): number;
     get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
     composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): Result<TCOMPOSITEID>;
-    static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     delete(key: TCOMPOSITEID): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -365,6 +370,7 @@ declare namespace Collections {
         IAddCollectionWithItemsOptions,
         IAggregatedResultMapConstructorParams,
         AggregatedResultMapValidator,
+        AggregatedResultMapBase,
         AggregatedResultMap
     }
 }
@@ -1137,6 +1143,8 @@ class HashingNormalizer extends Normalizer {
     protected _normalizeLiteralToString(from: string | number | bigint | boolean | symbol | undefined | Date | RegExp | null): Result<string>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 interface IAddCollectionWithItemsOptions {
     readonly isImmutable?: boolean;
@@ -1147,21 +1155,21 @@ interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCO
     // (undocumented)
     readonly collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>;
     // (undocumented)
-    readonly collections?: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>[];
+    readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>>;
     // (undocumented)
-    readonly compositeIdValidator: Validator<TCOMPOSITEID, unknown>;
-    // (undocumented)
-    readonly delimiter?: string;
+    readonly compositeIdValidator?: Validator<TCOMPOSITEID, unknown>;
     // (undocumented)
     readonly itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
     // (undocumented)
     readonly itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
+    // (undocumented)
+    readonly separator?: string;
 }
 
 // @public
 interface IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID extends string = string> {
     // (undocumented)
-    readonly entries: KeyValueEntry<string, unknown>[];
+    readonly entries: ReadonlyArray<KeyValueEntry<string, unknown>>;
     // (undocumented)
     readonly id: TCOLLECTIONID;
     // (undocumented)
@@ -1522,19 +1530,28 @@ interface IResultMap<TK extends string = string, TV = unknown> extends IReadOnly
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     delete(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    entries(): IterableIterator<KeyValueEntry<TK, TV>>;
+    forEach(cb: ResultMapForEachCb<TK, TV>, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     getOrAdd(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getOrAdd(key: TK, factory: ResultMapValueFactory<TK, TV>): DetailedResult<TV, ResultMapResultDetail>;
+    keys(): IterableIterator<TK>;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     set(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    readonly size: number;
     toReadOnly(): IReadOnlyResultMap<TK, TV>;
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     update(key: TK, value: TV): DetailedResult<TV, ResultMapResultDetail>;
+    values(): IterableIterator<TV>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

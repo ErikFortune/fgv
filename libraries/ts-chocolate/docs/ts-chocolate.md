@@ -21,6 +21,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Calculations](./ts-chocolate.calculations.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Converters](./ts-chocolate.converters.md)
 
 
@@ -31,6 +40,24 @@ Description
 <tr><td>
 
 [Ingredients](./ts-chocolate.ingredients.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Recipes](./ts-chocolate.recipes.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Runtime](./ts-chocolate.runtime.md)
 
 
 </td><td>
@@ -80,6 +107,39 @@ All possible common allergens
 </td><td>
 
 All possible built-in source identifiers
+
+
+</td></tr>
+<tr><td>
+
+[allCacaoVarieties](./ts-chocolate.allcacaovarieties.md)
+
+
+</td><td>
+
+All possible chocolate varieties.
+
+
+</td></tr>
+<tr><td>
+
+[allCertifications](./ts-chocolate.allcertifications.md)
+
+
+</td><td>
+
+All possible certifications
+
+
+</td></tr>
+<tr><td>
+
+[allChocolateApplications](./ts-chocolate.allchocolateapplications.md)
+
+
+</td><td>
+
+All possible chocolate applications
 
 
 </td></tr>
@@ -221,12 +281,45 @@ Well-known built-in source identifiers
 </td></tr>
 <tr><td>
 
+[CacaoVariety](./ts-chocolate.cacaovariety.md)
+
+
+</td><td>
+
+Varieties of cacao beans
+
+
+</td></tr>
+<tr><td>
+
 [Celsius](./ts-chocolate.celsius.md)
 
 
 </td><td>
 
 Temperature in Celsius
+
+
+</td></tr>
+<tr><td>
+
+[Certification](./ts-chocolate.certification.md)
+
+
+</td><td>
+
+Certifications that an ingredient may have.
+
+
+</td></tr>
+<tr><td>
+
+[ChocolateApplication](./ts-chocolate.chocolateapplication.md)
+
+
+</td><td>
+
+Recommended applications for chocolate
 
 
 </td></tr>

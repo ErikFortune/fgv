@@ -66,7 +66,7 @@ Description
 
 </td><td>
 
-[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;\[\]
+ReadonlyArray&lt;[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;&gt;
 
 
 </td><td>
@@ -77,7 +77,7 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[compositeIdValidator](./ts-utils.collections.iaggregatedresultmapconstructorparams.compositeidvalidator.md)
+[compositeIdValidator?](./ts-utils.collections.iaggregatedresultmapconstructorparams.compositeidvalidator.md)
 
 
 </td><td>
@@ -88,25 +88,6 @@ _(Optional)_
 </td><td>
 
 [Validator](./ts-utils.validator.md)<!-- -->&lt;TCOMPOSITEID, unknown&gt;
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[delimiter?](./ts-utils.collections.iaggregatedresultmapconstructorparams.delimiter.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
 
 
 </td><td>
@@ -150,6 +131,27 @@ _(Optional)_
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[separator?](./ts-utils.collections.iaggregatedresultmapconstructorparams.separator.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

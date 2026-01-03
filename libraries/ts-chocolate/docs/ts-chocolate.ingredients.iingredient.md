@@ -100,6 +100,27 @@ Ingredient category (discriminator)
 </td></tr>
 <tr><td>
 
+[certifications?](./ts-chocolate.ingredients.iingredient.certifications.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[Certification](./ts-chocolate.certification.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional list of certifications the ingredient has
+
+
+</td></tr>
+<tr><td>
+
 [description?](./ts-chocolate.ingredients.iingredient.description.md)
 
 
@@ -142,6 +163,27 @@ Ganache-relevant characteristics
 </td></tr>
 <tr><td>
 
+[manufacturer?](./ts-chocolate.ingredients.iingredient.manufacturer.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+_(Optional)_ Optional manufacturer
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-chocolate.ingredients.iingredient.name.md)
 
 
@@ -179,6 +221,27 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_ Optional tags for searching/filtering
+
+
+</td></tr>
+<tr><td>
+
+[traceAllergens?](./ts-chocolate.ingredients.iingredient.traceallergens.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[Allergen](./ts-chocolate.allergen.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional list of trace allergens possibly present (e.g. due to contamination)
 
 
 </td></tr>

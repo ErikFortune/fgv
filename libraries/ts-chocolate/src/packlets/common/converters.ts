@@ -45,7 +45,13 @@ import {
   allFluidityStars,
   allWeightUnits,
   allAllergens,
-  Allergen
+  Allergen,
+  Certification,
+  allCertifications,
+  CacaoVariety,
+  allCacaoVarieties,
+  ChocolateApplication,
+  allChocolateApplications
 } from './model';
 import {
   toBaseIngredientId,
@@ -146,6 +152,12 @@ export const ingredientCategory: Converter<IngredientCategory> =
 export const chocolateType: Converter<ChocolateType> = Converters.enumeratedValue(allChocolateTypes);
 
 /**
+ * Converter for ChocolateVariety
+ * @public
+ */
+export const chocolateVariety: Converter<CacaoVariety> = Converters.enumeratedValue(allCacaoVarieties);
+
+/**
  * Converter for FluidityStars
  * @public
  */
@@ -162,3 +174,16 @@ export const weightUnit: Converter<WeightUnit> = Converters.enumeratedValue(allW
  * @public
  */
 export const allergen: Converter<Allergen> = Converters.enumeratedValue(allAllergens);
+
+/**
+ * Converter for Certification
+ * @public
+ */
+export const certification: Converter<Certification> = Converters.enumeratedValue(allCertifications);
+
+/**
+ * Converter for ChocolateApplication
+ * @public
+ */
+export const chocolateApplication: Converter<ChocolateApplication> =
+  Converters.enumeratedValue(allChocolateApplications);

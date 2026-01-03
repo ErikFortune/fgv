@@ -63,12 +63,45 @@ Converter for Celsius
 </td></tr>
 <tr><td>
 
+[certification](./ts-chocolate.converters.certification.md)
+
+
+</td><td>
+
+Converter for Certification
+
+
+</td></tr>
+<tr><td>
+
+[chocolateApplication](./ts-chocolate.converters.chocolateapplication.md)
+
+
+</td><td>
+
+Converter for ChocolateApplication
+
+
+</td></tr>
+<tr><td>
+
 [chocolateType](./ts-chocolate.converters.chocolatetype.md)
 
 
 </td><td>
 
 Converter for ChocolateType
+
+
+</td></tr>
+<tr><td>
+
+[chocolateVariety](./ts-chocolate.converters.chocolatevariety.md)
+
+
+</td><td>
+
+Converter for ChocolateVariety
 
 
 </td></tr>

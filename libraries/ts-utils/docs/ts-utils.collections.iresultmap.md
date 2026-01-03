@@ -13,6 +13,52 @@ export interface IResultMap<TK extends string = string, TV = unknown> extends IR
 ```
 **Extends:** [IReadOnlyResultMap](./ts-utils.ireadonlyresultmap.md)<!-- -->&lt;TK, TV&gt;
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[size](./ts-utils.collections.iresultmap.size.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+Returns the number of entries in the map.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
@@ -61,6 +107,39 @@ Deletes a key from the map.
 </td></tr>
 <tr><td>
 
+[entries()](./ts-utils.collections.iresultmap.entries.md)
+
+
+</td><td>
+
+Returns an iterator over the map entries.
+
+
+</td></tr>
+<tr><td>
+
+[forEach(cb, arg)](./ts-utils.collections.iresultmap.foreach.md)
+
+
+</td><td>
+
+Calls a function for each entry in the map.
+
+
+</td></tr>
+<tr><td>
+
+[get(key)](./ts-utils.collections.iresultmap.get.md)
+
+
+</td><td>
+
+Gets a value from the map.
+
+
+</td></tr>
+<tr><td>
+
 [getOrAdd(key, value)](./ts-utils.collections.iresultmap.getoradd.md)
 
 
@@ -83,12 +162,23 @@ Gets a value from the map, or adds a value created by a factory function if it d
 </td></tr>
 <tr><td>
 
+[keys()](./ts-utils.collections.iresultmap.keys.md)
+
+
+</td><td>
+
+Returns an iterator over the map keys.
+
+
+</td></tr>
+<tr><td>
+
 [set(key, value)](./ts-utils.collections.iresultmap.set.md)
 
 
 </td><td>
 
-Sets a key/value pair in the map.
+Sets a key/value pair in the map regardless of whether the key already exists.
 
 
 </td></tr>
@@ -110,7 +200,18 @@ Gets a readonly version of this map.
 
 </td><td>
 
-Updates an existing key in the map.
+Updates the value associated with a key in the map.
+
+
+</td></tr>
+<tr><td>
+
+[values()](./ts-utils.collections.iresultmap.values.md)
+
+
+</td><td>
+
+Returns an iterator over the map values.
 
 
 </td></tr>

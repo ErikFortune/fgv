@@ -42,6 +42,8 @@ TK
 
 </td><td>
 
+The key to delete.
+
 
 </td></tr>
 </tbody></table>
@@ -49,4 +51,6 @@ TK
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+
+`Success` with the previous value and the detail 'deleted' if the key was found and deleted, `Failure` with detail 'not-found' if the key was not found, or with detail 'invalid-key' if the key is invalid.
 

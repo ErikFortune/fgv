@@ -4,7 +4,7 @@
 
 ## Collections.IResultMap.set() method
 
-Sets a key/value pair in the map.
+Sets a key/value pair in the map regardless of whether the key already exists.
 
 **Signature:**
 
@@ -42,6 +42,8 @@ TK
 
 </td><td>
 
+The key to set.
+
 
 </td></tr>
 <tr><td>
@@ -56,6 +58,8 @@ TV
 
 </td><td>
 
+The value to set.
+
 
 </td></tr>
 </tbody></table>
@@ -63,4 +67,6 @@ TV
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+
+`Success` with the new value and the detail `updated` if the key was found and updated, `Success` with the new value and detail `added` if the key was not found and added. Fails with detail 'invalid-key' or 'invalid-value' and an error message if either is invalid.
 

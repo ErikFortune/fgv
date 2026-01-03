@@ -1,0 +1,107 @@
+{
+  "zephyr-caramel-35": {
+    "baseId": "zephyr-caramel-35",
+    "name": "Cacao Barry Zéphyr™ Caramel 35%",
+    "category": "chocolate",
+    "chocolateType": "caramelized",
+    "cacaoPercentage": 35,
+    "ganacheCharacteristics": {
+      "cacaoFat": 35,
+      "sugar": 24,
+      "milkFat": 6,
+      "water": 1,
+      "solids": 34,
+      "otherFats": 0
+    },
+    "fluidityStars": 5,
+    "description": "Delightful caramelized white chocolate with silky texture and strong caramel milk taste, reminiscent of Brittany's 'caramel au beurre salé'",
+    "tags": ["caramelized", "white", "salted-caramel", "silky"],
+    "allergens": ["milk"],
+    "certifications": ["halal", "vegetarian", "kosher-dairy"]
+  },
+  "madirofolo-65": {
+    "baseId": "madirofolo-65",
+    "name": "Cacao Barry Madirofolo 65%",
+    "category": "chocolate",
+    "chocolateType": "dark",
+    "cacaoPercentage": 65,
+    "ganacheCharacteristics": {
+      "cacaoFat": 38,
+      "sugar": 33,
+      "milkFat": 0,
+      "water": 1,
+      "solids": 28,
+      "otherFats": 0
+    },
+    "fluidityStars": 4,
+    "description": "Madagascar single-origin dark chocolate with citrus bitterness, sour wood notes, and hint of liquorice",
+    "tags": ["dark", "single-origin", "madagascar", "organic", "citrus"],
+    "origins": ["Madagascar"],
+    "beanVarieties": "Trinitario",
+    "certifications": ["organic", "halal", "vegetarian", "kosher-dairy", "traceable-beans"]
+  },
+  "guayaquil-64": {
+    "baseId": "guayaquil-64",
+    "name": "Cacao Barry Extra-Bitter Guayaquil 64%",
+    "category": "chocolate",
+    "chocolateType": "dark",
+    "cacaoPercentage": 64,
+    "ganacheCharacteristics": {
+      "cacaoFat": 41,
+      "sugar": 34,
+      "milkFat": 0,
+      "water": 1,
+      "solids": 24,
+      "otherFats": 0
+    },
+    "fluidityStars": 4,
+    "description": "Most versatile dark couverture with powerful cocoa flavor, hints of coffee and chestnut, exceptional fluidity",
+    "tags": ["dark", "versatile", "coffee-notes", "chestnut", "multi-origin"],
+    "origins": ["Ecuador", "Ghana", "Côte d'Ivoire"],
+    "beanVarieties": ["Forastero"],
+    "certifications": ["halal", "vegetarian", "kosher-dairy", "vegan", "traceable-beans"]
+  },
+  "zephyr-white-34": {
+    "baseId": "zephyr-white-34",
+    "name": "Cacao Barry Zéphyr™ White 34%",
+    "category": "chocolate",
+    "chocolateType": "white",
+    "cacaoPercentage": 34,
+    "ganacheCharacteristics": {
+      "cacaoFat": 34,
+      "sugar": 39,
+      "milkFat": 6,
+      "water": 1,
+      "solids": 20,
+      "otherFats": 0
+    },
+    "fluidityStars": 5,
+    "description": "Extremely soft and subtly sweet white chocolate with smooth texture and strong flavor of whole milk",
+    "tags": ["white", "soft", "milk-flavor", "smooth", "heritage"],
+    "origins": ["West Africa"],
+    "beanVarieties": ["Forastero"],
+    "allergens": ["milk"],
+    "certifications": ["halal", "vegetarian", "kosher-dairy"]
+  },
+  "tanzanie-75": {
+    "baseId": "tanzanie-75",
+    "name": "Cacao Barry Tanzanie 75%",
+    "category": "chocolate",
+    "chocolateType": "dark",
+    "cacaoPercentage": 75,
+    "ganacheCharacteristics": {
+      "cacaoFat": 45,
+      "sugar": 22,
+      "milkFat": 0,
+      "water": 1,
+      "solids": 32,
+      "otherFats": 0
+    },
+    "fluidityStars": 5,
+    "description": "Single-origin Tanzanian dark chocolate with harmonious blend of acidity and intense cocoa bitterness, vegetal and woody notes with citrus hints",
+    "tags": ["dark", "single-origin", "tanzania", "fruity", "woody", "citrus"],
+    "origins": ["Tanzania", "Lake Malawi regions"],
+    "beanVarieties": ["Criollo", "Trinitario"],
+    "certifications": ["halal", "vegetarian", "kosher-dairy", "without-lecithin"]
+  }
+}

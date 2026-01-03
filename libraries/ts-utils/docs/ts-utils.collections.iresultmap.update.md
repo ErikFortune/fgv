@@ -4,7 +4,7 @@
 
 ## Collections.IResultMap.update() method
 
-Updates an existing key in the map.
+Updates the value associated with a key in the map.
 
 **Signature:**
 
@@ -42,6 +42,8 @@ TK
 
 </td><td>
 
+The key to update.
+
 
 </td></tr>
 <tr><td>
@@ -56,6 +58,8 @@ TV
 
 </td><td>
 
+The value to set.
+
 
 </td></tr>
 </tbody></table>
@@ -63,4 +67,6 @@ TV
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+
+`Success` with the value and detail 'updated' if the key was found and the value updated, `Failure` an error message and with detail `not-found` if the key was not found, or with detail 'invalid-key' or 'invalid-value' if either is invalid.
 

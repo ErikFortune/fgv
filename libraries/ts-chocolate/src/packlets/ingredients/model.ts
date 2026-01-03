@@ -31,7 +31,10 @@ import {
   IngredientCategory,
   Percentage,
   FluidityStars,
-  Allergen
+  Allergen,
+  Certification,
+  CacaoVariety,
+  ChocolateApplication
 } from '../common';
 
 // ============================================================================
@@ -95,8 +98,14 @@ export interface IIngredient {
   readonly ganacheCharacteristics: IGanacheCharacteristics;
   /** Optional description */
   readonly description?: string;
+  /** Optional manufacturer */
+  readonly manufacturer?: string;
   /** Optional list of common allergens present in the ingredient */
   readonly allergens?: ReadonlyArray<Allergen>;
+  /** Optional list of trace allergens possibly present (e.g. due to contamination) */
+  readonly traceAllergens?: ReadonlyArray<Allergen>;
+  /** Optional list of certifications the ingredient has */
+  readonly certifications?: ReadonlyArray<Certification>;
   /** Optional indicator if the ingredient is vegan */
   readonly vegan?: boolean;
   /** Optional tags for searching/filtering */
@@ -124,6 +133,12 @@ export interface IChocolateIngredient extends IIngredient {
   readonly viscosityMcM?: DegreesMacMichael;
   /** Tempering curve (optional) */
   readonly temperatureCurve?: ITemperatureCurve;
+  /** Bean varieties used in the chocolate (optional) */
+  readonly beanVarieties?: ReadonlyArray<CacaoVariety>;
+  /** Recommended applications for this chocolate (optional) */
+  readonly applications?: ReadonlyArray<ChocolateApplication>;
+  /** Origin of the chocolate (optional) */
+  readonly origins?: string[];
 }
 
 /**

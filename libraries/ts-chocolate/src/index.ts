@@ -29,4 +29,13 @@ export * from './packlets/common';
 // Ingredient types and converters
 import * as Ingredients from './packlets/ingredients';
 
-export { Ingredients };
+// Recipe types and converters
+import * as Recipes from './packlets/recipes';
+
+// Calculation utilities
+import * as Calculations from './packlets/calculations';
+
+// Runtime - main library entry point
+import * as Runtime from './packlets/runtime';
+
+export { Ingredients, Recipes, Calculations, Runtime };

@@ -153,6 +153,18 @@ export const allChocolateTypes: ChocolateType[] = [
 ];
 
 /**
+ * Varieties of cacao beans
+ * @public
+ */
+export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
+
+/**
+ * All possible chocolate varieties.
+ * @public
+ */
+export const allCacaoVarieties: CacaoVariety[] = ['Blend', 'Criollo', 'Forastero', 'Nacional', 'Trinitario'];
+
+/**
  * Fluidity in Callebaut star ratings (1-5)
  * Lower stars = more fluid, higher stars = more viscous
  * @public
@@ -164,6 +176,39 @@ export type FluidityStars = 1 | 2 | 3 | 4 | 5;
  * @public
  */
 export const allFluidityStars: FluidityStars[] = [1, 2, 3, 4, 5];
+
+/**
+ * Recommended applications for chocolate
+ * @public
+ */
+export type ChocolateApplication =
+  | 'baking'
+  | 'confectionary'
+  | 'cremeux'
+  | 'drinks'
+  | 'enrobing'
+  | 'ganache'
+  | 'ice-cream'
+  | 'molding'
+  | 'mousse'
+  | 'sorbet';
+
+/**
+ * All possible chocolate applications
+ * @public
+ */
+export const allChocolateApplications: ChocolateApplication[] = [
+  'baking',
+  'confectionary',
+  'cremeux',
+  'drinks',
+  'enrobing',
+  'ganache',
+  'ice-cream',
+  'molding',
+  'mousse',
+  'sorbet'
+];
 
 /**
  * Supported weight units for output conversion
@@ -188,6 +233,45 @@ export type Allergen = 'milk' | 'soy' | 'nuts' | 'gluten' | 'eggs' | 'peanuts';
  * @public
  */
 export const allAllergens: Allergen[] = ['milk', 'soy', 'nuts', 'gluten', 'eggs', 'peanuts'];
+
+/**
+ * Certifications that an ingredient may have.
+ * @public
+ */
+export type Certification =
+  | 'all-natural'
+  | 'fair-trade'
+  | 'gluten-free'
+  | 'halal'
+  | 'kosher-dairy'
+  | 'non-gmo'
+  | 'organic'
+  | 'peanut-free'
+  | 'real-vanilla'
+  | 'traceable-beans'
+  | 'vegan'
+  | 'vegetarian'
+  | 'without-lecithin';
+
+/**
+ * All possible certifications
+ * @public
+ */
+export const allCertifications: Certification[] = [
+  'all-natural',
+  'fair-trade',
+  'gluten-free',
+  'halal',
+  'kosher-dairy',
+  'non-gmo',
+  'organic',
+  'peanut-free',
+  'real-vanilla',
+  'traceable-beans',
+  'vegan',
+  'vegetarian',
+  'without-lecithin'
+];
 
 /**
  * Well-known built-in source identifiers

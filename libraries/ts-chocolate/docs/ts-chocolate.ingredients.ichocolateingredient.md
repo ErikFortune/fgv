@@ -38,6 +38,48 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[applications?](./ts-chocolate.ingredients.ichocolateingredient.applications.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ChocolateApplication](./ts-chocolate.chocolateapplication.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Recommended applications for this chocolate (optional)
+
+
+</td></tr>
+<tr><td>
+
+[beanVarieties?](./ts-chocolate.ingredients.ichocolateingredient.beanvarieties.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[CacaoVariety](./ts-chocolate.cacaovariety.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Bean varieties used in the chocolate (optional)
+
+
+</td></tr>
+<tr><td>
+
 [cacaoPercentage](./ts-chocolate.ingredients.ichocolateingredient.cacaopercentage.md)
 
 
@@ -117,6 +159,27 @@ Type of chocolate
 </td><td>
 
 _(Optional)_ Fluidity in Callebaut star ratings (optional)
+
+
+</td></tr>
+<tr><td>
+
+[origins?](./ts-chocolate.ingredients.ichocolateingredient.origins.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+string\[\]
+
+
+</td><td>
+
+_(Optional)_ Origin of the chocolate (optional)
 
 
 </td></tr>

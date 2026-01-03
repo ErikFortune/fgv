@@ -42,6 +42,8 @@ TK
 
 </td><td>
 
+The key of the element to be retrieved or created.
+
 
 </td></tr>
 <tr><td>
@@ -56,6 +58,8 @@ factory
 
 </td><td>
 
+A [factory function](./ts-utils.collections.resultmapvaluefactory.md) to create the value if the key does not exist.
+
 
 </td></tr>
 </tbody></table>
@@ -63,4 +67,6 @@ factory
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+
+`Success` with the value and detail `exists` if the key was found, `Success` with the value and detail `added` if the key was not found and added. Fails with detail 'invalid-key' or 'invalid-value' and an error message if either is invalid. 
 

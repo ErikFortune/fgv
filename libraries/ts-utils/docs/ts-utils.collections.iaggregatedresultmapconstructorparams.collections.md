@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly collections?: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>[];
+readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>>;
 ```

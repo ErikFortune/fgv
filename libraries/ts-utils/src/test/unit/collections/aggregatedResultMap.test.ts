@@ -697,7 +697,7 @@ describe('AggregatedResultMap', () => {
           collectionIdConverter: collectionIdValidator,
           itemIdConverter: itemIdValidator,
           itemConverter,
-          delimiter: ':'
+          separator: ':'
         }).orThrow();
 
         expect(colonMap.composeId('alpha' as CollectionId, '1' as ItemId)).toSucceedWith(
@@ -1020,6 +1020,208 @@ describe('AggregatedResultMap', () => {
     });
   });
 
+  describe('derived composite ID validator', () => {
+    // These tests verify that when compositeIdValidator is not provided,
+    // the AggregatedResultMap derives one from collectionIdConverter, itemIdConverter, and separator
+
+    test('works without explicit compositeIdValidator using default separator', () => {
+      const result = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter,
+        collections: [
+          {
+            isMutable: true,
+            id: 'alpha' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'test', value: 1 } }
+          }
+        ]
+      });
+      expect(result).toSucceedAndSatisfy((map) => {
+        // Default separator is '.'
+        expect(map.get('alpha.1' as CompositeId)).toSucceedWith({ name: 'test', value: 1 });
+        expect(map.has('alpha.1' as CompositeId)).toBe(true);
+      });
+    });
+
+    test('works without explicit compositeIdValidator using custom separator', () => {
+      const result = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter,
+        separator: ':',
+        collections: [
+          {
+            isMutable: true,
+            id: 'alpha' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'test', value: 1 } }
+          }
+        ]
+      });
+      expect(result).toSucceedAndSatisfy((map) => {
+        expect(map.get('alpha:1' as CompositeId)).toSucceedWith({ name: 'test', value: 1 });
+        expect(map.has('alpha:1' as CompositeId)).toBe(true);
+        // Should fail with wrong separator
+        expect(map.has('alpha.1' as CompositeId)).toBe(false);
+      });
+    });
+
+    test('derived validator validates collection ID portion', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter
+      }).orThrow();
+
+      // Add an item to a valid collection
+      expect(map.add('valid.1' as CompositeId, { name: 'test', value: 1 })).toSucceed();
+
+      // Try to get with invalid collection ID - should fail validation
+      expect(map.get('123invalid.1' as CompositeId)).toFail();
+    });
+
+    test('derived validator validates item ID portion', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter
+      }).orThrow();
+
+      // Add an item with valid IDs
+      expect(map.add('alpha.1' as CompositeId, { name: 'test', value: 1 })).toSucceed();
+
+      // Try to get with invalid item ID - should fail validation
+      expect(map.get('alpha.invalid' as CompositeId)).toFail();
+    });
+
+    test('derived validator requires separator in composite ID', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter
+      }).orThrow();
+
+      // Try to use ID without separator
+      expect(map.get('noseparator' as CompositeId)).toFailWith(/separator.*not found/i);
+    });
+
+    test('derived validator rejects multiple separators', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter
+      }).orThrow();
+
+      // Try to use ID with multiple separators
+      expect(map.get('alpha.beta.1' as CompositeId)).toFailWith(/multiple separators/i);
+    });
+
+    test('composeId works with derived validator', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter,
+        separator: '-'
+      }).orThrow();
+
+      expect(map.composeId('alpha' as CollectionId, '1' as ItemId)).toSucceedWith('alpha-1' as CompositeId);
+    });
+
+    test('entries iterator works with derived validator', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter,
+        collections: [
+          {
+            isMutable: true,
+            id: 'alpha' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'a1', value: 1 }, '2': { name: 'a2', value: 2 } }
+          }
+        ]
+      }).orThrow();
+
+      const entries = Array.from(map.entries());
+      expect(entries).toHaveLength(2);
+      const keys = entries.map(([key]) => key);
+      expect(keys).toContain('alpha.1');
+      expect(keys).toContain('alpha.2');
+    });
+
+    test('validating interface works with derived validator', () => {
+      const map = AggregatedResultMap.create({
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter,
+        collections: [
+          {
+            isMutable: true,
+            id: 'alpha' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'a1', value: 1 } }
+          }
+        ]
+      }).orThrow();
+
+      // Cast to access mutating methods on the validator
+      const validating = map.validating as AggregatedResultMapValidator<
+        CompositeId,
+        CollectionId,
+        ItemId,
+        ITestItem
+      >;
+
+      // Validating interface should work
+      expect(validating.get('alpha.1')).toSucceedWith({ name: 'a1', value: 1 });
+      expect(validating.has('alpha.1')).toBe(true);
+      expect(validating.add('alpha.2', { name: 'a2', value: 2 })).toSucceed();
+      expect(validating.set('alpha.3', { name: 'a3', value: 3 })).toSucceed();
+      expect(validating.update('alpha.1', { name: 'updated', value: 99 })).toSucceed();
+      expect(validating.delete('alpha.3')).toSucceed();
+    });
+
+    test('explicit compositeIdValidator overrides derived behavior', () => {
+      // Create a custom validator that only accepts composite IDs starting with 'custom'
+      const customValidator = Validators.generic<CompositeId>((from: unknown) => {
+        if (typeof from !== 'string') {
+          return fail('not a string');
+        }
+        if (!from.startsWith('custom')) {
+          return fail('must start with "custom"');
+        }
+        // Still validate it has a separator
+        if (!from.includes('.')) {
+          return fail('missing separator');
+        }
+        return true;
+      });
+
+      const map = AggregatedResultMap.create({
+        compositeIdValidator: customValidator,
+        collectionIdConverter: collectionIdValidator,
+        itemIdConverter: itemIdValidator,
+        itemConverter,
+        collections: [
+          {
+            isMutable: true,
+            id: 'custom' as CollectionId,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            items: { '1': { name: 'test', value: 1 } }
+          }
+        ]
+      }).orThrow();
+
+      // Should work with 'custom' prefix
+      expect(map.get('custom.1' as CompositeId)).toSucceedWith({ name: 'test', value: 1 });
+
+      // Should fail without 'custom' prefix even though collection/item IDs are valid
+      expect(map.composeId('alpha' as CollectionId, '1' as ItemId)).toFailWith(/must start with "custom"/i);
+    });
+  });
+
   describe('edge cases', () => {
     test('handles empty collections correctly', () => {
       const result = AggregatedResultMap.create({
@@ -1052,7 +1254,7 @@ describe('AggregatedResultMap', () => {
           collectionIdConverter: collectionIdValidator,
           itemIdConverter: itemIdValidator,
           itemConverter,
-          delimiter: ':',
+          separator: ':',
           collections: [
             {
               isMutable: true,
