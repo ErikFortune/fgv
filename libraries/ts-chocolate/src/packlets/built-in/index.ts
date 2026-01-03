@@ -18,14 +18,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-export * from './model';
-export * from './ingredientsCollection';
-export * from './ingredientsLibrary';
-
-import * as Converters from './converters';
-
-/**
- * Converters for ingredient types
- * @public
- */
-export { Converters };
+export * from './builtInData';

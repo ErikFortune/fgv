@@ -23,7 +23,6 @@ import '@fgv/ts-utils-jest';
 import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../packlets/common';
 
 import {
-  builtInIngredientCollections,
   IngredientsLibrary,
   Ingredient,
   IIngredient,
@@ -60,15 +59,23 @@ describe('IngredientsLibrary', () => {
   // ============================================================================
 
   describe('create', () => {
-    test('creates empty library with no params', () => {
-      expect(IngredientsLibrary.create()).toSucceedAndSatisfy((lib) => {
+    test('creates empty library with builtin: false', () => {
+      expect(IngredientsLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
         expect(lib.size).toBe(0);
         expect(lib.collectionCount).toBe(0);
       });
     });
 
-    test('creates library with initial collections', () => {
+    test('creates library with built-ins by default', () => {
+      expect(IngredientsLibrary.create()).toSucceedAndSatisfy((lib) => {
+        expect(lib.size).toBeGreaterThan(0);
+        expect(lib.collectionCount).toBe(4);
+      });
+    });
+
+    test('creates library with additional collections', () => {
       const result = IngredientsLibrary.create({
+        builtin: false,
         collections: [
           {
             id: 'test' as SourceId,
@@ -85,36 +92,63 @@ describe('IngredientsLibrary', () => {
         expect(lib.collectionCount).toBe(1);
       });
     });
-  });
 
-  describe('builtInIngredientsCollections', () => {
-    test('creates library with built-in collections', () => {
-      expect(
-        IngredientsLibrary.create({
-          collections: builtInIngredientCollections
-        })
-      ).toSucceedAndSatisfy((lib) => {
-        expect(lib.size).toBeGreaterThan(0);
-        expect(lib.collectionCount).toBe(4);
+    test('combines built-ins with additional collections', () => {
+      const result = IngredientsLibrary.create({
+        collections: [
+          {
+            id: 'test' as SourceId,
+            isMutable: true,
+            items: {
+              testChoco: testIngredient
+            }
+          }
+        ]
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(5); // 4 built-in + 1 custom
+        expect(lib.validating.has('test.testChoco')).toBe(true);
+        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
       });
     });
+  });
 
+  describe('builtin parameter', () => {
     test('includes common ingredients', () => {
-      expect(
-        IngredientsLibrary.create({
-          collections: builtInIngredientCollections
-        })
-      ).toSucceedAndSatisfy((lib) => {
+      expect(IngredientsLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
       });
     });
 
     test('includes felchlin ingredients', () => {
+      expect(IngredientsLibrary.create()).toSucceedAndSatisfy((lib) => {
+        expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
+      });
+    });
+
+    test('loads specific built-in collections with array', () => {
       expect(
         IngredientsLibrary.create({
-          collections: builtInIngredientCollections
+          builtin: ['common' as SourceId, 'felchlin' as SourceId]
         })
       ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
+        expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
+      });
+    });
+
+    test('loads built-ins with fine-grained params', () => {
+      expect(
+        IngredientsLibrary.create({
+          builtin: {
+            excluded: ['guittard', 'cacao-barry']
+          }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
         expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
       });
     });
@@ -128,9 +162,7 @@ describe('IngredientsLibrary', () => {
     let library: IngredientsLibrary;
 
     beforeEach(() => {
-      library = IngredientsLibrary.create({
-        collections: builtInIngredientCollections
-      }).orThrow();
+      library = IngredientsLibrary.create().orThrow();
     });
 
     test('gets existing ingredient', () => {
@@ -162,9 +194,7 @@ describe('IngredientsLibrary', () => {
     let library: IngredientsLibrary;
 
     beforeEach(() => {
-      library = IngredientsLibrary.create({
-        collections: builtInIngredientCollections
-      }).orThrow();
+      library = IngredientsLibrary.create().orThrow();
     });
 
     test('entries iterates all items', () => {
@@ -202,6 +232,7 @@ describe('IngredientsLibrary', () => {
 
     beforeEach(() => {
       library = IngredientsLibrary.create({
+        builtin: false,
         collections: [
           {
             id: 'test' as SourceId,
@@ -265,9 +296,8 @@ describe('IngredientsLibrary', () => {
     let library: IngredientsLibrary;
 
     beforeEach(() => {
-      library = IngredientsLibrary.create({
-        collections: builtInIngredientCollections
-      }).orThrow();
+      // Built-in collections are always immutable
+      library = IngredientsLibrary.create().orThrow();
     });
 
     test('add fails for immutable collection', () => {
@@ -294,7 +324,7 @@ describe('IngredientsLibrary', () => {
     let library: IngredientsLibrary;
 
     beforeEach(() => {
-      library = IngredientsLibrary.create().orThrow();
+      library = IngredientsLibrary.create({ builtin: false }).orThrow();
     });
 
     test('addCollectionEntry adds a collection', () => {
@@ -328,9 +358,7 @@ describe('IngredientsLibrary', () => {
     let library: IngredientsLibrary;
 
     beforeEach(() => {
-      library = IngredientsLibrary.create({
-        collections: builtInIngredientCollections
-      }).orThrow();
+      library = IngredientsLibrary.create().orThrow();
     });
 
     test('validating.get converts string key', () => {
@@ -351,9 +379,7 @@ describe('IngredientsLibrary', () => {
     let library: IngredientsLibrary;
 
     beforeEach(() => {
-      library = IngredientsLibrary.create({
-        collections: builtInIngredientCollections
-      }).orThrow();
+      library = IngredientsLibrary.create().orThrow();
     });
 
     test('collections returns readonly map', () => {

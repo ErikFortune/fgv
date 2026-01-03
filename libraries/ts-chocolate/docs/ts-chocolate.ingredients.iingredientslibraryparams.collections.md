@@ -4,7 +4,7 @@
 
 ## Ingredients.IIngredientsLibraryParams.collections property
 
-Optional initial collections of ingredients Each collection can be provided as a JSON entry or pre-built entry
+Optional additional collections of ingredients Each collection can be provided as a JSON entry or pre-built entry
 
 **Signature:**
 

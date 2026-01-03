@@ -64,11 +64,27 @@ export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
 // @public
 const baseRecipeId: Converter<BaseRecipeId>;
 
+declare namespace BuiltIn {
+    export {
+        BuiltInData
+    }
+}
+export { BuiltIn }
+
 // @public
-const builtInIngredientCollections: ReadonlyArray<IngredientCollectionEntryInit>;
+class BuiltInData {
+    // @internal
+    static clearCache(): void;
+    static getIngredientsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
+    static getLibraryTree(): Result<FileTree.IFileTreeDirectoryItem>;
+    static getRecipesDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
+}
 
 // @public
 export type BuiltInSource = 'built-in';
+
+// @public
+type BuiltInSpec = boolean | ReadonlyArray<SourceId> | IBuiltInLoadParams;
 
 // @public
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
@@ -226,21 +242,21 @@ declare namespace Converters_2 {
 
 declare namespace Converters_3 {
     export {
+        removeExtension,
+        collection,
+        removeJsonExtension,
+        ICollectionConverterParams
+    }
+}
+
+declare namespace Converters_4 {
+    export {
         recipeIngredient,
         recipeUsage,
         recipeDetails,
         recipe,
         scaledRecipeIngredient,
         recipeConverter
-    }
-}
-
-declare namespace Converters_4 {
-    export {
-        removeExtension,
-        collection,
-        removeJsonExtension,
-        ICollectionConverterParams
     }
 }
 
@@ -278,10 +294,16 @@ const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
 
 // @public
+function getIngredientsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
 function getIngredientSourceId(id: IngredientId): SourceId;
 
 // @public
 function getRecipeBaseId(id: RecipeId): BaseRecipeId;
+
+// @public
+function getRecipesDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getRecipeSourceId(id: RecipeId): SourceId;
@@ -291,6 +313,13 @@ export type Grams = Brand<number, 'Grams'>;
 
 // @public
 const grams: Converter<Grams>;
+
+// @public
+interface IBuiltInLoadParams {
+    readonly excluded?: ReadonlyArray<FilterPattern>;
+    readonly included?: ReadonlyArray<FilterPattern>;
+    readonly recurseWithDelimiter?: string;
+}
 
 // @public
 interface IChocolateIngredient extends IIngredient {
@@ -440,6 +469,7 @@ interface IIngredient {
 
 // @public
 interface IIngredientsLibraryParams {
+    readonly builtin?: BuiltInSpec;
     readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
 }
 
@@ -498,13 +528,14 @@ declare namespace Ingredients {
         IDairyIngredient,
         IFatIngredient,
         Ingredient,
+        IBuiltInLoadParams,
+        BuiltInSpec,
         IngredientCollectionEntry,
         IngredientCollectionEntryInit,
         IngredientCollectionValidator,
         IngredientCollection,
         IIngredientsLibraryParams,
-        IngredientsLibrary,
-        builtInIngredientCollections
+        IngredientsLibrary
     }
 }
 export { Ingredients }
@@ -639,7 +670,7 @@ interface ITemperatureCurve {
 
 declare namespace LibraryData {
     export {
-        Converters_4 as Converters,
+        Converters_3 as Converters,
         FilterPattern,
         MutabilitySpec,
         ICollection,
@@ -649,15 +680,28 @@ declare namespace LibraryData {
         CollectionFilter,
         ICollectionLoaderInitParams,
         ILoadCollectionFromFileTreeParams,
-        CollectionLoader
+        CollectionLoader,
+        navigateToDirectory,
+        getIngredientsDirectory,
+        getRecipesDirectory,
+        LibraryPaths
     }
 }
 export { LibraryData }
 
 // @public
+const LibraryPaths: {
+    readonly ingredients: "data/ingredients";
+    readonly recipes: "data/recipes";
+};
+
+// @public
 type MutabilitySpec = boolean | ReadonlyArray<string> | {
     readonly immutable: ReadonlyArray<string>;
 };
+
+// @public
+function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;
@@ -715,7 +759,7 @@ const recipeName: Converter<RecipeName>;
 
 declare namespace Recipes {
     export {
-        Converters_3 as Converters,
+        Converters_4 as Converters,
         IRecipeIngredient,
         IRecipeUsage,
         IRecipeDetails,

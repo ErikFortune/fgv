@@ -21,6 +21,15 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[BuiltIn](./ts-chocolate.builtin.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Calculations](./ts-chocolate.calculations.md)
 
 

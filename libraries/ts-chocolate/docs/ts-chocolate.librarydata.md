@@ -41,6 +41,54 @@ Loads collections from a file tree, validating with supplied converters and filt
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getIngredientsDirectory(tree)](./ts-chocolate.librarydata.getingredientsdirectory.md)
+
+
+</td><td>
+
+Gets the ingredients directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
+[getRecipesDirectory(tree)](./ts-chocolate.librarydata.getrecipesdirectory.md)
+
+
+</td><td>
+
+Gets the recipes directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
+[navigateToDirectory(tree, path)](./ts-chocolate.librarydata.navigatetodirectory.md)
+
+
+</td><td>
+
+Navigates to a subdirectory within a FileTree by path.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -141,6 +189,32 @@ Description
 
 
 </td><td>
+
+
+</td></tr>
+</tbody></table>
+
+## Variables
+
+<table><thead><tr><th>
+
+Variable
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[LibraryPaths](./ts-chocolate.librarydata.librarypaths.md)
+
+
+</td><td>
+
+Canonical paths within a chocolate library tree.
 
 
 </td></tr>

@@ -23,5 +23,6 @@ import * as Converters from './converters';
 export * from './model';
 export * from './collectionFilter';
 export * from './collectionLoader';
+export * from './navigation';
 
 export { Converters };

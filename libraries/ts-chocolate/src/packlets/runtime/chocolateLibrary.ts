@@ -26,7 +26,7 @@
 import { Result, fail, succeed } from '@fgv/ts-utils';
 
 import { Grams, IngredientId, RecipeId } from '../common';
-import { Ingredient, IngredientsLibrary, builtInIngredientCollections } from '../ingredients';
+import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, IScaledRecipe, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 
@@ -91,10 +91,8 @@ export class ChocolateLibrary {
     const ingredientsResult: Result<IngredientsLibrary> =
       params?.ingredients !== undefined
         ? succeed(params.ingredients)
-        : params?.includeBuiltInIngredients === false
-        ? IngredientsLibrary.create()
         : IngredientsLibrary.create({
-            collections: builtInIngredientCollections
+            builtin: params?.includeBuiltInIngredients ?? true
           });
 
     // Get or create recipes library

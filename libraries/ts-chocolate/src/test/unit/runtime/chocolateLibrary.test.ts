@@ -90,6 +90,7 @@ describe('ChocolateLibrary', () => {
 
     test('creates with provided ingredients library', () => {
       const ingredients = IngredientsLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 

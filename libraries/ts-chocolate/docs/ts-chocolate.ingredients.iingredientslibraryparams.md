@@ -37,6 +37,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[builtin?](./ts-chocolate.ingredients.iingredientslibraryparams.builtin.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[BuiltInSpec](./ts-chocolate.ingredients.builtinspec.md)
+
+
+</td><td>
+
+_(Optional)_ Controls which built-in ingredient collections are loaded. Built-in collections are always immutable.
+
+- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `IBuiltInLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
+
+
+</td></tr>
+<tr><td>
+
 [collections?](./ts-chocolate.ingredients.iingredientslibraryparams.collections.md)
 
 
@@ -52,7 +75,7 @@ ReadonlyArray&lt;[IngredientCollectionEntryInit](./ts-chocolate.ingredients.ingr
 
 </td><td>
 
-_(Optional)_ Optional initial collections of ingredients Each collection can be provided as a JSON entry or pre-built entry
+_(Optional)_ Optional additional collections of ingredients Each collection can be provided as a JSON entry or pre-built entry
 
 
 </td></tr>
