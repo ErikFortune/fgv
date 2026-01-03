@@ -117,7 +117,15 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
  * Base categories of ingredients (discriminated union tag)
  * @public
  */
-export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'other';
+export type IngredientCategory =
+  | 'chocolate'
+  | 'sugar'
+  | 'dairy'
+  | 'fat'
+  | 'liquid'
+  | 'flavor'
+  | 'alcohol'
+  | 'other';
 
 /**
  * All possible ingredient categories
@@ -130,6 +138,7 @@ export const allIngredientCategories: IngredientCategory[] = [
   'fat',
   'liquid',
   'flavor',
+  'alcohol',
   'other'
 ];
 

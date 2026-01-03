@@ -9,5 +9,5 @@ Base categories of ingredients (discriminated union tag)
 **Signature:**
 
 ```typescript
-export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'other';
+export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'alcohol' | 'other';
 ```

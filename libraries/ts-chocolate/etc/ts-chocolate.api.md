@@ -14,6 +14,9 @@ import { Result } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
+const alcoholIngredient: Converter<IAlcoholIngredient>;
+
+// @public
 export const allAllergens: Allergen[];
 
 // @public
@@ -237,6 +240,7 @@ declare namespace Converters_2 {
         sugarIngredient,
         dairyIngredient,
         fatIngredient,
+        alcoholIngredient,
         ingredient
     }
 }
@@ -314,6 +318,13 @@ export type Grams = Brand<number, 'Grams'>;
 
 // @public
 const grams: Converter<Grams>;
+
+// @public
+interface IAlcoholIngredient extends IIngredient {
+    readonly alcoholByVolume?: Percentage;
+    readonly category: 'alcohol';
+    readonly flavorProfile?: string;
+}
 
 // @public
 interface IBuiltInLoadParams {
@@ -482,13 +493,13 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
 }
 
 // @public
-type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IIngredient;
+type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IAlcoholIngredient | IIngredient;
 
 // @public
 const ingredient: Converter<Ingredient>;
 
 // @public
-export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'other';
+export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liquid' | 'flavor' | 'alcohol' | 'other';
 
 // @public
 const ingredientCategory: Converter<IngredientCategory>;
@@ -524,6 +535,7 @@ declare namespace Ingredients {
         isSugarIngredient,
         isDairyIngredient,
         isFatIngredient,
+        isAlcoholIngredient,
         IGanacheCharacteristics,
         ITemperatureCurve,
         IIngredient,
@@ -531,6 +543,7 @@ declare namespace Ingredients {
         ISugarIngredient,
         IDairyIngredient,
         IFatIngredient,
+        IAlcoholIngredient,
         Ingredient,
         IBuiltInLoadParams,
         BuiltInSpec,
@@ -601,6 +614,9 @@ interface IResolvedIngredient {
     // (undocumented)
     readonly ingredient: Ingredient;
 }
+
+// @public
+function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient;
 
 // @public
 interface IScaledRecipe {

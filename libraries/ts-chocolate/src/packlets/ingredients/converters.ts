@@ -27,6 +27,7 @@ import { Conversion, Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as IngredientConverters } from '../common';
 import {
+  IAlcoholIngredient,
   IChocolateIngredient,
   IDairyIngredient,
   IFatIngredient,
@@ -148,6 +149,17 @@ export const fatIngredient: Converter<IFatIngredient> = Converters.object<IFatIn
   meltingPoint: IngredientConverters.celsius.optional()
 });
 
+/**
+ * Converter for IAlcoholIngredient
+ * @public
+ */
+export const alcoholIngredient: Converter<IAlcoholIngredient> = Converters.object<IAlcoholIngredient>({
+  ...commonIngredientFields,
+  category: Converters.literal('alcohol'),
+  alcoholByVolume: IngredientConverters.percentage.optional(),
+  flavorProfile: Converters.string.optional()
+});
+
 // ============================================================================
 // Discriminated Union Converter
 // ============================================================================
@@ -162,5 +174,6 @@ export const ingredient: Converter<Ingredient> = Converters.oneOf<Ingredient>([
   sugarIngredient,
   dairyIngredient,
   fatIngredient,
+  alcoholIngredient,
   baseIngredient
 ]);

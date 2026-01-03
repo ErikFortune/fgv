@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[alcoholIngredient](./ts-chocolate.ingredients.converters.alcoholingredient.md)
+
+
+</td><td>
+
+Converter for IAlcoholIngredient
+
+
+</td></tr>
+<tr><td>
+
 [baseIngredient](./ts-chocolate.ingredients.converters.baseingredient.md)
 
 

@@ -47,6 +47,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[isAlcoholIngredient(ingredient)](./ts-chocolate.ingredients.isalcoholingredient.md)
+
+
+</td><td>
+
+Type guard for IAlcoholIngredient
+
+
+</td></tr>
+<tr><td>
+
 [isChocolateIngredient(ingredient)](./ts-chocolate.ingredients.ischocolateingredient.md)
 
 
@@ -105,6 +116,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IAlcoholIngredient](./ts-chocolate.ingredients.ialcoholingredient.md)
+
+
+</td><td>
+
+Alcohol-specific ingredient
+
+
+</td></tr>
+<tr><td>
 
 [IBuiltInLoadParams](./ts-chocolate.ingredients.ibuiltinloadparams.md)
 

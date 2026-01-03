@@ -30,7 +30,8 @@ import {
   isChocolateIngredient,
   isDairyIngredient,
   isFatIngredient,
-  isSugarIngredient
+  isSugarIngredient,
+  isAlcoholIngredient
 } from '../../../packlets/ingredients';
 
 describe('IngredientsLibrary', () => {
@@ -419,6 +420,7 @@ describe('Ingredient type guards', () => {
   const sugarIngredient: Ingredient = { ...baseIngredient, category: 'sugar' };
   const dairyIngredient: Ingredient = { ...baseIngredient, category: 'dairy' };
   const fatIngredient: Ingredient = { ...baseIngredient, category: 'fat' };
+  const alcoholIngredient: Ingredient = { ...baseIngredient, category: 'alcohol' };
 
   test.each([
     ['isChocolateIngredient', isChocolateIngredient, chocolateIngredient, true],
@@ -428,7 +430,9 @@ describe('Ingredient type guards', () => {
     ['isDairyIngredient', isDairyIngredient, dairyIngredient, true],
     ['isDairyIngredient', isDairyIngredient, chocolateIngredient, false],
     ['isFatIngredient', isFatIngredient, fatIngredient, true],
-    ['isFatIngredient', isFatIngredient, chocolateIngredient, false]
+    ['isFatIngredient', isFatIngredient, chocolateIngredient, false],
+    ['isAlcoholIngredient', isAlcoholIngredient, alcoholIngredient, true],
+    ['isAlcoholIngredient', isAlcoholIngredient, chocolateIngredient, false]
   ])('%s returns %p for %p', (name, fn, input, expected) => {
     expect(fn(input)).toBe(expected);
   });

@@ -180,6 +180,19 @@ export interface IFatIngredient extends IIngredient {
   readonly meltingPoint?: Celsius;
 }
 
+/**
+ * Alcohol-specific ingredient
+ * @public
+ */
+export interface IAlcoholIngredient extends IIngredient {
+  /** Category is always Alcohol for this type */
+  readonly category: 'alcohol';
+  /** Alcohol by volume percentage */
+  readonly alcoholByVolume?: Percentage;
+  /** Flavor profile description (optional) */
+  readonly flavorProfile?: string;
+}
+
 // ============================================================================
 // Ingredient Union Type
 // ============================================================================
@@ -193,6 +206,7 @@ export type Ingredient =
   | ISugarIngredient
   | IDairyIngredient
   | IFatIngredient
+  | IAlcoholIngredient
   | IIngredient;
 
 // ============================================================================
@@ -237,6 +251,16 @@ export function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyI
  */
 export function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient {
   return ingredient.category === 'fat';
+}
+
+/**
+ * Type guard for IAlcoholIngredient
+ * @param ingredient - Ingredient to check
+ * @returns True if the ingredient is an alcohol ingredient
+ * @public
+ */
+export function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient {
+  return ingredient.category === 'alcohol';
 }
 
 // ============================================================================

@@ -9,7 +9,7 @@ Discriminated union of all ingredient types
 **Signature:**
 
 ```typescript
-export type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IIngredient;
+export type Ingredient = IChocolateIngredient | ISugarIngredient | IDairyIngredient | IFatIngredient | IAlcoholIngredient | IIngredient;
 ```
-**References:** [IChocolateIngredient](./ts-chocolate.ingredients.ichocolateingredient.md)<!-- -->, [ISugarIngredient](./ts-chocolate.ingredients.isugaringredient.md)<!-- -->, [IDairyIngredient](./ts-chocolate.ingredients.idairyingredient.md)<!-- -->, [IFatIngredient](./ts-chocolate.ingredients.ifatingredient.md)<!-- -->, [IIngredient](./ts-chocolate.ingredients.iingredient.md)
+**References:** [IChocolateIngredient](./ts-chocolate.ingredients.ichocolateingredient.md)<!-- -->, [ISugarIngredient](./ts-chocolate.ingredients.isugaringredient.md)<!-- -->, [IDairyIngredient](./ts-chocolate.ingredients.idairyingredient.md)<!-- -->, [IFatIngredient](./ts-chocolate.ingredients.ifatingredient.md)<!-- -->, [IAlcoholIngredient](./ts-chocolate.ingredients.ialcoholingredient.md)<!-- -->, [IIngredient](./ts-chocolate.ingredients.iingredient.md)
 
