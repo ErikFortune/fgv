@@ -169,10 +169,10 @@ export const ingredientCollections: Record<string, JsonObject> = {
       ganacheCharacteristics: {
         cacaoFat: 0,
         sugar: 0,
-        milkFat: 0,
-        water: 16,
+        milkFat: 82,
+        water: 18,
         solids: 2,
-        otherFats: 82
+        otherFats: 0
       },
       meltingPoint: 32,
       allergens: ['milk'],
@@ -185,10 +185,10 @@ export const ingredientCollections: Record<string, JsonObject> = {
       ganacheCharacteristics: {
         cacaoFat: 0,
         sugar: 0,
-        milkFat: 0,
+        milkFat: 100,
         water: 0,
         solids: 0,
-        otherFats: 100
+        otherFats: 0
       },
       meltingPoint: 35,
       allergens: ['milk']
