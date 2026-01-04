@@ -172,17 +172,6 @@ Options for recipe scaling
 </td></tr>
 <tr><td>
 
-[IRecipesLibraryParams](./ts-chocolate.recipes.irecipeslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating a RecipesLibrary instance
-
-
-</td></tr>
-<tr><td>
-
 [IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)
 
 
@@ -332,7 +321,16 @@ Union type for consumers who can work with either scaled or unscaled versions
 
 File tree source for recipe data.
 
-Navigates to the standard path (data/recipes) within the tree and loads collections according to the load spec.
+
+</td></tr>
+<tr><td>
+
+[IRecipesLibraryParams](./ts-chocolate.recipes.irecipeslibraryparams.md)
+
+
+</td><td>
+
+Parameters for creating a RecipesLibrary instance.
 
 
 </td></tr>
@@ -410,8 +408,6 @@ Detailed result for recipe operations.
 </td><td>
 
 Specifies a recipes library to merge into a new library.
-
-Can be either: - A `RecipesLibrary` instance (merges all collections) - An `IMergeLibrarySource` object with optional filtering
 
 
 </td></tr>

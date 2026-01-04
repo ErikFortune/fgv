@@ -514,15 +514,10 @@ interface IIngredient {
 }
 
 // @public
-type IIngredientFileTreeSource = IFileTreeSource<SourceId>;
+type IIngredientFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-interface IIngredientsLibraryParams {
-    readonly builtin?: LibraryLoadSpec<SourceId>;
-    readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
-    readonly fileSources?: IIngredientFileTreeSource | ReadonlyArray<IIngredientFileTreeSource>;
-    readonly mergeLibraries?: IngredientsMergeSource | ReadonlyArray<IngredientsMergeSource>;
-}
+type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 
 // @public
 interface IInstantiatedLibrarySource {
@@ -629,7 +624,7 @@ class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, 
 }
 
 // @public
-type IngredientsMergeSource = IngredientsLibrary | IMergeLibrarySource<IngredientsLibrary, SourceId>;
+type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 
 // @public
 interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
@@ -649,7 +644,7 @@ interface IRecipe {
 }
 
 // @public
-type IRecipeFileTreeSource = IFileTreeSource<SourceId>;
+type IRecipeFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
 interface IRecipeIngredient {
@@ -667,12 +662,7 @@ interface IRecipeScaleOptions {
 }
 
 // @public
-interface IRecipesLibraryParams {
-    readonly builtin?: LibraryLoadSpec<SourceId>;
-    readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
-    readonly fileSources?: IRecipeFileTreeSource | ReadonlyArray<IRecipeFileTreeSource>;
-    readonly mergeLibraries?: RecipesMergeSource | ReadonlyArray<RecipesMergeSource>;
-}
+type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionEntryInit>;
 
 // @public
 interface IRecipeUsage {
@@ -764,6 +754,14 @@ interface ISubLibraryConstructorParams<TBaseId extends string, TItem> {
     readonly collections?: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
     readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
     readonly itemIdConverter: Converter<TBaseId, unknown> | Validator<TBaseId, unknown>;
+}
+
+// @public
+interface ISubLibraryParams<TLibrary, TEntryInit> {
+    readonly builtin?: LibraryLoadSpec<SourceId>;
+    readonly collections?: ReadonlyArray<TEntryInit>;
+    readonly fileSources?: SubLibraryFileTreeSource | ReadonlyArray<SubLibraryFileTreeSource>;
+    readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
 }
 
 // @public
@@ -867,6 +865,9 @@ declare namespace LibraryData {
         SubLibraryEntryInit,
         SubLibraryCollectionValidator,
         SubLibraryCollection,
+        SubLibraryFileTreeSource,
+        SubLibraryMergeSource,
+        ISubLibraryParams,
         ISubLibraryConstructorParams,
         SubLibraryBase
     }
@@ -1036,7 +1037,7 @@ class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
 }
 
 // @public
-type RecipesMergeSource = RecipesLibrary | IMergeLibrarySource<RecipesLibrary, SourceId>;
+type RecipesMergeSource = SubLibraryMergeSource<RecipesLibrary>;
 
 // @public
 const recipeUsage: Converter<IRecipeUsage>;
@@ -1119,7 +1120,13 @@ type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collect
 type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem>;
 
 // @public
+type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
+
+// @public
 type SubLibraryId = 'ingredients' | 'recipes';
+
+// @public
+type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
 
 // @public
 const sugarIngredient: Converter<ISugarIngredient>;

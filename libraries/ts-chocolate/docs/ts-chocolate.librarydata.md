@@ -428,6 +428,17 @@ Parameters for constructing a SubLibrary.
 
 
 </td></tr>
+<tr><td>
+
+[ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)
+
+
+</td><td>
+
+Parameters for creating a sub-library instance.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -598,12 +609,36 @@ Initialization type for a sub-library collection entry. Fixes the collection ID 
 </td></tr>
 <tr><td>
 
+[SubLibraryFileTreeSource](./ts-chocolate.librarydata.sublibraryfiletreesource.md)
+
+
+</td><td>
+
+File tree source for sub-library data. Fixes the collection ID type to SourceId.
+
+
+</td></tr>
+<tr><td>
+
 [SubLibraryId](./ts-chocolate.librarydata.sublibraryid.md)
 
 
 </td><td>
 
 Identifiers for sub-libraries within the chocolate library system.
+
+
+</td></tr>
+<tr><td>
+
+[SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
+
+
+</td><td>
+
+Specifies a sub-library to merge into a new library.
+
+Can be either: - A library instance directly (merges all collections) - An `IMergeLibrarySource` object with optional filtering
 
 
 </td></tr>

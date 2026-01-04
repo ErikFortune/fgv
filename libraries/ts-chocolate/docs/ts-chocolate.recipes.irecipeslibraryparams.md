@@ -2,128 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Recipes](./ts-chocolate.recipes.md) &gt; [IRecipesLibraryParams](./ts-chocolate.recipes.irecipeslibraryparams.md)
 
-## Recipes.IRecipesLibraryParams interface
+## Recipes.IRecipesLibraryParams type
 
-Parameters for creating a RecipesLibrary instance
+Parameters for creating a RecipesLibrary instance.
 
 **Signature:**
 
 ```typescript
-export interface IRecipesLibraryParams 
+export type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionEntryInit>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[builtin?](./ts-chocolate.recipes.irecipeslibraryparams.builtin.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)<!-- -->&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Controls which built-in recipe collections are loaded. Built-in collections are always immutable.
-
-- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `ILibraryLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
-
-
-</td></tr>
-<tr><td>
-
-[collections?](./ts-chocolate.recipes.irecipeslibraryparams.collections.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[RecipeCollectionEntryInit](./ts-chocolate.recipes.recipecollectionentryinit.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional additional collections of recipes Each collection can be provided as a JSON entry or pre-built entry
-
-
-</td></tr>
-<tr><td>
-
-[fileSources?](./ts-chocolate.recipes.irecipeslibraryparams.filesources.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRecipeFileTreeSource](./ts-chocolate.recipes.irecipefiletreesource.md) \| ReadonlyArray&lt;[IRecipeFileTreeSource](./ts-chocolate.recipes.irecipefiletreesource.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ File tree sources to load collections from. Collections are loaded and merged with built-in collections. Duplicate collection IDs across sources cause an error.
-
-
-</td></tr>
-<tr><td>
-
-[mergeLibraries?](./ts-chocolate.recipes.irecipeslibraryparams.mergelibraries.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipesMergeSource](./ts-chocolate.recipes.recipesmergesource.md) \| ReadonlyArray&lt;[RecipesMergeSource](./ts-chocolate.recipes.recipesmergesource.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Existing libraries to merge collections from.
-
-Collections are extracted from these libraries and merged with builtin, file source, and explicit collections. Collection ID collisions across any sources cause an error.
-
-Can be: - A single `RecipesLibrary` (merges all collections) - An `IMergeLibrarySource` object with optional filtering - An array of the above
-
-
-</td></tr>
-</tbody></table>
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [RecipesLibrary](./ts-chocolate.recipes.recipeslibrary.md)<!-- -->, [RecipeCollectionEntryInit](./ts-chocolate.recipes.recipecollectionentryinit.md)
 

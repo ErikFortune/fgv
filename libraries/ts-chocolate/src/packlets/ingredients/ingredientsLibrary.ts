@@ -44,13 +44,14 @@ import {
   createFilterFromSpec,
   getIngredientsDirectory,
   ICollectionSet,
-  IFileTreeSource,
-  IMergeLibrarySource,
+  ISubLibraryParams,
   LibraryLoadSpec,
   normalizeFileSources,
   normalizeMergeSource,
   specToLoadParams,
-  SubLibraryBase
+  SubLibraryBase,
+  SubLibraryFileTreeSource,
+  SubLibraryMergeSource
 } from '../library-data';
 import { BuiltInData } from '../built-in';
 
@@ -60,68 +61,21 @@ import { BuiltInData } from '../built-in';
 
 /**
  * File tree source for ingredient data.
- *
- * Navigates to the standard path (data/ingredients) within the tree
- * and loads collections according to the load spec.
- *
  * @public
  */
-export type IIngredientFileTreeSource = IFileTreeSource<SourceId>;
+export type IIngredientFileTreeSource = SubLibraryFileTreeSource;
 
 /**
  * Specifies an ingredients library to merge into a new library.
- *
- * Can be either:
- * - An `IngredientsLibrary` instance (merges all collections)
- * - An `IMergeLibrarySource` object with optional filtering
- *
  * @public
  */
-export type IngredientsMergeSource = IngredientsLibrary | IMergeLibrarySource<IngredientsLibrary, SourceId>;
+export type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 
 /**
- * Parameters for creating an IngredientsLibrary instance
+ * Parameters for creating an IngredientsLibrary instance.
  * @public
  */
-export interface IIngredientsLibraryParams {
-  /**
-   * Controls which built-in ingredient collections are loaded.
-   * Built-in collections are always immutable.
-   *
-   * - `true` (default): Load all built-in collections.
-   * - `false`: Load no built-in collections.
-   * - `SourceId[]`: Load only the specified built-in collections by name.
-   * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
-   */
-  readonly builtin?: LibraryLoadSpec<SourceId>;
-
-  /**
-   * File tree sources to load collections from.
-   * Collections are loaded and merged with built-in collections.
-   * Duplicate collection IDs across sources cause an error.
-   */
-  readonly fileSources?: IIngredientFileTreeSource | ReadonlyArray<IIngredientFileTreeSource>;
-
-  /**
-   * Optional additional collections of ingredients
-   * Each collection can be provided as a JSON entry or pre-built entry
-   */
-  readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
-
-  /**
-   * Existing libraries to merge collections from.
-   *
-   * Collections are extracted from these libraries and merged with
-   * builtin, file source, and explicit collections. Collection ID
-   * collisions across any sources cause an error.
-   *
-   * Can be:
-   * - A single `IngredientsLibrary` (merges all collections)
-   * - An `IMergeLibrarySource` object with optional filtering
-   * - An array of the above
-   */
-  readonly mergeLibraries?: IngredientsMergeSource | ReadonlyArray<IngredientsMergeSource>;
-}
+export type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 
 // ============================================================================
 // IngredientsLibrary Class

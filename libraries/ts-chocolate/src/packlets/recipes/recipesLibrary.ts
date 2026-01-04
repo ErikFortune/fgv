@@ -45,13 +45,14 @@ import {
   createFilterFromSpec,
   getRecipesDirectory,
   ICollectionSet,
-  IFileTreeSource,
-  IMergeLibrarySource,
+  ISubLibraryParams,
   LibraryLoadSpec,
   normalizeFileSources,
   normalizeMergeSource,
   specToLoadParams,
-  SubLibraryBase
+  SubLibraryBase,
+  SubLibraryFileTreeSource,
+  SubLibraryMergeSource
 } from '../library-data';
 import { BuiltInData } from '../built-in';
 
@@ -78,68 +79,21 @@ export type RecipesDetailedResult<T> = DetailedResult<T, RecipeId>;
 
 /**
  * File tree source for recipe data.
- *
- * Navigates to the standard path (data/recipes) within the tree
- * and loads collections according to the load spec.
- *
  * @public
  */
-export type IRecipeFileTreeSource = IFileTreeSource<SourceId>;
+export type IRecipeFileTreeSource = SubLibraryFileTreeSource;
 
 /**
  * Specifies a recipes library to merge into a new library.
- *
- * Can be either:
- * - A `RecipesLibrary` instance (merges all collections)
- * - An `IMergeLibrarySource` object with optional filtering
- *
  * @public
  */
-export type RecipesMergeSource = RecipesLibrary | IMergeLibrarySource<RecipesLibrary, SourceId>;
+export type RecipesMergeSource = SubLibraryMergeSource<RecipesLibrary>;
 
 /**
- * Parameters for creating a RecipesLibrary instance
+ * Parameters for creating a RecipesLibrary instance.
  * @public
  */
-export interface IRecipesLibraryParams {
-  /**
-   * Controls which built-in recipe collections are loaded.
-   * Built-in collections are always immutable.
-   *
-   * - `true` (default): Load all built-in collections.
-   * - `false`: Load no built-in collections.
-   * - `SourceId[]`: Load only the specified built-in collections by name.
-   * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
-   */
-  readonly builtin?: LibraryLoadSpec<SourceId>;
-
-  /**
-   * File tree sources to load collections from.
-   * Collections are loaded and merged with built-in collections.
-   * Duplicate collection IDs across sources cause an error.
-   */
-  readonly fileSources?: IRecipeFileTreeSource | ReadonlyArray<IRecipeFileTreeSource>;
-
-  /**
-   * Optional additional collections of recipes
-   * Each collection can be provided as a JSON entry or pre-built entry
-   */
-  readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
-
-  /**
-   * Existing libraries to merge collections from.
-   *
-   * Collections are extracted from these libraries and merged with
-   * builtin, file source, and explicit collections. Collection ID
-   * collisions across any sources cause an error.
-   *
-   * Can be:
-   * - A single `RecipesLibrary` (merges all collections)
-   * - An `IMergeLibrarySource` object with optional filtering
-   * - An array of the above
-   */
-  readonly mergeLibraries?: RecipesMergeSource | ReadonlyArray<RecipesMergeSource>;
-}
+export type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionEntryInit>;
 
 // ============================================================================
 // RecipesLibrary Class

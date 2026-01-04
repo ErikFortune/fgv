@@ -6,12 +6,10 @@
 
 Specifies an ingredients library to merge into a new library.
 
-Can be either: - An `IngredientsLibrary` instance (merges all collections) - An `IMergeLibrarySource` object with optional filtering
-
 **Signature:**
 
 ```typescript
-export type IngredientsMergeSource = IngredientsLibrary | IMergeLibrarySource<IngredientsLibrary, SourceId>;
+export type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 ```
-**References:** [IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- -->, [IMergeLibrarySource](./ts-chocolate.librarydata.imergelibrarysource.md)<!-- -->, [SourceId](./ts-chocolate.sourceid.md)
+**References:** [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)<!-- -->, [IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)
 

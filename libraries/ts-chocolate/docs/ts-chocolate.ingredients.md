@@ -183,17 +183,6 @@ Base ingredient interface All ingredients have these common properties
 </td></tr>
 <tr><td>
 
-[IIngredientsLibraryParams](./ts-chocolate.ingredients.iingredientslibraryparams.md)
-
-
-</td><td>
-
-Parameters for creating an IngredientsLibrary instance
-
-
-</td></tr>
-<tr><td>
-
 [ISugarIngredient](./ts-chocolate.ingredients.isugaringredient.md)
 
 
@@ -262,7 +251,16 @@ Description
 
 File tree source for ingredient data.
 
-Navigates to the standard path (data/ingredients) within the tree and loads collections according to the load spec.
+
+</td></tr>
+<tr><td>
+
+[IIngredientsLibraryParams](./ts-chocolate.ingredients.iingredientslibraryparams.md)
+
+
+</td><td>
+
+Parameters for creating an IngredientsLibrary instance.
 
 
 </td></tr>
@@ -329,8 +327,6 @@ Validator type for IngredientsLibrary collections.
 </td><td>
 
 Specifies an ingredients library to merge into a new library.
-
-Can be either: - An `IngredientsLibrary` instance (merges all collections) - An `IMergeLibrarySource` object with optional filtering
 
 
 </td></tr>

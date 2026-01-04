@@ -27,6 +27,7 @@ import { Collections, Converter, Validator } from '@fgv/ts-utils';
 
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
+import { IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec } from './model';
 
 // ============================================================================
 // Type Aliases
@@ -84,6 +85,80 @@ export type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IR
   SourceId,
   SubLibraryCollectionEntry<TBaseId, TItem>
 >;
+
+// ============================================================================
+// File Tree and Merge Source Types
+// ============================================================================
+
+/**
+ * File tree source for sub-library data.
+ * Fixes the collection ID type to SourceId.
+ * @public
+ */
+export type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
+
+/**
+ * Specifies a sub-library to merge into a new library.
+ *
+ * Can be either:
+ * - A library instance directly (merges all collections)
+ * - An `IMergeLibrarySource` object with optional filtering
+ *
+ * @typeParam TLibrary - The library type (e.g., `IngredientsLibrary`)
+ * @public
+ */
+export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
+
+// ============================================================================
+// Library Parameters
+// ============================================================================
+
+/**
+ * Parameters for creating a sub-library instance.
+ *
+ * @typeParam TLibrary - The library type (e.g., `IngredientsLibrary`)
+ * @typeParam TEntryInit - The collection entry initialization type (e.g., `IngredientCollectionEntryInit`)
+ * @public
+ */
+export interface ISubLibraryParams<TLibrary, TEntryInit> {
+  /**
+   * Controls which built-in collections are loaded.
+   * Built-in collections are always immutable.
+   *
+   * - `true` (default): Load all built-in collections.
+   * - `false`: Load no built-in collections.
+   * - `SourceId[]`: Load only the specified built-in collections by name.
+   * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
+   */
+  readonly builtin?: LibraryLoadSpec<SourceId>;
+
+  /**
+   * File tree sources to load collections from.
+   * Collections are loaded and merged with built-in collections.
+   * Duplicate collection IDs across sources cause an error.
+   */
+  readonly fileSources?: SubLibraryFileTreeSource | ReadonlyArray<SubLibraryFileTreeSource>;
+
+  /**
+   * Optional additional collections.
+   * Each collection can be provided as a JSON entry or pre-built entry.
+   */
+  readonly collections?: ReadonlyArray<TEntryInit>;
+
+  /**
+   * Existing libraries to merge collections from.
+   *
+   * Collections are extracted from these libraries and merged with
+   * builtin, file source, and explicit collections. Collection ID
+   * collisions across any sources cause an error.
+   *
+   * Can be:
+   * - A single library (merges all collections)
+   * - An `IMergeLibrarySource` object with optional filtering
+   * - An array of the above
+   */
+  readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
+}
 
 // ============================================================================
 // Constructor Parameters

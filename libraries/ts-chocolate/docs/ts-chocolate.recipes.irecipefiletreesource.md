@@ -6,12 +6,10 @@
 
 File tree source for recipe data.
 
-Navigates to the standard path (data/recipes) within the tree and loads collections according to the load spec.
-
 **Signature:**
 
 ```typescript
-export type IRecipeFileTreeSource = IFileTreeSource<SourceId>;
+export type IRecipeFileTreeSource = SubLibraryFileTreeSource;
 ```
-**References:** [IFileTreeSource](./ts-chocolate.librarydata.ifiletreesource.md)<!-- -->, [SourceId](./ts-chocolate.sourceid.md)
+**References:** [SubLibraryFileTreeSource](./ts-chocolate.librarydata.sublibraryfiletreesource.md)
 

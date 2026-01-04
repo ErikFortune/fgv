@@ -2,128 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Ingredients](./ts-chocolate.ingredients.md) &gt; [IIngredientsLibraryParams](./ts-chocolate.ingredients.iingredientslibraryparams.md)
 
-## Ingredients.IIngredientsLibraryParams interface
+## Ingredients.IIngredientsLibraryParams type
 
-Parameters for creating an IngredientsLibrary instance
+Parameters for creating an IngredientsLibrary instance.
 
 **Signature:**
 
 ```typescript
-export interface IIngredientsLibraryParams 
+export type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[builtin?](./ts-chocolate.ingredients.iingredientslibraryparams.builtin.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[LibraryLoadSpec](./ts-chocolate.librarydata.libraryloadspec.md)<!-- -->&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Controls which built-in ingredient collections are loaded. Built-in collections are always immutable.
-
-- `true` (default): Load all built-in collections. - `false`<!-- -->: Load no built-in collections. - `SourceId[]`<!-- -->: Load only the specified built-in collections by name. - `ILibraryLoadParams`<!-- -->: Fine-grained control using include/exclude patterns.
-
-
-</td></tr>
-<tr><td>
-
-[collections?](./ts-chocolate.ingredients.iingredientslibraryparams.collections.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IngredientCollectionEntryInit](./ts-chocolate.ingredients.ingredientcollectionentryinit.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional additional collections of ingredients Each collection can be provided as a JSON entry or pre-built entry
-
-
-</td></tr>
-<tr><td>
-
-[fileSources?](./ts-chocolate.ingredients.iingredientslibraryparams.filesources.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IIngredientFileTreeSource](./ts-chocolate.ingredients.iingredientfiletreesource.md) \| ReadonlyArray&lt;[IIngredientFileTreeSource](./ts-chocolate.ingredients.iingredientfiletreesource.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ File tree sources to load collections from. Collections are loaded and merged with built-in collections. Duplicate collection IDs across sources cause an error.
-
-
-</td></tr>
-<tr><td>
-
-[mergeLibraries?](./ts-chocolate.ingredients.iingredientslibraryparams.mergelibraries.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IngredientsMergeSource](./ts-chocolate.ingredients.ingredientsmergesource.md) \| ReadonlyArray&lt;[IngredientsMergeSource](./ts-chocolate.ingredients.ingredientsmergesource.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Existing libraries to merge collections from.
-
-Collections are extracted from these libraries and merged with builtin, file source, and explicit collections. Collection ID collisions across any sources cause an error.
-
-Can be: - A single `IngredientsLibrary` (merges all collections) - An `IMergeLibrarySource` object with optional filtering - An array of the above
-
-
-</td></tr>
-</tbody></table>
+**References:** [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md)<!-- -->, [IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- -->, [IngredientCollectionEntryInit](./ts-chocolate.ingredients.ingredientcollectionentryinit.md)
 
