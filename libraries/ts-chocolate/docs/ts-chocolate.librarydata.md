@@ -67,6 +67,19 @@ Checks for duplicate collection IDs across multiple sources.
 </td></tr>
 <tr><td>
 
+[createFilterFromSpec(filterSpec, nameConverter)](./ts-chocolate.librarydata.createfilterfromspec.md)
+
+
+</td><td>
+
+Creates a CollectionFilter from a LibraryLoadSpec.
+
+This helper provides a consistent way to convert the various forms of LibraryLoadSpec into a properly configured CollectionFilter.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory(tree)](./ts-chocolate.librarydata.getingredientsdirectory.md)
 
 
@@ -314,6 +327,19 @@ Fine-grained parameters for controlling which collections from a library to load
 </td><td>
 
 Parameters used to load collections from a file tree.
+
+
+</td></tr>
+<tr><td>
+
+[IMergeLibrarySource](./ts-chocolate.librarydata.imergelibrarysource.md)
+
+
+</td><td>
+
+Specifies a library to merge with optional collection filtering.
+
+Used when creating a new library that should include collections from an existing library instance. The filter parameter allows selective merging of collections.
 
 
 </td></tr>

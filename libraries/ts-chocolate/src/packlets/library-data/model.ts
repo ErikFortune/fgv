@@ -216,3 +216,35 @@ export interface ILibraryFileTreeSource {
    */
   readonly mutable?: MutabilitySpec;
 }
+
+// ============================================================================
+// Library Merging Types
+// ============================================================================
+
+/**
+ * Specifies a library to merge with optional collection filtering.
+ *
+ * Used when creating a new library that should include collections from
+ * an existing library instance. The filter parameter allows selective
+ * merging of collections.
+ *
+ * @typeParam TLibrary - The type of library being merged
+ * @typeParam TCollectionId - The type of collection identifiers (defaults to string)
+ * @public
+ */
+export interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
+  /**
+   * The library to merge collections from.
+   */
+  readonly library: TLibrary;
+
+  /**
+   * Controls which collections to merge from this library.
+   *
+   * - `true` (default): Merge all collections.
+   * - `false`: Merge no collections (skip this library).
+   * - `TCollectionId[]`: Merge only the specified collections by name.
+   * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
+   */
+  readonly filter?: LibraryLoadSpec<TCollectionId>;
+}

@@ -20,7 +20,7 @@
 
 import { Converter, Failure, mapResults, MessageAggregator, Result, Success, Validator } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { FilterPattern } from './model';
+import { FilterPattern, ILibraryLoadParams, LibraryLoadSpec } from './model';
 
 /**
  * Parameters used to filter and validate collections imported from a file tree.
@@ -203,4 +203,55 @@ export class CollectionFilter<T extends string> {
     }
     return Success.with(item.name);
   }
+}
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Creates a CollectionFilter from a LibraryLoadSpec.
+ *
+ * This helper provides a consistent way to convert the various forms of
+ * LibraryLoadSpec into a properly configured CollectionFilter.
+ *
+ * @param filterSpec - The filter specification (true, false, array of IDs, or ILibraryLoadParams)
+ * @param nameConverter - Converter for validating collection names
+ * @returns A CollectionFilter configured according to the spec
+ * @public
+ */
+export function createFilterFromSpec<TCollectionId extends string>(
+  filterSpec: LibraryLoadSpec<TCollectionId>,
+  nameConverter: Converter<TCollectionId> | Validator<TCollectionId>
+): CollectionFilter<TCollectionId> {
+  // true = include all (no include filter, no exclude filter)
+  if (filterSpec === true) {
+    return new CollectionFilter<TCollectionId>({
+      nameConverter
+    });
+  }
+
+  // false = include nothing (empty include list means nothing matches)
+  if (filterSpec === false) {
+    return new CollectionFilter<TCollectionId>({
+      nameConverter,
+      included: []
+    });
+  }
+
+  // Array of specific IDs to include
+  if (Array.isArray(filterSpec)) {
+    return new CollectionFilter<TCollectionId>({
+      nameConverter,
+      included: filterSpec
+    });
+  }
+
+  // ILibraryLoadParams with include/exclude patterns
+  const params = filterSpec as ILibraryLoadParams;
+  return new CollectionFilter<TCollectionId>({
+    nameConverter,
+    included: params.included,
+    excluded: params.excluded
+  });
 }

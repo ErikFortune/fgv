@@ -618,6 +618,325 @@ describe('RecipesLibrary', () => {
       expect(library.collectionCount).toBe(0);
     });
   });
+
+  // ============================================================================
+  // Merge Libraries Tests
+  // ============================================================================
+
+  describe('mergeLibraries parameter', () => {
+    test('merges single library into new library', () => {
+      // Create a library with custom collections
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'custom' as SourceId,
+            isMutable: true,
+            items: {
+              testGanache: testRecipe
+            }
+          }
+        ]
+      }).orThrow();
+
+      // Create a new library that merges the existing one
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: existingLibrary
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.size).toBe(1);
+        expect(lib.validating.has('custom.testGanache')).toBe(true);
+      });
+    });
+
+    test('merges library with builtins', () => {
+      // Create a library with custom collections
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'custom' as SourceId,
+            isMutable: true,
+            items: {
+              testGanache: testRecipe
+            }
+          }
+        ]
+      }).orThrow();
+
+      // Create a new library that merges builtins + existing
+      expect(
+        RecipesLibrary.create({
+          builtin: true,
+          mergeLibraries: existingLibrary
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        // 1 builtin (common) + 1 custom
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.validating.has('custom.testGanache')).toBe(true);
+        expect(lib.validating.has('common.dark-ganache-classic')).toBe(true);
+      });
+    });
+
+    test('merges multiple libraries', () => {
+      // Create two libraries with different collections
+      const lib1 = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'source1' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      const lib2 = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'source2' as SourceId,
+            isMutable: false,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      // Merge both
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: [lib1, lib2]
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.validating.has('source1.testGanache')).toBe(true);
+        expect(lib.validating.has('source2.testGanache')).toBe(true);
+      });
+    });
+
+    test('merges library using IMergeLibrarySource without filter (defaults to all)', () => {
+      // Create a library with custom collections
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'collection1' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          },
+          {
+            id: 'collection2' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      // Merge using IMergeLibrarySource object but without filter (should default to all)
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: {
+            library: existingLibrary
+            // filter is undefined, should default to true (include all)
+          }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(2);
+        expect(lib.validating.has('collection1.testGanache')).toBe(true);
+        expect(lib.validating.has('collection2.testGanache')).toBe(true);
+      });
+    });
+
+    test('merges library with filter to include specific collections', () => {
+      // Create a library with multiple collections
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'include-me' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          },
+          {
+            id: 'exclude-me' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      // Merge with filter to include only 'include-me'
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: {
+            library: existingLibrary,
+            filter: ['include-me' as SourceId]
+          }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.validating.has('include-me.testGanache')).toBe(true);
+        expect(lib.validating.has('exclude-me.testGanache')).toBe(false);
+      });
+    });
+
+    test('merges library with filter to exclude collections', () => {
+      // Create a library with multiple collections
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'keep-this' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          },
+          {
+            id: 'remove-this' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      // Merge with filter to exclude 'remove-this'
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: {
+            library: existingLibrary,
+            filter: { excluded: ['remove-this'] }
+          }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(1);
+        expect(lib.validating.has('keep-this.testGanache')).toBe(true);
+        expect(lib.validating.has('remove-this.testGanache')).toBe(false);
+      });
+    });
+
+    test('merges library with filter: false skips the library', () => {
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'custom' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: {
+            library: existingLibrary,
+            filter: false
+          }
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collectionCount).toBe(0);
+        expect(lib.size).toBe(0);
+      });
+    });
+
+    test('fails on collection ID collision between merged library and builtins', () => {
+      // Create a library that has the same collection ID as a builtin
+      const existingLibrary = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'common' as SourceId, // Same as builtin
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      expect(
+        RecipesLibrary.create({
+          builtin: true,
+          mergeLibraries: existingLibrary
+        })
+      ).toFailWith(/common.*conflict/i);
+    });
+
+    test('fails on collection ID collision between merged libraries', () => {
+      // Create two libraries with the same collection ID
+      const lib1 = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'duplicate' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      const lib2 = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'duplicate' as SourceId,
+            isMutable: false,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: [lib1, lib2]
+        })
+      ).toFailWith(/duplicate.*conflict/i);
+    });
+
+    test('preserves mutability from merged collections', () => {
+      const mutableLib = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'mutable-source' as SourceId,
+            isMutable: true,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      const immutableLib = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'immutable-source' as SourceId,
+            isMutable: false,
+            items: { testGanache: testRecipe }
+          }
+        ]
+      }).orThrow();
+
+      expect(
+        RecipesLibrary.create({
+          builtin: false,
+          mergeLibraries: [mutableLib, immutableLib]
+        })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.collections.validating.get('mutable-source')).toSucceedAndSatisfy((coll) => {
+          expect(coll.isMutable).toBe(true);
+        });
+        expect(lib.collections.validating.get('immutable-source')).toSucceedAndSatisfy((coll) => {
+          expect(coll.isMutable).toBe(false);
+        });
+      });
+    });
+  });
 });
 
 // ============================================================================

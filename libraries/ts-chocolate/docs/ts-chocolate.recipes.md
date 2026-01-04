@@ -402,5 +402,18 @@ Detailed result for recipe operations.
 
 
 </td></tr>
+<tr><td>
+
+[RecipesMergeSource](./ts-chocolate.recipes.recipesmergesource.md)
+
+
+</td><td>
+
+Specifies a recipes library to merge into a new library.
+
+Can be either: - A `RecipesLibrary` instance (merges all collections) - An `IMergeLibrarySource` object with optional filtering
+
+
+</td></tr>
 </tbody></table>
 

@@ -100,5 +100,30 @@ _(Optional)_ File tree sources to load collections from. Collections are loaded 
 
 
 </td></tr>
+<tr><td>
+
+[mergeLibraries?](./ts-chocolate.ingredients.iingredientslibraryparams.mergelibraries.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientsMergeSource](./ts-chocolate.ingredients.ingredientsmergesource.md) \| ReadonlyArray&lt;[IngredientsMergeSource](./ts-chocolate.ingredients.ingredientsmergesource.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Existing libraries to merge collections from.
+
+Collections are extracted from these libraries and merged with builtin, file source, and explicit collections. Collection ID collisions across any sources cause an error.
+
+Can be: - A single `IngredientsLibrary` (merges all collections) - An `IMergeLibrarySource` object with optional filtering - An array of the above
+
+
+</td></tr>
 </tbody></table>
 

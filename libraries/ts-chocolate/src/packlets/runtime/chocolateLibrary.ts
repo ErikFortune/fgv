@@ -132,24 +132,20 @@ export class ChocolateLibrary {
     const fileSources = normalizeFileSources(params?.fileSources);
 
     // --- INGREDIENTS ---
-    // If pre-instantiated library provided, use it directly (ignores builtin/fileSources)
-    const ingredientsResult: Result<IngredientsLibrary> =
-      params?.libraries?.ingredients !== undefined
-        ? succeed(params.libraries.ingredients)
-        : IngredientsLibrary.create({
-            builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients'),
-            fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients')
-          });
+    // All sources (builtin, fileSources, libraries) are merged together
+    const ingredientsResult = IngredientsLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients'),
+      mergeLibraries: params?.libraries?.ingredients
+    });
 
     // --- RECIPES ---
-    // If pre-instantiated library provided, use it directly (ignores builtin/fileSources)
-    const recipesResult: Result<RecipesLibrary> =
-      params?.libraries?.recipes !== undefined
-        ? succeed(params.libraries.recipes)
-        : RecipesLibrary.create({
-            builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes'),
-            fileSources: ChocolateLibrary._toFileSources(fileSources, 'recipes')
-          });
+    // All sources (builtin, fileSources, libraries) are merged together
+    const recipesResult = RecipesLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'recipes'),
+      mergeLibraries: params?.libraries?.recipes
+    });
 
     // Combine results
     return ingredientsResult.onSuccess((ingredients) =>

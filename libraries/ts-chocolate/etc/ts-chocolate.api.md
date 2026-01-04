@@ -287,6 +287,9 @@ declare namespace Converters_4 {
 }
 
 // @public
+function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryLoadSpec<TCollectionId>, nameConverter: Converter<TCollectionId> | Validator<TCollectionId>): CollectionFilter<TCollectionId>;
+
+// @public
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
 
 // @public
@@ -522,6 +525,7 @@ interface IIngredientsLibraryParams {
     readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<IngredientCollectionEntryInit>;
     readonly fileSources?: IIngredientFileTreeSource | ReadonlyArray<IIngredientFileTreeSource>;
+    readonly mergeLibraries?: IngredientsMergeSource | ReadonlyArray<IngredientsMergeSource>;
 }
 
 // @public
@@ -549,6 +553,12 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
     readonly mutable?: MutabilitySpec;
     // (undocumented)
     readonly recurseWithDelimiter?: string;
+}
+
+// @public
+interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
+    readonly filter?: LibraryLoadSpec<TCollectionId>;
+    readonly library: TLibrary;
 }
 
 // @public
@@ -609,6 +619,7 @@ declare namespace Ingredients {
         IngredientCollectionValidator,
         IngredientCollection,
         IIngredientFileTreeSource,
+        IngredientsMergeSource,
         IIngredientsLibraryParams,
         IngredientsLibrary
     }
@@ -620,6 +631,9 @@ class IngredientsLibrary extends Collections.AggregatedResultMapBase<IngredientI
     static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary>;
     loadFromFileTreeSource(source: IIngredientFileTreeSource): Result<number>;
 }
+
+// @public
+type IngredientsMergeSource = IngredientsLibrary | IMergeLibrarySource<IngredientsLibrary, SourceId>;
 
 // @public
 interface IRecipe {
@@ -655,6 +669,7 @@ interface IRecipesLibraryParams {
     readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<RecipeCollectionEntryInit>;
     readonly fileSources?: IRecipeFileTreeSource | ReadonlyArray<IRecipeFileTreeSource>;
+    readonly mergeLibraries?: RecipesMergeSource | ReadonlyArray<RecipesMergeSource>;
 }
 
 // @public
@@ -810,6 +825,8 @@ declare namespace LibraryData {
         FullLibraryLoadSpec,
         IFileTreeSource,
         ILibraryFileTreeSource,
+        IMergeLibrarySource,
+        createFilterFromSpec,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
         IFilteredItem,
@@ -973,6 +990,7 @@ declare namespace Recipes {
         RecipeCollection,
         RecipesDetailedResult,
         IRecipeFileTreeSource,
+        RecipesMergeSource,
         IRecipesLibraryParams,
         RecipesLibrary,
         scaleRecipe,
@@ -992,6 +1010,9 @@ class RecipesLibrary extends Collections.AggregatedResultMapBase<RecipeId, Sourc
     static create(params?: IRecipesLibraryParams): Result<RecipesLibrary>;
     loadFromFileTreeSource(source: IRecipeFileTreeSource): Result<number>;
 }
+
+// @public
+type RecipesMergeSource = RecipesLibrary | IMergeLibrarySource<RecipesLibrary, SourceId>;
 
 // @public
 const recipeUsage: Converter<IRecipeUsage>;

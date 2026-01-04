@@ -96,25 +96,43 @@ describe('ChocolateLibrary', () => {
       });
     });
 
-    test('creates with provided ingredients library', () => {
+    test('creates with provided ingredients library only (no builtins)', () => {
+      const ingredients = IngredientsLibrary.create({
+        builtin: false,
+        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
+      }).orThrow();
+
+      expect(ChocolateLibrary.create({ builtin: false, libraries: { ingredients } })).toSucceedAndSatisfy(
+        (lib) => {
+          expect(lib.ingredients.size).toBe(1);
+        }
+      );
+    });
+
+    test('creates with provided recipes library only (no builtins)', () => {
+      const recipes = RecipesLibrary.create({
+        builtin: false,
+        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
+      }).orThrow();
+
+      expect(ChocolateLibrary.create({ builtin: false, libraries: { recipes } })).toSucceedAndSatisfy(
+        (lib) => {
+          expect(lib.recipes.size).toBe(1);
+        }
+      );
+    });
+
+    test('merges provided ingredients library with builtins', () => {
       const ingredients = IngredientsLibrary.create({
         builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       expect(ChocolateLibrary.create({ libraries: { ingredients } })).toSucceedAndSatisfy((lib) => {
-        expect(lib.ingredients.size).toBe(1);
-      });
-    });
-
-    test('creates with provided recipes library', () => {
-      const recipes = RecipesLibrary.create({
-        builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
-      }).orThrow();
-
-      expect(ChocolateLibrary.create({ libraries: { recipes } })).toSucceedAndSatisfy((lib) => {
-        expect(lib.recipes.size).toBe(1);
+        // Should have both builtin and provided ingredients
+        expect(lib.ingredients.size).toBeGreaterThan(1);
+        expect(lib.hasIngredient('test.testChoco' as IngredientId)).toBe(true);
+        expect(lib.hasIngredient('felchlin.maracaibo-65' as IngredientId)).toBe(true);
       });
     });
   });
@@ -128,14 +146,19 @@ describe('ChocolateLibrary', () => {
 
     beforeEach(() => {
       const ingredients = IngredientsLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       const recipes = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ libraries: { ingredients, recipes } }).orThrow();
+      library = ChocolateLibrary.create({
+        builtin: false,
+        libraries: { ingredients, recipes }
+      }).orThrow();
     });
 
     test('ingredients returns IngredientsLibrary', () => {
@@ -186,10 +209,11 @@ describe('ChocolateLibrary', () => {
 
     beforeEach(() => {
       const recipes = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ libraries: { recipes } }).orThrow();
+      library = ChocolateLibrary.create({ builtin: false, libraries: { recipes } }).orThrow();
     });
 
     test('getRecipe returns existing recipe', () => {
@@ -220,10 +244,11 @@ describe('ChocolateLibrary', () => {
 
     beforeEach(() => {
       const recipes = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ libraries: { recipes } }).orThrow();
+      library = ChocolateLibrary.create({ builtin: false, libraries: { recipes } }).orThrow();
     });
 
     test('scaleRecipe scales to target weight', () => {
@@ -271,14 +296,19 @@ describe('ChocolateLibrary', () => {
 
     beforeEach(() => {
       const ingredients = IngredientsLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
       const recipes = RecipesLibrary.create({
+        builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ libraries: { ingredients, recipes } }).orThrow();
+      library = ChocolateLibrary.create({
+        builtin: false,
+        libraries: { ingredients, recipes }
+      }).orThrow();
     });
 
     test('createIngredientResolver returns working resolver', () => {

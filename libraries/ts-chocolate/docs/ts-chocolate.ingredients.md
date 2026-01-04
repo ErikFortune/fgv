@@ -321,5 +321,18 @@ Validator type for IngredientsLibrary collections.
 
 
 </td></tr>
+<tr><td>
+
+[IngredientsMergeSource](./ts-chocolate.ingredients.ingredientsmergesource.md)
+
+
+</td><td>
+
+Specifies an ingredients library to merge into a new library.
+
+Can be either: - An `IngredientsLibrary` instance (merges all collections) - An `IMergeLibrarySource` object with optional filtering
+
+
+</td></tr>
 </tbody></table>
 
