@@ -24,6 +24,7 @@ import '../helpers/jest';
 
 import {
   Result,
+  ensureArray,
   entriesForRecord,
   fail,
   getTypeOfProperty,
@@ -396,6 +397,52 @@ describe('Utils module', () => {
         ['key', 2]
       ];
       expect(recordFromEntries(entries)).toEqual({ key: 2 });
+    });
+  });
+
+  describe('ensureArray function', () => {
+    test('returns an array unchanged', () => {
+      const arr = [1, 2, 3];
+      const result = ensureArray(arr);
+      expect(result).toBe(arr); // same reference
+      expect(result).toEqual([1, 2, 3]);
+    });
+
+    test('wraps a single item in an array', () => {
+      expect(ensureArray(42)).toEqual([42]);
+      expect(ensureArray('hello')).toEqual(['hello']);
+      expect(ensureArray({ key: 'value' })).toEqual([{ key: 'value' }]);
+    });
+
+    test('handles empty array', () => {
+      const empty: number[] = [];
+      expect(ensureArray(empty)).toBe(empty);
+      expect(ensureArray(empty)).toEqual([]);
+    });
+
+    test('preserves readonly array type', () => {
+      const readonlyArr: readonly number[] = [1, 2, 3];
+      const result: readonly number[] = ensureArray(readonlyArr);
+      expect(result).toBe(readonlyArr);
+    });
+
+    test('preserves mutable array type', () => {
+      const mutableArr: number[] = [1, 2, 3];
+      const result: number[] = ensureArray(mutableArr);
+      expect(result).toBe(mutableArr);
+      result.push(4); // should compile - proves it's mutable
+      expect(result).toEqual([1, 2, 3, 4]);
+    });
+
+    test('wrapping a single item returns a mutable array', () => {
+      const result: number[] = ensureArray(42);
+      result.push(43); // should compile - proves it's mutable
+      expect(result).toEqual([42, 43]);
+    });
+
+    test('handles null and undefined as single items', () => {
+      expect(ensureArray(null)).toEqual([null]);
+      expect(ensureArray(undefined)).toEqual([undefined]);
     });
   });
 

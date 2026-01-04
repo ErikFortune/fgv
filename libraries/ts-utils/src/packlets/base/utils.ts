@@ -111,6 +111,23 @@ export function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]
 }
 
 /**
+ * Ensures the input is an array. If already an array, returns it as-is.
+ * If a single item, wraps it in an array.
+ * Preserves readonly status of input arrays.
+ * @param items - A single item or an array of items.
+ * @returns The input array unchanged, or a new array containing the single item.
+ * @public
+ */
+export function ensureArray<T>(items: T[]): T[];
+/** @public */
+export function ensureArray<T>(items: readonly T[]): readonly T[];
+/** @public */
+export function ensureArray<T>(items: T): T[];
+export function ensureArray<T>(items: T | readonly T[]): T[] | readonly T[] {
+  return Array.isArray(items) ? items : [items as T];
+}
+
+/**
  * Gets the value of a property specified by key from an arbitrary object,
  * or a default value if the property does not exist.
  * @param key - The key specifying the property to be retrieved.

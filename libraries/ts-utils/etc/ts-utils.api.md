@@ -895,6 +895,15 @@ type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> 
 function element<T, TC = unknown>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // @public
+export function ensureArray<T>(items: T[]): T[];
+
+// @public (undocumented)
+export function ensureArray<T>(items: readonly T[]): readonly T[];
+
+// @public (undocumented)
+export function ensureArray<T>(items: T): T[];
+
+// @public
 export function entriesForRecord<TK extends string, TV>(obj: Record<TK, TV>): Array<[TK, TV]>;
 
 // @public

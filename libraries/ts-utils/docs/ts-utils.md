@@ -223,6 +223,37 @@ Wraps a function which might throw to convert exception results to [Failure](./t
 </td></tr>
 <tr><td>
 
+[ensureArray(items)](./ts-utils.ensurearray.md)
+
+
+</td><td>
+
+Ensures the input is an array. If already an array, returns it as-is. If a single item, wraps it in an array. Preserves readonly status of input arrays.
+
+
+</td></tr>
+<tr><td>
+
+[ensureArray(items)](./ts-utils.ensurearray_1.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
+[ensureArray(items)](./ts-utils.ensurearray_2.md)
+
+
+</td><td>
+
+
+
+</td></tr>
+<tr><td>
+
 [entriesForRecord(obj)](./ts-utils.entriesforrecord.md)
 
 
