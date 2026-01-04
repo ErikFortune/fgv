@@ -30,32 +30,6 @@ Provides access to built-in chocolate library data as an InMemoryFileTree.
 </td></tr>
 </tbody></table>
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[builtInSpecToLoadParams(spec)](./ts-chocolate.builtin.builtinspectoloadparams.md)
-
-
-</td><td>
-
-Converts a LibraryLoadSpec to ILoadCollectionFromFileTreeParams for the CollectionLoader. Built-in collections are always immutable.
-
-
-</td></tr>
-</tbody></table>
-
 ## Variables
 
 <table><thead><tr><th>

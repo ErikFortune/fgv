@@ -51,7 +51,7 @@ import {
   normalizeFileSources,
   specToLoadParams
 } from '../library-data';
-import { BuiltInData, builtInSpecToLoadParams } from '../built-in';
+import { BuiltInData } from '../built-in';
 
 // ============================================================================
 // Re-export collection types for convenience
@@ -172,26 +172,29 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
 
   /**
    * Loads built-in recipe collections based on the LibraryLoadSpec.
+   *
+   * Delegates to `_loadFromFileTreeSource` with the built-in library root
+   * and forced immutability. This ensures built-in collections are always immutable.
+   *
    * @param spec - The LibraryLoadSpec controlling which built-ins to load.
    * @returns Success with collections or Failure with error.
    */
   private static _loadBuiltInCollections(
     spec: LibraryLoadSpec<SourceId>
   ): Result<ReadonlyArray<RecipeCollectionEntryInit>> {
-    const loadParams = builtInSpecToLoadParams(spec);
-    if (loadParams === undefined) {
+    // Handle disabled built-ins
+    if (spec === false) {
       return Success.with([]);
     }
 
-    const loader = new CollectionLoader<Recipe, SourceId, BaseRecipeId>({
-      itemConverter: recipeConverter,
-      collectionIdConverter: CommonConverters.sourceId,
-      itemIdConverter: CommonConverters.baseRecipeId,
-      mutable: false // Default for this loader
-    });
-
-    return BuiltInData.getRecipesDirectory().onSuccess((recipesDir) => {
-      return loader.loadFromFileTree(recipesDir, loadParams);
+    // Get the built-in library root and delegate to file tree source loading
+    return BuiltInData.getLibraryTree().onSuccess((libraryRoot) => {
+      const source: IRecipeFileTreeSource = {
+        directory: libraryRoot,
+        load: spec, // Pass through the filter spec
+        mutable: false // Built-ins are always immutable
+      };
+      return RecipesLibrary._loadFromFileTreeSource(source);
     });
   }
 

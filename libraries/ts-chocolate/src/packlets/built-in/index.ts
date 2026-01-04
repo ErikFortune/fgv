@@ -19,5 +19,4 @@
 // SOFTWARE.
 
 export * from './builtInData';
-export * from './builtInHelpers';
 export { ingredientCollections, recipeCollections } from './builtInData.generated';

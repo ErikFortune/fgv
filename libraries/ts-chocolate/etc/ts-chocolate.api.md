@@ -80,8 +80,7 @@ declare namespace BuiltIn {
     export {
         ingredientCollections,
         recipeCollections,
-        BuiltInData,
-        builtInSpecToLoadParams
+        BuiltInData
     }
 }
 export { BuiltIn }
@@ -97,9 +96,6 @@ class BuiltInData {
 
 // @public
 export type BuiltInSource = 'built-in';
-
-// @public
-function builtInSpecToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
 
 // @public
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
