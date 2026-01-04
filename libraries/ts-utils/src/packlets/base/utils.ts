@@ -101,12 +101,12 @@ export function entriesForRecord<TK extends string, TV>(obj: Record<TK, TV>): Ar
 }
 
 /**
- * Type-safe(ish) record constructor from an array of `[key, value]` tuples.
- * @param entries - The array of `[key, value]` tuples from which to construct the record.
+ * Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
+ * @param entries - The iterable of `[key, value]` tuples from which to construct the record.
  * @returns A record constructed from the supplied entries.
  * @public
  */
-export function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]>): Record<TK, TV> {
+export function recordFromEntries<TK extends string, TV>(entries: Iterable<[TK, TV]>): Record<TK, TV> {
   return Object.fromEntries(entries) as Record<TK, TV>;
 }
 

@@ -4,12 +4,12 @@
 
 ## recordFromEntries() function
 
-Type-safe(ish) record constructor from an array of `[key, value]` tuples.
+Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
 
 **Signature:**
 
 ```typescript
-export declare function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]>): Record<TK, TV>;
+export declare function recordFromEntries<TK extends string, TV>(entries: Iterable<[TK, TV]>): Record<TK, TV>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ entries
 
 </td><td>
 
-Array&lt;\[TK, TV\]&gt;
+Iterable&lt;\[TK, TV\]&gt;
 
 
 </td><td>
 
-The array of `[key, value]` tuples from which to construct the record.
+The iterable of `[key, value]` tuples from which to construct the record.
 
 
 </td></tr>

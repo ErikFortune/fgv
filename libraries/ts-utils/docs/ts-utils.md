@@ -234,26 +234,6 @@ Ensures the input is an array. If already an array, returns it as-is. If a singl
 </td></tr>
 <tr><td>
 
-[ensureArray(items)](./ts-utils.ensurearray_1.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
-[ensureArray(items)](./ts-utils.ensurearray_2.md)
-
-
-</td><td>
-
-
-
-</td></tr>
-<tr><td>
-
 [entriesForRecord(obj)](./ts-utils.entriesforrecord.md)
 
 
@@ -534,7 +514,7 @@ Propagates a [Success](./ts-utils.success.md) or [Failure](./ts-utils.failure.md
 
 </td><td>
 
-Type-safe(ish) record constructor from an array of `[key, value]` tuples.
+Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
 
 
 </td></tr>
@@ -896,6 +876,17 @@ Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) enco
 </td><td>
 
 Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters success.
+
+
+</td></tr>
+<tr><td>
+
+[EnsureArrayResult](./ts-utils.ensurearrayresult.md)
+
+
+</td><td>
+
+Helper type to extract the element type and preserve readonly status.
 
 
 </td></tr>

@@ -9,7 +9,7 @@ Ensures the input is an array. If already an array, returns it as-is. If a singl
 **Signature:**
 
 ```typescript
-export declare function ensureArray<T>(items: T[]): T[];
+export declare function ensureArray<T>(items: T): EnsureArrayResult<T>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ items
 
 </td><td>
 
-T\[\]
+T
 
 
 </td><td>
@@ -50,7 +50,7 @@ A single item or an array of items.
 
 **Returns:**
 
-T\[\]
+[EnsureArrayResult](./ts-utils.ensurearrayresult.md)<!-- -->&lt;T&gt;
 
 The input array unchanged, or a new array containing the single item.
 
