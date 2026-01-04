@@ -22,42 +22,35 @@
 // Type aliases for Collections types
 // ============================================================================
 
-import { Collections } from '@fgv/ts-utils';
-
-import { BaseIngredientId, IngredientId, SourceId } from '../common';
+import { BaseIngredientId, IngredientId } from '../common';
+import {
+  SubLibraryCollection,
+  SubLibraryCollectionEntry,
+  SubLibraryCollectionValidator,
+  SubLibraryEntryInit
+} from '../library-data';
 import { Ingredient } from './model';
 
 /**
  * A single entry in an ingredients collection.
  * @public
  */
-export type IngredientCollectionEntry = Collections.AggregatedResultMapEntry<
-  SourceId,
-  BaseIngredientId,
-  Ingredient
->;
+export type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, Ingredient>;
 
 /**
  * Initialization type for an IngredientsLibrary collection entry.
  * @public
  */
-export type IngredientCollectionEntryInit = Collections.AggregatedResultMapEntryInit<
-  SourceId,
-  BaseIngredientId,
-  Ingredient
->;
+export type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, Ingredient>;
 
 /**
  * Validator type for IngredientsLibrary collections.
  * @public
  */
-export type IngredientCollectionValidator = Collections.IReadOnlyResultMapValidator<IngredientId, Ingredient>;
+export type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
 
 /**
  * Type for the collections in an IngredientsLibrary.
  * @public
  */
-export type IngredientCollection = Collections.IReadOnlyValidatingResultMap<
-  SourceId,
-  IngredientCollectionEntry
->;
+export type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;

@@ -33,14 +33,56 @@ import { Converters as CommonConverters } from '../common';
 // ============================================================================
 
 /**
- * Type alias for sub-library collection entries.
+ * A single entry in a sub-library collection.
  * Fixes the collection ID type to SourceId.
+ *
+ * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
+ * @public
+ */
+export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<
+  SourceId,
+  TBaseId,
+  TItem
+>;
+
+/**
+ * Initialization type for a sub-library collection entry.
+ * Fixes the collection ID type to SourceId.
+ *
+ * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
  * @public
  */
 export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<
   SourceId,
   TBaseId,
   TItem
+>;
+
+/**
+ * Validator type for sub-library collections.
+ *
+ * @typeParam TCompositeId - The composite ID type (e.g., `IngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
+ * @public
+ */
+export type SubLibraryCollectionValidator<
+  TCompositeId extends string,
+  TItem
+> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
+
+/**
+ * Type for the collections map in a sub-library.
+ * Maps SourceId to collection entries.
+ *
+ * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
+ * @public
+ */
+export type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<
+  SourceId,
+  SubLibraryCollectionEntry<TBaseId, TItem>
 >;
 
 // ============================================================================

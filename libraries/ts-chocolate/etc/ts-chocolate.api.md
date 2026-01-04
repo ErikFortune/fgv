@@ -570,19 +570,19 @@ export type IngredientCategory = 'chocolate' | 'sugar' | 'dairy' | 'fat' | 'liqu
 const ingredientCategory: Converter<IngredientCategory>;
 
 // @public
-type IngredientCollection = Collections.IReadOnlyValidatingResultMap<SourceId, IngredientCollectionEntry>;
+type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;
 
 // @public
-type IngredientCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, BaseIngredientId, Ingredient>;
+type IngredientCollectionEntry = SubLibraryCollectionEntry<BaseIngredientId, Ingredient>;
 
 // @public
-type IngredientCollectionEntryInit = Collections.AggregatedResultMapEntryInit<SourceId, BaseIngredientId, Ingredient>;
+type IngredientCollectionEntryInit = SubLibraryEntryInit<BaseIngredientId, Ingredient>;
 
 // @public
 const ingredientCollections: Record<string, JsonObject>;
 
 // @public
-type IngredientCollectionValidator = Collections.IReadOnlyResultMapValidator<IngredientId, Ingredient>;
+type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
 
 // @public
 export type IngredientId = Brand<string, 'IngredientId'>;
@@ -863,7 +863,10 @@ declare namespace LibraryData {
         IResolvedSubLibrarySource,
         ICollectionSet,
         INormalizedMergeSource,
+        SubLibraryCollectionEntry,
         SubLibraryEntryInit,
+        SubLibraryCollectionValidator,
+        SubLibraryCollection,
         ISubLibraryConstructorParams,
         SubLibraryBase
     }
@@ -953,19 +956,19 @@ const recipe: Converter<Recipe>;
 export const RECIPE_VERSION_ID_PATTERN: RegExp;
 
 // @public
-type RecipeCollection = Collections.IReadOnlyValidatingResultMap<SourceId, RecipeCollectionEntry>;
+type RecipeCollection = SubLibraryCollection<BaseRecipeId, Recipe>;
 
 // @public
-type RecipeCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, BaseRecipeId, Recipe>;
+type RecipeCollectionEntry = SubLibraryCollectionEntry<BaseRecipeId, Recipe>;
 
 // @public
-type RecipeCollectionEntryInit = Collections.AggregatedResultMapEntryInit<SourceId, BaseRecipeId, Recipe>;
+type RecipeCollectionEntryInit = SubLibraryEntryInit<BaseRecipeId, Recipe>;
 
 // @public
 const recipeCollections: Record<string, JsonObject>;
 
 // @public
-type RecipeCollectionValidator = Collections.IReadOnlyResultMapValidator<RecipeId, Recipe>;
+type RecipeCollectionValidator = SubLibraryCollectionValidator<RecipeId, Recipe>;
 
 // @public
 const recipeConverter: Converter<Recipe>;
@@ -1102,6 +1105,15 @@ function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TC
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
     protected constructor(params: ISubLibraryConstructorParams<TBaseId, TItem>);
 }
+
+// @public
+type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<SourceId, SubLibraryCollectionEntry<TBaseId, TItem>>;
+
+// @public
+type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>;
+
+// @public
+type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
 
 // @public
 type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem>;

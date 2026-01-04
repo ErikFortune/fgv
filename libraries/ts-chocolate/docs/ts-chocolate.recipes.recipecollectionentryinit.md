@@ -9,7 +9,7 @@ Initialization type for a RecipesLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type RecipeCollectionEntryInit = Collections.AggregatedResultMapEntryInit<SourceId, BaseRecipeId, Recipe>;
+export type RecipeCollectionEntryInit = SubLibraryEntryInit<BaseRecipeId, Recipe>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [BaseRecipeId](./ts-chocolate.baserecipeid.md)<!-- -->, [Recipe](./ts-chocolate.recipes.recipe.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseRecipeId](./ts-chocolate.baserecipeid.md)<!-- -->, [Recipe](./ts-chocolate.recipes.recipe.md)
 

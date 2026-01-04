@@ -22,35 +22,35 @@
 // Type aliases for Collections types
 // ============================================================================
 
-import { Collections } from '@fgv/ts-utils';
-
-import { BaseRecipeId, RecipeId, SourceId } from '../common';
+import { BaseRecipeId, RecipeId } from '../common';
+import {
+  SubLibraryCollection,
+  SubLibraryCollectionEntry,
+  SubLibraryCollectionValidator,
+  SubLibraryEntryInit
+} from '../library-data';
 import { Recipe } from './recipe';
 
 /**
  * A single entry in a recipes collection.
  * @public
  */
-export type RecipeCollectionEntry = Collections.AggregatedResultMapEntry<SourceId, BaseRecipeId, Recipe>;
+export type RecipeCollectionEntry = SubLibraryCollectionEntry<BaseRecipeId, Recipe>;
 
 /**
  * Initialization type for a RecipesLibrary collection entry.
  * @public
  */
-export type RecipeCollectionEntryInit = Collections.AggregatedResultMapEntryInit<
-  SourceId,
-  BaseRecipeId,
-  Recipe
->;
+export type RecipeCollectionEntryInit = SubLibraryEntryInit<BaseRecipeId, Recipe>;
 
 /**
  * Validator type for RecipesLibrary collections.
  * @public
  */
-export type RecipeCollectionValidator = Collections.IReadOnlyResultMapValidator<RecipeId, Recipe>;
+export type RecipeCollectionValidator = SubLibraryCollectionValidator<RecipeId, Recipe>;
 
 /**
  * Type for the collections in a RecipesLibrary.
  * @public
  */
-export type RecipeCollection = Collections.IReadOnlyValidatingResultMap<SourceId, RecipeCollectionEntry>;
+export type RecipeCollection = SubLibraryCollection<BaseRecipeId, Recipe>;

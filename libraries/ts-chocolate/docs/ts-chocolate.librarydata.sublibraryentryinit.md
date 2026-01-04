@@ -4,7 +4,7 @@
 
 ## LibraryData.SubLibraryEntryInit type
 
-Type alias for sub-library collection entries. Fixes the collection ID type to SourceId.
+Initialization type for a sub-library collection entry. Fixes the collection ID type to SourceId.
 
 **Signature:**
 

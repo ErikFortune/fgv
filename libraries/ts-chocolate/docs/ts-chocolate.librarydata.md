@@ -554,12 +554,45 @@ Specifies which collections should be mutable. - `true`<!-- -->: All collections
 </td></tr>
 <tr><td>
 
+[SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)
+
+
+</td><td>
+
+Type for the collections map in a sub-library. Maps SourceId to collection entries.
+
+
+</td></tr>
+<tr><td>
+
+[SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)
+
+
+</td><td>
+
+A single entry in a sub-library collection. Fixes the collection ID type to SourceId.
+
+
+</td></tr>
+<tr><td>
+
+[SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)
+
+
+</td><td>
+
+Validator type for sub-library collections.
+
+
+</td></tr>
+<tr><td>
+
 [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)
 
 
 </td><td>
 
-Type alias for sub-library collection entries. Fixes the collection ID type to SourceId.
+Initialization type for a sub-library collection entry. Fixes the collection ID type to SourceId.
 
 
 </td></tr>

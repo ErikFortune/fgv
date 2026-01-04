@@ -9,7 +9,7 @@ Type for the collections in an IngredientsLibrary.
 **Signature:**
 
 ```typescript
-export type IngredientCollection = Collections.IReadOnlyValidatingResultMap<SourceId, IngredientCollectionEntry>;
+export type IngredientCollection = SubLibraryCollection<BaseIngredientId, Ingredient>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [IngredientCollectionEntry](./ts-chocolate.ingredients.ingredientcollectionentry.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.ingredients.ingredient.md)
 
