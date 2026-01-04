@@ -23,33 +23,17 @@
  * @packageDocumentation
  */
 
-import {
-  captureResult,
-  DetailedResult,
-  ensureArray,
-  Failure,
-  mapResults,
-  recordFromEntries,
-  Result,
-  Success
-} from '@fgv/ts-utils';
+import { captureResult, Result } from '@fgv/ts-utils';
 
-import { BaseRecipeId, RecipeId, SourceId } from '../common';
+import { BaseRecipeId, RecipeId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { Recipe } from './recipe';
 import { recipe as recipeConverter } from './converters';
 import { RecipeCollectionEntryInit } from './recipesCollection';
 import {
-  checkForCollisionIds,
   CollectionLoader,
-  createFilterFromSpec,
   getRecipesDirectory,
-  ICollectionSet,
   ISubLibraryParams,
-  LibraryLoadSpec,
-  normalizeFileSources,
-  normalizeMergeSource,
-  specToLoadParams,
   SubLibraryBase,
   SubLibraryFileTreeSource,
   SubLibraryMergeSource
@@ -66,16 +50,6 @@ export {
   RecipeCollectionValidator,
   RecipeCollection
 } from './recipesCollection';
-
-/**
- * Detailed result for recipe operations.
- * @public
- */
-export type RecipesDetailedResult<T> = DetailedResult<T, RecipeId>;
-
-// ============================================================================
-// Parameters Interface
-// ============================================================================
 
 /**
  * File tree source for recipe data.
@@ -95,10 +69,6 @@ export type RecipesMergeSource = SubLibraryMergeSource<RecipesLibrary>;
  */
 export type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionEntryInit>;
 
-// ============================================================================
-// RecipesLibrary Class
-// ============================================================================
-
 /**
  * Multi-source recipe library with type-safe access
  *
@@ -111,109 +81,21 @@ export type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeColl
  * @public
  */
 export class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
-  private constructor(collections: ReadonlyArray<RecipeCollectionEntryInit>) {
+  private constructor(params?: IRecipesLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseRecipeId,
       itemConverter: recipeConverter,
-      collections
+      loaderFactory: (mutable) =>
+        new CollectionLoader({
+          itemConverter: recipeConverter,
+          collectionIdConverter: CommonConverters.sourceId,
+          itemIdConverter: CommonConverters.baseRecipeId,
+          mutable
+        }),
+      directoryNavigator: getRecipesDirectory,
+      builtInTreeProvider: BuiltInData.getLibraryTree,
+      libraryParams: params
     });
-  }
-
-  /**
-   * Loads built-in recipe collections based on the LibraryLoadSpec.
-   *
-   * Delegates to `_loadFromFileTreeSource` with the built-in library root
-   * and forced immutability. This ensures built-in collections are always immutable.
-   *
-   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
-   * @returns Success with collections or Failure with error.
-   */
-  private static _loadBuiltInCollections(
-    spec: LibraryLoadSpec<SourceId>
-  ): Result<ReadonlyArray<RecipeCollectionEntryInit>> {
-    // Handle disabled built-ins
-    if (spec === false) {
-      return Success.with([]);
-    }
-
-    // Get the built-in library root and delegate to file tree source loading
-    return BuiltInData.getLibraryTree().onSuccess((libraryRoot) => {
-      const source: IRecipeFileTreeSource = {
-        directory: libraryRoot,
-        load: spec, // Pass through the filter spec
-        mutable: false // Built-ins are always immutable
-      };
-      return RecipesLibrary._loadFromFileTreeSource(source);
-    });
-  }
-
-  /**
-   * Loads collections from a single file tree source.
-   * @param source - The file tree source to load from.
-   * @returns Success with collections or Failure with error.
-   */
-  private static _loadFromFileTreeSource(
-    source: IRecipeFileTreeSource
-  ): Result<ReadonlyArray<RecipeCollectionEntryInit>> {
-    const loadParams = specToLoadParams(source.load ?? true, source.mutable ?? false);
-    if (loadParams === undefined) {
-      return Success.with([]);
-    }
-
-    const loader = new CollectionLoader<Recipe, SourceId, BaseRecipeId>({
-      itemConverter: recipeConverter,
-      collectionIdConverter: CommonConverters.sourceId,
-      itemIdConverter: CommonConverters.baseRecipeId,
-      mutable: loadParams.mutable
-    });
-
-    return getRecipesDirectory(source.directory).onSuccess((recipesDir) => {
-      return loader.loadFromFileTree(recipesDir, loadParams);
-    });
-  }
-
-  /**
-   * Extracts collections from merge sources with optional filtering.
-   * @param sources - The merge sources to extract from.
-   * @returns Array of collection entries from the merged libraries.
-   */
-  private static _extractCollections(
-    sources: RecipesMergeSource | ReadonlyArray<RecipesMergeSource> | undefined
-  ): ReadonlyArray<RecipeCollectionEntryInit> {
-    if (sources === undefined) {
-      return [];
-    }
-
-    const sourceArray = ensureArray(sources);
-    const result: RecipeCollectionEntryInit[] = [];
-
-    for (const source of sourceArray) {
-      const { library, filter: filterSpec } = normalizeMergeSource(source);
-
-      // Create filter from spec using shared helper
-      const filter = createFilterFromSpec(filterSpec, CommonConverters.sourceId);
-
-      // Build array of collection IDs for filtering
-      const collectionIds = Array.from(library.collections.keys());
-
-      // Filter the IDs
-      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => Success.with(id));
-      if (filterResult.isSuccess()) {
-        for (const filtered of filterResult.value) {
-          const id = filtered.name;
-          library.collections.get(id).asResult.onSuccess((collection) =>
-            Success.with(
-              result.push({
-                id,
-                isMutable: collection.isMutable,
-                items: recordFromEntries(collection.items.entries())
-              })
-            )
-          );
-        }
-      }
-    }
-    return result;
   }
 
   /**
@@ -223,75 +105,6 @@ export class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recip
    * @public
    */
   public static create(params?: IRecipesLibraryParams): Result<RecipesLibrary> {
-    const builtin = params?.builtin ?? true;
-    const fileSources = normalizeFileSources(params?.fileSources);
-    const additionalCollections = params?.collections ?? [];
-    const mergedLibraryCollections = RecipesLibrary._extractCollections(params?.mergeLibraries);
-
-    // Load built-in collections
-    return RecipesLibrary._loadBuiltInCollections(builtin).onSuccess((builtInCollections) => {
-      // Load file source collections
-      const fileSourceResults = fileSources.map((source, i) =>
-        RecipesLibrary._loadFromFileTreeSource(source).onSuccess((collections) =>
-          Success.with<ICollectionSet<SourceId>>({
-            source: `fileSource[${i}]`,
-            collections
-          })
-        )
-      );
-
-      return mapResults(fileSourceResults).onSuccess((fileSourceData) => {
-        // Check for collisions between all sources
-        const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
-          { source: 'builtin', collections: builtInCollections },
-          ...fileSourceData,
-          { source: 'mergeLibraries', collections: mergedLibraryCollections }
-        ];
-
-        return checkForCollisionIds(allSets).onSuccess(() => {
-          // Merge all collections - fileSourceData.collections contains full RecipeCollectionEntryInit objects
-          const fileCollections = fileSourceData.flatMap(
-            (d) => d.collections as ReadonlyArray<RecipeCollectionEntryInit>
-          );
-          const allCollections: RecipeCollectionEntryInit[] = [
-            ...builtInCollections,
-            ...fileCollections,
-            ...mergedLibraryCollections,
-            ...additionalCollections
-          ];
-          return captureResult(() => new RecipesLibrary(allCollections));
-        });
-      });
-    });
-  }
-
-  // ============================================================================
-  // Instance Methods
-  // ============================================================================
-
-  /**
-   * Loads recipes from a file tree source and adds them to this library.
-   *
-   * @param source - The file tree source to load from
-   * @returns Success with the number of collections added, or Failure with error message
-   * @public
-   */
-  public loadFromFileTreeSource(source: IRecipeFileTreeSource): Result<number> {
-    return RecipesLibrary._loadFromFileTreeSource(source).onSuccess((collections) => {
-      // Check for collisions with existing collections
-      const existingIds = new Set(this.collections.keys());
-      for (const coll of collections) {
-        if (existingIds.has(coll.id)) {
-          return Failure.with(`Collection ID '${coll.id}' already exists in this library`);
-        }
-      }
-
-      // Add each collection
-      for (const coll of collections) {
-        this.addCollectionEntry(coll);
-      }
-
-      return Success.with(collections.length);
-    });
+    return captureResult(() => new RecipesLibrary(params));
   }
 }

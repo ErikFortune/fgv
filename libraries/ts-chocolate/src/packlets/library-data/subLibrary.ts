@@ -23,11 +23,31 @@
  * @packageDocumentation
  */
 
-import { Collections, Converter, Validator } from '@fgv/ts-utils';
+import {
+  Collections,
+  Converter,
+  ensureArray,
+  Failure,
+  mapResults,
+  recordFromEntries,
+  Result,
+  Success,
+  Validator
+} from '@fgv/ts-utils';
+import { FileTree } from '@fgv/ts-json-base';
 
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec } from './model';
+import { CollectionLoader } from './collectionLoader';
+import { createFilterFromSpec } from './collectionFilter';
+import { IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec, MutabilitySpec } from './model';
+import {
+  checkForCollisionIds,
+  ICollectionSet,
+  normalizeFileSources,
+  normalizeMergeSource,
+  specToLoadParams
+} from './libraryLoader';
 
 // ============================================================================
 // Type Aliases
@@ -110,6 +130,37 @@ export type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
 
 // ============================================================================
+// Loader Factory and Directory Navigator
+// ============================================================================
+
+/**
+ * Factory function that creates a CollectionLoader for a specific sub-library type.
+ *
+ * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
+ * @public
+ */
+export type SubLibraryLoaderFactory<TBaseId extends string, TItem> = (
+  mutable: MutabilitySpec
+) => CollectionLoader<TItem, SourceId, TBaseId>;
+
+/**
+ * Function that navigates from library root to the appropriate data directory.
+ *
+ * @public
+ */
+export type SubLibraryDirectoryNavigator = (
+  tree: FileTree.FileTreeItem
+) => Result<FileTree.IFileTreeDirectoryItem>;
+
+/**
+ * Function that provides the built-in library tree.
+ *
+ * @public
+ */
+export type SubLibraryBuiltInTreeProvider = () => Result<FileTree.IFileTreeDirectoryItem>;
+
+// ============================================================================
 // Library Parameters
 // ============================================================================
 
@@ -165,10 +216,17 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
 // ============================================================================
 
 /**
- * Parameters for constructing a SubLibrary.
+ * Parameters for constructing a SubLibrary with full loading support.
+ *
+ * This interface extends the base collection parameters with factory functions
+ * that allow the base class to handle all loading logic.
+ *
+ * @typeParam TLibrary - The library type (e.g., `IngredientsLibrary`)
+ * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
  * @public
  */
-export interface ISubLibraryConstructorParams<TBaseId extends string, TItem> {
+export interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem> {
   /**
    * Converter or validator for item IDs within collections.
    */
@@ -180,9 +238,25 @@ export interface ISubLibraryConstructorParams<TBaseId extends string, TItem> {
   readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
 
   /**
-   * Optional initial collections to populate the library.
+   * Factory function that creates a CollectionLoader for loading from file trees.
    */
-  readonly collections?: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
+  readonly loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>;
+
+  /**
+   * Function that navigates from library root to the data directory.
+   */
+  readonly directoryNavigator: SubLibraryDirectoryNavigator;
+
+  /**
+   * Function that provides the built-in library tree.
+   * Used to load built-in collections.
+   */
+  readonly builtInTreeProvider: SubLibraryBuiltInTreeProvider;
+
+  /**
+   * Library creation parameters (builtin, fileSources, collections, mergeLibraries).
+   */
+  readonly libraryParams?: ISubLibraryParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>;
 }
 
 // ============================================================================
@@ -196,6 +270,7 @@ export interface ISubLibraryConstructorParams<TBaseId extends string, TItem> {
  * - Collection ID type: Always `SourceId`
  * - Separator: Always `.` (dot)
  * - Collection ID converter: Always `CommonConverters.sourceId`
+ * - Loading logic for built-in, file source, and merge library collections
  *
  * This reduces the type parameter count from 4 to 3 and eliminates
  * boilerplate in derived classes.
@@ -211,15 +286,235 @@ export abstract class SubLibraryBase<
   TItem
 > extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
   /**
-   * Creates a new SubLibraryBase instance.
-   *
-   * @param params - Construction parameters (itemIdConverter, itemConverter, collections)
+   * The loader factory for this library type.
+   * Used by loadFromFileTreeSource instance method.
    */
-  protected constructor(params: ISubLibraryConstructorParams<TBaseId, TItem>) {
+  private readonly _loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>;
+
+  /**
+   * The directory navigator for this library type.
+   * Used by loadFromFileTreeSource instance method.
+   */
+  private readonly _directoryNavigator: SubLibraryDirectoryNavigator;
+
+  /**
+   * Creates a new SubLibraryBase instance with full loading support.
+   *
+   * This constructor handles all collection loading:
+   * - Built-in collections (from BuiltInData)
+   * - File source collections
+   * - Merge library collections
+   * - Additional explicit collections
+   *
+   * @param params - Creation parameters including factory functions and library params
+   * @throws Error if loading fails (use captureResult in derived create())
+   */
+  protected constructor(
+    params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>
+  ) {
+    const libraryParams = params.libraryParams;
+    const builtin = libraryParams?.builtin ?? true;
+    const fileSources = normalizeFileSources(libraryParams?.fileSources);
+    const additionalCollections = libraryParams?.collections ?? [];
+
+    // Load built-in collections
+    const builtInCollections = SubLibraryBase._loadBuiltInCollections(
+      builtin,
+      params.loaderFactory,
+      params.directoryNavigator,
+      params.builtInTreeProvider
+    ).orThrow();
+
+    // Load file source collections
+    const fileSourceResults = fileSources.map((source, i) =>
+      SubLibraryBase._loadFromFileTreeSource(
+        source,
+        params.loaderFactory,
+        params.directoryNavigator
+      ).onSuccess((collections) =>
+        Success.with<ICollectionSet<SourceId>>({
+          source: `fileSource[${i}]`,
+          collections
+        })
+      )
+    );
+    const fileSourceData = mapResults(fileSourceResults).orThrow();
+
+    // Extract collections from merge libraries
+    const mergedLibraryCollections = SubLibraryBase._extractCollections<TBaseId, TItem>(
+      libraryParams?.mergeLibraries
+    );
+
+    // Check for collisions between all sources
+    const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
+      { source: 'builtin', collections: builtInCollections },
+      ...fileSourceData,
+      { source: 'mergeLibraries', collections: mergedLibraryCollections }
+    ];
+    checkForCollisionIds(allSets).orThrow();
+
+    // Merge all collections
+    const fileCollections = fileSourceData.flatMap(
+      (d) => d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
+    );
+    const allCollections: SubLibraryEntryInit<TBaseId, TItem>[] = [
+      ...builtInCollections,
+      ...fileCollections,
+      ...mergedLibraryCollections,
+      ...additionalCollections
+    ];
+
     super({
       collectionIdConverter: CommonConverters.sourceId,
       separator: '.',
-      ...params
+      itemIdConverter: params.itemIdConverter,
+      itemConverter: params.itemConverter,
+      collections: allCollections
+    });
+
+    this._loaderFactory = params.loaderFactory;
+    this._directoryNavigator = params.directoryNavigator;
+  }
+
+  // ============================================================================
+  // Private Static Loading Methods
+  // ============================================================================
+
+  /**
+   * Loads built-in collections based on the LibraryLoadSpec.
+   *
+   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
+   * @param loaderFactory - Factory to create the collection loader.
+   * @param directoryNavigator - Function to navigate to the data directory.
+   * @param builtInTreeProvider - Function to get the built-in library tree.
+   * @returns Success with collections or Failure with error.
+   */
+  private static _loadBuiltInCollections<TBaseId extends string, TItem>(
+    spec: LibraryLoadSpec<SourceId>,
+    loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>,
+    directoryNavigator: SubLibraryDirectoryNavigator,
+    builtInTreeProvider: SubLibraryBuiltInTreeProvider
+  ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
+    if (spec === false) {
+      return Success.with([]);
+    }
+
+    return builtInTreeProvider().onSuccess((libraryRoot) => {
+      const source: SubLibraryFileTreeSource = {
+        directory: libraryRoot,
+        load: spec,
+        mutable: false // Built-ins are always immutable
+      };
+      return SubLibraryBase._loadFromFileTreeSource(source, loaderFactory, directoryNavigator);
+    });
+  }
+
+  /**
+   * Loads collections from a single file tree source.
+   *
+   * @param source - The file tree source to load from.
+   * @param loaderFactory - Factory to create the collection loader.
+   * @param directoryNavigator - Function to navigate to the data directory.
+   * @returns Success with collections or Failure with error.
+   */
+  private static _loadFromFileTreeSource<TBaseId extends string, TItem>(
+    source: SubLibraryFileTreeSource,
+    loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>,
+    directoryNavigator: SubLibraryDirectoryNavigator
+  ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
+    const mutable = source.mutable ?? false;
+    const loadParams = specToLoadParams(source.load ?? true, mutable);
+    if (loadParams === undefined) {
+      return Success.with([]);
+    }
+
+    /* c8 ignore next 1 - defensive fallback: loadParams.mutable always set by specToLoadParams */
+    const loader = loaderFactory(loadParams.mutable ?? mutable);
+
+    return directoryNavigator(source.directory).onSuccess((dataDir) => {
+      return loader.loadFromFileTree(dataDir, loadParams);
+    });
+  }
+
+  /**
+   * Extracts collections from merge sources with optional filtering.
+   *
+   * @param sources - The merge sources to extract from.
+   * @returns Array of collection entries from the merged libraries.
+   */
+  private static _extractCollections<TBaseId extends string, TItem>(
+    sources:
+      | SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>
+      | ReadonlyArray<SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>>
+      | undefined
+  ): ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>> {
+    if (sources === undefined) {
+      return [];
+    }
+
+    const sourceArray = ensureArray(sources);
+    const result: SubLibraryEntryInit<TBaseId, TItem>[] = [];
+
+    for (const source of sourceArray) {
+      const { library, filter: filterSpec } = normalizeMergeSource(source);
+
+      // Create filter from spec using shared helper
+      const filter = createFilterFromSpec(filterSpec, CommonConverters.sourceId);
+
+      // Build array of collection IDs for filtering
+      const collectionIds = Array.from(library.collections.keys());
+
+      // Filter the IDs
+      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => Success.with(id));
+      if (filterResult.isSuccess()) {
+        for (const filtered of filterResult.value) {
+          const id = filtered.name;
+          library.collections.get(id).asResult.onSuccess((collection) =>
+            Success.with(
+              result.push({
+                id,
+                isMutable: collection.isMutable,
+                items: recordFromEntries(collection.items.entries())
+              })
+            )
+          );
+        }
+      }
+    }
+    return result;
+  }
+
+  // ============================================================================
+  // Instance Methods
+  // ============================================================================
+
+  /**
+   * Loads collections from a file tree source and adds them to this library.
+   *
+   * @param source - The file tree source to load from
+   * @returns Success with the number of collections added, or Failure with error message
+   * @public
+   */
+  public loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number> {
+    return SubLibraryBase._loadFromFileTreeSource(
+      source,
+      this._loaderFactory,
+      this._directoryNavigator
+    ).onSuccess((collections) => {
+      // Check for collisions with existing collections
+      const existingIds = new Set(this.collections.keys());
+      for (const coll of collections) {
+        if (existingIds.has(coll.id)) {
+          return Failure.with(`Collection ID '${coll.id}' already exists in this library`);
+        }
+      }
+
+      // Add each collection
+      for (const coll of collections) {
+        this.addCollectionEntry(coll);
+      }
+
+      return Success.with(collections.length);
     });
   }
 }

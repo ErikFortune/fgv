@@ -63,7 +63,7 @@ Description
 
 Base class for sub-libraries that use SourceId as the collection ID.
 
-This abstract class standardizes: - Collection ID type: Always `SourceId` - Separator: Always `.` (dot) - Collection ID converter: Always `CommonConverters.sourceId`
+This abstract class standardizes: - Collection ID type: Always `SourceId` - Separator: Always `.` (dot) - Collection ID converter: Always `CommonConverters.sourceId` - Loading logic for built-in, file source, and merge library collections
 
 This reduces the type parameter count from 4 to 3 and eliminates boilerplate in derived classes.
 
@@ -419,12 +419,14 @@ Result of resolving a file tree source for a specific sub-library.
 </td></tr>
 <tr><td>
 
-[ISubLibraryConstructorParams](./ts-chocolate.librarydata.isublibraryconstructorparams.md)
+[ISubLibraryCreateParams](./ts-chocolate.librarydata.isublibrarycreateparams.md)
 
 
 </td><td>
 
-Parameters for constructing a SubLibrary.
+Parameters for constructing a SubLibrary with full loading support.
+
+This interface extends the base collection parameters with factory functions that allow the base class to handle all loading logic.
 
 
 </td></tr>
@@ -565,6 +567,17 @@ Specifies which collections should be mutable. - `true`<!-- -->: All collections
 </td></tr>
 <tr><td>
 
+[SubLibraryBuiltInTreeProvider](./ts-chocolate.librarydata.sublibrarybuiltintreeprovider.md)
+
+
+</td><td>
+
+Function that provides the built-in library tree.
+
+
+</td></tr>
+<tr><td>
+
 [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)
 
 
@@ -598,6 +611,17 @@ Validator type for sub-library collections.
 </td></tr>
 <tr><td>
 
+[SubLibraryDirectoryNavigator](./ts-chocolate.librarydata.sublibrarydirectorynavigator.md)
+
+
+</td><td>
+
+Function that navigates from library root to the appropriate data directory.
+
+
+</td></tr>
+<tr><td>
+
 [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)
 
 
@@ -626,6 +650,17 @@ File tree source for sub-library data. Fixes the collection ID type to SourceId.
 </td><td>
 
 Identifiers for sub-libraries within the chocolate library system.
+
+
+</td></tr>
+<tr><td>
+
+[SubLibraryLoaderFactory](./ts-chocolate.librarydata.sublibraryloaderfactory.md)
+
+
+</td><td>
+
+Factory function that creates a CollectionLoader for a specific sub-library type.
 
 
 </td></tr>

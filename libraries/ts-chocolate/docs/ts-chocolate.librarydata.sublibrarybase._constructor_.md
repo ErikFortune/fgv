@@ -4,12 +4,14 @@
 
 ## LibraryData.SubLibraryBase.(constructor)
 
-Creates a new SubLibraryBase instance.
+Creates a new SubLibraryBase instance with full loading support.
+
+This constructor handles all collection loading: - Built-in collections (from BuiltInData) - File source collections - Merge library collections - Additional explicit collections
 
 **Signature:**
 
 ```typescript
-protected constructor(params: ISubLibraryConstructorParams<TBaseId, TItem>);
+protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
 ```
 
 ## Parameters
@@ -37,14 +39,18 @@ params
 
 </td><td>
 
-[ISubLibraryConstructorParams](./ts-chocolate.librarydata.isublibraryconstructorparams.md)<!-- -->&lt;TBaseId, TItem&gt;
+[ISubLibraryCreateParams](./ts-chocolate.librarydata.isublibrarycreateparams.md)<!-- -->&lt;[SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;TCompositeId, TBaseId, TItem&gt;, TBaseId, TItem&gt;
 
 
 </td><td>
 
-Construction parameters (itemIdConverter, itemConverter, collections)
+Creation parameters including factory functions and library params
 
 
 </td></tr>
 </tbody></table>
+
+## Exceptions
+
+Error if loading fails (use captureResult in derived create())
 

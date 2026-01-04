@@ -391,17 +391,6 @@ Validator type for RecipesLibrary collections.
 </td></tr>
 <tr><td>
 
-[RecipesDetailedResult](./ts-chocolate.recipes.recipesdetailedresult.md)
-
-
-</td><td>
-
-Detailed result for recipe operations.
-
-
-</td></tr>
-<tr><td>
-
 [RecipesMergeSource](./ts-chocolate.recipes.recipesmergesource.md)
 
 

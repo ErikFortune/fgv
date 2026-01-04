@@ -23,32 +23,17 @@
  * @packageDocumentation
  */
 
-import {
-  captureResult,
-  ensureArray,
-  Failure,
-  mapResults,
-  recordFromEntries,
-  Result,
-  Success
-} from '@fgv/ts-utils';
+import { captureResult, Result } from '@fgv/ts-utils';
 
-import { BaseIngredientId, IngredientId, SourceId } from '../common';
+import { BaseIngredientId, IngredientId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { Ingredient } from './model';
 import { ingredient as ingredientConverter } from './converters';
 import { IngredientCollectionEntryInit } from './ingredientsCollection';
 import {
-  checkForCollisionIds,
   CollectionLoader,
-  createFilterFromSpec,
   getIngredientsDirectory,
-  ICollectionSet,
   ISubLibraryParams,
-  LibraryLoadSpec,
-  normalizeFileSources,
-  normalizeMergeSource,
-  specToLoadParams,
   SubLibraryBase,
   SubLibraryFileTreeSource,
   SubLibraryMergeSource
@@ -93,109 +78,21 @@ export type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, In
  * @public
  */
 export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
-  private constructor(collections: ReadonlyArray<IngredientCollectionEntryInit>) {
+  private constructor(params?: IIngredientsLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseIngredientId,
       itemConverter: ingredientConverter,
-      collections
+      loaderFactory: (mutable) =>
+        new CollectionLoader({
+          itemConverter: ingredientConverter,
+          collectionIdConverter: CommonConverters.sourceId,
+          itemIdConverter: CommonConverters.baseIngredientId,
+          mutable
+        }),
+      directoryNavigator: getIngredientsDirectory,
+      builtInTreeProvider: BuiltInData.getLibraryTree,
+      libraryParams: params
     });
-  }
-
-  /**
-   * Loads built-in ingredient collections based on the LibraryLoadSpec.
-   *
-   * Delegates to `_loadFromFileTreeSource` with the built-in library root
-   * and forced immutability. This ensures built-in collections are always immutable.
-   *
-   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
-   * @returns Success with collections or Failure with error.
-   */
-  private static _loadBuiltInCollections(
-    spec: LibraryLoadSpec<SourceId>
-  ): Result<ReadonlyArray<IngredientCollectionEntryInit>> {
-    // Handle disabled built-ins
-    if (spec === false) {
-      return Success.with([]);
-    }
-
-    // Get the built-in library root and delegate to file tree source loading
-    return BuiltInData.getLibraryTree().onSuccess((libraryRoot) => {
-      const source: IIngredientFileTreeSource = {
-        directory: libraryRoot,
-        load: spec, // Pass through the filter spec
-        mutable: false // Built-ins are always immutable
-      };
-      return IngredientsLibrary._loadFromFileTreeSource(source);
-    });
-  }
-
-  /**
-   * Loads collections from a single file tree source.
-   * @param source - The file tree source to load from.
-   * @returns Success with collections or Failure with error.
-   */
-  private static _loadFromFileTreeSource(
-    source: IIngredientFileTreeSource
-  ): Result<ReadonlyArray<IngredientCollectionEntryInit>> {
-    const loadParams = specToLoadParams(source.load ?? true, source.mutable ?? false);
-    if (loadParams === undefined) {
-      return Success.with([]);
-    }
-
-    const loader = new CollectionLoader<Ingredient, SourceId, BaseIngredientId>({
-      itemConverter: ingredientConverter,
-      collectionIdConverter: CommonConverters.sourceId,
-      itemIdConverter: CommonConverters.baseIngredientId,
-      mutable: loadParams.mutable
-    });
-
-    return getIngredientsDirectory(source.directory).onSuccess((ingredientsDir) => {
-      return loader.loadFromFileTree(ingredientsDir, loadParams);
-    });
-  }
-
-  /**
-   * Extracts collections from merge sources with optional filtering.
-   * @param sources - The merge sources to extract from.
-   * @returns Array of collection entries from the merged libraries.
-   */
-  private static _extractCollections(
-    sources: IngredientsMergeSource | ReadonlyArray<IngredientsMergeSource> | undefined
-  ): ReadonlyArray<IngredientCollectionEntryInit> {
-    if (sources === undefined) {
-      return [];
-    }
-
-    const sourceArray = ensureArray(sources);
-    const result: IngredientCollectionEntryInit[] = [];
-
-    for (const source of sourceArray) {
-      const { library, filter: filterSpec } = normalizeMergeSource(source);
-
-      // Create filter from spec using shared helper
-      const filter = createFilterFromSpec(filterSpec, CommonConverters.sourceId);
-
-      // Build array of collection IDs for filtering
-      const collectionIds = Array.from(library.collections.keys());
-
-      // Filter the IDs
-      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => Success.with(id));
-      if (filterResult.isSuccess()) {
-        for (const filtered of filterResult.value) {
-          const id = filtered.name;
-          library.collections.get(id).asResult.onSuccess((collection) =>
-            Success.with(
-              result.push({
-                id,
-                isMutable: collection.isMutable,
-                items: recordFromEntries(collection.items.entries())
-              })
-            )
-          );
-        }
-      }
-    }
-    return result;
   }
 
   /**
@@ -205,75 +102,6 @@ export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredi
    * @public
    */
   public static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary> {
-    const builtin = params?.builtin ?? true;
-    const fileSources = normalizeFileSources(params?.fileSources);
-    const additionalCollections = params?.collections ?? [];
-    const mergedLibraryCollections = IngredientsLibrary._extractCollections(params?.mergeLibraries);
-
-    // Load built-in collections
-    return IngredientsLibrary._loadBuiltInCollections(builtin).onSuccess((builtInCollections) => {
-      // Load file source collections
-      const fileSourceResults = fileSources.map((source, i) =>
-        IngredientsLibrary._loadFromFileTreeSource(source).onSuccess((collections) =>
-          Success.with<ICollectionSet<SourceId>>({
-            source: `fileSource[${i}]`,
-            collections
-          })
-        )
-      );
-
-      return mapResults(fileSourceResults).onSuccess((fileSourceData) => {
-        // Check for collisions between all sources
-        const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
-          { source: 'builtin', collections: builtInCollections },
-          ...fileSourceData,
-          { source: 'mergeLibraries', collections: mergedLibraryCollections }
-        ];
-
-        return checkForCollisionIds(allSets).onSuccess(() => {
-          // Merge all collections - fileSourceData.collections contains full IngredientCollectionEntryInit objects
-          const fileCollections = fileSourceData.flatMap(
-            (d) => d.collections as ReadonlyArray<IngredientCollectionEntryInit>
-          );
-          const allCollections: IngredientCollectionEntryInit[] = [
-            ...builtInCollections,
-            ...fileCollections,
-            ...mergedLibraryCollections,
-            ...additionalCollections
-          ];
-          return captureResult(() => new IngredientsLibrary(allCollections));
-        });
-      });
-    });
-  }
-
-  // ============================================================================
-  // Instance Methods
-  // ============================================================================
-
-  /**
-   * Loads ingredients from a file tree source and adds them to this library.
-   *
-   * @param source - The file tree source to load from
-   * @returns Success with the number of collections added, or Failure with error message
-   * @public
-   */
-  public loadFromFileTreeSource(source: IIngredientFileTreeSource): Result<number> {
-    return IngredientsLibrary._loadFromFileTreeSource(source).onSuccess((collections) => {
-      // Check for collisions with existing collections
-      const existingIds = new Set(this.collections.keys());
-      for (const coll of collections) {
-        if (existingIds.has(coll.id)) {
-          return Failure.with(`Collection ID '${coll.id}' already exists in this library`);
-        }
-      }
-
-      // Add each collection
-      for (const coll of collections) {
-        this.addCollectionEntry(coll);
-      }
-
-      return Success.with(collections.length);
-    });
+    return captureResult(() => new IngredientsLibrary(params));
   }
 }

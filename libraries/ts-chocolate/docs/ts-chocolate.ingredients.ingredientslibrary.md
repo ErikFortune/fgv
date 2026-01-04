@@ -49,19 +49,5 @@ Creates a new IngredientsLibrary instance
 
 
 </td></tr>
-<tr><td>
-
-[loadFromFileTreeSource(source)](./ts-chocolate.ingredients.ingredientslibrary.loadfromfiletreesource.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Loads ingredients from a file tree source and adds them to this library.
-
-
-</td></tr>
 </tbody></table>
 

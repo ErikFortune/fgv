@@ -7,7 +7,6 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
@@ -620,7 +619,6 @@ export { Ingredients }
 // @public
 class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
     static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary>;
-    loadFromFileTreeSource(source: IIngredientFileTreeSource): Result<number>;
 }
 
 // @public
@@ -750,10 +748,13 @@ function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRec
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
 
 // @public
-interface ISubLibraryConstructorParams<TBaseId extends string, TItem> {
-    readonly collections?: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
+interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem> {
+    readonly builtInTreeProvider: SubLibraryBuiltInTreeProvider;
+    readonly directoryNavigator: SubLibraryDirectoryNavigator;
     readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
     readonly itemIdConverter: Converter<TBaseId, unknown> | Validator<TBaseId, unknown>;
+    readonly libraryParams?: ISubLibraryParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>;
+    readonly loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>;
 }
 
 // @public
@@ -867,8 +868,11 @@ declare namespace LibraryData {
         SubLibraryCollection,
         SubLibraryFileTreeSource,
         SubLibraryMergeSource,
+        SubLibraryLoaderFactory,
+        SubLibraryDirectoryNavigator,
+        SubLibraryBuiltInTreeProvider,
         ISubLibraryParams,
-        ISubLibraryConstructorParams,
+        ISubLibraryCreateParams,
         SubLibraryBase
     }
 }
@@ -1013,7 +1017,6 @@ declare namespace Recipes {
         RecipeCollectionEntryInit,
         RecipeCollectionValidator,
         RecipeCollection,
-        RecipesDetailedResult,
         IRecipeFileTreeSource,
         RecipesMergeSource,
         IRecipesLibraryParams,
@@ -1028,12 +1031,8 @@ declare namespace Recipes {
 export { Recipes }
 
 // @public
-type RecipesDetailedResult<T> = DetailedResult<T, RecipeId>;
-
-// @public
 class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
     static create(params?: IRecipesLibraryParams): Result<RecipesLibrary>;
-    loadFromFileTreeSource(source: IRecipeFileTreeSource): Result<number>;
 }
 
 // @public
@@ -1104,8 +1103,12 @@ function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TC
 
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
-    protected constructor(params: ISubLibraryConstructorParams<TBaseId, TItem>);
+    protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
+    loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
 }
+
+// @public
+type SubLibraryBuiltInTreeProvider = () => Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<SourceId, SubLibraryCollectionEntry<TBaseId, TItem>>;
@@ -1117,6 +1120,9 @@ type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.Aggr
 type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
 
 // @public
+type SubLibraryDirectoryNavigator = (tree: FileTree.FileTreeItem) => Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
 type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem>;
 
 // @public
@@ -1124,6 +1130,9 @@ type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
 type SubLibraryId = 'ingredients' | 'recipes';
+
+// @public
+type SubLibraryLoaderFactory<TBaseId extends string, TItem> = (mutable: MutabilitySpec) => CollectionLoader<TItem, SourceId, TBaseId>;
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;

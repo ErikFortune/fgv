@@ -6,7 +6,7 @@
 
 Base class for sub-libraries that use SourceId as the collection ID.
 
-This abstract class standardizes: - Collection ID type: Always `SourceId` - Separator: Always `.` (dot) - Collection ID converter: Always `CommonConverters.sourceId`
+This abstract class standardizes: - Collection ID type: Always `SourceId` - Separator: Always `.` (dot) - Collection ID converter: Always `CommonConverters.sourceId` - Loading logic for built-in, file source, and merge library collections
 
 This reduces the type parameter count from 4 to 3 and eliminates boilerplate in derived classes.
 
@@ -47,7 +47,43 @@ Description
 
 </td><td>
 
-Creates a new SubLibraryBase instance.
+Creates a new SubLibraryBase instance with full loading support.
+
+This constructor handles all collection loading: - Built-in collections (from BuiltInData) - File source collections - Merge library collections - Additional explicit collections
+
+
+</td></tr>
+</tbody></table>
+
+## Methods
+
+<table><thead><tr><th>
+
+Method
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[loadFromFileTreeSource(source)](./ts-chocolate.librarydata.sublibrarybase.loadfromfiletreesource.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Loads collections from a file tree source and adds them to this library.
 
 
 </td></tr>
