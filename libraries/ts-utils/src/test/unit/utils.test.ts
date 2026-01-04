@@ -24,10 +24,12 @@ import '../helpers/jest';
 
 import {
   Result,
+  entriesForRecord,
   fail,
   getTypeOfProperty,
   getValueOfPropertyOrDefault,
   isKeyOf,
+  keysForRecord,
   mapToRecord,
   omit,
   optionalMapToPossiblyEmptyRecord,
@@ -36,7 +38,8 @@ import {
   optionalRecordToPossiblyEmptyMap,
   pick,
   recordToMap,
-  succeed
+  succeed,
+  valuesForRecord
 } from '../../packlets/base';
 
 describe('Utils module', () => {
@@ -264,6 +267,93 @@ describe('Utils module', () => {
       expect(getValueOfPropertyOrDefault('a string', obj, 'xyzzy')).toBe('xyzzy');
       expect(getValueOfPropertyOrDefault(2, obj, 'xyzzy')).toBe('xyzzy');
       expect(getValueOfPropertyOrDefault(Symbol('symbol'), obj, 'xyzzy')).toBe('xyzzy');
+    });
+  });
+
+  describe('keysForRecord function', () => {
+    test('returns keys from a record with string keys', () => {
+      const result = keysForRecord(record);
+      expect(result.sort()).toEqual(['first', 'second', 'third'].sort());
+    });
+
+    test('returns an empty array for an empty record', () => {
+      const emptyRecord: Record<string, string> = {};
+      expect(keysForRecord(emptyRecord)).toEqual([]);
+    });
+
+    test('preserves branded string key types', () => {
+      type BrandedKey = 'alpha' | 'beta' | 'gamma';
+      const brandedRecord: Record<BrandedKey, number> = {
+        alpha: 1,
+        beta: 2,
+        gamma: 3
+      };
+      const keys: BrandedKey[] = keysForRecord(brandedRecord);
+      expect(keys.sort()).toEqual(['alpha', 'beta', 'gamma'].sort());
+    });
+  });
+
+  describe('valuesForRecord function', () => {
+    test('returns values from a record', () => {
+      const result = valuesForRecord(record);
+      expect(result.sort()).toEqual(['1st', '2nd', '3rd'].sort());
+    });
+
+    test('returns an empty array for an empty record', () => {
+      const emptyRecord: Record<string, string> = {};
+      expect(valuesForRecord(emptyRecord)).toEqual([]);
+    });
+
+    test('preserves value types', () => {
+      const numRecord: Record<string, number> = {
+        a: 1,
+        b: 2,
+        c: 3
+      };
+      const values: number[] = valuesForRecord(numRecord);
+      expect(values.sort()).toEqual([1, 2, 3].sort());
+    });
+
+    test('handles mixed value types in union records', () => {
+      const mixedRecord: Record<string, string | number> = {
+        str: 'hello',
+        num: 42
+      };
+      const values: (string | number)[] = valuesForRecord(mixedRecord);
+      expect(values).toHaveLength(2);
+      expect(values).toContain('hello');
+      expect(values).toContain(42);
+    });
+  });
+
+  describe('entriesForRecord function', () => {
+    test('returns entries from a record', () => {
+      const result = entriesForRecord(record);
+      const sortedResult = result.sort((a, b) => a[0].localeCompare(b[0]));
+      expect(sortedResult).toEqual([
+        ['first', '1st'],
+        ['second', '2nd'],
+        ['third', '3rd']
+      ]);
+    });
+
+    test('returns an empty array for an empty record', () => {
+      const emptyRecord: Record<string, string> = {};
+      expect(entriesForRecord(emptyRecord)).toEqual([]);
+    });
+
+    test('preserves key and value types in entries', () => {
+      type BrandedKey = 'x' | 'y';
+      const typedRecord: Record<BrandedKey, number> = {
+        x: 10,
+        y: 20
+      };
+      const entries: Array<[BrandedKey, number]> = entriesForRecord(typedRecord);
+      const sortedEntries = entries.sort((a, b) => a[0].localeCompare(b[0]));
+      expect(sortedEntries).toEqual([
+        ['x', 10],
+        ['y', 20]
+      ]);
     });
   });
 

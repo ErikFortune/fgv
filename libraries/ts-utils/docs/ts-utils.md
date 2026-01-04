@@ -223,6 +223,17 @@ Wraps a function which might throw to convert exception results to [Failure](./t
 </td></tr>
 <tr><td>
 
+[entriesForRecord(obj)](./ts-utils.entriesforrecord.md)
+
+
+</td><td>
+
+Type-safe(ish) entries extractor for typed records.
+
+
+</td></tr>
+<tr><td>
+
 [fail\_2(message)](./ts-utils.fail_2.md)
 
 
@@ -317,6 +328,17 @@ Checks if a result is a deferred result.
 </td><td>
 
 Helper type-guard function to report whether a specified key is present in a supplied object.
+
+
+</td></tr>
+<tr><td>
+
+[keysForRecord(obj)](./ts-utils.keysforrecord.md)
+
+
+</td><td>
+
+Type-safe(ish) key extractor for typed records.
 
 
 </td></tr>
@@ -537,6 +559,17 @@ Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a sup
 </td><td>
 
 Uses a value or calls a supplied initializer if the supplied value is undefined.
+
+
+</td></tr>
+<tr><td>
+
+[valuesForRecord(obj)](./ts-utils.valuesforrecord.md)
+
+
+</td><td>
+
+Type-safe(ish) value extractor for typed records.
 
 
 </td></tr>

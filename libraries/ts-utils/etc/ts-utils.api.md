@@ -895,6 +895,9 @@ type DiscriminatedObjectConverters<T, TD extends string = string, TC = unknown> 
 function element<T, TC = unknown>(index: number, converter: Converter<T, TC> | Validator<T, TC>): Converter<T, TC>;
 
 // @public
+export function entriesForRecord<TK extends string, TV>(obj: Record<TK, TV>): Array<[TK, TV]>;
+
+// @public
 function enumeratedValue<T>(values: ReadonlyArray<T>): Converter<T, ReadonlyArray<T>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1667,6 +1670,9 @@ interface KeyedConverterOptions<T extends string = string, TC = unknown> {
     keyConverter?: Converter<T, TC> | Validator<T, TC>;
     onError?: 'fail' | 'ignore';
 }
+
+// @public
+export function keysForRecord<TK extends string>(obj: Record<TK, unknown>): TK[];
 
 // @public
 class KeyValueConverters<TK extends string = string, TV = unknown> {
@@ -2663,6 +2669,9 @@ interface ValidatorTraitValues {
 //
 // @internal @deprecated
 const value: typeof literal;
+
+// @public
+export function valuesForRecord<TK extends string, TV>(obj: Record<TK, TV>): TV[];
 
 // (No @packageDocumentation comment for this package)
 

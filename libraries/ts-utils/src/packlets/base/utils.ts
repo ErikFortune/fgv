@@ -71,6 +71,36 @@ export function omit<T extends object, K extends keyof T>(from: T, exclude: K[])
 }
 
 /**
+ * Type-safe(ish) key extractor for typed records.
+ * @param obj - The record from which keys are to be extracted.
+ * @returns The keys of the record as an array.
+ * @public
+ */
+export function keysForRecord<TK extends string>(obj: Record<TK, unknown>): TK[] {
+  return Object.keys(obj) as TK[];
+}
+
+/**
+ * Type-safe(ish) value extractor for typed records.
+ * @param obj - The record from which values are to be extracted.
+ * @returns The values of the record as an array.
+ * @public
+ */
+export function valuesForRecord<TK extends string, TV>(obj: Record<TK, TV>): TV[] {
+  return Object.values(obj) as TV[];
+}
+
+/**
+ * Type-safe(ish) entries extractor for typed records.
+ * @param obj - The record from which entries are to be extracted.
+ * @returns The entries of the record as an array of `[key, value]` tuples.
+ * @public
+ */
+export function entriesForRecord<TK extends string, TV>(obj: Record<TK, TV>): Array<[TK, TV]> {
+  return Object.entries(obj) as Array<[TK, TV]>;
+}
+
+/**
  * Gets the value of a property specified by key from an arbitrary object,
  * or a default value if the property does not exist.
  * @param key - The key specifying the property to be retrieved.
