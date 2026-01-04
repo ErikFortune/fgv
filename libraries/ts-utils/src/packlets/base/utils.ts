@@ -111,6 +111,13 @@ export function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]
 }
 
 /**
+ * Helper type to extract the element type and preserve readonly status.
+ * @public
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export type EnsureArrayResult<T> = T extends readonly (infer _U)[] ? T : T[];
+
+/**
  * Ensures the input is an array. If already an array, returns it as-is.
  * If a single item, wraps it in an array.
  * Preserves readonly status of input arrays.
@@ -118,13 +125,8 @@ export function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]
  * @returns The input array unchanged, or a new array containing the single item.
  * @public
  */
-export function ensureArray<T>(items: T[]): T[];
-/** @public */
-export function ensureArray<T>(items: readonly T[]): readonly T[];
-/** @public */
-export function ensureArray<T>(items: T): T[];
-export function ensureArray<T>(items: T | readonly T[]): T[] | readonly T[] {
-  return Array.isArray(items) ? items : [items as T];
+export function ensureArray<T>(items: T): EnsureArrayResult<T> {
+  return (Array.isArray(items) ? items : [items]) as EnsureArrayResult<T>;
 }
 
 /**
