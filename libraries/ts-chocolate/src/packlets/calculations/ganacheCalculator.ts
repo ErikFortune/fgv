@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, mapResults, succeed } from '@fgv/ts-utils';
+import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
 import { Grams, IngredientId, Percentage, RecipeVersionId } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
@@ -262,7 +262,7 @@ export function calculateFromRecipeIngredients(
   // Resolve all ingredients
   const resolutionResults = recipeIngredients.map((ri) =>
     resolver(ri.ingredientId).onSuccess((ingredient) =>
-      succeed<IResolvedIngredient>({
+      Success.with<IResolvedIngredient>({
         ingredient,
         amount: ri.amount
       })
@@ -270,7 +270,7 @@ export function calculateFromRecipeIngredients(
   );
 
   return mapResults(resolutionResults).onSuccess((resolvedIngredients) =>
-    succeed(calculateFromIngredients(resolvedIngredients))
+    Success.with(calculateFromIngredients(resolvedIngredients))
   );
 }
 
@@ -290,7 +290,7 @@ export function calculateForRecipe(
 ): Result<IGanacheAnalysis> {
   // If a Recipe instance, use helper methods; otherwise find the version manually
   if (recipe instanceof Recipe) {
-    const version = versionId ? recipe.getVersion(versionId) : succeed(recipe.goldenVersion);
+    const version = versionId ? recipe.getVersion(versionId) : Success.with(recipe.goldenVersion);
     return version.onSuccess((v) => calculateFromRecipeIngredients(v.ingredients, resolver));
   }
 
@@ -299,7 +299,7 @@ export function calculateForRecipe(
   const version = recipe.versions.find((v) => v.versionId === targetVersionId);
 
   if (!version) {
-    return fail(`Version ${targetVersionId} not found in recipe ${recipe.baseId}`);
+    return Failure.with(`Version ${targetVersionId} not found in recipe ${recipe.baseId}`);
   }
 
   return calculateFromRecipeIngredients(version.ingredients, resolver);
@@ -427,7 +427,7 @@ export function calculateGanache(
   versionId?: RecipeVersionId
 ): Result<IGanacheCalculation> {
   return calculateForRecipe(recipe, resolver, versionId).onSuccess((analysis) =>
-    succeed({
+    Success.with({
       analysis,
       validation: validateGanache(analysis)
     })

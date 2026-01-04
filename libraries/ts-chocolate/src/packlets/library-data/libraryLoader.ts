@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Failure, Result, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import {
@@ -161,12 +161,12 @@ export function resolveFileTreeSourceForSubLibrary(
   // Check if this sub-library should be loaded
   const loadParams = specToLoadParams(subLibrarySpec, source.mutable ?? false);
   if (loadParams === undefined) {
-    return succeed(undefined);
+    return Success.with(undefined);
   }
 
   // Navigate to the sub-library directory
   return navigateToSubLibrary(source.directory, subLibraryId).onSuccess((directory) =>
-    succeed({
+    Success.with({
       subLibraryId,
       directory,
       loadParams
@@ -201,7 +201,7 @@ export function resolveFileTreeSource(
     }
   }
 
-  return succeed(results);
+  return Success.with(results);
 }
 
 /**
@@ -255,12 +255,14 @@ export function checkForCollisionIds<TCollectionId extends string>(
     for (const coll of collections) {
       const existing = seen.get(coll.id);
       if (existing !== undefined) {
-        return fail(`Collection ID '${coll.id}' conflict: found in both '${existing}' and '${source}'`);
+        return Failure.with(
+          `Collection ID '${coll.id}' conflict: found in both '${existing}' and '${source}'`
+        );
       }
       seen.set(coll.id, source);
     }
   }
-  return succeed(true);
+  return Success.with(true);
 }
 
 // ============================================================================

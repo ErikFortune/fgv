@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters, Result, succeed, fail } from '@fgv/ts-utils';
+import { Converters, Failure, Result, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { CollectionFilter, ICollectionFilterInitParams } from '../../../packlets/library-data';
@@ -30,16 +30,16 @@ type TestId = string & { readonly __testId: unique symbol };
 
 const testIdConverter = Converters.generic<TestId>((from: unknown) => {
   if (typeof from !== 'string') {
-    return fail('Expected string');
+    return Failure.with('Expected string');
   }
   if (from.length === 0) {
-    return fail('TestId cannot be empty');
+    return Failure.with('TestId cannot be empty');
   }
   // Allow lowercase letters, numbers, hyphens, dots, and forward slashes (for recursive paths)
   if (!/^[a-z][a-z0-9./-]*$/.test(from)) {
-    return fail(`Invalid TestId format: ${from}`);
+    return Failure.with(`Invalid TestId format: ${from}`);
   }
-  return succeed(from as TestId);
+  return Success.with(from as TestId);
 });
 
 describe('CollectionFilter', () => {
@@ -88,13 +88,13 @@ describe('CollectionFilter', () => {
     });
 
     test('filters empty array', () => {
-      const result = filter.filterItems([], () => succeed('test'));
+      const result = filter.filterItems([], () => Success.with('test'));
       expect(result).toSucceedWith([]);
     });
 
     test('filters items with valid names', () => {
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(3);
@@ -107,7 +107,7 @@ describe('CollectionFilter', () => {
 
     test('skips items with invalid names when errorOnInvalidName is false', () => {
       const items = [{ value: 'valid-name' }, { value: 'INVALID' }, { value: 'another-valid' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(item.value);
+      const extractName = (item: { value: string }): Result<string> => Success.with(item.value);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -123,7 +123,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'valid-name' }, { value: 'INVALID' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(item.value);
+      const extractName = (item: { value: string }): Result<string> => Success.with(item.value);
 
       expect(errorFilter.filterItems(items, extractName)).toFailWith(/Invalid item name/i);
     });
@@ -132,9 +132,9 @@ describe('CollectionFilter', () => {
       const items = [{ value: 'good' }, { value: 'bad' }, { value: 'also-good' }];
       const extractName = (item: { value: string }): Result<string> => {
         if (item.value === 'bad') {
-          return fail('Cannot extract name');
+          return Failure.with('Cannot extract name');
         }
-        return succeed(`item-${item.value}`);
+        return Success.with(`item-${item.value}`);
       };
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
@@ -153,9 +153,9 @@ describe('CollectionFilter', () => {
       const items = [{ value: 'good' }, { value: 'bad' }];
       const extractName = (item: { value: string }): Result<string> => {
         if (item.value === 'bad') {
-          return fail('Cannot extract name');
+          return Failure.with('Cannot extract name');
         }
-        return succeed(`item-${item.value}`);
+        return Success.with(`item-${item.value}`);
       };
 
       expect(errorFilter.filterItems(items, extractName)).toFailWith(
@@ -176,7 +176,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -192,7 +192,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -208,7 +208,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -224,7 +224,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -241,7 +241,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -257,7 +257,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }, { value: 'c' }, { value: 'd' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(3);
@@ -273,7 +273,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(2);
@@ -287,7 +287,7 @@ describe('CollectionFilter', () => {
       });
 
       const items = [{ value: 'a' }, { value: 'b' }];
-      const extractName = (item: { value: string }): Result<string> => succeed(`item-${item.value}`);
+      const extractName = (item: { value: string }): Result<string> => Success.with(`item-${item.value}`);
 
       expect(filter.filterItems(items, extractName)).toSucceedAndSatisfy((filtered) => {
         expect(filtered).toHaveLength(0);

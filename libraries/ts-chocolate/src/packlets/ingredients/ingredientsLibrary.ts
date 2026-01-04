@@ -27,11 +27,10 @@ import {
   captureResult,
   Collections,
   ensureArray,
-  fail,
+  Failure,
   mapResults,
   recordFromEntries,
   Result,
-  succeed,
   Success
 } from '@fgv/ts-utils';
 
@@ -233,7 +232,7 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
       const collectionIds = Array.from(library.collections.keys());
 
       // Filter the IDs
-      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => succeed(id));
+      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => Success.with(id));
       if (filterResult.isSuccess()) {
         for (const filtered of filterResult.value) {
           const id = filtered.name;
@@ -269,7 +268,7 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
       // Load file source collections
       const fileSourceResults = fileSources.map((source, i) =>
         IngredientsLibrary._loadFromFileTreeSource(source).onSuccess((collections) =>
-          succeed<ICollectionSet<SourceId>>({
+          Success.with<ICollectionSet<SourceId>>({
             source: `fileSource[${i}]`,
             collections
           })
@@ -318,7 +317,7 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
       const existingIds = new Set(this.collections.keys());
       for (const coll of collections) {
         if (existingIds.has(coll.id)) {
-          return fail(`Collection ID '${coll.id}' already exists in this library`);
+          return Failure.with(`Collection ID '${coll.id}' already exists in this library`);
         }
       }
 
@@ -327,7 +326,7 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
         this.addCollectionEntry(coll);
       }
 
-      return succeed(collections.length);
+      return Success.with(collections.length);
     });
   }
 }

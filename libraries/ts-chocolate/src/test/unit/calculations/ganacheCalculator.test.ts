@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { fail, succeed } from '@fgv/ts-utils';
+import { Failure, Success } from '@fgv/ts-utils';
 
 import {
   BaseIngredientId,
@@ -85,9 +85,9 @@ describe('Ganache Calculator', () => {
   };
 
   const testResolver: IngredientResolver = (id: IngredientId) => {
-    if (id === ('test.chocolate' as IngredientId)) return succeed(darkChocolate);
-    if (id === ('test.cream' as IngredientId)) return succeed(cream);
-    return fail(`Unknown ingredient: ${id}`);
+    if (id === ('test.chocolate' as IngredientId)) return Success.with(darkChocolate);
+    if (id === ('test.cream' as IngredientId)) return Success.with(cream);
+    return Failure.with(`Unknown ingredient: ${id}`);
   };
 
   // ============================================================================

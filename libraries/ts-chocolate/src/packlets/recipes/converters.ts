@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result, fail } from '@fgv/ts-utils';
+import { Converter, Converters, Failure, Result } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../common';
 import {
@@ -136,13 +136,15 @@ export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
 export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unknown): Result<Recipe> => {
   return recipeData.convert(from).onSuccess((data) => {
     if (data.versions.length === 0) {
-      return fail('Recipe must have at least one version');
+      return Failure.with('Recipe must have at least one version');
     }
 
     // Validate that goldenVersionId exists in versions
     const goldenExists = data.versions.some((v) => v.versionId === data.goldenVersionId);
     if (!goldenExists) {
-      return fail(`Golden version ${data.goldenVersionId} not found in versions for recipe ${data.baseId}`);
+      return Failure.with(
+        `Golden version ${data.goldenVersionId} not found in versions for recipe ${data.baseId}`
+      );
     }
 
     return Recipe.create(data);

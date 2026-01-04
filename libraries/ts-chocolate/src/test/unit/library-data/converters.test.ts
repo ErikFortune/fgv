@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import { Converters as LibraryDataConverters } from '../../../packlets/library-data';
-import { Converters, succeed } from '@fgv/ts-utils';
+import { Converters, Success } from '@fgv/ts-utils';
 
 // Branded string types for testing
 type TestCollectionId = string & { readonly __testCollectionId: unique symbol };
@@ -32,8 +32,8 @@ interface ITestItem {
   value: number;
 }
 
-const testCollectionIdConverter = Converters.string.map((s) => succeed(s as TestCollectionId));
-const testItemIdConverter = Converters.string.map((s) => succeed(s as TestItemId));
+const testCollectionIdConverter = Converters.string.map((s) => Success.with(s as TestCollectionId));
+const testItemIdConverter = Converters.string.map((s) => Success.with(s as TestItemId));
 const testItemConverter = Converters.strictObject<ITestItem>({
   name: Converters.string,
   value: Converters.number

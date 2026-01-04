@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Grams, RecipeVersionId } from '../common';
 import {
@@ -110,19 +110,19 @@ export function scaleRecipe(
 ): Result<IScaledRecipeVersion> {
   // Validate inputs
   if (targetWeight <= 0) {
-    return fail('Target weight must be greater than zero');
+    return Failure.with('Target weight must be greater than zero');
   }
 
   // Get the version to scale (default to golden version)
   const versionId = options.versionId ?? recipe.goldenVersionId;
   const version = recipe.versions.find((v) => v.versionId === versionId);
   if (!version) {
-    return fail(`Version ${versionId} not found in recipe ${recipe.baseId}`);
+    return Failure.with(`Version ${versionId} not found in recipe ${recipe.baseId}`);
   }
 
   // Validate base weight
   if (version.baseWeight <= 0) {
-    return fail('Recipe base weight must be greater than zero');
+    return Failure.with('Recipe base weight must be greater than zero');
   }
 
   // Calculate scale factor
@@ -141,7 +141,7 @@ export function scaleRecipe(
     targetWeight
   };
 
-  return succeed({
+  return Success.with({
     scaledFrom,
     createdDate: new Date().toISOString().split('T')[0],
     ingredients: scaledIngredients,
@@ -167,14 +167,14 @@ export function scaleRecipeByFactor(
   options: IRecipeScaleOptions = {}
 ): Result<IScaledRecipeVersion> {
   if (factor <= 0) {
-    return fail('Scale factor must be greater than zero');
+    return Failure.with('Scale factor must be greater than zero');
   }
 
   // Get the version to scale (default to golden version)
   const versionId = options.versionId ?? recipe.goldenVersionId;
   const version = recipe.versions.find((v) => v.versionId === versionId);
   if (!version) {
-    return fail(`Version ${versionId} not found in recipe ${recipe.baseId}`);
+    return Failure.with(`Version ${versionId} not found in recipe ${recipe.baseId}`);
   }
 
   const targetWeight = (version.baseWeight * factor) as Grams;

@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters, fail, succeed } from '@fgv/ts-utils';
+import { Converters, Failure, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { CollectionLoader } from '../../../packlets/library-data';
@@ -35,9 +35,9 @@ interface ITestItem {
 }
 
 // Collection ID converter validates/converts the ID after .json extension is already removed
-const testCollectionIdConverter = Converters.string.map((s) => succeed(s as TestCollectionId));
+const testCollectionIdConverter = Converters.string.map((s) => Success.with(s as TestCollectionId));
 
-const testItemIdConverter = Converters.string.map((s) => succeed(s as TestItemId));
+const testItemIdConverter = Converters.string.map((s) => Success.with(s as TestItemId));
 const testItemConverter = Converters.strictObject<ITestItem>({
   name: Converters.string,
   value: Converters.number
@@ -96,12 +96,12 @@ describe('CollectionLoader', () => {
       // Custom converter that removes .yaml extension instead of .json
       const removeYamlExtension = Converters.generic<string>((from: unknown) => {
         if (typeof from !== 'string') {
-          return fail('Expected string');
+          return Failure.with('Expected string');
         }
         if (from.endsWith('.yaml')) {
-          return succeed(from.slice(0, -5));
+          return Success.with(from.slice(0, -5));
         }
-        return fail('Expected .yaml extension');
+        return Failure.with('Expected .yaml extension');
       });
 
       const loader = new CollectionLoader({
@@ -358,12 +358,12 @@ describe('CollectionLoader', () => {
       // the name without .json extension.
       const strictCollectionIdConverter = Converters.generic<TestCollectionId>((from: unknown) => {
         if (typeof from !== 'string') {
-          return fail('Expected string');
+          return Failure.with('Expected string');
         }
         if (!/^[a-z]+$/.test(from)) {
-          return fail(`Invalid collection ID: ${from}`);
+          return Failure.with(`Invalid collection ID: ${from}`);
         }
-        return succeed(from as TestCollectionId);
+        return Success.with(from as TestCollectionId);
       });
 
       const strictLoader = new CollectionLoader({
@@ -419,12 +419,12 @@ describe('CollectionLoader', () => {
       // Custom converter that removes .yaml extension
       const removeYamlExtension = Converters.generic<string>((from: unknown) => {
         if (typeof from !== 'string') {
-          return fail('Expected string');
+          return Failure.with('Expected string');
         }
         if (from.endsWith('.yaml')) {
-          return succeed(from.slice(0, -5));
+          return Success.with(from.slice(0, -5));
         }
-        return fail('Expected .yaml extension');
+        return Failure.with('Expected .yaml extension');
       });
 
       const yamlLoader = new CollectionLoader({

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BASE_ID_PATTERN,
@@ -66,9 +66,9 @@ export function isValidSourceId(from: unknown): from is SourceId {
  */
 export function toSourceId(from: unknown): Result<SourceId> {
   if (isValidSourceId(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid SourceId: must be non-empty alphanumeric with dashes/underscores, no dots');
+  return Failure.with('Invalid SourceId: must be non-empty alphanumeric with dashes/underscores, no dots');
 }
 
 /**
@@ -89,9 +89,11 @@ export function isValidBaseIngredientId(from: unknown): from is BaseIngredientId
  */
 export function toBaseIngredientId(from: unknown): Result<BaseIngredientId> {
   if (isValidBaseIngredientId(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid BaseIngredientId: must be non-empty alphanumeric with dashes/underscores, no dots');
+  return Failure.with(
+    'Invalid BaseIngredientId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
 }
 
 /**
@@ -112,9 +114,11 @@ export function isValidBaseRecipeId(from: unknown): from is BaseRecipeId {
  */
 export function toBaseRecipeId(from: unknown): Result<BaseRecipeId> {
   if (isValidBaseRecipeId(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid BaseRecipeId: must be non-empty alphanumeric with dashes/underscores, no dots');
+  return Failure.with(
+    'Invalid BaseRecipeId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
 }
 
 // ============================================================================
@@ -139,9 +143,9 @@ export function isValidIngredientId(from: unknown): from is IngredientId {
  */
 export function toIngredientId(from: unknown): Result<IngredientId> {
   if (isValidIngredientId(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail(
+  return Failure.with(
     'Invalid IngredientId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
   );
 }
@@ -164,9 +168,9 @@ export function isValidRecipeId(from: unknown): from is RecipeId {
  */
 export function toRecipeId(from: unknown): Result<RecipeId> {
   if (isValidRecipeId(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail(
+  return Failure.with(
     'Invalid RecipeId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
   );
 }
@@ -193,9 +197,9 @@ export function isValidRecipeName(from: unknown): from is RecipeName {
  */
 export function toRecipeName(from: unknown): Result<RecipeName> {
   if (isValidRecipeName(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid RecipeName: must be a non-empty string');
+  return Failure.with('Invalid RecipeName: must be a non-empty string');
 }
 
 /**
@@ -216,9 +220,9 @@ export function isValidRecipeVersionId(from: unknown): from is RecipeVersionId {
  */
 export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
   if (isValidRecipeVersionId(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail(
+  return Failure.with(
     'Invalid RecipeVersionId: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
   );
 }
@@ -245,9 +249,9 @@ export function isValidGrams(from: unknown): from is Grams {
  */
 export function toGrams(from: unknown): Result<Grams> {
   if (isValidGrams(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid Grams: must be a non-negative finite number');
+  return Failure.with('Invalid Grams: must be a non-negative finite number');
 }
 
 /**
@@ -268,9 +272,9 @@ export function isValidPercentage(from: unknown): from is Percentage {
  */
 export function toPercentage(from: unknown): Result<Percentage> {
   if (isValidPercentage(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid Percentage: must be a number between 0 and 100');
+  return Failure.with('Invalid Percentage: must be a number between 0 and 100');
 }
 
 /**
@@ -291,9 +295,9 @@ export function isValidCelsius(from: unknown): from is Celsius {
  */
 export function toCelsius(from: unknown): Result<Celsius> {
   if (isValidCelsius(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid Celsius: must be a finite number');
+  return Failure.with('Invalid Celsius: must be a finite number');
 }
 
 /**
@@ -314,9 +318,9 @@ export function isValidDegreesMacMichael(from: unknown): from is DegreesMacMicha
  */
 export function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael> {
   if (isValidDegreesMacMichael(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail('Invalid DegreesMacMichael: must be a non-negative finite number');
+  return Failure.with('Invalid DegreesMacMichael: must be a non-negative finite number');
 }
 
 /**
@@ -337,9 +341,9 @@ export function isValidRatingScore(from: unknown): from is RatingScore {
  */
 export function toRatingScore(from: unknown): Result<RatingScore> {
   if (isValidRatingScore(from)) {
-    return succeed(from);
+    return Success.with(from);
   }
-  return fail(`${from}: Invalid RatingScore: must be an integer between 1 and 5`);
+  return Failure.with(`${from}: Invalid RatingScore: must be an integer between 1 and 5`);
 }
 
 // ============================================================================
@@ -366,11 +370,11 @@ export function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId)
 export function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]> {
   const parts = id.split(ID_SEPARATOR);
   if (parts.length !== 2) {
-    return fail(`Invalid IngredientId format: ${id}`);
+    return Failure.with(`Invalid IngredientId format: ${id}`);
   }
   return toSourceId(parts[0]).onSuccess((sourceId) =>
     toBaseIngredientId(parts[1]).onSuccess((baseId) =>
-      succeed([sourceId, baseId] as [SourceId, BaseIngredientId])
+      Success.with([sourceId, baseId] as [SourceId, BaseIngredientId])
     )
   );
 }
@@ -415,10 +419,12 @@ export function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): Recipe
 export function parseRecipeId(id: RecipeId): Result<[SourceId, BaseRecipeId]> {
   const parts = id.split(ID_SEPARATOR);
   if (parts.length !== 2) {
-    return fail(`Invalid RecipeId format: ${id}`);
+    return Failure.with(`Invalid RecipeId format: ${id}`);
   }
   return toSourceId(parts[0]).onSuccess((sourceId) =>
-    toBaseRecipeId(parts[1]).onSuccess((baseId) => succeed([sourceId, baseId] as [SourceId, BaseRecipeId]))
+    toBaseRecipeId(parts[1]).onSuccess((baseId) =>
+      Success.with([sourceId, baseId] as [SourceId, BaseRecipeId])
+    )
   );
 }
 

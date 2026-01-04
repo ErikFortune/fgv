@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeName, RecipeVersionId } from '../common';
 import { IRecipe, IRecipeUsage, IRecipeVersion } from './model';
@@ -67,9 +67,9 @@ export class Recipe implements IRecipe {
     const goldenVersion = data.versions.find((v) => v.versionId === data.goldenVersionId);
     /* c8 ignore next 3 - defensive: converter validates golden version exists before calling create */
     if (!goldenVersion) {
-      return fail(`Golden version ${data.goldenVersionId} not found in recipe ${data.baseId}`);
+      return Failure.with(`Golden version ${data.goldenVersionId} not found in recipe ${data.baseId}`);
     }
-    return succeed(new Recipe(data, goldenVersion));
+    return Success.with(new Recipe(data, goldenVersion));
   }
 
   /**
@@ -87,8 +87,8 @@ export class Recipe implements IRecipe {
   public getVersion(versionId: RecipeVersionId): Result<IRecipeVersion> {
     const version = this.versions.find((v) => v.versionId === versionId);
     if (!version) {
-      return fail(`Version ${versionId} not found in recipe ${this.baseId}`);
+      return Failure.with(`Version ${versionId} not found in recipe ${this.baseId}`);
     }
-    return succeed(version);
+    return Success.with(version);
   }
 }

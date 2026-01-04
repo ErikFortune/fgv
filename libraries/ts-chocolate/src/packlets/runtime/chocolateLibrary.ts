@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Grams, IngredientId, RecipeId, RecipeVersionId, SourceId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
@@ -149,7 +149,7 @@ export class ChocolateLibrary {
 
     // Combine results
     return ingredientsResult.onSuccess((ingredients) =>
-      recipesResult.onSuccess((recipes) => succeed(new ChocolateLibrary(ingredients, recipes)))
+      recipesResult.onSuccess((recipes) => Success.with(new ChocolateLibrary(ingredients, recipes)))
     );
   }
 
@@ -269,7 +269,7 @@ export class ChocolateLibrary {
 
       /* c8 ignore next 3 - tested in chocolateLibrary.test.ts but coverage intermittently missed */
       if (!version) {
-        return fail(`Version ${versionId} not found in recipe ${recipe.baseId}`);
+        return Failure.with(`Version ${versionId} not found in recipe ${recipe.baseId}`);
       }
 
       const targetWeight = (version.baseWeight * factor) as Grams;
