@@ -25,7 +25,6 @@
 
 import {
   captureResult,
-  Collections,
   DetailedResult,
   ensureArray,
   Failure,
@@ -51,7 +50,8 @@ import {
   LibraryLoadSpec,
   normalizeFileSources,
   normalizeMergeSource,
-  specToLoadParams
+  specToLoadParams,
+  SubLibraryBase
 } from '../library-data';
 import { BuiltInData } from '../built-in';
 
@@ -156,18 +156,11 @@ export interface IRecipesLibraryParams {
  *
  * @public
  */
-export class RecipesLibrary extends Collections.AggregatedResultMapBase<
-  RecipeId,
-  SourceId,
-  BaseRecipeId,
-  Recipe
-> {
+export class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
   private constructor(collections: ReadonlyArray<RecipeCollectionEntryInit>) {
     super({
-      collectionIdConverter: CommonConverters.sourceId,
       itemIdConverter: CommonConverters.baseRecipeId,
       itemConverter: recipeConverter,
-      separator: '.',
       collections
     });
   }

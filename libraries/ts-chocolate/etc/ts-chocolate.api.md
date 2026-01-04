@@ -623,7 +623,7 @@ declare namespace Ingredients {
 export { Ingredients }
 
 // @public
-class IngredientsLibrary extends Collections.AggregatedResultMapBase<IngredientId, SourceId, BaseIngredientId, Ingredient> {
+class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
     static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary>;
     loadFromFileTreeSource(source: IIngredientFileTreeSource): Result<number>;
 }
@@ -760,6 +760,13 @@ function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRec
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
 
 // @public
+interface ISubLibraryConstructorParams<TBaseId extends string, TItem> {
+    readonly collections?: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
+    readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
+    readonly itemIdConverter: Converter<TBaseId, unknown> | Validator<TBaseId, unknown>;
+}
+
+// @public
 interface ISugarIngredient extends IIngredient {
     readonly category: 'sugar';
     readonly hydrationNumber?: number;
@@ -855,7 +862,10 @@ declare namespace LibraryData {
         normalizeMergeSource,
         IResolvedSubLibrarySource,
         ICollectionSet,
-        INormalizedMergeSource
+        INormalizedMergeSource,
+        SubLibraryEntryInit,
+        ISubLibraryConstructorParams,
+        SubLibraryBase
     }
 }
 export { LibraryData }
@@ -1017,7 +1027,7 @@ export { Recipes }
 type RecipesDetailedResult<T> = DetailedResult<T, RecipeId>;
 
 // @public
-class RecipesLibrary extends Collections.AggregatedResultMapBase<RecipeId, SourceId, BaseRecipeId, Recipe> {
+class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
     static create(params?: IRecipesLibraryParams): Result<RecipesLibrary>;
     loadFromFileTreeSource(source: IRecipeFileTreeSource): Result<number>;
 }
@@ -1087,6 +1097,14 @@ const sourceId: Converter<SourceId>;
 
 // @public
 function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
+
+// @public
+abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
+    protected constructor(params: ISubLibraryConstructorParams<TBaseId, TItem>);
+}
+
+// @public
+type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem>;
 
 // @public
 type SubLibraryId = 'ingredients' | 'recipes';

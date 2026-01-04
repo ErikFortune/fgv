@@ -11,9 +11,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "felchlin.mar
 **Signature:**
 
 ```typescript
-export declare class IngredientsLibrary extends Collections.AggregatedResultMapBase<IngredientId, SourceId, BaseIngredientId, Ingredient> 
+export declare class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> 
 ```
-**Extends:** Collections.AggregatedResultMapBase&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.ingredients.ingredient.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [Ingredient](./ts-chocolate.ingredients.ingredient.md)<!-- -->&gt;
 
 ## Methods
 

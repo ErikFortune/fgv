@@ -25,7 +25,6 @@
 
 import {
   captureResult,
-  Collections,
   ensureArray,
   Failure,
   mapResults,
@@ -50,7 +49,8 @@ import {
   LibraryLoadSpec,
   normalizeFileSources,
   normalizeMergeSource,
-  specToLoadParams
+  specToLoadParams,
+  SubLibraryBase
 } from '../library-data';
 import { BuiltInData } from '../built-in';
 
@@ -138,18 +138,11 @@ export interface IIngredientsLibraryParams {
  *
  * @public
  */
-export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
-  IngredientId,
-  SourceId,
-  BaseIngredientId,
-  Ingredient
-> {
+export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
   private constructor(collections: ReadonlyArray<IngredientCollectionEntryInit>) {
     super({
-      collectionIdConverter: CommonConverters.sourceId,
       itemIdConverter: CommonConverters.baseIngredientId,
       itemConverter: ingredientConverter,
-      separator: '.',
       collections
     });
   }

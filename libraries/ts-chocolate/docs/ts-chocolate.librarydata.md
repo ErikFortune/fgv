@@ -41,6 +41,36 @@ Loads collections from a file tree, validating with supplied converters and filt
 </td></tr>
 </tbody></table>
 
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)
+
+
+</td><td>
+
+Base class for sub-libraries that use SourceId as the collection ID.
+
+This abstract class standardizes: - Collection ID type: Always `SourceId` - Separator: Always `.` (dot) - Collection ID converter: Always `CommonConverters.sourceId`
+
+This reduces the type parameter count from 4 to 3 and eliminates boilerplate in derived classes.
+
+
+</td></tr>
+</tbody></table>
+
 ## Functions
 
 <table><thead><tr><th>
@@ -387,6 +417,17 @@ Result of resolving a file tree source for a specific sub-library.
 
 
 </td></tr>
+<tr><td>
+
+[ISubLibraryConstructorParams](./ts-chocolate.librarydata.isublibraryconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a SubLibrary.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -508,6 +549,17 @@ Specifies which collections from a library should be loaded.
 </td><td>
 
 Specifies which collections should be mutable. - `true`<!-- -->: All collections are mutable. - `false`<!-- -->: All collections are immutable. - `ReadonlyArray<string>`<!-- -->: Only the specified collections are mutable, all others are immutable. - `{ immutable: ReadonlyArray<string> }`<!-- -->: Only the specified collections are immutable, all others are mutable.
+
+
+</td></tr>
+<tr><td>
+
+[SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)
+
+
+</td><td>
+
+Type alias for sub-library collection entries. Fixes the collection ID type to SourceId.
 
 
 </td></tr>
