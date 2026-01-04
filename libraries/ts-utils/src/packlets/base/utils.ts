@@ -101,6 +101,16 @@ export function entriesForRecord<TK extends string, TV>(obj: Record<TK, TV>): Ar
 }
 
 /**
+ * Type-safe(ish) record constructor from an array of `[key, value]` tuples.
+ * @param entries - The array of `[key, value]` tuples from which to construct the record.
+ * @returns A record constructed from the supplied entries.
+ * @public
+ */
+export function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]>): Record<TK, TV> {
+  return Object.fromEntries(entries) as Record<TK, TV>;
+}
+
+/**
  * Gets the value of a property specified by key from an arbitrary object,
  * or a default value if the property does not exist.
  * @param key - The key specifying the property to be retrieved.

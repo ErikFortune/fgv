@@ -2137,6 +2137,9 @@ export interface PopulateObjectOptions<T> {
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
 // @public
+export function recordFromEntries<TK extends string, TV>(entries: Array<[TK, TV]>): Record<TK, TV>;
+
+// @public
 function recordOf<T, TC = unknown, TK extends string = string>(converter: Converter<T, TC> | Validator<T, TC>): Converter<Record<TK, T>, TC>;
 
 // @public

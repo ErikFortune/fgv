@@ -37,6 +37,7 @@ import {
   optionalRecordToMap,
   optionalRecordToPossiblyEmptyMap,
   pick,
+  recordFromEntries,
   recordToMap,
   succeed,
   valuesForRecord
@@ -354,6 +355,47 @@ describe('Utils module', () => {
         ['x', 10],
         ['y', 20]
       ]);
+    });
+  });
+
+  describe('recordFromEntries function', () => {
+    test('creates a record from entries', () => {
+      const entries: Array<[string, string]> = [
+        ['first', '1st'],
+        ['second', '2nd'],
+        ['third', '3rd']
+      ];
+      expect(recordFromEntries(entries)).toEqual(record);
+    });
+
+    test('returns an empty record for an empty array', () => {
+      const emptyEntries: Array<[string, string]> = [];
+      expect(recordFromEntries(emptyEntries)).toEqual({});
+    });
+
+    test('preserves branded key types', () => {
+      type BrandedKey = 'alpha' | 'beta';
+      const entries: Array<[BrandedKey, number]> = [
+        ['alpha', 1],
+        ['beta', 2]
+      ];
+      const result: Record<BrandedKey, number> = recordFromEntries(entries);
+      expect(result).toEqual({ alpha: 1, beta: 2 });
+    });
+
+    test('round-trips with entriesForRecord', () => {
+      const original: Record<string, number> = { a: 1, b: 2, c: 3 };
+      const entries = entriesForRecord(original);
+      const reconstructed = recordFromEntries(entries);
+      expect(reconstructed).toEqual(original);
+    });
+
+    test('later entries overwrite earlier ones with the same key', () => {
+      const entries: Array<[string, number]> = [
+        ['key', 1],
+        ['key', 2]
+      ];
+      expect(recordFromEntries(entries)).toEqual({ key: 2 });
     });
   });
 

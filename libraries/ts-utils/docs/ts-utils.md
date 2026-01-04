@@ -498,6 +498,17 @@ Propagates a [Success](./ts-utils.success.md) or [Failure](./ts-utils.failure.md
 </td></tr>
 <tr><td>
 
+[recordFromEntries(entries)](./ts-utils.recordfromentries.md)
+
+
+</td><td>
+
+Type-safe(ish) record constructor from an array of `[key, value]` tuples.
+
+
+</td></tr>
+<tr><td>
+
 [recordToMap(src, factory)](./ts-utils.recordtomap.md)
 
 
