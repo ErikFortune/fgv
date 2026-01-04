@@ -9,5 +9,5 @@ Converter or validator for item IDs within collections.
 **Signature:**
 
 ```typescript
-readonly itemIdConverter: Converter<TBaseId, unknown> | Validator<TBaseId, unknown>;
+readonly itemIdConverter: Converter<TBaseId> | Validator<TBaseId>;
 ```

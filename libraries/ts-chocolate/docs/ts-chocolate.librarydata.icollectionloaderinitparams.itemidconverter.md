@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly itemIdConverter: Converter<TITEMID>;
+readonly itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
 ```

@@ -9,5 +9,5 @@ Converter or validator for items within collections.
 **Signature:**
 
 ```typescript
-readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
+readonly itemConverter: Converter<TItem> | Validator<TItem>;
 ```

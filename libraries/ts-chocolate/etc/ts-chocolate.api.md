@@ -412,9 +412,9 @@ interface ICollectionLoaderInitParams<T, TCOLLECTIONID extends string = string, 
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly fileNameConverter?: Converter<string>;
     // (undocumented)
-    readonly itemConverter: Converter<T>;
+    readonly itemConverter: Converter<T> | Validator<T>;
     // (undocumented)
-    readonly itemIdConverter: Converter<TITEMID>;
+    readonly itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
     readonly mutable?: MutabilitySpec;
 }
 
@@ -751,10 +751,9 @@ function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredie
 interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem> {
     readonly builtInTreeProvider: SubLibraryBuiltInTreeProvider;
     readonly directoryNavigator: SubLibraryDirectoryNavigator;
-    readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
-    readonly itemIdConverter: Converter<TBaseId, unknown> | Validator<TBaseId, unknown>;
+    readonly itemConverter: Converter<TItem> | Validator<TItem>;
+    readonly itemIdConverter: Converter<TBaseId> | Validator<TBaseId>;
     readonly libraryParams?: ISubLibraryParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>;
-    readonly loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>;
 }
 
 // @public
@@ -868,7 +867,6 @@ declare namespace LibraryData {
         SubLibraryCollection,
         SubLibraryFileTreeSource,
         SubLibraryMergeSource,
-        SubLibraryLoaderFactory,
         SubLibraryDirectoryNavigator,
         SubLibraryBuiltInTreeProvider,
         ISubLibraryParams,
@@ -1130,9 +1128,6 @@ type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
 type SubLibraryId = 'ingredients' | 'recipes';
-
-// @public
-type SubLibraryLoaderFactory<TBaseId extends string, TItem> = (mutable: MutabilitySpec) => CollectionLoader<TItem, SourceId, TBaseId>;
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;

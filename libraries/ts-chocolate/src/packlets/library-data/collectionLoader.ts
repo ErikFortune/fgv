@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Converter, mapResults, pick, Result } from '@fgv/ts-utils';
+import { Converter, mapResults, pick, Result, Validator } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { CollectionFilter, ICollectionFilterInitParams, IFilterDirectoryParams } from './collectionFilter';
 import { ICollection, MutabilitySpec } from './model';
@@ -33,9 +33,9 @@ export interface ICollectionLoaderInitParams<
   TCOLLECTIONID extends string = string,
   TITEMID extends string = string
 > {
-  readonly itemConverter: Converter<T>;
+  readonly itemConverter: Converter<T> | Validator<T>;
   readonly collectionIdConverter: Converter<TCOLLECTIONID>;
-  readonly itemIdConverter: Converter<TITEMID>;
+  readonly itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
   /**
    * Optional converter to transform file names before applying the collection ID converter.
    * Defaults to {@link LibraryData.Converters.removeJsonExtension | removeJsonExtension}.
@@ -73,8 +73,8 @@ export class CollectionLoader<
 > {
   private readonly _fileNameToCollectionIdConverter: Converter<TCOLLECTIONID>;
   private readonly _collectionIdConverter: Converter<TCOLLECTIONID>;
-  private readonly _itemIdConverter: Converter<TITEMID>;
-  private readonly _itemConverter: Converter<T>;
+  private readonly _itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
+  private readonly _itemConverter: Converter<T> | Validator<T>;
   private readonly _mutableDefault: MutabilitySpec;
   private readonly _collectionConverter: Converter<ICollection<T, TCOLLECTIONID, TITEMID>>;
 

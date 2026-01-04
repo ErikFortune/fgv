@@ -87,7 +87,7 @@ _(Optional)_ Optional converter to transform file names before applying the coll
 
 </td><td>
 
-Converter&lt;T&gt;
+Converter&lt;T&gt; \| Validator&lt;T&gt;
 
 
 </td><td>
@@ -106,7 +106,7 @@ Converter&lt;T&gt;
 
 </td><td>
 
-Converter&lt;TITEMID&gt;
+Converter&lt;TITEMID&gt; \| Validator&lt;TITEMID&gt;
 
 
 </td><td>

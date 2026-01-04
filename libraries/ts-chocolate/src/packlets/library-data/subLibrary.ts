@@ -40,7 +40,7 @@ import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
 import { CollectionLoader } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
-import { IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec, MutabilitySpec } from './model';
+import { IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec } from './model';
 import {
   checkForCollisionIds,
   ICollectionSet,
@@ -130,19 +130,8 @@ export type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 export type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
 
 // ============================================================================
-// Loader Factory and Directory Navigator
+// Directory Navigator and Built-in Tree Provider
 // ============================================================================
-
-/**
- * Factory function that creates a CollectionLoader for a specific sub-library type.
- *
- * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
- * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
- * @public
- */
-export type SubLibraryLoaderFactory<TBaseId extends string, TItem> = (
-  mutable: MutabilitySpec
-) => CollectionLoader<TItem, SourceId, TBaseId>;
 
 /**
  * Function that navigates from library root to the appropriate data directory.
@@ -230,17 +219,12 @@ export interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem
   /**
    * Converter or validator for item IDs within collections.
    */
-  readonly itemIdConverter: Converter<TBaseId, unknown> | Validator<TBaseId, unknown>;
+  readonly itemIdConverter: Converter<TBaseId> | Validator<TBaseId>;
 
   /**
    * Converter or validator for items within collections.
    */
-  readonly itemConverter: Converter<TItem, unknown> | Validator<TItem, unknown>;
-
-  /**
-   * Factory function that creates a CollectionLoader for loading from file trees.
-   */
-  readonly loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>;
+  readonly itemConverter: Converter<TItem> | Validator<TItem>;
 
   /**
    * Function that navigates from library root to the data directory.
@@ -286,10 +270,16 @@ export abstract class SubLibraryBase<
   TItem
 > extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
   /**
-   * The loader factory for this library type.
+   * The item ID converter for creating loaders.
    * Used by loadFromFileTreeSource instance method.
    */
-  private readonly _loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>;
+  private readonly _loaderItemIdConverter: Converter<TBaseId> | Validator<TBaseId>;
+
+  /**
+   * The item converter for creating loaders.
+   * Used by loadFromFileTreeSource instance method.
+   */
+  private readonly _loaderItemConverter: Converter<TItem> | Validator<TItem>;
 
   /**
    * The directory navigator for this library type.
@@ -320,7 +310,8 @@ export abstract class SubLibraryBase<
     // Load built-in collections
     const builtInCollections = SubLibraryBase._loadBuiltInCollections(
       builtin,
-      params.loaderFactory,
+      params.itemIdConverter,
+      params.itemConverter,
       params.directoryNavigator,
       params.builtInTreeProvider
     ).orThrow();
@@ -329,7 +320,8 @@ export abstract class SubLibraryBase<
     const fileSourceResults = fileSources.map((source, i) =>
       SubLibraryBase._loadFromFileTreeSource(
         source,
-        params.loaderFactory,
+        params.itemIdConverter,
+        params.itemConverter,
         params.directoryNavigator
       ).onSuccess((collections) =>
         Success.with<ICollectionSet<SourceId>>({
@@ -372,7 +364,8 @@ export abstract class SubLibraryBase<
       collections: allCollections
     });
 
-    this._loaderFactory = params.loaderFactory;
+    this._loaderItemIdConverter = params.itemIdConverter;
+    this._loaderItemConverter = params.itemConverter;
     this._directoryNavigator = params.directoryNavigator;
   }
 
@@ -384,14 +377,16 @@ export abstract class SubLibraryBase<
    * Loads built-in collections based on the LibraryLoadSpec.
    *
    * @param spec - The LibraryLoadSpec controlling which built-ins to load.
-   * @param loaderFactory - Factory to create the collection loader.
+   * @param itemIdConverter - Converter for item IDs.
+   * @param itemConverter - Converter for items.
    * @param directoryNavigator - Function to navigate to the data directory.
    * @param builtInTreeProvider - Function to get the built-in library tree.
    * @returns Success with collections or Failure with error.
    */
   private static _loadBuiltInCollections<TBaseId extends string, TItem>(
     spec: LibraryLoadSpec<SourceId>,
-    loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>,
+    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
+    itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
     builtInTreeProvider: SubLibraryBuiltInTreeProvider
   ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
@@ -405,7 +400,12 @@ export abstract class SubLibraryBase<
         load: spec,
         mutable: false // Built-ins are always immutable
       };
-      return SubLibraryBase._loadFromFileTreeSource(source, loaderFactory, directoryNavigator);
+      return SubLibraryBase._loadFromFileTreeSource(
+        source,
+        itemIdConverter,
+        itemConverter,
+        directoryNavigator
+      );
     });
   }
 
@@ -413,13 +413,15 @@ export abstract class SubLibraryBase<
    * Loads collections from a single file tree source.
    *
    * @param source - The file tree source to load from.
-   * @param loaderFactory - Factory to create the collection loader.
+   * @param itemIdConverter - Converter for item IDs.
+   * @param itemConverter - Converter for items.
    * @param directoryNavigator - Function to navigate to the data directory.
    * @returns Success with collections or Failure with error.
    */
   private static _loadFromFileTreeSource<TBaseId extends string, TItem>(
     source: SubLibraryFileTreeSource,
-    loaderFactory: SubLibraryLoaderFactory<TBaseId, TItem>,
+    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
+    itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator
   ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
     const mutable = source.mutable ?? false;
@@ -428,8 +430,13 @@ export abstract class SubLibraryBase<
       return Success.with([]);
     }
 
-    /* c8 ignore next 1 - defensive fallback: loadParams.mutable always set by specToLoadParams */
-    const loader = loaderFactory(loadParams.mutable ?? mutable);
+    /* c8 ignore next 6 - defensive fallback: loadParams.mutable always set by specToLoadParams */
+    const loader = new CollectionLoader({
+      itemConverter,
+      collectionIdConverter: CommonConverters.sourceId,
+      itemIdConverter,
+      mutable: loadParams.mutable ?? mutable
+    });
 
     return directoryNavigator(source.directory).onSuccess((dataDir) => {
       return loader.loadFromFileTree(dataDir, loadParams);
@@ -498,7 +505,8 @@ export abstract class SubLibraryBase<
   public loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number> {
     return SubLibraryBase._loadFromFileTreeSource(
       source,
-      this._loaderFactory,
+      this._loaderItemIdConverter,
+      this._loaderItemConverter,
       this._directoryNavigator
     ).onSuccess((collections) => {
       // Check for collisions with existing collections

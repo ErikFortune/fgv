@@ -31,7 +31,6 @@ import { Recipe } from './recipe';
 import { recipe as recipeConverter } from './converters';
 import { RecipeCollectionEntryInit } from './recipesCollection';
 import {
-  CollectionLoader,
   getRecipesDirectory,
   ISubLibraryParams,
   SubLibraryBase,
@@ -85,13 +84,6 @@ export class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recip
     super({
       itemIdConverter: CommonConverters.baseRecipeId,
       itemConverter: recipeConverter,
-      loaderFactory: (mutable) =>
-        new CollectionLoader({
-          itemConverter: recipeConverter,
-          collectionIdConverter: CommonConverters.sourceId,
-          itemIdConverter: CommonConverters.baseRecipeId,
-          mutable
-        }),
       directoryNavigator: getRecipesDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
       libraryParams: params

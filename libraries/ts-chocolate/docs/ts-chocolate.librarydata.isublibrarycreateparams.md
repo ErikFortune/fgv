@@ -91,7 +91,7 @@ Function that navigates from library root to the data directory.
 
 </td><td>
 
-Converter&lt;TItem, unknown&gt; \| Validator&lt;TItem, unknown&gt;
+Converter&lt;TItem&gt; \| Validator&lt;TItem&gt;
 
 
 </td><td>
@@ -112,7 +112,7 @@ Converter or validator for items within collections.
 
 </td><td>
 
-Converter&lt;TBaseId, unknown&gt; \| Validator&lt;TBaseId, unknown&gt;
+Converter&lt;TBaseId&gt; \| Validator&lt;TBaseId&gt;
 
 
 </td><td>
@@ -139,27 +139,6 @@ Converter or validator for item IDs within collections.
 </td><td>
 
 _(Optional)_ Library creation parameters (builtin, fileSources, collections, mergeLibraries).
-
-
-</td></tr>
-<tr><td>
-
-[loaderFactory](./ts-chocolate.librarydata.isublibrarycreateparams.loaderfactory.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[SubLibraryLoaderFactory](./ts-chocolate.librarydata.sublibraryloaderfactory.md)<!-- -->&lt;TBaseId, TItem&gt;
-
-
-</td><td>
-
-Factory function that creates a CollectionLoader for loading from file trees.
 
 
 </td></tr>

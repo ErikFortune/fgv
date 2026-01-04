@@ -31,7 +31,6 @@ import { Ingredient } from './model';
 import { ingredient as ingredientConverter } from './converters';
 import { IngredientCollectionEntryInit } from './ingredientsCollection';
 import {
-  CollectionLoader,
   getIngredientsDirectory,
   ISubLibraryParams,
   SubLibraryBase,
@@ -82,13 +81,6 @@ export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredi
     super({
       itemIdConverter: CommonConverters.baseIngredientId,
       itemConverter: ingredientConverter,
-      loaderFactory: (mutable) =>
-        new CollectionLoader({
-          itemConverter: ingredientConverter,
-          collectionIdConverter: CommonConverters.sourceId,
-          itemIdConverter: CommonConverters.baseIngredientId,
-          mutable
-        }),
       directoryNavigator: getIngredientsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
       libraryParams: params

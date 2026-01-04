@@ -655,17 +655,6 @@ Identifiers for sub-libraries within the chocolate library system.
 </td></tr>
 <tr><td>
 
-[SubLibraryLoaderFactory](./ts-chocolate.librarydata.sublibraryloaderfactory.md)
-
-
-</td><td>
-
-Factory function that creates a CollectionLoader for a specific sub-library type.
-
-
-</td></tr>
-<tr><td>
-
 [SubLibraryMergeSource](./ts-chocolate.librarydata.sublibrarymergesource.md)
 
 
