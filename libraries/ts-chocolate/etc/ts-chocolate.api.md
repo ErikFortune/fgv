@@ -632,6 +632,12 @@ class IngredientsLibrary extends Collections.AggregatedResultMapBase<IngredientI
 type IngredientsMergeSource = IngredientsLibrary | IMergeLibrarySource<IngredientsLibrary, SourceId>;
 
 // @public
+interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
+    readonly filter: LibraryLoadSpec<TCollectionId>;
+    readonly library: TLibrary;
+}
+
+// @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
     readonly description?: string;
@@ -742,6 +748,9 @@ function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredie
 function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
 
 // @public
+function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
+
+// @public
 function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion;
 
 // @public
@@ -842,8 +851,11 @@ declare namespace LibraryData {
         resolveBuiltInSpec,
         checkForCollisionIds,
         normalizeFileSources,
+        isMergeLibrarySource,
+        normalizeMergeSource,
         IResolvedSubLibrarySource,
-        ICollectionSet
+        ICollectionSet,
+        INormalizedMergeSource
     }
 }
 export { LibraryData }
@@ -872,6 +884,9 @@ function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryI
 function normalizeFileSources<T extends {
     readonly directory: FileTree.IFileTreeDirectoryItem;
 }>(sources: T | ReadonlyArray<T> | undefined): ReadonlyArray<T>;
+
+// @public
+function normalizeMergeSource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): INormalizedMergeSource<TLibrary, TCollectionId>;
 
 // @public
 function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;

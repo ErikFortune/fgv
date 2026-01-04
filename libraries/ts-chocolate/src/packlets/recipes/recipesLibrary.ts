@@ -27,10 +27,11 @@ import {
   captureResult,
   Collections,
   DetailedResult,
-  fail,
+  ensureArray,
+  Failure,
   mapResults,
+  recordFromEntries,
   Result,
-  succeed,
   Success
 } from '@fgv/ts-utils';
 
@@ -49,6 +50,7 @@ import {
   IMergeLibrarySource,
   LibraryLoadSpec,
   normalizeFileSources,
+  normalizeMergeSource,
   specToLoadParams
 } from '../library-data';
 import { BuiltInData } from '../built-in';
@@ -235,39 +237,32 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
       return [];
     }
 
-    const sourceArray = Array.isArray(sources) ? sources : [sources];
+    const sourceArray = ensureArray(sources);
     const result: RecipeCollectionEntryInit[] = [];
 
     for (const source of sourceArray) {
-      // Normalize: library or {library, filter}
-      const library = 'library' in source ? source.library : source;
-      const filterSpec: LibraryLoadSpec<SourceId> = 'library' in source ? source.filter ?? true : true;
+      const { library, filter: filterSpec } = normalizeMergeSource(source);
 
       // Create filter from spec using shared helper
       const filter = createFilterFromSpec(filterSpec, CommonConverters.sourceId);
 
       // Build array of collection IDs for filtering
-      const collectionIds = Array.from(library.collections.keys()) as SourceId[];
+      const collectionIds = Array.from(library.collections.keys());
 
       // Filter the IDs
-      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => succeed(id));
+      const filterResult = filter.filterItems(collectionIds, (id: SourceId) => Success.with(id));
       if (filterResult.isSuccess()) {
         for (const filtered of filterResult.value) {
           const id = filtered.name;
-          library.collections
-            .get(id)
-            .onSuccess(
-              (collection: {
-                isMutable: boolean;
-                items: { entries(): IterableIterator<[BaseRecipeId, Recipe]> };
-              }) => {
-                result.push({
-                  id,
-                  isMutable: collection.isMutable,
-                  items: Object.fromEntries(collection.items.entries()) as Record<BaseRecipeId, Recipe>
-                });
-              }
-            );
+          library.collections.get(id).asResult.onSuccess((collection) =>
+            Success.with(
+              result.push({
+                id,
+                isMutable: collection.isMutable,
+                items: recordFromEntries(collection.items.entries())
+              })
+            )
+          );
         }
       }
     }
@@ -291,7 +286,7 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
       // Load file source collections
       const fileSourceResults = fileSources.map((source, i) =>
         RecipesLibrary._loadFromFileTreeSource(source).onSuccess((collections) =>
-          succeed<ICollectionSet<SourceId>>({
+          Success.with<ICollectionSet<SourceId>>({
             source: `fileSource[${i}]`,
             collections
           })
@@ -340,7 +335,7 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
       const existingIds = new Set(this.collections.keys());
       for (const coll of collections) {
         if (existingIds.has(coll.id)) {
-          return fail(`Collection ID '${coll.id}' already exists in this library`);
+          return Failure.with(`Collection ID '${coll.id}' already exists in this library`);
         }
       }
 
@@ -349,7 +344,7 @@ export class RecipesLibrary extends Collections.AggregatedResultMapBase<
         this.addCollectionEntry(coll);
       }
 
-      return succeed(collections.length);
+      return Success.with(collections.length);
     });
   }
 }

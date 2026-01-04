@@ -31,9 +31,12 @@ import {
   resolveBuiltInSpec,
   checkForCollisionIds,
   normalizeFileSources,
+  isMergeLibrarySource,
+  normalizeMergeSource,
   ILibraryFileTreeSource,
   IFileTreeSource,
   ICollectionSet,
+  IMergeLibrarySource,
   LibraryPaths
 } from '../../../packlets/library-data';
 import { SourceId } from '../../../packlets/common';
@@ -392,6 +395,119 @@ describe('libraryLoader', () => {
       ];
       const result = normalizeFileSources(sources);
       expect(result).toBe(sources);
+    });
+  });
+
+  // ============================================================================
+  // isMergeLibrarySource Tests
+  // ============================================================================
+
+  describe('isMergeLibrarySource', () => {
+    // Mock library type for testing
+    interface IMockLibrary {
+      name: string;
+    }
+
+    test('returns true for IMergeLibrarySource with library property', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+        library: mockLibrary,
+        filter: true
+      };
+      expect(isMergeLibrarySource(mergeSource)).toBe(true);
+    });
+
+    test('returns true for IMergeLibrarySource without filter', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+        library: mockLibrary
+      };
+      expect(isMergeLibrarySource(mergeSource)).toBe(true);
+    });
+
+    test('returns false for library directly', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      expect(isMergeLibrarySource(mockLibrary)).toBe(false);
+    });
+
+    test('returns false for null', () => {
+      expect(isMergeLibrarySource(null as unknown as IMockLibrary)).toBe(false);
+    });
+
+    test('returns false for primitives', () => {
+      expect(isMergeLibrarySource('string' as unknown as IMockLibrary)).toBe(false);
+      expect(isMergeLibrarySource(123 as unknown as IMockLibrary)).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // normalizeMergeSource Tests
+  // ============================================================================
+
+  describe('normalizeMergeSource', () => {
+    // Mock library type for testing
+    interface IMockLibrary {
+      name: string;
+    }
+
+    test('normalizes library directly to object with filter: true', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const result = normalizeMergeSource<IMockLibrary, SourceId>(mockLibrary);
+      expect(result).toEqual({
+        library: mockLibrary,
+        filter: true
+      });
+    });
+
+    test('normalizes IMergeLibrarySource with explicit filter', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+        library: mockLibrary,
+        filter: ['felchlin' as SourceId]
+      };
+      const result = normalizeMergeSource(mergeSource);
+      expect(result).toEqual({
+        library: mockLibrary,
+        filter: ['felchlin' as SourceId]
+      });
+    });
+
+    test('normalizes IMergeLibrarySource with filter: false', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+        library: mockLibrary,
+        filter: false
+      };
+      const result = normalizeMergeSource(mergeSource);
+      expect(result).toEqual({
+        library: mockLibrary,
+        filter: false
+      });
+    });
+
+    test('normalizes IMergeLibrarySource without filter to filter: true', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+        library: mockLibrary
+      };
+      const result = normalizeMergeSource(mergeSource);
+      expect(result).toEqual({
+        library: mockLibrary,
+        filter: true
+      });
+    });
+
+    test('normalizes IMergeLibrarySource with ILibraryLoadParams filter', () => {
+      const mockLibrary: IMockLibrary = { name: 'test' };
+      const mergeSource: IMergeLibrarySource<IMockLibrary, SourceId> = {
+        library: mockLibrary,
+        filter: { included: ['felchlin' as SourceId], excluded: ['deprecated' as SourceId] }
+      };
+      const result = normalizeMergeSource(mergeSource);
+      expect(result).toEqual({
+        library: mockLibrary,
+        filter: { included: ['felchlin' as SourceId], excluded: ['deprecated' as SourceId] }
+      });
     });
   });
 });

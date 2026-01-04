@@ -23,7 +23,17 @@
  * @packageDocumentation
  */
 
-import { captureResult, Collections, fail, mapResults, Result, succeed, Success } from '@fgv/ts-utils';
+import {
+  captureResult,
+  Collections,
+  ensureArray,
+  fail,
+  mapResults,
+  recordFromEntries,
+  Result,
+  succeed,
+  Success
+} from '@fgv/ts-utils';
 
 import { BaseIngredientId, IngredientId, SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
@@ -40,6 +50,7 @@ import {
   IMergeLibrarySource,
   LibraryLoadSpec,
   normalizeFileSources,
+  normalizeMergeSource,
   specToLoadParams
 } from '../library-data';
 import { BuiltInData } from '../built-in';
@@ -209,42 +220,32 @@ export class IngredientsLibrary extends Collections.AggregatedResultMapBase<
       return [];
     }
 
-    const sourceArray = Array.isArray(sources) ? sources : [sources];
+    const sourceArray = ensureArray(sources);
     const result: IngredientCollectionEntryInit[] = [];
 
     for (const source of sourceArray) {
-      // Normalize: library or {library, filter}
-      const library = 'library' in source ? source.library : source;
-      const filterSpec: LibraryLoadSpec<SourceId> = 'library' in source ? source.filter ?? true : true;
+      const { library, filter: filterSpec } = normalizeMergeSource(source);
 
       // Create filter from spec using shared helper
       const filter = createFilterFromSpec(filterSpec, CommonConverters.sourceId);
 
       // Build array of collection IDs for filtering
-      const collectionIds = Array.from(library.collections.keys()) as SourceId[];
+      const collectionIds = Array.from(library.collections.keys());
 
       // Filter the IDs
       const filterResult = filter.filterItems(collectionIds, (id: SourceId) => succeed(id));
       if (filterResult.isSuccess()) {
         for (const filtered of filterResult.value) {
           const id = filtered.name;
-          library.collections
-            .get(id)
-            .onSuccess(
-              (collection: {
-                isMutable: boolean;
-                items: { entries(): IterableIterator<[BaseIngredientId, Ingredient]> };
-              }) => {
-                result.push({
-                  id,
-                  isMutable: collection.isMutable,
-                  items: Object.fromEntries(collection.items.entries()) as Record<
-                    BaseIngredientId,
-                    Ingredient
-                  >
-                });
-              }
-            );
+          library.collections.get(id).asResult.onSuccess((collection) =>
+            Success.with(
+              result.push({
+                id,
+                isMutable: collection.isMutable,
+                items: recordFromEntries(collection.items.entries())
+              })
+            )
+          );
         }
       }
     }

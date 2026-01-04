@@ -113,6 +113,17 @@ Gets the directory path for a sub-library.
 </td></tr>
 <tr><td>
 
+[isMergeLibrarySource(source)](./ts-chocolate.librarydata.ismergelibrarysource.md)
+
+
+</td><td>
+
+Type guard to check if a value is an IMergeLibrarySource.
+
+
+</td></tr>
+<tr><td>
+
 [navigateToDirectory(tree, path)](./ts-chocolate.librarydata.navigatetodirectory.md)
 
 
@@ -143,6 +154,17 @@ Navigates to a sub-library directory within a file tree.
 Normalizes a file sources parameter to an array.
 
 Accepts either a single source or an array of sources, and always returns a readonly array.
+
+
+</td></tr>
+<tr><td>
+
+[normalizeMergeSource(source)](./ts-chocolate.librarydata.normalizemergesource.md)
+
+
+</td><td>
+
+Normalizes a merge source (library or {<!-- -->library, filter<!-- -->}<!-- -->) to a consistent shape.
 
 
 </td></tr>
@@ -340,6 +362,17 @@ Parameters used to load collections from a file tree.
 Specifies a library to merge with optional collection filtering.
 
 Used when creating a new library that should include collections from an existing library instance. The filter parameter allows selective merging of collections.
+
+
+</td></tr>
+<tr><td>
+
+[INormalizedMergeSource](./ts-chocolate.librarydata.inormalizedmergesource.md)
+
+
+</td><td>
+
+Normalized result from a merge source.
 
 
 </td></tr>

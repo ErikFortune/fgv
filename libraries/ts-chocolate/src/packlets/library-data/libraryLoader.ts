@@ -30,6 +30,7 @@ import {
   FullLibraryLoadSpec,
   ILibraryFileTreeSource,
   ILibraryLoadParams,
+  IMergeLibrarySource,
   LibraryLoadSpec,
   MutabilitySpec,
   resolveSubLibraryLoadSpec,
@@ -287,4 +288,59 @@ export function normalizeFileSources<T extends { readonly directory: FileTree.IF
     return [sources as T];
   }
   return sources;
+}
+
+// ============================================================================
+// Merge Source Normalization
+// ============================================================================
+
+/**
+ * Normalized result from a merge source.
+ * @public
+ */
+export interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
+  /**
+   * The library to merge collections from.
+   */
+  readonly library: TLibrary;
+
+  /**
+   * The filter spec to apply (defaults to true if not specified).
+   */
+  readonly filter: LibraryLoadSpec<TCollectionId>;
+}
+
+/**
+ * Type guard to check if a value is an IMergeLibrarySource.
+ *
+ * @param source - Either a library directly or an IMergeLibrarySource object
+ * @returns True if the source is an IMergeLibrarySource with a 'library' property
+ * @public
+ */
+export function isMergeLibrarySource<TLibrary, TCollectionId extends string>(
+  source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>
+): source is IMergeLibrarySource<TLibrary, TCollectionId> {
+  return typeof source === 'object' && source !== null && 'library' in source;
+}
+
+/**
+ * Normalizes a merge source (library or \{library, filter\}) to a consistent shape.
+ *
+ * @param source - Either a library directly or an IMergeLibrarySource object
+ * @returns Normalized object with library and filter (defaults to true)
+ * @public
+ */
+export function normalizeMergeSource<TLibrary, TCollectionId extends string>(
+  source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>
+): INormalizedMergeSource<TLibrary, TCollectionId> {
+  if (isMergeLibrarySource(source)) {
+    return {
+      library: source.library,
+      filter: source.filter ?? true
+    };
+  }
+  return {
+    library: source,
+    filter: true
+  };
 }
