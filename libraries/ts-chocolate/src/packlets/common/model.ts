@@ -90,6 +90,13 @@ export type RecipeName = Brand<string, 'RecipeName'>;
 export type RecipeVersionSpec = Brand<string, 'RecipeVersionSpec'>;
 
 /**
+ * Unique identifier for an indexer in the reverse index system
+ * Used to identify indexer types and key query specifications
+ * @public
+ */
+export type IndexerId = Brand<string, 'IndexerId'>;
+
+/**
  * Globally unique recipe version identifier (composite)
  * Format: "recipeId\@versionSpec" where recipeId is "sourceId.baseRecipeId"
  * Examples: "user.ganache\@2026-01-03-01", "felchlin.truffle\@2026-01-03-02-less-sugar"

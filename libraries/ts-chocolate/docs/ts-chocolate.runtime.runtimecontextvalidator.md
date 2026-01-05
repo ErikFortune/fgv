@@ -50,6 +50,38 @@ Calculates ganache characteristics for a recipe by validating string IDs.
 </td></tr>
 <tr><td>
 
+[findIngredients(json, options)](./ts-chocolate.runtime.runtimecontextvalidator.findingredients.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Finds ingredients matching a JSON query specification.
+
+This unified method accepts plain JSON objects and converts them to typed query specifications. Use this when working with user input or configuration.
+
+
+</td></tr>
+<tr><td>
+
+[findRecipes(json, options)](./ts-chocolate.runtime.runtimecontextvalidator.findrecipes.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Finds recipes matching a JSON query specification.
+
+This unified method accepts plain JSON objects and converts them to typed query specifications. Use this when working with user input or configuration.
+
+
+</td></tr>
+<tr><td>
+
 [findRecipesUsingIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontextvalidator.findrecipesusingingredient.md)
 
 

@@ -1,0 +1,137 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * Abstract base class for indexers with common functionality
+ * @packageDocumentation
+ */
+
+import { Converter, Result, Success } from '@fgv/ts-utils';
+import { IndexerId } from '../../common';
+import { IIndexer, IIndexerConfig } from './model';
+
+/**
+ * Abstract base class for indexers providing common functionality.
+ *
+ * Subclasses must implement:
+ * - `_buildIndex()`: Build the internal index structure
+ * - `_findInternal(config)`: Execute the query against the index
+ *
+ * @public
+ */
+export abstract class BaseIndexer<TEntity, TId, TConfig extends IIndexerConfig>
+  implements IIndexer<TEntity, TId, TConfig>
+{
+  /** {@inheritdoc Runtime.Indexers.IIndexer.id} */
+  public abstract readonly id: IndexerId;
+
+  /** {@inheritdoc Runtime.Indexers.IIndexer.configConverter} */
+  public abstract readonly configConverter: Converter<TConfig>;
+
+  /**
+   * Flag indicating if the index has been built.
+   */
+  protected _isBuilt: boolean = false;
+
+  /** {@inheritdoc Runtime.Indexers.IIndexer.find} */
+  public find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined {
+    // Check if this config is for us
+    if (config.indexerId !== this.id) {
+      return undefined;
+    }
+
+    // Ensure index is built
+    this._ensureBuilt();
+
+    // Delegate to subclass implementation
+    return this._findInternal(config);
+  }
+
+  /** {@inheritdoc Runtime.Indexers.IIndexer.invalidate} */
+  public invalidate(): void {
+    this._isBuilt = false;
+    this._clearIndex();
+  }
+
+  /** {@inheritdoc Runtime.Indexers.IIndexer.warmUp} */
+  public warmUp(): void {
+    this._ensureBuilt();
+  }
+
+  /**
+   * Ensures the index is built before querying.
+   */
+  protected _ensureBuilt(): void {
+    if (!this._isBuilt) {
+      this._buildIndex();
+      this._isBuilt = true;
+    }
+  }
+
+  /**
+   * Builds the internal index structure.
+   * Called lazily on first query or explicitly via warmUp().
+   */
+  protected abstract _buildIndex(): void;
+
+  /**
+   * Clears the internal index structure.
+   * Called when invalidating the index.
+   */
+  protected abstract _clearIndex(): void;
+
+  /**
+   * Executes the query against the built index.
+   * @param config - The query configuration
+   * @returns Array of matching entities or IDs
+   */
+  protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
+
+  // ============================================================================
+  // Common Helper Methods
+  // ============================================================================
+
+  /**
+   * Helper to add a value to a Set-based index.
+   */
+  protected _addToSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey, value: TValue): void {
+    let set = index.get(key);
+    if (!set) {
+      set = new Set<TValue>();
+      index.set(key, set);
+    }
+    set.add(value);
+  }
+
+  /**
+   * Helper to get values from a Set-based index as an array.
+   */
+  protected _getFromSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey): ReadonlyArray<TValue> {
+    const set = index.get(key);
+    return set ? [...set] : [];
+  }
+
+  /**
+   * Helper to return an empty success result.
+   */
+  protected _emptyResult(): Result<ReadonlyArray<TEntity | TId>> {
+    return Success.with([]);
+  }
+}

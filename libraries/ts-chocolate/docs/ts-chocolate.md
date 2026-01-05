@@ -429,6 +429,17 @@ Weight in grams (native internal unit)
 </td></tr>
 <tr><td>
 
+[IndexerId](./ts-chocolate.indexerid.md)
+
+
+</td><td>
+
+Unique identifier for an indexer in the reverse index system Used to identify indexer types and key query specifications
+
+
+</td></tr>
+<tr><td>
+
 [IngredientCategory](./ts-chocolate.ingredientcategory.md)
 
 

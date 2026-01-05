@@ -39,7 +39,7 @@ import {
   IngredientsLibrary
 } from '../../../packlets/ingredients';
 import { IRecipe, IRecipeUsage, RecipesLibrary } from '../../../packlets/recipes';
-import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
+import { ChocolateLibrary, Indexers, RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeContext', () => {
   // ============================================================================
@@ -527,6 +527,110 @@ describe('RuntimeContext', () => {
   });
 
   // ============================================================================
+  // Unified Find Interface Tests (Extensible Indexer System)
+  // ============================================================================
+
+  describe('unified find interface', () => {
+    let ctx: RuntimeContext;
+
+    beforeEach(() => {
+      ctx = RuntimeContext.fromLibrary(library).orThrow();
+    });
+
+    describe('findRecipes', () => {
+      test('finds recipes by tag using indexer', () => {
+        const spec = Indexers.recipesByTagConfig('classic');
+        expect(ctx.findRecipes({ [Indexers.IndexerIds.recipesByTag]: spec })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(2);
+          }
+        );
+      });
+
+      test('finds recipes by chocolate type using indexer', () => {
+        const spec = Indexers.recipesByChocolateTypeConfig('dark');
+        expect(ctx.findRecipes({ [Indexers.IndexerIds.recipesByChocolateType]: spec })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(1);
+            expect(recipes[0].name).toBe('Dark Ganache');
+          }
+        );
+      });
+
+      test('finds recipes by ingredient using indexer', () => {
+        const spec = Indexers.recipesByIngredientConfig('test.cream' as IngredientId);
+        expect(ctx.findRecipes({ [Indexers.IndexerIds.recipesByIngredient]: spec })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(2);
+          }
+        );
+      });
+
+      test('returns empty for no matches', () => {
+        const spec = Indexers.recipesByChocolateTypeConfig('white');
+        expect(ctx.findRecipes({ [Indexers.IndexerIds.recipesByChocolateType]: spec })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(0);
+          }
+        );
+      });
+
+      test('returns empty for empty spec', () => {
+        expect(ctx.findRecipes({})).toSucceedAndSatisfy((recipes) => {
+          expect(recipes.length).toBe(0);
+        });
+      });
+    });
+
+    describe('findIngredients', () => {
+      test('finds ingredients by tag using indexer', () => {
+        const spec = Indexers.ingredientsByTagConfig('premium');
+        expect(ctx.findIngredients({ [Indexers.IndexerIds.ingredientsByTag]: spec })).toSucceedAndSatisfy(
+          (ingredients) => {
+            expect(ingredients.length).toBe(1);
+            expect(ingredients[0].name).toBe('Dark Chocolate 70%');
+          }
+        );
+      });
+
+      test('returns empty for no matches', () => {
+        const spec = Indexers.ingredientsByTagConfig('nonexistent');
+        expect(ctx.findIngredients({ [Indexers.IndexerIds.ingredientsByTag]: spec })).toSucceedAndSatisfy(
+          (ingredients) => {
+            expect(ingredients.length).toBe(0);
+          }
+        );
+      });
+
+      test('returns empty for empty spec', () => {
+        expect(ctx.findIngredients({})).toSucceedAndSatisfy((ingredients) => {
+          expect(ingredients.length).toBe(0);
+        });
+      });
+    });
+
+    describe('invalidateIndexers', () => {
+      test('invalidates all indexer caches', () => {
+        // Warm up indexers first
+        ctx.warmUp();
+
+        // Use an indexer to build its index
+        const spec = Indexers.recipesByTagConfig('classic');
+        expect(ctx.findRecipes({ [Indexers.IndexerIds.recipesByTag]: spec })).toSucceed();
+
+        // Invalidate and verify still works (rebuilds on next query)
+        ctx.invalidateIndexers();
+
+        expect(ctx.findRecipes({ [Indexers.IndexerIds.recipesByTag]: spec })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(2);
+          }
+        );
+      });
+    });
+  });
+
+  // ============================================================================
   // Operations Tests
   // ============================================================================
 
@@ -758,6 +862,155 @@ describe('RuntimeContext', () => {
 
       test('fails with non-existent ingredient', () => {
         expect(ctx.validating.findRecipesUsingIngredient('test.unknown')).toFailWith(/not found/i);
+      });
+    });
+
+    describe('findRecipes (unified JSON query)', () => {
+      const { recipesByTag, recipesByChocolateType, recipesByIngredient } = Indexers.IndexerIdStrings;
+
+      test('finds recipes by tag', () => {
+        expect(ctx.validating.findRecipes({ [recipesByTag]: { tag: 'classic' } })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(2);
+          }
+        );
+      });
+
+      test('returns empty for unknown tag', () => {
+        expect(ctx.validating.findRecipes({ [recipesByTag]: { tag: 'nonexistent' } })).toSucceedAndSatisfy(
+          (recipes) => {
+            expect(recipes.length).toBe(0);
+          }
+        );
+      });
+
+      test('finds recipes by chocolate type', () => {
+        expect(
+          ctx.validating.findRecipes({ [recipesByChocolateType]: { chocolateType: 'dark' } })
+        ).toSucceedAndSatisfy((recipes) => {
+          expect(recipes.length).toBe(1);
+          expect(recipes[0].name).toBe('Dark Ganache');
+        });
+      });
+
+      test('returns empty for unused chocolate type', () => {
+        expect(
+          ctx.validating.findRecipes({ [recipesByChocolateType]: { chocolateType: 'white' } })
+        ).toSucceedAndSatisfy((recipes) => {
+          expect(recipes.length).toBe(0);
+        });
+      });
+
+      test('finds recipes by ingredient ID', () => {
+        expect(
+          ctx.validating.findRecipes({ [recipesByIngredient]: { ingredientId: 'test.cream' } })
+        ).toSucceedAndSatisfy((recipes) => {
+          expect(recipes.length).toBe(2);
+        });
+      });
+
+      test('finds recipes by primary ingredient only', () => {
+        expect(
+          ctx.validating.findRecipes({
+            [recipesByIngredient]: { ingredientId: 'test.dark-chocolate', usageType: 'primary' }
+          })
+        ).toSucceedAndSatisfy((recipes) => {
+          expect(recipes.length).toBe(1);
+          expect(recipes[0].name).toBe('Dark Ganache');
+        });
+      });
+
+      test('fails with invalid ingredient ID', () => {
+        expect(ctx.validating.findRecipes({ [recipesByIngredient]: { ingredientId: 'invalid' } })).toFailWith(
+          /invalid/i
+        );
+      });
+
+      test('finds recipes using alternate ingredient', () => {
+        expect(
+          ctx.validating.findRecipes({ [recipesByIngredient]: { ingredientId: 'test.alt-chocolate' } })
+        ).toSucceedAndSatisfy((recipes) => {
+          // alt-chocolate is only alternate, not primary, so 'any' will find it
+          expect(recipes.length).toBe(1);
+        });
+      });
+
+      test('fails with unknown indexer ID', () => {
+        expect(
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          ctx.validating.findRecipes({ 'unknown-indexer': { foo: 'bar' } })
+        ).toFailWith(/unknown indexer/i);
+      });
+
+      test('fails when JSON is not an object', () => {
+        expect(ctx.validating.findRecipes(null)).toFailWith(/must be an object/i);
+        expect(ctx.validating.findRecipes('string')).toFailWith(/must be an object/i);
+        expect(ctx.validating.findRecipes(123)).toFailWith(/must be an object/i);
+      });
+
+      test('fails when config is not an object', () => {
+        expect(
+          ctx.validating.findRecipes({ [recipesByTag]: 'invalid' as unknown as Record<string, unknown> })
+        ).toFailWith(/config must be an object/i);
+      });
+
+      test('fails when recipes-by-tag missing tag', () => {
+        expect(ctx.validating.findRecipes({ [recipesByTag]: {} })).toFailWith(/Field tag not found/i);
+      });
+
+      test('fails when recipes-by-chocolate-type missing chocolateType', () => {
+        expect(ctx.validating.findRecipes({ [recipesByChocolateType]: {} })).toFailWith(
+          /Field chocolateType not found/i
+        );
+      });
+
+      test('fails when recipes-by-chocolate-type has invalid chocolateType', () => {
+        expect(
+          ctx.validating.findRecipes({ [recipesByChocolateType]: { chocolateType: 'invalid' } })
+        ).toFailWith(/invalid.*enumerated value/i);
+      });
+
+      test('fails when recipes-by-ingredient missing ingredientId', () => {
+        expect(ctx.validating.findRecipes({ [recipesByIngredient]: {} })).toFailWith(
+          /Field ingredientId not found/i
+        );
+      });
+
+      test('fails when recipes-by-ingredient has invalid usageType', () => {
+        expect(
+          ctx.validating.findRecipes({
+            [recipesByIngredient]: { ingredientId: 'test.cream', usageType: 'invalid' }
+          })
+        ).toFailWith(/invalid.*enumerated value/i);
+      });
+    });
+
+    describe('findIngredients (unified JSON query)', () => {
+      const { ingredientsByTag } = Indexers.IndexerIdStrings;
+
+      test('finds ingredients by tag', () => {
+        expect(
+          ctx.validating.findIngredients({ [ingredientsByTag]: { tag: 'premium' } })
+        ).toSucceedAndSatisfy((ingredients) => {
+          expect(ingredients.length).toBe(1);
+          expect(ingredients[0].name).toBe('Dark Chocolate 70%');
+        });
+      });
+
+      test('returns empty for unknown tag', () => {
+        expect(
+          ctx.validating.findIngredients({ [ingredientsByTag]: { tag: 'nonexistent' } })
+        ).toSucceedAndSatisfy((ingredients) => {
+          expect(ingredients.length).toBe(0);
+        });
+      });
+
+      test('fails when ingredients-by-tag missing tag', () => {
+        expect(ctx.validating.findIngredients({ [ingredientsByTag]: {} })).toFailWith(/Field tag not found/i);
+      });
+
+      test('fails when JSON is not an object', () => {
+        expect(ctx.validating.findIngredients(null)).toFailWith(/must be an object/i);
       });
     });
   });

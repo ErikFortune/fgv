@@ -41,6 +41,12 @@ import { RuntimeReverseIndex } from './runtimeReverseIndex';
 import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
 import { RuntimeRecipe } from './runtimeRecipe';
 import { RuntimeScaledVersion } from './runtimeScaledVersion';
+import {
+  IFindOptions,
+  IngredientIndexerOrchestrator,
+  QuerySpec,
+  RecipeIndexerOrchestrator
+} from './indexers';
 
 // ============================================================================
 // RuntimeContext Parameters
@@ -74,10 +80,18 @@ export interface IRuntimeContextCreateParams {
  */
 export class RuntimeContextValidator {
   private readonly _context: RuntimeContext;
+  private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
+  private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
 
   /** @internal */
-  public constructor(context: RuntimeContext) {
+  public constructor(
+    context: RuntimeContext,
+    recipeOrchestrator: RecipeIndexerOrchestrator,
+    ingredientOrchestrator: IngredientIndexerOrchestrator
+  ) {
     this._context = context;
+    this._recipeOrchestrator = recipeOrchestrator;
+    this._ingredientOrchestrator = ingredientOrchestrator;
   }
 
   /** Gets a resolved runtime ingredient by validating a string ID. */
@@ -136,6 +150,67 @@ export class RuntimeContextValidator {
       this._context.findRecipesUsingIngredient(iid)
     );
   }
+
+  /**
+   * Finds recipes matching a JSON query specification.
+   *
+   * This unified method accepts plain JSON objects and converts them to typed
+   * query specifications. Use this when working with user input or configuration.
+   *
+   * @param json - JSON object with indexer ID strings as keys and config objects as values
+   * @param options - Optional find options (aggregation mode)
+   * @returns Array of matching RuntimeRecipe objects
+   *
+   * @example
+   * ```typescript
+   * // Find recipes by tag
+   * ctx.validating.findRecipes({
+   *   'recipes-by-tag': { tag: 'classic' }
+   * });
+   *
+   * // Find recipes by multiple criteria (intersection)
+   * ctx.validating.findRecipes({
+   *   'recipes-by-tag': { tag: 'ganache' },
+   *   'recipes-by-chocolate-type': { chocolateType: 'dark' }
+   * });
+   *
+   * // Find recipes by ingredient
+   * ctx.validating.findRecipes({
+   *   'recipes-by-ingredient': { ingredientId: 'felchlin.maracaibo-65', usageType: 'primary' }
+   * });
+   * ```
+   */
+  public findRecipes(json: unknown, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>> {
+    return this._recipeOrchestrator
+      .convertConfig(json)
+      .onSuccess((spec) => this._context.findRecipes(spec, options) as Result<ReadonlyArray<RuntimeRecipe>>);
+  }
+
+  /**
+   * Finds ingredients matching a JSON query specification.
+   *
+   * This unified method accepts plain JSON objects and converts them to typed
+   * query specifications. Use this when working with user input or configuration.
+   *
+   * @param json - JSON object with indexer ID strings as keys and config objects as values
+   * @param options - Optional find options (aggregation mode)
+   * @returns Array of matching RuntimeIngredient objects
+   *
+   * @example
+   * ```typescript
+   * // Find ingredients by tag
+   * ctx.validating.findIngredients({
+   *   'ingredients-by-tag': { tag: 'chocolate' }
+   * });
+   * ```
+   */
+  public findIngredients(json: unknown, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>> {
+    return this._ingredientOrchestrator
+      .convertConfig(json)
+      .onSuccess(
+        (spec) => this._context.findIngredients(spec, options) as Result<ReadonlyArray<AnyRuntimeIngredient>>
+      );
+  }
 }
 
 // ============================================================================
@@ -163,14 +238,24 @@ export class RuntimeContext
   private readonly _recipeCache: ResultMap<RecipeId, RuntimeRecipe>;
   private readonly _reverseIndex: RuntimeReverseIndex;
 
+  // Extensible indexer orchestrators
+  private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
+  private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
+
   private constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
     this._ingredientCache = new ResultMap<IngredientId, AnyRuntimeIngredient>();
     this._recipeCache = new ResultMap<RecipeId, RuntimeRecipe>();
     this._reverseIndex = new RuntimeReverseIndex(library);
 
+    // Initialize orchestrators with resolver functions bound to this context
+    this._recipeOrchestrator = new RecipeIndexerOrchestrator(library, (id) => this.getRecipe(id));
+    this._ingredientOrchestrator = new IngredientIndexerOrchestrator(library, (id) => this.getIngredient(id));
+
     if (preWarm) {
       this._reverseIndex.warmUp();
+      this._recipeOrchestrator.warmUp();
+      this._ingredientOrchestrator.warmUp();
     }
   }
 
@@ -578,6 +663,8 @@ export class RuntimeContext
     this._ingredientCache.clear();
     this._recipeCache.clear();
     this._reverseIndex.invalidate();
+    this._recipeOrchestrator.invalidate();
+    this._ingredientOrchestrator.invalidate();
   }
 
   /**
@@ -585,6 +672,86 @@ export class RuntimeContext
    */
   public warmUp(): void {
     this._reverseIndex.warmUp();
+    this._recipeOrchestrator.warmUp();
+    this._ingredientOrchestrator.warmUp();
+  }
+
+  // ============================================================================
+  // Unified Find Interface (Extensible Indexer System)
+  // ============================================================================
+
+  /**
+   * Finds recipes matching a query specification.
+   *
+   * This is the unified entry point for recipe queries. Query specifications
+   * are keyed by indexer ID, allowing multiple criteria to be combined.
+   *
+   * @param spec - Query specification with configs keyed by indexer ID
+   * @param options - Optional find options (aggregation mode)
+   * @returns Array of matching RuntimeRecipe objects
+   *
+   * @example
+   * ```typescript
+   * // Find recipes by ingredient
+   * ctx.findRecipes({
+   *   [IndexerIds.recipesByIngredient]: {
+   *     indexerId: IndexerIds.recipesByIngredient,
+   *     ingredientId: someIngredientId
+   *   }
+   * });
+   *
+   * // Find recipes by tag AND chocolate type (intersection)
+   * ctx.findRecipes({
+   *   [IndexerIds.recipesByTag]: {
+   *     indexerId: IndexerIds.recipesByTag,
+   *     tag: 'ganache'
+   *   },
+   *   [IndexerIds.recipesByChocolateType]: {
+   *     indexerId: IndexerIds.recipesByChocolateType,
+   *     chocolateType: 'dark'
+   *   }
+   * });
+   * ```
+   */
+  public findRecipes(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>> {
+    return this._recipeOrchestrator.find(spec, options) as Result<ReadonlyArray<RuntimeRecipe>>;
+  }
+
+  /**
+   * Finds ingredients matching a query specification.
+   *
+   * This is the unified entry point for ingredient queries. Query specifications
+   * are keyed by indexer ID, allowing multiple criteria to be combined.
+   *
+   * @param spec - Query specification with configs keyed by indexer ID
+   * @param options - Optional find options (aggregation mode)
+   * @returns Array of matching RuntimeIngredient objects
+   *
+   * @example
+   * ```typescript
+   * // Find ingredients by tag
+   * ctx.findIngredients({
+   *   [IndexerIds.ingredientsByTag]: {
+   *     indexerId: IndexerIds.ingredientsByTag,
+   *     tag: 'chocolate'
+   *   }
+   * });
+   * ```
+   */
+  public findIngredients(
+    spec: QuerySpec,
+    options?: IFindOptions
+  ): Result<ReadonlyArray<AnyRuntimeIngredient>> {
+    return this._ingredientOrchestrator.find(spec, options) as Result<ReadonlyArray<AnyRuntimeIngredient>>;
+  }
+
+  /**
+   * Invalidates all indexer caches.
+   * Call this when underlying library data changes.
+   */
+  public invalidateIndexers(): void {
+    this._recipeOrchestrator.invalidate();
+    this._ingredientOrchestrator.invalidate();
   }
 
   // ============================================================================
@@ -605,6 +772,6 @@ export class RuntimeContext
    * ```
    */
   public get validating(): RuntimeContextValidator {
-    return new RuntimeContextValidator(this);
+    return new RuntimeContextValidator(this, this._recipeOrchestrator, this._ingredientOrchestrator);
   }
 }

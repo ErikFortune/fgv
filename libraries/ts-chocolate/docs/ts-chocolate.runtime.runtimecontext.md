@@ -201,6 +201,22 @@ Creates a RuntimeContext with a new or default ChocolateLibrary. This is the pri
 </td></tr>
 <tr><td>
 
+[findIngredients(spec, options)](./ts-chocolate.runtime.runtimecontext.findingredients.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Finds ingredients matching a query specification.
+
+This is the unified entry point for ingredient queries. Query specifications are keyed by indexer ID, allowing multiple criteria to be combined.
+
+
+</td></tr>
+<tr><td>
+
 [findIngredientsByTag(tag)](./ts-chocolate.runtime.runtimecontext.findingredientsbytag.md)
 
 
@@ -210,6 +226,22 @@ Creates a RuntimeContext with a new or default ChocolateLibrary. This is the pri
 </td><td>
 
 Finds all ingredients with a specific tag.
+
+
+</td></tr>
+<tr><td>
+
+[findRecipes(spec, options)](./ts-chocolate.runtime.runtimecontext.findrecipes.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Finds recipes matching a query specification.
+
+This is the unified entry point for recipe queries. Query specifications are keyed by indexer ID, allowing multiple criteria to be combined.
 
 
 </td></tr>
@@ -449,6 +481,20 @@ Checks if a recipe exists.
 </td><td>
 
 Iterates over all ingredients as RuntimeIngredient objects. Note: This resolves ingredients lazily as you iterate.
+
+
+</td></tr>
+<tr><td>
+
+[invalidateIndexers()](./ts-chocolate.runtime.runtimecontext.invalidateindexers.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Invalidates all indexer caches. Call this when underlying library data changes.
 
 
 </td></tr>
