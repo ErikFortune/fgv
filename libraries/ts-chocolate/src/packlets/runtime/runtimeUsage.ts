@@ -161,7 +161,7 @@ export class RuntimeUsage {
       }
 
       const result = this._recipe.getVersion(this._usage.modifiedVersionSpec);
-      /* c8 ignore next 3 - defensive coding: missing version would indicate data corruption */
+      /* c8 ignore next 5 - defensive coding: missing version would indicate data corruption */
       if (result.isFailure()) {
         throw new Error(
           `Failed to resolve modified version ${this._usage.modifiedVersionSpec}: ${result.message}`

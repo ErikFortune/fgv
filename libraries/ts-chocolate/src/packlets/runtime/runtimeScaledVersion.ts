@@ -25,28 +25,26 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { BaseRecipeId, Grams, IngredientId, RecipeVersionSpec } from '../common';
-import { IScaledRecipeVersion, IScalingSource, IRecipeRating } from '../recipes';
+import { Grams } from '../common';
+import { IScaledRecipeVersion, IRecipeRating } from '../recipes';
 import {
   IGanacheCalculation,
   calculateFromIngredients,
   IResolvedIngredient,
   validateGanache
 } from '../calculations';
-import { ICategoryFilter, IResolvedScaledIngredient, RecipeIngredientsFilter } from './model';
+import {
+  ICategoryFilter,
+  IResolvedScaledIngredient,
+  IRuntimeScaledRecipeVersion,
+  IRuntimeScalingSource,
+  IScaledVersionContext,
+  RecipeIngredientsFilter
+} from './model';
 import { AnyRuntimeIngredient } from './ingredients';
 
-// ============================================================================
-// Internal Context Interface
-// ============================================================================
-
-/**
- * Minimal context interface for RuntimeScaledVersion.
- * @internal
- */
-interface IScaledVersionContext {
-  getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
-}
+// Specialize the context interface with concrete ingredient type
+type ScaledVersionContext = IScaledVersionContext<AnyRuntimeIngredient>;
 
 // ============================================================================
 // Filter Helpers
@@ -98,19 +96,21 @@ function matchesFilter(
  * A resolved view of a scaled recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeScaledVersion {
-  private readonly _context: IScaledVersionContext;
+export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
+  private readonly _context: ScaledVersionContext;
   private readonly _scaled: IScaledRecipeVersion;
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedScaledIngredient<AnyRuntimeIngredient>> | undefined;
   private _resolutionError: string | undefined;
+  private _scaledFrom: IRuntimeScalingSource | undefined;
+  private _scaledFromError: string | undefined;
 
   /**
    * Creates a RuntimeScaledVersion.
    * @internal
    */
-  public constructor(context: IScaledVersionContext, scaled: IScaledRecipeVersion) {
+  public constructor(context: ScaledVersionContext, scaled: IScaledRecipeVersion) {
     this._context = context;
     this._scaled = scaled;
   }
@@ -122,7 +122,7 @@ export class RuntimeScaledVersion {
    * @returns Success with RuntimeScaledVersion
    */
   public static create(
-    context: IScaledVersionContext,
+    context: ScaledVersionContext,
     scaled: IScaledRecipeVersion
   ): Result<RuntimeScaledVersion> {
     return Success.with(new RuntimeScaledVersion(context, scaled));
@@ -134,16 +134,18 @@ export class RuntimeScaledVersion {
 
   /**
    * Information about the source recipe and version that was scaled.
+   * Provides direct access to the resolved source version.
+   * @throws Error if source version cannot be resolved (indicates data corruption)
    */
-  public get scaledFrom(): IScalingSource {
-    return this._scaled.scaledFrom;
-  }
-
-  /**
-   * The scaling factor that was applied
-   */
-  public get scaleFactor(): number {
-    return this._scaled.scaledFrom.scaleFactor;
+  public get scaledFrom(): IRuntimeScalingSource {
+    if (this._scaledFrom === undefined && this._scaledFromError === undefined) {
+      this._resolveScaledFrom();
+    }
+    /* c8 ignore next 3 - defensive coding: resolution errors would indicate data corruption */
+    if (this._scaledFromError) {
+      throw new Error(this._scaledFromError);
+    }
+    return this._scaledFrom!;
   }
 
   /**
@@ -154,28 +156,28 @@ export class RuntimeScaledVersion {
   }
 
   /**
+   * Resolves the source version reference lazily.
+   */
+  private _resolveScaledFrom(): void {
+    const sourceResult = this._context.getSourceVersion(this._scaled);
+    /* c8 ignore next 4 - defensive coding: missing source version would indicate data corruption */
+    if (sourceResult.isFailure()) {
+      this._scaledFromError = `Failed to resolve source version: ${sourceResult.message}`;
+      return;
+    }
+
+    this._scaledFrom = {
+      sourceVersion: sourceResult.value,
+      scaleFactor: this._scaled.scaledFrom.scaleFactor,
+      targetWeight: this._scaled.scaledFrom.targetWeight
+    };
+  }
+
+  /**
    * Date this scaled version was created (ISO 8601 format)
    */
   public get createdDate(): string {
     return this._scaled.createdDate;
-  }
-
-  // ============================================================================
-  // Source Information
-  // ============================================================================
-
-  /**
-   * The base recipe ID this was scaled from
-   */
-  public get sourceRecipeId(): BaseRecipeId {
-    return this._scaled.scaledFrom.recipeId;
-  }
-
-  /**
-   * The version that was scaled
-   */
-  public get sourceVersionSpec(): RecipeVersionSpec {
-    return this._scaled.scaledFrom.versionSpec;
   }
 
   // ============================================================================

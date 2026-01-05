@@ -9,7 +9,7 @@ Scales by a multiplicative factor.
 **Signature:**
 
 ```typescript
-scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
+scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
 ```
 
 ## Parameters
@@ -66,7 +66,7 @@ _(Optional)_ Optional scaling options
 
 **Returns:**
 
-Result&lt;[RuntimeScaledVersion](./ts-chocolate.runtime.runtimescaledversion.md)<!-- -->&gt;
+Result&lt;[IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)<!-- -->&gt;
 
-Success with RuntimeScaledVersion, or Failure if scaling fails
+Success with scaled version, or Failure if scaling fails
 

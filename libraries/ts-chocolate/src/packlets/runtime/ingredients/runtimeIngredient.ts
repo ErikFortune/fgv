@@ -34,7 +34,7 @@ import {
   Ingredient,
   ISugarIngredient
 } from '../../ingredients';
-import { IIngredientContext } from './runtimeIngredientBase';
+import { IIngredientContext } from '../model';
 import { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
 import { RuntimeDairyIngredient } from './runtimeDairyIngredient';
 import { RuntimeSugarIngredient } from './runtimeSugarIngredient';

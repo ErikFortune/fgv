@@ -62,27 +62,6 @@ _(Optional)_ Optional list of common allergens present in the ingredient
 </td></tr>
 <tr><td>
 
-[alternateInRecipeIds](./ts-chocolate.runtime.iruntimeingredient.alternateinrecipeids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlySet&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->&gt;
-
-
-</td><td>
-
-IDs of recipes where this ingredient is listed as an alternate.
-
-
-</td></tr>
-<tr><td>
-
 [baseId](./ts-chocolate.runtime.iruntimeingredient.baseid.md)
 
 
@@ -251,27 +230,6 @@ Display name
 </td></tr>
 <tr><td>
 
-[primaryInRecipeIds](./ts-chocolate.runtime.iruntimeingredient.primaryinrecipeids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlySet&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->&gt;
-
-
-</td><td>
-
-IDs of recipes where this ingredient is the primary choice.
-
-
-</td></tr>
-<tr><td>
-
 [raw](./ts-chocolate.runtime.iruntimeingredient.raw.md)
 
 
@@ -356,27 +314,6 @@ _(Optional)_ Optional list of trace allergens possibly present (e.g. due to cont
 </td></tr>
 <tr><td>
 
-[usedByRecipeIds](./ts-chocolate.runtime.iruntimeingredient.usedbyrecipeids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlySet&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->&gt;
-
-
-</td><td>
-
-IDs of all recipes that use this ingredient (primary or alternate).
-
-
-</td></tr>
-<tr><td>
-
 [vegan?](./ts-chocolate.runtime.iruntimeingredient.vegan.md)
 
 
@@ -412,6 +349,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[alternateInRecipes()](./ts-chocolate.runtime.iruntimeingredient.alternateinrecipes.md)
+
+
+</td><td>
+
+Gets recipes where this ingredient is listed as an alternate.
+
+
+</td></tr>
+<tr><td>
 
 [isAlcohol()](./ts-chocolate.runtime.iruntimeingredient.isalcohol.md)
 
@@ -463,6 +411,28 @@ Returns true if this is a fat ingredient. When true, fat-specific properties are
 </td><td>
 
 Returns true if this is a sugar ingredient. When true, sugar-specific properties are available.
+
+
+</td></tr>
+<tr><td>
+
+[primaryInRecipes()](./ts-chocolate.runtime.iruntimeingredient.primaryinrecipes.md)
+
+
+</td><td>
+
+Gets recipes where this ingredient is the primary choice.
+
+
+</td></tr>
+<tr><td>
+
+[usedByRecipes()](./ts-chocolate.runtime.iruntimeingredient.usedbyrecipes.md)
+
+
+</td><td>
+
+Gets all recipes that use this ingredient (primary or alternate).
 
 
 </td></tr>

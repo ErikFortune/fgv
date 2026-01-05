@@ -9,8 +9,9 @@ A resolved view of a recipe version with all ingredients resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeVersion 
+export declare class RuntimeVersion implements IRuntimeRecipeVersion 
 ```
+**Implements:** [IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
 
 ## Remarks
 
@@ -183,6 +184,27 @@ The parent recipe - resolved. Enables navigation: `version.recipe.name`
 </td><td>
 
 The parent recipe ID
+
+
+</td></tr>
+<tr><td>
+
+[versionId](./ts-chocolate.runtime.runtimeversion.versionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+Qualified identifier for this version (recipeId<!-- -->@<!-- -->versionSpec).
 
 
 </td></tr>

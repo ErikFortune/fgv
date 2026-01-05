@@ -9,7 +9,7 @@ Scales a specific version to a target weight.
 **Signature:**
 
 ```typescript
-scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<RuntimeScaledVersion>;
+scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<IRuntimeScaledRecipeVersion>;
 ```
 
 ## Parameters
@@ -82,7 +82,7 @@ _(Optional)_ Optional scaling options (versionSpec will be overridden)
 
 **Returns:**
 
-Result&lt;[RuntimeScaledVersion](./ts-chocolate.runtime.runtimescaledversion.md)<!-- -->&gt;
+Result&lt;[IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)<!-- -->&gt;
 
-Success with RuntimeScaledVersion, or Failure if scaling fails
+Success with scaled version, or Failure if scaling fails
 

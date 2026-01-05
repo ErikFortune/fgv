@@ -28,7 +28,6 @@ import {
   Grams,
   IngredientId,
   Percentage,
-  RecipeId,
   RecipeName,
   RecipeVersionSpec,
   SourceId
@@ -551,23 +550,23 @@ describe('RuntimeIngredient', () => {
   // ============================================================================
 
   describe('navigation', () => {
-    test('usedByRecipeIds returns recipes using ingredient', () => {
+    test('usedByRecipes returns recipes using ingredient', () => {
       const ingredient = ctx.getIngredient('test.dark-chocolate' as IngredientId).orThrow();
-      const recipeIds = ingredient.usedByRecipeIds;
-      expect(recipeIds.size).toBe(1);
-      expect(recipeIds.has('test.ganache' as RecipeId)).toBe(true);
+      const recipes = ingredient.usedByRecipes();
+      expect(recipes.length).toBe(1);
+      expect(recipes[0].id).toBe('test.ganache');
     });
 
-    test('primaryInRecipeIds returns primary usages', () => {
+    test('primaryInRecipes returns primary usages', () => {
       const ingredient = ctx.getIngredient('test.dark-chocolate' as IngredientId).orThrow();
-      const recipeIds = ingredient.primaryInRecipeIds;
-      expect(recipeIds.size).toBe(1);
+      const recipes = ingredient.primaryInRecipes();
+      expect(recipes.length).toBe(1);
     });
 
-    test('alternateInRecipeIds returns alternate usages', () => {
+    test('alternateInRecipes returns alternate usages', () => {
       const ingredient = ctx.getIngredient('test.dark-chocolate' as IngredientId).orThrow();
-      const recipeIds = ingredient.alternateInRecipeIds;
-      expect(recipeIds.size).toBe(0);
+      const recipes = ingredient.alternateInRecipes();
+      expect(recipes.length).toBe(0);
     });
   });
 

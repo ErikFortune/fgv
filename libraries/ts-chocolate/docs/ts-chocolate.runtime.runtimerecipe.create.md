@@ -9,7 +9,7 @@ Factory method for creating a RuntimeRecipe.
 **Signature:**
 
 ```typescript
-static create(context: IRecipeContext, id: RecipeId, recipe: Recipe | IRecipe): Result<RuntimeRecipe>;
+static create(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe): Result<RuntimeRecipe>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ context
 
 </td><td>
 
-IRecipeContext
+RecipeContext
 
 
 </td><td>

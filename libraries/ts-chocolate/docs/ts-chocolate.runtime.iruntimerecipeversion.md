@@ -188,6 +188,27 @@ The parent recipe ID.
 </td></tr>
 <tr><td>
 
+[versionId](./ts-chocolate.runtime.iruntimerecipeversion.versionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+Qualified identifier for this version (recipeId<!-- -->@<!-- -->versionSpec).
+
+
+</td></tr>
+<tr><td>
+
 [versionSpec](./ts-chocolate.runtime.iruntimerecipeversion.versionspec.md)
 
 
@@ -203,7 +224,7 @@ The parent recipe ID.
 
 </td><td>
 
-Unique identifier for this version.
+Version spec portion of the identifier.
 
 
 </td></tr>

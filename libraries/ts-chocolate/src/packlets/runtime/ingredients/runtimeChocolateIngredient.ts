@@ -35,8 +35,8 @@ import {
   Percentage
 } from '../../common';
 import { IChocolateIngredient, ITemperatureCurve } from '../../ingredients';
-import { IRuntimeChocolateIngredient } from '../model';
-import { IIngredientContext, RuntimeIngredientBase } from './runtimeIngredientBase';
+import { IIngredientContext, IRuntimeChocolateIngredient } from '../model';
+import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
 // ============================================================================
 // RuntimeChocolateIngredient Class

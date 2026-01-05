@@ -27,8 +27,8 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId } from '../../common';
 import { ISugarIngredient } from '../../ingredients';
-import { IRuntimeSugarIngredient } from '../model';
-import { IIngredientContext, RuntimeIngredientBase } from './runtimeIngredientBase';
+import { IIngredientContext, IRuntimeSugarIngredient } from '../model';
+import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
 // ============================================================================
 // RuntimeSugarIngredient Class

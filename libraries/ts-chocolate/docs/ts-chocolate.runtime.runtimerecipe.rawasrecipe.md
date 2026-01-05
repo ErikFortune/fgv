@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeRecipe.rawAsRecipe property
 
-Gets the underlying Recipe class instance if available. Returns undefined if the raw data is a plain IRecipe.
+Gets the underlying Recipe class instance if available. Returns undefined if the raw data is a plain IRecipe. Useful for accessing Recipe-specific methods not available on IRecipe.
 
 **Signature:**
 

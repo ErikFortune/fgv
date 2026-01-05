@@ -9,8 +9,9 @@ A resolved view of a scaled recipe version with all ingredients resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeScaledVersion 
+export declare class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion 
 ```
+**Implements:** [IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)
 
 ## Remarks
 
@@ -156,75 +157,12 @@ Gets the underlying raw scaled version data
 
 </td><td>
 
-[IScalingSource](./ts-chocolate.recipes.iscalingsource.md)
+[IRuntimeScalingSource](./ts-chocolate.runtime.iruntimescalingsource.md)
 
 
 </td><td>
 
-Information about the source recipe and version that was scaled.
-
-
-</td></tr>
-<tr><td>
-
-[scaleFactor](./ts-chocolate.runtime.runtimescaledversion.scalefactor.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-The scaling factor that was applied
-
-
-</td></tr>
-<tr><td>
-
-[sourceRecipeId](./ts-chocolate.runtime.runtimescaledversion.sourcerecipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[BaseRecipeId](./ts-chocolate.baserecipeid.md)
-
-
-</td><td>
-
-The base recipe ID this was scaled from
-
-
-</td></tr>
-<tr><td>
-
-[sourceVersionSpec](./ts-chocolate.runtime.runtimescaledversion.sourceversionspec.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
-
-
-</td><td>
-
-The version that was scaled
+Information about the source recipe and version that was scaled. Provides direct access to the resolved source version.
 
 
 </td></tr>

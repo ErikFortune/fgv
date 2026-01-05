@@ -78,15 +78,13 @@ describe('RecipesLibrary', () => {
   // Creation Tests
   // ============================================================================
 
-  // TODO: use the .validating accessors where available throughout to avoid unsafe cast to a branded type.
-
   describe('create', () => {
     test('creates library with built-ins by default', () => {
       expect(RecipesLibrary.create()).toSucceedAndSatisfy((lib) => {
         // Built-in recipes are loaded by default
         expect(lib.size).toBeGreaterThan(0);
         expect(lib.collectionCount).toBe(1); // 'common' collection
-        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+        expect(lib.validating.has('common.dark-ganache-classic')).toBe(true);
       });
     });
 
@@ -143,7 +141,7 @@ describe('RecipesLibrary', () => {
 
       expect(result).toSucceedAndSatisfy((lib) => {
         expect(lib.collectionCount).toBe(1);
-        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+        expect(lib.validating.has('common.dark-ganache-classic')).toBe(true);
       });
     });
 
@@ -154,7 +152,7 @@ describe('RecipesLibrary', () => {
 
       expect(result).toSucceedAndSatisfy((lib) => {
         expect(lib.collectionCount).toBe(1);
-        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+        expect(lib.validating.has('common.dark-ganache-classic')).toBe(true);
       });
     });
 
@@ -166,7 +164,7 @@ describe('RecipesLibrary', () => {
       expect(result).toSucceedAndSatisfy((lib) => {
         // Should load all collections since nonexistent isn't present
         expect(lib.collectionCount).toBe(1);
-        expect(lib.has('common.dark-ganache-classic' as RecipeId)).toBe(true);
+        expect(lib.validating.has('common.dark-ganache-classic')).toBe(true);
       });
     });
   });
@@ -192,17 +190,17 @@ describe('RecipesLibrary', () => {
     });
 
     test('gets existing recipe', () => {
-      expect(library.get('user.testGanache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+      expect(library.validating.get('user.testGanache')).toSucceedAndSatisfy((recipe) => {
         expect(recipe.name).toBe('Test Ganache');
       });
     });
 
     test('has returns true for existing recipe', () => {
-      expect(library.has('user.testGanache' as RecipeId)).toBe(true);
+      expect(library.validating.has('user.testGanache')).toBe(true);
     });
 
     test('has returns false for non-existent recipe', () => {
-      expect(library.has('user.nonexistent' as RecipeId)).toBe(false);
+      expect(library.validating.has('user.nonexistent')).toBe(false);
     });
 
     test('entries, keys, values iterate correctly', () => {

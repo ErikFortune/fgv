@@ -47,6 +47,7 @@ import {
   Percentage,
   RecipeId,
   RecipeName,
+  RecipeVersionId,
   RecipeVersionSpec,
   SourceId
 } from '../common';
@@ -68,7 +69,6 @@ import {
   IRecipeVersion,
   IScaledRecipeIngredient,
   IScaledRecipeVersion,
-  IScalingSource,
   IRecipeRating as IRecipeRating
 } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
@@ -145,21 +145,21 @@ export interface IRuntimeIngredient {
   readonly tags?: ReadonlyArray<string>;
 
   // ---- Navigation (runtime-specific) ----
-  // TODO: should either not exist or should return IRecipe instead of just the ID
-  /**
-   * IDs of all recipes that use this ingredient (primary or alternate).
-   */
-  readonly usedByRecipeIds: ReadonlySet<RecipeId>;
 
   /**
-   * IDs of recipes where this ingredient is the primary choice.
+   * Gets all recipes that use this ingredient (primary or alternate).
    */
-  readonly primaryInRecipeIds: ReadonlySet<RecipeId>;
+  usedByRecipes(): IRuntimeRecipe[];
 
   /**
-   * IDs of recipes where this ingredient is listed as an alternate.
+   * Gets recipes where this ingredient is the primary choice.
    */
-  readonly alternateInRecipeIds: ReadonlySet<RecipeId>;
+  primaryInRecipes(): IRuntimeRecipe[];
+
+  /**
+   * Gets recipes where this ingredient is listed as an alternate.
+   */
+  alternateInRecipes(): IRuntimeRecipe[];
 
   // ---- Type narrowing methods ----
 
@@ -362,10 +362,13 @@ export type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 export interface IRuntimeRecipeVersion {
   // ---- Identity ----
 
-  // TODO: consider adding the qualified RecipeVersionId here as well
+  /**
+   * Qualified identifier for this version (recipeId\@versionSpec).
+   */
+  readonly versionId: RecipeVersionId;
 
   /**
-   * Unique identifier for this version.
+   * Version spec portion of the identifier.
    */
   readonly versionSpec: RecipeVersionSpec;
 
@@ -462,6 +465,32 @@ export interface IRuntimeRecipeVersion {
   readonly raw: IRecipeVersion;
 }
 
+// ============================================================================
+// Scaled Recipe Version Types
+// ============================================================================
+
+/**
+ * Runtime-specific scaling source with resolved version reference.
+ * Extends the basic scaling info with a reference to the actual runtime version.
+ * @public
+ */
+export interface IRuntimeScalingSource {
+  /**
+   * The source version that was scaled - fully resolved.
+   */
+  readonly sourceVersion: IRuntimeRecipeVersion;
+
+  /**
+   * The scaling factor applied.
+   */
+  readonly scaleFactor: number;
+
+  /**
+   * The target weight requested.
+   */
+  readonly targetWeight: Grams;
+}
+
 /**
  * A resolved runtime view of a scaled recipe version.
  *
@@ -479,33 +508,14 @@ export interface IRuntimeRecipeVersion {
 export interface IRuntimeScaledRecipeVersion {
   // ---- Scaling Info ----
 
-  // TODO: this should be a runtime-specific scaling source with a link to the actual recipe version and not just ids
   /**
-   * Information about the source recipe and version that was scaled.
+   * Information about the source version and scaling parameters.
+   * Provides direct access to the resolved source version and scaling metadata.
    */
-  readonly scaledFrom: IScalingSource;
-
-  // TODO: redundant with scaledFrom - remove
-  /**
-   * The base recipe ID this was scaled from.
-   */
-  readonly sourceRecipeId: BaseRecipeId;
-
-  // TODO: redundant with scaledFrom - remove
-  /**
-   * The version ID that was scaled.
-   */
-  readonly sourceVersionSpec: RecipeVersionSpec;
-
-  // TODO: redundant with scaledFrom - remove
-  /**
-   * The scaling factor that was applied.
-   */
-  readonly scaleFactor: number;
-
-  // TODO: redundant with scaledFrom - remove
+  readonly scaledFrom: IRuntimeScalingSource;
   /**
    * The target weight that was requested.
+   * Convenience accessor for scaledFrom.targetWeight.
    */
   readonly targetWeight: Grams;
 
@@ -975,6 +985,72 @@ export interface IIngredientUsageInfo {
    * Whether this is a primary ingredient (vs alternate).
    */
   readonly isPrimary: boolean;
+}
+
+// ============================================================================
+// Internal Context Interfaces
+// ============================================================================
+
+/**
+ * Minimal context interface for RuntimeVersion.
+ * Provides only what a version needs to resolve its dependencies.
+ *
+ * Generic type parameter allows internal implementations to use concrete types
+ * (e.g., `AnyRuntimeIngredient`) while external consumers get abstract interfaces.
+ *
+ * @typeParam TIngredient - The ingredient type returned by getIngredient
+ * @internal
+ */
+export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+  /** Gets a resolved runtime ingredient by ID. */
+  getIngredient(id: IngredientId): Result<TIngredient>;
+  /** Gets a resolved runtime recipe by ID. */
+  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
+}
+
+/**
+ * Minimal context interface for RuntimeRecipe.
+ * Provides only what a recipe needs to resolve its dependencies.
+ *
+ * @typeParam TIngredient - The ingredient type returned by getIngredient
+ * @internal
+ */
+export interface IRecipeContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient>
+  extends IVersionContext<TIngredient> {
+  /** Scales a recipe to a target weight. */
+  scaleRecipe(
+    recipeId: RecipeId,
+    targetWeight: Grams,
+    options?: IRecipeScaleOptions
+  ): Result<IRuntimeScaledRecipeVersion>;
+}
+
+/**
+ * Minimal context interface for RuntimeScaledVersion.
+ * Provides only what a scaled version needs to resolve its dependencies.
+ *
+ * @typeParam TIngredient - The ingredient type returned by getIngredient
+ * @internal
+ */
+export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+  /** Gets a resolved runtime ingredient by ID. */
+  getIngredient(id: IngredientId): Result<TIngredient>;
+  /** Gets the source version for a scaled recipe version. */
+  getSourceVersion(scaled: IScaledRecipeVersion): Result<IRuntimeRecipeVersion>;
+}
+
+/**
+ * Minimal context interface for RuntimeIngredient.
+ * Provides only what an ingredient needs for navigation.
+ * @internal
+ */
+export interface IIngredientContext {
+  /** Gets all recipes using this ingredient (primary or alternate). */
+  getRecipesUsingIngredient(id: IngredientId): IRuntimeRecipe[];
+  /** Gets recipes where this ingredient is primary. */
+  getRecipesWithPrimaryIngredient(id: IngredientId): IRuntimeRecipe[];
+  /** Gets recipes where this ingredient is an alternate. */
+  getRecipesWithAlternateIngredient(id: IngredientId): IRuntimeRecipe[];
 }
 
 // ============================================================================

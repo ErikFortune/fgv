@@ -539,7 +539,7 @@ describe('RuntimeContext', () => {
 
     test('scaleRecipe scales to target weight', () => {
       expect(ctx.scaleRecipe('test.dark-ganache' as RecipeId, 600 as Grams)).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaleFactor).toBe(2);
+        expect(scaled.scaledFrom.scaleFactor).toBe(2);
         expect(scaled.baseWeight).toBe(600);
       });
     });
@@ -686,7 +686,7 @@ describe('RuntimeContext', () => {
       test('succeeds with valid string ID', () => {
         expect(ctx.validating.scaleRecipe('test.dark-ganache', 600 as Grams)).toSucceedAndSatisfy(
           (scaled) => {
-            expect(scaled.scaleFactor).toBe(2);
+            expect(scaled.scaledFrom.scaleFactor).toBe(2);
             expect(scaled.baseWeight).toBe(600);
           }
         );

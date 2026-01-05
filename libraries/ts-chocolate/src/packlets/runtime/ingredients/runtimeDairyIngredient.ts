@@ -27,8 +27,8 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId, Percentage } from '../../common';
 import { IDairyIngredient } from '../../ingredients';
-import { IRuntimeDairyIngredient } from '../model';
-import { IIngredientContext, RuntimeIngredientBase } from './runtimeIngredientBase';
+import { IIngredientContext, IRuntimeDairyIngredient } from '../model';
+import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
 // ============================================================================
 // RuntimeDairyIngredient Class

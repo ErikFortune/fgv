@@ -42,7 +42,6 @@ export { RuntimeContext, IRuntimeContextCreateParams, RuntimeContextValidator } 
 // Runtime ingredient classes
 export {
   RuntimeIngredientBase,
-  IIngredientContext,
   RuntimeChocolateIngredient,
   RuntimeDairyIngredient,
   RuntimeSugarIngredient,

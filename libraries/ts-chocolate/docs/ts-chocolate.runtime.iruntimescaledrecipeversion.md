@@ -156,75 +156,12 @@ Gets the underlying raw scaled version data.
 
 </td><td>
 
-[IScalingSource](./ts-chocolate.recipes.iscalingsource.md)
+[IRuntimeScalingSource](./ts-chocolate.runtime.iruntimescalingsource.md)
 
 
 </td><td>
 
-Information about the source recipe and version that was scaled.
-
-
-</td></tr>
-<tr><td>
-
-[scaleFactor](./ts-chocolate.runtime.iruntimescaledrecipeversion.scalefactor.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-The scaling factor that was applied.
-
-
-</td></tr>
-<tr><td>
-
-[sourceRecipeId](./ts-chocolate.runtime.iruntimescaledrecipeversion.sourcerecipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[BaseRecipeId](./ts-chocolate.baserecipeid.md)
-
-
-</td><td>
-
-The base recipe ID this was scaled from.
-
-
-</td></tr>
-<tr><td>
-
-[sourceVersionSpec](./ts-chocolate.runtime.iruntimescaledrecipeversion.sourceversionspec.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
-
-
-</td><td>
-
-The version ID that was scaled.
+Information about the source version and scaling parameters. Provides direct access to the resolved source version and scaling metadata.
 
 
 </td></tr>
@@ -245,7 +182,7 @@ The version ID that was scaled.
 
 </td><td>
 
-The target weight that was requested.
+The target weight that was requested. Convenience accessor for scaledFrom.targetWeight.
 
 
 </td></tr>

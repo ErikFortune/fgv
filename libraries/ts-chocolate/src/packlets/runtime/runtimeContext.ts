@@ -26,10 +26,17 @@
 import { Failure, Result, ResultMap, Success } from '@fgv/ts-utils';
 
 import { ChocolateType, Grams, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
-import { IRecipeScaleOptions } from '../recipes';
+import { IRecipeScaleOptions, IScaledRecipeVersion } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
 import { ChocolateLibrary, IChocolateLibraryParams } from './chocolateLibrary';
-import { IIngredientUsageInfo } from './model';
+import {
+  IIngredientContext,
+  IIngredientUsageInfo,
+  IRecipeContext,
+  IRuntimeRecipeVersion,
+  IScaledVersionContext,
+  IVersionContext
+} from './model';
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
 import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
 import { RuntimeRecipe } from './runtimeRecipe';
@@ -144,7 +151,13 @@ export class RuntimeContextValidator {
  *
  * @public
  */
-export class RuntimeContext {
+export class RuntimeContext
+  implements
+    IVersionContext<AnyRuntimeIngredient>,
+    IRecipeContext<AnyRuntimeIngredient>,
+    IScaledVersionContext<AnyRuntimeIngredient>,
+    IIngredientContext
+{
   private readonly _library: ChocolateLibrary;
   private readonly _ingredientCache: ResultMap<IngredientId, AnyRuntimeIngredient>;
   private readonly _recipeCache: ResultMap<RecipeId, RuntimeRecipe>;
@@ -224,6 +237,28 @@ export class RuntimeContext {
         .getRecipe(id)
         .onSuccess((recipe) => this._recipeCache.set(id, new RuntimeRecipe(this, id, recipe)));
     });
+  }
+
+  /**
+   * Gets the source version for a scaled recipe version.
+   * Used internally by RuntimeScaledVersion to resolve the source reference.
+   * @param scaled - The scaled version containing source IDs
+   * @returns Success with the resolved source version, or Failure if not found
+   * @internal
+   */
+  public getSourceVersion(scaled: IScaledRecipeVersion): Result<IRuntimeRecipeVersion> {
+    // The IScalingSource contains BaseRecipeId, which we need to resolve to a full RecipeId.
+    // We search through all recipes to find the one with matching baseId.
+    // This is a linear scan, but scaled versions are not created frequently.
+    const { recipeId: baseRecipeId, versionSpec } = scaled.scaledFrom;
+
+    for (const recipe of this.recipes()) {
+      if (recipe.baseId === baseRecipeId) {
+        return recipe.getVersion(versionSpec);
+      }
+    }
+    /* c8 ignore next 2 - defensive coding: scaled versions are created from existing recipes */
+    return Failure.with(`Source recipe not found: ${baseRecipeId}`);
   }
 
   /**
@@ -337,12 +372,51 @@ export class RuntimeContext {
     if (!this.hasIngredient(ingredientId)) {
       return Failure.with(`${ingredientId}: ingredient not found`);
     }
+    return Success.with(this.getRecipesUsingIngredient(ingredientId));
+  }
+
+  // ---- Internal methods for ingredient navigation (no Result wrapper) ----
+
+  /**
+   * Gets all recipes that use a specific ingredient (primary or alternate).
+   * Used internally by RuntimeIngredient for navigation.
+   * @internal
+   */
+  public getRecipesUsingIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
     const recipeIds = this._reverseIndex.getRecipesUsingIngredient(ingredientId);
+    return this._resolveRecipeIds(recipeIds);
+  }
+
+  /**
+   * Gets recipes where ingredient is primary.
+   * Used internally by RuntimeIngredient for navigation.
+   * @internal
+   */
+  public getRecipesWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
+    const recipeIds = this._reverseIndex.getRecipesWithPrimaryIngredient(ingredientId);
+    return this._resolveRecipeIds(recipeIds);
+  }
+
+  /**
+   * Gets recipes where ingredient is an alternate.
+   * Used internally by RuntimeIngredient for navigation.
+   * @internal
+   */
+  public getRecipesWithAlternateIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
+    const recipeIds = this._reverseIndex.getRecipesWithAlternateIngredient(ingredientId);
+    return this._resolveRecipeIds(recipeIds);
+  }
+
+  /**
+   * Resolves a set of recipe IDs to RuntimeRecipe objects.
+   * @internal
+   */
+  private _resolveRecipeIds(recipeIds: ReadonlySet<RecipeId>): RuntimeRecipe[] {
     const result: RuntimeRecipe[] = [];
     for (const id of recipeIds) {
       this.getRecipe(id).onSuccess((r) => Success.with(result.push(r)));
     }
-    return Success.with(result);
+    return result;
   }
 
   /**
@@ -450,16 +524,23 @@ export class RuntimeContext {
 
   /**
    * Calculates ganache characteristics for a recipe.
+   * Convenience method that delegates to the recipe entity.
    * @param recipeId - Recipe ID to analyze
    * @param versionSpec - Optional version specifier (default: golden version)
    * @returns Success with ganache calculation, or Failure
    */
   public calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation> {
-    return this._library.calculateGanache(recipeId, versionSpec);
+    return this.getRecipe(recipeId).onSuccess((recipe) => {
+      if (versionSpec !== undefined) {
+        return recipe.calculateGanacheForVersion(versionSpec);
+      }
+      return recipe.calculateGanache();
+    });
   }
 
   /**
    * Calculates ganache for a specific version.
+   * Convenience method that delegates to the recipe entity.
    * @param recipeId - Recipe ID
    * @param versionSpec - Version to analyze
    * @returns Success with ganache calculation, or Failure
@@ -468,7 +549,7 @@ export class RuntimeContext {
     recipeId: RecipeId,
     versionSpec: RecipeVersionSpec
   ): Result<IGanacheCalculation> {
-    return this._library.calculateGanache(recipeId, versionSpec);
+    return this.getRecipe(recipeId).onSuccess((recipe) => recipe.calculateGanacheForVersion(versionSpec));
   }
 
   // ============================================================================

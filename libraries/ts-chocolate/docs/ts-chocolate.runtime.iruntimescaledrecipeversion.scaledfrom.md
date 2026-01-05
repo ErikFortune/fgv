@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeScaledRecipeVersion.scaledFrom property
 
-Information about the source recipe and version that was scaled.
+Information about the source version and scaling parameters. Provides direct access to the resolved source version and scaling metadata.
 
 **Signature:**
 
 ```typescript
-readonly scaledFrom: IScalingSource;
+readonly scaledFrom: IRuntimeScalingSource;
 ```

@@ -642,6 +642,17 @@ Note: Does not extend `IScaledRecipeVersion` because `ingredients` has a differe
 </td></tr>
 <tr><td>
 
+[IRuntimeScalingSource](./ts-chocolate.runtime.iruntimescalingsource.md)
+
+
+</td><td>
+
+Runtime-specific scaling source with resolved version reference. Extends the basic scaling info with a reference to the actual runtime version.
+
+
+</td></tr>
+<tr><td>
+
 [IRuntimeSugarIngredient](./ts-chocolate.runtime.iruntimesugaringredient.md)
 
 

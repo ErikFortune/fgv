@@ -9,8 +9,9 @@ A resolved view of a recipe with navigation and version access. Immutable - does
 **Signature:**
 
 ```typescript
-export declare class RuntimeRecipe 
+export declare class RuntimeRecipe implements IRuntimeRecipe 
 ```
+**Implements:** [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
 
 ## Remarks
 
@@ -308,7 +309,7 @@ Gets the underlying raw recipe data
 
 </td><td>
 
-Gets the underlying Recipe class instance if available. Returns undefined if the raw data is a plain IRecipe.
+Gets the underlying Recipe class instance if available. Returns undefined if the raw data is a plain IRecipe. Useful for accessing Recipe-specific methods not available on IRecipe.
 
 
 </td></tr>

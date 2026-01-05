@@ -37,34 +37,17 @@ import {
 } from '../common';
 import { IRecipe, IRecipeScaleOptions, IRecipeUsage, Recipe } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
-import { IResolvedRecipeIngredient, IRuntimeRecipe } from './model';
+import {
+  IRecipeContext,
+  IResolvedRecipeIngredient,
+  IRuntimeRecipe,
+  IRuntimeScaledRecipeVersion
+} from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';
-import { RuntimeScaledVersion } from './runtimeScaledVersion';
 
-// ============================================================================
-// Internal Context Interface
-// ============================================================================
-
-/*
- * TODO: eliminate these sorts of forward declarations tucked away in various modules.  define a full context object in the model if needed.
- */
-
-/**
- * Minimal context interface for RuntimeRecipe.
- * @internal
- */
-interface IRecipeContext {
-  getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
-  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
-  calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
-  calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
-  scaleRecipe(
-    recipeId: RecipeId,
-    targetWeight: Grams,
-    options?: IRecipeScaleOptions
-  ): Result<RuntimeScaledVersion>;
-}
+// Specialize the context interface with concrete ingredient type
+type RecipeContext = IRecipeContext<AnyRuntimeIngredient>;
 
 // ============================================================================
 // RuntimeRecipe Class
@@ -75,8 +58,8 @@ interface IRecipeContext {
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeRecipe {
-  private readonly _context: IRecipeContext;
+export class RuntimeRecipe implements IRuntimeRecipe {
+  private readonly _context: RecipeContext;
   private readonly _id: RecipeId;
   private readonly _recipe: Recipe | IRecipe;
   private readonly _sourceId: SourceId;
@@ -93,7 +76,7 @@ export class RuntimeRecipe {
    * Use RuntimeContext.getRecipe() instead of calling this directly.
    * @internal
    */
-  public constructor(context: IRecipeContext, id: RecipeId, recipe: Recipe | IRecipe) {
+  public constructor(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe) {
     this._context = context;
     this._id = id;
     this._recipe = recipe;
@@ -112,7 +95,7 @@ export class RuntimeRecipe {
    * @returns Success with RuntimeRecipe
    */
   public static create(
-    context: IRecipeContext,
+    context: RecipeContext,
     id: RecipeId,
     recipe: Recipe | IRecipe
   ): Result<RuntimeRecipe> {
@@ -331,9 +314,9 @@ export class RuntimeRecipe {
    * Scales the golden version to a target weight.
    * @param targetWeight - Target total weight in grams
    * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   * @returns Success with scaled version, or Failure if scaling fails
    */
-  public scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion> {
+  public scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion> {
     return this._context.scaleRecipe(this._id, targetWeight, options);
   }
 
@@ -342,13 +325,14 @@ export class RuntimeRecipe {
    * @param versionSpec - The version to scale
    * @param targetWeight - Target total weight in grams
    * @param options - Optional scaling options (versionSpec will be overridden)
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   * @returns Success with scaled version, or Failure if scaling fails
    */
   public scaleVersion(
     versionSpec: RecipeVersionSpec,
     targetWeight: Grams,
     options?: Omit<IRecipeScaleOptions, 'versionSpec'>
-  ): Result<RuntimeScaledVersion> {
+  ): Result<IRuntimeScaledRecipeVersion> {
+    // TODO: we should call the library scaler directly instead - going through the context adds no value
     return this._context.scaleRecipe(this._id, targetWeight, { ...options, versionSpec: versionSpec });
   }
 
@@ -356,9 +340,9 @@ export class RuntimeRecipe {
    * Scales by a multiplicative factor.
    * @param factor - Multiplicative factor (e.g., 2.0 for double)
    * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   * @returns Success with scaled version, or Failure if scaling fails
    */
-  public scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion> {
+  public scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion> {
     const targetWeight = (this.goldenVersion.baseWeight * factor) as Grams;
     return this.scale(targetWeight, options);
   }
@@ -368,8 +352,7 @@ export class RuntimeRecipe {
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
   public calculateGanache(): Result<IGanacheCalculation> {
-    // TODO: putting logic in the context and calling it from the entity is inverted.  the recipe should know how to scale itself - the context adds no value here.
-    return this._context.calculateGanache(this._id);
+    return this.goldenVersion.calculateGanache();
   }
 
   /**
@@ -378,8 +361,7 @@ export class RuntimeRecipe {
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
   public calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation> {
-    // TODO: putting logic in the context and calling it from the entity is inverted.  the recipe should know how to calculate ganache characteristics itself - the context adds no value here.
-    return this._context.calculateGanache(this._id, versionSpec);
+    return this.getVersion(versionSpec).onSuccess((version) => version.calculateGanache());
   }
 
   // ============================================================================
@@ -393,10 +375,10 @@ export class RuntimeRecipe {
     return this._recipe;
   }
 
-  // TODO: why do we need this method?  who uses it?  consider removal.
   /**
    * Gets the underlying Recipe class instance if available.
    * Returns undefined if the raw data is a plain IRecipe.
+   * Useful for accessing Recipe-specific methods not available on IRecipe.
    */
   /* c8 ignore next 3 - rawAsRecipe returns undefined when constructed with plain IRecipe */
   public get rawAsRecipe(): Recipe | undefined {

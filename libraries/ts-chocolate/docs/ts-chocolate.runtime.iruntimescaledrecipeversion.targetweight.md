@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeScaledRecipeVersion.targetWeight property
 
-The target weight that was requested.
+The target weight that was requested. Convenience accessor for scaledFrom.targetWeight.
 
 **Signature:**
 

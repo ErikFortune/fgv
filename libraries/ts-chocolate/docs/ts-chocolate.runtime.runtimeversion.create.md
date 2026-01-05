@@ -9,7 +9,7 @@ Factory method for creating a RuntimeVersion.
 **Signature:**
 
 ```typescript
-static create(context: IVersionContext, recipeId: RecipeId, version: IRecipeVersion): Result<RuntimeVersion>;
+static create(context: VersionContext, recipeId: RecipeId, version: IRecipeVersion): Result<RuntimeVersion>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ context
 
 </td><td>
 
-IVersionContext
+VersionContext
 
 
 </td><td>

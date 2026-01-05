@@ -25,25 +25,26 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, RecipeId, RecipeVersionSpec } from '../common';
+import { Grams, Helpers, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
 import { IRecipeVersion, IRecipeRating } from '../recipes';
-import { IGanacheCalculation } from '../calculations';
-import { ICategoryFilter, IResolvedRecipeIngredient, IRuntimeRecipe, RecipeIngredientsFilter } from './model';
+import {
+  IGanacheCalculation,
+  calculateFromIngredients,
+  IResolvedIngredient,
+  validateGanache
+} from '../calculations';
+import {
+  ICategoryFilter,
+  IResolvedRecipeIngredient,
+  IRuntimeRecipe,
+  IRuntimeRecipeVersion,
+  IVersionContext,
+  RecipeIngredientsFilter
+} from './model';
 import { AnyRuntimeIngredient } from './ingredients';
 
-// ============================================================================
-// Internal Context Interface
-// ============================================================================
-
-/**
- * Minimal context interface for RuntimeVersion.
- * @internal
- */
-interface IVersionContext {
-  getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
-  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
-  calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
-}
+// Specialize the context interface with concrete ingredient type
+type VersionContext = IVersionContext<AnyRuntimeIngredient>;
 
 // ============================================================================
 // Filter Helpers
@@ -95,8 +96,8 @@ function matchesFilter(
  * A resolved view of a recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeVersion {
-  private readonly _context: IVersionContext;
+export class RuntimeVersion implements IRuntimeRecipeVersion {
+  private readonly _context: VersionContext;
   private readonly _recipeId: RecipeId;
   private readonly _version: IRecipeVersion;
 
@@ -110,7 +111,7 @@ export class RuntimeVersion {
    * Use RuntimeRecipe.getVersion() or goldenVersion instead of calling this directly.
    * @internal
    */
-  public constructor(context: IVersionContext, recipeId: RecipeId, version: IRecipeVersion) {
+  public constructor(context: VersionContext, recipeId: RecipeId, version: IRecipeVersion) {
     this._context = context;
     this._recipeId = recipeId;
     this._version = version;
@@ -124,7 +125,7 @@ export class RuntimeVersion {
    * @returns Success with RuntimeVersion
    */
   public static create(
-    context: IVersionContext,
+    context: VersionContext,
     recipeId: RecipeId,
     version: IRecipeVersion
   ): Result<RuntimeVersion> {
@@ -134,6 +135,13 @@ export class RuntimeVersion {
   // ============================================================================
   // Identity
   // ============================================================================
+
+  /**
+   * Qualified identifier for this version (recipeId\@versionSpec).
+   */
+  public get versionId(): RecipeVersionId {
+    return Helpers.createRecipeVersionId(this._recipeId, this._version.versionSpec);
+  }
 
   /**
    * The version specifier
@@ -264,7 +272,21 @@ export class RuntimeVersion {
    * @returns Success with ganache calculation, or Failure if calculation fails
    */
   public calculateGanache(): Result<IGanacheCalculation> {
-    return this._context.calculateGanacheForVersion(this._recipeId, this._version.versionSpec);
+    return this.getIngredients().onSuccess((ingredientIterator) => {
+      // Convert to IResolvedIngredient format for calculation
+      const resolvedForCalc: IResolvedIngredient[] = [...ingredientIterator].map((ri) => ({
+        ingredient: ri.ingredient.raw,
+        amount: ri.amount
+      }));
+
+      const analysis = calculateFromIngredients(resolvedForCalc);
+      const validation = validateGanache(analysis);
+
+      return Success.with({
+        analysis,
+        validation
+      });
+    });
   }
 
   // ============================================================================

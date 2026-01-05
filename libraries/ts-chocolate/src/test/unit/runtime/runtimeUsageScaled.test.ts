@@ -396,7 +396,7 @@ describe('RuntimeUsage and RuntimeScaledVersion', () => {
       test('provides scaleFactor', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         const scaled = recipe.scale(600 as Grams).orThrow();
-        expect(scaled.scaleFactor).toBe(2);
+        expect(scaled.scaledFrom.scaleFactor).toBe(2);
       });
 
       test('provides targetWeight', () => {
@@ -417,22 +417,18 @@ describe('RuntimeUsage and RuntimeScaledVersion', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         const scaled = recipe.scale(600 as Grams).orThrow();
         expect(scaled.scaledFrom).toBeDefined();
-        expect(scaled.scaledFrom.recipeId).toBe('dark-ganache');
-        expect(scaled.scaledFrom.versionSpec).toBe('2026-01-01-01');
+        expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-01-01-01');
         expect(scaled.scaledFrom.scaleFactor).toBe(2);
         expect(scaled.scaledFrom.targetWeight).toBe(600);
       });
 
-      test('provides sourceRecipeId', () => {
+      test('provides source version reference via scaledFrom', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         const scaled = recipe.scale(600 as Grams).orThrow();
-        expect(scaled.sourceRecipeId).toBe('dark-ganache');
-      });
-
-      test('provides sourceversionSpec', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        const scaled = recipe.scale(600 as Grams).orThrow();
-        expect(scaled.sourceVersionSpec).toBe('2026-01-01-01');
+        const sourceVersion = scaled.scaledFrom.sourceVersion;
+        expect(sourceVersion.versionSpec).toBe('2026-01-01-01');
+        expect(sourceVersion.recipeId).toBe('test.dark-ganache');
+        expect(sourceVersion.baseWeight).toBe(300); // Original base weight
       });
     });
 

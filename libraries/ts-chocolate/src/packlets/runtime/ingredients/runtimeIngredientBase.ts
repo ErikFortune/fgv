@@ -23,8 +23,6 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
-
 import {
   Allergen,
   BaseIngredientId,
@@ -32,11 +30,18 @@ import {
   ID_SEPARATOR,
   IngredientCategory,
   IngredientId,
-  RecipeId,
   SourceId
 } from '../../common';
-import { IGanacheCharacteristics, Ingredient } from '../../ingredients';
-import { IRuntimeIngredient } from '../model';
+import {
+  IGanacheCharacteristics,
+  Ingredient,
+  isChocolateIngredient,
+  isDairyIngredient,
+  isSugarIngredient,
+  isFatIngredient,
+  isAlcoholIngredient
+} from '../../ingredients';
+import { IIngredientContext, IRuntimeIngredient, IRuntimeRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
 import type { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
@@ -44,20 +49,6 @@ import type { RuntimeDairyIngredient } from './runtimeDairyIngredient';
 import type { RuntimeSugarIngredient } from './runtimeSugarIngredient';
 import type { RuntimeFatIngredient } from './runtimeFatIngredient';
 import type { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
-
-// ============================================================================
-// Internal Context Interface
-// ============================================================================
-
-/**
- * Minimal context interface for RuntimeIngredient.
- * @internal
- */
-export interface IIngredientContext {
-  getRecipeIdsUsingIngredient(id: IngredientId): Result<ReadonlySet<RecipeId>>;
-  getRecipeIdsWithPrimaryIngredient(id: IngredientId): Result<ReadonlySet<RecipeId>>;
-  getRecipeIdsWithAlternateIngredient(id: IngredientId): Result<ReadonlySet<RecipeId>>;
-}
 
 // ============================================================================
 // RuntimeIngredientBase Abstract Class
@@ -192,44 +183,42 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   }
 
   // ============================================================================
-  // Type Guards - use category discriminator for type narrowing
+  // Type Guards - delegate to ingredient module helpers for consistency
   // ============================================================================
-
-  // TODO: use isChocolate etc helpers from the ingredient module
 
   /**
    * Returns true if this is a chocolate ingredient.
    */
   public isChocolate(): this is RuntimeChocolateIngredient {
-    return this.category === 'chocolate';
+    return isChocolateIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is a dairy ingredient.
    */
   public isDairy(): this is RuntimeDairyIngredient {
-    return this.category === 'dairy';
+    return isDairyIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is a sugar ingredient.
    */
   public isSugar(): this is RuntimeSugarIngredient {
-    return this.category === 'sugar';
+    return isSugarIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is a fat ingredient.
    */
   public isFat(): this is RuntimeFatIngredient {
-    return this.category === 'fat';
+    return isFatIngredient(this._ingredient);
   }
 
   /**
    * Returns true if this is an alcohol ingredient.
    */
   public isAlcohol(): this is RuntimeAlcoholIngredient {
-    return this.category === 'alcohol';
+    return isAlcoholIngredient(this._ingredient);
   }
 
   // ============================================================================
@@ -237,27 +226,24 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   // ============================================================================
 
   /**
-   * Gets the IDs of all recipes that use this ingredient (primary or alternate).
+   * Gets all recipes that use this ingredient (primary or alternate).
    */
-  public get usedByRecipeIds(): ReadonlySet<RecipeId> {
-    // orThrow is safe here - this ingredient was created from a valid ID
-    return this._context.getRecipeIdsUsingIngredient(this._id).orThrow();
+  public usedByRecipes(): IRuntimeRecipe[] {
+    return this._context.getRecipesUsingIngredient(this._id);
   }
 
   /**
-   * Gets the IDs of recipes where this ingredient is the primary choice.
+   * Gets recipes where this ingredient is the primary choice.
    */
-  public get primaryInRecipeIds(): ReadonlySet<RecipeId> {
-    // orThrow is safe here - this ingredient was created from a valid ID
-    return this._context.getRecipeIdsWithPrimaryIngredient(this._id).orThrow();
+  public primaryInRecipes(): IRuntimeRecipe[] {
+    return this._context.getRecipesWithPrimaryIngredient(this._id);
   }
 
   /**
-   * Gets the IDs of recipes where this ingredient is listed as an alternate.
+   * Gets recipes where this ingredient is listed as an alternate.
    */
-  public get alternateInRecipeIds(): ReadonlySet<RecipeId> {
-    // orThrow is safe here - this ingredient was created from a valid ID
-    return this._context.getRecipeIdsWithAlternateIngredient(this._id).orThrow();
+  public alternateInRecipes(): IRuntimeRecipe[] {
+    return this._context.getRecipesWithAlternateIngredient(this._id);
   }
 
   // ============================================================================

@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeContext.calculateGanache() method
 
-Calculates ganache characteristics for a recipe.
+Calculates ganache characteristics for a recipe. Convenience method that delegates to the recipe entity.
 
 **Signature:**
 

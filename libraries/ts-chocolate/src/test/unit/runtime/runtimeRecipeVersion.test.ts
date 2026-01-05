@@ -373,7 +373,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       test('scale scales to target weight', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
-          expect(scaled.scaleFactor).toBe(2);
+          expect(scaled.scaledFrom.scaleFactor).toBe(2);
         });
       });
 
@@ -381,7 +381,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.scaleVersion('2026-02-01-01' as RecipeVersionSpec, 600 as Grams)).toSucceedAndSatisfy(
           (scaled) => {
-            expect(scaled.sourceVersionSpec).toBe('2026-02-01-01');
+            expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-02-01-01');
           }
         );
       });

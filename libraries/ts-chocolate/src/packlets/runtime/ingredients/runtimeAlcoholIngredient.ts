@@ -27,8 +27,8 @@ import { Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId, Percentage } from '../../common';
 import { IAlcoholIngredient } from '../../ingredients';
-import { IRuntimeAlcoholIngredient } from '../model';
-import { IIngredientContext, RuntimeIngredientBase } from './runtimeIngredientBase';
+import { IIngredientContext, IRuntimeAlcoholIngredient } from '../model';
+import { RuntimeIngredientBase } from './runtimeIngredientBase';
 
 // ============================================================================
 // RuntimeAlcoholIngredient Class

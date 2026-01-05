@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeRecipeVersion.versionSpec property
 
-Unique identifier for this version.
+Version spec portion of the identifier.
 
 **Signature:**
 

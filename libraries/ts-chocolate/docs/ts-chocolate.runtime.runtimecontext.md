@@ -11,8 +11,9 @@ This is the primary entry point for consumers who want resolved views of recipes
 **Signature:**
 
 ```typescript
-export declare class RuntimeContext 
+export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IRecipeContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext 
 ```
+**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IRecipeContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext
 
 ## Properties
 
@@ -150,7 +151,7 @@ Description
 
 </td><td>
 
-Calculates ganache characteristics for a recipe.
+Calculates ganache characteristics for a recipe. Convenience method that delegates to the recipe entity.
 
 
 </td></tr>
@@ -164,7 +165,7 @@ Calculates ganache characteristics for a recipe.
 
 </td><td>
 
-Calculates ganache for a specific version.
+Calculates ganache for a specific version. Convenience method that delegates to the recipe entity.
 
 
 </td></tr>

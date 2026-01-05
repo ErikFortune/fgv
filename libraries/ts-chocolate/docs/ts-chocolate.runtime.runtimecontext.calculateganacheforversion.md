@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeContext.calculateGanacheForVersion() method
 
-Calculates ganache for a specific version.
+Calculates ganache for a specific version. Convenience method that delegates to the recipe entity.
 
 **Signature:**
 

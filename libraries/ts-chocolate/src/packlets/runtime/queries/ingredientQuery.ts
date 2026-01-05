@@ -330,14 +330,14 @@ export class IngredientQuery {
    * Filter to ingredients used in at least one recipe.
    */
   public usedInRecipes(): IngredientQuery {
-    return this._addFilter((i) => i.usedByRecipeIds.size > 0);
+    return this._addFilter((i) => i.usedByRecipes().length > 0);
   }
 
   /**
    * Filter to ingredients not used in any recipe.
    */
   public unused(): IngredientQuery {
-    return this._addFilter((i) => i.usedByRecipeIds.size === 0);
+    return this._addFilter((i) => i.usedByRecipes().length === 0);
   }
 
   /**
@@ -345,7 +345,7 @@ export class IngredientQuery {
    * @param count - Minimum number of recipes
    */
   public usedInAtLeast(count: number): IngredientQuery {
-    return this._addFilter((i) => i.usedByRecipeIds.size >= count);
+    return this._addFilter((i) => i.usedByRecipes().length >= count);
   }
 
   // ============================================================================

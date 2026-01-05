@@ -28,7 +28,7 @@
  */
 
 // Base class and context interface
-export { RuntimeIngredientBase, IIngredientContext } from './runtimeIngredientBase';
+export { RuntimeIngredientBase } from './runtimeIngredientBase';
 
 // Concrete ingredient classes
 export { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
