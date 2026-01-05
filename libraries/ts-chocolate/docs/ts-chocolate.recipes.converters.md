@@ -35,7 +35,7 @@ Converter for RatingCategory
 
 </td><td>
 
-Converter for Recipe Validates that goldenVersionId exists in versions and creates Recipe instance
+Converter for Recipe Validates that goldenVersionSpec exists in versions and creates Recipe instance
 
 
 </td></tr>
@@ -69,6 +69,17 @@ Converter for IRecipe data structure
 </td><td>
 
 Converter for IRecipeIngredient
+
+
+</td></tr>
+<tr><td>
+
+[recipeRating](./ts-chocolate.recipes.converters.reciperating.md)
+
+
+</td><td>
+
+Converter for [IRecipeRating](./ts-chocolate.recipes.ireciperating.md)
 
 
 </td></tr>
@@ -124,17 +135,6 @@ Converter for IScaledRecipeVersion
 </td><td>
 
 Converter for IScalingSource
-
-
-</td></tr>
-<tr><td>
-
-[versionRating](./ts-chocolate.recipes.converters.versionrating.md)
-
-
-</td><td>
-
-Converter for IVersionRating
 
 
 </td></tr>

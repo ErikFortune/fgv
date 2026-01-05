@@ -1,0 +1,644 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+import '@fgv/ts-utils-jest';
+
+import {
+  BaseIngredientId,
+  BaseRecipeId,
+  Grams,
+  IngredientId,
+  Percentage,
+  RatingScore,
+  RecipeId,
+  RecipeName,
+  RecipeVersionSpec,
+  SourceId
+} from '../../../packlets/common';
+
+import {
+  IGanacheCharacteristics,
+  IChocolateIngredient,
+  IIngredient,
+  IngredientsLibrary
+} from '../../../packlets/ingredients';
+import { IRecipe, IRecipeUsage, RecipesLibrary } from '../../../packlets/recipes';
+import { ChocolateLibrary, RuntimeContext, RuntimeRecipe, RuntimeVersion } from '../../../packlets/runtime';
+
+describe('RuntimeRecipe and RuntimeVersion', () => {
+  // ============================================================================
+  // Test Data
+  // ============================================================================
+
+  const testChars: IGanacheCharacteristics = {
+    cacaoFat: 36 as Percentage,
+    sugar: 34 as Percentage,
+    milkFat: 0 as Percentage,
+    water: 1 as Percentage,
+    solids: 29 as Percentage,
+    otherFats: 0 as Percentage
+  };
+
+  const creamChars: IGanacheCharacteristics = {
+    cacaoFat: 0 as Percentage,
+    sugar: 3 as Percentage,
+    milkFat: 38 as Percentage,
+    water: 55 as Percentage,
+    solids: 4 as Percentage,
+    otherFats: 0 as Percentage
+  };
+
+  const darkChocolate: IChocolateIngredient = {
+    baseId: 'dark-chocolate' as BaseIngredientId,
+    name: 'Dark Chocolate 70%',
+    category: 'chocolate',
+    chocolateType: 'dark',
+    cacaoPercentage: 70 as Percentage,
+    ganacheCharacteristics: testChars
+  };
+
+  const altChocolate: IChocolateIngredient = {
+    baseId: 'alt-chocolate' as BaseIngredientId,
+    name: 'Alternative Chocolate',
+    category: 'chocolate',
+    chocolateType: 'dark',
+    cacaoPercentage: 65 as Percentage,
+    ganacheCharacteristics: testChars
+  };
+
+  const cream: IIngredient = {
+    baseId: 'cream' as BaseIngredientId,
+    name: 'Heavy Cream',
+    category: 'dairy',
+    ganacheCharacteristics: creamChars
+  };
+
+  const butter: IIngredient = {
+    baseId: 'butter' as BaseIngredientId,
+    name: 'Butter',
+    category: 'fat',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 82 as Percentage,
+      water: 16 as Percentage,
+      solids: 2 as Percentage,
+      otherFats: 0 as Percentage
+    }
+  };
+
+  const usage1: IRecipeUsage = {
+    date: '2026-01-15',
+    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    scaledWeight: 600 as Grams,
+    scaleFactor: 2.0,
+    notes: 'First batch'
+  };
+
+  const usage2: IRecipeUsage = {
+    date: '2026-01-20',
+    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    scaledWeight: 900 as Grams
+  };
+
+  const darkGanacheRecipe: IRecipe = {
+    baseId: 'dark-ganache' as BaseRecipeId,
+    name: 'Dark Ganache' as RecipeName,
+    description: 'Classic dark chocolate ganache',
+    tags: ['classic', 'dark'],
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        notes: 'Original recipe',
+        yield: '50 bonbons',
+        ingredients: [
+          {
+            ingredientId: 'test.dark-chocolate' as IngredientId,
+            amount: 200 as Grams,
+            notes: 'Use couverture',
+            alternateIngredientIds: ['test.alt-chocolate' as IngredientId]
+          },
+          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+        ],
+        baseWeight: 300 as Grams,
+        ratings: [{ category: 'texture', score: 4 as RatingScore, notes: 'Good texture' }]
+      },
+      {
+        versionSpec: '2026-02-01-01' as RecipeVersionSpec,
+        createdDate: '2026-02-01',
+        notes: 'Revised with butter',
+        ingredients: [
+          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 180 as Grams },
+          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams },
+          { ingredientId: 'test.butter' as IngredientId, amount: 20 as Grams }
+        ],
+        baseWeight: 300 as Grams
+      }
+    ],
+    usage: [usage1, usage2]
+  };
+
+  const emptyRecipe: IRecipe = {
+    baseId: 'empty-recipe' as BaseRecipeId,
+    name: 'Empty Recipe' as RecipeName,
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [{ ingredientId: 'test.dark-chocolate' as IngredientId, amount: 100 as Grams }],
+        baseWeight: 100 as Grams
+      }
+    ],
+    usage: []
+  };
+
+  let ctx: RuntimeContext;
+
+  beforeEach(() => {
+    const ingredients = IngredientsLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as SourceId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'dark-chocolate': darkChocolate,
+            'alt-chocolate': altChocolate,
+            /* eslint-enable @typescript-eslint/naming-convention */
+            cream,
+            butter
+          }
+        }
+      ]
+    }).orThrow();
+
+    const recipes = RecipesLibrary.create({
+      builtin: false,
+      collections: [
+        {
+          id: 'test' as SourceId,
+          isMutable: false,
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'dark-ganache': darkGanacheRecipe,
+            'empty-recipe': emptyRecipe
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
+        }
+      ]
+    }).orThrow();
+
+    const library = ChocolateLibrary.create({
+      builtin: false,
+      libraries: { ingredients, recipes }
+    }).orThrow();
+
+    ctx = RuntimeContext.fromLibrary(library).orThrow();
+  });
+
+  // ============================================================================
+  // RuntimeRecipe Tests
+  // ============================================================================
+
+  describe('RuntimeRecipe', () => {
+    describe('identity', () => {
+      test('provides composite ID', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.id).toBe('test.dark-ganache');
+      });
+
+      test('provides source ID', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.sourceId).toBe('test');
+      });
+
+      test('provides base ID', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.baseId).toBe('dark-ganache');
+      });
+    });
+
+    describe('core properties', () => {
+      test('provides name', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.name).toBe('Dark Ganache');
+      });
+
+      test('provides description', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.description).toBe('Classic dark chocolate ganache');
+      });
+
+      test('provides tags', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.tags).toContain('classic');
+        expect(recipe.tags).toContain('dark');
+      });
+
+      test('provides empty tags when none defined', () => {
+        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
+        expect(recipe.tags).toEqual([]);
+      });
+
+      test('provides goldenVersionSpec', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersionSpec).toBe('2026-01-01-01');
+      });
+    });
+
+    describe('version navigation', () => {
+      test('provides goldenVersion', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const golden = recipe.goldenVersion;
+        expect(golden.versionSpec).toBe('2026-01-01-01');
+      });
+
+      test('provides all versions', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.versions.length).toBe(2);
+      });
+
+      test('getVersion returns specific version', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.getVersion('2026-02-01-01' as RecipeVersionSpec)).toSucceedAndSatisfy((v) => {
+          expect(v.versionSpec).toBe('2026-02-01-01');
+        });
+      });
+
+      test('getVersion fails for non-existent version', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.getVersion('nonexistent' as RecipeVersionSpec)).toFailWith(/not found/);
+      });
+
+      test('latestVersion returns most recent by date', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const latest = recipe.latestVersion;
+        expect(latest.versionSpec).toBe('2026-02-01-01');
+      });
+
+      test('latestVersion reuses goldenVersion when same', () => {
+        // empty-recipe has only one version which is both golden and latest
+        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
+        const latest = recipe.latestVersion;
+        const golden = recipe.goldenVersion;
+        expect(latest.versionSpec).toBe('2026-01-01-01');
+        expect(latest).toBe(golden); // Same instance
+      });
+
+      test('versionCount returns correct count', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.versionCount).toBe(2);
+      });
+    });
+
+    describe('usage history', () => {
+      test('provides usage records', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.usage.length).toBe(2);
+      });
+
+      test('hasBeenUsed returns true when used', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.hasBeenUsed).toBe(true);
+      });
+
+      test('hasBeenUsed returns false when never used', () => {
+        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
+        expect(recipe.hasBeenUsed).toBe(false);
+      });
+
+      test('usageCount returns correct count', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.usageCount).toBe(2);
+      });
+
+      test('latestUsage returns most recent usage', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const latest = recipe.latestUsage;
+        expect(latest?.date).toBe('2026-01-20');
+      });
+
+      test('latestUsage returns undefined when no usage', () => {
+        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
+        expect(recipe.latestUsage).toBeUndefined();
+      });
+    });
+
+    describe('ingredient queries', () => {
+      test('allIngredientIds returns unique IDs across versions', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const ids = recipe.allIngredientIds;
+        expect(ids.size).toBe(3); // dark-chocolate, cream, butter
+      });
+
+      test('usesIngredient returns true for used ingredient', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.usesIngredient('test.dark-chocolate' as IngredientId)).toBe(true);
+      });
+
+      test('usesIngredient returns false for unused ingredient', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.usesIngredient('test.alt-chocolate' as IngredientId)).toBe(false);
+      });
+
+      test('ingredients getter provides golden version ingredients', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const ingredients = recipe.ingredients;
+        expect(ingredients.length).toBe(2);
+      });
+    });
+
+    describe('operations', () => {
+      test('scale scales to target weight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.scaleFactor).toBe(2);
+        });
+      });
+
+      test('scaleVersion scales specific version', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scaleVersion('2026-02-01-01' as RecipeVersionSpec, 600 as Grams)).toSucceedAndSatisfy(
+          (scaled) => {
+            expect(scaled.sourceVersionSpec).toBe('2026-02-01-01');
+          }
+        );
+      });
+
+      test('scaleByFactor scales by multiplicative factor', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scaleByFactor(2.0)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.baseWeight).toBe(600);
+        });
+      });
+
+      test('calculateGanache returns analysis', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.calculateGanache()).toSucceedAndSatisfy((calc) => {
+          expect(calc.analysis).toBeDefined();
+          expect(calc.validation).toBeDefined();
+        });
+      });
+
+      test('calculateGanacheForVersion analyzes specific version', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.calculateGanacheForVersion('2026-02-01-01' as RecipeVersionSpec)).toSucceedAndSatisfy(
+          (calc) => {
+            expect(calc.analysis.totalWeight).toBe(300);
+          }
+        );
+      });
+    });
+
+    describe('raw access', () => {
+      test('raw returns underlying recipe data', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.raw.name).toBe('Dark Ganache');
+      });
+
+      test('rawAsRecipe returns Recipe instance when underlying data is Recipe', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        // RecipesLibrary converts IRecipe data to Recipe class instances
+        // So rawAsRecipe should return the Recipe instance
+        expect(recipe.rawAsRecipe).toBeDefined();
+        expect(recipe.rawAsRecipe).toBe(recipe.raw);
+      });
+    });
+
+    describe('create factory', () => {
+      test('create factory method succeeds', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(RuntimeRecipe.create(ctx as never, recipe.id, recipe.raw)).toSucceed();
+      });
+    });
+  });
+
+  // ============================================================================
+  // RuntimeVersion Tests
+  // ============================================================================
+
+  describe('RuntimeVersion', () => {
+    describe('identity', () => {
+      test('provides versionSpec', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.versionSpec).toBe('2026-01-01-01');
+      });
+
+      test('provides createdDate', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.createdDate).toBe('2026-01-01');
+      });
+
+      test('provides recipeId', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.recipeId).toBe('test.dark-ganache');
+      });
+
+      test('provides recipe parent reference', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const version = recipe.goldenVersion;
+        expect(version.recipe).toBeDefined();
+        expect(version.recipe.id).toBe('test.dark-ganache');
+        expect(version.recipe.name).toBe('Dark Ganache');
+      });
+    });
+
+    describe('resolved ingredients', () => {
+      test('getIngredients returns all resolved ingredients', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.getIngredients()).toSucceedAndSatisfy((iter) => {
+          const ingredients = [...iter];
+          expect(ingredients.length).toBe(2);
+          expect(ingredients[0].ingredient.name).toBe('Dark Chocolate 70%');
+          expect(ingredients[0].amount).toBe(200);
+        });
+      });
+
+      test('resolved ingredient includes notes', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
+        expect(ingredients[0].notes).toBe('Use couverture');
+      });
+
+      test('resolved ingredient includes alternates', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
+        expect(ingredients[0].alternates.length).toBe(1);
+        expect(ingredients[0].alternates[0].name).toBe('Alternative Chocolate');
+      });
+
+      test('resolved ingredient includes raw reference', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
+        expect(ingredients[0].raw.ingredientId).toBe('test.dark-chocolate');
+      });
+
+      test('getIngredients with empty array returns nothing', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.getIngredients([])).toSucceedAndSatisfy((iter) => {
+          const ingredients = [...iter];
+          expect(ingredients.length).toBe(0);
+        });
+      });
+
+      test('getIngredients with exact ID filter returns matching ingredient', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.getIngredients(['test.dark-chocolate'])).toSucceedAndSatisfy((iter) => {
+          const ingredients = [...iter];
+          expect(ingredients.length).toBe(1);
+          expect(ingredients[0].ingredient.name).toBe('Dark Chocolate 70%');
+        });
+      });
+
+      test('getIngredients with non-matching ID returns nothing', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.getIngredients(['test.nonexistent'])).toSucceedAndSatisfy((iter) => {
+          const ingredients = [...iter];
+          expect(ingredients.length).toBe(0);
+        });
+      });
+    });
+
+    describe('computed properties', () => {
+      test('provides baseWeight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.baseWeight).toBe(300);
+      });
+
+      test('provides yield', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.yield).toBe('50 bonbons');
+      });
+
+      test('provides notes', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.notes).toBe('Original recipe');
+      });
+
+      test('provides ratings', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const ratings = recipe.goldenVersion.ratings;
+        expect(ratings.length).toBe(1);
+        expect(ratings[0].score).toBe(4);
+      });
+
+      test('ratings returns empty array when none defined', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const version = recipe.versions[1]; // Second version has no ratings
+        expect(version.ratings).toEqual([]);
+      });
+    });
+
+    describe('filtering helpers', () => {
+      test('getIngredients with category filter returns matching category', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.getIngredients([{ category: 'chocolate' }])).toSucceedAndSatisfy(
+          (iter) => {
+            const chocolate = [...iter];
+            expect(chocolate.length).toBe(1);
+            expect(chocolate[0].ingredient.name).toBe('Dark Chocolate 70%');
+          }
+        );
+      });
+
+      test('getIngredients filters chocolate ingredients only', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const chocolate = [...recipe.goldenVersion.getIngredients([{ category: 'chocolate' }]).orThrow()];
+        expect(chocolate.length).toBe(1);
+      });
+
+      test('getIngredients filters dairy ingredients only', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const dairy = [...recipe.goldenVersion.getIngredients([{ category: 'dairy' }]).orThrow()];
+        expect(dairy.length).toBe(1);
+        expect(dairy[0].ingredient.name).toBe('Heavy Cream');
+      });
+
+      test('getIngredients with sugar filter returns empty when no sugar', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const sugar = [...recipe.goldenVersion.getIngredients([{ category: 'sugar' }]).orThrow()];
+        expect(sugar.length).toBe(0);
+      });
+
+      test('getIngredients with fat filter returns fat only', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const version = recipe.versions[1]; // Has butter
+        const fat = [...version.getIngredients([{ category: 'fat' }]).orThrow()];
+        expect(fat.length).toBe(1);
+        expect(fat[0].ingredient.name).toBe('Butter');
+      });
+
+      test('getIngredients with alcohol filter returns empty when no alcohol', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const alcohol = [...recipe.goldenVersion.getIngredients([{ category: 'alcohol' }]).orThrow()];
+        expect(alcohol.length).toBe(0);
+      });
+
+      test('getIngredients with regex pattern filters by ID pattern', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const matching = [...recipe.goldenVersion.getIngredients([/^test\.dark/]).orThrow()];
+        expect(matching.length).toBe(1);
+        expect(matching[0].ingredient.name).toBe('Dark Chocolate 70%');
+      });
+
+      test('getIngredients with multiple filters uses OR semantics', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const filtered = [
+          ...recipe.goldenVersion.getIngredients([{ category: 'chocolate' }, { category: 'dairy' }]).orThrow()
+        ];
+        expect(filtered.length).toBe(2);
+      });
+
+      test('getIngredients with category regex pattern', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const matching = [...recipe.goldenVersion.getIngredients([{ category: /^choc/ }]).orThrow()];
+        expect(matching.length).toBe(1);
+        expect(matching[0].ingredient.name).toBe('Dark Chocolate 70%');
+      });
+    });
+
+    describe('operations', () => {
+      test('calculateGanache returns analysis', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.calculateGanache()).toSucceedAndSatisfy((calc) => {
+          expect(calc.analysis).toBeDefined();
+        });
+      });
+    });
+
+    describe('raw access', () => {
+      test('raw returns underlying version data', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.raw.versionSpec).toBe('2026-01-01-01');
+      });
+    });
+
+    describe('create factory', () => {
+      test('create factory method succeeds', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(RuntimeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.raw)).toSucceed();
+      });
+    });
+  });
+});

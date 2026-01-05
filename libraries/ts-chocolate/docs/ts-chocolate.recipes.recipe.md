@@ -93,13 +93,11 @@ _(Optional)_
 
 </td><td>
 
-Gets the golden (approved default) version
-
 
 </td></tr>
 <tr><td>
 
-[goldenVersionId](./ts-chocolate.recipes.recipe.goldenversionid.md)
+[goldenVersionSpec](./ts-chocolate.recipes.recipe.goldenversionspec.md)
 
 
 </td><td>
@@ -109,7 +107,7 @@ Gets the golden (approved default) version
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>
@@ -232,7 +230,7 @@ Creates a Recipe instance from recipe data
 </td></tr>
 <tr><td>
 
-[getVersion(versionId)](./ts-chocolate.recipes.recipe.getversion.md)
+[getVersion(versionSpec)](./ts-chocolate.recipes.recipe.getversion.md)
 
 
 </td><td>
@@ -240,7 +238,7 @@ Creates a Recipe instance from recipe data
 
 </td><td>
 
-Gets a specific version by ID
+Gets a specific version by [version specifier](./ts-chocolate.recipeversionspec.md)
 
 
 </td></tr>

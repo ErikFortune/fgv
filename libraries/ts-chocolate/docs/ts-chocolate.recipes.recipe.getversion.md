@@ -4,12 +4,12 @@
 
 ## Recipes.Recipe.getVersion() method
 
-Gets a specific version by ID
+Gets a specific version by [version specifier](./ts-chocolate.recipeversionspec.md)
 
 **Signature:**
 
 ```typescript
-getVersion(versionId: RecipeVersionId): Result<IRecipeVersion>;
+getVersion(versionSpec: RecipeVersionSpec): Result<IRecipeVersion>;
 ```
 
 ## Parameters
@@ -32,17 +32,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-versionId
+versionSpec
 
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>
 
-The version ID to find
+The version specifier to find
 
 
 </td></tr>

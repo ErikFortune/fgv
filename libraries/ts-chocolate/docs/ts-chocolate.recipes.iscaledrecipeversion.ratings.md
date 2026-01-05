@@ -9,5 +9,5 @@ Optional ratings from the source version
 **Signature:**
 
 ```typescript
-readonly ratings?: ReadonlyArray<IVersionRating>;
+readonly ratings?: ReadonlyArray<IRecipeRating>;
 ```

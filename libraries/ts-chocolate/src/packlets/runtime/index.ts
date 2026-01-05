@@ -18,4 +18,47 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/**
+ * Runtime object access layer
+ *
+ * Provides resolved views of ingredients and recipes with automatic
+ * reference resolution, navigation helpers, and rich query capabilities.
+ *
+ * @packageDocumentation
+ */
+
+// Core library (existing)
 export * from './chocolateLibrary';
+
+// Runtime model types (includes cache statistics)
+export * from './model';
+
+// Reverse index
+export { RuntimeReverseIndex } from './runtimeReverseIndex';
+
+// Runtime context
+export { RuntimeContext, IRuntimeContextCreateParams, RuntimeContextValidator } from './runtimeContext';
+
+// Runtime ingredient classes
+export {
+  RuntimeIngredientBase,
+  IIngredientContext,
+  RuntimeChocolateIngredient,
+  RuntimeDairyIngredient,
+  RuntimeSugarIngredient,
+  RuntimeFatIngredient,
+  RuntimeAlcoholIngredient,
+  RuntimeIngredient,
+  AnyRuntimeIngredient
+} from './ingredients';
+
+export { RuntimeRecipe } from './runtimeRecipe';
+
+export { RuntimeVersion } from './runtimeVersion';
+
+export { RuntimeUsage, createRuntimeUsages, getUsagesSortedByDate } from './runtimeUsage';
+
+export { RuntimeScaledVersion } from './runtimeScaledVersion';
+
+// Query builders
+export * from './queries';

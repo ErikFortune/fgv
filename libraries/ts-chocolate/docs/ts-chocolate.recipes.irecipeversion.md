@@ -131,7 +131,7 @@ _(Optional)_ Optional notes about this version
 
 </td><td>
 
-ReadonlyArray&lt;[IVersionRating](./ts-chocolate.recipes.iversionrating.md)<!-- -->&gt;
+ReadonlyArray&lt;[IRecipeRating](./ts-chocolate.recipes.ireciperating.md)<!-- -->&gt;
 
 
 </td><td>
@@ -142,7 +142,7 @@ _(Optional)_ Optional ratings for this version
 </td></tr>
 <tr><td>
 
-[versionId](./ts-chocolate.recipes.irecipeversion.versionid.md)
+[versionSpec](./ts-chocolate.recipes.irecipeversion.versionspec.md)
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Optional ratings for this version
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>

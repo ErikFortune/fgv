@@ -30,6 +30,357 @@ Provides unified access to: - Ingredient management (multi-source with built-ins
 
 
 </td></tr>
+<tr><td>
+
+[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+
+
+</td><td>
+
+Fluent query builder for ingredients. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
+[RecipeQuery](./ts-chocolate.runtime.recipequery.md)
+
+
+</td><td>
+
+Fluent query builder for recipes. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeAlcoholIngredient](./ts-chocolate.runtime.runtimealcoholingredient.md)
+
+
+</td><td>
+
+A resolved view of an alcohol ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeChocolateIngredient](./ts-chocolate.runtime.runtimechocolateingredient.md)
+
+
+</td><td>
+
+A resolved view of a chocolate ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeContext](./ts-chocolate.runtime.runtimecontext.md)
+
+
+</td><td>
+
+Central context for the runtime object access layer. Provides factory methods for runtime objects, caching, and reverse lookups.
+
+This is the primary entry point for consumers who want resolved views of recipes and ingredients with automatic reference resolution.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeContextValidator](./ts-chocolate.runtime.runtimecontextvalidator.md)
+
+
+</td><td>
+
+Provides validated access to RuntimeContext methods. Accepts untyped strings, validates them, and delegates to RuntimeContext.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeDairyIngredient](./ts-chocolate.runtime.runtimedairyingredient.md)
+
+
+</td><td>
+
+A resolved view of a dairy ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeFatIngredient](./ts-chocolate.runtime.runtimefatingredient.md)
+
+
+</td><td>
+
+A resolved view of a fat ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)
+
+
+</td><td>
+
+A resolved view of a recipe with navigation and version access. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeScaledVersion](./ts-chocolate.runtime.runtimescaledversion.md)
+
+
+</td><td>
+
+A resolved view of a scaled recipe version with all ingredients resolved.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeSugarIngredient](./ts-chocolate.runtime.runtimesugaringredient.md)
+
+
+</td><td>
+
+A resolved view of a sugar ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeUsage](./ts-chocolate.runtime.runtimeusage.md)
+
+
+</td><td>
+
+A resolved view of a recipe usage record with linked versions.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeVersion](./ts-chocolate.runtime.runtimeversion.md)
+
+
+</td><td>
+
+A resolved view of a recipe version with all ingredients resolved.
+
+
+</td></tr>
+</tbody></table>
+
+## Abstract Classes
+
+<table><thead><tr><th>
+
+Abstract Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[RuntimeIngredient](./ts-chocolate.runtime.runtimeingredient.md)
+
+
+</td><td>
+
+Static factory for creating runtime ingredients. This class cannot be instantiated - use create() to get the appropriate concrete type.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeIngredientBase](./ts-chocolate.runtime.runtimeingredientbase.md)
+
+
+</td><td>
+
+Abstract base class for runtime ingredients. Provides common properties and navigation shared by all ingredient types.
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[andFilters(filters)](./ts-chocolate.runtime.andfilters.md)
+
+
+</td><td>
+
+Combines multiple filters with AND logic.
+
+
+</td></tr>
+<tr><td>
+
+[atLeast(min, getter)](./ts-chocolate.runtime.atleast.md)
+
+
+</td><td>
+
+Creates a filter for minimum value (inclusive).
+
+
+</td></tr>
+<tr><td>
+
+[atMost(max, getter)](./ts-chocolate.runtime.atmost.md)
+
+
+</td><td>
+
+Creates a filter for maximum value (inclusive).
+
+
+</td></tr>
+<tr><td>
+
+[collectionContains(value, getter)](./ts-chocolate.runtime.collectioncontains.md)
+
+
+</td><td>
+
+Creates a filter that checks if a collection contains a value.
+
+
+</td></tr>
+<tr><td>
+
+[collectionContainsAny(values, getter)](./ts-chocolate.runtime.collectioncontainsany.md)
+
+
+</td><td>
+
+Creates a filter that checks if a collection contains any of the values.
+
+
+</td></tr>
+<tr><td>
+
+[containsIgnoreCase(text, getter)](./ts-chocolate.runtime.containsignorecase.md)
+
+
+</td><td>
+
+Creates a case-insensitive contains filter.
+
+
+</td></tr>
+<tr><td>
+
+[equals(expected, getter)](./ts-chocolate.runtime.equals.md)
+
+
+</td><td>
+
+Creates a filter for exact equality.
+
+
+</td></tr>
+<tr><td>
+
+[hasAllTags(tags, getter)](./ts-chocolate.runtime.hasalltags.md)
+
+
+</td><td>
+
+Creates a filter that checks if item has all of the specified tags.
+
+
+</td></tr>
+<tr><td>
+
+[hasAnyTag(tags, getter)](./ts-chocolate.runtime.hasanytag.md)
+
+
+</td><td>
+
+Creates a filter that checks if item has any of the specified tags.
+
+
+</td></tr>
+<tr><td>
+
+[hasTag(tag, getter)](./ts-chocolate.runtime.hastag.md)
+
+
+</td><td>
+
+Creates a tag filter that checks if item has the specified tag.
+
+
+</td></tr>
+<tr><td>
+
+[inRange(min, max, getter)](./ts-chocolate.runtime.inrange.md)
+
+
+</td><td>
+
+Creates a filter for numeric range (inclusive).
+
+
+</td></tr>
+<tr><td>
+
+[notFilter(filter)](./ts-chocolate.runtime.notfilter.md)
+
+
+</td><td>
+
+Negates a filter.
+
+
+</td></tr>
+<tr><td>
+
+[oneOf(allowed, getter)](./ts-chocolate.runtime.oneof.md)
+
+
+</td><td>
+
+Creates a filter that checks if value is one of the allowed values.
+
+
+</td></tr>
+<tr><td>
+
+[orFilters(filters)](./ts-chocolate.runtime.orfilters.md)
+
+
+</td><td>
+
+Combines multiple filters with OR logic.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -47,6 +398,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ICategoryFilter](./ts-chocolate.runtime.icategoryfilter.md)
+
+
+</td><td>
+
+Filter by ingredient category.
+
+
+</td></tr>
+<tr><td>
+
 [IChocolateLibraryParams](./ts-chocolate.runtime.ichocolatelibraryparams.md)
 
 
@@ -62,12 +424,322 @@ When multiple sources provide the same collection ID within a sub-library, an er
 </td></tr>
 <tr><td>
 
+[IIngredientResolutionResult](./ts-chocolate.runtime.iingredientresolutionresult.md)
+
+
+</td><td>
+
+Result of attempting to resolve an ingredient reference. Used when partial resolution is acceptable (e.g., for alternates).
+
+
+</td></tr>
+<tr><td>
+
+[IIngredientUsageInfo](./ts-chocolate.runtime.iingredientusageinfo.md)
+
+
+</td><td>
+
+Information about how an ingredient is used in a recipe.
+
+
+</td></tr>
+<tr><td>
+
 [IInstantiatedLibrarySource](./ts-chocolate.runtime.iinstantiatedlibrarysource.md)
 
 
 </td><td>
 
 Pre-built library instances to include. Useful for testing or when libraries are constructed through other means.
+
+
+</td></tr>
+<tr><td>
+
+[IIterationOptions](./ts-chocolate.runtime.iiterationoptions.md)
+
+
+</td><td>
+
+Options for iterating over runtime entities
+
+
+</td></tr>
+<tr><td>
+
+[INumericRange](./ts-chocolate.runtime.inumericrange.md)
+
+
+</td><td>
+
+Range specification for numeric filtering
+
+
+</td></tr>
+<tr><td>
+
+[IQueryResult](./ts-chocolate.runtime.iqueryresult.md)
+
+
+</td><td>
+
+Result of a query execution with metadata
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedRecipeIngredient](./ts-chocolate.runtime.iresolvedrecipeingredient.md)
+
+
+</td><td>
+
+A resolved ingredient reference with full ingredient data and alternates. This is the primary interface for accessing recipe ingredients in the runtime layer.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedScaledIngredient](./ts-chocolate.runtime.iresolvedscaledingredient.md)
+
+
+</td><td>
+
+A resolved scaled ingredient with both original and scaled amounts.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeAlcoholIngredient](./ts-chocolate.runtime.iruntimealcoholingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to alcohol type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeChocolateIngredient](./ts-chocolate.runtime.iruntimechocolateingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to chocolate type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeContext](./ts-chocolate.runtime.iruntimecontext.md)
+
+
+</td><td>
+
+Central context for the runtime object access layer.
+
+Provides: - Primary resolution methods for ingredients and recipes - Reverse lookups (ingredient → recipes, tag → entities) - Recipe operations (scaling, ganache calculation) - Cache management - Iteration over all entities
+
+This is the main entry point for consumers who want resolved views of recipes and ingredients with automatic reference resolution.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeContextCreateParams](./ts-chocolate.runtime.iruntimecontextcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a RuntimeContext with a new library
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeDairyIngredient](./ts-chocolate.runtime.iruntimedairyingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to dairy type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeFatIngredient](./ts-chocolate.runtime.iruntimefatingredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to fat type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)
+
+
+</td><td>
+
+A resolved runtime view of an ingredient with navigation capabilities.
+
+This interface includes all properties from the data layer `IIngredient` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Navigation to recipes that use this ingredient - Type narrowing methods for discriminated access - Raw access to underlying data
+
+Note: Does not extend `IIngredient` directly because the class implementation provides the same shape but with additional runtime behavior.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
+
+
+</td><td>
+
+A resolved runtime view of a recipe with navigation and version access.
+
+This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries
+
+Note: Does not extend `IRecipe` because `versions` has a different type (resolved vs raw versions).
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
+
+
+</td><td>
+
+A resolved runtime view of a recipe version with resolved ingredients.
+
+This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
+
+Note: Does not extend `IRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)
+
+
+</td><td>
+
+A resolved runtime view of a scaled recipe version.
+
+This interface provides runtime-layer access to scaled version data with: - Source recipe/version tracking - Resolved scaled ingredient access via flexible filtering - Scaling metadata - Ganache calculation using scaled amounts
+
+Note: Does not extend `IScaledRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeSugarIngredient](./ts-chocolate.runtime.iruntimesugaringredient.md)
+
+
+</td><td>
+
+Runtime ingredient narrowed to sugar type.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)
+
+
+</td><td>
+
+Union type of all concrete runtime ingredient classes. Use this type when you need to work with any runtime ingredient.
+
+
+</td></tr>
+<tr><td>
+
+[ComparisonOperator](./ts-chocolate.runtime.comparisonoperator.md)
+
+
+</td><td>
+
+Comparison operators for numeric filters
+
+
+</td></tr>
+<tr><td>
+
+[FilterPredicate](./ts-chocolate.runtime.filterpredicate.md)
+
+
+</td><td>
+
+Generic filter predicate function
+
+
+</td></tr>
+<tr><td>
+
+[IngredientFilter](./ts-chocolate.runtime.ingredientfilter.md)
+
+
+</td><td>
+
+Filter for RuntimeIngredient
+
+
+</td></tr>
+<tr><td>
+
+[RecipeFilter](./ts-chocolate.runtime.recipefilter.md)
+
+
+</td><td>
+
+Filter for RuntimeRecipe
+
+
+</td></tr>
+<tr><td>
+
+[RecipeIngredientsFilter](./ts-chocolate.runtime.recipeingredientsfilter.md)
+
+
+</td><td>
+
+Filter for recipe ingredients. - string: Match ingredient ID exactly - RegExp: Match ingredient ID by pattern - ICategoryFilter: Match by category
+
+
+</td></tr>
+<tr><td>
+
+[ResolutionStatus](./ts-chocolate.runtime.resolutionstatus.md)
+
+
+</td><td>
+
+Status of a resolution attempt for an ingredient
 
 
 </td></tr>

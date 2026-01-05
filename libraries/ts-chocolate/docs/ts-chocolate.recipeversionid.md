@@ -4,7 +4,7 @@
 
 ## RecipeVersionId type
 
-Unique identifier for a recipe version Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+Globally unique recipe version identifier (composite) Format: "recipeId<!-- -->@<!-- -->versionSpec" where recipeId is "sourceId.baseRecipeId" Examples: "user.ganache<!-- -->@<!-- -->2026-01-03-01", "felchlin.truffle<!-- -->@<!-- -->2026-01-03-02-less-sugar"
 
 **Signature:**
 

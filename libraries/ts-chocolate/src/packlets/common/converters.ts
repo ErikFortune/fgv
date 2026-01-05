@@ -26,12 +26,18 @@
 import { Converter, Converters } from '@fgv/ts-utils';
 
 import {
+  Allergen,
   BaseIngredientId,
   BaseRecipeId,
+  CacaoVariety,
   Celsius,
+  Certification,
+  ChocolateApplication,
   ChocolateType,
   DegreesMacMichael,
+  FluidityStars,
   Grams,
+  ID_SEPARATOR,
   IngredientCategory,
   IngredientId,
   Percentage,
@@ -39,21 +45,18 @@ import {
   RecipeId,
   RecipeName,
   RecipeVersionId,
+  RecipeVersionSpec,
   SourceId,
-  FluidityStars,
+  VERSION_ID_SEPARATOR,
   WeightUnit,
-  allChocolateTypes,
-  allIngredientCategories,
-  allFluidityStars,
-  allWeightUnits,
   allAllergens,
-  Allergen,
-  Certification,
-  allCertifications,
-  CacaoVariety,
   allCacaoVarieties,
-  ChocolateApplication,
-  allChocolateApplications
+  allCertifications,
+  allChocolateApplications,
+  allChocolateTypes,
+  allFluidityStars,
+  allIngredientCategories,
+  allWeightUnits
 } from './model';
 import {
   toBaseIngredientId,
@@ -67,6 +70,7 @@ import {
   toRecipeId,
   toRecipeName,
   toRecipeVersionId,
+  toRecipeVersionSpec,
   toSourceId
 } from './validation';
 
@@ -104,6 +108,42 @@ export const ingredientId: Converter<IngredientId> = Converters.generic(toIngred
  */
 export const recipeId: Converter<RecipeId> = Converters.generic(toRecipeId);
 
+// ============================================================================
+// Composite ID Converters (parsing to structured form)
+// ============================================================================
+
+/**
+ * Type alias for parsed IngredientId components
+ * @public
+ */
+export type ParsedIngredientId = Converters.ICompositeId<SourceId, BaseIngredientId>;
+
+/**
+ * Converter that parses an IngredientId string into its component parts
+ * @public
+ */
+export const parsedIngredientId: Converter<ParsedIngredientId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  baseIngredientId
+);
+
+/**
+ * Type alias for parsed RecipeId components
+ * @public
+ */
+export type ParsedRecipeId = Converters.ICompositeId<SourceId, BaseRecipeId>;
+
+/**
+ * Converter that parses a RecipeId string into its component parts
+ * @public
+ */
+export const parsedRecipeId: Converter<ParsedRecipeId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  baseRecipeId
+);
+
 /**
  * Converter for RecipeName
  * @public
@@ -111,10 +151,32 @@ export const recipeId: Converter<RecipeId> = Converters.generic(toRecipeId);
 export const recipeName: Converter<RecipeName> = Converters.generic(toRecipeName);
 
 /**
- * Converter for RecipeVersionId
+ * Converter for RecipeVersionSpec
+ * @public
+ */
+export const recipeVersionSpec: Converter<RecipeVersionSpec> = Converters.generic(toRecipeVersionSpec);
+
+/**
+ * Converter for RecipeVersionId (composite)
  * @public
  */
 export const recipeVersionId: Converter<RecipeVersionId> = Converters.generic(toRecipeVersionId);
+
+/**
+ * Type alias for parsed RecipeVersionId components
+ * @public
+ */
+export type ParsedRecipeVersionId = Converters.ICompositeId<RecipeId, RecipeVersionSpec>;
+
+/**
+ * Converter that parses a RecipeVersionId string into its component parts
+ * @public
+ */
+export const parsedRecipeVersionId: Converter<ParsedRecipeVersionId> = Converters.compositeId(
+  recipeId,
+  VERSION_ID_SEPARATOR,
+  recipeVersionSpec
+);
 
 // ============================================================================
 // Numeric Converters

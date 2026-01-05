@@ -33,15 +33,16 @@ import {
   COMPOSITE_ID_PATTERN,
   DegreesMacMichael,
   Grams,
-  ID_SEPARATOR,
   IngredientId,
   Percentage,
   RatingScore,
-  RECIPE_VERSION_ID_PATTERN,
+  RECIPE_VERSION_SPEC_PATTERN,
   RecipeId,
   RecipeName,
   RecipeVersionId,
-  SourceId
+  RecipeVersionSpec,
+  SourceId,
+  VERSION_ID_SEPARATOR
 } from './model';
 
 // ============================================================================
@@ -203,19 +204,51 @@ export function toRecipeName(from: unknown): Result<RecipeName> {
 }
 
 /**
+ * Type guard for RecipeVersionSpec
+ * @param from - Value to check
+ * @returns True if the value is a valid RecipeVersionSpec
+ * @public
+ */
+export function isValidRecipeVersionSpec(from: unknown): from is RecipeVersionSpec {
+  return typeof from === 'string' && RECIPE_VERSION_SPEC_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to RecipeVersionSpec
+ * @param from - Value to convert
+ * @returns Result with {@link RecipeVersionSpec | RecipeVersionSpec} or error
+ * @public
+ */
+export function toRecipeVersionSpec(from: unknown): Result<RecipeVersionSpec> {
+  if (isValidRecipeVersionSpec(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid RecipeVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+  );
+}
+
+/**
  * Type guard for RecipeVersionId
  * @param from - Value to check
  * @returns True if the value is a valid RecipeVersionId
  * @public
  */
 export function isValidRecipeVersionId(from: unknown): from is RecipeVersionId {
-  return typeof from === 'string' && RECIPE_VERSION_ID_PATTERN.test(from);
+  if (typeof from !== 'string') {
+    return false;
+  }
+  const parts = from.split(VERSION_ID_SEPARATOR);
+  if (parts.length !== 2) {
+    return false;
+  }
+  return isValidRecipeId(parts[0]) && isValidRecipeVersionSpec(parts[1]);
 }
 
 /**
  * Converts unknown value to RecipeVersionId
  * @param from - Value to convert
- * @returns Result with RecipeVersionId or error
+ * @returns Result with {@link RecipeVersionId | RecipeVersionId} or error
  * @public
  */
 export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
@@ -223,7 +256,7 @@ export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid RecipeVersionId: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+    'Invalid RecipeVersionId: must be in format "recipeId@versionSpec" (e.g., "user.ganache@2026-01-03-01")'
   );
 }
 
@@ -344,106 +377,4 @@ export function toRatingScore(from: unknown): Result<RatingScore> {
     return Success.with(from);
   }
   return Failure.with(`${from}: Invalid RatingScore: must be an integer between 1 and 5`);
-}
-
-// ============================================================================
-// Composite ID Helpers
-// ============================================================================
-
-/**
- * Creates a composite IngredientId from source ID and base ID
- * @param sourceId - The source identifier
- * @param baseId - The base ingredient identifier
- * @returns Composite ingredient ID in format "sourceId.baseId"
- * @public
- */
-export function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId {
-  return `${sourceId}${ID_SEPARATOR}${baseId}` as IngredientId;
-}
-
-/**
- * Parses a composite IngredientId into source ID and base ID
- * @param id - The composite ingredient ID to parse
- * @returns Result with tuple [sourceId, baseId] or error
- * @public
- */
-export function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]> {
-  const parts = id.split(ID_SEPARATOR);
-  if (parts.length !== 2) {
-    return Failure.with(`Invalid IngredientId format: ${id}`);
-  }
-  return toSourceId(parts[0]).onSuccess((sourceId) =>
-    toBaseIngredientId(parts[1]).onSuccess((baseId) =>
-      Success.with([sourceId, baseId] as [SourceId, BaseIngredientId])
-    )
-  );
-}
-
-/**
- * Gets the source ID from a composite IngredientId
- * @param id - The composite ingredient ID
- * @returns The source ID portion
- * @public
- */
-export function getIngredientSourceId(id: IngredientId): SourceId {
-  return id.split(ID_SEPARATOR)[0] as SourceId;
-}
-
-/**
- * Gets the base ID from a composite IngredientId
- * @param id - The composite ingredient ID
- * @returns The base ingredient ID portion
- * @public
- */
-export function getIngredientBaseId(id: IngredientId): BaseIngredientId {
-  return id.split(ID_SEPARATOR)[1] as BaseIngredientId;
-}
-
-/**
- * Creates a composite RecipeId from source ID and base ID
- * @param sourceId - The source identifier
- * @param baseId - The base recipe identifier
- * @returns Composite recipe ID in format "sourceId.baseId"
- * @public
- */
-export function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): RecipeId {
-  return `${sourceId}${ID_SEPARATOR}${baseId}` as RecipeId;
-}
-
-/**
- * Parses a composite RecipeId into source ID and base ID
- * @param id - The composite recipe ID to parse
- * @returns Result with tuple [sourceId, baseId] or error
- * @public
- */
-export function parseRecipeId(id: RecipeId): Result<[SourceId, BaseRecipeId]> {
-  const parts = id.split(ID_SEPARATOR);
-  if (parts.length !== 2) {
-    return Failure.with(`Invalid RecipeId format: ${id}`);
-  }
-  return toSourceId(parts[0]).onSuccess((sourceId) =>
-    toBaseRecipeId(parts[1]).onSuccess((baseId) =>
-      Success.with([sourceId, baseId] as [SourceId, BaseRecipeId])
-    )
-  );
-}
-
-/**
- * Gets the source ID from a composite RecipeId
- * @param id - The composite recipe ID
- * @returns The source ID portion
- * @public
- */
-export function getRecipeSourceId(id: RecipeId): SourceId {
-  return id.split(ID_SEPARATOR)[0] as SourceId;
-}
-
-/**
- * Gets the base ID from a composite RecipeId
- * @param id - The composite recipe ID
- * @returns The base recipe ID portion
- * @public
- */
-export function getRecipeBaseId(id: RecipeId): BaseRecipeId {
-  return id.split(ID_SEPARATOR)[1] as BaseRecipeId;
 }

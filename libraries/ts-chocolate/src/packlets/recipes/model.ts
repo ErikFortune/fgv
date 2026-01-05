@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseRecipeId, Grams, IngredientId, RatingScore, RecipeName, RecipeVersionId } from '../common';
+import { BaseRecipeId, Grams, IngredientId, RatingScore, RecipeName, RecipeVersionSpec } from '../common';
 
 // ============================================================================
 // Recipe Ingredient Reference
@@ -83,7 +83,7 @@ export const allRatingCategories: RatingCategory[] = [
  * Rating for a specific category of a recipe version
  * @public
  */
-export interface IVersionRating {
+export interface IRecipeRating {
   /**
    * The category being rated
    */
@@ -117,7 +117,7 @@ export interface IRecipeUsage {
   /**
    * Which version was used
    */
-  readonly versionId: RecipeVersionId;
+  readonly versionSpec: RecipeVersionSpec;
 
   /**
    * Scaled weight used for this production run
@@ -138,7 +138,7 @@ export interface IRecipeUsage {
    * If modifications were made during this usage that created a new version,
    * this is the ID of that new version
    */
-  readonly modifiedVersionId?: RecipeVersionId;
+  readonly modifiedVersionSpec?: RecipeVersionSpec;
 }
 
 // ============================================================================
@@ -153,7 +153,7 @@ export interface IRecipeVersion {
   /**
    * Unique identifier for this version
    */
-  readonly versionId: RecipeVersionId;
+  readonly versionSpec: RecipeVersionSpec;
 
   /**
    * Date this version was created (ISO 8601 format)
@@ -183,7 +183,7 @@ export interface IRecipeVersion {
   /**
    * Optional ratings for this version
    */
-  readonly ratings?: ReadonlyArray<IVersionRating>;
+  readonly ratings?: ReadonlyArray<IRecipeRating>;
 }
 
 // ============================================================================
@@ -223,7 +223,7 @@ export interface IRecipe {
   /**
    * The ID of the golden (approved default) version
    */
-  readonly goldenVersionId: RecipeVersionId;
+  readonly goldenVersionSpec: RecipeVersionSpec;
 
   /**
    * Usage history for all versions of this recipe
@@ -264,7 +264,7 @@ export interface IScalingSource {
   /**
    * Exact version that was scaled
    */
-  readonly versionId: RecipeVersionId;
+  readonly versionSpec: RecipeVersionSpec;
 
   /**
    * Scaling factor applied
@@ -315,7 +315,7 @@ export interface IScaledRecipeVersion {
   /**
    * Optional ratings from the source version
    */
-  readonly ratings?: ReadonlyArray<IVersionRating>;
+  readonly ratings?: ReadonlyArray<IRecipeRating>;
 }
 
 /**
@@ -341,5 +341,5 @@ export function isScaledRecipeVersion(version: AnyRecipeVersion): version is ISc
  * @public
  */
 export function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion {
-  return 'versionId' in version;
+  return 'versionSpec' in version;
 }

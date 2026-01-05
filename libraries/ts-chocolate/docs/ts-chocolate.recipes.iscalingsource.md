@@ -100,7 +100,7 @@ Resulting target weight
 </td></tr>
 <tr><td>
 
-[versionId](./ts-chocolate.recipes.iscalingsource.versionid.md)
+[versionSpec](./ts-chocolate.recipes.iscalingsource.versionspec.md)
 
 
 </td><td>
@@ -110,7 +110,7 @@ Resulting target weight
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>

@@ -62,7 +62,7 @@ describe('ChocolateLibrary', () => {
   };
 
   const testRecipeVersion: IRecipeVersion = {
-    versionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [{ ingredientId: 'test.testChoco' as IngredientId, amount: 100 as Grams }],
     baseWeight: 100 as Grams
@@ -72,7 +72,7 @@ describe('ChocolateLibrary', () => {
     baseId: 'testRecipe' as BaseRecipeId,
     name: 'Test Recipe' as RecipeName,
     versions: [testRecipeVersion],
-    goldenVersionId: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionId,
+    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
     usage: []
   };
 
@@ -281,7 +281,7 @@ describe('ChocolateLibrary', () => {
     test('scaleRecipeByFactor fails for invalid version', () => {
       expect(
         library.scaleRecipeByFactor('test.testRecipe' as RecipeId, 0.5, {
-          versionId: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionId
+          versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionSpec
         })
       ).toFailWith(/not found/);
     });
@@ -366,11 +366,11 @@ describe('ChocolateLibrary', () => {
         name: 'File Source Recipe',
         description: 'A recipe from file source',
         tags: ['file'],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: [],
         versions: [
           {
-            versionId: '2026-01-01-01',
+            versionSpec: '2026-01-01-01',
             createdDate: '2026-01-01',
             ingredients: [{ ingredientId: 'file-source.file-chocolate', amount: 100 }],
             baseWeight: 100

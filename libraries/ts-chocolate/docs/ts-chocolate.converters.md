@@ -162,6 +162,39 @@ Converter for IngredientId (composite)
 </td></tr>
 <tr><td>
 
+[parsedIngredientId](./ts-chocolate.converters.parsedingredientid.md)
+
+
+</td><td>
+
+Converter that parses an IngredientId string into its component parts
+
+
+</td></tr>
+<tr><td>
+
+[parsedRecipeId](./ts-chocolate.converters.parsedrecipeid.md)
+
+
+</td><td>
+
+Converter that parses a RecipeId string into its component parts
+
+
+</td></tr>
+<tr><td>
+
+[parsedRecipeVersionId](./ts-chocolate.converters.parsedrecipeversionid.md)
+
+
+</td><td>
+
+Converter that parses a RecipeVersionId string into its component parts
+
+
+</td></tr>
+<tr><td>
+
 [percentage](./ts-chocolate.converters.percentage.md)
 
 
@@ -211,7 +244,18 @@ Converter for RecipeName
 
 </td><td>
 
-Converter for RecipeVersionId
+Converter for RecipeVersionId (composite)
+
+
+</td></tr>
+<tr><td>
+
+[recipeVersionSpec](./ts-chocolate.converters.recipeversionspec.md)
+
+
+</td><td>
+
+Converter for RecipeVersionSpec
 
 
 </td></tr>
@@ -234,6 +278,54 @@ Converter for SourceId
 </td><td>
 
 Converter for WeightUnit
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ParsedIngredientId](./ts-chocolate.converters.parsedingredientid.md)
+
+
+</td><td>
+
+Type alias for parsed IngredientId components
+
+
+</td></tr>
+<tr><td>
+
+[ParsedRecipeId](./ts-chocolate.converters.parsedrecipeid.md)
+
+
+</td><td>
+
+Type alias for parsed RecipeId components
+
+
+</td></tr>
+<tr><td>
+
+[ParsedRecipeVersionId](./ts-chocolate.converters.parsedrecipeversionid.md)
+
+
+</td><td>
+
+Type alias for parsed RecipeVersionId components
 
 
 </td></tr>

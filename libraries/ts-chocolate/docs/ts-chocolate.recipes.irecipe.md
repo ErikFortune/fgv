@@ -79,7 +79,7 @@ _(Optional)_ Optional description of the recipe
 </td></tr>
 <tr><td>
 
-[goldenVersionId](./ts-chocolate.recipes.irecipe.goldenversionid.md)
+[goldenVersionSpec](./ts-chocolate.recipes.irecipe.goldenversionspec.md)
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_ Optional description of the recipe
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>

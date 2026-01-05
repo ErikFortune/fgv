@@ -1,0 +1,109 @@
+// Copyright (c) 2026 Erik Fortune
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+/**
+ * RuntimeDairyIngredient - concrete dairy ingredient implementation
+ * @packageDocumentation
+ */
+
+import { Result, Success } from '@fgv/ts-utils';
+
+import { IngredientId, Percentage } from '../../common';
+import { IDairyIngredient } from '../../ingredients';
+import { IRuntimeDairyIngredient } from '../model';
+import { IIngredientContext, RuntimeIngredientBase } from './runtimeIngredientBase';
+
+// ============================================================================
+// RuntimeDairyIngredient Class
+// ============================================================================
+
+/**
+ * A resolved view of a dairy ingredient with navigation capabilities.
+ * Immutable - does not allow modification of underlying data.
+ * @public
+ */
+export class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRuntimeDairyIngredient {
+  private readonly _dairyIngredient: IDairyIngredient;
+
+  /**
+   * Creates a RuntimeDairyIngredient.
+   * Use RuntimeIngredient.create() or RuntimeDairyIngredient.create() instead.
+   * @internal
+   */
+  protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient) {
+    super(context, id, ingredient);
+    this._dairyIngredient = ingredient;
+  }
+
+  /**
+   * Factory method for creating a RuntimeDairyIngredient.
+   * @param context - The runtime context
+   * @param id - The ingredient ID
+   * @param ingredient - The raw dairy ingredient data
+   * @returns Success with RuntimeDairyIngredient
+   */
+  public static create(
+    context: IIngredientContext,
+    id: IngredientId,
+    ingredient: IDairyIngredient
+  ): Result<RuntimeDairyIngredient> {
+    return Success.with(new RuntimeDairyIngredient(context, id, ingredient));
+  }
+
+  // ============================================================================
+  // Category Override
+  // ============================================================================
+
+  /**
+   * Category is always 'dairy' for this type
+   */
+  public get category(): 'dairy' {
+    return 'dairy';
+  }
+
+  // ============================================================================
+  // Dairy-Specific Properties
+  // ============================================================================
+
+  /**
+   * Fat content percentage (optional)
+   */
+  public get fatContent(): Percentage | undefined {
+    return this._dairyIngredient.fatContent;
+  }
+
+  /**
+   * Water content percentage (optional)
+   */
+  public get waterContent(): Percentage | undefined {
+    return this._dairyIngredient.waterContent;
+  }
+
+  // ============================================================================
+  // Raw Access
+  // ============================================================================
+
+  /**
+   * Gets the underlying raw dairy ingredient data
+   */
+  public get raw(): IDairyIngredient {
+    return this._dairyIngredient;
+  }
+}

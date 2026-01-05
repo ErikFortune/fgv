@@ -24,11 +24,13 @@ import {
   BaseIngredientId,
   BaseRecipeId,
   Grams,
+  Helpers,
   IngredientId,
   Percentage,
   RatingScore,
   RecipeId,
   RecipeVersionId,
+  RecipeVersionSpec,
   SourceId,
   Validation
 } from '../../../packlets/common';
@@ -40,6 +42,7 @@ const {
   isValidIngredientId,
   isValidRecipeId,
   isValidRecipeName,
+  isValidRecipeVersionSpec,
   isValidRecipeVersionId,
   isValidRatingScore,
   isValidGrams,
@@ -52,21 +55,29 @@ const {
   toIngredientId,
   toRecipeId,
   toRecipeName,
+  toRecipeVersionSpec,
   toRecipeVersionId,
   toRatingScore,
   toGrams,
   toPercentage,
   toCelsius,
-  toDegreesMacMichael,
+  toDegreesMacMichael
+} = Validation;
+
+const {
   createIngredientId,
   createRecipeId,
+  createRecipeVersionId,
   parseIngredientId,
   parseRecipeId,
+  parseRecipeVersionId,
   getIngredientSourceId,
   getIngredientBaseId,
   getRecipeSourceId,
-  getRecipeBaseId
-} = Validation;
+  getRecipeBaseId,
+  getRecipeVersionRecipeId,
+  getRecipeVersionSpec
+} = Helpers;
 
 describe('Common validation', () => {
   // ============================================================================
@@ -151,7 +162,7 @@ describe('Common validation', () => {
     });
   });
 
-  describe('isValidRecipeVersionId', () => {
+  describe('isValidRecipeVersionSpec', () => {
     test.each([
       ['basic version', '2026-01-03-01', true],
       ['with label', '2026-01-03-02-tweaked', true],
@@ -164,8 +175,8 @@ describe('Common validation', () => {
       ['empty string', '', false],
       ['number', 123, false],
       ['null', null, false]
-    ])('%s: isValidRecipeVersionId(%p) returns %p', (_desc, input, expected) => {
-      expect(isValidRecipeVersionId(input)).toBe(expected);
+    ])('%s: isValidRecipeVersionSpec(%p) returns %p', (_desc, input, expected) => {
+      expect(isValidRecipeVersionSpec(input)).toBe(expected);
     });
   });
 
@@ -313,35 +324,35 @@ describe('Common validation', () => {
     });
   });
 
-  describe('toRecipeVersionId', () => {
+  describe('toRecipeVersionSpec', () => {
     test('succeeds with valid basic version ID', () => {
-      expect(toRecipeVersionId('2026-01-03-01')).toSucceedWith('2026-01-03-01' as RecipeVersionId);
+      expect(toRecipeVersionSpec('2026-01-03-01')).toSucceedWith('2026-01-03-01' as RecipeVersionSpec);
     });
 
     test('succeeds with version ID with label', () => {
-      expect(toRecipeVersionId('2026-01-03-02-tweaked')).toSucceedWith(
-        '2026-01-03-02-tweaked' as RecipeVersionId
+      expect(toRecipeVersionSpec('2026-01-03-02-tweaked')).toSucceedWith(
+        '2026-01-03-02-tweaked' as RecipeVersionSpec
       );
     });
 
     test('fails with missing counter', () => {
-      expect(toRecipeVersionId('2026-01-03')).toFailWith(/Invalid RecipeVersionId/);
+      expect(toRecipeVersionSpec('2026-01-03')).toFailWith(/Invalid RecipeVersionSpec/);
     });
 
     test('fails with invalid format', () => {
-      expect(toRecipeVersionId('invalid')).toFailWith(/Invalid RecipeVersionId/);
+      expect(toRecipeVersionSpec('invalid')).toFailWith(/Invalid RecipeVersionSpec/);
     });
 
     test('fails with uppercase label', () => {
-      expect(toRecipeVersionId('2026-01-03-01-WRONG')).toFailWith(/Invalid RecipeVersionId/);
+      expect(toRecipeVersionSpec('2026-01-03-01-WRONG')).toFailWith(/Invalid RecipeVersionSpec/);
     });
 
     test('fails with empty string', () => {
-      expect(toRecipeVersionId('')).toFailWith(/Invalid RecipeVersionId/);
+      expect(toRecipeVersionSpec('')).toFailWith(/Invalid RecipeVersionSpec/);
     });
 
     test('fails with non-string', () => {
-      expect(toRecipeVersionId(123)).toFailWith(/Invalid RecipeVersionId/);
+      expect(toRecipeVersionSpec(123)).toFailWith(/Invalid RecipeVersionSpec/);
     });
   });
 
@@ -447,26 +458,28 @@ describe('Common validation', () => {
     describe('parse helpers', () => {
       test('parseIngredientId parses composite ID', () => {
         const id = 'felchlin.maracaibo-65' as IngredientId;
-        expect(parseIngredientId(id)).toSucceedAndSatisfy(([sourceId, baseId]) => {
-          expect(sourceId).toBe('felchlin');
-          expect(baseId).toBe('maracaibo-65');
+        expect(parseIngredientId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('felchlin');
+          expect(parsed.itemId).toBe('maracaibo-65');
+          expect(parsed.separator).toBe('.');
         });
       });
 
       test('parseIngredientId fails with invalid format', () => {
-        expect(parseIngredientId('invalid' as IngredientId)).toFailWith(/Invalid IngredientId format/);
+        expect(parseIngredientId('invalid' as IngredientId)).toFailWith(/separator.*not found/i);
       });
 
       test('parseRecipeId parses composite ID', () => {
         const id = 'user.classic-ganache' as RecipeId;
-        expect(parseRecipeId(id)).toSucceedAndSatisfy(([sourceId, baseId]) => {
-          expect(sourceId).toBe('user');
-          expect(baseId).toBe('classic-ganache');
+        expect(parseRecipeId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('user');
+          expect(parsed.itemId).toBe('classic-ganache');
+          expect(parsed.separator).toBe('.');
         });
       });
 
       test('parseRecipeId fails with invalid format', () => {
-        expect(parseRecipeId('invalid' as unknown as RecipeId)).toFailWith(/Invalid RecipeId format/);
+        expect(parseRecipeId('invalid' as unknown as RecipeId)).toFailWith(/separator.*not found/i);
       });
     });
 
@@ -478,6 +491,109 @@ describe('Common validation', () => {
         ['getRecipeBaseId', getRecipeBaseId, 'user.classic-ganache', 'classic-ganache']
       ])('%s extracts correct part', (_name, fn, input, expected) => {
         expect(fn(input as IngredientId & RecipeId)).toBe(expected);
+      });
+    });
+  });
+
+  // ============================================================================
+  // RecipeVersionId Tests
+  // ============================================================================
+
+  describe('RecipeVersionId validation', () => {
+    const validVersionIds: [string, string][] = [
+      ['simple', 'user.ganache@2026-01-03-01'],
+      ['with label', 'felchlin.truffle@2026-01-03-02-less-sugar'],
+      ['complex recipe id', 'my-source.my_recipe@2026-12-31-99']
+    ];
+
+    const invalidVersionIds: [string, unknown][] = [
+      ['missing @', 'user.ganache2026-01-03-01'],
+      ['missing recipe id', '@2026-01-03-01'],
+      ['missing version spec', 'user.ganache@'],
+      ['invalid recipe id', 'invalid@2026-01-03-01'],
+      ['invalid version spec', 'user.ganache@invalid'],
+      ['multiple @', 'user.ganache@2026-01-03-01@extra'],
+      ['empty string', ''],
+      ['number', 123],
+      ['null', null]
+    ];
+
+    describe('isValidRecipeVersionId', () => {
+      test.each(validVersionIds)('%s: returns true for valid RecipeVersionId', (_name, value) => {
+        expect(isValidRecipeVersionId(value)).toBe(true);
+      });
+
+      test.each(invalidVersionIds)('%s: returns false for invalid RecipeVersionId', (_name, value) => {
+        expect(isValidRecipeVersionId(value)).toBe(false);
+      });
+    });
+
+    describe('toRecipeVersionId', () => {
+      test.each(validVersionIds)('%s: succeeds for valid RecipeVersionId', (_name, value) => {
+        expect(toRecipeVersionId(value)).toSucceedWith(value as RecipeVersionId);
+      });
+
+      test.each(invalidVersionIds)('%s: fails for invalid RecipeVersionId', (_name, value) => {
+        expect(toRecipeVersionId(value)).toFailWith(/Invalid RecipeVersionId/i);
+      });
+    });
+  });
+
+  describe('RecipeVersionId helpers', () => {
+    describe('createRecipeVersionId', () => {
+      test('creates composite ID', () => {
+        const recipeId = 'user.ganache' as RecipeId;
+        const versionSpec = '2026-01-03-01' as RecipeVersionSpec;
+        expect(createRecipeVersionId(recipeId, versionSpec)).toBe('user.ganache@2026-01-03-01');
+      });
+
+      test('creates composite ID with label', () => {
+        const recipeId = 'felchlin.truffle' as RecipeId;
+        const versionSpec = '2026-01-03-02-less-sugar' as RecipeVersionSpec;
+        expect(createRecipeVersionId(recipeId, versionSpec)).toBe(
+          'felchlin.truffle@2026-01-03-02-less-sugar'
+        );
+      });
+    });
+
+    describe('parseRecipeVersionId', () => {
+      test('parses composite ID', () => {
+        const id = 'user.ganache@2026-01-03-01' as RecipeVersionId;
+        expect(parseRecipeVersionId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('user.ganache');
+          expect(parsed.itemId).toBe('2026-01-03-01');
+          expect(parsed.separator).toBe('@');
+        });
+      });
+
+      test('parses composite ID with label', () => {
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as RecipeVersionId;
+        expect(parseRecipeVersionId(id)).toSucceedAndSatisfy((parsed) => {
+          expect(parsed.collectionId).toBe('felchlin.truffle');
+          expect(parsed.itemId).toBe('2026-01-03-02-less-sugar');
+          expect(parsed.separator).toBe('@');
+        });
+      });
+
+      test('fails with invalid format', () => {
+        expect(parseRecipeVersionId('invalid' as RecipeVersionId)).toFailWith(/separator.*not found/i);
+      });
+    });
+
+    describe('get helpers', () => {
+      test('getRecipeVersionRecipeId extracts recipe ID', () => {
+        const id = 'user.ganache@2026-01-03-01' as RecipeVersionId;
+        expect(getRecipeVersionRecipeId(id)).toBe('user.ganache');
+      });
+
+      test('getRecipeVersionSpec extracts version spec', () => {
+        const id = 'user.ganache@2026-01-03-01' as RecipeVersionId;
+        expect(getRecipeVersionSpec(id)).toBe('2026-01-03-01');
+      });
+
+      test('getRecipeVersionSpec extracts version spec with label', () => {
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as RecipeVersionId;
+        expect(getRecipeVersionSpec(id)).toBe('2026-01-03-02-less-sugar');
       });
     });
   });

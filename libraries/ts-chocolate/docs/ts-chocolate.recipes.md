@@ -161,6 +161,17 @@ Reference to an ingredient used in a recipe Uses composite IngredientId to suppo
 </td></tr>
 <tr><td>
 
+[IRecipeRating](./ts-chocolate.recipes.ireciperating.md)
+
+
+</td><td>
+
+Rating for a specific category of a recipe version
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeScaleOptions](./ts-chocolate.recipes.irecipescaleoptions.md)
 
 
@@ -222,17 +233,6 @@ A scaled recipe version - mirrors IRecipeVersion structure for interoperability
 </td><td>
 
 Information about the source of a scaled recipe
-
-
-</td></tr>
-<tr><td>
-
-[IVersionRating](./ts-chocolate.recipes.iversionrating.md)
-
-
-</td><td>
-
-Rating for a specific category of a recipe version
 
 
 </td></tr>

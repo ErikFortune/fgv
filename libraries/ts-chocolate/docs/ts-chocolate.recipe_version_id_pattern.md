@@ -4,7 +4,7 @@
 
 ## RECIPE\_VERSION\_ID\_PATTERN variable
 
-Pattern for valid recipe version IDs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+Pattern for valid recipe version IDs Format: recipeId<!-- -->@<!-- -->versionSpec where recipeId is sourceId.baseRecipeId
 
 **Signature:**
 

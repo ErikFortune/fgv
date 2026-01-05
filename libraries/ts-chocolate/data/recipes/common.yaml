@@ -6,10 +6,10 @@ dark-ganache-classic:
   name: Classic Dark Ganache
   description: Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.
   tags: [classic, dark, truffle, bonbon]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: cacao-barry.guayaquil-64
@@ -32,10 +32,10 @@ milk-ganache-classic:
   name: Classic Milk Ganache
   description: Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.
   tags: [classic, milk, truffle, bonbon]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: guittard.soleil-dor-38
@@ -55,10 +55,10 @@ white-ganache-classic:
   name: Classic White Ganache
   description: Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.
   tags: [classic, white, truffle, bonbon]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: cacao-barry.zephyr-white-34
@@ -78,10 +78,10 @@ vegan-ganache-coconut-cream:
   name: Vegan Ganache (Coconut Cream)
   description: Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.
   tags: [vegan, dairy-free, dark, coconut]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: cacao-barry.guayaquil-64
@@ -99,10 +99,10 @@ vegan-ganache-coconut-oil:
   name: Vegan Ganache (Coconut Oil)
   description: Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.
   tags: [vegan, dairy-free, dark, neutral]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: cacao-barry.guayaquil-64
@@ -123,10 +123,10 @@ caramelized-ganache:
   name: Caramelized Ganache
   description: Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.
   tags: [caramelized, blonde, truffle, bonbon, salted-caramel]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: cacao-barry.zephyr-caramel-35
@@ -146,10 +146,10 @@ gianduja-basic:
   name: Basic Gianduja
   description: Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.
   tags: [gianduja, hazelnut, italian, praline]
-  goldenVersionId: '2026-01-01-01'
+  goldenVersionSpec: '2026-01-01-01'
   usage: []
   versions:
-    - versionId: '2026-01-01-01'
+    - versionSpec: '2026-01-01-01'
       createdDate: '2026-01-01'
       ingredients:
         - ingredientId: felchlin.sao-palme-43

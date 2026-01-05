@@ -4,7 +4,7 @@
 
 ## Converters.recipeVersionId variable
 
-Converter for RecipeVersionId
+Converter for RecipeVersionId (composite)
 
 **Signature:**
 

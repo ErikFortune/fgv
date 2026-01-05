@@ -58,7 +58,7 @@ Date of use in ISO 8601 format
 </td></tr>
 <tr><td>
 
-[modifiedVersionId?](./ts-chocolate.recipes.irecipeusage.modifiedversionid.md)
+[modifiedVersionSpec?](./ts-chocolate.recipes.irecipeusage.modifiedversionspec.md)
 
 
 </td><td>
@@ -68,7 +68,7 @@ Date of use in ISO 8601 format
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>
@@ -142,7 +142,7 @@ _(Optional)_ Optional scale factor for reference
 </td></tr>
 <tr><td>
 
-[versionId](./ts-chocolate.recipes.irecipeusage.versionid.md)
+[versionSpec](./ts-chocolate.recipes.irecipeusage.versionspec.md)
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Optional scale factor for reference
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>

@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { BaseRecipeId, RecipeName, RecipeVersionId } from '../common';
+import { BaseRecipeId, RecipeName, RecipeVersionSpec } from '../common';
 import { IRecipe, IRecipeUsage, IRecipeVersion } from './model';
 
 // ============================================================================
@@ -42,10 +42,10 @@ export class Recipe implements IRecipe {
   public readonly description?: string;
   public readonly tags?: ReadonlyArray<string>;
   public readonly versions: ReadonlyArray<IRecipeVersion>;
-  public readonly goldenVersionId: RecipeVersionId;
+  public readonly goldenVersionSpec: RecipeVersionSpec;
   public readonly usage: ReadonlyArray<IRecipeUsage>;
 
-  private readonly _goldenVersion: IRecipeVersion;
+  public readonly goldenVersion: IRecipeVersion;
 
   private constructor(data: IRecipe, goldenVersion: IRecipeVersion) {
     this.baseId = data.baseId;
@@ -53,9 +53,9 @@ export class Recipe implements IRecipe {
     this.description = data.description;
     this.tags = data.tags;
     this.versions = data.versions;
-    this.goldenVersionId = data.goldenVersionId;
+    this.goldenVersionSpec = data.goldenVersionSpec;
     this.usage = data.usage;
-    this._goldenVersion = goldenVersion;
+    this.goldenVersion = goldenVersion;
   }
 
   /**
@@ -64,30 +64,23 @@ export class Recipe implements IRecipe {
    * @returns Success with Recipe instance, or Failure if golden version not found
    */
   public static create(data: IRecipe): Result<Recipe> {
-    const goldenVersion = data.versions.find((v) => v.versionId === data.goldenVersionId);
+    const goldenVersion = data.versions.find((v) => v.versionSpec === data.goldenVersionSpec);
     /* c8 ignore next 3 - defensive: converter validates golden version exists before calling create */
     if (!goldenVersion) {
-      return Failure.with(`Golden version ${data.goldenVersionId} not found in recipe ${data.baseId}`);
+      return Failure.with(`Golden version ${data.goldenVersionSpec} not found in recipe ${data.baseId}`);
     }
     return Success.with(new Recipe(data, goldenVersion));
   }
 
   /**
-   * Gets the golden (approved default) version
-   */
-  public get goldenVersion(): IRecipeVersion {
-    return this._goldenVersion;
-  }
-
-  /**
-   * Gets a specific version by ID
-   * @param versionId - The version ID to find
+   * Gets a specific version by {@link RecipeVersionSpec | version specifier}
+   * @param versionSpec - The version specifier to find
    * @returns Success with version, or Failure if not found
    */
-  public getVersion(versionId: RecipeVersionId): Result<IRecipeVersion> {
-    const version = this.versions.find((v) => v.versionId === versionId);
+  public getVersion(versionSpec: RecipeVersionSpec): Result<IRecipeVersion> {
+    const version = this.versions.find((v) => v.versionSpec === versionSpec);
     if (!version) {
-      return Failure.with(`Version ${versionId} not found in recipe ${this.baseId}`);
+      return Failure.with(`Version ${versionSpec} not found in recipe ${this.baseId}`);
     }
     return Success.with(version);
   }

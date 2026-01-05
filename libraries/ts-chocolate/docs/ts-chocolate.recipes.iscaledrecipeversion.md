@@ -131,7 +131,7 @@ _(Optional)_ Optional notes from the source version
 
 </td><td>
 
-ReadonlyArray&lt;[IVersionRating](./ts-chocolate.recipes.iversionrating.md)<!-- -->&gt;
+ReadonlyArray&lt;[IRecipeRating](./ts-chocolate.recipes.ireciperating.md)<!-- -->&gt;
 
 
 </td><td>

@@ -19,72 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[createIngredientId(sourceId, baseId)](./ts-chocolate.validation.createingredientid.md)
-
-
-</td><td>
-
-Creates a composite IngredientId from source ID and base ID
-
-
-</td></tr>
-<tr><td>
-
-[createRecipeId(sourceId, baseId)](./ts-chocolate.validation.createrecipeid.md)
-
-
-</td><td>
-
-Creates a composite RecipeId from source ID and base ID
-
-
-</td></tr>
-<tr><td>
-
-[getIngredientBaseId(id)](./ts-chocolate.validation.getingredientbaseid.md)
-
-
-</td><td>
-
-Gets the base ID from a composite IngredientId
-
-
-</td></tr>
-<tr><td>
-
-[getIngredientSourceId(id)](./ts-chocolate.validation.getingredientsourceid.md)
-
-
-</td><td>
-
-Gets the source ID from a composite IngredientId
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeBaseId(id)](./ts-chocolate.validation.getrecipebaseid.md)
-
-
-</td><td>
-
-Gets the base ID from a composite RecipeId
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeSourceId(id)](./ts-chocolate.validation.getrecipesourceid.md)
-
-
-</td><td>
-
-Gets the source ID from a composite RecipeId
-
-
-</td></tr>
-<tr><td>
-
 [isValidBaseIngredientId(from)](./ts-chocolate.validation.isvalidbaseingredientid.md)
 
 
@@ -206,34 +140,23 @@ Type guard for RecipeVersionId
 </td></tr>
 <tr><td>
 
+[isValidRecipeVersionSpec(from)](./ts-chocolate.validation.isvalidrecipeversionspec.md)
+
+
+</td><td>
+
+Type guard for RecipeVersionSpec
+
+
+</td></tr>
+<tr><td>
+
 [isValidSourceId(from)](./ts-chocolate.validation.isvalidsourceid.md)
 
 
 </td><td>
 
 Type guard for SourceId
-
-
-</td></tr>
-<tr><td>
-
-[parseIngredientId(id)](./ts-chocolate.validation.parseingredientid.md)
-
-
-</td><td>
-
-Parses a composite IngredientId into source ID and base ID
-
-
-</td></tr>
-<tr><td>
-
-[parseRecipeId(id)](./ts-chocolate.validation.parserecipeid.md)
-
-
-</td><td>
-
-Parses a composite RecipeId into source ID and base ID
 
 
 </td></tr>
@@ -355,6 +278,17 @@ Converts unknown value to RecipeName
 </td><td>
 
 Converts unknown value to RecipeVersionId
+
+
+</td></tr>
+<tr><td>
+
+[toRecipeVersionSpec(from)](./ts-chocolate.validation.torecipeversionspec.md)
+
+
+</td><td>
+
+Converts unknown value to RecipeVersionSpec
 
 
 </td></tr>

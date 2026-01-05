@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, RecipeVersionId } from '../common';
+import { Grams, RecipeVersionSpec } from '../common';
 import {
   IRecipe,
   IRecipeVersion,
@@ -58,7 +58,7 @@ export interface IRecipeScaleOptions {
   /**
    * Recipe version to scale (default: golden version)
    */
-  readonly versionId?: RecipeVersionId;
+  readonly versionSpec?: RecipeVersionSpec;
 }
 
 // ============================================================================
@@ -114,10 +114,10 @@ export function scaleRecipe(
   }
 
   // Get the version to scale (default to golden version)
-  const versionId = options.versionId ?? recipe.goldenVersionId;
-  const version = recipe.versions.find((v) => v.versionId === versionId);
+  const versionSpec = options.versionSpec ?? recipe.goldenVersionSpec;
+  const version = recipe.versions.find((v) => v.versionSpec === versionSpec);
   if (!version) {
-    return Failure.with(`Version ${versionId} not found in recipe ${recipe.baseId}`);
+    return Failure.with(`Version ${versionSpec} not found in recipe ${recipe.baseId}`);
   }
 
   // Validate base weight
@@ -136,7 +136,7 @@ export function scaleRecipe(
   // Build scaling source metadata
   const scaledFrom: IScalingSource = {
     recipeId: recipe.baseId,
-    versionId,
+    versionSpec: versionSpec,
     scaleFactor,
     targetWeight
   };
@@ -171,10 +171,10 @@ export function scaleRecipeByFactor(
   }
 
   // Get the version to scale (default to golden version)
-  const versionId = options.versionId ?? recipe.goldenVersionId;
-  const version = recipe.versions.find((v) => v.versionId === versionId);
+  const versionSpec = options.versionSpec ?? recipe.goldenVersionSpec;
+  const version = recipe.versions.find((v) => v.versionSpec === versionSpec);
   if (!version) {
-    return Failure.with(`Version ${versionId} not found in recipe ${recipe.baseId}`);
+    return Failure.with(`Version ${versionSpec} not found in recipe ${recipe.baseId}`);
   }
 
   const targetWeight = (version.baseWeight * factor) as Grams;

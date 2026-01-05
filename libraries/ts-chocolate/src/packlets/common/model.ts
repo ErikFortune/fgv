@@ -82,9 +82,17 @@ export type RecipeId = Brand<string, 'RecipeId'>;
 export type RecipeName = Brand<string, 'RecipeName'>;
 
 /**
- * Unique identifier for a recipe version
+ * Specifier for a recipe version within a recipe
  * Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter
  * Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+ * @public
+ */
+export type RecipeVersionSpec = Brand<string, 'RecipeVersionSpec'>;
+
+/**
+ * Globally unique recipe version identifier (composite)
+ * Format: "recipeId\@versionSpec" where recipeId is "sourceId.baseRecipeId"
+ * Examples: "user.ganache\@2026-01-03-01", "felchlin.truffle\@2026-01-03-02-less-sugar"
  * @public
  */
 export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
@@ -331,8 +339,22 @@ export const BASE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+$/;
 export const COMPOSITE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
 
 /**
- * Pattern for valid recipe version IDs
+ * Pattern for valid recipe version specs
  * Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
  * @public
  */
-export const RECIPE_VERSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+export const RECIPE_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+
+/**
+ * Separator character used in recipe version IDs (between RecipeId and RecipeVersionSpec)
+ * @public
+ */
+export const VERSION_ID_SEPARATOR: string = '@';
+
+/**
+ * Pattern for valid recipe version IDs
+ * Format: recipeId\@versionSpec where recipeId is sourceId.baseRecipeId
+ * @public
+ */
+export const RECIPE_VERSION_ID_PATTERN: RegExp =
+  /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;

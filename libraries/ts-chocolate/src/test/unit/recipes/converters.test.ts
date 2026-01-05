@@ -84,12 +84,12 @@ describe('Recipe Converters', () => {
     test('converts valid recipe usage', () => {
       const input = {
         date: '2026-01-01',
-        versionId: '2026-01-01-01',
+        versionSpec: '2026-01-01-01',
         scaledWeight: 500
       };
       expect(recipeUsage.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.date).toBe('2026-01-01');
-        expect(result.versionId).toBe('2026-01-01-01');
+        expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.scaledWeight).toBe(500);
       });
     });
@@ -97,7 +97,7 @@ describe('Recipe Converters', () => {
     test('converts recipe usage with notes', () => {
       const input = {
         date: '2026-01-01',
-        versionId: '2026-01-01-01',
+        versionSpec: '2026-01-01-01',
         scaledWeight: 500,
         notes: 'Made for Valentine batch'
       };
@@ -114,7 +114,7 @@ describe('Recipe Converters', () => {
   describe('recipeVersion', () => {
     test('converts valid recipe version', () => {
       const input = {
-        versionId: '2026-01-01-01',
+        versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         ingredients: [
           { ingredientId: 'source.chocolate', amount: 100 },
@@ -123,7 +123,7 @@ describe('Recipe Converters', () => {
         baseWeight: 150
       };
       expect(recipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.versionId).toBe('2026-01-01-01');
+        expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.createdDate).toBe('2026-01-01');
         expect(result.ingredients.length).toBe(2);
         expect(result.baseWeight).toBe(150);
@@ -132,7 +132,7 @@ describe('Recipe Converters', () => {
 
     test('converts recipe version with optional fields', () => {
       const input = {
-        versionId: '2026-01-01-01',
+        versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         ingredients: [{ ingredientId: 'source.chocolate', amount: 100 }],
         baseWeight: 100,
@@ -152,7 +152,7 @@ describe('Recipe Converters', () => {
 
   describe('recipe', () => {
     const validVersion = {
-      versionId: '2026-01-01-01',
+      versionSpec: '2026-01-01-01',
       createdDate: '2026-01-01',
       ingredients: [{ ingredientId: 'source.chocolate', amount: 100 }],
       baseWeight: 100
@@ -163,13 +163,13 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         versions: [validVersion],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
       expect(recipe.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('test-recipe');
         expect(result.name).toBe('Test Recipe');
-        expect(result.goldenVersionId).toBe('2026-01-01-01');
+        expect(result.goldenVersionSpec).toBe('2026-01-01-01');
         expect(result.goldenVersion).toBe(result.versions[0]);
       });
     });
@@ -181,7 +181,7 @@ describe('Recipe Converters', () => {
         description: 'A test recipe',
         tags: ['dark', 'ganache'],
         versions: [validVersion],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
       expect(recipe.convert(input)).toSucceedAndSatisfy((result) => {
@@ -195,18 +195,18 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         versions: [],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
       expect(recipe.convert(input)).toFailWith(/Recipe must have at least one version/);
     });
 
-    test('fails for recipe with invalid goldenVersionId', () => {
+    test('fails for recipe with invalid goldenVersionSpec', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         versions: [validVersion],
-        goldenVersionId: '2026-12-31-99',
+        goldenVersionSpec: '2026-12-31-99',
         usage: []
       };
       expect(recipe.convert(input)).toFailWith(/Golden version.*not found/);
@@ -217,7 +217,7 @@ describe('Recipe Converters', () => {
         baseId: 'invalid.id',
         name: 'Test Recipe',
         versions: [validVersion],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
       expect(recipe.convert(input)).toFail();
@@ -228,7 +228,7 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: '',
         versions: [validVersion],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
       expect(recipe.convert(input)).toFail();
@@ -277,13 +277,13 @@ describe('Recipe Converters', () => {
     test('converts valid scaling source', () => {
       const input = {
         recipeId: 'test-recipe',
-        versionId: '2026-01-01-01',
+        versionSpec: '2026-01-01-01',
         scaleFactor: 2,
         targetWeight: 300
       };
       expect(scalingSource.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.recipeId).toBe('test-recipe');
-        expect(result.versionId).toBe('2026-01-01-01');
+        expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.scaleFactor).toBe(2);
         expect(result.targetWeight).toBe(300);
       });
@@ -292,7 +292,7 @@ describe('Recipe Converters', () => {
     test('fails for invalid recipe ID', () => {
       const input = {
         recipeId: 'invalid.id',
-        versionId: '2026-01-01-01',
+        versionSpec: '2026-01-01-01',
         scaleFactor: 2,
         targetWeight: 300
       };
@@ -302,7 +302,7 @@ describe('Recipe Converters', () => {
     test('fails for invalid version ID', () => {
       const input = {
         recipeId: 'test-recipe',
-        versionId: 'invalid',
+        versionSpec: 'invalid',
         scaleFactor: 2,
         targetWeight: 300
       };
@@ -317,7 +317,7 @@ describe('Recipe Converters', () => {
   describe('scaledRecipeVersion', () => {
     const validScalingSource = {
       recipeId: 'test-recipe',
-      versionId: '2026-01-01-01',
+      versionSpec: '2026-01-01-01',
       scaleFactor: 2,
       targetWeight: 300
     };
@@ -338,7 +338,7 @@ describe('Recipe Converters', () => {
       };
       expect(scaledRecipeVersion.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.scaledFrom.recipeId).toBe('test-recipe');
-        expect(result.scaledFrom.versionId).toBe('2026-01-01-01');
+        expect(result.scaledFrom.versionSpec).toBe('2026-01-01-01');
         expect(result.createdDate).toBe('2026-01-15');
         expect(result.ingredients.length).toBe(1);
         expect(result.baseWeight).toBe(300);
@@ -377,14 +377,14 @@ describe('Recipe Converters', () => {
 
   describe('Recipe class', () => {
     const version1 = {
-      versionId: '2026-01-01-01',
+      versionSpec: '2026-01-01-01',
       createdDate: '2026-01-01',
       ingredients: [{ ingredientId: 'source.chocolate', amount: 100 }],
       baseWeight: 100
     };
 
     const version2 = {
-      versionId: '2026-01-02-01',
+      versionSpec: '2026-01-02-01',
       createdDate: '2026-01-02',
       ingredients: [{ ingredientId: 'source.chocolate', amount: 150 }],
       baseWeight: 150
@@ -395,15 +395,17 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         versions: [version1, version2],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
 
       expect(recipe.convert(recipeData)).toSucceedAndSatisfy((result) => {
         expect(
-          result.getVersion('2026-01-02-01' as unknown as import('../../../packlets/common').RecipeVersionId)
+          result.getVersion(
+            '2026-01-02-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
+          )
         ).toSucceedAndSatisfy((v) => {
-          expect(v.versionId).toBe('2026-01-02-01');
+          expect(v.versionSpec).toBe('2026-01-02-01');
           expect(v.baseWeight).toBe(150);
         });
       });
@@ -414,13 +416,15 @@ describe('Recipe Converters', () => {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         versions: [version1],
-        goldenVersionId: '2026-01-01-01',
+        goldenVersionSpec: '2026-01-01-01',
         usage: []
       };
 
       expect(recipe.convert(recipeData)).toSucceedAndSatisfy((result) => {
         expect(
-          result.getVersion('2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionId)
+          result.getVersion(
+            '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionSpec
+          )
         ).toFailWith(/not found/);
       });
     });

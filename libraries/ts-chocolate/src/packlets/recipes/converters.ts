@@ -35,7 +35,7 @@ import {
   IScaledRecipeIngredient,
   IScaledRecipeVersion,
   IScalingSource,
-  IVersionRating,
+  IRecipeRating,
   RatingCategory
 } from './model';
 import { Recipe } from './recipe';
@@ -66,10 +66,10 @@ export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<
 export const ratingCategory: Converter<RatingCategory> = Converters.enumeratedValue(allRatingCategories);
 
 /**
- * Converter for IVersionRating
+ * Converter for {@link Recipes.IRecipeRating | IRecipeRating}
  * @public
  */
-export const versionRating: Converter<IVersionRating> = Converters.object<IVersionRating>({
+export const recipeRating: Converter<IRecipeRating> = Converters.object<IRecipeRating>({
   category: ratingCategory,
   score: CommonConverters.ratingScore,
   notes: Converters.string.optional()
@@ -85,11 +85,11 @@ export const versionRating: Converter<IVersionRating> = Converters.object<IVersi
  */
 export const recipeUsage: Converter<IRecipeUsage> = Converters.object<IRecipeUsage>({
   date: Converters.string, // ISO 8601 date string
-  versionId: CommonConverters.recipeVersionId,
+  versionSpec: CommonConverters.recipeVersionSpec,
   scaledWeight: CommonConverters.grams,
   scaleFactor: Converters.number.optional(),
   notes: Converters.string.optional(),
-  modifiedVersionId: CommonConverters.recipeVersionId.optional()
+  modifiedVersionSpec: CommonConverters.recipeVersionSpec.optional()
 });
 
 // ============================================================================
@@ -101,13 +101,13 @@ export const recipeUsage: Converter<IRecipeUsage> = Converters.object<IRecipeUsa
  * @public
  */
 export const recipeVersion: Converter<IRecipeVersion> = Converters.object<IRecipeVersion>({
-  versionId: CommonConverters.recipeVersionId,
+  versionSpec: CommonConverters.recipeVersionSpec,
   createdDate: Converters.string, // ISO 8601 date string
   ingredients: Converters.arrayOf(recipeIngredient),
   baseWeight: CommonConverters.grams,
   yield: Converters.string.optional(),
   notes: Converters.string.optional(),
-  ratings: Converters.arrayOf(versionRating).optional()
+  ratings: Converters.arrayOf(recipeRating).optional()
 });
 
 // ============================================================================
@@ -124,13 +124,13 @@ export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
   description: Converters.string.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   versions: Converters.arrayOf(recipeVersion),
-  goldenVersionId: CommonConverters.recipeVersionId,
+  goldenVersionSpec: CommonConverters.recipeVersionSpec,
   usage: Converters.arrayOf(recipeUsage)
 });
 
 /**
  * Converter for Recipe
- * Validates that goldenVersionId exists in versions and creates Recipe instance
+ * Validates that goldenVersionSpec exists in versions and creates Recipe instance
  * @public
  */
 export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unknown): Result<Recipe> => {
@@ -139,11 +139,11 @@ export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unkno
       return Failure.with('Recipe must have at least one version');
     }
 
-    // Validate that goldenVersionId exists in versions
-    const goldenExists = data.versions.some((v) => v.versionId === data.goldenVersionId);
+    // Validate that goldenVersionSpec exists in versions
+    const goldenExists = data.versions.some((v) => v.versionSpec === data.goldenVersionSpec);
     if (!goldenExists) {
       return Failure.with(
-        `Golden version ${data.goldenVersionId} not found in versions for recipe ${data.baseId}`
+        `Golden version ${data.goldenVersionSpec} not found in versions for recipe ${data.baseId}`
       );
     }
 
@@ -179,7 +179,7 @@ export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
  */
 export const scalingSource: Converter<IScalingSource> = Converters.object<IScalingSource>({
   recipeId: CommonConverters.baseRecipeId,
-  versionId: CommonConverters.recipeVersionId,
+  versionSpec: CommonConverters.recipeVersionSpec,
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.grams
 });
@@ -199,7 +199,7 @@ export const scaledRecipeVersion: Converter<IScaledRecipeVersion> = Converters.o
   baseWeight: CommonConverters.grams,
   yield: Converters.string.optional(),
   notes: Converters.string.optional(),
-  ratings: Converters.arrayOf(versionRating).optional()
+  ratings: Converters.arrayOf(recipeRating).optional()
 });
 
 // ============================================================================

@@ -4,10 +4,8 @@
 
 ## Recipes.Recipe.goldenVersion property
 
-Gets the golden (approved default) version
-
 **Signature:**
 
 ```typescript
-get goldenVersion(): IRecipeVersion;
+readonly goldenVersion: IRecipeVersion;
 ```

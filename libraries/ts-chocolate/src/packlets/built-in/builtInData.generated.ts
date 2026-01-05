@@ -742,11 +742,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.',
       tags: ['classic', 'dark', 'truffle', 'bonbon'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {
@@ -776,11 +776,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.',
       tags: ['classic', 'milk', 'truffle', 'bonbon'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {
@@ -809,11 +809,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.',
       tags: ['classic', 'white', 'truffle', 'bonbon'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {
@@ -842,11 +842,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.',
       tags: ['vegan', 'dairy-free', 'dark', 'coconut'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {
@@ -871,11 +871,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.',
       tags: ['vegan', 'dairy-free', 'dark', 'neutral'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {
@@ -905,11 +905,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       description:
         'Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.',
       tags: ['caramelized', 'blonde', 'truffle', 'bonbon', 'salted-caramel'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {
@@ -937,11 +937,11 @@ export const recipeCollections: Record<string, JsonObject> = {
       name: 'Basic Gianduja',
       description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
       tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
-      goldenVersionId: '2026-01-01-01',
+      goldenVersionSpec: '2026-01-01-01',
       usage: [],
       versions: [
         {
-          versionId: '2026-01-01-01',
+          versionSpec: '2026-01-01-01',
           createdDate: '2026-01-01',
           ingredients: [
             {

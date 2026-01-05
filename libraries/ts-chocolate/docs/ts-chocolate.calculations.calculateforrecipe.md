@@ -9,7 +9,7 @@ Resolves and calculates characteristics for a complete recipe
 **Signature:**
 
 ```typescript
-export declare function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionId?: RecipeVersionId): Result<IGanacheAnalysis>;
+export declare function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionSpec?: RecipeVersionSpec): Result<IGanacheAnalysis>;
 ```
 
 ## Parameters
@@ -64,12 +64,12 @@ Function to resolve ingredient IDs to full data
 </td></tr>
 <tr><td>
 
-versionId
+versionSpec
 
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
 
 
 </td><td>

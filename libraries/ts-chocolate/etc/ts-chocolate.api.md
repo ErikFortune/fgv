@@ -7,6 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
+import { Converters as Converters_5 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
@@ -55,7 +56,19 @@ const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
 export const allWeightUnits: WeightUnit[];
 
 // @public
+function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
+
+// @public
 type AnyRecipeVersion = IRecipeVersion | IScaledRecipeVersion;
+
+// @public
+type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient;
+
+// @public
+function atLeast<T>(min: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
+
+// @public
+function atMost<T>(max: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
 export const BASE_ID_PATTERN: RegExp;
@@ -103,7 +116,7 @@ export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Tri
 function calculateBaseWeight(version: IRecipeVersion): Grams;
 
 // @public
-function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionId?: RecipeVersionId): Result<IGanacheAnalysis>;
+function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionSpec?: RecipeVersionSpec): Result<IGanacheAnalysis>;
 
 // @public
 function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIngredient>): IGanacheAnalysis;
@@ -112,7 +125,7 @@ function calculateFromIngredients(resolvedIngredients: ReadonlyArray<IResolvedIn
 function calculateFromRecipeIngredients(recipeIngredients: ReadonlyArray<IRecipeIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 
 // @public
-function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
+function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
 
 declare namespace Calculations {
     export {
@@ -156,8 +169,8 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 
 // @public
 class ChocolateLibrary {
-    calculateGanache(id: RecipeId, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
-    calculateGanacheForRecipe(recipe: IRecipe, versionId?: RecipeVersionId): Result<IGanacheCalculation>;
+    calculateGanache(id: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
+    calculateGanacheForRecipe(recipe: IRecipe, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary>;
     createIngredientResolver(): IngredientResolver;
     getIngredient(id: IngredientId): Result<Ingredient>;
@@ -184,6 +197,12 @@ const chocolateVariety: Converter<CacaoVariety>;
 //
 // @public
 function collection<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: ICollectionConverterParams<TCOLLECTIONID, TITEMID, TITEM>): Converter<ICollection<TITEM, TCOLLECTIONID, TITEMID>>;
+
+// @public
+function collectionContains<T, V>(value: V, getter: (item: T) => ReadonlyArray<V> | undefined): FilterPredicate<T>;
+
+// @public
+function collectionContainsAny<T, V>(values: V[], getter: (item: T) => ReadonlyArray<V> | undefined): FilterPredicate<T>;
 
 // @public
 class CollectionFilter<T extends string> {
@@ -214,7 +233,13 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 }
 
 // @public
+type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
+
+// @public
 export const COMPOSITE_ID_PATTERN: RegExp;
+
+// @public
+function containsIgnoreCase<T>(text: string, getter: (item: T) => string | undefined): FilterPredicate<T>;
 
 declare namespace Converters {
     export {
@@ -223,8 +248,15 @@ declare namespace Converters {
         baseRecipeId,
         ingredientId,
         recipeId,
+        ParsedIngredientId,
+        parsedIngredientId,
+        ParsedRecipeId,
+        parsedRecipeId,
         recipeName,
+        recipeVersionSpec,
         recipeVersionId,
+        ParsedRecipeVersionId,
+        parsedRecipeVersionId,
         grams,
         percentage,
         celsius,
@@ -269,7 +301,7 @@ declare namespace Converters_4 {
     export {
         recipeIngredient,
         ratingCategory,
-        versionRating,
+        recipeRating,
         recipeUsage,
         recipeVersion,
         recipeData,
@@ -291,6 +323,12 @@ function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): Ingre
 function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): RecipeId;
 
 // @public
+function createRecipeVersionId(recipeId: RecipeId, versionSpec: RecipeVersionSpec): RecipeVersionId;
+
+// @internal
+function createRuntimeUsages(recipe: RuntimeRecipe): RuntimeUsage[];
+
+// @public
 const dairyIngredient: Converter<IDairyIngredient>;
 
 // @public
@@ -300,10 +338,16 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 const degreesMacMichael: Converter<DegreesMacMichael>;
 
 // @public
+function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
+
+// @public
 const fatIngredient: Converter<IFatIngredient>;
 
 // @public
 type FilterPattern = string | RegExp;
+
+// @public
+type FilterPredicate<T> = (item: T) => boolean;
 
 // @public
 export type FluidityStars = 1 | 2 | 3 | 4 | 5;
@@ -336,7 +380,16 @@ function getRecipesDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFile
 function getRecipeSourceId(id: RecipeId): SourceId;
 
 // @public
+function getRecipeVersionRecipeId(id: RecipeVersionId): RecipeId;
+
+// @public
+function getRecipeVersionSpec(id: RecipeVersionId): RecipeVersionSpec;
+
+// @public
 function getSubLibraryPath(subLibraryId: SubLibraryId): string;
+
+// @internal
+function getUsagesSortedByDate(recipe: RuntimeRecipe): RuntimeUsage[];
 
 // @public
 export type Grams = Brand<number, 'Grams'>;
@@ -345,10 +398,42 @@ export type Grams = Brand<number, 'Grams'>;
 const grams: Converter<Grams>;
 
 // @public
+function hasAllTags<T>(tags: string[], getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
+
+// @public
+function hasAnyTag<T>(tags: string[], getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
+
+// @public
+function hasTag<T>(tag: string, getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
+
+declare namespace Helpers {
+    export {
+        createIngredientId,
+        parseIngredientId,
+        getIngredientSourceId,
+        getIngredientBaseId,
+        createRecipeId,
+        parseRecipeId,
+        getRecipeSourceId,
+        getRecipeBaseId,
+        createRecipeVersionId,
+        parseRecipeVersionId,
+        getRecipeVersionRecipeId,
+        getRecipeVersionSpec
+    }
+}
+export { Helpers }
+
+// @public
 interface IAlcoholIngredient extends IIngredient {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
     readonly flavorProfile?: string;
+}
+
+// @public
+interface ICategoryFilter {
+    readonly category: IngredientCategory | RegExp;
 }
 
 // @public
@@ -512,16 +597,45 @@ interface IIngredient {
     readonly vegan?: boolean;
 }
 
+// @internal
+interface IIngredientContext {
+    // (undocumented)
+    getRecipeIdsUsingIngredient(id: IngredientId): Result<ReadonlySet<RecipeId>>;
+    // (undocumented)
+    getRecipeIdsWithAlternateIngredient(id: IngredientId): Result<ReadonlySet<RecipeId>>;
+    // (undocumented)
+    getRecipeIdsWithPrimaryIngredient(id: IngredientId): Result<ReadonlySet<RecipeId>>;
+}
+
 // @public
 type IIngredientFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IIngredientResolutionResult<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+    readonly error?: string;
+    readonly ingredient?: TIngredient;
+    readonly status: ResolutionStatus;
+}
 
 // @public
 type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 
 // @public
+interface IIngredientUsageInfo {
+    readonly isPrimary: boolean;
+    readonly recipeId: RecipeId;
+}
+
+// @public
 interface IInstantiatedLibrarySource {
     readonly ingredients?: IngredientsLibrary;
     readonly recipes?: RecipesLibrary;
+}
+
+// @public
+interface IIterationOptions {
+    readonly limit?: number;
+    readonly offset?: number;
 }
 
 // @public
@@ -579,10 +693,53 @@ const ingredientCollections: Record<string, JsonObject>;
 type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
 
 // @public
+type IngredientFilter = FilterPredicate<AnyRuntimeIngredient>;
+
+// @public
 export type IngredientId = Brand<string, 'IngredientId'>;
 
 // @public
 const ingredientId: Converter<IngredientId>;
+
+// @public
+class IngredientQuery {
+    constructor(context: RuntimeContext);
+    alcohol(): IngredientQuery;
+    byManufacturer(manufacturer: string): IngredientQuery;
+    cacaoRange(min: Percentage, max: Percentage): IngredientQuery;
+    category(category: IngredientCategory): IngredientQuery;
+    chocolate(): IngredientQuery;
+    chocolateType(type: ChocolateType): IngredientQuery;
+    count(): number;
+    dairy(): IngredientQuery;
+    descriptionContains(text: string): IngredientQuery;
+    execute(): ReadonlyArray<AnyRuntimeIngredient>;
+    exists(): boolean;
+    fat(): IngredientQuery;
+    fatRange(min: Percentage, max: Percentage): IngredientQuery;
+    first(): AnyRuntimeIngredient | undefined;
+    forApplication(application: ChocolateApplication): IngredientQuery;
+    fromSource(sourceId: SourceId): IngredientQuery;
+    maxCacao(percentage: Percentage): IngredientQuery;
+    maxFat(max: Percentage): IngredientQuery;
+    maxWater(max: Percentage): IngredientQuery;
+    minCacao(percentage: Percentage): IngredientQuery;
+    minFat(min: Percentage): IngredientQuery;
+    minWater(min: Percentage): IngredientQuery;
+    nameContains(text: string): IngredientQuery;
+    sugar(): IngredientQuery;
+    unused(): IngredientQuery;
+    usedInAtLeast(count: number): IngredientQuery;
+    usedInRecipes(): IngredientQuery;
+    vegan(): IngredientQuery;
+    where(predicate: IngredientFilter): IngredientQuery;
+    withAllTags(tags: string[]): IngredientQuery;
+    withAnyTag(tags: string[]): IngredientQuery;
+    withCertification(certification: Certification): IngredientQuery;
+    withoutAllergen(allergen: Allergen): IngredientQuery;
+    withoutAllergens(allergens: Allergen[]): IngredientQuery;
+    withTag(tag: string): IngredientQuery;
+}
 
 // @public
 type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
@@ -631,10 +788,26 @@ interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
 }
 
 // @public
+function inRange<T>(min: number | undefined, max: number | undefined, getter: (item: T) => number | undefined): FilterPredicate<T>;
+
+// @public
+interface INumericRange {
+    readonly max?: number;
+    readonly min?: number;
+}
+
+// @public
+interface IQueryResult<T> {
+    readonly hasMore: boolean;
+    readonly items: ReadonlyArray<T>;
+    readonly totalCount: number;
+}
+
+// @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
     readonly description?: string;
-    readonly goldenVersionId: RecipeVersionId;
+    readonly goldenVersionSpec: RecipeVersionSpec;
     readonly name: RecipeName;
     readonly tags?: ReadonlyArray<string>;
     readonly usage: ReadonlyArray<IRecipeUsage>;
@@ -653,10 +826,17 @@ interface IRecipeIngredient {
 }
 
 // @public
+interface IRecipeRating {
+    readonly category: RatingCategory;
+    readonly notes?: string;
+    readonly score: RatingScore;
+}
+
+// @public
 interface IRecipeScaleOptions {
     readonly minimumAmount?: Grams;
     readonly precision?: number;
-    readonly versionId?: RecipeVersionId;
+    readonly versionSpec?: RecipeVersionSpec;
 }
 
 // @public
@@ -665,11 +845,11 @@ type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionE
 // @public
 interface IRecipeUsage {
     readonly date: string;
-    readonly modifiedVersionId?: RecipeVersionId;
+    readonly modifiedVersionSpec?: RecipeVersionSpec;
     readonly notes?: string;
     readonly scaledWeight: Grams;
     readonly scaleFactor?: number;
-    readonly versionId: RecipeVersionId;
+    readonly versionSpec: RecipeVersionSpec;
 }
 
 // @public
@@ -678,8 +858,8 @@ interface IRecipeVersion {
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IRecipeIngredient>;
     readonly notes?: string;
-    readonly ratings?: ReadonlyArray<IVersionRating>;
-    readonly versionId: RecipeVersionId;
+    readonly ratings?: ReadonlyArray<IRecipeRating>;
+    readonly versionSpec: RecipeVersionSpec;
     readonly yield?: string;
 }
 
@@ -692,10 +872,214 @@ interface IResolvedIngredient {
 }
 
 // @public
+interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+    readonly alternates: ReadonlyArray<TIngredient>;
+    readonly amount: Grams;
+    readonly ingredient: TIngredient;
+    readonly notes?: string;
+    readonly raw: IRecipeIngredient;
+}
+
+// @public
+interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+    readonly alternates: ReadonlyArray<TIngredient>;
+    readonly amount: Grams;
+    readonly ingredient: TIngredient;
+    readonly notes?: string;
+    readonly originalAmount: Grams;
+    readonly raw: IScaledRecipeIngredient;
+    readonly scaleFactor: number;
+}
+
+// @public
 interface IResolvedSubLibrarySource {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly loadParams: ILoadCollectionFromFileTreeParams<string>;
     readonly subLibraryId: SubLibraryId;
+}
+
+// @public
+interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
+    readonly alcoholByVolume?: Percentage;
+    readonly category: 'alcohol';
+    readonly flavorProfile?: string;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly raw: IAlcoholIngredient;
+}
+
+// @public
+interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
+    readonly applications?: ReadonlyArray<ChocolateApplication>;
+    readonly beanVarieties?: ReadonlyArray<CacaoVariety>;
+    readonly cacaoPercentage: Percentage;
+    readonly category: 'chocolate';
+    readonly chocolateType: ChocolateType;
+    readonly fluidityStars?: FluidityStars;
+    readonly origins?: ReadonlyArray<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly raw: IChocolateIngredient;
+    readonly temperatureCurve?: ITemperatureCurve;
+    readonly viscosityMcM?: DegreesMacMichael;
+}
+
+// @public
+interface IRuntimeContext {
+    readonly cachedIngredientCount: number;
+    readonly cachedRecipeCount: number;
+    calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
+    calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
+    clearCache(): void;
+    findIngredientsByTag(tag: string): Result<IRuntimeIngredient[]>;
+    findRecipesByChocolateType(type: ChocolateType): IRuntimeRecipe[];
+    findRecipesByTag(tag: string): Result<IRuntimeRecipe[]>;
+    findRecipesUsingIngredient(ingredientId: IngredientId): Result<IRuntimeRecipe[]>;
+    getAllIngredients(): IRuntimeIngredient[];
+    getAllIngredientTags(): ReadonlyArray<string>;
+    getAllRecipes(): IRuntimeRecipe[];
+    getAllRecipeTags(): ReadonlyArray<string>;
+    getIngredient(id: IngredientId): Result<IRuntimeIngredient>;
+    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
+    getRecipeIdsUsingIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
+    getRecipeIdsWithAlternateIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
+    getRecipeIdsWithPrimaryIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
+    hasIngredient(id: IngredientId): boolean;
+    hasRecipe(id: RecipeId): boolean;
+    ingredients(): IterableIterator<IRuntimeIngredient>;
+    readonly library: ChocolateLibrary;
+    recipes(): IterableIterator<IRuntimeRecipe>;
+    scaleRecipe(recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    warmUp(): void;
+}
+
+// @public
+interface IRuntimeContextCreateParams {
+    readonly libraryParams?: IChocolateLibraryParams;
+    readonly preWarm?: boolean;
+}
+
+// @public
+interface IRuntimeDairyIngredient extends IRuntimeIngredient {
+    readonly category: 'dairy';
+    readonly fatContent?: Percentage;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly raw: IDairyIngredient;
+    readonly waterContent?: Percentage;
+}
+
+// @public
+interface IRuntimeFatIngredient extends IRuntimeIngredient {
+    readonly category: 'fat';
+    readonly meltingPoint?: Celsius;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly raw: IFatIngredient;
+}
+
+// @public
+interface IRuntimeIngredient {
+    readonly allergens?: ReadonlyArray<Allergen>;
+    readonly alternateInRecipeIds: ReadonlySet<RecipeId>;
+    readonly baseId: BaseIngredientId;
+    readonly category: IngredientCategory;
+    readonly certifications?: ReadonlyArray<Certification>;
+    readonly description?: string;
+    readonly ganacheCharacteristics: IGanacheCharacteristics;
+    readonly id: IngredientId;
+    isAlcohol(): this is IRuntimeAlcoholIngredient;
+    isChocolate(): this is IRuntimeChocolateIngredient;
+    isDairy(): this is IRuntimeDairyIngredient;
+    isFat(): this is IRuntimeFatIngredient;
+    isSugar(): this is IRuntimeSugarIngredient;
+    readonly manufacturer?: string;
+    readonly name: string;
+    readonly primaryInRecipeIds: ReadonlySet<RecipeId>;
+    readonly raw: Ingredient;
+    readonly sourceId: SourceId;
+    readonly tags?: ReadonlyArray<string>;
+    readonly traceAllergens?: ReadonlyArray<Allergen>;
+    readonly usedByRecipeIds: ReadonlySet<RecipeId>;
+    readonly vegan?: boolean;
+}
+
+// @public
+interface IRuntimeRecipe {
+    readonly allIngredientIds: ReadonlySet<IngredientId>;
+    readonly baseId: BaseRecipeId;
+    calculateGanache(): Result<IGanacheCalculation>;
+    calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
+    readonly description?: string;
+    getVersion(versionSpec: RecipeVersionSpec): Result<IRuntimeRecipeVersion>;
+    readonly goldenVersion: IRuntimeRecipeVersion;
+    readonly goldenVersionSpec: RecipeVersionSpec;
+    readonly hasBeenUsed: boolean;
+    readonly id: RecipeId;
+    readonly ingredients: ReadonlyArray<IResolvedRecipeIngredient<IRuntimeIngredient>>;
+    readonly latestUsage: IRecipeUsage | undefined;
+    readonly latestVersion: IRuntimeRecipeVersion;
+    readonly name: RecipeName;
+    readonly raw: IRecipe;
+    scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<IRuntimeScaledRecipeVersion>;
+    readonly sourceId: SourceId;
+    readonly tags?: ReadonlyArray<string>;
+    readonly usage: ReadonlyArray<IRecipeUsage>;
+    readonly usageCount: number;
+    usesIngredient(ingredientId: IngredientId): boolean;
+    readonly versionCount: number;
+    readonly versions: ReadonlyArray<IRuntimeRecipeVersion>;
+}
+
+// @public
+interface IRuntimeRecipeVersion {
+    readonly baseWeight: Grams;
+    calculateGanache(): Result<IGanacheCalculation>;
+    readonly createdDate: string;
+    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedRecipeIngredient<IRuntimeIngredient>>>;
+    readonly notes?: string;
+    readonly ratings: ReadonlyArray<IRecipeRating>;
+    readonly raw: IRecipeVersion;
+    readonly recipe: IRuntimeRecipe;
+    readonly recipeId: RecipeId;
+    readonly versionSpec: RecipeVersionSpec;
+    readonly yield?: string;
+}
+
+// @public
+interface IRuntimeScaledRecipeVersion {
+    readonly baseWeight: Grams;
+    calculateGanache(): Result<IGanacheCalculation>;
+    readonly createdDate: string;
+    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
+    readonly notes?: string;
+    readonly ratings: ReadonlyArray<IRecipeRating>;
+    readonly raw: IScaledRecipeVersion;
+    readonly scaledFrom: IScalingSource;
+    readonly scaleFactor: number;
+    readonly sourceRecipeId: BaseRecipeId;
+    readonly sourceVersionSpec: RecipeVersionSpec;
+    readonly targetWeight: Grams;
+    readonly weightDifference: Grams;
+    readonly yield?: string;
+}
+
+// @public
+interface IRuntimeSugarIngredient extends IRuntimeIngredient {
+    readonly category: 'sugar';
+    readonly hydrationNumber?: number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly raw: ISugarIngredient;
+    readonly sweetnessPotency?: number;
 }
 
 // @public
@@ -713,7 +1097,7 @@ interface IScaledRecipeVersion {
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
     readonly notes?: string;
-    readonly ratings?: ReadonlyArray<IVersionRating>;
+    readonly ratings?: ReadonlyArray<IRecipeRating>;
     readonly scaledFrom: IScalingSource;
     readonly yield?: string;
 }
@@ -723,7 +1107,7 @@ interface IScalingSource {
     readonly recipeId: BaseRecipeId;
     readonly scaleFactor: number;
     readonly targetWeight: Grams;
-    readonly versionId: RecipeVersionId;
+    readonly versionSpec: RecipeVersionSpec;
 }
 
 // @public
@@ -805,6 +1189,9 @@ function isValidRecipeName(from: unknown): from is RecipeName;
 function isValidRecipeVersionId(from: unknown): from is RecipeVersionId;
 
 // @public
+function isValidRecipeVersionSpec(from: unknown): from is RecipeVersionSpec;
+
+// @public
 function isValidSourceId(from: unknown): from is SourceId;
 
 // @public
@@ -812,13 +1199,6 @@ interface ITemperatureCurve {
     readonly cool: Celsius;
     readonly melt: Celsius;
     readonly working: Celsius;
-}
-
-// @public
-interface IVersionRating {
-    readonly category: RatingCategory;
-    readonly notes?: string;
-    readonly score: RatingScore;
 }
 
 declare namespace LibraryData {
@@ -905,10 +1285,40 @@ function normalizeFileSources<T extends {
 function normalizeMergeSource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): INormalizedMergeSource<TLibrary, TCollectionId>;
 
 // @public
-function parseIngredientId(id: IngredientId): Result<[SourceId, BaseIngredientId]>;
+function notFilter<T>(filter: FilterPredicate<T>): FilterPredicate<T>;
 
 // @public
-function parseRecipeId(id: RecipeId): Result<[SourceId, BaseRecipeId]>;
+function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPredicate<T>;
+
+// @public
+function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
+
+// @public
+type ParsedIngredientId = Converters_5.ICompositeId<SourceId, BaseIngredientId>;
+
+// @public
+const parsedIngredientId: Converter<ParsedIngredientId>;
+
+// @public
+type ParsedRecipeId = Converters_5.ICompositeId<SourceId, BaseRecipeId>;
+
+// @public
+const parsedRecipeId: Converter<ParsedRecipeId>;
+
+// @public
+type ParsedRecipeVersionId = Converters_5.ICompositeId<RecipeId, RecipeVersionSpec>;
+
+// @public
+const parsedRecipeVersionId: Converter<ParsedRecipeVersionId>;
+
+// @public
+function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
+
+// @public
+function parseRecipeId(id: RecipeId): Result<ParsedRecipeId>;
+
+// @public
+function parseRecipeVersionId(id: RecipeVersionId): Result<ParsedRecipeVersionId>;
 
 // @public
 export type Percentage = Brand<number, 'Percentage'>;
@@ -938,10 +1348,11 @@ class Recipe implements IRecipe {
     static create(data: IRecipe): Result<Recipe>;
     // (undocumented)
     readonly description?: string;
-    getVersion(versionId: RecipeVersionId): Result<IRecipeVersion>;
-    get goldenVersion(): IRecipeVersion;
+    getVersion(versionSpec: RecipeVersionSpec): Result<IRecipeVersion>;
     // (undocumented)
-    readonly goldenVersionId: RecipeVersionId;
+    readonly goldenVersion: IRecipeVersion;
+    // (undocumented)
+    readonly goldenVersionSpec: RecipeVersionSpec;
     // (undocumented)
     readonly name: RecipeName;
     // (undocumented)
@@ -957,6 +1368,9 @@ const recipe: Converter<Recipe>;
 
 // @public
 export const RECIPE_VERSION_ID_PATTERN: RegExp;
+
+// @public
+export const RECIPE_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
 type RecipeCollection = SubLibraryCollection<BaseRecipeId, Recipe>;
@@ -980,6 +1394,9 @@ const recipeConverter: Converter<Recipe>;
 const recipeData: Converter<IRecipe>;
 
 // @public
+type RecipeFilter = FilterPredicate<RuntimeRecipe>;
+
+// @public
 export type RecipeId = Brand<string, 'RecipeId'>;
 
 // @public
@@ -989,10 +1406,53 @@ const recipeId: Converter<RecipeId>;
 const recipeIngredient: Converter<IRecipeIngredient>;
 
 // @public
+type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
+
+// @public
 export type RecipeName = Brand<string, 'RecipeName'>;
 
 // @public
 const recipeName: Converter<RecipeName>;
+
+// @public
+class RecipeQuery {
+    constructor(context: RuntimeContext);
+    count(): number;
+    descriptionContains(text: string): RecipeQuery;
+    everUsed(): RecipeQuery;
+    execute(): ReadonlyArray<RuntimeRecipe>;
+    exists(): boolean;
+    first(): RuntimeRecipe | undefined;
+    fromSource(sourceId: SourceId): RecipeQuery;
+    ganacheFatContent(min: Percentage, max?: Percentage): RecipeQuery;
+    ganacheWithWarnings(): RecipeQuery;
+    hasMultipleVersions(): RecipeQuery;
+    minVersions(count: number): RecipeQuery;
+    nameContains(text: string): RecipeQuery;
+    neverUsed(): RecipeQuery;
+    usedAfter(date: string): RecipeQuery;
+    usedAtLeast(count: number): RecipeQuery;
+    usedBetween(startDate: string, endDate: string): RecipeQuery;
+    validGanache(): RecipeQuery;
+    where(predicate: RecipeFilter): RecipeQuery;
+    withAllIngredients(ingredientIds: IngredientId[]): RecipeQuery;
+    withAllTags(tags: string[]): RecipeQuery;
+    withAnyIngredient(ingredientIds: IngredientId[]): RecipeQuery;
+    withAnyTag(tags: string[]): RecipeQuery;
+    withChocolateType(type: ChocolateType): RecipeQuery;
+    withDarkChocolate(): RecipeQuery;
+    withIngredient(ingredientId: IngredientId): RecipeQuery;
+    withMilkChocolate(): RecipeQuery;
+    withoutIngredient(ingredientId: IngredientId): RecipeQuery;
+    withRubyChocolate(): RecipeQuery;
+    withTag(tag: string): RecipeQuery;
+    withWhiteChocolate(): RecipeQuery;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeRating: Converter<IRecipeRating>;
 
 declare namespace Recipes {
     export {
@@ -1002,7 +1462,7 @@ declare namespace Recipes {
         IRecipeIngredient,
         RatingCategory,
         allRatingCategories,
-        IVersionRating,
+        IRecipeRating,
         IRecipeUsage,
         IRecipeVersion,
         IRecipe,
@@ -1049,10 +1509,19 @@ export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
 const recipeVersionId: Converter<RecipeVersionId>;
 
 // @public
+export type RecipeVersionSpec = Brand<string, 'RecipeVersionSpec'>;
+
+// @public
+const recipeVersionSpec: Converter<RecipeVersionSpec>;
+
+// @public
 function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
 
 // @public
 const removeJsonExtension: Converter<string>;
+
+// @public
+type ResolutionStatus = 'resolved' | 'missing' | 'error';
 
 // @public
 function resolveBuiltInSpec<TCollectionId extends string = string>(spec: FullLibraryLoadSpec | undefined, subLibraryId: SubLibraryId): LibraryLoadSpec<TCollectionId>;
@@ -1068,12 +1537,357 @@ function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubL
 
 declare namespace Runtime {
     export {
+        RuntimeReverseIndex,
+        RuntimeContext,
+        IRuntimeContextCreateParams,
+        RuntimeContextValidator,
+        RuntimeIngredientBase,
+        IIngredientContext,
+        RuntimeChocolateIngredient,
+        RuntimeDairyIngredient,
+        RuntimeSugarIngredient,
+        RuntimeFatIngredient,
+        RuntimeAlcoholIngredient,
+        RuntimeIngredient,
+        AnyRuntimeIngredient,
+        RuntimeRecipe,
+        RuntimeVersion,
+        RuntimeUsage,
+        createRuntimeUsages,
+        getUsagesSortedByDate,
+        RuntimeScaledVersion,
         IInstantiatedLibrarySource,
         IChocolateLibraryParams,
-        ChocolateLibrary
+        ChocolateLibrary,
+        IRuntimeIngredient,
+        IRuntimeChocolateIngredient,
+        IRuntimeDairyIngredient,
+        IRuntimeSugarIngredient,
+        IRuntimeFatIngredient,
+        IRuntimeAlcoholIngredient,
+        ICategoryFilter,
+        RecipeIngredientsFilter,
+        IRuntimeRecipeVersion,
+        IRuntimeScaledRecipeVersion,
+        IRuntimeRecipe,
+        IResolvedRecipeIngredient,
+        IResolvedScaledIngredient,
+        ResolutionStatus,
+        IIngredientResolutionResult,
+        IQueryResult,
+        ComparisonOperator,
+        INumericRange,
+        IIterationOptions,
+        IIngredientUsageInfo,
+        IRuntimeContext,
+        andFilters,
+        orFilters,
+        notFilter,
+        containsIgnoreCase,
+        hasTag,
+        hasAnyTag,
+        hasAllTags,
+        inRange,
+        atLeast,
+        atMost,
+        collectionContains,
+        collectionContainsAny,
+        equals,
+        oneOf,
+        FilterPredicate,
+        IngredientFilter,
+        RecipeFilter,
+        IngredientQuery,
+        RecipeQuery
     }
 }
 export { Runtime }
+
+// @public
+class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntimeAlcoholIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredient);
+    get alcoholByVolume(): Percentage | undefined;
+    get category(): 'alcohol';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IAlcoholIngredient): Result<RuntimeAlcoholIngredient>;
+    get flavorProfile(): string | undefined;
+    get raw(): IAlcoholIngredient;
+}
+
+// @public
+class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRuntimeChocolateIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredient);
+    get applications(): ReadonlyArray<ChocolateApplication> | undefined;
+    get beanVarieties(): ReadonlyArray<CacaoVariety> | undefined;
+    get cacaoPercentage(): Percentage;
+    get category(): 'chocolate';
+    get chocolateType(): ChocolateType;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredient): Result<RuntimeChocolateIngredient>;
+    get fluidityStars(): FluidityStars | undefined;
+    get origins(): ReadonlyArray<string> | undefined;
+    get raw(): IChocolateIngredient;
+    get temperatureCurve(): ITemperatureCurve | undefined;
+    get viscosityMcM(): DegreesMacMichael | undefined;
+}
+
+// @public
+class RuntimeContext {
+    get cachedIngredientCount(): number;
+    get cachedRecipeCount(): number;
+    calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
+    calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
+    clearCache(): void;
+    static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
+    findIngredientsByTag(tag: string): Result<AnyRuntimeIngredient[]>;
+    findRecipesByChocolateType(type: ChocolateType): RuntimeRecipe[];
+    findRecipesByTag(tag: string): Result<RuntimeRecipe[]>;
+    findRecipesUsingIngredient(ingredientId: IngredientId): Result<RuntimeRecipe[]>;
+    static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
+    getAllIngredients(): AnyRuntimeIngredient[];
+    getAllIngredientTags(): ReadonlyArray<string>;
+    getAllRecipes(): RuntimeRecipe[];
+    getAllRecipeTags(): ReadonlyArray<string>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
+    getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    getRecipe(id: RecipeId): Result<RuntimeRecipe>;
+    getRecipeIdsUsingIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
+    getRecipeIdsWithAlternateIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
+    getRecipeIdsWithPrimaryIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
+    hasIngredient(id: IngredientId): boolean;
+    hasRecipe(id: RecipeId): boolean;
+    ingredients(): IterableIterator<AnyRuntimeIngredient>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get library(): ChocolateLibrary;
+    recipes(): IterableIterator<RuntimeRecipe>;
+    scaleRecipe(recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
+    get validating(): RuntimeContextValidator;
+    warmUp(): void;
+}
+
+// @public
+class RuntimeContextValidator {
+    // @internal
+    constructor(context: RuntimeContext);
+    calculateGanache(recipeId: string, versionSpec?: string): Result<IGanacheCalculation>;
+    findRecipesUsingIngredient(ingredientId: string): Result<RuntimeRecipe[]>;
+    getIngredient(id: string): Result<AnyRuntimeIngredient>;
+    getRecipe(id: string): Result<RuntimeRecipe>;
+    getRecipeIdsUsingIngredient(ingredientId: string): Result<ReadonlySet<RecipeId>>;
+    hasIngredient(id: string): Result<boolean>;
+    hasRecipe(id: string): Result<boolean>;
+    scaleRecipe(recipeId: string, targetWeight: Grams, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
+}
+
+// @public
+class RuntimeDairyIngredient extends RuntimeIngredientBase implements IRuntimeDairyIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient);
+    get category(): 'dairy';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IDairyIngredient): Result<RuntimeDairyIngredient>;
+    get fatContent(): Percentage | undefined;
+    get raw(): IDairyIngredient;
+    get waterContent(): Percentage | undefined;
+}
+
+// @public
+class RuntimeFatIngredient extends RuntimeIngredientBase implements IRuntimeFatIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredient);
+    get category(): 'fat';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: IFatIngredient): Result<RuntimeFatIngredient>;
+    get meltingPoint(): Celsius | undefined;
+    get raw(): IFatIngredient;
+}
+
+// @public
+abstract class RuntimeIngredient {
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: Ingredient): Result<AnyRuntimeIngredient>;
+}
+
+// @public
+abstract class RuntimeIngredientBase implements IRuntimeIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: Ingredient);
+    get allergens(): ReadonlyArray<Allergen>;
+    get alternateInRecipeIds(): ReadonlySet<RecipeId>;
+    get baseId(): BaseIngredientId;
+    // (undocumented)
+    protected readonly _baseId: BaseIngredientId;
+    abstract get category(): IngredientCategory;
+    get certifications(): ReadonlyArray<Certification>;
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    //
+    // (undocumented)
+    protected readonly _context: IIngredientContext;
+    get description(): string | undefined;
+    get ganacheCharacteristics(): IGanacheCharacteristics;
+    get id(): IngredientId;
+    // (undocumented)
+    protected readonly _id: IngredientId;
+    // (undocumented)
+    protected readonly _ingredient: Ingredient;
+    isAlcohol(): this is RuntimeAlcoholIngredient;
+    isChocolate(): this is RuntimeChocolateIngredient;
+    isDairy(): this is RuntimeDairyIngredient;
+    isFat(): this is RuntimeFatIngredient;
+    isSugar(): this is RuntimeSugarIngredient;
+    get manufacturer(): string | undefined;
+    get name(): string;
+    get primaryInRecipeIds(): ReadonlySet<RecipeId>;
+    abstract get raw(): Ingredient;
+    get sourceId(): SourceId;
+    // (undocumented)
+    protected readonly _sourceId: SourceId;
+    get tags(): ReadonlyArray<string>;
+    get traceAllergens(): ReadonlyArray<Allergen>;
+    get usedByRecipeIds(): ReadonlySet<RecipeId>;
+    get vegan(): boolean | undefined;
+}
+
+// @public
+class RuntimeRecipe {
+    // Warning: (ae-forgotten-export) The symbol "IRecipeContext" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    constructor(context: IRecipeContext, id: RecipeId, recipe: Recipe | IRecipe);
+    get allIngredientIds(): ReadonlySet<IngredientId>;
+    get baseId(): BaseRecipeId;
+    calculateGanache(): Result<IGanacheCalculation>;
+    calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
+    static create(context: IRecipeContext, id: RecipeId, recipe: Recipe | IRecipe): Result<RuntimeRecipe>;
+    get description(): string | undefined;
+    getVersion(versionSpec: RecipeVersionSpec): Result<RuntimeVersion>;
+    get goldenVersion(): RuntimeVersion;
+    get goldenVersionSpec(): RecipeVersionSpec;
+    get hasBeenUsed(): boolean;
+    get id(): RecipeId;
+    get ingredients(): ReadonlyArray<IResolvedRecipeIngredient<AnyRuntimeIngredient>>;
+    get latestUsage(): IRecipeUsage | undefined;
+    get latestVersion(): RuntimeVersion;
+    get name(): RecipeName;
+    get raw(): IRecipe;
+    get rawAsRecipe(): Recipe | undefined;
+    scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
+    scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
+    scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<RuntimeScaledVersion>;
+    get sourceId(): SourceId;
+    get tags(): ReadonlyArray<string>;
+    get usage(): ReadonlyArray<IRecipeUsage>;
+    get usageCount(): number;
+    usesIngredient(ingredientId: IngredientId): boolean;
+    get versionCount(): number;
+    get versions(): ReadonlyArray<RuntimeVersion>;
+}
+
+// @internal
+class RuntimeReverseIndex {
+    constructor(library: ChocolateLibrary);
+    getAllIngredientTags(): ReadonlyArray<string>;
+    getAllRecipeTags(): ReadonlyArray<string>;
+    getIngredientsByTag(tag: string): ReadonlySet<IngredientId>;
+    getIngredientUsage(ingredientId: IngredientId): ReadonlyArray<IIngredientUsageInfo>;
+    getRecipesByChocolateType(type: ChocolateType): ReadonlySet<RecipeId>;
+    getRecipesByTag(tag: string): ReadonlySet<RecipeId>;
+    getRecipesUsingIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId>;
+    getRecipesWithAlternateIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId>;
+    getRecipesWithPrimaryIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId>;
+    invalidate(): void;
+    warmUp(): void;
+}
+
+// @public
+class RuntimeScaledVersion {
+    // Warning: (ae-forgotten-export) The symbol "IScaledVersionContext" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    constructor(context: IScaledVersionContext, scaled: IScaledRecipeVersion);
+    get baseWeight(): Grams;
+    calculateGanache(): Result<IGanacheCalculation>;
+    static create(context: IScaledVersionContext, scaled: IScaledRecipeVersion): Result<RuntimeScaledVersion>;
+    get createdDate(): string;
+    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
+    get notes(): string | undefined;
+    get ratings(): ReadonlyArray<IRecipeRating>;
+    get raw(): IScaledRecipeVersion;
+    get scaledFrom(): IScalingSource;
+    get scaleFactor(): number;
+    get sourceRecipeId(): BaseRecipeId;
+    get sourceVersionSpec(): RecipeVersionSpec;
+    get targetWeight(): Grams;
+    get weightDifference(): Grams;
+    get yield(): string | undefined;
+}
+
+// @public
+class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSugarIngredient {
+    // @internal
+    protected constructor(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredient);
+    get category(): 'sugar';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+    static create(context: IIngredientContext, id: IngredientId, ingredient: ISugarIngredient): Result<RuntimeSugarIngredient>;
+    get hydrationNumber(): number | undefined;
+    get raw(): ISugarIngredient;
+    get sweetnessPotency(): number | undefined;
+}
+
+// @public
+class RuntimeUsage {
+    // @internal
+    constructor(recipe: RuntimeRecipe, usage: IRecipeUsage);
+    static create(recipe: RuntimeRecipe, usage: IRecipeUsage): Result<RuntimeUsage>;
+    get date(): string;
+    get dateAsDate(): Date;
+    get hasModification(): boolean;
+    get modifiedVersion(): RuntimeVersion | undefined;
+    get modifiedVersionSpec(): RecipeVersionSpec | undefined;
+    get notes(): string | undefined;
+    get raw(): IRecipeUsage;
+    get recipe(): RuntimeRecipe;
+    get scaledWeight(): Grams;
+    get scaleFactor(): number | undefined;
+    tryGetModifiedVersion(): Result<RuntimeVersion | undefined>;
+    tryGetVersion(): Result<RuntimeVersion>;
+    get version(): RuntimeVersion;
+    get versionSpec(): RecipeVersionSpec;
+}
+
+// @public
+class RuntimeVersion {
+    // Warning: (ae-forgotten-export) The symbol "IVersionContext" needs to be exported by the entry point index.d.ts
+    //
+    // @internal
+    constructor(context: IVersionContext, recipeId: RecipeId, version: IRecipeVersion);
+    get baseWeight(): Grams;
+    calculateGanache(): Result<IGanacheCalculation>;
+    static create(context: IVersionContext, recipeId: RecipeId, version: IRecipeVersion): Result<RuntimeVersion>;
+    get createdDate(): string;
+    getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedRecipeIngredient<AnyRuntimeIngredient>>>;
+    get notes(): string | undefined;
+    get ratings(): ReadonlyArray<IRecipeRating>;
+    get raw(): IRecipeVersion;
+    get recipe(): IRuntimeRecipe;
+    get recipeId(): RecipeId;
+    get versionSpec(): RecipeVersionSpec;
+    get yield(): string | undefined;
+}
 
 // @public
 const scaledRecipeIngredient: Converter<IScaledRecipeIngredient>;
@@ -1172,6 +1986,9 @@ function toRecipeName(from: unknown): Result<RecipeName>;
 function toRecipeVersionId(from: unknown): Result<RecipeVersionId>;
 
 // @public
+function toRecipeVersionSpec(from: unknown): Result<RecipeVersionSpec>;
+
+// @public
 function toSourceId(from: unknown): Result<SourceId>;
 
 // @public
@@ -1191,6 +2008,8 @@ declare namespace Validation {
         toRecipeId,
         isValidRecipeName,
         toRecipeName,
+        isValidRecipeVersionSpec,
+        toRecipeVersionSpec,
         isValidRecipeVersionId,
         toRecipeVersionId,
         isValidGrams,
@@ -1202,21 +2021,13 @@ declare namespace Validation {
         isValidDegreesMacMichael,
         toDegreesMacMichael,
         isValidRatingScore,
-        toRatingScore,
-        createIngredientId,
-        parseIngredientId,
-        getIngredientSourceId,
-        getIngredientBaseId,
-        createRecipeId,
-        parseRecipeId,
-        getRecipeSourceId,
-        getRecipeBaseId
+        toRatingScore
     }
 }
 export { Validation }
 
 // @public
-const versionRating: Converter<IVersionRating>;
+export const VERSION_ID_SEPARATOR: string;
 
 // @public
 export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';

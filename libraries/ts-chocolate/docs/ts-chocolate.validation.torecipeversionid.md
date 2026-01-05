@@ -52,5 +52,5 @@ Value to convert
 
 Result&lt;[RecipeVersionId](./ts-chocolate.recipeversionid.md)<!-- -->&gt;
 
-Result with RecipeVersionId or error
+Result with [RecipeVersionId](./ts-chocolate.recipeversionid.md) or error
 

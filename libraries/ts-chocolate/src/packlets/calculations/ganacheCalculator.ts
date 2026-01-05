@@ -25,7 +25,7 @@
 
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, Percentage, RecipeVersionId } from '../common';
+import { Grams, IngredientId, Percentage, RecipeVersionSpec } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
 import { IRecipe, IRecipeIngredient, Recipe } from '../recipes';
 
@@ -279,27 +279,27 @@ export function calculateFromRecipeIngredients(
  *
  * @param recipe - The recipe to analyze
  * @param resolver - Function to resolve ingredient IDs to full data
- * @param versionId - Optional version ID (default: golden version)
+ * @param versionSpec - Optional version ID (default: golden version)
  * @returns Success with ganache analysis, or Failure if resolution fails
  * @public
  */
 export function calculateForRecipe(
   recipe: IRecipe,
   resolver: IngredientResolver,
-  versionId?: RecipeVersionId
+  versionSpec?: RecipeVersionSpec
 ): Result<IGanacheAnalysis> {
   // If a Recipe instance, use helper methods; otherwise find the version manually
   if (recipe instanceof Recipe) {
-    const version = versionId ? recipe.getVersion(versionId) : Success.with(recipe.goldenVersion);
+    const version = versionSpec ? recipe.getVersion(versionSpec) : Success.with(recipe.goldenVersion);
     return version.onSuccess((v) => calculateFromRecipeIngredients(v.ingredients, resolver));
   }
 
   // For plain IRecipe objects
-  const targetVersionId = versionId ?? recipe.goldenVersionId;
-  const version = recipe.versions.find((v) => v.versionId === targetVersionId);
+  const targetVersionSpec = versionSpec ?? recipe.goldenVersionSpec;
+  const version = recipe.versions.find((v) => v.versionSpec === targetVersionSpec);
 
   if (!version) {
-    return Failure.with(`Version ${targetVersionId} not found in recipe ${recipe.baseId}`);
+    return Failure.with(`Version ${targetVersionSpec} not found in recipe ${recipe.baseId}`);
   }
 
   return calculateFromRecipeIngredients(version.ingredients, resolver);
@@ -417,16 +417,16 @@ export function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation 
  *
  * @param recipe - The recipe to analyze
  * @param resolver - Function to resolve ingredient IDs to full data
- * @param versionId - Optional version ID (default: golden version)
+ * @param versionSpec - Optional version ID (default: golden version)
  * @returns Success with complete calculation, or Failure if resolution fails
  * @public
  */
 export function calculateGanache(
   recipe: IRecipe,
   resolver: IngredientResolver,
-  versionId?: RecipeVersionId
+  versionSpec?: RecipeVersionSpec
 ): Result<IGanacheCalculation> {
-  return calculateForRecipe(recipe, resolver, versionId).onSuccess((analysis) =>
+  return calculateForRecipe(recipe, resolver, versionSpec).onSuccess((analysis) =>
     Success.with({
       analysis,
       validation: validateGanache(analysis)

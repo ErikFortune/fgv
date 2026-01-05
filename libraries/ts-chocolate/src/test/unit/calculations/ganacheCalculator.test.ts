@@ -28,7 +28,7 @@ import {
   IngredientId,
   Percentage,
   RecipeName,
-  RecipeVersionId
+  RecipeVersionSpec
 } from '../../../packlets/common';
 
 import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/ingredients';
@@ -211,7 +211,7 @@ describe('Ganache Calculator', () => {
 
   describe('calculateForRecipe', () => {
     const testVersion: IRecipeVersion = {
-      versionId: '2026-01-01-01' as RecipeVersionId,
+      versionSpec: '2026-01-01-01' as RecipeVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
         { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
@@ -224,7 +224,7 @@ describe('Ganache Calculator', () => {
       baseId: 'test-ganache' as BaseRecipeId,
       name: 'Test Ganache' as RecipeName,
       versions: [testVersion],
-      goldenVersionId: '2026-01-01-01' as RecipeVersionId,
+      goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
       usage: []
     };
 
@@ -236,14 +236,14 @@ describe('Ganache Calculator', () => {
 
     test('calculates for specific version by ID', () => {
       expect(
-        calculateForRecipe(testRecipe, testResolver, '2026-01-01-01' as RecipeVersionId)
+        calculateForRecipe(testRecipe, testResolver, '2026-01-01-01' as RecipeVersionSpec)
       ).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
     });
 
     test('fails for invalid version ID', () => {
-      expect(calculateForRecipe(testRecipe, testResolver, '2026-12-31-99' as RecipeVersionId)).toFailWith(
+      expect(calculateForRecipe(testRecipe, testResolver, '2026-12-31-99' as RecipeVersionSpec)).toFailWith(
         /not found/
       );
     });
@@ -258,7 +258,7 @@ describe('Ganache Calculator', () => {
     test('calculates for Recipe instance with specific version ID', () => {
       const recipe = Recipe.create(testRecipe).orThrow();
       expect(
-        calculateForRecipe(recipe, testResolver, '2026-01-01-01' as RecipeVersionId)
+        calculateForRecipe(recipe, testResolver, '2026-01-01-01' as RecipeVersionSpec)
       ).toSucceedAndSatisfy((analysis) => {
         expect(analysis.totalWeight).toBe(150);
       });
@@ -266,7 +266,7 @@ describe('Ganache Calculator', () => {
 
     test('fails for Recipe instance with invalid version ID', () => {
       const recipe = Recipe.create(testRecipe).orThrow();
-      expect(calculateForRecipe(recipe, testResolver, '2026-12-31-99' as RecipeVersionId)).toFailWith(
+      expect(calculateForRecipe(recipe, testResolver, '2026-12-31-99' as RecipeVersionSpec)).toFailWith(
         /not found/
       );
     });
@@ -413,7 +413,7 @@ describe('Ganache Calculator', () => {
 
   describe('calculateGanache', () => {
     const testVersion: IRecipeVersion = {
-      versionId: '2026-01-01-01' as RecipeVersionId,
+      versionSpec: '2026-01-01-01' as RecipeVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
         { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
@@ -426,7 +426,7 @@ describe('Ganache Calculator', () => {
       baseId: 'test' as BaseRecipeId,
       name: 'Test' as RecipeName,
       versions: [testVersion],
-      goldenVersionId: '2026-01-01-01' as RecipeVersionId,
+      goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
       usage: []
     };
 

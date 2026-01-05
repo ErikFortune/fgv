@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipe variable
 
-Converter for Recipe Validates that goldenVersionId exists in versions and creates Recipe instance
+Converter for Recipe Validates that goldenVersionSpec exists in versions and creates Recipe instance
 
 **Signature:**
 

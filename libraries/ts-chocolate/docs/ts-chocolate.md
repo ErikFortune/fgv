@@ -48,6 +48,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Helpers](./ts-chocolate.helpers.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Ingredients](./ts-chocolate.ingredients.md)
 
 
@@ -245,7 +254,29 @@ Separator character used in composite IDs
 
 </td><td>
 
-Pattern for valid recipe version IDs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+Pattern for valid recipe version IDs Format: recipeId<!-- -->@<!-- -->versionSpec where recipeId is sourceId.baseRecipeId
+
+
+</td></tr>
+<tr><td>
+
+[RECIPE\_VERSION\_SPEC\_PATTERN](./ts-chocolate.recipe_version_spec_pattern.md)
+
+
+</td><td>
+
+Pattern for valid recipe version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+
+
+</td></tr>
+<tr><td>
+
+[VERSION\_ID\_SEPARATOR](./ts-chocolate.version_id_separator.md)
+
+
+</td><td>
+
+Separator character used in recipe version IDs (between RecipeId and RecipeVersionSpec)
 
 
 </td></tr>
@@ -469,7 +500,18 @@ Non-unique recipe name used for display and grouping
 
 </td><td>
 
-Unique identifier for a recipe version Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+Globally unique recipe version identifier (composite) Format: "recipeId<!-- -->@<!-- -->versionSpec" where recipeId is "sourceId.baseRecipeId" Examples: "user.ganache<!-- -->@<!-- -->2026-01-03-01", "felchlin.truffle<!-- -->@<!-- -->2026-01-03-02-less-sugar"
+
+
+</td></tr>
+<tr><td>
+
+[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
+
+
+</td><td>
+
+Specifier for a recipe version within a recipe Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
 
 
 </td></tr>
