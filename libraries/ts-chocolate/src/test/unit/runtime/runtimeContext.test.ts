@@ -609,17 +609,6 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('scaleRecipe scales to target weight', () => {
-      expect(ctx.scaleRecipe('test.dark-ganache' as RecipeId, 600 as Grams)).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaledFrom.scaleFactor).toBe(2);
-        expect(scaled.baseWeight).toBe(600);
-      });
-    });
-
-    test('scaleRecipe fails for non-existent recipe', () => {
-      expect(ctx.scaleRecipe('test.nonexistent' as RecipeId, 600 as Grams)).toFail();
-    });
-
     test('calculateGanache returns analysis', () => {
       expect(ctx.calculateGanache('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((calc) => {
         expect(calc.analysis).toBeDefined();
@@ -631,9 +620,9 @@ describe('RuntimeContext', () => {
       expect(ctx.calculateGanache('test.nonexistent' as RecipeId)).toFail();
     });
 
-    test('calculateGanacheForVersion calculates for specific version', () => {
+    test('calculateGanache with version spec calculates for specific version', () => {
       expect(
-        ctx.calculateGanacheForVersion('test.dark-ganache' as RecipeId, '2026-01-01-01' as RecipeVersionSpec)
+        ctx.calculateGanache('test.dark-ganache' as RecipeId, '2026-01-01-01' as RecipeVersionSpec)
       ).toSucceedAndSatisfy((calc) => {
         expect(calc.analysis.totalWeight).toBe(300);
       });
@@ -751,25 +740,6 @@ describe('RuntimeContext', () => {
 
       test('fails with invalid ID format', () => {
         expect(ctx.validating.hasRecipe('invalid')).toFailWith(/invalid/i);
-      });
-    });
-
-    describe('scaleRecipe', () => {
-      test('succeeds with valid string ID', () => {
-        expect(ctx.validating.scaleRecipe('test.dark-ganache', 600 as Grams)).toSucceedAndSatisfy(
-          (scaled) => {
-            expect(scaled.scaledFrom.scaleFactor).toBe(2);
-            expect(scaled.baseWeight).toBe(600);
-          }
-        );
-      });
-
-      test('fails with invalid ID format', () => {
-        expect(ctx.validating.scaleRecipe('invalid', 600 as Grams)).toFailWith(/invalid/i);
-      });
-
-      test('fails with non-existent recipe', () => {
-        expect(ctx.validating.scaleRecipe('test.nonexistent', 600 as Grams)).toFail();
       });
     });
 

@@ -168,27 +168,6 @@ The composite recipe ID (e.g., "user.dark-ganache")
 </td></tr>
 <tr><td>
 
-[ingredients](./ts-chocolate.runtime.runtimerecipe.ingredients.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IResolvedRecipeIngredient](./ts-chocolate.runtime.iresolvedrecipeingredient.md)<!-- -->&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;&gt;
-
-
-</td><td>
-
-Gets resolved ingredients from the golden version. Convenience method - same as goldenVersion.getIngredients()
-
-
-</td></tr>
-<tr><td>
-
 [latestVersion](./ts-chocolate.runtime.runtimerecipe.latestversion.md)
 
 
@@ -377,34 +356,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[calculateGanache()](./ts-chocolate.runtime.runtimerecipe.calculateganache.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Calculates ganache characteristics for the golden version.
-
-
-</td></tr>
-<tr><td>
-
-[calculateGanacheForVersion(versionSpec)](./ts-chocolate.runtime.runtimerecipe.calculateganacheforversion.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Calculates ganache characteristics for a specific version.
-
-
-</td></tr>
-<tr><td>
-
 [create(context, id, recipe)](./ts-chocolate.runtime.runtimerecipe.create.md)
 
 
@@ -430,48 +381,6 @@ Factory method for creating a RuntimeRecipe.
 </td><td>
 
 Gets a specific version by ID.
-
-
-</td></tr>
-<tr><td>
-
-[scale(targetWeight, options)](./ts-chocolate.runtime.runtimerecipe.scale.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales the golden version to a target weight.
-
-
-</td></tr>
-<tr><td>
-
-[scaleByFactor(factor, options)](./ts-chocolate.runtime.runtimerecipe.scalebyfactor.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales by a multiplicative factor.
-
-
-</td></tr>
-<tr><td>
-
-[scaleVersion(versionSpec, targetWeight, options)](./ts-chocolate.runtime.runtimerecipe.scaleversion.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales a specific version to a target weight.
 
 
 </td></tr>

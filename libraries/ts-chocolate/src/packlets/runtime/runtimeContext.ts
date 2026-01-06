@@ -25,22 +25,13 @@
 
 import { Failure, Result, ResultMap, Success } from '@fgv/ts-utils';
 
-import {
-  ChocolateType,
-  Grams,
-  Helpers,
-  IngredientId,
-  RecipeId,
-  RecipeVersionSpec,
-  Validation
-} from '../common';
-import { IComputedScaledRecipe, IRecipeScaleOptions } from '../recipes';
+import { ChocolateType, Helpers, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
+import { IComputedScaledRecipe } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
   IIngredientUsageInfo,
-  IRecipeContext,
   IRuntimeRecipeVersion,
   IScaledVersionContext,
   IVersionContext
@@ -48,7 +39,6 @@ import {
 import { RuntimeReverseIndex } from './runtimeReverseIndex';
 import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
 import { RuntimeRecipe } from './runtimeRecipe';
-import { RuntimeScaledVersion } from './runtimeScaledVersion';
 import {
   IFindOptions,
   IIngredientQuerySpec,
@@ -121,17 +111,6 @@ export class RuntimeContextValidator {
   /** Checks if a recipe exists by validating a string ID. */
   public hasRecipe(id: string): Result<boolean> {
     return Validation.toRecipeId(id).onSuccess((rid) => Success.with(this._context.hasRecipe(rid)));
-  }
-
-  /** Scales a recipe by validating string IDs. */
-  public scaleRecipe(
-    recipeId: string,
-    targetWeight: Grams,
-    options?: IRecipeScaleOptions
-  ): Result<RuntimeScaledVersion> {
-    return Validation.toRecipeId(recipeId).onSuccess((rid) =>
-      this._context.scaleRecipe(rid, targetWeight, options)
-    );
   }
 
   /** Calculates ganache characteristics for a recipe by validating string IDs. */
@@ -238,7 +217,6 @@ export class RuntimeContextValidator {
 export class RuntimeContext
   implements
     IVersionContext<AnyRuntimeIngredient>,
-    IRecipeContext<AnyRuntimeIngredient>,
     IScaledVersionContext<AnyRuntimeIngredient>,
     IIngredientContext
 {
@@ -590,54 +568,23 @@ export class RuntimeContext
   }
 
   // ============================================================================
-  // Operations (delegate to library)
+  // Operations
   // ============================================================================
 
   /**
-   * Scales a recipe to a target weight.
-   * @param recipeId - Recipe ID to scale
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure
-   */
-  public scaleRecipe(
-    recipeId: RecipeId,
-    targetWeight: Grams,
-    options?: IRecipeScaleOptions
-  ): Result<RuntimeScaledVersion> {
-    return this._library.scaleRecipe(recipeId, targetWeight, options).onSuccess((scaled) => {
-      return RuntimeScaledVersion.create(this, scaled);
-    });
-  }
-
-  /**
-   * Calculates ganache characteristics for a recipe.
-   * Convenience method that delegates to the recipe entity.
+   * Calculates ganache characteristics for a recipe version.
+   * Convenience method for ID-based lookups.
    * @param recipeId - Recipe ID to analyze
-   * @param versionSpec - Optional version specifier (default: golden version)
+   * @param versionSpec - Optional version spec (default: golden version)
    * @returns Success with ganache calculation, or Failure
    */
   public calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation> {
     return this.getRecipe(recipeId).onSuccess((recipe) => {
       if (versionSpec !== undefined) {
-        return recipe.calculateGanacheForVersion(versionSpec);
+        return recipe.getVersion(versionSpec).onSuccess((version) => version.calculateGanache());
       }
-      return recipe.calculateGanache();
+      return recipe.goldenVersion.calculateGanache();
     });
-  }
-
-  /**
-   * Calculates ganache for a specific version.
-   * Convenience method that delegates to the recipe entity.
-   * @param recipeId - Recipe ID
-   * @param versionSpec - Version to analyze
-   * @returns Success with ganache calculation, or Failure
-   */
-  public calculateGanacheForVersion(
-    recipeId: RecipeId,
-    versionSpec: RecipeVersionSpec
-  ): Result<IGanacheCalculation> {
-    return this.getRecipe(recipeId).onSuccess((recipe) => recipe.calculateGanacheForVersion(versionSpec));
   }
 
   // ============================================================================

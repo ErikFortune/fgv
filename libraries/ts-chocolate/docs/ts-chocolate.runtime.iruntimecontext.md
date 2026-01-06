@@ -124,18 +124,7 @@ Description
 
 </td><td>
 
-Calculates ganache characteristics for a recipe.
-
-
-</td></tr>
-<tr><td>
-
-[calculateGanacheForVersion(recipeId, versionSpec)](./ts-chocolate.runtime.iruntimecontext.calculateganacheforversion.md)
-
-
-</td><td>
-
-Calculates ganache for a specific version.
+Calculates ganache characteristics for a recipe version. Convenience method for ID-based lookups.
 
 
 </td></tr>
@@ -345,17 +334,6 @@ Iterates over all ingredients as RuntimeIngredient objects. Note: This resolves 
 </td><td>
 
 Iterates over all recipes as RuntimeRecipe objects. Note: This resolves recipes lazily as you iterate.
-
-
-</td></tr>
-<tr><td>
-
-[scaleRecipe(recipeId, targetWeight, options)](./ts-chocolate.runtime.iruntimecontext.scalerecipe.md)
-
-
-</td><td>
-
-Scales a recipe to a target weight.
 
 
 </td></tr>

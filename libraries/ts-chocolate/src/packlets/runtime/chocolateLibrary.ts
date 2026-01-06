@@ -23,11 +23,11 @@
  * @packageDocumentation
  */
 
-import { Failure, Result, Success } from '@fgv/ts-utils';
+import { Result, Success } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, RecipeId, RecipeVersionSpec, SourceId } from '../common';
+import { IngredientId, RecipeId, RecipeVersionSpec, SourceId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
-import { IComputedScaledRecipe, IRecipe, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
+import { IRecipe, RecipesLibrary } from '../recipes';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,
@@ -210,50 +210,6 @@ export class ChocolateLibrary {
    */
   public hasRecipe(id: RecipeId): boolean {
     return this._recipes.has(id);
-  }
-
-  /**
-   * Scales a recipe to a target weight
-   *
-   * @param id - The {@link RecipeId | id} of the recipe to scale
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional {@link Recipes.IRecipeScaleOptions | scaling options}.
-   * @returns `Success` with computed scaled recipe, or `Failure` if recipe not found or invalid
-   */
-  public scaleRecipe(
-    id: RecipeId,
-    targetWeight: Grams,
-    options?: IRecipeScaleOptions
-  ): Result<IComputedScaledRecipe> {
-    return this.getRecipe(id).onSuccess((recipe) => scaleRecipe(recipe, id, targetWeight, options));
-  }
-
-  /**
-   * Scales a recipe by a multiplicative factor
-   *
-   * @param id - The {@link RecipeId | id} of the recipe to scale
-   * @param factor - Multiplicative factor (e.g., 2.0 for double)
-   * @param options - Optional {@link Recipes.IRecipeScaleOptions | scaling options}.
-   * @returns `Success` with computed scaled recipe, or `Failure` if recipe not found or invalid
-   */
-  public scaleRecipeByFactor(
-    id: RecipeId,
-    factor: number,
-    options?: IRecipeScaleOptions
-  ): Result<IComputedScaledRecipe> {
-    return this.getRecipe(id).onSuccess((recipe) => {
-      // Get the version to scale (default to golden version)
-      const versionSpec = options?.versionSpec ?? recipe.goldenVersionSpec;
-      const version = recipe.versions.find((v) => v.versionSpec === versionSpec);
-
-      /* c8 ignore next 3 - tested in chocolateLibrary.test.ts but coverage intermittently missed */
-      if (!version) {
-        return Failure.with(`Version ${versionSpec} not found in recipe ${recipe.baseId}`);
-      }
-
-      const targetWeight = (version.baseWeight * factor) as Grams;
-      return scaleRecipe(recipe, id, targetWeight, options);
-    });
   }
 
   // ============================================================================

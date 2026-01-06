@@ -107,7 +107,9 @@ Recalculates base weight for recipe version and returns updated version
 
 </td><td>
 
-Scales a recipe to a target weight
+Scales a recipe to a target weight.
+
+This function looks up a version by spec and delegates to [scaleVersion](./ts-chocolate.recipes.scaleversion.md)<!-- -->. Use this when you have a recipe and want to scale a specific version by spec.
 
 
 </td></tr>
@@ -119,6 +121,19 @@ Scales a recipe to a target weight
 </td><td>
 
 Scales a [recipe](./ts-chocolate.recipes.irecipe.md) by a supplied multiplier.
+
+
+</td></tr>
+<tr><td>
+
+[scaleVersion(version, sourceVersionId, targetWeight, options)](./ts-chocolate.recipes.scaleversion.md)
+
+
+</td><td>
+
+Scales a recipe version to a target weight.
+
+This is the core scaling function that operates directly on a version. Use this when you already have the version object and its ID.
 
 
 </td></tr>
@@ -210,7 +225,7 @@ Rating for a specific category of a recipe version
 
 </td><td>
 
-Options for recipe scaling
+Options for recipe scaling (extends version options with version selection)
 
 
 </td></tr>
@@ -277,6 +292,17 @@ Lightweight scaling reference - the default storage format for scaled recipes. S
 </td><td>
 
 Information about the source of a scaled recipe. Used at runtime for computed scaled versions.
+
+
+</td></tr>
+<tr><td>
+
+[IVersionScaleOptions](./ts-chocolate.recipes.iversionscaleoptions.md)
+
+
+</td><td>
+
+Options for version scaling (precision and minimum amount only)
 
 
 </td></tr>

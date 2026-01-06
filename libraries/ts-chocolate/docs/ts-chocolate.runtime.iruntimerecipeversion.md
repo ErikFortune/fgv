@@ -286,5 +286,38 @@ Gets ingredients, optionally filtered.
 
 
 </td></tr>
+<tr><td>
+
+[scale(targetWeight, options)](./ts-chocolate.runtime.iruntimerecipeversion.scale.md)
+
+
+</td><td>
+
+Scales this version to a target weight.
+
+
+</td></tr>
+<tr><td>
+
+[scaleByFactor(factor, options)](./ts-chocolate.runtime.iruntimerecipeversion.scalebyfactor.md)
+
+
+</td><td>
+
+Scales this version by a multiplicative factor.
+
+
+</td></tr>
+<tr><td>
+
+[usesIngredient(ingredientId)](./ts-chocolate.runtime.iruntimerecipeversion.usesingredient.md)
+
+
+</td><td>
+
+Checks if this version uses a specific ingredient (as primary).
+
+
+</td></tr>
 </tbody></table>
 

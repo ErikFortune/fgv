@@ -221,10 +221,6 @@ class ChocolateLibrary {
     get ingredients(): IngredientsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get recipes(): RecipesLibrary;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 }
 
 // @public
@@ -1113,11 +1109,6 @@ interface IRecipe {
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
 
-// @internal
-interface IRecipeContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IVersionContext<TIngredient> {
-    scaleRecipe(recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-}
-
 // @public
 interface IRecipeDerivation {
     readonly derivedDate: string;
@@ -1170,9 +1161,7 @@ interface IRecipesByTagConfig {
 }
 
 // @public
-interface IRecipeScaleOptions {
-    readonly minimumAmount?: Grams;
-    readonly precision?: number;
+interface IRecipeScaleOptions extends IVersionScaleOptions {
     readonly versionSpec?: RecipeVersionSpec;
 }
 
@@ -1268,7 +1257,6 @@ interface IRuntimeContext {
     readonly cachedIngredientCount: number;
     readonly cachedRecipeCount: number;
     calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
-    calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
     findIngredientsByTag(tag: string): Result<IRuntimeIngredient[]>;
     findRecipesByChocolateType(type: ChocolateType): IRuntimeRecipe[];
@@ -1289,7 +1277,6 @@ interface IRuntimeContext {
     ingredients(): IterableIterator<IRuntimeIngredient>;
     readonly library: ChocolateLibrary;
     recipes(): IterableIterator<IRuntimeRecipe>;
-    scaleRecipe(recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
     warmUp(): void;
 }
 
@@ -1350,20 +1337,14 @@ interface IRuntimeIngredient {
 interface IRuntimeRecipe {
     readonly allIngredientIds: ReadonlySet<IngredientId>;
     readonly baseId: BaseRecipeId;
-    calculateGanache(): Result<IGanacheCalculation>;
-    calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
     readonly description?: string;
     getVersion(versionSpec: RecipeVersionSpec): Result<IRuntimeRecipeVersion>;
     readonly goldenVersion: IRuntimeRecipeVersion;
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly id: RecipeId;
-    readonly ingredients: ReadonlyArray<IResolvedRecipeIngredient<IRuntimeIngredient>>;
     readonly latestVersion: IRuntimeRecipeVersion;
     readonly name: RecipeName;
     readonly raw: IRecipe;
-    scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-    scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-    scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<IRuntimeScaledRecipeVersion>;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId): boolean;
@@ -1382,6 +1363,9 @@ interface IRuntimeRecipeVersion {
     readonly raw: IRecipeVersion;
     readonly recipe: IRuntimeRecipe;
     readonly recipeId: RecipeId;
+    scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    usesIngredient(ingredientId: IngredientId): boolean;
     readonly versionId: RecipeVersionId;
     readonly versionSpec: RecipeVersionSpec;
     readonly yield?: string;
@@ -1591,9 +1575,14 @@ interface ITemperatureCurve {
 }
 
 // @internal
-interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-    getIngredient(id: IngredientId): Result<TIngredient>;
+interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
     getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
+}
+
+// @public
+interface IVersionScaleOptions {
+    readonly minimumAmount?: Grams;
+    readonly precision?: number;
 }
 
 declare namespace Journal {
@@ -1967,10 +1956,12 @@ declare namespace Recipes {
         RecipesMergeSource,
         IRecipesLibraryParams,
         RecipesLibrary,
+        scaleVersion,
         scaleRecipe,
         scaleRecipeByFactor,
         calculateBaseWeight,
         recalculateRecipeVersion,
+        IVersionScaleOptions,
         IRecipeScaleOptions
     }
 }
@@ -2135,9 +2126,8 @@ declare namespace Runtime {
         INumericRange,
         IIterationOptions,
         IIngredientUsageInfo,
-        IVersionContext,
-        IRecipeContext,
         IScaledVersionContext,
+        IVersionContext,
         IIngredientContext,
         IRuntimeContext,
         andFilters,
@@ -2196,20 +2186,17 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
 }
 
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IRecipeContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
-// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IRecipeContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
 //
 // @public
-class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IRecipeContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext {
+class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext {
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
-    calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     findIngredients(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
@@ -2249,7 +2236,6 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IRecipeCo
     // (undocumented)
     get library(): ChocolateLibrary;
     recipes(): IterableIterator<RuntimeRecipe>;
-    scaleRecipe(recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
     get validating(): RuntimeContextValidator;
     warmUp(): void;
 }
@@ -2267,7 +2253,6 @@ class RuntimeContextValidator {
     getRecipeIdsUsingIngredient(ingredientId: string): Result<ReadonlySet<RecipeId>>;
     hasIngredient(id: string): Result<boolean>;
     hasRecipe(id: string): Result<boolean>;
-    scaleRecipe(recipeId: string, targetWeight: Grams, options?: IRecipeScaleOptions): Result<RuntimeScaledVersion>;
 }
 
 // @public
@@ -2351,22 +2336,16 @@ class RuntimeRecipe implements IRuntimeRecipe {
     constructor(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe);
     get allIngredientIds(): ReadonlySet<IngredientId>;
     get baseId(): BaseRecipeId;
-    calculateGanache(): Result<IGanacheCalculation>;
-    calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
     static create(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe): Result<RuntimeRecipe>;
     get description(): string | undefined;
     getVersion(versionSpec: RecipeVersionSpec): Result<RuntimeVersion>;
     get goldenVersion(): RuntimeVersion;
     get goldenVersionSpec(): RecipeVersionSpec;
     get id(): RecipeId;
-    get ingredients(): ReadonlyArray<IResolvedRecipeIngredient<AnyRuntimeIngredient>>;
     get latestVersion(): RuntimeVersion;
     get name(): RecipeName;
     get raw(): IRecipe;
     get rawAsRecipe(): Recipe | undefined;
-    scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-    scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-    scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<IRuntimeScaledRecipeVersion>;
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId): boolean;
@@ -2439,6 +2418,9 @@ class RuntimeVersion implements IRuntimeRecipeVersion {
     get raw(): IRecipeVersion;
     get recipe(): IRuntimeRecipe;
     get recipeId(): RecipeId;
+    scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    usesIngredient(ingredientId: IngredientId): boolean;
     get versionId(): RecipeVersionId;
     get versionSpec(): RecipeVersionSpec;
     get yield(): string | undefined;
@@ -2456,6 +2438,7 @@ const scaledRecipeVersion: Converter<IScaledRecipeVersion>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
@@ -2466,6 +2449,12 @@ function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Grams, o
 //
 // @public
 function scaleRecipeByFactor(recipe: IRecipe, recipeId: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+function scaleVersion(version: IRecipeVersion, sourceVersionId: RecipeVersionId, targetWeight: Grams, options?: IVersionScaleOptions): Result<IComputedScaledRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //

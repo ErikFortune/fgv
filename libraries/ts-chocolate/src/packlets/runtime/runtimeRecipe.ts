@@ -27,7 +27,6 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BaseRecipeId,
-  Grams,
   ID_SEPARATOR,
   IngredientId,
   RecipeId,
@@ -35,19 +34,13 @@ import {
   RecipeVersionSpec,
   SourceId
 } from '../common';
-import { IRecipe, IRecipeScaleOptions, Recipe } from '../recipes';
-import { IGanacheCalculation } from '../calculations';
-import {
-  IRecipeContext,
-  IResolvedRecipeIngredient,
-  IRuntimeRecipe,
-  IRuntimeScaledRecipeVersion
-} from './model';
+import { IRecipe, Recipe } from '../recipes';
+import { IRuntimeRecipe, IVersionContext } from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';
 
 // Specialize the context interface with concrete ingredient type
-type RecipeContext = IRecipeContext<AnyRuntimeIngredient>;
+type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
 
 // ============================================================================
 // RuntimeRecipe Class
@@ -259,73 +252,6 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   public usesIngredient(ingredientId: IngredientId): boolean {
     return this.allIngredientIds.has(ingredientId);
-  }
-
-  /**
-   * Gets resolved ingredients from the golden version.
-   * Convenience method - same as goldenVersion.getIngredients()
-   */
-  public get ingredients(): ReadonlyArray<IResolvedRecipeIngredient<AnyRuntimeIngredient>> {
-    // orThrow is safe here - ingredient resolution should not fail for valid recipes
-    return [...this.goldenVersion.getIngredients().orThrow()];
-  }
-
-  // ============================================================================
-  // Operations
-  // ============================================================================
-
-  /**
-   * Scales the golden version to a target weight.
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options
-   * @returns Success with scaled version, or Failure if scaling fails
-   */
-  public scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion> {
-    return this._context.scaleRecipe(this._id, targetWeight, options);
-  }
-
-  /**
-   * Scales a specific version to a target weight.
-   * @param versionSpec - The version to scale
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options (versionSpec will be overridden)
-   * @returns Success with scaled version, or Failure if scaling fails
-   */
-  public scaleVersion(
-    versionSpec: RecipeVersionSpec,
-    targetWeight: Grams,
-    options?: Omit<IRecipeScaleOptions, 'versionSpec'>
-  ): Result<IRuntimeScaledRecipeVersion> {
-    // TODO: we should call the library scaler directly instead - going through the context adds no value
-    return this._context.scaleRecipe(this._id, targetWeight, { ...options, versionSpec: versionSpec });
-  }
-
-  /**
-   * Scales by a multiplicative factor.
-   * @param factor - Multiplicative factor (e.g., 2.0 for double)
-   * @param options - Optional scaling options
-   * @returns Success with scaled version, or Failure if scaling fails
-   */
-  public scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion> {
-    const targetWeight = (this.goldenVersion.baseWeight * factor) as Grams;
-    return this.scale(targetWeight, options);
-  }
-
-  /**
-   * Calculates ganache characteristics for the golden version.
-   * @returns Success with ganache calculation, or Failure if calculation fails
-   */
-  public calculateGanache(): Result<IGanacheCalculation> {
-    return this.goldenVersion.calculateGanache();
-  }
-
-  /**
-   * Calculates ganache characteristics for a specific version.
-   * @param versionSpec - The version to analyze
-   * @returns Success with ganache calculation, or Failure if calculation fails
-   */
-  public calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation> {
-    return this.getVersion(versionSpec).onSuccess((version) => version.calculateGanache());
   }
 
   // ============================================================================

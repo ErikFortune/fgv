@@ -4,7 +4,9 @@
 
 ## Recipes.scaleRecipe() function
 
-Scales a recipe to a target weight
+Scales a recipe to a target weight.
+
+This function looks up a version by spec and delegates to [scaleVersion](./ts-chocolate.recipes.scaleversion.md)<!-- -->. Use this when you have a recipe and want to scale a specific version by spec.
 
 **Signature:**
 

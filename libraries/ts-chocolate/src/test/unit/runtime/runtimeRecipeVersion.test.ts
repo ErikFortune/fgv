@@ -312,54 +312,6 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.usesIngredient('test.alt-chocolate' as IngredientId)).toBe(false);
       });
-
-      test('ingredients getter provides golden version ingredients', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        const ingredients = recipe.ingredients;
-        expect(ingredients.length).toBe(2);
-      });
-    });
-
-    describe('operations', () => {
-      test('scale scales to target weight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
-          expect(scaled.scaledFrom.scaleFactor).toBe(2);
-        });
-      });
-
-      test('scaleVersion scales specific version', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scaleVersion('2026-02-01-01' as RecipeVersionSpec, 600 as Grams)).toSucceedAndSatisfy(
-          (scaled) => {
-            expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-02-01-01');
-          }
-        );
-      });
-
-      test('scaleByFactor scales by multiplicative factor', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scaleByFactor(2.0)).toSucceedAndSatisfy((scaled) => {
-          expect(scaled.baseWeight).toBe(600);
-        });
-      });
-
-      test('calculateGanache returns analysis', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.calculateGanache()).toSucceedAndSatisfy((calc) => {
-          expect(calc.analysis).toBeDefined();
-          expect(calc.validation).toBeDefined();
-        });
-      });
-
-      test('calculateGanacheForVersion analyzes specific version', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.calculateGanacheForVersion('2026-02-01-01' as RecipeVersionSpec)).toSucceedAndSatisfy(
-          (calc) => {
-            expect(calc.analysis.totalWeight).toBe(300);
-          }
-        );
-      });
     });
 
     describe('raw access', () => {
@@ -570,10 +522,57 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     });
 
     describe('operations', () => {
+      test('usesIngredient returns true for used ingredient', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.usesIngredient('test.dark-chocolate' as IngredientId)).toBe(true);
+      });
+
+      test('usesIngredient returns false for unused ingredient', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        // butter is used in version 2 but not golden version
+        expect(recipe.goldenVersion.usesIngredient('test.butter' as IngredientId)).toBe(false);
+      });
+
+      test('scale scales to target weight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.scaledFrom.scaleFactor).toBe(2);
+          expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-01-01-01');
+        });
+      });
+
+      test('scale fails for zero target weight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.scale(0 as Grams)).toFailWith(/greater than zero/);
+      });
+
+      test('scale fails for negative target weight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.scale(-100 as Grams)).toFailWith(/greater than zero/);
+      });
+
+      test('scaleByFactor scales by multiplicative factor', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.scaleByFactor(2.0)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.baseWeight).toBe(600);
+        });
+      });
+
+      test('scaleByFactor fails for zero factor', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.scaleByFactor(0)).toFailWith(/greater than zero/);
+      });
+
+      test('scaleByFactor fails for negative factor', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.goldenVersion.scaleByFactor(-1)).toFailWith(/greater than zero/);
+      });
+
       test('calculateGanache returns analysis', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.calculateGanache()).toSucceedAndSatisfy((calc) => {
           expect(calc.analysis).toBeDefined();
+          expect(calc.validation).toBeDefined();
         });
       });
     });
@@ -601,7 +600,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     describe('getIngredients filtering', () => {
       test('getIngredients with no filter returns all ingredients', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients()).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(2);
@@ -611,7 +610,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with empty array returns nothing', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(0);
@@ -621,7 +620,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with string filter matches exact ID', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients(['test.dark-chocolate'])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(1);
@@ -632,7 +631,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with regex filter matches pattern', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([/^test\.dark/])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(1);
@@ -643,7 +642,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with category filter matches category', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([{ category: 'dairy' }])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(1);
@@ -654,7 +653,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with category regex filter matches pattern', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([{ category: /^choc/ }])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(1);
@@ -665,7 +664,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with multiple filters uses OR semantics', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(
             scaled.getIngredients([{ category: 'chocolate' }, { category: 'dairy' }])
           ).toSucceedAndSatisfy((iter) => {
@@ -677,7 +676,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('getIngredients with non-matching filter returns empty', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients(['test.nonexistent'])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
             expect(ingredients.length).toBe(0);
@@ -689,7 +688,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     describe('scaled properties', () => {
       test('scaledFrom contains source version reference', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-01-01-01');
           expect(scaled.scaledFrom.scaleFactor).toBe(2);
           expect(scaled.scaledFrom.targetWeight).toBe(600);
@@ -698,21 +697,21 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('targetWeight returns requested weight', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.targetWeight).toBe(600);
         });
       });
 
       test('baseWeight matches target weight', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.baseWeight).toBe(600);
         });
       });
 
       test('createdDate is present', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.createdDate).toBeDefined();
           expect(typeof scaled.createdDate).toBe('string');
         });
@@ -720,7 +719,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('yields is accessible', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           // yield may or may not be defined based on source
           expect(() => scaled.yield).not.toThrow();
         });
@@ -728,7 +727,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('notes is accessible', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           // notes may or may not be defined based on source
           expect(() => scaled.notes).not.toThrow();
         });
@@ -736,14 +735,14 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
       test('ratings returns array', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(Array.isArray(scaled.ratings)).toBe(true);
         });
       });
 
       test('raw returns underlying computed scaled recipe', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.raw).toBeDefined();
           expect(scaled.raw.scaledFrom).toBeDefined();
           expect(scaled.raw.ingredients).toBeDefined();
@@ -754,7 +753,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     describe('calculateGanache', () => {
       test('calculateGanache uses scaled amounts', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.calculateGanache()).toSucceedAndSatisfy((calc) => {
             // Scaled to 2x, so total weight should be 600
             expect(calc.analysis.totalWeight).toBe(600);

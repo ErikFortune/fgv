@@ -183,7 +183,7 @@ export class RecipeQuery {
    */
   public ganacheFatContent(min: Percentage, max?: Percentage): RecipeQuery {
     return this._addFilter((r) => {
-      const result = r.calculateGanache();
+      const result = r.goldenVersion.calculateGanache();
       /* c8 ignore next 3 - defensive coding: calculateGanache succeeds for valid recipes */
       if (result.isFailure()) {
         return false;
@@ -201,7 +201,7 @@ export class RecipeQuery {
    */
   public validGanache(): RecipeQuery {
     return this._addFilter((r) => {
-      const result = r.calculateGanache();
+      const result = r.goldenVersion.calculateGanache();
       /* c8 ignore next 3 - defensive coding: calculateGanache succeeds for valid recipes */
       if (result.isFailure()) {
         return false;
@@ -215,7 +215,7 @@ export class RecipeQuery {
    */
   public ganacheWithWarnings(): RecipeQuery {
     return this._addFilter((r) => {
-      const result = r.calculateGanache();
+      const result = r.goldenVersion.calculateGanache();
       /* c8 ignore next 3 - defensive coding: calculateGanache succeeds for valid recipes */
       if (result.isFailure()) {
         return false;

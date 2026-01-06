@@ -65,9 +65,9 @@ import {
   IComputedScaledRecipe,
   IRecipe,
   IRecipeIngredient,
-  IRecipeScaleOptions,
   IRecipeVersion,
   IScaledRecipeIngredient,
+  IVersionScaleOptions,
   IRecipeRating as IRecipeRating
 } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
@@ -448,7 +448,32 @@ export interface IRuntimeRecipeVersion {
     filter?: RecipeIngredientsFilter[]
   ): Result<IterableIterator<IResolvedRecipeIngredient<IRuntimeIngredient>>>;
 
+  // ---- Ingredient queries ----
+
+  /**
+   * Checks if this version uses a specific ingredient (as primary).
+   * @param ingredientId - The ingredient ID to check
+   * @returns True if the ingredient is used in this version
+   */
+  usesIngredient(ingredientId: IngredientId): boolean;
+
   // ---- Operations ----
+
+  /**
+   * Scales this version to a target weight.
+   * @param targetWeight - Target total weight in grams
+   * @param options - Optional scaling options (precision, minimum amount)
+   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   */
+  scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+
+  /**
+   * Scales this version by a multiplicative factor.
+   * @param factor - Multiplicative factor (e.g., 2.0 for double)
+   * @param options - Optional scaling options
+   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   */
+  scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
 
   /**
    * Calculates ganache characteristics for this version.
@@ -704,56 +729,6 @@ export interface IRuntimeRecipe {
    */
   usesIngredient(ingredientId: IngredientId): boolean;
 
-  /**
-   * Gets resolved ingredients from the golden version.
-   * Convenience method - same as goldenVersion.ingredients
-   */
-  readonly ingredients: ReadonlyArray<IResolvedRecipeIngredient<IRuntimeIngredient>>;
-
-  // ---- Operations ----
-
-  /**
-   * Scales the golden version to a target weight.
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
-   */
-  scale(targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-
-  /**
-   * Scales a specific version to a target weight.
-   * @param versionSpec - The version to scale
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options (versionSpec will be overridden)
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
-   */
-  scaleVersion(
-    versionSpec: RecipeVersionSpec,
-    targetWeight: Grams,
-    options?: Omit<IRecipeScaleOptions, 'versionSpec'>
-  ): Result<IRuntimeScaledRecipeVersion>;
-
-  /**
-   * Scales by a multiplicative factor.
-   * @param factor - Multiplicative factor (e.g., 2.0 for double)
-   * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
-   */
-  scaleByFactor(factor: number, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
-
-  /**
-   * Calculates ganache characteristics for the golden version.
-   * @returns Success with ganache calculation, or Failure if calculation fails
-   */
-  calculateGanache(): Result<IGanacheCalculation>;
-
-  /**
-   * Calculates ganache characteristics for a specific version.
-   * @param versionSpec - The version to analyze
-   * @returns Success with ganache calculation, or Failure if calculation fails
-   */
-  calculateGanacheForVersion(versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
-
   // ---- Raw access ----
 
   /**
@@ -969,40 +944,6 @@ export interface IIngredientUsageInfo {
 // ============================================================================
 
 /**
- * Minimal context interface for RuntimeVersion.
- * Provides only what a version needs to resolve its dependencies.
- *
- * Generic type parameter allows internal implementations to use concrete types
- * (e.g., `AnyRuntimeIngredient`) while external consumers get abstract interfaces.
- *
- * @typeParam TIngredient - The ingredient type returned by getIngredient
- * @internal
- */
-export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-  /** Gets a resolved runtime ingredient by ID. */
-  getIngredient(id: IngredientId): Result<TIngredient>;
-  /** Gets a resolved runtime recipe by ID. */
-  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
-}
-
-/**
- * Minimal context interface for RuntimeRecipe.
- * Provides only what a recipe needs to resolve its dependencies.
- *
- * @typeParam TIngredient - The ingredient type returned by getIngredient
- * @internal
- */
-export interface IRecipeContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient>
-  extends IVersionContext<TIngredient> {
-  /** Scales a recipe to a target weight. */
-  scaleRecipe(
-    recipeId: RecipeId,
-    targetWeight: Grams,
-    options?: IRecipeScaleOptions
-  ): Result<IRuntimeScaledRecipeVersion>;
-}
-
-/**
  * Minimal context interface for RuntimeScaledVersion.
  * Provides only what a scaled version needs to resolve its dependencies.
  *
@@ -1014,6 +955,22 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
   getIngredient(id: IngredientId): Result<TIngredient>;
   /** Gets the source version for a computed scaled recipe. */
   getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
+}
+
+/**
+ * Minimal context interface for RuntimeVersion and RuntimeRecipe.
+ * Provides ingredient/recipe resolution and scaled version creation.
+ *
+ * Generic type parameter allows internal implementations to use concrete types
+ * (e.g., `AnyRuntimeIngredient`) while external consumers get abstract interfaces.
+ *
+ * @typeParam TIngredient - The ingredient type returned by getIngredient
+ * @internal
+ */
+export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient>
+  extends IScaledVersionContext<TIngredient> {
+  /** Gets a resolved runtime recipe by ID. */
+  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
 }
 
 /**
@@ -1199,35 +1156,14 @@ export interface IRuntimeContext {
 
   // ---- Operations ----
 
-  // TODO: consider removing these - we can get the recipe and then chain any other operations.
   /**
-   * Scales a recipe to a target weight.
-   * @param recipeId - Recipe ID to scale
-   * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options
-   * @returns Success with RuntimeScaledVersion, or Failure
-   */
-  scaleRecipe(
-    recipeId: RecipeId,
-    targetWeight: Grams,
-    options?: IRecipeScaleOptions
-  ): Result<IRuntimeScaledRecipeVersion>;
-
-  /**
-   * Calculates ganache characteristics for a recipe.
+   * Calculates ganache characteristics for a recipe version.
+   * Convenience method for ID-based lookups.
    * @param recipeId - Recipe ID to analyze
-   * @param versionSpec - Optional version ID (default: golden version)
+   * @param versionSpec - Optional version spec (default: golden version)
    * @returns Success with ganache calculation, or Failure
    */
   calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
-
-  /**
-   * Calculates ganache for a specific version.
-   * @param recipeId - Recipe ID
-   * @param versionSpec - Version ID to analyze
-   * @returns Success with ganache calculation, or Failure
-   */
-  calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
 
   // ---- Cache Management ----
 

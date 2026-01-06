@@ -164,19 +164,5 @@ Checks if a recipe exists by validating a string ID.
 
 
 </td></tr>
-<tr><td>
-
-[scaleRecipe(recipeId, targetWeight, options)](./ts-chocolate.runtime.runtimecontextvalidator.scalerecipe.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales a recipe by validating string IDs.
-
-
-</td></tr>
 </tbody></table>
 

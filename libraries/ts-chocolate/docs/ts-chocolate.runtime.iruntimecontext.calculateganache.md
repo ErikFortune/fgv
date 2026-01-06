@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeContext.calculateGanache() method
 
-Calculates ganache characteristics for a recipe.
+Calculates ganache characteristics for a recipe version. Convenience method for ID-based lookups.
 
 **Signature:**
 
@@ -58,7 +58,7 @@ versionSpec
 
 </td><td>
 
-_(Optional)_ Optional version ID (default: golden version)
+_(Optional)_ Optional version spec (default: golden version)
 
 
 </td></tr>

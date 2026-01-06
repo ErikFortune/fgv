@@ -25,8 +25,8 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, Helpers, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
-import { IRecipeVersion, IRecipeRating } from '../recipes';
+import { Grams, Helpers, IngredientId, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
+import { IRecipeVersion, IRecipeRating, scaleVersion, IVersionScaleOptions } from '../recipes';
 import {
   IGanacheCalculation,
   calculateFromIngredients,
@@ -38,10 +38,12 @@ import {
   IResolvedRecipeIngredient,
   IRuntimeRecipe,
   IRuntimeRecipeVersion,
+  IRuntimeScaledRecipeVersion,
   IVersionContext,
   RecipeIngredientsFilter
 } from './model';
 import { AnyRuntimeIngredient } from './ingredients';
+import { RuntimeScaledVersion } from './runtimeScaledVersion';
 
 // Specialize the context interface with concrete ingredient type
 type VersionContext = IVersionContext<AnyRuntimeIngredient>;
@@ -264,8 +266,47 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   }
 
   // ============================================================================
+  // Ingredient Queries
+  // ============================================================================
+
+  /**
+   * Checks if this version uses a specific ingredient (as primary).
+   * @param ingredientId - The ingredient ID to check
+   * @returns True if the ingredient is used in this version
+   */
+  public usesIngredient(ingredientId: IngredientId): boolean {
+    return this._version.ingredients.some((ri) => ri.ingredientId === ingredientId);
+  }
+
+  // ============================================================================
   // Operations
   // ============================================================================
+
+  /**
+   * Scales this version to a target weight.
+   * @param targetWeight - Target total weight in grams
+   * @param options - Optional scaling options (precision, minimum amount)
+   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   */
+  public scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion> {
+    return scaleVersion(this._version, this.versionId, targetWeight, options).onSuccess((scaled) =>
+      RuntimeScaledVersion.create(this._context, scaled)
+    );
+  }
+
+  /**
+   * Scales this version by a multiplicative factor.
+   * @param factor - Multiplicative factor (e.g., 2.0 for double)
+   * @param options - Optional scaling options
+   * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
+   */
+  public scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion> {
+    if (factor <= 0) {
+      return Failure.with('Scale factor must be greater than zero');
+    }
+    const targetWeight = (this.baseWeight * factor) as Grams;
+    return this.scale(targetWeight, options);
+  }
 
   /**
    * Calculates ganache characteristics for this version.

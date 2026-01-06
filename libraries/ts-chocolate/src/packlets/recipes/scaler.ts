@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, Helpers, RecipeId, RecipeVersionSpec } from '../common';
+import { Grams, Helpers, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
 import {
   IComputedScaledRecipe,
   IRecipe,
@@ -40,10 +40,10 @@ import {
 // ============================================================================
 
 /**
- * Options for recipe scaling
+ * Options for version scaling (precision and minimum amount only)
  * @public
  */
-export interface IRecipeScaleOptions {
+export interface IVersionScaleOptions {
   /**
    * Number of decimal places for scaled amounts (default: 1)
    */
@@ -54,7 +54,13 @@ export interface IRecipeScaleOptions {
    * Amounts below this threshold will be rounded up to it
    */
   readonly minimumAmount?: Grams;
+}
 
+/**
+ * Options for recipe scaling (extends version options with version selection)
+ * @public
+ */
+export interface IRecipeScaleOptions extends IVersionScaleOptions {
   /**
    * Recipe version to scale (default: golden version)
    */
@@ -66,17 +72,17 @@ export interface IRecipeScaleOptions {
 // ============================================================================
 
 /**
- * Scales a single {@link Recipes.IRecipeIngredient | recipe ingredient}.ß
- * @param ingredient - The {@link Recipes.IRecipeIngredient | ingredient}ß to scale
+ * Scales a single {@link Recipes.IRecipeIngredient | recipe ingredient}.
+ * @param ingredient - The {@link Recipes.IRecipeIngredient | ingredient} to scale
  * @param scaleFactor - The scaling factor to apply
- * @param options - {@link Recipes.IRecipeScaleOptions | Scaling options}ß
+ * @param options - {@link Recipes.IVersionScaleOptions | Scaling options}
  * @returns Scaled ingredient with both original and scaled amounts
  * @internal
  */
 function scaleIngredient(
   ingredient: IRecipeIngredient,
   scaleFactor: number,
-  options: IRecipeScaleOptions
+  options: IVersionScaleOptions
 ): IScaledRecipeIngredient {
   const precision = options.precision ?? 1;
   const minimumAmount = (options.minimumAmount ?? 0.1) as Grams;
@@ -95,7 +101,64 @@ function scaleIngredient(
 }
 
 /**
- * Scales a recipe to a target weight
+ * Scales a recipe version to a target weight.
+ *
+ * This is the core scaling function that operates directly on a version.
+ * Use this when you already have the version object and its ID.
+ *
+ * @param version - The {@link Recipes.IRecipeVersion | recipe version} to scale.
+ * @param sourceVersionId - The full composite {@link RecipeVersionId | version ID}
+ * @param targetWeight - Target total weight in grams
+ * @param options - Optional {@link Recipes.IVersionScaleOptions | scaling options}
+ * @returns `Success` with computed scaled recipe, or `Failure` if invalid.
+ * @public
+ */
+export function scaleVersion(
+  version: IRecipeVersion,
+  sourceVersionId: RecipeVersionId,
+  targetWeight: Grams,
+  options: IVersionScaleOptions = {}
+): Result<IComputedScaledRecipe> {
+  // Validate inputs
+  if (targetWeight <= 0) {
+    return Failure.with('Target weight must be greater than zero');
+  }
+
+  if (version.baseWeight <= 0) {
+    return Failure.with('Version base weight must be greater than zero');
+  }
+
+  // Calculate scale factor
+  const scaleFactor = targetWeight / version.baseWeight;
+
+  // Scale all ingredients
+  const scaledIngredients = version.ingredients.map((ingredient) =>
+    scaleIngredient(ingredient, scaleFactor, options)
+  );
+
+  // Build scaling source metadata
+  const scaledFrom: IScalingSource = {
+    sourceVersionId,
+    scaleFactor,
+    targetWeight
+  };
+
+  return Success.with({
+    scaledFrom,
+    createdDate: new Date().toISOString().split('T')[0],
+    ingredients: scaledIngredients,
+    baseWeight: targetWeight,
+    yield: version.yield,
+    notes: version.notes,
+    ratings: version.ratings
+  });
+}
+
+/**
+ * Scales a recipe to a target weight.
+ *
+ * This function looks up a version by spec and delegates to {@link Recipes.scaleVersion | scaleVersion}.
+ * Use this when you have a recipe and want to scale a specific version by spec.
  *
  * @param recipe - The {@link Recipes.IRecipe | recipe} to scale.
  * @param recipeId - The full composite {@link RecipeId | recipe ID}
@@ -110,11 +173,6 @@ export function scaleRecipe(
   targetWeight: Grams,
   options: IRecipeScaleOptions = {}
 ): Result<IComputedScaledRecipe> {
-  // Validate inputs
-  if (targetWeight <= 0) {
-    return Failure.with('Target weight must be greater than zero');
-  }
-
   // Get the version to scale (default to golden version)
   const versionSpec = options.versionSpec ?? recipe.goldenVersionSpec;
   const version = recipe.versions.find((v) => v.versionSpec === versionSpec);
@@ -122,35 +180,8 @@ export function scaleRecipe(
     return Failure.with(`Version ${versionSpec} not found in recipe ${recipe.baseId}`);
   }
 
-  // Validate base weight
-  if (version.baseWeight <= 0) {
-    return Failure.with('Recipe base weight must be greater than zero');
-  }
-
-  // Calculate scale factor
-  const scaleFactor = targetWeight / version.baseWeight;
-
-  // Scale all ingredients
-  const scaledIngredients = version.ingredients.map((ingredient) =>
-    scaleIngredient(ingredient, scaleFactor, options)
-  );
-
-  // Build scaling source metadata
-  const scaledFrom: IScalingSource = {
-    sourceVersionId: Helpers.createRecipeVersionId(recipeId, versionSpec),
-    scaleFactor,
-    targetWeight
-  };
-
-  return Success.with({
-    scaledFrom,
-    createdDate: new Date().toISOString().split('T')[0],
-    ingredients: scaledIngredients,
-    baseWeight: targetWeight,
-    yield: version.yield,
-    notes: version.notes,
-    ratings: version.ratings
-  });
+  const versionId = Helpers.createRecipeVersionId(recipeId, versionSpec);
+  return scaleVersion(version, versionId, targetWeight, options);
 }
 
 /**

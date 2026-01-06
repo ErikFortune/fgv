@@ -213,33 +213,5 @@ Checks if a recipe exists
 
 
 </td></tr>
-<tr><td>
-
-[scaleRecipe(id, targetWeight, options)](./ts-chocolate.runtime.chocolatelibrary.scalerecipe.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales a recipe to a target weight
-
-
-</td></tr>
-<tr><td>
-
-[scaleRecipeByFactor(id, factor, options)](./ts-chocolate.runtime.chocolatelibrary.scalerecipebyfactor.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales a recipe by a multiplicative factor
-
-
-</td></tr>
 </tbody></table>
 

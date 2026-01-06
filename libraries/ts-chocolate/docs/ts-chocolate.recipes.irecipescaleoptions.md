@@ -4,13 +4,14 @@
 
 ## Recipes.IRecipeScaleOptions interface
 
-Options for recipe scaling
+Options for recipe scaling (extends version options with version selection)
 
 **Signature:**
 
 ```typescript
-export interface IRecipeScaleOptions 
+export interface IRecipeScaleOptions extends IVersionScaleOptions 
 ```
+**Extends:** [IVersionScaleOptions](./ts-chocolate.recipes.iversionscaleoptions.md)
 
 ## Properties
 
@@ -36,48 +37,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[minimumAmount?](./ts-chocolate.recipes.irecipescaleoptions.minimumamount.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Grams](./ts-chocolate.grams.md)
-
-
-</td><td>
-
-_(Optional)_ Minimum amount to show in scaled recipe (default: 0.1) Amounts below this threshold will be rounded up to it
-
-
-</td></tr>
-<tr><td>
-
-[precision?](./ts-chocolate.recipes.irecipescaleoptions.precision.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-_(Optional)_ Number of decimal places for scaled amounts (default: 1)
-
-
-</td></tr>
-<tr><td>
 
 [versionSpec?](./ts-chocolate.recipes.irecipescaleoptions.versionspec.md)
 

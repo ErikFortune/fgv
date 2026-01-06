@@ -11,9 +11,9 @@ This is the primary entry point for consumers who want resolved views of recipes
 **Signature:**
 
 ```typescript
-export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IRecipeContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext 
+export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext 
 ```
-**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IRecipeContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext
+**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext
 
 ## Properties
 
@@ -151,21 +151,7 @@ Description
 
 </td><td>
 
-Calculates ganache characteristics for a recipe. Convenience method that delegates to the recipe entity.
-
-
-</td></tr>
-<tr><td>
-
-[calculateGanacheForVersion(recipeId, versionSpec)](./ts-chocolate.runtime.runtimecontext.calculateganacheforversion.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Calculates ganache for a specific version. Convenience method that delegates to the recipe entity.
+Calculates ganache characteristics for a recipe version. Convenience method for ID-based lookups.
 
 
 </td></tr>
@@ -509,20 +495,6 @@ Invalidates all indexer caches. Call this when underlying library data changes.
 </td><td>
 
 Iterates over all recipes as RuntimeRecipe objects. Note: This resolves recipes lazily as you iterate.
-
-
-</td></tr>
-<tr><td>
-
-[scaleRecipe(recipeId, targetWeight, options)](./ts-chocolate.runtime.runtimecontext.scalerecipe.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Scales a recipe to a target weight.
 
 
 </td></tr>

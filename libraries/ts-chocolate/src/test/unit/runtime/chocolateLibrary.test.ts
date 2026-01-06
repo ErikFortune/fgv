@@ -235,58 +235,6 @@ describe('ChocolateLibrary', () => {
   });
 
   // ============================================================================
-  // Recipe Scaling Tests
-  // ============================================================================
-
-  describe('recipe scaling', () => {
-    let library: ChocolateLibrary;
-
-    beforeEach(() => {
-      const recipes = RecipesLibrary.create({
-        builtin: false,
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
-      }).orThrow();
-
-      library = ChocolateLibrary.create({ builtin: false, libraries: { recipes } }).orThrow();
-    });
-
-    test('scaleRecipe scales to target weight', () => {
-      expect(library.scaleRecipe('test.testRecipe' as RecipeId, 200 as Grams)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.scaledFrom.targetWeight).toBe(200);
-          expect(scaled.scaledFrom.scaleFactor).toBe(2);
-          expect(scaled.baseWeight).toBe(200);
-        }
-      );
-    });
-
-    test('scaleRecipe fails for non-existent recipe', () => {
-      expect(library.scaleRecipe('test.nonexistent' as RecipeId, 200 as Grams)).toFail();
-    });
-
-    test('scaleRecipeByFactor scales by factor', () => {
-      expect(library.scaleRecipeByFactor('test.testRecipe' as RecipeId, 0.5)).toSucceedAndSatisfy(
-        (scaled) => {
-          expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
-          expect(scaled.scaledFrom.targetWeight).toBe(50);
-        }
-      );
-    });
-
-    test('scaleRecipeByFactor fails for non-existent recipe', () => {
-      expect(library.scaleRecipeByFactor('test.nonexistent' as RecipeId, 0.5)).toFail();
-    });
-
-    test('scaleRecipeByFactor fails for invalid version', () => {
-      expect(
-        library.scaleRecipeByFactor('test.testRecipe' as RecipeId, 0.5, {
-          versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionSpec
-        })
-      ).toFailWith(/not found/);
-    });
-  });
-
-  // ============================================================================
   // Ganache Calculation Tests
   // ============================================================================
 

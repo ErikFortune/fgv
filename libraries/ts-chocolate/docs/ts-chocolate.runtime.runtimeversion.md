@@ -314,5 +314,47 @@ Gets ingredients, optionally filtered.
 
 
 </td></tr>
+<tr><td>
+
+[scale(targetWeight, options)](./ts-chocolate.runtime.runtimeversion.scale.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Scales this version to a target weight.
+
+
+</td></tr>
+<tr><td>
+
+[scaleByFactor(factor, options)](./ts-chocolate.runtime.runtimeversion.scalebyfactor.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Scales this version by a multiplicative factor.
+
+
+</td></tr>
+<tr><td>
+
+[usesIngredient(ingredientId)](./ts-chocolate.runtime.runtimeversion.usesingredient.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if this version uses a specific ingredient (as primary).
+
+
+</td></tr>
 </tbody></table>
 

@@ -167,27 +167,6 @@ The composite recipe ID (e.g., "user.dark-ganache"). Combines source and base ID
 </td></tr>
 <tr><td>
 
-[ingredients](./ts-chocolate.runtime.iruntimerecipe.ingredients.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IResolvedRecipeIngredient](./ts-chocolate.runtime.iresolvedrecipeingredient.md)<!-- -->&lt;[IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->&gt;&gt;
-
-
-</td><td>
-
-Gets resolved ingredients from the golden version. Convenience method - same as goldenVersion.ingredients
-
-
-</td></tr>
-<tr><td>
-
 [latestVersion](./ts-chocolate.runtime.iruntimerecipe.latestversion.md)
 
 
@@ -350,67 +329,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[calculateGanache()](./ts-chocolate.runtime.iruntimerecipe.calculateganache.md)
-
-
-</td><td>
-
-Calculates ganache characteristics for the golden version.
-
-
-</td></tr>
-<tr><td>
-
-[calculateGanacheForVersion(versionSpec)](./ts-chocolate.runtime.iruntimerecipe.calculateganacheforversion.md)
-
-
-</td><td>
-
-Calculates ganache characteristics for a specific version.
-
-
-</td></tr>
-<tr><td>
-
 [getVersion(versionSpec)](./ts-chocolate.runtime.iruntimerecipe.getversion.md)
 
 
 </td><td>
 
 Gets a specific version by [version specifier](./ts-chocolate.recipeversionspec.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[scale(targetWeight, options)](./ts-chocolate.runtime.iruntimerecipe.scale.md)
-
-
-</td><td>
-
-Scales the golden version to a target weight.
-
-
-</td></tr>
-<tr><td>
-
-[scaleByFactor(factor, options)](./ts-chocolate.runtime.iruntimerecipe.scalebyfactor.md)
-
-
-</td><td>
-
-Scales by a multiplicative factor.
-
-
-</td></tr>
-<tr><td>
-
-[scaleVersion(versionSpec, targetWeight, options)](./ts-chocolate.runtime.iruntimerecipe.scaleversion.md)
-
-
-</td><td>
-
-Scales a specific version to a target weight.
 
 
 </td></tr>
