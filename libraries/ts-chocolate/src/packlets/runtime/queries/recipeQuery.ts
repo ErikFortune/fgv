@@ -287,7 +287,7 @@ export class RecipeQuery {
    */
   public execute(): ReadonlyArray<RuntimeRecipe> {
     const results: RuntimeRecipe[] = [];
-    for (const recipe of this._context.recipes()) {
+    for (const recipe of this._context.recipes.values()) {
       if (this._matchesAllFilters(recipe)) {
         results.push(recipe);
       }
@@ -299,7 +299,7 @@ export class RecipeQuery {
    * Execute and return first matching recipe.
    */
   public first(): RuntimeRecipe | undefined {
-    for (const recipe of this._context.recipes()) {
+    for (const recipe of this._context.recipes.values()) {
       if (this._matchesAllFilters(recipe)) {
         return recipe;
       }
@@ -313,7 +313,7 @@ export class RecipeQuery {
    */
   public count(): number {
     let count = 0;
-    for (const recipe of this._context.recipes()) {
+    for (const recipe of this._context.recipes.values()) {
       if (this._matchesAllFilters(recipe)) {
         count++;
       }

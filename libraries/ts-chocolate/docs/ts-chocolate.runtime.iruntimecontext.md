@@ -83,6 +83,27 @@ Gets the number of cached recipes.
 </td></tr>
 <tr><td>
 
+[ingredients](./ts-chocolate.runtime.iruntimecontext.ingredients.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Collections.IReadOnlyValidatingResultMap&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->&gt;
+
+
+</td><td>
+
+A read-only map of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+
+
+</td></tr>
+<tr><td>
+
 [library](./ts-chocolate.runtime.iruntimecontext.library.md)
 
 
@@ -99,6 +120,27 @@ Gets the number of cached recipes.
 </td><td>
 
 The underlying ChocolateLibrary for direct access when needed.
+
+
+</td></tr>
+<tr><td>
+
+[recipes](./ts-chocolate.runtime.iruntimecontext.recipes.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Collections.IReadOnlyValidatingResultMap&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)<!-- -->&gt;
+
+
+</td><td>
+
+A read-only map of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
 
 
 </td></tr>
@@ -141,34 +183,12 @@ Clears all cached runtime objects. Use if underlying library data has changed.
 </td></tr>
 <tr><td>
 
-[getAllIngredients()](./ts-chocolate.runtime.iruntimecontext.getallingredients.md)
-
-
-</td><td>
-
-Gets all ingredients as an array.
-
-
-</td></tr>
-<tr><td>
-
 [getAllIngredientTags()](./ts-chocolate.runtime.iruntimecontext.getallingredienttags.md)
 
 
 </td><td>
 
 Gets all unique tags used across ingredients.
-
-
-</td></tr>
-<tr><td>
-
-[getAllRecipes()](./ts-chocolate.runtime.iruntimecontext.getallrecipes.md)
-
-
-</td><td>
-
-Gets all recipes as an array.
 
 
 </td></tr>
@@ -185,78 +205,12 @@ Gets all unique tags used across recipes.
 </td></tr>
 <tr><td>
 
-[getIngredient(id)](./ts-chocolate.runtime.iruntimecontext.getingredient.md)
-
-
-</td><td>
-
-Gets a resolved runtime ingredient by ID. Results are cached for efficient repeated access.
-
-
-</td></tr>
-<tr><td>
-
 [getIngredientUsage(ingredientId)](./ts-chocolate.runtime.iruntimecontext.getingredientusage.md)
 
 
 </td><td>
 
 Gets detailed usage information for an ingredient.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipe(id)](./ts-chocolate.runtime.iruntimecontext.getrecipe.md)
-
-
-</td><td>
-
-Gets a resolved runtime recipe by ID. Results are cached for efficient repeated access.
-
-
-</td></tr>
-<tr><td>
-
-[hasIngredient(id)](./ts-chocolate.runtime.iruntimecontext.hasingredient.md)
-
-
-</td><td>
-
-Checks if an ingredient exists.
-
-
-</td></tr>
-<tr><td>
-
-[hasRecipe(id)](./ts-chocolate.runtime.iruntimecontext.hasrecipe.md)
-
-
-</td><td>
-
-Checks if a recipe exists.
-
-
-</td></tr>
-<tr><td>
-
-[ingredients()](./ts-chocolate.runtime.iruntimecontext.ingredients.md)
-
-
-</td><td>
-
-Iterates over all ingredients as RuntimeIngredient objects. Note: This resolves ingredients lazily as you iterate.
-
-
-</td></tr>
-<tr><td>
-
-[recipes()](./ts-chocolate.runtime.iruntimecontext.recipes.md)
-
-
-</td><td>
-
-Iterates over all recipes as RuntimeRecipe objects. Note: This resolves recipes lazily as you iterate.
 
 
 </td></tr>

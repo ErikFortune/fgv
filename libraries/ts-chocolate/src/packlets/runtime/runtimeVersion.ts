@@ -173,9 +173,9 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   public get recipe(): IRuntimeRecipe {
     if (this._recipe === undefined) {
       // orThrow is safe - version was created from a valid recipe
-      this._recipe = this._context.getRecipe(this._recipeId).orThrow();
+      this._recipe = this._context.recipes.get(this._recipeId).value;
     }
-    return this._recipe;
+    return this._recipe!;
   }
 
   // ============================================================================
@@ -351,7 +351,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
 
     for (const ri of this._version.ingredients) {
       // Resolve primary ingredient
-      const ingredientResult = this._context.getIngredient(ri.ingredientId);
+      const ingredientResult = this._context.ingredients.get(ri.ingredientId);
       /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
       if (ingredientResult.isFailure()) {
         errors.push(`Failed to resolve ingredient ${ri.ingredientId}: ${ingredientResult.message}`);
@@ -362,7 +362,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
       const alternates: AnyRuntimeIngredient[] = [];
       if (ri.alternateIngredientIds) {
         for (const altId of ri.alternateIngredientIds) {
-          const altResult = this._context.getIngredient(altId);
+          const altResult = this._context.ingredients.get(altId);
           if (altResult.isSuccess()) {
             alternates.push(altResult.value);
           }

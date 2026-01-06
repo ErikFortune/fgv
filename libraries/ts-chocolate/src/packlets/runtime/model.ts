@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Collections, Result } from '@fgv/ts-utils';
 
 import {
   Allergen,
@@ -946,12 +946,12 @@ export interface IIngredientUsageInfo {
  * Minimal context interface for RuntimeScaledVersion.
  * Provides only what a scaled version needs to resolve its dependencies.
  *
- * @typeParam TIngredient - The ingredient type returned by getIngredient
+ * @typeParam TIngredient - The ingredient type returned by ingredients map
  * @internal
  */
 export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-  /** Gets a resolved runtime ingredient by ID. */
-  getIngredient(id: IngredientId): Result<TIngredient>;
+  /** Map of all ingredients, keyed by composite ID. */
+  readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
   /** Gets the source version for a computed scaled recipe. */
   getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
 }
@@ -963,13 +963,13 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
  * Generic type parameter allows internal implementations to use concrete types
  * (e.g., `AnyRuntimeIngredient`) while external consumers get abstract interfaces.
  *
- * @typeParam TIngredient - The ingredient type returned by getIngredient
+ * @typeParam TIngredient - The ingredient type returned by ingredients map
  * @internal
  */
 export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient>
   extends IScaledVersionContext<TIngredient> {
-  /** Gets a resolved runtime recipe by ID. */
-  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
+  /** Map of all recipes, keyed by composite ID. */
+  readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
 }
 
 /**
@@ -1013,72 +1013,23 @@ export interface IRuntimeContext {
    */
   readonly library: ChocolateLibrary;
 
-  // ---- Primary Resolution ----
+  // ---- Ingredients and Recipes ----
 
   /**
-   * Gets a resolved runtime ingredient by ID.
-   * Results are cached for efficient repeated access.
-   * @param id - Composite ingredient ID
-   * @returns Success with RuntimeIngredient, or Failure if not found
+   * A read-only map of all ingredients, keyed by composite ID.
+   * Ingredients are resolved eagerly on first access and cached.
+   * Use `.get(id)` for Result-based access, `.has(id)` for existence checks,
+   * `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
    */
-  getIngredient(id: IngredientId): Result<IRuntimeIngredient>;
+  readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient>;
 
   /**
-   * Gets a resolved runtime recipe by ID.
-   * Results are cached for efficient repeated access.
-   * @param id - Composite recipe ID
-   * @returns Success with RuntimeRecipe, or Failure if not found
+   * A read-only map of all recipes, keyed by composite ID.
+   * Recipes are resolved eagerly on first access and cached.
+   * Use `.get(id)` for Result-based access, `.has(id)` for existence checks,
+   * `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
    */
-  getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
-
-  /**
-   * Checks if an ingredient exists.
-   * @param id - Composite ingredient ID
-   * @returns True if ingredient exists
-   */
-  hasIngredient(id: IngredientId): boolean;
-
-  /**
-   * Checks if a recipe exists.
-   * @param id - Composite recipe ID
-   * @returns True if recipe exists
-   */
-  hasRecipe(id: RecipeId): boolean;
-
-  // ---- Iteration ----
-
-  /*
-   * TODO: consider exposing ingredients and recipes as a ReadOnlyValidatingResultMap instead of just an iterator.
-   * We could:
-   * 1. add a type guard to distinguish runtime from data-layer entities (e.g. using instanceof)
-   * 2. populate the recipe & ingredient maps with the data-layer entities at construction
-   * 3. lazily resolve to runtime entities on get() calls
-   * 4. expose as ReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient> and ReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>
-   * This would provide map-like access with caching, while still allowing iteration.
-   *
-   * We will probably want to create a LazyLoadingResultMap, possibly in ts-utils, to encapsulate the lazy loading logic.
-   */
-  /**
-   * Iterates over all ingredients as RuntimeIngredient objects.
-   * Note: This resolves ingredients lazily as you iterate.
-   */
-  ingredients(): IterableIterator<IRuntimeIngredient>;
-
-  /**
-   * Iterates over all recipes as RuntimeRecipe objects.
-   * Note: This resolves recipes lazily as you iterate.
-   */
-  recipes(): IterableIterator<IRuntimeRecipe>;
-
-  /**
-   * Gets all ingredients as an array.
-   */
-  getAllIngredients(): IRuntimeIngredient[];
-
-  /**
-   * Gets all recipes as an array.
-   */
-  getAllRecipes(): IRuntimeRecipe[];
+  readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
 
   // ---- Reverse Lookups ----
 

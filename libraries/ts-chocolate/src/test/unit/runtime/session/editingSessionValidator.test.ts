@@ -161,7 +161,7 @@ describe('EditingSessionValidator', () => {
 
   describe('validating property', () => {
     test('exposes validator via validating property', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating).toBeDefined();
@@ -169,7 +169,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('validator toReadOnly returns the same validator', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       const readOnly = session.validating.toReadOnly();
@@ -183,7 +183,7 @@ describe('EditingSessionValidator', () => {
 
   describe('getIngredient', () => {
     test('gets ingredient using plain string', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.getIngredient('test.dark-chocolate')).toSucceedAndSatisfy((ing) => {
@@ -193,14 +193,14 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid ingredient ID format', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.getIngredient('invalid-no-dot')).toFailWith(/Invalid IngredientId/);
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.getIngredient('test.non-existent')).toFailWith(/not found/);
@@ -209,21 +209,21 @@ describe('EditingSessionValidator', () => {
 
   describe('hasIngredient', () => {
     test('returns true for existing ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.hasIngredient('test.dark-chocolate')).toBe(true);
     });
 
     test('returns false for non-existent ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.hasIngredient('test.non-existent')).toBe(false);
     });
 
     test('returns false for invalid ingredient ID format', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.hasIngredient('invalid-no-dot')).toBe(false);
@@ -236,7 +236,7 @@ describe('EditingSessionValidator', () => {
 
   describe('setIngredientAmount', () => {
     test('sets ingredient amount using plain values', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setIngredientAmount('test.dark-chocolate', 250)).toSucceed();
@@ -247,7 +247,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid ingredient ID', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setIngredientAmount('invalid-no-dot', 100)).toFailWith(
@@ -256,14 +256,14 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for negative amount', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setIngredientAmount('test.dark-chocolate', -10)).toFailWith(/non-negative/);
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setIngredientAmount('test.non-existent', 100)).toFailWith(/not found/);
@@ -272,7 +272,7 @@ describe('EditingSessionValidator', () => {
 
   describe('addIngredientAmount', () => {
     test('adds to ingredient amount using plain values', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredientAmount('test.dark-chocolate', 50)).toSucceed();
@@ -282,21 +282,21 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid ingredient ID', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredientAmount('invalid-no-dot', 50)).toFailWith(/Invalid IngredientId/);
     });
 
     test('fails for negative additional amount', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredientAmount('test.dark-chocolate', -10)).toFailWith(/non-negative/);
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredientAmount('test.non-existent', 50)).toFailWith(/not found/);
@@ -309,7 +309,7 @@ describe('EditingSessionValidator', () => {
 
   describe('addIngredient', () => {
     test('adds new ingredient using plain values', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredient('test.butter', 30)).toSucceed();
@@ -321,21 +321,21 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid ingredient ID', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredient('invalid-no-dot', 30)).toFailWith(/Invalid IngredientId/);
     });
 
     test('fails for negative amount', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredient('test.butter', -10)).toFailWith(/non-negative/);
     });
 
     test('fails if ingredient already exists', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.addIngredient('test.dark-chocolate', 100)).toFailWith(/already exists/);
@@ -344,7 +344,7 @@ describe('EditingSessionValidator', () => {
 
   describe('removeIngredient', () => {
     test('removes ingredient using plain string', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.removeIngredient('test.cream')).toSucceed();
@@ -354,14 +354,14 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid ingredient ID', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.removeIngredient('invalid-no-dot')).toFailWith(/Invalid IngredientId/);
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.removeIngredient('test.non-existent')).toFailWith(/not found/);
@@ -374,7 +374,7 @@ describe('EditingSessionValidator', () => {
 
   describe('substituteIngredient', () => {
     test('substitutes ingredient using plain values', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.cream', 'test.butter')).toSucceed();
@@ -389,7 +389,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('substitutes ingredient with specified amount', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.cream', 'test.butter', 80)).toSucceed();
@@ -400,7 +400,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid original ingredient ID', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('invalid-no-dot', 'test.butter')).toFailWith(
@@ -409,7 +409,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for invalid substitute ingredient ID', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.cream', 'invalid-no-dot')).toFailWith(
@@ -418,7 +418,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for negative amount', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.cream', 'test.butter', -10)).toFailWith(
@@ -427,7 +427,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for non-existent original ingredient', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.non-existent', 'test.butter')).toFailWith(
@@ -436,7 +436,7 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails if substitute already exists', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.substituteIngredient('test.cream', 'test.dark-chocolate')).toFailWith(
@@ -451,7 +451,7 @@ describe('EditingSessionValidator', () => {
 
   describe('setTargetWeight', () => {
     test('sets target weight using plain number', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setTargetWeight(600)).toSucceed();
@@ -460,14 +460,14 @@ describe('EditingSessionValidator', () => {
     });
 
     test('fails for negative weight', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.validating.setTargetWeight(-100)).toFailWith(/non-negative/);
     });
 
     test('fails for zero weight (converted but rejected by session)', () => {
-      const version = ctx.getRecipe('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.EditingSession.create({ sourceVersion: version }).orThrow();
 
       // 0 passes grams conversion but fails session validation

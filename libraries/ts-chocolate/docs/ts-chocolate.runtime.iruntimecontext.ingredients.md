@@ -2,16 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Runtime](./ts-chocolate.runtime.md) &gt; [IRuntimeContext](./ts-chocolate.runtime.iruntimecontext.md) &gt; [ingredients](./ts-chocolate.runtime.iruntimecontext.ingredients.md)
 
-## Runtime.IRuntimeContext.ingredients() method
+## Runtime.IRuntimeContext.ingredients property
 
-Iterates over all ingredients as RuntimeIngredient objects. Note: This resolves ingredients lazily as you iterate.
+A read-only map of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
 
 **Signature:**
 
 ```typescript
-ingredients(): IterableIterator<IRuntimeIngredient>;
+readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient>;
 ```
-**Returns:**
-
-IterableIterator&lt;[IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->&gt;
-

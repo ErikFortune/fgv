@@ -208,82 +208,82 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
   describe('RuntimeRecipe', () => {
     describe('identity', () => {
       test('provides composite ID', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.id).toBe('test.dark-ganache');
       });
 
       test('provides source ID', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.sourceId).toBe('test');
       });
 
       test('provides base ID', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.baseId).toBe('dark-ganache');
       });
     });
 
     describe('core properties', () => {
       test('provides name', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.name).toBe('Dark Ganache');
       });
 
       test('provides description', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.description).toBe('Classic dark chocolate ganache');
       });
 
       test('provides tags', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.tags).toContain('classic');
         expect(recipe.tags).toContain('dark');
       });
 
       test('provides empty tags when none defined', () => {
-        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.empty-recipe' as RecipeId).orThrow();
         expect(recipe.tags).toEqual([]);
       });
 
       test('provides goldenVersionSpec', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersionSpec).toBe('2026-01-01-01');
       });
     });
 
     describe('version navigation', () => {
       test('provides goldenVersion', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const golden = recipe.goldenVersion;
         expect(golden.versionSpec).toBe('2026-01-01-01');
       });
 
       test('provides all versions', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.versions.length).toBe(2);
       });
 
       test('getVersion returns specific version', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.getVersion('2026-02-01-01' as RecipeVersionSpec)).toSucceedAndSatisfy((v) => {
           expect(v.versionSpec).toBe('2026-02-01-01');
         });
       });
 
       test('getVersion fails for non-existent version', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.getVersion('nonexistent' as RecipeVersionSpec)).toFailWith(/not found/);
       });
 
       test('latestVersion returns most recent by date', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const latest = recipe.latestVersion;
         expect(latest.versionSpec).toBe('2026-02-01-01');
       });
 
       test('latestVersion reuses goldenVersion when same', () => {
         // empty-recipe has only one version which is both golden and latest
-        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.empty-recipe' as RecipeId).orThrow();
         const latest = recipe.latestVersion;
         const golden = recipe.goldenVersion;
         expect(latest.versionSpec).toBe('2026-01-01-01');
@@ -291,37 +291,37 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('versionCount returns correct count', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.versionCount).toBe(2);
       });
     });
 
     describe('ingredient queries', () => {
       test('allIngredientIds returns unique IDs across versions', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const ids = recipe.allIngredientIds;
         expect(ids.size).toBe(3); // dark-chocolate, cream, butter
       });
 
       test('usesIngredient returns true for used ingredient', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.usesIngredient('test.dark-chocolate' as IngredientId)).toBe(true);
       });
 
       test('usesIngredient returns false for unused ingredient', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.usesIngredient('test.alt-chocolate' as IngredientId)).toBe(false);
       });
     });
 
     describe('raw access', () => {
       test('raw returns underlying recipe data', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.raw.name).toBe('Dark Ganache');
       });
 
       test('rawAsRecipe returns Recipe instance when underlying data is Recipe', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         // RecipesLibrary converts IRecipe data to Recipe class instances
         // So rawAsRecipe should return the Recipe instance
         expect(recipe.rawAsRecipe).toBeDefined();
@@ -331,7 +331,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('create factory', () => {
       test('create factory method succeeds', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(RuntimeRecipe.create(ctx as never, recipe.id, recipe.raw)).toSucceed();
       });
     });
@@ -344,22 +344,22 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
   describe('RuntimeVersion', () => {
     describe('identity', () => {
       test('provides versionSpec', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.versionSpec).toBe('2026-01-01-01');
       });
 
       test('provides createdDate', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.createdDate).toBe('2026-01-01');
       });
 
       test('provides recipeId', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.recipeId).toBe('test.dark-ganache');
       });
 
       test('provides recipe parent reference', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const version = recipe.goldenVersion;
         expect(version.recipe).toBeDefined();
         expect(version.recipe.id).toBe('test.dark-ganache');
@@ -369,7 +369,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('resolved ingredients', () => {
       test('getIngredients returns all resolved ingredients', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.getIngredients()).toSucceedAndSatisfy((iter) => {
           const ingredients = [...iter];
           expect(ingredients.length).toBe(2);
@@ -379,26 +379,26 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('resolved ingredient includes notes', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
         expect(ingredients[0].notes).toBe('Use couverture');
       });
 
       test('resolved ingredient includes alternates', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
         expect(ingredients[0].alternates.length).toBe(1);
         expect(ingredients[0].alternates[0].name).toBe('Alternative Chocolate');
       });
 
       test('resolved ingredient includes raw reference', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
         expect(ingredients[0].raw.ingredientId).toBe('test.dark-chocolate');
       });
 
       test('getIngredients with empty array returns nothing', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.getIngredients([])).toSucceedAndSatisfy((iter) => {
           const ingredients = [...iter];
           expect(ingredients.length).toBe(0);
@@ -406,7 +406,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with exact ID filter returns matching ingredient', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.getIngredients(['test.dark-chocolate'])).toSucceedAndSatisfy((iter) => {
           const ingredients = [...iter];
           expect(ingredients.length).toBe(1);
@@ -415,7 +415,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with non-matching ID returns nothing', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.getIngredients(['test.nonexistent'])).toSucceedAndSatisfy((iter) => {
           const ingredients = [...iter];
           expect(ingredients.length).toBe(0);
@@ -425,29 +425,29 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('computed properties', () => {
       test('provides baseWeight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.baseWeight).toBe(300);
       });
 
       test('provides yield', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.yield).toBe('50 bonbons');
       });
 
       test('provides notes', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.notes).toBe('Original recipe');
       });
 
       test('provides ratings', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const ratings = recipe.goldenVersion.ratings;
         expect(ratings.length).toBe(1);
         expect(ratings[0].score).toBe(4);
       });
 
       test('ratings returns empty array when none defined', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const version = recipe.versions[1]; // Second version has no ratings
         expect(version.ratings).toEqual([]);
       });
@@ -455,7 +455,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('filtering helpers', () => {
       test('getIngredients with category filter returns matching category', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.getIngredients([{ category: 'chocolate' }])).toSucceedAndSatisfy(
           (iter) => {
             const chocolate = [...iter];
@@ -466,26 +466,26 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients filters chocolate ingredients only', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const chocolate = [...recipe.goldenVersion.getIngredients([{ category: 'chocolate' }]).orThrow()];
         expect(chocolate.length).toBe(1);
       });
 
       test('getIngredients filters dairy ingredients only', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const dairy = [...recipe.goldenVersion.getIngredients([{ category: 'dairy' }]).orThrow()];
         expect(dairy.length).toBe(1);
         expect(dairy[0].ingredient.name).toBe('Heavy Cream');
       });
 
       test('getIngredients with sugar filter returns empty when no sugar', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const sugar = [...recipe.goldenVersion.getIngredients([{ category: 'sugar' }]).orThrow()];
         expect(sugar.length).toBe(0);
       });
 
       test('getIngredients with fat filter returns fat only', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const version = recipe.versions[1]; // Has butter
         const fat = [...version.getIngredients([{ category: 'fat' }]).orThrow()];
         expect(fat.length).toBe(1);
@@ -493,20 +493,20 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with alcohol filter returns empty when no alcohol', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const alcohol = [...recipe.goldenVersion.getIngredients([{ category: 'alcohol' }]).orThrow()];
         expect(alcohol.length).toBe(0);
       });
 
       test('getIngredients with regex pattern filters by ID pattern', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const matching = [...recipe.goldenVersion.getIngredients([/^test\.dark/]).orThrow()];
         expect(matching.length).toBe(1);
         expect(matching[0].ingredient.name).toBe('Dark Chocolate 70%');
       });
 
       test('getIngredients with multiple filters uses OR semantics', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const filtered = [
           ...recipe.goldenVersion.getIngredients([{ category: 'chocolate' }, { category: 'dairy' }]).orThrow()
         ];
@@ -514,7 +514,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with category regex pattern', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const matching = [...recipe.goldenVersion.getIngredients([{ category: /^choc/ }]).orThrow()];
         expect(matching.length).toBe(1);
         expect(matching[0].ingredient.name).toBe('Dark Chocolate 70%');
@@ -523,18 +523,18 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('operations', () => {
       test('usesIngredient returns true for used ingredient', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.usesIngredient('test.dark-chocolate' as IngredientId)).toBe(true);
       });
 
       test('usesIngredient returns false for unused ingredient', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         // butter is used in version 2 but not golden version
         expect(recipe.goldenVersion.usesIngredient('test.butter' as IngredientId)).toBe(false);
       });
 
       test('scale scales to target weight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.scaledFrom.scaleFactor).toBe(2);
           expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-01-01-01');
@@ -542,34 +542,34 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('scale fails for zero target weight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(0 as Grams)).toFailWith(/greater than zero/);
       });
 
       test('scale fails for negative target weight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(-100 as Grams)).toFailWith(/greater than zero/);
       });
 
       test('scaleByFactor scales by multiplicative factor', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scaleByFactor(2.0)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.baseWeight).toBe(600);
         });
       });
 
       test('scaleByFactor fails for zero factor', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scaleByFactor(0)).toFailWith(/greater than zero/);
       });
 
       test('scaleByFactor fails for negative factor', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scaleByFactor(-1)).toFailWith(/greater than zero/);
       });
 
       test('calculateGanache returns analysis', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.calculateGanache()).toSucceedAndSatisfy((calc) => {
           expect(calc.analysis).toBeDefined();
           expect(calc.validation).toBeDefined();
@@ -579,14 +579,14 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('raw access', () => {
       test('raw returns underlying version data', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.raw.versionSpec).toBe('2026-01-01-01');
       });
     });
 
     describe('create factory', () => {
       test('create factory method succeeds', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(RuntimeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.raw)).toSucceed();
       });
     });
@@ -599,7 +599,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
   describe('RuntimeScaledVersion', () => {
     describe('getIngredients filtering', () => {
       test('getIngredients with no filter returns all ingredients', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients()).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -609,7 +609,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with empty array returns nothing', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -619,7 +619,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with string filter matches exact ID', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients(['test.dark-chocolate'])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -630,7 +630,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with regex filter matches pattern', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([/^test\.dark/])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -641,7 +641,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with category filter matches category', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([{ category: 'dairy' }])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -652,7 +652,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with category regex filter matches pattern', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients([{ category: /^choc/ }])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -663,7 +663,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with multiple filters uses OR semantics', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(
             scaled.getIngredients([{ category: 'chocolate' }, { category: 'dairy' }])
@@ -675,7 +675,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('getIngredients with non-matching filter returns empty', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.getIngredients(['test.nonexistent'])).toSucceedAndSatisfy((iter) => {
             const ingredients = [...iter];
@@ -687,7 +687,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('scaled properties', () => {
       test('scaledFrom contains source version reference', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-01-01-01');
           expect(scaled.scaledFrom.scaleFactor).toBe(2);
@@ -696,21 +696,21 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('targetWeight returns requested weight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.targetWeight).toBe(600);
         });
       });
 
       test('baseWeight matches target weight', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.baseWeight).toBe(600);
         });
       });
 
       test('createdDate is present', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.createdDate).toBeDefined();
           expect(typeof scaled.createdDate).toBe('string');
@@ -718,7 +718,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('yields is accessible', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           // yield may or may not be defined based on source
           expect(() => scaled.yield).not.toThrow();
@@ -726,7 +726,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('notes is accessible', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           // notes may or may not be defined based on source
           expect(() => scaled.notes).not.toThrow();
@@ -734,14 +734,14 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       });
 
       test('ratings returns array', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(Array.isArray(scaled.ratings)).toBe(true);
         });
       });
 
       test('raw returns underlying computed scaled recipe', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.raw).toBeDefined();
           expect(scaled.raw.scaledFrom).toBeDefined();
@@ -752,7 +752,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
 
     describe('calculateGanache', () => {
       test('calculateGanache uses scaled amounts', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.goldenVersion.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
           expect(scaled.calculateGanache()).toSucceedAndSatisfy((calc) => {
             // Scaled to 2x, so total weight should be 600

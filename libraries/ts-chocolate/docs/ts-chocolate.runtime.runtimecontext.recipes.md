@@ -2,16 +2,12 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Runtime](./ts-chocolate.runtime.md) &gt; [RuntimeContext](./ts-chocolate.runtime.runtimecontext.md) &gt; [recipes](./ts-chocolate.runtime.runtimecontext.recipes.md)
 
-## Runtime.RuntimeContext.recipes() method
+## Runtime.RuntimeContext.recipes property
 
-Iterates over all recipes as RuntimeRecipe objects. Note: This resolves recipes lazily as you iterate.
+A read-only map of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached.
 
 **Signature:**
 
 ```typescript
-recipes(): IterableIterator<RuntimeRecipe>;
+get recipes(): Collections.IReadOnlyValidatingResultMap<RecipeId, RuntimeRecipe>;
 ```
-**Returns:**
-
-IterableIterator&lt;[RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)<!-- -->&gt;
-

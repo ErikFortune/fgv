@@ -1258,18 +1258,12 @@ interface IRuntimeContext {
     readonly cachedRecipeCount: number;
     calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
-    getAllIngredients(): IRuntimeIngredient[];
     getAllIngredientTags(): ReadonlyArray<string>;
-    getAllRecipes(): IRuntimeRecipe[];
     getAllRecipeTags(): ReadonlyArray<string>;
-    getIngredient(id: IngredientId): Result<IRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
-    hasIngredient(id: IngredientId): boolean;
-    hasRecipe(id: RecipeId): boolean;
-    ingredients(): IterableIterator<IRuntimeIngredient>;
+    readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient>;
     readonly library: ChocolateLibrary;
-    recipes(): IterableIterator<IRuntimeRecipe>;
+    readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
     warmUp(): void;
 }
 
@@ -1429,8 +1423,8 @@ interface IScaledRecipeVersion {
 
 // @internal
 interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
-    getIngredient(id: IngredientId): Result<TIngredient>;
     getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
+    readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
 }
 
 // @public
@@ -1569,7 +1563,7 @@ interface ITemperatureCurve {
 
 // @internal
 interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
-    getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
+    readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
 }
 
 // @public
@@ -2195,16 +2189,13 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     findIngredients(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
     findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
-    getAllIngredients(): AnyRuntimeIngredient[];
     getAllIngredientTags(): ReadonlyArray<string>;
-    getAllRecipes(): RuntimeRecipe[];
     getAllRecipeTags(): ReadonlyArray<string>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
+    // @internal
+    _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getRecipe(id: RecipeId): Result<RuntimeRecipe>;
+    // @internal
+    _getRecipe(id: RecipeId): Result<RuntimeRecipe>;
     // @internal
     getRecipesUsingIngredient(ingredientId: IngredientId): RuntimeRecipe[];
     // @internal
@@ -2213,15 +2204,13 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getRecipesWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[];
     // @internal
     getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
-    hasIngredient(id: IngredientId): boolean;
-    hasRecipe(id: RecipeId): boolean;
-    ingredients(): IterableIterator<AnyRuntimeIngredient>;
+    get ingredients(): Collections.IReadOnlyValidatingResultMap<IngredientId, AnyRuntimeIngredient>;
     invalidateIndexers(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get library(): ChocolateLibrary;
-    recipes(): IterableIterator<RuntimeRecipe>;
+    get recipes(): Collections.IReadOnlyValidatingResultMap<RecipeId, RuntimeRecipe>;
     get validating(): RuntimeContextValidator;
     warmUp(): void;
 }

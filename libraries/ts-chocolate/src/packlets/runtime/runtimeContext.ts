@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Failure, Result, ResultMap, Success } from '@fgv/ts-utils';
+import { Collections, fail, Failure, Result, succeed, Success, ValidatingResultMap } from '@fgv/ts-utils';
 
 import { Helpers, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
@@ -95,22 +95,22 @@ export class RuntimeContextValidator {
 
   /** Gets a resolved runtime ingredient by validating a string ID. */
   public getIngredient(id: string): Result<AnyRuntimeIngredient> {
-    return Validation.toIngredientId(id).onSuccess((iid) => this._context.getIngredient(iid));
+    return this._context.ingredients.validating.get(id);
   }
 
   /** Gets a resolved runtime recipe by validating a string ID. */
   public getRecipe(id: string): Result<RuntimeRecipe> {
-    return Validation.toRecipeId(id).onSuccess((rid) => this._context.getRecipe(rid));
+    return this._context.recipes.validating.get(id);
   }
 
   /** Checks if an ingredient exists by validating a string ID. */
   public hasIngredient(id: string): Result<boolean> {
-    return Validation.toIngredientId(id).onSuccess((iid) => Success.with(this._context.hasIngredient(iid)));
+    return Validation.toIngredientId(id).onSuccess((iid) => Success.with(this._context.ingredients.has(iid)));
   }
 
   /** Checks if a recipe exists by validating a string ID. */
   public hasRecipe(id: string): Result<boolean> {
-    return Validation.toRecipeId(id).onSuccess((rid) => Success.with(this._context.hasRecipe(rid)));
+    return Validation.toRecipeId(id).onSuccess((rid) => Success.with(this._context.recipes.has(rid)));
   }
 
   /** Calculates ganache characteristics for a recipe by validating string IDs. */
@@ -207,9 +207,11 @@ export class RuntimeContext
     IIngredientContext
 {
   private readonly _library: ChocolateLibrary;
-  private readonly _ingredientCache: ResultMap<IngredientId, AnyRuntimeIngredient>;
-  private readonly _recipeCache: ResultMap<RecipeId, RuntimeRecipe>;
   private readonly _reverseIndex: RuntimeReverseIndex;
+
+  // Lazily-populated caches exposed as IReadOnlyValidatingResultMap
+  private _ingredients: ValidatingResultMap<IngredientId, AnyRuntimeIngredient> | undefined;
+  private _recipes: ValidatingResultMap<RecipeId, RuntimeRecipe> | undefined;
 
   // Extensible indexer orchestrators
   private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
@@ -217,13 +219,13 @@ export class RuntimeContext
 
   private constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
-    this._ingredientCache = new ResultMap<IngredientId, AnyRuntimeIngredient>();
-    this._recipeCache = new ResultMap<RecipeId, RuntimeRecipe>();
     this._reverseIndex = new RuntimeReverseIndex(library);
 
     // Initialize orchestrators with resolver functions bound to this context
-    this._recipeOrchestrator = new RecipeIndexerOrchestrator(library, (id) => this.getRecipe(id));
-    this._ingredientOrchestrator = new IngredientIndexerOrchestrator(library, (id) => this.getIngredient(id));
+    this._recipeOrchestrator = new RecipeIndexerOrchestrator(library, (id) => this._getRecipe(id));
+    this._ingredientOrchestrator = new IngredientIndexerOrchestrator(library, (id) =>
+      this._getIngredient(id)
+    );
 
     if (preWarm) {
       this._reverseIndex.warmUp();
@@ -267,34 +269,88 @@ export class RuntimeContext
   }
 
   // ============================================================================
-  // Primary Resolution Methods
+  // Ingredients and Recipes (IReadOnlyValidatingResultMap)
   // ============================================================================
 
   /**
-   * {@inheritdoc Runtime.RuntimeContext.getIngredient}
+   * A read-only map of all ingredients, keyed by composite ID.
+   * Ingredients are resolved eagerly on first access and cached.
    */
-  public getIngredient(id: IngredientId): Result<AnyRuntimeIngredient> {
-    return this._ingredientCache.get(id).asResult.onFailure(() => {
-      return this._library
-        .getIngredient(id)
-        .onSuccess((ingredient) =>
-          RuntimeIngredient.create(this, id, ingredient).onSuccess((ri) => this._ingredientCache.set(id, ri))
-        );
-    });
+  public get ingredients(): Collections.IReadOnlyValidatingResultMap<IngredientId, AnyRuntimeIngredient> {
+    return this._resolveIngredients();
+  }
+
+  /**
+   * A read-only map of all recipes, keyed by composite ID.
+   * Recipes are resolved eagerly on first access and cached.
+   */
+  public get recipes(): Collections.IReadOnlyValidatingResultMap<RecipeId, RuntimeRecipe> {
+    return this._resolveRecipes();
+  }
+
+  /**
+   * Resolves and caches all ingredients from the library.
+   * @internal
+   */
+  private _resolveIngredients(): ValidatingResultMap<IngredientId, AnyRuntimeIngredient> {
+    if (this._ingredients === undefined) {
+      this._ingredients = new ValidatingResultMap({
+        converters: new Collections.KeyValueConverters<IngredientId, AnyRuntimeIngredient>({
+          key: Validation.toIngredientId,
+          /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
+          value: (from: unknown) =>
+            from instanceof RuntimeIngredient
+              ? succeed(from as AnyRuntimeIngredient)
+              : fail('not a runtime ingredient')
+        })
+      });
+      // Populate from library
+      for (const [id, ingredient] of this._library.ingredients.entries()) {
+        RuntimeIngredient.create(this, id, ingredient).onSuccess((ri) => {
+          this._ingredients!.set(id, ri);
+          return succeed(ri);
+        });
+      }
+    }
+    return this._ingredients;
+  }
+
+  /**
+   * Resolves and caches all recipes from the library.
+   * @internal
+   */
+  private _resolveRecipes(): ValidatingResultMap<RecipeId, RuntimeRecipe> {
+    if (this._recipes === undefined) {
+      this._recipes = new ValidatingResultMap({
+        converters: new Collections.KeyValueConverters<RecipeId, RuntimeRecipe>({
+          key: Validation.toRecipeId,
+          /* c8 ignore next - defensive code: value converter only used for external validation, not internal population */
+          value: (from: unknown) =>
+            from instanceof RuntimeRecipe ? succeed(from) : fail('not a runtime recipe')
+        })
+      });
+      // Populate from library
+      for (const [id, recipe] of this._library.recipes.entries()) {
+        this._recipes.set(id, new RuntimeRecipe(this, id, recipe));
+      }
+    }
+    return this._recipes;
+  }
+
+  /**
+   * Gets a resolved runtime ingredient by ID.
+   * @internal - for use by orchestrators and internal navigation
+   */
+  public _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient> {
+    return this._resolveIngredients().get(id).asResult;
   }
 
   /**
    * Gets a resolved runtime recipe by ID.
-   * Results are cached for efficient repeated access.
-   * @param id - Composite recipe ID
-   * @returns Success with RuntimeRecipe, or Failure if not found
+   * @internal - for use by orchestrators and internal navigation
    */
-  public getRecipe(id: RecipeId): Result<RuntimeRecipe> {
-    return this._recipeCache.get(id).asResult.onFailure(() => {
-      return this._library
-        .getRecipe(id)
-        .onSuccess((recipe) => this._recipeCache.set(id, new RuntimeRecipe(this, id, recipe)));
-    });
+  public _getRecipe(id: RecipeId): Result<RuntimeRecipe> {
+    return this._resolveRecipes().get(id).asResult;
   }
 
   /**
@@ -309,70 +365,8 @@ export class RuntimeContext
     return Helpers.parseRecipeVersionId(scaled.scaledFrom.sourceVersionId).onSuccess((parsed) => {
       const recipeId = parsed.collectionId;
       const versionSpec = parsed.itemId;
-      return this.getRecipe(recipeId).onSuccess((recipe) => recipe.getVersion(versionSpec));
+      return this._getRecipe(recipeId).onSuccess((recipe) => recipe.getVersion(versionSpec));
     });
-  }
-
-  /**
-   * Checks if an ingredient exists.
-   * @param id - Composite ingredient ID
-   * @returns True if ingredient exists
-   */
-  public hasIngredient(id: IngredientId): boolean {
-    return this._library.hasIngredient(id);
-  }
-
-  /**
-   * Checks if a recipe exists.
-   * @param id - Composite recipe ID
-   * @returns True if recipe exists
-   */
-  public hasRecipe(id: RecipeId): boolean {
-    return this._library.hasRecipe(id);
-  }
-
-  // ============================================================================
-  // Iteration
-  // ============================================================================
-
-  /**
-   * Iterates over all ingredients as RuntimeIngredient objects.
-   * Note: This resolves ingredients lazily as you iterate.
-   */
-  public *ingredients(): IterableIterator<AnyRuntimeIngredient> {
-    for (const [id] of this._library.ingredients.entries()) {
-      const result = this.getIngredient(id);
-      if (result.isSuccess()) {
-        yield result.value;
-      }
-    }
-  }
-
-  /**
-   * Iterates over all recipes as RuntimeRecipe objects.
-   * Note: This resolves recipes lazily as you iterate.
-   */
-  public *recipes(): IterableIterator<RuntimeRecipe> {
-    for (const [id] of this._library.recipes.entries()) {
-      const result = this.getRecipe(id);
-      if (result.isSuccess()) {
-        yield result.value;
-      }
-    }
-  }
-
-  /**
-   * Gets all ingredients as an array.
-   */
-  public getAllIngredients(): AnyRuntimeIngredient[] {
-    return Array.from(this.ingredients());
-  }
-
-  /**
-   * Gets all recipes as an array.
-   */
-  public getAllRecipes(): RuntimeRecipe[] {
-    return Array.from(this.recipes());
   }
 
   // ============================================================================
@@ -418,7 +412,7 @@ export class RuntimeContext
   private _resolveRecipeIds(recipeIds: ReadonlySet<RecipeId>): RuntimeRecipe[] {
     const result: RuntimeRecipe[] = [];
     for (const id of recipeIds) {
-      this.getRecipe(id).onSuccess((r) => Success.with(result.push(r)));
+      this._getRecipe(id).onSuccess((r: RuntimeRecipe) => Success.with(result.push(r)));
     }
     return result;
   }
@@ -429,7 +423,7 @@ export class RuntimeContext
    * @returns Success with array of usage info, or Failure if ingredient doesn't exist
    */
   public getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>> {
-    if (!this.hasIngredient(ingredientId)) {
+    if (!this.ingredients.has(ingredientId)) {
       return Failure.with(`${ingredientId}: ingredient not found`);
     }
     return Success.with(this._reverseIndex.getIngredientUsage(ingredientId));
@@ -465,7 +459,7 @@ export class RuntimeContext
    * @returns Success with ganache calculation, or Failure
    */
   public calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation> {
-    return this.getRecipe(recipeId).onSuccess((recipe) => {
+    return this._getRecipe(recipeId).onSuccess((recipe: RuntimeRecipe) => {
       if (versionSpec !== undefined) {
         return recipe.getVersion(versionSpec).onSuccess((version) => version.calculateGanache());
       }
@@ -481,14 +475,14 @@ export class RuntimeContext
    * Gets the number of cached ingredients.
    */
   public get cachedIngredientCount(): number {
-    return this._ingredientCache.size;
+    return this._ingredients?.size ?? 0;
   }
 
   /**
    * Gets the number of cached recipes.
    */
   public get cachedRecipeCount(): number {
-    return this._recipeCache.size;
+    return this._recipes?.size ?? 0;
   }
 
   /**
@@ -496,8 +490,8 @@ export class RuntimeContext
    * Use if underlying library data has changed.
    */
   public clearCache(): void {
-    this._ingredientCache.clear();
-    this._recipeCache.clear();
+    this._ingredients = undefined;
+    this._recipes = undefined;
     this._reverseIndex.invalidate();
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();

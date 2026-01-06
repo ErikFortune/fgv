@@ -253,8 +253,8 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('getIngredient returns RuntimeIngredient', () => {
-      expect(ctx.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
+    test('ingredients.get returns RuntimeIngredient', () => {
+      expect(ctx.ingredients.get('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
         expect(ing.id).toBe('test.dark-chocolate');
         expect(ing.name).toBe('Dark Chocolate 70%');
         expect(ing.category).toBe('chocolate');
@@ -263,22 +263,22 @@ describe('RuntimeContext', () => {
       });
     });
 
-    test('getIngredient caches results', () => {
-      const result1 = ctx.getIngredient('test.dark-chocolate' as IngredientId).orThrow();
-      const result2 = ctx.getIngredient('test.dark-chocolate' as IngredientId).orThrow();
+    test('ingredients.get caches results', () => {
+      const result1 = ctx.ingredients.get('test.dark-chocolate' as IngredientId).value;
+      const result2 = ctx.ingredients.get('test.dark-chocolate' as IngredientId).value;
       expect(result1).toBe(result2); // Same instance
     });
 
-    test('getIngredient fails for non-existent', () => {
-      expect(ctx.getIngredient('test.nonexistent' as IngredientId)).toFail();
+    test('ingredients.get fails for non-existent', () => {
+      expect(ctx.ingredients.get('test.nonexistent' as IngredientId)).toFail();
     });
 
-    test('hasIngredient returns true for existing', () => {
-      expect(ctx.hasIngredient('test.dark-chocolate' as IngredientId)).toBe(true);
+    test('ingredients.has returns true for existing', () => {
+      expect(ctx.ingredients.has('test.dark-chocolate' as IngredientId)).toBe(true);
     });
 
-    test('hasIngredient returns false for non-existent', () => {
-      expect(ctx.hasIngredient('test.nonexistent' as IngredientId)).toBe(false);
+    test('ingredients.has returns false for non-existent', () => {
+      expect(ctx.ingredients.has('test.nonexistent' as IngredientId)).toBe(false);
     });
   });
 
@@ -293,8 +293,8 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('getRecipe returns RuntimeRecipe', () => {
-      expect(ctx.getRecipe('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+    test('recipes.get returns RuntimeRecipe', () => {
+      expect(ctx.recipes.get('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
         expect(recipe.id).toBe('test.dark-ganache');
         expect(recipe.name).toBe('Dark Ganache');
         expect(recipe.sourceId).toBe('test');
@@ -302,22 +302,22 @@ describe('RuntimeContext', () => {
       });
     });
 
-    test('getRecipe caches results', () => {
-      const result1 = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-      const result2 = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+    test('recipes.get caches results', () => {
+      const result1 = ctx.recipes.get('test.dark-ganache' as RecipeId).value;
+      const result2 = ctx.recipes.get('test.dark-ganache' as RecipeId).value;
       expect(result1).toBe(result2); // Same instance
     });
 
-    test('getRecipe fails for non-existent', () => {
-      expect(ctx.getRecipe('test.nonexistent' as RecipeId)).toFail();
+    test('recipes.get fails for non-existent', () => {
+      expect(ctx.recipes.get('test.nonexistent' as RecipeId)).toFail();
     });
 
-    test('hasRecipe returns true for existing', () => {
-      expect(ctx.hasRecipe('test.dark-ganache' as RecipeId)).toBe(true);
+    test('recipes.has returns true for existing', () => {
+      expect(ctx.recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
     });
 
-    test('hasRecipe returns false for non-existent', () => {
-      expect(ctx.hasRecipe('test.nonexistent' as RecipeId)).toBe(false);
+    test('recipes.has returns false for non-existent', () => {
+      expect(ctx.recipes.has('test.nonexistent' as RecipeId)).toBe(false);
     });
   });
 
@@ -332,32 +332,28 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('ingredients() iterates all ingredients', () => {
-      const ingredients = Array.from(ctx.ingredients());
+    test('ingredients.values() iterates all ingredients', () => {
+      const ingredients = Array.from(ctx.ingredients.values());
       expect(ingredients.length).toBe(4);
       const names = ingredients.map((i) => i.name);
       expect(names).toContain('Dark Chocolate 70%');
       expect(names).toContain('Heavy Cream');
     });
 
-    test('recipes() iterates all recipes', () => {
-      const recipes = Array.from(ctx.recipes());
+    test('recipes.values() iterates all recipes', () => {
+      const recipes = Array.from(ctx.recipes.values());
       expect(recipes.length).toBe(2);
       const names = recipes.map((r) => r.name);
       expect(names).toContain('Dark Ganache');
       expect(names).toContain('Milk Ganache');
     });
 
-    test('getAllIngredients returns array', () => {
-      const ingredients = ctx.getAllIngredients();
-      expect(Array.isArray(ingredients)).toBe(true);
-      expect(ingredients.length).toBe(4);
+    test('ingredients.size returns count', () => {
+      expect(ctx.ingredients.size).toBe(4);
     });
 
-    test('getAllRecipes returns array', () => {
-      const recipes = ctx.getAllRecipes();
-      expect(Array.isArray(recipes)).toBe(true);
-      expect(recipes.length).toBe(2);
+    test('recipes.size returns count', () => {
+      expect(ctx.recipes.size).toBe(2);
     });
   });
 
@@ -542,18 +538,19 @@ describe('RuntimeContext', () => {
     });
 
     test('cache counts reflect cached items', () => {
-      // Access some items to populate cache
-      ctx.getIngredient('test.dark-chocolate' as IngredientId);
-      ctx.getRecipe('test.dark-ganache' as RecipeId);
+      // Access ingredients to populate cache (eager loading populates all)
+      ctx.ingredients.get('test.dark-chocolate' as IngredientId);
+      ctx.recipes.get('test.dark-ganache' as RecipeId);
 
-      expect(ctx.cachedIngredientCount).toBe(1);
-      expect(ctx.cachedRecipeCount).toBe(1);
+      // With eager loading, accessing any item loads all items
+      expect(ctx.cachedIngredientCount).toBe(4);
+      expect(ctx.cachedRecipeCount).toBe(2);
     });
 
     test('clearCache clears all caches', () => {
       // Populate cache
-      ctx.getIngredient('test.dark-chocolate' as IngredientId);
-      ctx.getRecipe('test.dark-ganache' as RecipeId);
+      ctx.ingredients.get('test.dark-chocolate' as IngredientId);
+      ctx.recipes.get('test.dark-ganache' as RecipeId);
 
       ctx.clearCache();
 

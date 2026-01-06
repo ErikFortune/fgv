@@ -331,7 +331,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
 
     for (const ri of this._scaled.ingredients) {
       // Resolve primary ingredient
-      const ingredientResult = this._context.getIngredient(ri.ingredientId);
+      const ingredientResult = this._context.ingredients.get(ri.ingredientId);
       /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
       if (ingredientResult.isFailure()) {
         errors.push(`Failed to resolve ingredient ${ri.ingredientId}: ${ingredientResult.message}`);
@@ -343,7 +343,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
       /* c8 ignore next 8 - alternateIngredientIds not preserved by scaler */
       if (ri.alternateIngredientIds) {
         for (const altId of ri.alternateIngredientIds) {
-          const altResult = this._context.getIngredient(altId);
+          const altResult = this._context.ingredients.get(altId);
           if (altResult.isSuccess()) {
             alternates.push(altResult.value);
           }

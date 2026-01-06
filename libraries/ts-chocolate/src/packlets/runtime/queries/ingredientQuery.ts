@@ -389,7 +389,7 @@ export class IngredientQuery {
    */
   public execute(): ReadonlyArray<AnyRuntimeIngredient> {
     const results: AnyRuntimeIngredient[] = [];
-    for (const ingredient of this._context.ingredients()) {
+    for (const ingredient of this._context.ingredients.values()) {
       if (this._matchesAllFilters(ingredient)) {
         results.push(ingredient);
       }
@@ -401,7 +401,7 @@ export class IngredientQuery {
    * Execute and return first matching ingredient.
    */
   public first(): AnyRuntimeIngredient | undefined {
-    for (const ingredient of this._context.ingredients()) {
+    for (const ingredient of this._context.ingredients.values()) {
       if (this._matchesAllFilters(ingredient)) {
         return ingredient;
       }
@@ -414,7 +414,7 @@ export class IngredientQuery {
    */
   public count(): number {
     let count = 0;
-    for (const ingredient of this._context.ingredients()) {
+    for (const ingredient of this._context.ingredients.values()) {
       if (this._matchesAllFilters(ingredient)) {
         count++;
       }
