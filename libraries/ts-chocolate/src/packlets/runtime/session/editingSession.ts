@@ -37,6 +37,7 @@ import {
   ISessionState,
   SessionIngredientStatus
 } from './model';
+import { EditingSessionValidator, IEditingSessionValidator } from './editingSessionValidator';
 
 // ============================================================================
 // ID Generators
@@ -96,6 +97,7 @@ export class EditingSession implements ISessionState {
   private readonly _sessionId: SessionId;
   private readonly _sourceVersion: IRuntimeRecipeVersion;
   private readonly _enableJournal: boolean;
+  private readonly _validator: EditingSessionValidator;
 
   private _scaleFactor: number;
   private _targetWeight: Grams;
@@ -123,6 +125,7 @@ export class EditingSession implements ISessionState {
 
     this._journalEntries = [];
     this._isDirty = false;
+    this._validator = new EditingSessionValidator(this);
   }
 
   // ============================================================================
@@ -173,6 +176,15 @@ export class EditingSession implements ISessionState {
 
   public get isJournalingEnabled(): boolean {
     return this._enableJournal;
+  }
+
+  /**
+   * A validator that accepts weakly-typed inputs (strings, numbers) and converts
+   * them to strongly-typed branded types before calling the underlying session methods.
+   * @public
+   */
+  public get validating(): IEditingSessionValidator {
+    return this._validator;
   }
 
   // ============================================================================

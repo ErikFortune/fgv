@@ -192,6 +192,27 @@ number
 
 
 </td></tr>
+<tr><td>
+
+[validating](./ts-chocolate.runtime.session.editingsession.validating.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IEditingSessionValidator](./ts-chocolate.runtime.session.ieditingsessionvalidator.md)
+
+
+</td><td>
+
+A validator that accepts weakly-typed inputs (strings, numbers) and converts them to strongly-typed branded types before calling the underlying session methods.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods

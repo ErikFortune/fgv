@@ -32,6 +32,19 @@ Can produce: - Journal records documenting the session - New recipe versions inc
 
 
 </td></tr>
+<tr><td>
+
+[EditingSessionValidator](./ts-chocolate.runtime.session.editingsessionvalidator.md)
+
+
+</td><td>
+
+A wrapper for EditingSession that validates and converts weakly-typed inputs to strongly-typed branded types before delegating to the underlying session.
+
+This allows consumers to use plain strings and numbers instead of IngredientId and Grams branded types while still benefiting from runtime validation.
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -55,6 +68,28 @@ Description
 </td><td>
 
 Parameters for creating an editing session
+
+
+</td></tr>
+<tr><td>
+
+[IEditingSessionValidator](./ts-chocolate.runtime.session.ieditingsessionvalidator.md)
+
+
+</td><td>
+
+Full interface for EditingSessionValidator. Provides validated mutating operations using weakly-typed inputs.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyEditingSessionValidator](./ts-chocolate.runtime.session.ireadonlyeditingsessionvalidator.md)
+
+
+</td><td>
+
+Read-only interface for EditingSessionValidator. Provides validated access to session ingredients using weakly-typed inputs.
 
 
 </td></tr>

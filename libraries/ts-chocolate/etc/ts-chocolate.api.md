@@ -422,6 +422,22 @@ class EditingSession implements ISessionState {
     toJournalRecord(notes?: string): Result<IJournalRecord>;
     toRecipeIngredients(): IRecipeIngredient[];
     toRecipeVersion(versionSpec: string): Result<IRecipeVersion>;
+    get validating(): IEditingSessionValidator;
+}
+
+// @public
+class EditingSessionValidator implements IEditingSessionValidator {
+    constructor(session: EditingSession);
+    addIngredient(id: string, amount: number): Result<void>;
+    addIngredientAmount(id: string, additional: number): Result<void>;
+    getIngredient(id: string): Result<ISessionIngredient>;
+    hasIngredient(id: string): boolean;
+    removeIngredient(id: string): Result<void>;
+    get session(): EditingSession;
+    setIngredientAmount(id: string, amount: number): Result<void>;
+    setTargetWeight(weight: number): Result<void>;
+    substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
+    toReadOnly(): IReadOnlyEditingSessionValidator;
 }
 
 // @public
@@ -627,6 +643,17 @@ interface IEditingSessionParams {
     readonly scaleFactor?: number;
     readonly sourceVersion: IRuntimeRecipeVersion;
     readonly targetWeight?: Grams;
+}
+
+// @public
+interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
+    addIngredient(id: string, amount: number): Result<void>;
+    addIngredientAmount(id: string, additional: number): Result<void>;
+    removeIngredient(id: string): Result<void>;
+    setIngredientAmount(id: string, amount: number): Result<void>;
+    setTargetWeight(weight: number): Result<void>;
+    substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
+    toReadOnly(): IReadOnlyEditingSessionValidator;
 }
 
 // @public
@@ -1066,6 +1093,13 @@ interface IQueryResult<T> {
     readonly hasMore: boolean;
     readonly items: ReadonlyArray<T>;
     readonly totalCount: number;
+}
+
+// @public
+interface IReadOnlyEditingSessionValidator {
+    getIngredient(id: string): Result<ISessionIngredient>;
+    hasIngredient(id: string): boolean;
+    readonly session: EditingSession;
 }
 
 // @public
@@ -2446,6 +2480,9 @@ const scalingSource: Converter<IScalingSource>;
 declare namespace Session {
     export {
         EditingSession,
+        EditingSessionValidator,
+        IEditingSessionValidator,
+        IReadOnlyEditingSessionValidator,
         SessionIngredientStatus,
         ISessionIngredient,
         IEditingSessionParams,

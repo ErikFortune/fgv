@@ -20,3 +20,8 @@
 
 export * from './model';
 export { EditingSession } from './editingSession';
+export {
+  EditingSessionValidator,
+  IEditingSessionValidator,
+  IReadOnlyEditingSessionValidator
+} from './editingSessionValidator';
