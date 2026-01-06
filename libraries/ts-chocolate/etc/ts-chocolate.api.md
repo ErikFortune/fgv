@@ -1258,10 +1258,6 @@ interface IRuntimeContext {
     readonly cachedRecipeCount: number;
     calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
-    findIngredientsByTag(tag: string): Result<IRuntimeIngredient[]>;
-    findRecipesByChocolateType(type: ChocolateType): IRuntimeRecipe[];
-    findRecipesByTag(tag: string): Result<IRuntimeRecipe[]>;
-    findRecipesUsingIngredient(ingredientId: IngredientId): Result<IRuntimeRecipe[]>;
     getAllIngredients(): IRuntimeIngredient[];
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipes(): IRuntimeRecipe[];
@@ -1269,9 +1265,6 @@ interface IRuntimeContext {
     getIngredient(id: IngredientId): Result<IRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
-    getRecipeIdsUsingIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-    getRecipeIdsWithAlternateIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-    getRecipeIdsWithPrimaryIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
     hasIngredient(id: IngredientId): boolean;
     hasRecipe(id: RecipeId): boolean;
     ingredients(): IterableIterator<IRuntimeIngredient>;
@@ -2200,11 +2193,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     clearCache(): void;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     findIngredients(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
-    findIngredientsByTag(tag: string): Result<AnyRuntimeIngredient[]>;
     findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
-    findRecipesByChocolateType(type: ChocolateType): RuntimeRecipe[];
-    findRecipesByTag(tag: string): Result<RuntimeRecipe[]>;
-    findRecipesUsingIngredient(ingredientId: IngredientId): Result<RuntimeRecipe[]>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
     getAllIngredients(): AnyRuntimeIngredient[];
     getAllIngredientTags(): ReadonlyArray<string>;
@@ -2216,9 +2205,6 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getRecipe(id: RecipeId): Result<RuntimeRecipe>;
-    getRecipeIdsUsingIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-    getRecipeIdsWithAlternateIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-    getRecipeIdsWithPrimaryIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
     // @internal
     getRecipesUsingIngredient(ingredientId: IngredientId): RuntimeRecipe[];
     // @internal
@@ -2247,10 +2233,8 @@ class RuntimeContextValidator {
     calculateGanache(recipeId: string, versionSpec?: string): Result<IGanacheCalculation>;
     findIngredients(json: unknown, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
     findRecipes(json: unknown, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
-    findRecipesUsingIngredient(ingredientId: string): Result<RuntimeRecipe[]>;
     getIngredient(id: string): Result<AnyRuntimeIngredient>;
     getRecipe(id: string): Result<RuntimeRecipe>;
-    getRecipeIdsUsingIngredient(ingredientId: string): Result<ReadonlySet<RecipeId>>;
     hasIngredient(id: string): Result<boolean>;
     hasRecipe(id: string): Result<boolean>;
 }

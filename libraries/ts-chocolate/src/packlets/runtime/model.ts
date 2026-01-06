@@ -644,7 +644,6 @@ export interface IRuntimeScaledRecipeVersion {
  *
  * @public
  */
-// TODO: we have a bunch of "for version" methods, which seems like a poor separation of concerns.  We should have "getVersion" and the version object should have those methods.
 export interface IRuntimeRecipe {
   // ---- Composite Identity (runtime-specific) ----
 
@@ -1083,35 +1082,6 @@ export interface IRuntimeContext {
 
   // ---- Reverse Lookups ----
 
-  // TODO: boil these down to a unified find method with parameters per entity type.  I think we only need to resolve the entity (so just drop the id versions)
-  /**
-   * Gets recipe IDs that use a specific ingredient (primary or alternate).
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with set of recipe IDs, or Failure if ingredient doesn't exist
-   */
-  getRecipeIdsUsingIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-
-  /**
-   * Gets recipe IDs where ingredient is primary.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with set of recipe IDs, or Failure if ingredient doesn't exist
-   */
-  getRecipeIdsWithPrimaryIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-
-  /**
-   * Gets recipe IDs where ingredient is an alternate.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with set of recipe IDs, or Failure if ingredient doesn't exist
-   */
-  getRecipeIdsWithAlternateIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>>;
-
-  /**
-   * Finds all recipes that use a specific ingredient.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with array of RuntimeRecipe objects, or Failure if ingredient doesn't exist
-   */
-  findRecipesUsingIngredient(ingredientId: IngredientId): Result<IRuntimeRecipe[]>;
-
   /**
    * Gets detailed usage information for an ingredient.
    * @param ingredientId - The ingredient ID to look up
@@ -1119,21 +1089,7 @@ export interface IRuntimeContext {
    */
   getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
 
-  // ---- Tag Lookups ----
-
-  /**
-   * Finds all recipes with a specific tag.
-   * @param tag - The tag to search for
-   * @returns Success with array of RuntimeRecipe objects, or Failure if tag is unknown
-   */
-  findRecipesByTag(tag: string): Result<IRuntimeRecipe[]>;
-
-  /**
-   * Finds all ingredients with a specific tag.
-   * @param tag - The tag to search for
-   * @returns Success with array of RuntimeIngredient objects, or Failure if tag is unknown
-   */
-  findIngredientsByTag(tag: string): Result<IRuntimeIngredient[]>;
+  // ---- Tag Discovery ----
 
   /**
    * Gets all unique tags used across recipes.
@@ -1144,15 +1100,6 @@ export interface IRuntimeContext {
    * Gets all unique tags used across ingredients.
    */
   getAllIngredientTags(): ReadonlyArray<string>;
-
-  // ---- Chocolate Type Lookups ----
-
-  /**
-   * Finds all recipes containing a specific chocolate type.
-   * @param type - The chocolate type to search for
-   * @returns Array of RuntimeRecipe objects
-   */
-  findRecipesByChocolateType(type: ChocolateType): IRuntimeRecipe[];
 
   // ---- Operations ----
 

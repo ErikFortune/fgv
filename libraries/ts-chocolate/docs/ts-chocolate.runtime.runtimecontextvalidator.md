@@ -82,20 +82,6 @@ This unified method accepts plain JSON objects and converts them to typed query 
 </td></tr>
 <tr><td>
 
-[findRecipesUsingIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontextvalidator.findrecipesusingingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds all recipes using a specific ingredient by validating string ID.
-
-
-</td></tr>
-<tr><td>
-
 [getIngredient(id)](./ts-chocolate.runtime.runtimecontextvalidator.getingredient.md)
 
 
@@ -119,20 +105,6 @@ Gets a resolved runtime ingredient by validating a string ID.
 </td><td>
 
 Gets a resolved runtime recipe by validating a string ID.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsUsingIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontextvalidator.getrecipeidsusingingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets recipe IDs using a specific ingredient by validating string ID.
 
 
 </td></tr>

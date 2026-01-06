@@ -25,7 +25,7 @@
 
 import { Failure, Result, ResultMap, Success } from '@fgv/ts-utils';
 
-import { ChocolateType, Helpers, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
+import { Helpers, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -123,20 +123,6 @@ export class RuntimeContextValidator {
         this._context.calculateGanache(rid, vid)
       );
     });
-  }
-
-  /** Gets recipe IDs using a specific ingredient by validating string ID. */
-  public getRecipeIdsUsingIngredient(ingredientId: string): Result<ReadonlySet<RecipeId>> {
-    return Validation.toIngredientId(ingredientId).onSuccess((iid) =>
-      this._context.getRecipeIdsUsingIngredient(iid)
-    );
-  }
-
-  /** Finds all recipes using a specific ingredient by validating string ID. */
-  public findRecipesUsingIngredient(ingredientId: string): Result<RuntimeRecipe[]> {
-    return Validation.toIngredientId(ingredientId).onSuccess((iid) =>
-      this._context.findRecipesUsingIngredient(iid)
-    );
   }
 
   /**
@@ -393,55 +379,7 @@ export class RuntimeContext
   // Reverse Lookups (for RuntimeIngredient navigation)
   // ============================================================================
 
-  /**
-   * Gets recipe IDs that use a specific ingredient.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with set of recipe IDs, or Failure if ingredient doesn't exist
-   */
-  public getRecipeIdsUsingIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>> {
-    if (!this.hasIngredient(ingredientId)) {
-      return Failure.with(`${ingredientId}: ingredient not found`);
-    }
-    return Success.with(this._reverseIndex.getRecipesUsingIngredient(ingredientId));
-  }
-
-  /**
-   * Gets recipe IDs where ingredient is primary.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with set of recipe IDs, or Failure if ingredient doesn't exist
-   */
-  public getRecipeIdsWithPrimaryIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>> {
-    if (!this.hasIngredient(ingredientId)) {
-      return Failure.with(`${ingredientId}: ingredient not found`);
-    }
-    return Success.with(this._reverseIndex.getRecipesWithPrimaryIngredient(ingredientId));
-  }
-
-  /**
-   * Gets recipe IDs where ingredient is an alternate.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with set of recipe IDs, or Failure if ingredient doesn't exist
-   */
-  public getRecipeIdsWithAlternateIngredient(ingredientId: IngredientId): Result<ReadonlySet<RecipeId>> {
-    if (!this.hasIngredient(ingredientId)) {
-      return Failure.with(`${ingredientId}: ingredient not found`);
-    }
-    return Success.with(this._reverseIndex.getRecipesWithAlternateIngredient(ingredientId));
-  }
-
-  /**
-   * Finds all recipes that use a specific ingredient.
-   * @param ingredientId - The ingredient ID to look up
-   * @returns Success with array of RuntimeRecipe objects, or Failure if ingredient doesn't exist
-   */
-  public findRecipesUsingIngredient(ingredientId: IngredientId): Result<RuntimeRecipe[]> {
-    if (!this.hasIngredient(ingredientId)) {
-      return Failure.with(`${ingredientId}: ingredient not found`);
-    }
-    return Success.with(this.getRecipesUsingIngredient(ingredientId));
-  }
-
-  // ---- Internal methods for ingredient navigation (no Result wrapper) ----
+  // ---- Internal methods for ingredient navigation (IIngredientContext) ----
 
   /**
    * Gets all recipes that use a specific ingredient (primary or alternate).
@@ -498,42 +436,8 @@ export class RuntimeContext
   }
 
   // ============================================================================
-  // Tag Lookups
+  // Tag Discovery
   // ============================================================================
-
-  /**
-   * Finds all recipes with a specific tag.
-   * @param tag - The tag to search for
-   * @returns Success with array of RuntimeRecipe objects, or Failure if tag is unknown
-   */
-  public findRecipesByTag(tag: string): Result<RuntimeRecipe[]> {
-    if (!this._reverseIndex.getAllRecipeTags().includes(tag)) {
-      return Failure.with(`"${tag}": unknown recipe tag`);
-    }
-    const recipeIds = this._reverseIndex.getRecipesByTag(tag);
-    const result: RuntimeRecipe[] = [];
-    for (const id of recipeIds) {
-      this.getRecipe(id).onSuccess((r) => Success.with(result.push(r)));
-    }
-    return Success.with(result);
-  }
-
-  /**
-   * Finds all ingredients with a specific tag.
-   * @param tag - The tag to search for
-   * @returns Success with array of RuntimeIngredient objects, or Failure if tag is unknown
-   */
-  public findIngredientsByTag(tag: string): Result<AnyRuntimeIngredient[]> {
-    if (!this._reverseIndex.getAllIngredientTags().includes(tag)) {
-      return Failure.with(`"${tag}": unknown ingredient tag`);
-    }
-    const ingredientIds = this._reverseIndex.getIngredientsByTag(tag);
-    const result: AnyRuntimeIngredient[] = [];
-    for (const id of ingredientIds) {
-      this.getIngredient(id).onSuccess((i) => Success.with(result.push(i)));
-    }
-    return Success.with(result);
-  }
 
   /**
    * Gets all unique tags used across recipes.
@@ -547,24 +451,6 @@ export class RuntimeContext
    */
   public getAllIngredientTags(): ReadonlyArray<string> {
     return this._reverseIndex.getAllIngredientTags();
-  }
-
-  // ============================================================================
-  // Chocolate Type Lookups
-  // ============================================================================
-
-  /**
-   * Finds all recipes containing a specific chocolate type.
-   * @param type - The chocolate type to search for
-   * @returns Array of RuntimeRecipe objects
-   */
-  public findRecipesByChocolateType(type: ChocolateType): RuntimeRecipe[] {
-    const recipeIds = this._reverseIndex.getRecipesByChocolateType(type);
-    const result: RuntimeRecipe[] = [];
-    for (const id of recipeIds) {
-      this.getRecipe(id).onSuccess((r) => Success.with(result.push(r)));
-    }
-    return result;
   }
 
   // ============================================================================

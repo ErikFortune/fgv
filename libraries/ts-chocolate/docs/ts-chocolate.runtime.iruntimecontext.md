@@ -141,50 +141,6 @@ Clears all cached runtime objects. Use if underlying library data has changed.
 </td></tr>
 <tr><td>
 
-[findIngredientsByTag(tag)](./ts-chocolate.runtime.iruntimecontext.findingredientsbytag.md)
-
-
-</td><td>
-
-Finds all ingredients with a specific tag.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipesByChocolateType(type)](./ts-chocolate.runtime.iruntimecontext.findrecipesbychocolatetype.md)
-
-
-</td><td>
-
-Finds all recipes containing a specific chocolate type.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipesByTag(tag)](./ts-chocolate.runtime.iruntimecontext.findrecipesbytag.md)
-
-
-</td><td>
-
-Finds all recipes with a specific tag.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipesUsingIngredient(ingredientId)](./ts-chocolate.runtime.iruntimecontext.findrecipesusingingredient.md)
-
-
-</td><td>
-
-Finds all recipes that use a specific ingredient.
-
-
-</td></tr>
-<tr><td>
-
 [getAllIngredients()](./ts-chocolate.runtime.iruntimecontext.getallingredients.md)
 
 
@@ -257,39 +213,6 @@ Gets detailed usage information for an ingredient.
 </td><td>
 
 Gets a resolved runtime recipe by ID. Results are cached for efficient repeated access.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsUsingIngredient(ingredientId)](./ts-chocolate.runtime.iruntimecontext.getrecipeidsusingingredient.md)
-
-
-</td><td>
-
-Gets recipe IDs that use a specific ingredient (primary or alternate).
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsWithAlternateIngredient(ingredientId)](./ts-chocolate.runtime.iruntimecontext.getrecipeidswithalternateingredient.md)
-
-
-</td><td>
-
-Gets recipe IDs where ingredient is an alternate.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsWithPrimaryIngredient(ingredientId)](./ts-chocolate.runtime.iruntimecontext.getrecipeidswithprimaryingredient.md)
-
-
-</td><td>
-
-Gets recipe IDs where ingredient is primary.
 
 
 </td></tr>

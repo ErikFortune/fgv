@@ -372,57 +372,6 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('getRecipeIdsUsingIngredient returns correct recipes', () => {
-      expect(ctx.getRecipeIdsUsingIngredient('test.cream' as IngredientId)).toSucceedAndSatisfy(
-        (recipeIds) => {
-          expect(recipeIds.size).toBe(2);
-        }
-      );
-    });
-
-    test('getRecipeIdsUsingIngredient fails for unknown ingredient', () => {
-      expect(ctx.getRecipeIdsUsingIngredient('test.unknown' as IngredientId)).toFailWith(/not found/i);
-    });
-
-    test('getRecipeIdsWithPrimaryIngredient returns primary usages', () => {
-      expect(
-        ctx.getRecipeIdsWithPrimaryIngredient('test.dark-chocolate' as IngredientId)
-      ).toSucceedAndSatisfy((recipeIds) => {
-        expect(recipeIds.size).toBe(1);
-        expect(recipeIds.has('test.dark-ganache' as RecipeId)).toBe(true);
-      });
-    });
-
-    test('getRecipeIdsWithPrimaryIngredient fails for unknown ingredient', () => {
-      expect(ctx.getRecipeIdsWithPrimaryIngredient('test.unknown' as IngredientId)).toFailWith(/not found/i);
-    });
-
-    test('getRecipeIdsWithAlternateIngredient returns alternate usages', () => {
-      expect(
-        ctx.getRecipeIdsWithAlternateIngredient('test.alt-chocolate' as IngredientId)
-      ).toSucceedAndSatisfy((recipeIds) => {
-        expect(recipeIds.size).toBe(1);
-        expect(recipeIds.has('test.dark-ganache' as RecipeId)).toBe(true);
-      });
-    });
-
-    test('getRecipeIdsWithAlternateIngredient fails for unknown ingredient', () => {
-      expect(ctx.getRecipeIdsWithAlternateIngredient('test.unknown' as IngredientId)).toFailWith(
-        /not found/i
-      );
-    });
-
-    test('findRecipesUsingIngredient returns RuntimeRecipe objects', () => {
-      expect(ctx.findRecipesUsingIngredient('test.cream' as IngredientId)).toSucceedAndSatisfy((recipes) => {
-        expect(recipes.length).toBe(2);
-        expect(recipes[0].name).toBeDefined();
-      });
-    });
-
-    test('findRecipesUsingIngredient fails for unknown ingredient', () => {
-      expect(ctx.findRecipesUsingIngredient('test.unknown' as IngredientId)).toFailWith(/not found/i);
-    });
-
     test('getIngredientUsage returns usage info', () => {
       expect(ctx.getIngredientUsage('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((usage) => {
         expect(usage.length).toBe(1);
@@ -439,32 +388,11 @@ describe('RuntimeContext', () => {
   // Tag Lookup Tests
   // ============================================================================
 
-  describe('tag lookups', () => {
+  describe('tag discovery', () => {
     let ctx: RuntimeContext;
 
     beforeEach(() => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
-    });
-
-    test('findRecipesByTag returns matching recipes', () => {
-      expect(ctx.findRecipesByTag('classic')).toSucceedAndSatisfy((recipes) => {
-        expect(recipes.length).toBe(2);
-      });
-    });
-
-    test('findRecipesByTag fails for unknown tag', () => {
-      expect(ctx.findRecipesByTag('nonexistent')).toFailWith(/unknown recipe tag/i);
-    });
-
-    test('findIngredientsByTag returns matching ingredients', () => {
-      expect(ctx.findIngredientsByTag('premium')).toSucceedAndSatisfy((ingredients) => {
-        expect(ingredients.length).toBe(1);
-        expect(ingredients[0].name).toBe('Dark Chocolate 70%');
-      });
-    });
-
-    test('findIngredientsByTag fails for unknown tag', () => {
-      expect(ctx.findIngredientsByTag('nonexistent')).toFailWith(/unknown ingredient tag/i);
     });
 
     test('getAllRecipeTags returns unique tags', () => {
@@ -479,33 +407,6 @@ describe('RuntimeContext', () => {
       expect(tags).toContain('premium');
       expect(tags).toContain('single-origin');
       expect(tags).toContain('fresh');
-    });
-  });
-
-  // ============================================================================
-  // Chocolate Type Lookup Tests
-  // ============================================================================
-
-  describe('chocolate type lookups', () => {
-    let ctx: RuntimeContext;
-
-    beforeEach(() => {
-      ctx = RuntimeContext.fromLibrary(library).orThrow();
-    });
-
-    test('findRecipesByChocolateType returns matching recipes', () => {
-      const darkRecipes = ctx.findRecipesByChocolateType('dark');
-      expect(darkRecipes.length).toBe(1);
-      expect(darkRecipes[0].name).toBe('Dark Ganache');
-
-      const milkRecipes = ctx.findRecipesByChocolateType('milk');
-      expect(milkRecipes.length).toBe(1);
-      expect(milkRecipes[0].name).toBe('Milk Ganache');
-    });
-
-    test('findRecipesByChocolateType returns empty for unused type', () => {
-      const whiteRecipes = ctx.findRecipesByChocolateType('white');
-      expect(whiteRecipes.length).toBe(0);
     });
   });
 
@@ -664,7 +565,7 @@ describe('RuntimeContext', () => {
       ctx.warmUp();
 
       // Lookups should still work
-      expect(ctx.findRecipesByTag('classic')).toSucceedAndSatisfy((recipes) => {
+      expect(ctx.findRecipes({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
         expect(recipes.length).toBe(2);
       });
     });
@@ -768,38 +669,6 @@ describe('RuntimeContext', () => {
 
       test('fails with non-existent recipe', () => {
         expect(ctx.validating.calculateGanache('test.nonexistent')).toFail();
-      });
-    });
-
-    describe('getRecipeIdsUsingIngredient', () => {
-      test('succeeds with valid ingredient ID', () => {
-        expect(ctx.validating.getRecipeIdsUsingIngredient('test.cream')).toSucceedAndSatisfy((ids) => {
-          expect(ids.size).toBe(2);
-        });
-      });
-
-      test('fails with invalid ID format', () => {
-        expect(ctx.validating.getRecipeIdsUsingIngredient('invalid')).toFailWith(/invalid/i);
-      });
-
-      test('fails with non-existent ingredient', () => {
-        expect(ctx.validating.getRecipeIdsUsingIngredient('test.unknown')).toFailWith(/not found/i);
-      });
-    });
-
-    describe('findRecipesUsingIngredient', () => {
-      test('succeeds with valid ingredient ID', () => {
-        expect(ctx.validating.findRecipesUsingIngredient('test.cream')).toSucceedAndSatisfy((recipes) => {
-          expect(recipes.length).toBe(2);
-        });
-      });
-
-      test('fails with invalid ID format', () => {
-        expect(ctx.validating.findRecipesUsingIngredient('invalid')).toFailWith(/invalid/i);
-      });
-
-      test('fails with non-existent ingredient', () => {
-        expect(ctx.validating.findRecipesUsingIngredient('test.unknown')).toFailWith(/not found/i);
       });
     });
 

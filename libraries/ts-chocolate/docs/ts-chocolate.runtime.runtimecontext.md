@@ -203,20 +203,6 @@ This is the unified entry point for ingredient queries. Query specifications are
 </td></tr>
 <tr><td>
 
-[findIngredientsByTag(tag)](./ts-chocolate.runtime.runtimecontext.findingredientsbytag.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds all ingredients with a specific tag.
-
-
-</td></tr>
-<tr><td>
-
 [findRecipes(spec, options)](./ts-chocolate.runtime.runtimecontext.findrecipes.md)
 
 
@@ -228,48 +214,6 @@ Finds all ingredients with a specific tag.
 Finds recipes matching a query specification.
 
 This is the unified entry point for recipe queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipesByChocolateType(type)](./ts-chocolate.runtime.runtimecontext.findrecipesbychocolatetype.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds all recipes containing a specific chocolate type.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipesByTag(tag)](./ts-chocolate.runtime.runtimecontext.findrecipesbytag.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds all recipes with a specific tag.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipesUsingIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontext.findrecipesusingingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds all recipes that use a specific ingredient.
 
 
 </td></tr>
@@ -383,48 +327,6 @@ Gets detailed usage information for an ingredient.
 </td><td>
 
 Gets a resolved runtime recipe by ID. Results are cached for efficient repeated access.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsUsingIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontext.getrecipeidsusingingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets recipe IDs that use a specific ingredient.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsWithAlternateIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontext.getrecipeidswithalternateingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets recipe IDs where ingredient is an alternate.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeIdsWithPrimaryIngredient(ingredientId)](./ts-chocolate.runtime.runtimecontext.getrecipeidswithprimaryingredient.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets recipe IDs where ingredient is primary.
 
 
 </td></tr>
