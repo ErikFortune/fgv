@@ -24,11 +24,10 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { IndexerId, IngredientId } from '../../common';
+import { IngredientId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeIngredient } from '../model';
 import { BaseIndexer } from './baseIndexer';
-import { IIndexerConfig, IndexerIds } from './model';
 
 // ============================================================================
 // Configuration Types
@@ -38,9 +37,7 @@ import { IIndexerConfig, IndexerIds } from './model';
  * Configuration for the IngredientsByTag indexer.
  * @public
  */
-export interface IIngredientsByTagConfig extends IIndexerConfig {
-  readonly indexerId: typeof IndexerIds.ingredientsByTag;
-
+export interface IIngredientsByTagConfig {
   /**
    * The tag to search for (case-insensitive).
    */
@@ -52,10 +49,7 @@ export interface IIngredientsByTagConfig extends IIndexerConfig {
  * @public
  */
 export function ingredientsByTagConfig(tag: string): IIngredientsByTagConfig {
-  return {
-    indexerId: IndexerIds.ingredientsByTag,
-    tag
-  };
+  return { tag };
 }
 
 /**
@@ -64,7 +58,6 @@ export function ingredientsByTagConfig(tag: string): IIngredientsByTagConfig {
  */
 export const ingredientsByTagConfigConverter: Converter<IIngredientsByTagConfig> =
   Converters.strictObject<IIngredientsByTagConfig>({
-    indexerId: Converters.literal(IndexerIds.ingredientsByTag),
     tag: Converters.string
   });
 
@@ -83,9 +76,6 @@ export class IngredientsByTagIndexer extends BaseIndexer<
   IngredientId,
   IIngredientsByTagConfig
 > {
-  public readonly id: IndexerId = IndexerIds.ingredientsByTag;
-  public readonly configConverter: Converter<IIngredientsByTagConfig> = ingredientsByTagConfigConverter;
-
   private readonly _library: ChocolateLibrary;
 
   // Index structure: lowercase tag -> ingredient IDs

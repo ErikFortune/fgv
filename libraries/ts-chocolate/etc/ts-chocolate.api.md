@@ -77,26 +77,15 @@ function atMost<T>(max: number, getter: (item: T) => number | undefined): Filter
 export const BASE_ID_PATTERN: RegExp;
 
 // @public
-abstract class BaseIndexer<TEntity, TId, TConfig extends IIndexerConfig> implements IIndexer<TEntity, TId, TConfig> {
+abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
     protected _addToSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey, value: TValue): void;
     protected abstract _buildIndex(): void;
     protected abstract _clearIndex(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    abstract readonly configConverter: Converter<TConfig>;
     protected _emptyResult(): Result<ReadonlyArray<TEntity | TId>>;
     protected _ensureBuilt(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
+    find(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
     protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
     protected _getFromSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey): ReadonlyArray<TValue>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    abstract readonly id: IndexerId;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -106,6 +95,15 @@ abstract class BaseIndexer<TEntity, TId, TConfig extends IIndexerConfig> impleme
     //
     // (undocumented)
     warmUp(): void;
+}
+
+// @public
+abstract class BaseIndexerOrchestrator<TEntity, TId> {
+    protected constructor(resolver: IEntityResolver<TEntity, TId>);
+    protected _intersect(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
+    protected readonly _resolver: IEntityResolver<TEntity, TId>;
+    protected _resolveToEntities(items: Set<TId | TEntity>): Result<ReadonlyArray<TEntity>>;
+    protected _union(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
 }
 
 // @public
@@ -629,30 +627,11 @@ interface IGanacheValidation {
 }
 
 // @public
-interface IIndexer<TEntity, TId, TConfig extends IIndexerConfig> {
-    configConverter: Converter<TConfig>;
+interface IIndexer<TEntity, TId, TConfig> {
     find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
-    readonly id: IndexerId;
     invalidate(): void;
     warmUp(): void;
 }
-
-// @public
-interface IIndexerConfig {
-    readonly indexerId: IndexerId;
-}
-
-// @public
-interface IIndexOrchestrator<TEntity, TId, TOrchestratorConfig extends IIndexOrchestratorConfig> {
-    convertConfig(json: unknown): Result<TOrchestratorConfig>;
-    find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<TEntity>>;
-    invalidate(): void;
-    register<TConfig extends IIndexerConfig>(indexer: IIndexer<TEntity, TId, TConfig>): void;
-    warmUp(): void;
-}
-
-// @public
-type IIndexOrchestratorConfig = Partial<Record<IndexerId, IIndexerConfig>>;
 
 // @public
 interface IIngredient {
@@ -680,6 +659,12 @@ interface IIngredientContext {
 type IIngredientFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
+interface IIngredientQuerySpec {
+    // (undocumented)
+    readonly byTag?: IIngredientsByTagConfig;
+}
+
+// @public
 interface IIngredientResolutionResult<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly error?: string;
     readonly ingredient?: TIngredient;
@@ -687,9 +672,7 @@ interface IIngredientResolutionResult<TIngredient extends IRuntimeIngredient = I
 }
 
 // @public
-interface IIngredientsByTagConfig extends IIndexerConfig {
-    // (undocumented)
-    readonly indexerId: typeof IndexerIds.ingredientsByTag;
+interface IIngredientsByTagConfig {
     readonly tag: string;
 }
 
@@ -744,38 +727,10 @@ interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
 // @public
 export type IndexerId = Brand<string, 'IndexerId'>;
 
-// @internal
-function indexerId<T extends string>(id: T): IndexerId;
-
-// @public
-const IndexerIds: {
-    readonly recipesByIngredient: IndexerId;
-    readonly recipesByTag: IndexerId;
-    readonly ingredientsByTag: IndexerId;
-    readonly recipesByChocolateType: IndexerId;
-};
-
-// @public
-const IndexerIdStrings: {
-    readonly recipesByIngredient: "recipes-by-ingredient";
-    readonly recipesByTag: "recipes-by-tag";
-    readonly ingredientsByTag: "ingredients-by-tag";
-    readonly recipesByChocolateType: "recipes-by-chocolate-type";
-};
-
 declare namespace Indexers {
     export {
-        AggregationMode,
-        IEntityResolver,
-        IFindOptions,
-        IIndexer,
-        IIndexerConfig,
-        IIndexOrchestrator,
-        IIndexOrchestratorConfig,
-        IndexerIds,
-        indexerId,
-        QuerySpec,
         BaseIndexer,
+        BaseIndexerOrchestrator,
         IRecipesByIngredientConfig,
         IngredientUsageType,
         RecipesByIngredientIndexer,
@@ -793,39 +748,21 @@ declare namespace Indexers {
         RecipesByChocolateTypeIndexer,
         recipesByChocolateTypeConfig,
         recipesByChocolateTypeConfigConverter,
-        IndexOrchestrator,
+        IRecipeQuerySpec,
+        RecipeIndexerName,
         RecipeIndexerOrchestrator,
         RecipeResolver,
+        recipeQuerySpecConverter,
+        IIngredientQuerySpec,
+        IngredientIndexerName,
         IngredientIndexerOrchestrator,
         IngredientResolver_2 as IngredientResolver,
-        JsonQuerySpec,
-        IndexerIdStrings
+        ingredientQuerySpecConverter,
+        IIndexer,
+        IEntityResolver,
+        AggregationMode,
+        IFindOptions
     }
-}
-
-// @public
-class IndexOrchestrator<TEntity, TId, TOrchestratorConfig extends IIndexOrchestratorConfig> implements IIndexOrchestrator<TEntity, TId, TOrchestratorConfig> {
-    constructor(resolver: IEntityResolver<TEntity, TId>);
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    convertConfig(json: unknown): Result<TOrchestratorConfig>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<TEntity>>;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    invalidate(): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    register<TConfig extends IIndexerConfig>(indexer: IIndexer<TEntity, TId, TConfig>): void;
-    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
-    //
-    // (undocumented)
-    warmUp(): void;
 }
 
 // @public
@@ -865,10 +802,13 @@ export type IngredientId = Brand<string, 'IngredientId'>;
 const ingredientId: Converter<IngredientId>;
 
 // @public
-class IngredientIndexerOrchestrator {
+type IngredientIndexerName = keyof IIngredientQuerySpec;
+
+// @public
+class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngredient, IngredientId> {
     constructor(library: ChocolateLibrary, resolver: IngredientResolver_2);
-    convertConfig(json: unknown): Result<IIndexOrchestratorConfig>;
-    find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>>;
+    convertConfig(json: unknown): Result<IIngredientQuerySpec>;
+    find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>>;
     invalidate(): void;
     warmUp(): void;
 }
@@ -912,6 +852,9 @@ class IngredientQuery {
     withoutAllergens(allergens: Allergen[]): IngredientQuery;
     withTag(tag: string): IngredientQuery;
 }
+
+// @public
+const ingredientQuerySpecConverter: Converter<IIngredientQuerySpec>;
 
 // @public
 type IngredientResolver = (id: IngredientId) => Result<Ingredient>;
@@ -965,15 +908,11 @@ class IngredientsByTagIndexer extends BaseIndexer<IRuntimeIngredient, Ingredient
     //
     // (undocumented)
     protected _clearIndex(): void;
-    // (undocumented)
-    readonly configConverter: Converter<IIngredientsByTagConfig>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _findInternal(config: IIngredientsByTagConfig): Result<ReadonlyArray<IRuntimeIngredient | IngredientId>>;
     getAllTags(): ReadonlyArray<string>;
-    // (undocumented)
-    readonly id: IndexerId;
 }
 
 // @public
@@ -1037,6 +976,16 @@ interface IRecipeIngredient {
 }
 
 // @public
+interface IRecipeQuerySpec {
+    // (undocumented)
+    readonly byChocolateType?: IRecipesByChocolateTypeConfig;
+    // (undocumented)
+    readonly byIngredient?: IRecipesByIngredientConfig;
+    // (undocumented)
+    readonly byTag?: IRecipesByTagConfig;
+}
+
+// @public
 interface IRecipeRating {
     readonly category: RatingCategory;
     readonly notes?: string;
@@ -1044,24 +993,18 @@ interface IRecipeRating {
 }
 
 // @public
-interface IRecipesByChocolateTypeConfig extends IIndexerConfig {
+interface IRecipesByChocolateTypeConfig {
     readonly chocolateType: ChocolateType;
-    // (undocumented)
-    readonly indexerId: typeof IndexerIds.recipesByChocolateType;
 }
 
 // @public
-interface IRecipesByIngredientConfig extends IIndexerConfig {
-    // (undocumented)
-    readonly indexerId: typeof IndexerIds.recipesByIngredient;
+interface IRecipesByIngredientConfig {
     readonly ingredientId: IngredientId;
     readonly usageType?: IngredientUsageType;
 }
 
 // @public
-interface IRecipesByTagConfig extends IIndexerConfig {
-    // (undocumented)
-    readonly indexerId: typeof IndexerIds.recipesByTag;
+interface IRecipesByTagConfig {
     readonly tag: string;
 }
 
@@ -1451,9 +1394,6 @@ interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngre
     getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
 }
 
-// @public
-type JsonQuerySpec = Record<string, Record<string, unknown>>;
-
 declare namespace LibraryData {
     export {
         Converters_3 as Converters,
@@ -1580,9 +1520,6 @@ export type Percentage = Brand<number, 'Percentage'>;
 const percentage: Converter<Percentage>;
 
 // @public
-type QuerySpec = Partial<Record<IndexerId, IIndexerConfig>>;
-
-// @public
 type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
 
 // @public
@@ -1659,10 +1596,13 @@ export type RecipeId = Brand<string, 'RecipeId'>;
 const recipeId: Converter<RecipeId>;
 
 // @public
-class RecipeIndexerOrchestrator {
+type RecipeIndexerName = keyof IRecipeQuerySpec;
+
+// @public
+class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeRecipe, RecipeId> {
     constructor(library: ChocolateLibrary, resolver: RecipeResolver);
-    convertConfig(json: unknown): Result<IIndexOrchestratorConfig>;
-    find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeRecipe>>;
+    convertConfig(json: unknown): Result<IRecipeQuerySpec>;
+    find(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeRecipe>>;
     invalidate(): void;
     warmUp(): void;
 }
@@ -1713,6 +1653,9 @@ class RecipeQuery {
     withTag(tag: string): RecipeQuery;
     withWhiteChocolate(): RecipeQuery;
 }
+
+// @public
+const recipeQuerySpecConverter: Converter<IRecipeQuerySpec>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1773,14 +1716,10 @@ class RecipesByChocolateTypeIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId
     //
     // (undocumented)
     protected _clearIndex(): void;
-    // (undocumented)
-    readonly configConverter: Converter<IRecipesByChocolateTypeConfig>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _findInternal(config: IRecipesByChocolateTypeConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>>;
-    // (undocumented)
-    readonly id: IndexerId;
 }
 
 // @public
@@ -1800,14 +1739,10 @@ class RecipesByIngredientIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, I
     //
     // (undocumented)
     protected _clearIndex(): void;
-    // (undocumented)
-    readonly configConverter: Converter<IRecipesByIngredientConfig>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _findInternal(config: IRecipesByIngredientConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>>;
-    // (undocumented)
-    readonly id: IndexerId;
 }
 
 // @public
@@ -1827,15 +1762,11 @@ class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipes
     //
     // (undocumented)
     protected _clearIndex(): void;
-    // (undocumented)
-    readonly configConverter: Converter<IRecipesByTagConfig>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     protected _findInternal(config: IRecipesByTagConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>>;
     getAllTags(): ReadonlyArray<string>;
-    // (undocumented)
-    readonly id: IndexerId;
 }
 
 // @public
@@ -2007,9 +1938,9 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IRecipeCo
     calculateGanacheForVersion(recipeId: RecipeId, versionSpec: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
-    findIngredients(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
+    findIngredients(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
     findIngredientsByTag(tag: string): Result<AnyRuntimeIngredient[]>;
-    findRecipes(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
+    findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
     findRecipesByChocolateType(type: ChocolateType): RuntimeRecipe[];
     findRecipesByTag(tag: string): Result<RuntimeRecipe[]>;
     findRecipesUsingIngredient(ingredientId: IngredientId): Result<RuntimeRecipe[]>;

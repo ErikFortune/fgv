@@ -24,12 +24,11 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { ChocolateType, Converters as ChocolateConverters, IndexerId, RecipeId } from '../../common';
+import { ChocolateType, Converters as ChocolateConverters, RecipeId } from '../../common';
 import { isChocolateIngredient } from '../../ingredients';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
-import { IIndexerConfig, IndexerIds } from './model';
 
 // ============================================================================
 // Configuration Types
@@ -39,9 +38,7 @@ import { IIndexerConfig, IndexerIds } from './model';
  * Configuration for the RecipesByChocolateType indexer.
  * @public
  */
-export interface IRecipesByChocolateTypeConfig extends IIndexerConfig {
-  readonly indexerId: typeof IndexerIds.recipesByChocolateType;
-
+export interface IRecipesByChocolateTypeConfig {
   /**
    * The chocolate type to search for.
    */
@@ -53,10 +50,7 @@ export interface IRecipesByChocolateTypeConfig extends IIndexerConfig {
  * @public
  */
 export function recipesByChocolateTypeConfig(chocolateType: ChocolateType): IRecipesByChocolateTypeConfig {
-  return {
-    indexerId: IndexerIds.recipesByChocolateType,
-    chocolateType
-  };
+  return { chocolateType };
 }
 
 /**
@@ -65,13 +59,8 @@ export function recipesByChocolateTypeConfig(chocolateType: ChocolateType): IRec
  */
 export const recipesByChocolateTypeConfigConverter: Converter<IRecipesByChocolateTypeConfig> =
   Converters.strictObject<IRecipesByChocolateTypeConfig>({
-    indexerId: Converters.literal(IndexerIds.recipesByChocolateType),
     chocolateType: ChocolateConverters.chocolateType
   });
-
-// ============================================================================
-// RecipesByChocolateTypeIndexer Class
-// ============================================================================
 
 /**
  * Indexer that finds recipes containing a specific chocolate type.
@@ -84,10 +73,6 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
   RecipeId,
   IRecipesByChocolateTypeConfig
 > {
-  public readonly id: IndexerId = IndexerIds.recipesByChocolateType;
-  public readonly configConverter: Converter<IRecipesByChocolateTypeConfig> =
-    recipesByChocolateTypeConfigConverter;
-
   private readonly _library: ChocolateLibrary;
 
   // Index structure: chocolate type -> recipe IDs

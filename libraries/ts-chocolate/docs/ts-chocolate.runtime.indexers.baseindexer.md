@@ -11,7 +11,7 @@ Subclasses must implement: - `_buildIndex()`<!-- -->: Build the internal index s
 **Signature:**
 
 ```typescript
-export declare abstract class BaseIndexer<TEntity, TId, TConfig extends IIndexerConfig> implements IIndexer<TEntity, TId, TConfig> 
+export declare abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> 
 ```
 **Implements:** [IIndexer](./ts-chocolate.runtime.indexers.iindexer.md)<!-- -->&lt;TEntity, TId, TConfig&gt;
 
@@ -56,52 +56,6 @@ boolean
 </td><td>
 
 Flag indicating if the index has been built.
-
-
-</td></tr>
-<tr><td>
-
-[configConverter](./ts-chocolate.runtime.indexers.baseindexer.configconverter.md)
-
-
-</td><td>
-
-`abstract`
-
-`readonly`
-
-
-</td><td>
-
-Converter&lt;TConfig&gt;
-
-
-</td><td>
-
-Converter for this indexers JSON configuration.
-
-
-</td></tr>
-<tr><td>
-
-[id](./ts-chocolate.runtime.indexers.baseindexer.id.md)
-
-
-</td><td>
-
-`abstract`
-
-`readonly`
-
-
-</td><td>
-
-[IndexerId](./ts-chocolate.indexerid.md)
-
-
-</td><td>
-
-Unique identifier for this indexer.
 
 
 </td></tr>
@@ -253,7 +207,7 @@ Helper to get values from a Set-based index as an array.
 
 </td><td>
 
-Finds entities or IDs matching the given configuration. Returns undefined if this indexer has no work to do (config not relevant). Returns empty array if config is relevant but no matches found.
+Finds entities or IDs matching the given configuration.
 
 
 </td></tr>

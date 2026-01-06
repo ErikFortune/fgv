@@ -6,12 +6,12 @@
 
 Finds ingredients matching a query specification.
 
-This is the unified entry point for ingredient queries. Query specifications are keyed by indexer ID, allowing multiple criteria to be combined.
+This is the unified entry point for ingredient queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
 
 **Signature:**
 
 ```typescript
-findIngredients(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
+findIngredients(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
 ```
 
 ## Parameters
@@ -39,12 +39,12 @@ spec
 
 </td><td>
 
-[QuerySpec](./ts-chocolate.runtime.indexers.queryspec.md)
+[IIngredientQuerySpec](./ts-chocolate.runtime.indexers.iingredientqueryspec.md)
 
 
 </td><td>
 
-Query specification with configs keyed by indexer ID
+Query specification with configs keyed by indexer name
 
 
 </td></tr>
@@ -78,10 +78,7 @@ Array of matching RuntimeIngredient objects
 ```typescript
 // Find ingredients by tag
 ctx.findIngredients({
-  [IndexerIds.ingredientsByTag]: {
-    indexerId: IndexerIds.ingredientsByTag,
-    tag: 'chocolate'
-  }
+  'ingredients-by-tag': { tag: 'chocolate' }
 });
 ```
 

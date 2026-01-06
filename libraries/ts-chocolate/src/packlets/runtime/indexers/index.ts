@@ -24,29 +24,19 @@
  * This module provides:
  * - Base indexer class with common functionality
  * - Concrete indexers for various query types
- * - Index orchestrator for unified query execution
+ * - Type-specific orchestrators for unified query execution
  *
  * @packageDocumentation
  */
 
 // Model and interfaces
-export {
-  AggregationMode,
-  IEntityResolver,
-  IFindOptions,
-  IIndexer,
-  IIndexerConfig,
-  IIndexOrchestrator,
-  IIndexOrchestratorConfig,
-  IndexerIds,
-  indexerId,
-  QuerySpec
-} from './model';
+export * from './model';
 
-// Base class
+// Base classes
 export { BaseIndexer } from './baseIndexer';
+export { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 
-// Concrete indexers
+// Concrete indexers - recipes by ingredient
 export {
   IRecipesByIngredientConfig,
   IngredientUsageType,
@@ -55,6 +45,7 @@ export {
   recipesByIngredientConfigConverter
 } from './recipesByIngredientIndexer';
 
+// Concrete indexers - recipes by tag
 export {
   IRecipesByTagConfig,
   RecipesByTagIndexer,
@@ -62,6 +53,7 @@ export {
   recipesByTagConfigConverter
 } from './recipesByTagIndexer';
 
+// Concrete indexers - ingredients by tag
 export {
   IIngredientsByTagConfig,
   IngredientsByTagIndexer,
@@ -69,6 +61,7 @@ export {
   ingredientsByTagConfigConverter
 } from './ingredientsByTagIndexer';
 
+// Concrete indexers - recipes by chocolate type
 export {
   IRecipesByChocolateTypeConfig,
   RecipesByChocolateTypeIndexer,
@@ -76,10 +69,20 @@ export {
   recipesByChocolateTypeConfigConverter
 } from './recipesByChocolateTypeIndexer';
 
-// Orchestrators
-export { IndexOrchestrator } from './indexOrchestrator';
-export { RecipeIndexerOrchestrator, RecipeResolver } from './recipeIndexerOrchestrator';
-export { IngredientIndexerOrchestrator, IngredientResolver } from './ingredientIndexerOrchestrator';
+// Recipe orchestrator with query spec types
+export {
+  IRecipeQuerySpec,
+  RecipeIndexerName,
+  RecipeIndexerOrchestrator,
+  RecipeResolver,
+  recipeQuerySpecConverter
+} from './recipeIndexerOrchestrator';
 
-// Query spec types for JSON input
-export { JsonQuerySpec, IndexerIdStrings } from './querySpecConverter';
+// Ingredient orchestrator with query spec types
+export {
+  IIngredientQuerySpec,
+  IngredientIndexerName,
+  IngredientIndexerOrchestrator,
+  IngredientResolver,
+  ingredientQuerySpecConverter
+} from './ingredientIndexerOrchestrator';

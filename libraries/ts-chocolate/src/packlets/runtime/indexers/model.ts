@@ -23,37 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Result } from '@fgv/ts-utils';
-import { IndexerId } from '../../common';
-
-// ============================================================================
-// Indexer Query Configuration
-// ============================================================================
-
-/**
- * Base interface for indexer query configurations.
- * Each indexer defines its own configuration type extending this.
- * @public
- */
-export interface IIndexerConfig {
-  /**
-   * The indexer ID that this config targets.
-   * Used by the indexer to determine if it should handle this config.
-   */
-  readonly indexerId: IndexerId;
-}
-
-/**
- * A query specification is a record keyed by IndexerId containing configs for each indexer.
- * Indexers check for their own key and return early if not present.
- * @public
- */
-export type QuerySpec = Partial<Record<IndexerId, IIndexerConfig>>;
-
-// ============================================================================
-// Indexer Interface
-// ============================================================================
-
+import { Result } from '@fgv/ts-utils';
 /**
  * Interface for a single indexer that can find entities matching a query config.
  *
@@ -66,12 +36,7 @@ export type QuerySpec = Partial<Record<IndexerId, IIndexerConfig>>;
  *
  * @public
  */
-export interface IIndexer<TEntity, TId, TConfig extends IIndexerConfig> {
-  /**
-   * Unique identifier for this indexer.
-   */
-  readonly id: IndexerId;
-
+export interface IIndexer<TEntity, TId, TConfig> {
   /**
    * Finds entities or IDs matching the given configuration.
    * Returns undefined if this indexer has no work to do (config not relevant).
@@ -93,16 +58,7 @@ export interface IIndexer<TEntity, TId, TConfig extends IIndexerConfig> {
    * Called during warmup.
    */
   warmUp(): void;
-
-  /**
-   * Converter for this indexers JSON configuration.
-   */
-  configConverter: Converter<TConfig>;
 }
-
-// ============================================================================
-// Entity Resolver Interface
-// ============================================================================
 
 /**
  * Interface for resolving entity IDs to entities.
@@ -126,10 +82,6 @@ export interface IEntityResolver<TEntity, TId> {
   isId(value: TEntity | TId): value is TId;
 }
 
-// ============================================================================
-// Index Orchestrator Interface
-// ============================================================================
-
 /**
  * Aggregation mode for combining results from multiple indexers.
  * @public
@@ -149,81 +101,3 @@ export interface IFindOptions {
    */
   aggregation?: AggregationMode;
 }
-
-/**
- * Configuration for an index orchestrator.
- * A partial record since not all indexers need to be queried at once.
- * @public
- */
-export type IIndexOrchestratorConfig = Partial<Record<IndexerId, IIndexerConfig>>;
-
-/**
- * Interface for the index orchestrator that manages multiple indexers.
- *
- * The orchestrator:
- * - Routes query configs to appropriate indexers
- * - Aggregates results across indexers
- * - Resolves IDs to entities
- *
- * @public
- */
-export interface IIndexOrchestrator<TEntity, TId, TOrchestratorConfig extends IIndexOrchestratorConfig> {
-  /**
-   * Finds entities matching the given query specification.
-   *
-   * @param spec - Query specification with configs keyed by indexer ID
-   * @param options - Optional find options
-   * @returns Array of matching entities
-   */
-  find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<TEntity>>;
-
-  /**
-   * Registers an indexer with the orchestrator.
-   * @param indexer - The indexer to register
-   */
-  register<TConfig extends IIndexerConfig>(indexer: IIndexer<TEntity, TId, TConfig>): void;
-
-  /**
-   * Invalidates all registered indexers.
-   */
-  invalidate(): void;
-
-  /**
-   * Warms up all registered indexers.
-   */
-  warmUp(): void;
-
-  /**
-   * Converts a JSON object to an orchestrator configuration.
-   * @param json - The JSON object
-   * @returns The orchestrator configuration
-   */
-  convertConfig(json: unknown): Result<TOrchestratorConfig>;
-}
-
-// ============================================================================
-// Well-known Indexer IDs
-// ============================================================================
-
-/**
- * Creates an IndexerId from a string literal.
- * @internal
- */
-export function indexerId<T extends string>(id: T): IndexerId {
-  return id as unknown as IndexerId;
-}
-
-/**
- * Well-known indexer IDs for the chocolate library.
- * @public
- */
-export const IndexerIds = {
-  /** Indexes recipes by ingredient usage */
-  recipesByIngredient: indexerId('recipes-by-ingredient'),
-  /** Indexes recipes by tag */
-  recipesByTag: indexerId('recipes-by-tag'),
-  /** Indexes ingredients by tag */
-  ingredientsByTag: indexerId('ingredients-by-tag'),
-  /** Indexes recipes by chocolate type */
-  recipesByChocolateType: indexerId('recipes-by-chocolate-type')
-} as const;

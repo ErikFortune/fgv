@@ -13,73 +13,8 @@ Indexers can return either entities or IDs - the orchestrator resolves IDs to en
 **Signature:**
 
 ```typescript
-export interface IIndexer<TEntity, TId, TConfig extends IIndexerConfig> 
+export interface IIndexer<TEntity, TId, TConfig> 
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[configConverter](./ts-chocolate.runtime.indexers.iindexer.configconverter.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Converter&lt;TConfig&gt;
-
-
-</td><td>
-
-Converter for this indexers JSON configuration.
-
-
-</td></tr>
-<tr><td>
-
-[id](./ts-chocolate.runtime.indexers.iindexer.id.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IndexerId](./ts-chocolate.indexerid.md)
-
-
-</td><td>
-
-Unique identifier for this indexer.
-
-
-</td></tr>
-</tbody></table>
 
 ## Methods
 

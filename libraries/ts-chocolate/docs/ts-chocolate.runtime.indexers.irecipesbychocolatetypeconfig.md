@@ -9,9 +9,8 @@ Configuration for the RecipesByChocolateType indexer.
 **Signature:**
 
 ```typescript
-export interface IRecipesByChocolateTypeConfig extends IIndexerConfig 
+export interface IRecipesByChocolateTypeConfig 
 ```
-**Extends:** [IIndexerConfig](./ts-chocolate.runtime.indexers.iindexerconfig.md)
 
 ## Properties
 
@@ -54,25 +53,6 @@ Description
 </td><td>
 
 The chocolate type to search for.
-
-
-</td></tr>
-<tr><td>
-
-[indexerId](./ts-chocolate.runtime.indexers.irecipesbychocolatetypeconfig.indexerid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-typeof IndexerIds.recipesByChocolateType
-
-
-</td><td>
 
 
 </td></tr>

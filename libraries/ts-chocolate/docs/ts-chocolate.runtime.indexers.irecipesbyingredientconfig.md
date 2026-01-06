@@ -9,9 +9,8 @@ Configuration for the RecipesByIngredient indexer.
 **Signature:**
 
 ```typescript
-export interface IRecipesByIngredientConfig extends IIndexerConfig 
+export interface IRecipesByIngredientConfig 
 ```
-**Extends:** [IIndexerConfig](./ts-chocolate.runtime.indexers.iindexerconfig.md)
 
 ## Properties
 
@@ -37,25 +36,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[indexerId](./ts-chocolate.runtime.indexers.irecipesbyingredientconfig.indexerid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-typeof IndexerIds.recipesByIngredient
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
 
 [ingredientId](./ts-chocolate.runtime.indexers.irecipesbyingredientconfig.ingredientid.md)
 

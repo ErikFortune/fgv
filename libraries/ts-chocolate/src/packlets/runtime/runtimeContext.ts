@@ -43,8 +43,9 @@ import { RuntimeRecipe } from './runtimeRecipe';
 import { RuntimeScaledVersion } from './runtimeScaledVersion';
 import {
   IFindOptions,
+  IIngredientQuerySpec,
+  IRecipeQuerySpec,
   IngredientIndexerOrchestrator,
-  QuerySpec,
   RecipeIndexerOrchestrator
 } from './indexers';
 
@@ -684,9 +685,9 @@ export class RuntimeContext
    * Finds recipes matching a query specification.
    *
    * This is the unified entry point for recipe queries. Query specifications
-   * are keyed by indexer ID, allowing multiple criteria to be combined.
+   * are keyed by indexer name, allowing multiple criteria to be combined.
    *
-   * @param spec - Query specification with configs keyed by indexer ID
+   * @param spec - Query specification with configs keyed by indexer name
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching RuntimeRecipe objects
    *
@@ -694,26 +695,17 @@ export class RuntimeContext
    * ```typescript
    * // Find recipes by ingredient
    * ctx.findRecipes({
-   *   [IndexerIds.recipesByIngredient]: {
-   *     indexerId: IndexerIds.recipesByIngredient,
-   *     ingredientId: someIngredientId
-   *   }
+   *   'recipes-by-ingredient': { ingredientId: someIngredientId }
    * });
    *
    * // Find recipes by tag AND chocolate type (intersection)
    * ctx.findRecipes({
-   *   [IndexerIds.recipesByTag]: {
-   *     indexerId: IndexerIds.recipesByTag,
-   *     tag: 'ganache'
-   *   },
-   *   [IndexerIds.recipesByChocolateType]: {
-   *     indexerId: IndexerIds.recipesByChocolateType,
-   *     chocolateType: 'dark'
-   *   }
+   *   'recipes-by-tag': { tag: 'ganache' },
+   *   'recipes-by-chocolate-type': { chocolateType: 'dark' }
    * });
    * ```
    */
-  public findRecipes(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>> {
+  public findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>> {
     return this._recipeOrchestrator.find(spec, options) as Result<ReadonlyArray<RuntimeRecipe>>;
   }
 
@@ -721,9 +713,9 @@ export class RuntimeContext
    * Finds ingredients matching a query specification.
    *
    * This is the unified entry point for ingredient queries. Query specifications
-   * are keyed by indexer ID, allowing multiple criteria to be combined.
+   * are keyed by indexer name, allowing multiple criteria to be combined.
    *
-   * @param spec - Query specification with configs keyed by indexer ID
+   * @param spec - Query specification with configs keyed by indexer name
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching RuntimeIngredient objects
    *
@@ -731,15 +723,12 @@ export class RuntimeContext
    * ```typescript
    * // Find ingredients by tag
    * ctx.findIngredients({
-   *   [IndexerIds.ingredientsByTag]: {
-   *     indexerId: IndexerIds.ingredientsByTag,
-   *     tag: 'chocolate'
-   *   }
+   *   'ingredients-by-tag': { tag: 'chocolate' }
    * });
    * ```
    */
   public findIngredients(
-    spec: QuerySpec,
+    spec: IIngredientQuerySpec,
     options?: IFindOptions
   ): Result<ReadonlyArray<AnyRuntimeIngredient>> {
     return this._ingredientOrchestrator.find(spec, options) as Result<ReadonlyArray<AnyRuntimeIngredient>>;

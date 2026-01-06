@@ -24,11 +24,10 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { Converters as ChocolateConverters, IndexerId, IngredientId, RecipeId } from '../../common';
+import { Converters as ChocolateConverters, IngredientId, RecipeId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
-import { IIndexerConfig, IndexerIds } from './model';
 
 // ============================================================================
 // Configuration Types
@@ -44,9 +43,7 @@ export type IngredientUsageType = 'primary' | 'alternate' | 'any';
  * Configuration for the RecipesByIngredient indexer.
  * @public
  */
-export interface IRecipesByIngredientConfig extends IIndexerConfig {
-  readonly indexerId: typeof IndexerIds.recipesByIngredient;
-
+export interface IRecipesByIngredientConfig {
   /**
    * The ingredient ID to search for.
    */
@@ -70,11 +67,7 @@ export function recipesByIngredientConfig(
   ingredientId: IngredientId,
   usageType?: IngredientUsageType
 ): IRecipesByIngredientConfig {
-  return {
-    indexerId: IndexerIds.recipesByIngredient,
-    ingredientId,
-    usageType
-  };
+  return { ingredientId, usageType };
 }
 
 /**
@@ -93,7 +86,6 @@ const usageTypeConverter: Converter<IngredientUsageType> = Converters.enumerated
  */
 export const recipesByIngredientConfigConverter: Converter<IRecipesByIngredientConfig> =
   Converters.strictObject<IRecipesByIngredientConfig>({
-    indexerId: Converters.literal(IndexerIds.recipesByIngredient),
     ingredientId: ChocolateConverters.ingredientId,
     usageType: usageTypeConverter.optional()
   });
@@ -129,9 +121,6 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
   RecipeId,
   IRecipesByIngredientConfig
 > {
-  public readonly id: IndexerId = IndexerIds.recipesByIngredient;
-  public readonly configConverter: Converter<IRecipesByIngredientConfig> = recipesByIngredientConfigConverter;
-
   private readonly _library: ChocolateLibrary;
 
   // Index structure: ingredient -> usage info

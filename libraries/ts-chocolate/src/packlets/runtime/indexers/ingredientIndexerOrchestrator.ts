@@ -23,13 +23,45 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { IngredientId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeIngredient } from '../model';
-import { IEntityResolver, IFindOptions, IIndexOrchestratorConfig, QuerySpec } from './model';
-import { IndexOrchestrator } from './indexOrchestrator';
-import { IngredientsByTagIndexer } from './ingredientsByTagIndexer';
+import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
+import { AggregationMode, IFindOptions } from './model';
+import {
+  IIngredientsByTagConfig,
+  IngredientsByTagIndexer,
+  ingredientsByTagConfigConverter
+} from './ingredientsByTagIndexer';
+
+// ============================================================================
+// Ingredient Query Spec Types
+// ============================================================================
+
+/**
+ * Query specification for ingredient indexers.
+ * Each key corresponds to an indexer, and the value is that indexer's config.
+ * @public
+ */
+export interface IIngredientQuerySpec {
+  readonly byTag?: IIngredientsByTagConfig;
+}
+
+/**
+ * Valid ingredient indexer names (inferred from query spec keys).
+ * @public
+ */
+export type IngredientIndexerName = keyof IIngredientQuerySpec;
+
+/**
+ * Converter for ingredient query specification from JSON.
+ * @public
+ */
+export const ingredientQuerySpecConverter: Converter<IIngredientQuerySpec> =
+  Converters.strictObject<IIngredientQuerySpec>({
+    byTag: ingredientsByTagConfigConverter.optional()
+  });
 
 /**
  * Ingredient resolver function type.
@@ -47,12 +79,10 @@ export type IngredientResolver = (id: IngredientId) => Result<IRuntimeIngredient
  *
  * @public
  */
-export class IngredientIndexerOrchestrator {
-  private readonly _orchestrator: IndexOrchestrator<
-    IRuntimeIngredient,
-    IngredientId,
-    IIndexOrchestratorConfig
-  >;
+export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngredient, IngredientId> {
+  private readonly _indexers: {
+    byTag: IngredientsByTagIndexer;
+  };
 
   /**
    * Creates a new IngredientIndexerOrchestrator.
@@ -60,45 +90,76 @@ export class IngredientIndexerOrchestrator {
    * @param resolver - Function to resolve ingredient IDs to entities
    */
   public constructor(library: ChocolateLibrary, resolver: IngredientResolver) {
-    const entityResolver: IEntityResolver<IRuntimeIngredient, IngredientId> = {
+    super({
       resolve: resolver,
       isId: (value): value is IngredientId => typeof value === 'string'
-    };
+    });
 
-    this._orchestrator = new IndexOrchestrator(entityResolver);
-    this._orchestrator.register(new IngredientsByTagIndexer(library));
+    this._indexers = {
+      byTag: new IngredientsByTagIndexer(library)
+    };
   }
 
   /**
    * Finds ingredients matching a query specification.
-   * @param spec - Query specification with configs keyed by indexer ID
+   * @param spec - Query specification with configs keyed by indexer name
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching ingredients
    */
-  public find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>> {
-    return this._orchestrator.find(spec, options);
+  public find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>> {
+    const aggregation: AggregationMode = options?.aggregation ?? 'intersection';
+
+    // Collect results from each specified indexer
+    const indexerResults: Array<Set<IngredientId | IRuntimeIngredient>> = [];
+    const errors = new MessageAggregator();
+
+    if (spec.byTag !== undefined) {
+      this._indexers.byTag
+        .find(spec.byTag)
+        .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
+        .aggregateError(errors);
+    }
+
+    if (indexerResults.length === 0) {
+      /* c8 ignore next 3 - defensive: current indexers never return Failure */
+      if (errors.hasMessages) {
+        return Failure.with(`Errors during indexing: ${errors.messages.join('; ')}`);
+      }
+      return Success.with([]);
+    }
+
+    // Aggregate results
+    let aggregatedSet: Set<IngredientId | IRuntimeIngredient>;
+    if (aggregation === 'intersection') {
+      aggregatedSet = this._intersect(indexerResults);
+    } else {
+      aggregatedSet = this._union(indexerResults);
+    }
+
+    // Resolve IDs to entities
+    return this._resolveToEntities(aggregatedSet);
   }
 
   /**
    * Converts a JSON query specification to a typed config.
-   * @param json - JSON object with indexer ID strings as keys and config objects as values
-   * @returns Typed orchestrator config
+   * @param json - JSON object with indexer name strings as keys and config objects as values
+   * @returns Typed query spec
    */
-  public convertConfig(json: unknown): Result<IIndexOrchestratorConfig> {
-    return this._orchestrator.convertConfig(json);
+  public convertConfig(json: unknown): Result<IIngredientQuerySpec> {
+    return ingredientQuerySpecConverter.convert(json);
   }
 
   /**
    * Invalidates all indexer caches.
    */
   public invalidate(): void {
-    this._orchestrator.invalidate();
+    this._indexers.byTag.invalidate();
   }
 
   /**
    * Pre-warms all indexers.
    */
   public warmUp(): void {
-    this._orchestrator.warmUp();
+    this._indexers.byTag.warmUp();
   }
 }

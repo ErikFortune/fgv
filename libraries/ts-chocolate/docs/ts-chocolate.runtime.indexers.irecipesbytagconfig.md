@@ -9,9 +9,8 @@ Configuration for the RecipesByTag indexer.
 **Signature:**
 
 ```typescript
-export interface IRecipesByTagConfig extends IIndexerConfig 
+export interface IRecipesByTagConfig 
 ```
-**Extends:** [IIndexerConfig](./ts-chocolate.runtime.indexers.iindexerconfig.md)
 
 ## Properties
 
@@ -37,25 +36,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[indexerId](./ts-chocolate.runtime.indexers.irecipesbytagconfig.indexerid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-typeof IndexerIds.recipesByTag
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
 
 [tag](./ts-chocolate.runtime.indexers.irecipesbytagconfig.tag.md)
 

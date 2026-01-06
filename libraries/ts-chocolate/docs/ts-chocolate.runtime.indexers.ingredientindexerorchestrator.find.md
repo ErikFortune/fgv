@@ -9,7 +9,7 @@ Finds ingredients matching a query specification.
 **Signature:**
 
 ```typescript
-find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>>;
+find(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeIngredient>>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ spec
 
 </td><td>
 
-[QuerySpec](./ts-chocolate.runtime.indexers.queryspec.md)
+[IIngredientQuerySpec](./ts-chocolate.runtime.indexers.iingredientqueryspec.md)
 
 
 </td><td>
 
-Query specification with configs keyed by indexer ID
+Query specification with configs keyed by indexer name
 
 
 </td></tr>

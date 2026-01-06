@@ -23,9 +23,8 @@
  * @packageDocumentation
  */
 
-import { Converter, Result, Success } from '@fgv/ts-utils';
-import { IndexerId } from '../../common';
-import { IIndexer, IIndexerConfig } from './model';
+import { Result, Success } from '@fgv/ts-utils';
+import { IIndexer } from './model';
 
 /**
  * Abstract base class for indexers providing common functionality.
@@ -36,27 +35,18 @@ import { IIndexer, IIndexerConfig } from './model';
  *
  * @public
  */
-export abstract class BaseIndexer<TEntity, TId, TConfig extends IIndexerConfig>
-  implements IIndexer<TEntity, TId, TConfig>
-{
-  /** {@inheritdoc Runtime.Indexers.IIndexer.id} */
-  public abstract readonly id: IndexerId;
-
-  /** {@inheritdoc Runtime.Indexers.IIndexer.configConverter} */
-  public abstract readonly configConverter: Converter<TConfig>;
-
+export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
   /**
    * Flag indicating if the index has been built.
    */
   protected _isBuilt: boolean = false;
 
-  /** {@inheritdoc Runtime.Indexers.IIndexer.find} */
-  public find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined {
-    // Check if this config is for us
-    if (config.indexerId !== this.id) {
-      return undefined;
-    }
-
+  /**
+   * Finds entities or IDs matching the given configuration.
+   * @param config - The indexer-specific configuration
+   * @returns Array of entities or IDs, or Failure on error
+   */
+  public find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> {
     // Ensure index is built
     this._ensureBuilt();
 

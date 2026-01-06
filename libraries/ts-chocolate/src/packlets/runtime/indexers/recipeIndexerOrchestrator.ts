@@ -23,15 +23,51 @@
  * @packageDocumentation
  */
 
-import { Result } from '@fgv/ts-utils';
+import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
 import { RecipeId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeRecipe } from '../model';
-import { IEntityResolver, IFindOptions, IIndexOrchestratorConfig, QuerySpec } from './model';
-import { IndexOrchestrator } from './indexOrchestrator';
-import { RecipesByIngredientIndexer } from './recipesByIngredientIndexer';
-import { RecipesByTagIndexer } from './recipesByTagIndexer';
-import { RecipesByChocolateTypeIndexer } from './recipesByChocolateTypeIndexer';
+import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
+import { AggregationMode, IFindOptions } from './model';
+import {
+  IRecipesByIngredientConfig,
+  RecipesByIngredientIndexer,
+  recipesByIngredientConfigConverter
+} from './recipesByIngredientIndexer';
+import { IRecipesByTagConfig, RecipesByTagIndexer, recipesByTagConfigConverter } from './recipesByTagIndexer';
+import {
+  IRecipesByChocolateTypeConfig,
+  RecipesByChocolateTypeIndexer,
+  recipesByChocolateTypeConfigConverter
+} from './recipesByChocolateTypeIndexer';
+
+/**
+ * Query specification for recipe indexers.
+ * Each key corresponds to an indexer, and the value is that indexer's config.
+ * @public
+ */
+export interface IRecipeQuerySpec {
+  readonly byTag?: IRecipesByTagConfig;
+  readonly byIngredient?: IRecipesByIngredientConfig;
+  readonly byChocolateType?: IRecipesByChocolateTypeConfig;
+}
+
+/**
+ * Valid recipe indexer names (inferred from query spec keys).
+ * @public
+ */
+export type RecipeIndexerName = keyof IRecipeQuerySpec;
+
+/**
+ * Converter for recipe query specification from JSON.
+ * @public
+ */
+export const recipeQuerySpecConverter: Converter<IRecipeQuerySpec> =
+  Converters.strictObject<IRecipeQuerySpec>({
+    byTag: recipesByTagConfigConverter.optional(),
+    byIngredient: recipesByIngredientConfigConverter.optional(),
+    byChocolateType: recipesByChocolateTypeConfigConverter.optional()
+  });
 
 /**
  * Recipe resolver function type.
@@ -49,8 +85,12 @@ export type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
  *
  * @public
  */
-export class RecipeIndexerOrchestrator {
-  private readonly _orchestrator: IndexOrchestrator<IRuntimeRecipe, RecipeId, IIndexOrchestratorConfig>;
+export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeRecipe, RecipeId> {
+  private readonly _indexers: {
+    byTag: RecipesByTagIndexer;
+    byIngredient: RecipesByIngredientIndexer;
+    byChocolateType: RecipesByChocolateTypeIndexer;
+  };
 
   /**
    * Creates a new RecipeIndexerOrchestrator.
@@ -58,47 +98,96 @@ export class RecipeIndexerOrchestrator {
    * @param resolver - Function to resolve recipe IDs to entities
    */
   public constructor(library: ChocolateLibrary, resolver: RecipeResolver) {
-    const entityResolver: IEntityResolver<IRuntimeRecipe, RecipeId> = {
+    super({
       resolve: resolver,
       isId: (value): value is RecipeId => typeof value === 'string'
-    };
+    });
 
-    this._orchestrator = new IndexOrchestrator(entityResolver);
-    this._orchestrator.register(new RecipesByIngredientIndexer(library));
-    this._orchestrator.register(new RecipesByTagIndexer(library));
-    this._orchestrator.register(new RecipesByChocolateTypeIndexer(library));
+    this._indexers = {
+      byTag: new RecipesByTagIndexer(library),
+      byIngredient: new RecipesByIngredientIndexer(library),
+      byChocolateType: new RecipesByChocolateTypeIndexer(library)
+    };
   }
 
   /**
    * Finds recipes matching a query specification.
-   * @param spec - Query specification with configs keyed by indexer ID
+   * @param spec - Query specification with configs keyed by indexer name
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching recipes
    */
-  public find(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeRecipe>> {
-    return this._orchestrator.find(spec, options);
+  public find(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeRecipe>> {
+    const aggregation: AggregationMode = options?.aggregation ?? 'intersection';
+
+    // Collect results from each specified indexer
+    const indexerResults: Array<Set<RecipeId | IRuntimeRecipe>> = [];
+    const errors = new MessageAggregator();
+
+    if (spec.byTag !== undefined) {
+      this._indexers.byTag
+        .find(spec.byTag)
+        .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
+        .aggregateError(errors);
+    }
+
+    if (spec.byIngredient !== undefined) {
+      this._indexers.byIngredient
+        .find(spec.byIngredient)
+        .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
+        .aggregateError(errors);
+    }
+
+    if (spec.byChocolateType !== undefined) {
+      this._indexers.byChocolateType
+        .find(spec.byChocolateType)
+        .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
+        .aggregateError(errors);
+    }
+
+    if (indexerResults.length === 0) {
+      /* c8 ignore next 3 - defensive: current indexers never return Failure */
+      if (errors.hasMessages) {
+        return Failure.with(`Errors during indexing: ${errors.messages.join('; ')}`);
+      }
+      return Success.with([]);
+    }
+
+    // Aggregate results
+    let aggregatedSet: Set<RecipeId | IRuntimeRecipe>;
+    if (aggregation === 'intersection') {
+      aggregatedSet = this._intersect(indexerResults);
+    } else {
+      aggregatedSet = this._union(indexerResults);
+    }
+
+    // Resolve IDs to entities
+    return this._resolveToEntities(aggregatedSet);
   }
 
   /**
    * Converts a JSON query specification to a typed config.
-   * @param json - JSON object with indexer ID strings as keys and config objects as values
-   * @returns Typed orchestrator config
+   * @param json - JSON object with indexer name strings as keys and config objects as values
+   * @returns Typed query spec
    */
-  public convertConfig(json: unknown): Result<IIndexOrchestratorConfig> {
-    return this._orchestrator.convertConfig(json);
+  public convertConfig(json: unknown): Result<IRecipeQuerySpec> {
+    return recipeQuerySpecConverter.convert(json);
   }
 
   /**
    * Invalidates all indexer caches.
    */
   public invalidate(): void {
-    this._orchestrator.invalidate();
+    this._indexers.byTag.invalidate();
+    this._indexers.byIngredient.invalidate();
+    this._indexers.byChocolateType.invalidate();
   }
 
   /**
    * Pre-warms all indexers.
    */
   public warmUp(): void {
-    this._orchestrator.warmUp();
+    this._indexers.byTag.warmUp();
+    this._indexers.byIngredient.warmUp();
+    this._indexers.byChocolateType.warmUp();
   }
 }

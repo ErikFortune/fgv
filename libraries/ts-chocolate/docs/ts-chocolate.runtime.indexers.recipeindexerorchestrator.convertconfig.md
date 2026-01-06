@@ -9,7 +9,7 @@ Converts a JSON query specification to a typed config.
 **Signature:**
 
 ```typescript
-convertConfig(json: unknown): Result<IIndexOrchestratorConfig>;
+convertConfig(json: unknown): Result<IRecipeQuerySpec>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ unknown
 
 </td><td>
 
-JSON object with indexer ID strings as keys and config objects as values
+JSON object with indexer name strings as keys and config objects as values
 
 
 </td></tr>
@@ -50,7 +50,7 @@ JSON object with indexer ID strings as keys and config objects as values
 
 **Returns:**
 
-Result&lt;[IIndexOrchestratorConfig](./ts-chocolate.runtime.indexers.iindexorchestratorconfig.md)<!-- -->&gt;
+Result&lt;[IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)<!-- -->&gt;
 
-Typed orchestrator config
+Typed query spec
 

@@ -211,7 +211,7 @@ Creates a RuntimeContext with a new or default ChocolateLibrary. This is the pri
 
 Finds ingredients matching a query specification.
 
-This is the unified entry point for ingredient queries. Query specifications are keyed by indexer ID, allowing multiple criteria to be combined.
+This is the unified entry point for ingredient queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
 
 
 </td></tr>
@@ -241,7 +241,7 @@ Finds all ingredients with a specific tag.
 
 Finds recipes matching a query specification.
 
-This is the unified entry point for recipe queries. Query specifications are keyed by indexer ID, allowing multiple criteria to be combined.
+This is the unified entry point for recipe queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
 
 
 </td></tr>

@@ -24,11 +24,10 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { IndexerId, RecipeId } from '../../common';
+import { RecipeId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
-import { IIndexerConfig, IndexerIds } from './model';
 
 // ============================================================================
 // Configuration Types
@@ -38,9 +37,7 @@ import { IIndexerConfig, IndexerIds } from './model';
  * Configuration for the RecipesByTag indexer.
  * @public
  */
-export interface IRecipesByTagConfig extends IIndexerConfig {
-  readonly indexerId: typeof IndexerIds.recipesByTag;
-
+export interface IRecipesByTagConfig {
   /**
    * The tag to search for (case-insensitive).
    */
@@ -52,10 +49,7 @@ export interface IRecipesByTagConfig extends IIndexerConfig {
  * @public
  */
 export function recipesByTagConfig(tag: string): IRecipesByTagConfig {
-  return {
-    indexerId: IndexerIds.recipesByTag,
-    tag
-  };
+  return { tag };
 }
 
 /**
@@ -64,7 +58,6 @@ export function recipesByTagConfig(tag: string): IRecipesByTagConfig {
  */
 export const recipesByTagConfigConverter: Converter<IRecipesByTagConfig> =
   Converters.strictObject<IRecipesByTagConfig>({
-    indexerId: Converters.literal(IndexerIds.recipesByTag),
     tag: Converters.string
   });
 
@@ -79,9 +72,6 @@ export const recipesByTagConfigConverter: Converter<IRecipesByTagConfig> =
  * @public
  */
 export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipesByTagConfig> {
-  public readonly id: IndexerId = IndexerIds.recipesByTag;
-  public readonly configConverter: Converter<IRecipesByTagConfig> = recipesByTagConfigConverter;
-
   private readonly _library: ChocolateLibrary;
 
   // Index structure: lowercase tag -> recipe IDs

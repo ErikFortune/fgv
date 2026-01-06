@@ -9,9 +9,8 @@ Configuration for the IngredientsByTag indexer.
 **Signature:**
 
 ```typescript
-export interface IIngredientsByTagConfig extends IIndexerConfig 
+export interface IIngredientsByTagConfig 
 ```
-**Extends:** [IIndexerConfig](./ts-chocolate.runtime.indexers.iindexerconfig.md)
 
 ## Properties
 
@@ -37,25 +36,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[indexerId](./ts-chocolate.runtime.indexers.iingredientsbytagconfig.indexerid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-typeof IndexerIds.ingredientsByTag
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
 
 [tag](./ts-chocolate.runtime.indexers.iingredientsbytagconfig.tag.md)
 

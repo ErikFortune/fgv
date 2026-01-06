@@ -11,8 +11,9 @@ Encapsulates all ingredient-related indexers and provides a unified find interfa
 **Signature:**
 
 ```typescript
-export declare class IngredientIndexerOrchestrator 
+export declare class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngredient, IngredientId> 
 ```
+**Extends:** [BaseIndexerOrchestrator](./ts-chocolate.runtime.indexers.baseindexerorchestrator.md)<!-- -->&lt;[IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
 
 ## Constructors
 

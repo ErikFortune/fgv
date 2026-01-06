@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { Result, Success } from '@fgv/ts-utils';
+import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BaseIngredientId,
@@ -44,12 +44,12 @@ import { ChocolateLibrary, Indexers, IRuntimeRecipe, IRuntimeIngredient } from '
 
 // Destructure the Indexers namespace for convenient access
 const {
-  IndexerIds,
-  IndexOrchestrator,
   RecipesByIngredientIndexer,
   RecipesByTagIndexer,
   IngredientsByTagIndexer,
   RecipesByChocolateTypeIndexer,
+  RecipeIndexerOrchestrator,
+  IngredientIndexerOrchestrator,
   recipesByIngredientConfig,
   recipesByTagConfig,
   ingredientsByTagConfig,
@@ -57,16 +57,10 @@ const {
 } = Indexers;
 
 // Type aliases for types from Indexers namespace
-type IEntityResolver<TEntity, TId> = Indexers.IEntityResolver<TEntity, TId>;
 type RecipesByIngredientIndexerType = InstanceType<typeof RecipesByIngredientIndexer>;
 type RecipesByTagIndexerType = InstanceType<typeof RecipesByTagIndexer>;
 type IngredientsByTagIndexerType = InstanceType<typeof IngredientsByTagIndexer>;
 type RecipesByChocolateTypeIndexerType = InstanceType<typeof RecipesByChocolateTypeIndexer>;
-type IndexOrchestratorType<
-  TEntity,
-  TId,
-  TOrchestratorConfig extends Indexers.IIndexOrchestratorConfig
-> = InstanceType<typeof IndexOrchestrator<TEntity, TId, TOrchestratorConfig>>;
 
 describe('Indexers', () => {
   // ============================================================================
@@ -223,15 +217,10 @@ describe('Indexers', () => {
       indexer = new RecipesByIngredientIndexer(library);
     });
 
-    test('has correct ID', () => {
-      expect(indexer.id).toBe(IndexerIds.recipesByIngredient);
-    });
-
     test('finds recipes by primary ingredient', () => {
       const config = recipesByIngredientConfig('test.dark-chocolate' as IngredientId, 'primary');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(1);
         expect(ids).toContain('test.dark-ganache');
@@ -242,7 +231,6 @@ describe('Indexers', () => {
       const config = recipesByIngredientConfig('test.alt-chocolate' as IngredientId, 'alternate');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(1);
         expect(ids).toContain('test.dark-ganache');
@@ -253,7 +241,6 @@ describe('Indexers', () => {
       const config = recipesByIngredientConfig('test.cream' as IngredientId);
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(2);
         expect(ids).toContain('test.dark-ganache');
@@ -265,17 +252,7 @@ describe('Indexers', () => {
       const config = recipesByIngredientConfig('test.unknown' as IngredientId);
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedWith([]);
-    });
-
-    test('returns undefined for wrong indexer ID', () => {
-      const wrongConfig = {
-        indexerId: IndexerIds.recipesByTag,
-        ingredientId: 'test.dark-chocolate' as IngredientId
-      };
-      const result = indexer.find(wrongConfig as unknown as ReturnType<typeof recipesByIngredientConfig>);
-      expect(result).toBeUndefined();
     });
 
     test('warmUp pre-builds the index', () => {
@@ -314,15 +291,10 @@ describe('Indexers', () => {
       indexer = new RecipesByTagIndexer(library);
     });
 
-    test('has correct ID', () => {
-      expect(indexer.id).toBe(IndexerIds.recipesByTag);
-    });
-
     test('finds recipes by tag (case-insensitive)', () => {
       const config = recipesByTagConfig('CLASSIC');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(2);
         expect(ids).toContain('test.dark-ganache');
@@ -334,7 +306,6 @@ describe('Indexers', () => {
       const config = recipesByTagConfig('dark');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(1);
         expect(ids).toContain('test.dark-ganache');
@@ -345,7 +316,6 @@ describe('Indexers', () => {
       const config = recipesByTagConfig('unknown-tag');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedWith([]);
     });
 
@@ -368,15 +338,10 @@ describe('Indexers', () => {
       indexer = new IngredientsByTagIndexer(library);
     });
 
-    test('has correct ID', () => {
-      expect(indexer.id).toBe(IndexerIds.ingredientsByTag);
-    });
-
     test('finds ingredients by tag', () => {
       const config = ingredientsByTagConfig('premium');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(2);
         expect(ids).toContain('test.dark-chocolate');
@@ -388,7 +353,6 @@ describe('Indexers', () => {
       const config = ingredientsByTagConfig('unknown-tag');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedWith([]);
     });
 
@@ -426,15 +390,10 @@ describe('Indexers', () => {
       indexer = new RecipesByChocolateTypeIndexer(library);
     });
 
-    test('has correct ID', () => {
-      expect(indexer.id).toBe(IndexerIds.recipesByChocolateType);
-    });
-
     test('finds recipes by chocolate type', () => {
       const config = recipesByChocolateTypeConfig('dark');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(1);
         expect(ids).toContain('test.dark-ganache');
@@ -445,7 +404,6 @@ describe('Indexers', () => {
       const config = recipesByChocolateTypeConfig('milk');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedAndSatisfy((ids) => {
         expect(ids).toHaveLength(1);
         expect(ids).toContain('test.milk-ganache');
@@ -456,42 +414,33 @@ describe('Indexers', () => {
       const config = recipesByChocolateTypeConfig('white');
       const result = indexer.find(config);
 
-      expect(result).toBeDefined();
       expect(result).toSucceedWith([]);
     });
   });
 
   // ============================================================================
-  // IndexOrchestrator Tests
+  // RecipeIndexerOrchestrator Tests
   // ============================================================================
 
-  describe('IndexOrchestrator', () => {
+  describe('RecipeIndexerOrchestrator', () => {
     // Mock recipe resolver that just returns ID as "resolved"
-    const mockRecipeResolver: IEntityResolver<IRuntimeRecipe, RecipeId> = {
-      resolve: (id: RecipeId): Result<IRuntimeRecipe> => {
-        // Create a minimal mock recipe - in real usage this would come from RuntimeContext
-        return Success.with({
-          id,
-          name: `Recipe ${id}` as RecipeName
-        } as unknown as IRuntimeRecipe);
-      },
-      isId: (value: IRuntimeRecipe | RecipeId): value is RecipeId => {
-        return typeof value === 'string';
-      }
+    const mockRecipeResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+      // Create a minimal mock recipe - in real usage this would come from RuntimeContext
+      return Success.with({
+        id,
+        name: `Recipe ${id}` as RecipeName
+      } as unknown as IRuntimeRecipe);
     };
 
-    let orchestrator: IndexOrchestratorType<IRuntimeRecipe, RecipeId, Indexers.IIndexOrchestratorConfig>;
+    let orchestrator: InstanceType<typeof RecipeIndexerOrchestrator>;
 
     beforeEach(() => {
-      orchestrator = new IndexOrchestrator(mockRecipeResolver);
-      orchestrator.register(new RecipesByIngredientIndexer(library));
-      orchestrator.register(new RecipesByTagIndexer(library));
-      orchestrator.register(new RecipesByChocolateTypeIndexer(library));
+      orchestrator = new RecipeIndexerOrchestrator(library, mockRecipeResolver);
     });
 
     test('finds with single indexer', () => {
       const result = orchestrator.find({
-        [IndexerIds.recipesByTag]: recipesByTagConfig('classic')
+        byTag: { tag: 'classic' }
       });
 
       expect(result).toSucceedAndSatisfy((recipes) => {
@@ -501,8 +450,8 @@ describe('Indexers', () => {
 
     test('finds with intersection (AND) semantics', () => {
       const result = orchestrator.find({
-        [IndexerIds.recipesByTag]: recipesByTagConfig('classic'),
-        [IndexerIds.recipesByChocolateType]: recipesByChocolateTypeConfig('dark')
+        byTag: { tag: 'classic' },
+        byChocolateType: { chocolateType: 'dark' }
       });
 
       expect(result).toSucceedAndSatisfy((recipes) => {
@@ -515,8 +464,8 @@ describe('Indexers', () => {
     test('finds with union (OR) semantics', () => {
       const result = orchestrator.find(
         {
-          [IndexerIds.recipesByChocolateType]: recipesByChocolateTypeConfig('dark'),
-          [IndexerIds.recipesByTag]: recipesByTagConfig('milk')
+          byChocolateType: { chocolateType: 'dark' },
+          byTag: { tag: 'milk' }
         },
         { aggregation: 'union' }
       );
@@ -532,20 +481,12 @@ describe('Indexers', () => {
       expect(result).toSucceedWith([]);
     });
 
-    test('fails for unknown indexer', () => {
-      const result = orchestrator.find({
-        ['unknown-indexer' as unknown as keyof typeof IndexerIds]: { indexerId: 'unknown-indexer' }
-      } as unknown as Parameters<typeof orchestrator.find>[0]);
-
-      expect(result).toFailWith(/unknown indexer/i);
-    });
-
     test('warmUp warms all indexers', () => {
       orchestrator.warmUp();
 
       // Queries should work without indexers rebuilding
       const result = orchestrator.find({
-        [IndexerIds.recipesByTag]: recipesByTagConfig('classic')
+        byTag: { tag: 'classic' }
       });
       expect(result).toSucceed();
     });
@@ -553,7 +494,7 @@ describe('Indexers', () => {
     test('invalidate invalidates all indexers', () => {
       // First query to build indexes
       orchestrator.find({
-        [IndexerIds.recipesByTag]: recipesByTagConfig('classic')
+        byTag: { tag: 'classic' }
       });
 
       // Invalidate
@@ -561,39 +502,171 @@ describe('Indexers', () => {
 
       // Should still work after invalidation (indexes rebuilt)
       const result = orchestrator.find({
-        [IndexerIds.recipesByTag]: recipesByTagConfig('classic')
+        byTag: { tag: 'classic' }
       });
       expect(result).toSucceed();
+    });
+
+    test('convertConfig converts JSON to typed spec', () => {
+      const json = {
+        byTag: { tag: 'classic' }
+      };
+
+      const result = orchestrator.convertConfig(json);
+      expect(result).toSucceedAndSatisfy((spec) => {
+        expect(spec.byTag).toEqual({ tag: 'classic' });
+      });
     });
   });
 
   // ============================================================================
-  // IndexOrchestrator with Ingredient Tests
+  // IngredientIndexerOrchestrator Tests
   // ============================================================================
 
-  describe('IndexOrchestrator for Ingredients', () => {
-    const mockIngredientResolver: IEntityResolver<IRuntimeIngredient, IngredientId> = {
-      resolve: (id: IngredientId): Result<IRuntimeIngredient> => {
-        return Success.with({
-          id,
-          name: `Ingredient ${id}`
-        } as unknown as IRuntimeIngredient);
-      },
-      isId: (value: IRuntimeIngredient | IngredientId): value is IngredientId => {
-        return typeof value === 'string';
-      }
+  describe('IngredientIndexerOrchestrator', () => {
+    const mockIngredientResolver = (id: IngredientId): Result<IRuntimeIngredient> => {
+      return Success.with({
+        id,
+        name: `Ingredient ${id}`
+      } as unknown as IRuntimeIngredient);
     };
 
     test('finds ingredients with single indexer', () => {
-      const orchestrator = new IndexOrchestrator(mockIngredientResolver);
-      orchestrator.register(new IngredientsByTagIndexer(library));
+      const orchestrator = new IngredientIndexerOrchestrator(library, mockIngredientResolver);
 
       const result = orchestrator.find({
-        [IndexerIds.ingredientsByTag]: ingredientsByTagConfig('premium')
+        byTag: { tag: 'premium' }
       });
 
       expect(result).toSucceedAndSatisfy((ingredients) => {
         expect(ingredients).toHaveLength(2);
+      });
+    });
+
+    test('convertConfig converts JSON to typed spec', () => {
+      const orchestrator = new IngredientIndexerOrchestrator(library, mockIngredientResolver);
+
+      const json = {
+        byTag: { tag: 'premium' }
+      };
+
+      const result = orchestrator.convertConfig(json);
+      expect(result).toSucceedAndSatisfy((spec) => {
+        expect(spec.byTag).toEqual({ tag: 'premium' });
+      });
+    });
+
+    test('returns empty array for empty spec', () => {
+      const orchestrator = new IngredientIndexerOrchestrator(library, mockIngredientResolver);
+      const result = orchestrator.find({});
+      expect(result).toSucceedWith([]);
+    });
+
+    test('warmUp and invalidate work correctly', () => {
+      const orchestrator = new IngredientIndexerOrchestrator(library, mockIngredientResolver);
+
+      // Warm up should not throw
+      orchestrator.warmUp();
+
+      // Query should work
+      const result1 = orchestrator.find({ byTag: { tag: 'premium' } });
+      expect(result1).toSucceed();
+
+      // Invalidate should not throw
+      orchestrator.invalidate();
+
+      // Query should still work after invalidation
+      const result2 = orchestrator.find({ byTag: { tag: 'premium' } });
+      expect(result2).toSucceed();
+    });
+
+    test('finds ingredients with union aggregation', () => {
+      const orchestrator = new IngredientIndexerOrchestrator(library, mockIngredientResolver);
+
+      // Use union aggregation to cover that code path
+      const result = orchestrator.find({ byTag: { tag: 'premium' } }, { aggregation: 'union' });
+
+      expect(result).toSucceedAndSatisfy((ingredients) => {
+        expect(ingredients).toHaveLength(2);
+      });
+    });
+  });
+
+  // ============================================================================
+  // BaseIndexerOrchestrator Coverage Tests
+  // ============================================================================
+
+  describe('BaseIndexerOrchestrator (via orchestrators)', () => {
+    describe('intersection logic', () => {
+      test('intersection removes items not in all sets', () => {
+        // Create a resolver that works for all IDs
+        const mockRecipeResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+          return Success.with({
+            id,
+            name: `Recipe ${id}` as RecipeName
+          } as unknown as IRuntimeRecipe);
+        };
+
+        const orchestrator = new RecipeIndexerOrchestrator(library, mockRecipeResolver);
+
+        // Find recipes that have BOTH 'dark' tag AND milk chocolate type
+        // dark-ganache has 'dark' tag but dark chocolate type
+        // milk-ganache has 'milk' tag and milk chocolate type
+        // This should return empty since no recipe has both dark tag AND milk chocolate type
+        const result = orchestrator.find({
+          byTag: { tag: 'dark' },
+          byChocolateType: { chocolateType: 'milk' }
+        });
+
+        expect(result).toSucceedWith([]);
+      });
+    });
+
+    describe('entity resolution failures', () => {
+      test('fails when recipe resolver returns failure', () => {
+        // Create a resolver that always fails
+        const failingResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+          return Failure.with(`Cannot resolve recipe: ${id}`);
+        };
+
+        const orchestrator = new RecipeIndexerOrchestrator(library, failingResolver);
+
+        const result = orchestrator.find({
+          byTag: { tag: 'classic' }
+        });
+
+        expect(result).toFailWith(/Failed to resolve entities/);
+      });
+
+      test('fails when ingredient resolver returns failure', () => {
+        // Create a resolver that always fails
+        const failingResolver = (id: IngredientId): Result<IRuntimeIngredient> => {
+          return Failure.with(`Cannot resolve ingredient: ${id}`);
+        };
+
+        const orchestrator = new IngredientIndexerOrchestrator(library, failingResolver);
+
+        const result = orchestrator.find({
+          byTag: { tag: 'premium' }
+        });
+
+        expect(result).toFailWith(/Failed to resolve entities/);
+      });
+
+      test('aggregates multiple resolution failures', () => {
+        // Create a resolver that fails for all IDs
+        const failingResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+          return Failure.with(`Not found: ${id}`);
+        };
+
+        const orchestrator = new RecipeIndexerOrchestrator(library, failingResolver);
+
+        // classic tag matches both recipes, so both should fail to resolve
+        const result = orchestrator.find({
+          byTag: { tag: 'classic' }
+        });
+
+        expect(result).toFailWith(/Failed to resolve entities.*Not found/);
       });
     });
   });

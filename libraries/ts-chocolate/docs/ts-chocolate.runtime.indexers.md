@@ -19,19 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IndexOrchestrator](./ts-chocolate.runtime.indexers.indexorchestrator.md)
-
-
-</td><td>
-
-Orchestrates multiple indexers for unified query execution.
-
-The orchestrator: - Routes query configs to appropriate indexers - Aggregates results using intersection or union semantics - Resolves IDs to entities using the provided resolver
-
-
-</td></tr>
-<tr><td>
-
 [IngredientIndexerOrchestrator](./ts-chocolate.runtime.indexers.ingredientindexerorchestrator.md)
 
 
@@ -127,6 +114,17 @@ Description
 Abstract base class for indexers providing common functionality.
 
 Subclasses must implement: - `_buildIndex()`<!-- -->: Build the internal index structure - `_findInternal(config)`<!-- -->: Execute the query against the index
+
+
+</td></tr>
+<tr><td>
+
+[BaseIndexerOrchestrator](./ts-chocolate.runtime.indexers.baseindexerorchestrator.md)
+
+
+</td><td>
+
+Base class for index orchestrators that provides common set operations and entity resolution logic.
 
 
 </td></tr>
@@ -243,25 +241,12 @@ Indexers can return either entities or IDs - the orchestrator resolves IDs to en
 </td></tr>
 <tr><td>
 
-[IIndexerConfig](./ts-chocolate.runtime.indexers.iindexerconfig.md)
+[IIngredientQuerySpec](./ts-chocolate.runtime.indexers.iingredientqueryspec.md)
 
 
 </td><td>
 
-Base interface for indexer query configurations. Each indexer defines its own configuration type extending this.
-
-
-</td></tr>
-<tr><td>
-
-[IIndexOrchestrator](./ts-chocolate.runtime.indexers.iindexorchestrator.md)
-
-
-</td><td>
-
-Interface for the index orchestrator that manages multiple indexers.
-
-The orchestrator: - Routes query configs to appropriate indexers - Aggregates results across indexers - Resolves IDs to entities
+Query specification for ingredient indexers. Each key corresponds to an indexer, and the value is that indexer's config.
 
 
 </td></tr>
@@ -273,6 +258,17 @@ The orchestrator: - Routes query configs to appropriate indexers - Aggregates re
 </td><td>
 
 Configuration for the IngredientsByTag indexer.
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)
+
+
+</td><td>
+
+Query specification for recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
 
 
 </td></tr>
@@ -326,23 +322,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[IndexerIds](./ts-chocolate.runtime.indexers.indexerids.md)
+[ingredientQuerySpecConverter](./ts-chocolate.runtime.indexers.ingredientqueryspecconverter.md)
 
 
 </td><td>
 
-Well-known indexer IDs for the chocolate library.
-
-
-</td></tr>
-<tr><td>
-
-[IndexerIdStrings](./ts-chocolate.runtime.indexers.indexeridstrings.md)
-
-
-</td><td>
-
-Well-known indexer ID strings for use in JSON query specifications.
+Converter for ingredient query specification from JSON.
 
 
 </td></tr>
@@ -354,6 +339,17 @@ Well-known indexer ID strings for use in JSON query specifications.
 </td><td>
 
 Converter for IngredientsByTag config from JSON.
+
+
+</td></tr>
+<tr><td>
+
+[recipeQuerySpecConverter](./ts-chocolate.runtime.indexers.recipequeryspecconverter.md)
+
+
+</td><td>
+
+Converter for recipe query specification from JSON.
 
 
 </td></tr>
@@ -418,12 +414,12 @@ Aggregation mode for combining results from multiple indexers.
 </td></tr>
 <tr><td>
 
-[IIndexOrchestratorConfig](./ts-chocolate.runtime.indexers.iindexorchestratorconfig.md)
+[IngredientIndexerName](./ts-chocolate.runtime.indexers.ingredientindexername.md)
 
 
 </td><td>
 
-Configuration for an index orchestrator. A partial record since not all indexers need to be queried at once.
+Valid ingredient indexer names (inferred from query spec keys).
 
 
 </td></tr>
@@ -451,23 +447,12 @@ Usage type filter for ingredient lookups.
 </td></tr>
 <tr><td>
 
-[JsonQuerySpec](./ts-chocolate.runtime.indexers.jsonqueryspec.md)
+[RecipeIndexerName](./ts-chocolate.runtime.indexers.recipeindexername.md)
 
 
 </td><td>
 
-JSON input format for query specifications. Keys are indexer ID strings, values are config objects.
-
-
-</td></tr>
-<tr><td>
-
-[QuerySpec](./ts-chocolate.runtime.indexers.queryspec.md)
-
-
-</td><td>
-
-A query specification is a record keyed by IndexerId containing configs for each indexer. Indexers check for their own key and return early if not present.
+Valid recipe indexer names (inferred from query spec keys).
 
 
 </td></tr>

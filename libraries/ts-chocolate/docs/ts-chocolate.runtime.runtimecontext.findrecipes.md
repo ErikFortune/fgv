@@ -6,12 +6,12 @@
 
 Finds recipes matching a query specification.
 
-This is the unified entry point for recipe queries. Query specifications are keyed by indexer ID, allowing multiple criteria to be combined.
+This is the unified entry point for recipe queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
 
 **Signature:**
 
 ```typescript
-findRecipes(spec: QuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
+findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
 ```
 
 ## Parameters
@@ -39,12 +39,12 @@ spec
 
 </td><td>
 
-[QuerySpec](./ts-chocolate.runtime.indexers.queryspec.md)
+[IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)
 
 
 </td><td>
 
-Query specification with configs keyed by indexer ID
+Query specification with configs keyed by indexer name
 
 
 </td></tr>
@@ -78,22 +78,13 @@ Array of matching RuntimeRecipe objects
 ```typescript
 // Find recipes by ingredient
 ctx.findRecipes({
-  [IndexerIds.recipesByIngredient]: {
-    indexerId: IndexerIds.recipesByIngredient,
-    ingredientId: someIngredientId
-  }
+  'recipes-by-ingredient': { ingredientId: someIngredientId }
 });
 
 // Find recipes by tag AND chocolate type (intersection)
 ctx.findRecipes({
-  [IndexerIds.recipesByTag]: {
-    indexerId: IndexerIds.recipesByTag,
-    tag: 'ganache'
-  },
-  [IndexerIds.recipesByChocolateType]: {
-    indexerId: IndexerIds.recipesByChocolateType,
-    chocolateType: 'dark'
-  }
+  'recipes-by-tag': { tag: 'ganache' },
+  'recipes-by-chocolate-type': { chocolateType: 'dark' }
 });
 ```
 
