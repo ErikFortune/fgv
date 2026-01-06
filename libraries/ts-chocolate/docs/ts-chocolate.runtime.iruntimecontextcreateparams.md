@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IChocolateLibraryParams](./ts-chocolate.runtime.ichocolatelibraryparams.md)
+[IChocolateLibraryCreateParams](./ts-chocolate.runtime.ichocolatelibrarycreateparams.md)
 
 
 </td><td>

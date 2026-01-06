@@ -226,63 +226,6 @@ export class RecipeQuery {
   }
 
   // ============================================================================
-  // Usage Filters
-  // ============================================================================
-
-  /**
-   * Filter to recipes that have been used at least once.
-   */
-  public everUsed(): RecipeQuery {
-    return this._addFilter((r) => r.hasBeenUsed);
-  }
-
-  /**
-   * Filter to recipes never used.
-   */
-  public neverUsed(): RecipeQuery {
-    return this._addFilter((r) => !r.hasBeenUsed);
-  }
-
-  /**
-   * Filter to recipes used at least N times.
-   * @param count - Minimum usage count
-   */
-  public usedAtLeast(count: number): RecipeQuery {
-    return this._addFilter(atLeast(count, (r) => r.usageCount));
-  }
-
-  /**
-   * Filter to recipes used within a date range.
-   * @param startDate - Start date (ISO 8601 format, inclusive)
-   * @param endDate - End date (ISO 8601 format, inclusive)
-   */
-  public usedBetween(startDate: string, endDate: string): RecipeQuery {
-    return this._addFilter((r) => {
-      for (const usage of r.usage) {
-        if (usage.date >= startDate && usage.date <= endDate) {
-          return true;
-        }
-      }
-      return false;
-    });
-  }
-
-  /**
-   * Filter to recipes used after a specific date.
-   * @param date - Cutoff date (ISO 8601 format, exclusive)
-   */
-  public usedAfter(date: string): RecipeQuery {
-    return this._addFilter((r) => {
-      for (const usage of r.usage) {
-        if (usage.date > date) {
-          return true;
-        }
-      }
-      return false;
-    });
-  }
-
-  // ============================================================================
   // Version Filters
   // ============================================================================
 

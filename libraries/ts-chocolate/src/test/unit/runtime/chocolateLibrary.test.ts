@@ -72,8 +72,7 @@ describe('ChocolateLibrary', () => {
     baseId: 'testRecipe' as BaseRecipeId,
     name: 'Test Recipe' as RecipeName,
     versions: [testRecipeVersion],
-    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
-    usage: []
+    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
   };
 
   // ============================================================================
@@ -367,7 +366,6 @@ describe('ChocolateLibrary', () => {
         description: 'A recipe from file source',
         tags: ['file'],
         goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',

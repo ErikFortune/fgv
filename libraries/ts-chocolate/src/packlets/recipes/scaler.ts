@@ -25,12 +25,12 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, RecipeVersionSpec } from '../common';
+import { Grams, Helpers, RecipeId, RecipeVersionSpec } from '../common';
 import {
+  IComputedScaledRecipe,
   IRecipe,
   IRecipeVersion,
   IRecipeIngredient,
-  IScaledRecipeVersion,
   IScaledRecipeIngredient,
   IScalingSource
 } from './model';
@@ -66,10 +66,10 @@ export interface IRecipeScaleOptions {
 // ============================================================================
 
 /**
- * Scales a single recipe ingredient
- * @param ingredient - The ingredient to scale
+ * Scales a single {@link Recipes.IRecipeIngredient | recipe ingredient}.ß
+ * @param ingredient - The {@link Recipes.IRecipeIngredient | ingredient}ß to scale
  * @param scaleFactor - The scaling factor to apply
- * @param options - Scaling options
+ * @param options - {@link Recipes.IRecipeScaleOptions | Scaling options}ß
  * @returns Scaled ingredient with both original and scaled amounts
  * @internal
  */
@@ -97,17 +97,19 @@ function scaleIngredient(
 /**
  * Scales a recipe to a target weight
  *
- * @param recipe - The recipe to scale
+ * @param recipe - The {@link Recipes.IRecipe | recipe} to scale.
+ * @param recipeId - The full composite {@link RecipeId | recipe ID}
  * @param targetWeight - Target total weight in grams
- * @param options - Optional scaling options
- * @returns Success with scaled recipe version, or Failure if invalid
+ * @param options - Optional {@link Recipes.IRecipeScaleOptions | scaling options}
+ * @returns `Success` with computed scaled recipe, or `Failure` if invalid.
  * @public
  */
 export function scaleRecipe(
   recipe: IRecipe,
+  recipeId: RecipeId,
   targetWeight: Grams,
   options: IRecipeScaleOptions = {}
-): Result<IScaledRecipeVersion> {
+): Result<IComputedScaledRecipe> {
   // Validate inputs
   if (targetWeight <= 0) {
     return Failure.with('Target weight must be greater than zero');
@@ -135,8 +137,7 @@ export function scaleRecipe(
 
   // Build scaling source metadata
   const scaledFrom: IScalingSource = {
-    recipeId: recipe.baseId,
-    versionSpec: versionSpec,
+    sourceVersionId: Helpers.createRecipeVersionId(recipeId, versionSpec),
     scaleFactor,
     targetWeight
   };
@@ -153,19 +154,21 @@ export function scaleRecipe(
 }
 
 /**
- * Scales a recipe by a multiplicative factor
+ * Scales a {@link Recipes.IRecipe | recipe} by a supplied multiplier.
  *
- * @param recipe - The recipe to scale
- * @param factor - Multiplicative factor (e.g., 2.0 for double, 0.5 for half)
- * @param options - Optional scaling options
- * @returns Success with scaled recipe version, or Failure if invalid
+ * @param recipe - The {@link Recipes.IRecipe | recipe} to scale.
+ * @param recipeId - The full composite {@link RecipeId | recipe ID}.
+ * @param factor - Multiplicative factor (e.g., 2.0 for double, 0.5 for half).
+ * @param options - Optional {@link Recipes.IRecipeScaleOptions | scaling options}.
+ * @returns `Success` with computed scaled recipe, or `Failure` if invalid.
  * @public
  */
 export function scaleRecipeByFactor(
   recipe: IRecipe,
+  recipeId: RecipeId,
   factor: number,
   options: IRecipeScaleOptions = {}
-): Result<IScaledRecipeVersion> {
+): Result<IComputedScaledRecipe> {
   if (factor <= 0) {
     return Failure.with('Scale factor must be greater than zero');
   }
@@ -179,7 +182,7 @@ export function scaleRecipeByFactor(
 
   const targetWeight = (version.baseWeight * factor) as Grams;
 
-  return scaleRecipe(recipe, targetWeight, options);
+  return scaleRecipe(recipe, recipeId, targetWeight, options);
 }
 
 /**

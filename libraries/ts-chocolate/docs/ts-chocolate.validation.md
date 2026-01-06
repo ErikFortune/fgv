@@ -85,6 +85,17 @@ Type guard for IngredientId
 </td></tr>
 <tr><td>
 
+[isValidJournalId(from)](./ts-chocolate.validation.isvalidjournalid.md)
+
+
+</td><td>
+
+Type guard for JournalId
+
+
+</td></tr>
+<tr><td>
+
 [isValidPercentage(from)](./ts-chocolate.validation.isvalidpercentage.md)
 
 
@@ -146,6 +157,17 @@ Type guard for RecipeVersionId
 </td><td>
 
 Type guard for RecipeVersionSpec
+
+
+</td></tr>
+<tr><td>
+
+[isValidSessionId(from)](./ts-chocolate.validation.isvalidsessionid.md)
+
+
+</td><td>
+
+Type guard for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 
 </td></tr>
@@ -228,6 +250,17 @@ Converts unknown value to IngredientId
 </td></tr>
 <tr><td>
 
+[toJournalId(from)](./ts-chocolate.validation.tojournalid.md)
+
+
+</td><td>
+
+Converts unknown value to JournalId
+
+
+</td></tr>
+<tr><td>
+
 [toPercentage(from)](./ts-chocolate.validation.topercentage.md)
 
 
@@ -289,6 +322,17 @@ Converts unknown value to RecipeVersionId
 </td><td>
 
 Converts unknown value to RecipeVersionSpec
+
+
+</td></tr>
+<tr><td>
+
+[toSessionId(from)](./ts-chocolate.validation.tosessionid.md)
+
+
+</td><td>
+
+Converts unknown value to [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 
 </td></tr>

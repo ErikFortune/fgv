@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipeVersion variable
 
-Converter for IRecipeVersion
+Converter for [IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->.
 
 **Signature:**
 

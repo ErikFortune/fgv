@@ -42,8 +42,7 @@ import {
   calculateBaseWeight,
   recalculateRecipeVersion,
   isScaledRecipeVersion,
-  isRecipeVersion,
-  AnyRecipeVersion
+  isRecipeVersion
 } from '../../../packlets/recipes';
 
 describe('RecipesLibrary', () => {
@@ -68,8 +67,7 @@ describe('RecipesLibrary', () => {
     description: 'A test ganache recipe',
     tags: ['test', 'dark'],
     versions: [testRecipeVersion],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
-    usage: []
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec
   };
 
   const testRecipe = Recipe.create(testRecipeData).orThrow();
@@ -335,7 +333,6 @@ describe('RecipesLibrary', () => {
         description: 'A test recipe',
         tags: ['test'],
         goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -352,7 +349,6 @@ describe('RecipesLibrary', () => {
         baseId: 'other-recipe',
         name: 'Other Recipe',
         goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -518,7 +514,6 @@ describe('RecipesLibrary', () => {
         description: 'A test recipe',
         tags: ['test'],
         goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -535,7 +530,6 @@ describe('RecipesLibrary', () => {
         baseId: 'other-recipe',
         name: 'Other Recipe',
         goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -966,13 +960,14 @@ describe('Recipe scaling', () => {
     baseId: 'test' as BaseRecipeId,
     name: 'Test' as RecipeName,
     versions: [testVersion],
-    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
-    usage: []
+    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
   };
+
+  const testRecipeId = 'source.test' as import('../../../packlets/common').RecipeId;
 
   describe('scaleRecipe', () => {
     test('scales ingredients proportionally', () => {
-      expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.scaledFrom.scaleFactor).toBe(2);
         expect(scaled.scaledFrom.targetWeight).toBe(300);
         expect(scaled.baseWeight).toBe(300);
@@ -982,22 +977,21 @@ describe('Recipe scaling', () => {
     });
 
     test('preserves original amounts', () => {
-      expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.ingredients[0].originalAmount).toBe(100);
       });
     });
 
     test('includes scaling source information', () => {
-      expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
-        expect(scaled.scaledFrom.recipeId).toBe('test');
-        expect(scaled.scaledFrom.versionSpec).toBe('2026-01-01-01');
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.scaledFrom.sourceVersionId).toBe('source.test@2026-01-01-01');
         expect(scaled.scaledFrom.scaleFactor).toBe(2);
         expect(scaled.scaledFrom.targetWeight).toBe(300);
       });
     });
 
     test('includes createdDate', () => {
-      expect(scaleRecipe(testRecipe, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.createdDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       });
     });
@@ -1012,64 +1006,66 @@ describe('Recipe scaling', () => {
         ...testRecipe,
         versions: [versionWithNotes]
       };
-      expect(scaleRecipe(recipeWithNotes, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(recipeWithNotes, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.notes).toBe('Test notes');
         expect(scaled.yield).toBe('20 bonbons');
       });
     });
 
     test('fails with zero target weight', () => {
-      expect(scaleRecipe(testRecipe, 0 as Grams)).toFailWith(/greater than zero/);
+      expect(scaleRecipe(testRecipe, testRecipeId, 0 as Grams)).toFailWith(/greater than zero/);
     });
 
     test('fails with negative target weight', () => {
-      expect(scaleRecipe(testRecipe, -100 as Grams)).toFailWith(/greater than zero/);
+      expect(scaleRecipe(testRecipe, testRecipeId, -100 as Grams)).toFailWith(/greater than zero/);
     });
 
     test('fails with invalid version ID', () => {
       expect(
-        scaleRecipe(testRecipe, 300 as Grams, {
+        scaleRecipe(testRecipe, testRecipeId, 300 as Grams, {
           versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionSpec
         })
       ).toFailWith(/not found/);
     });
 
     test('respects precision option', () => {
-      expect(scaleRecipe(testRecipe, 333 as Grams, { precision: 0 })).toSucceedAndSatisfy((scaled) => {
-        expect(Number.isInteger(scaled.ingredients[0].amount)).toBe(true);
-      });
+      expect(scaleRecipe(testRecipe, testRecipeId, 333 as Grams, { precision: 0 })).toSucceedAndSatisfy(
+        (scaled) => {
+          expect(Number.isInteger(scaled.ingredients[0].amount)).toBe(true);
+        }
+      );
     });
 
     test('respects minimumAmount option', () => {
       // Scale to very small amount that would be below minimum
-      expect(scaleRecipe(testRecipe, 15 as Grams, { minimumAmount: 5 as Grams })).toSucceedAndSatisfy(
-        (scaled) => {
-          // Scaled amount would be 10 * 0.1 = 1, but minimum is 5
-          expect(scaled.ingredients[0].amount).toBeGreaterThanOrEqual(5);
-        }
-      );
+      expect(
+        scaleRecipe(testRecipe, testRecipeId, 15 as Grams, { minimumAmount: 5 as Grams })
+      ).toSucceedAndSatisfy((scaled) => {
+        // Scaled amount would be 10 * 0.1 = 1, but minimum is 5
+        expect(scaled.ingredients[0].amount).toBeGreaterThanOrEqual(5);
+      });
     });
   });
 
   describe('scaleRecipeByFactor', () => {
     test('scales by factor', () => {
-      expect(scaleRecipeByFactor(testRecipe, 0.5)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipeByFactor(testRecipe, testRecipeId, 0.5)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.scaledFrom.scaleFactor).toBe(0.5);
         expect(scaled.ingredients[0].amount).toBe(50);
       });
     });
 
     test('fails with zero factor', () => {
-      expect(scaleRecipeByFactor(testRecipe, 0)).toFailWith(/greater than zero/);
+      expect(scaleRecipeByFactor(testRecipe, testRecipeId, 0)).toFailWith(/greater than zero/);
     });
 
     test('fails with negative factor', () => {
-      expect(scaleRecipeByFactor(testRecipe, -1)).toFailWith(/greater than zero/);
+      expect(scaleRecipeByFactor(testRecipe, testRecipeId, -1)).toFailWith(/greater than zero/);
     });
 
     test('fails with invalid version ID', () => {
       expect(
-        scaleRecipeByFactor(testRecipe, 0.5, {
+        scaleRecipeByFactor(testRecipe, testRecipeId, 0.5, {
           versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionSpec
         })
       ).toFailWith(/not found/);
@@ -1081,28 +1077,23 @@ describe('Recipe scaling', () => {
   // ============================================================================
 
   describe('type guards', () => {
-    test('isScaledRecipeVersion returns true for scaled versions', () => {
-      const scaled = scaleRecipe(testRecipe, 300 as Grams).orThrow();
-      expect(isScaledRecipeVersion(scaled)).toBe(true);
-      expect(isRecipeVersion(scaled)).toBe(false);
-    });
-
     test('isRecipeVersion returns true for regular versions', () => {
       expect(isRecipeVersion(testVersion)).toBe(true);
       expect(isScaledRecipeVersion(testVersion)).toBe(false);
     });
 
-    test('type guards work with AnyRecipeVersion union', () => {
-      const scaled = scaleRecipe(testRecipe, 300 as Grams).orThrow();
-      const versions: AnyRecipeVersion[] = [testVersion, scaled];
-
-      const regularVersions = versions.filter(isRecipeVersion);
-      const scaledVersions = versions.filter(isScaledRecipeVersion);
-
-      expect(regularVersions.length).toBe(1);
-      expect(scaledVersions.length).toBe(1);
-      expect(regularVersions[0].versionSpec).toBe('2026-01-01-01');
-      expect(scaledVersions[0].scaledFrom.versionSpec).toBe('2026-01-01-01');
+    test('isScaledRecipeVersion returns true for persistence-format scaled versions', () => {
+      // IScaledRecipeVersion is the reference-based persistence format
+      const scaledVersion: import('../../../packlets/recipes').IScaledRecipeVersion = {
+        scalingRef: {
+          sourceVersionId: 'source.test@2026-01-01-01' as import('../../../packlets/common').RecipeVersionId,
+          scaleFactor: 2,
+          targetWeight: 300 as Grams,
+          createdDate: '2026-01-15'
+        }
+      };
+      expect(isScaledRecipeVersion(scaledVersion)).toBe(true);
+      expect(isRecipeVersion(scaledVersion)).toBe(false);
     });
   });
 
@@ -1118,10 +1109,12 @@ describe('Recipe scaling', () => {
         baseId: 'zero' as BaseRecipeId,
         name: 'Zero' as RecipeName,
         versions: [zeroWeightVersion],
-        goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
-        usage: []
+        goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
       };
-      expect(scaleRecipe(zeroWeightRecipe, 100 as Grams)).toFailWith(/base weight must be greater than zero/);
+      const zeroRecipeId = 'source.zero' as import('../../../packlets/common').RecipeId;
+      expect(scaleRecipe(zeroWeightRecipe, zeroRecipeId, 100 as Grams)).toFailWith(
+        /base weight must be greater than zero/
+      );
     });
   });
 

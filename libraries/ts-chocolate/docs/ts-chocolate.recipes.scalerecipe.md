@@ -9,7 +9,7 @@ Scales a recipe to a target weight
 **Signature:**
 
 ```typescript
-export declare function scaleRecipe(recipe: IRecipe, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+export declare function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 ```
 
 ## Parameters
@@ -42,7 +42,23 @@ recipe
 
 </td><td>
 
-The recipe to scale
+The [recipe](./ts-chocolate.recipes.irecipe.md) to scale.
+
+
+</td></tr>
+<tr><td>
+
+recipeId
+
+
+</td><td>
+
+[RecipeId](./ts-chocolate.recipeid.md)
+
+
+</td><td>
+
+The full composite [recipe ID](./ts-chocolate.recipeid.md)
 
 
 </td></tr>
@@ -74,7 +90,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional scaling options
+_(Optional)_ Optional [scaling options](./ts-chocolate.recipes.irecipescaleoptions.md)
 
 
 </td></tr>
@@ -82,7 +98,7 @@ _(Optional)_ Optional scaling options
 
 **Returns:**
 
-Result&lt;[IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md)<!-- -->&gt;
+Result&lt;[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)<!-- -->&gt;
 
-Success with scaled recipe version, or Failure if invalid
+`Success` with computed scaled recipe, or `Failure` if invalid.
 

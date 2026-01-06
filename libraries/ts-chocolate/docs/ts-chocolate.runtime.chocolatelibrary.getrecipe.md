@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getRecipe() method
 
-Gets a recipe by its composite ID
+Gets a [recipe](./ts-chocolate.recipes.recipe.md) by its [composite ID](./ts-chocolate.recipeid.md)
 
 **Signature:**
 
@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-Composite recipe ID
+The [id](./ts-chocolate.recipeid.md) of the recipe to retrieve.
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Composite recipe ID
 
 Result&lt;[IRecipe](./ts-chocolate.recipes.irecipe.md)<!-- -->&gt;
 
-Success with recipe, or Failure if not found
+`Success` with recipe, or `Failure` if not found
 

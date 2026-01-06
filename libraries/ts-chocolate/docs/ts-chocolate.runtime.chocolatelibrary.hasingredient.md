@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-Composite ingredient ID
+The [id](./ts-chocolate.ingredientid.md) of the ingredient to check.
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Composite ingredient ID
 
 boolean
 
-True if ingredient exists
+`true` if the ingredient exists
 

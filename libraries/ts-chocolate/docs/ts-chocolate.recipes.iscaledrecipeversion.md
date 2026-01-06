@@ -4,7 +4,7 @@
 
 ## Recipes.IScaledRecipeVersion interface
 
-A scaled recipe version - mirrors IRecipeVersion structure for interoperability
+A scaled recipe version - reference-based by default. Scaling is primarily a runtime operation; this represents what gets persisted (e.g., in a journal record).
 
 **Signature:**
 
@@ -37,69 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[baseWeight](./ts-chocolate.recipes.iscaledrecipeversion.baseweight.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Grams](./ts-chocolate.grams.md)
-
-
-</td><td>
-
-Base weight of the scaled recipe (same as targetWeight)
-
-
-</td></tr>
-<tr><td>
-
-[createdDate](./ts-chocolate.recipes.iscaledrecipeversion.createddate.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-Date this scaled version was created (ISO 8601 format)
-
-
-</td></tr>
-<tr><td>
-
-[ingredients](./ts-chocolate.recipes.iscaledrecipeversion.ingredients.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)<!-- -->&gt;
-
-
-</td><td>
-
-Scaled ingredients with both original and scaled amounts
-
-
-</td></tr>
-<tr><td>
-
 [notes?](./ts-chocolate.recipes.iscaledrecipeversion.notes.md)
 
 
@@ -115,13 +52,13 @@ string
 
 </td><td>
 
-_(Optional)_ Optional notes from the source version
+_(Optional)_ Optional notes
 
 
 </td></tr>
 <tr><td>
 
-[ratings?](./ts-chocolate.recipes.iscaledrecipeversion.ratings.md)
+[scalingRef](./ts-chocolate.recipes.iscaledrecipeversion.scalingref.md)
 
 
 </td><td>
@@ -131,18 +68,18 @@ _(Optional)_ Optional notes from the source version
 
 </td><td>
 
-ReadonlyArray&lt;[IRecipeRating](./ts-chocolate.recipes.ireciperating.md)<!-- -->&gt;
+[IScalingRef](./ts-chocolate.recipes.iscalingref.md)
 
 
 </td><td>
 
-_(Optional)_ Optional ratings from the source version
+Reference to source recipe version with scaling parameters
 
 
 </td></tr>
 <tr><td>
 
-[scaledFrom](./ts-chocolate.recipes.iscaledrecipeversion.scaledfrom.md)
+[snapshotIngredients?](./ts-chocolate.recipes.iscaledrecipeversion.snapshotingredients.md)
 
 
 </td><td>
@@ -152,33 +89,12 @@ _(Optional)_ Optional ratings from the source version
 
 </td><td>
 
-[IScalingSource](./ts-chocolate.recipes.iscalingsource.md)
+ReadonlyArray&lt;[IIngredientSnapshot](./ts-chocolate.recipes.iingredientsnapshot.md)<!-- -->&gt;
 
 
 </td><td>
 
-Information about the source recipe and version that was scaled
-
-
-</td></tr>
-<tr><td>
-
-[yield?](./ts-chocolate.recipes.iscaledrecipeversion.yield.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional yield description (may be scaled from original)
+_(Optional)_ Optional snapshot of ingredients for archival. Only present when explicitly requested (e.g., before losing access to source).
 
 
 </td></tr>

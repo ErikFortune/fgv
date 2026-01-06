@@ -57,6 +57,27 @@ Description
 </td></tr>
 <tr><td>
 
+[derivedFrom?](./ts-chocolate.recipes.recipe.derivedfrom.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeDerivation](./ts-chocolate.recipes.irecipederivation.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [description?](./ts-chocolate.recipes.recipe.description.md)
 
 
@@ -151,25 +172,6 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[usage](./ts-chocolate.recipes.recipe.usage.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)<!-- -->&gt;
-
-
-</td><td>
 
 
 </td></tr>

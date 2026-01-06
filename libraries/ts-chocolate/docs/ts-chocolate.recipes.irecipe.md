@@ -58,6 +58,27 @@ Base recipe identifier (unique within source)
 </td></tr>
 <tr><td>
 
+[derivedFrom?](./ts-chocolate.recipes.irecipe.derivedfrom.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeDerivation](./ts-chocolate.recipes.irecipederivation.md)
+
+
+</td><td>
+
+_(Optional)_ Optional derivation info - tracks lineage if this recipe was forked from another recipe (e.g., when editing a read-only recipe)
+
+
+</td></tr>
+<tr><td>
+
 [description?](./ts-chocolate.recipes.irecipe.description.md)
 
 
@@ -137,27 +158,6 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_ Optional tags for categorization and search
-
-
-</td></tr>
-<tr><td>
-
-[usage](./ts-chocolate.recipes.irecipe.usage.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)<!-- -->&gt;
-
-
-</td><td>
-
-Usage history for all versions of this recipe
 
 
 </td></tr>

@@ -55,8 +55,6 @@ export { RuntimeRecipe } from './runtimeRecipe';
 
 export { RuntimeVersion } from './runtimeVersion';
 
-export { RuntimeUsage, createRuntimeUsages, getUsagesSortedByDate } from './runtimeUsage';
-
 export { RuntimeScaledVersion } from './runtimeScaledVersion';
 
 // Query builders
@@ -65,3 +63,7 @@ export * from './queries';
 // Indexer infrastructure (as namespace to avoid cluttering the main namespace)
 import * as Indexers from './indexers';
 export { Indexers };
+
+// Session infrastructure (as namespace)
+import * as Session from './session';
+export { Session };

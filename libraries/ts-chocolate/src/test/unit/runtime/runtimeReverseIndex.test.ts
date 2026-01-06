@@ -118,8 +118,7 @@ describe('RuntimeReverseIndex', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   const milkGanacheRecipe: IRecipe = {
@@ -137,8 +136,7 @@ describe('RuntimeReverseIndex', () => {
         ],
         baseWeight: 350 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   let library: ChocolateLibrary;

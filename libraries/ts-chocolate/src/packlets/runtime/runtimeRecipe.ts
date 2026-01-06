@@ -35,7 +35,7 @@ import {
   RecipeVersionSpec,
   SourceId
 } from '../common';
-import { IRecipe, IRecipeScaleOptions, IRecipeUsage, Recipe } from '../recipes';
+import { IRecipe, IRecipeScaleOptions, Recipe } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
 import {
   IRecipeContext,
@@ -231,42 +231,6 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   public get versionCount(): number {
     return this._recipe.versions.length;
-  }
-
-  // ============================================================================
-  // Usage History
-  // ============================================================================
-
-  /**
-   * Raw usage records
-   */
-  public get usage(): ReadonlyArray<IRecipeUsage> {
-    return this._recipe.usage;
-  }
-
-  /**
-   * Whether this recipe has ever been used
-   */
-  public get hasBeenUsed(): boolean {
-    return this._recipe.usage.length > 0;
-  }
-
-  /**
-   * Number of times this recipe has been used
-   */
-  public get usageCount(): number {
-    return this._recipe.usage.length;
-  }
-
-  /**
-   * Gets the most recent usage record
-   */
-  public get latestUsage(): IRecipeUsage | undefined {
-    if (this._recipe.usage.length === 0) {
-      return undefined;
-    }
-    /* c8 ignore next - ternary branches depend on data ordering */
-    return this._recipe.usage.reduce((latest, current) => (current.date > latest.date ? current : latest));
   }
 
   // ============================================================================

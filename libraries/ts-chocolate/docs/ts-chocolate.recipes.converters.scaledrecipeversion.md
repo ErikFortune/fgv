@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.scaledRecipeVersion variable
 
-Converter for IScaledRecipeVersion
+Converter for [IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md) (reference-based)
 
 **Signature:**
 

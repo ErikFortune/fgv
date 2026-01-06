@@ -27,7 +27,7 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Grams, IngredientId, RecipeId, RecipeVersionSpec, SourceId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
-import { IRecipe, IScaledRecipeVersion, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
+import { IComputedScaledRecipe, IRecipe, RecipesLibrary, scaleRecipe, IRecipeScaleOptions } from '../recipes';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,
@@ -43,7 +43,7 @@ import {
 // ============================================================================
 
 /**
- * Pre-built library instances to include.
+ * Pre-built library instances to include in a {@link Runtime.ChocolateLibrary | ChocolateLibrary}.
  * Useful for testing or when libraries are constructed through other means.
  * @public
  */
@@ -60,7 +60,7 @@ export interface IInstantiatedLibrarySource {
 }
 
 /**
- * Parameters for creating a ChocolateLibrary
+ * Parameters for creating a {@link Runtime.ChocolateLibrary | ChocolateLibrary}.
  *
  * Sources are processed in order:
  * 1. Built-in collections (if enabled)
@@ -72,9 +72,9 @@ export interface IInstantiatedLibrarySource {
  *
  * @public
  */
-export interface IChocolateLibraryParams {
+export interface IChocolateLibraryCreateParams {
   /**
-   * Controls built-in data loading for each sub-library.
+   * {@link LibraryData.FullLibraryLoadSpec | Specifies built-in data loading} for each sub-library.
    *
    * - `true` (default): Load all built-ins for all sub-libraries
    * - `false`: Load no built-ins
@@ -83,14 +83,14 @@ export interface IChocolateLibraryParams {
   readonly builtin?: FullLibraryLoadSpec;
 
   /**
-   * File tree sources to load data from.
+   * {@link LibraryData.ILibraryFileTreeSource | File tree sources} to load data from.
    * Each source navigates to standard paths (data/ingredients, data/recipes)
    * and loads collections according to the source's load spec.
    */
   readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
 
   /**
-   * Pre-instantiated library instances.
+   * Pre-instantiated {@link Runtime.IInstantiatedLibrarySource | library sources}.
    * Used for advanced scenarios like testing or custom library construction.
    * If provided along with other sources, collections are combined.
    */
@@ -122,32 +122,27 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Creates a new ChocolateLibrary instance
-   * @param params - Optional creation parameters
-   * @returns Success with new instance, or Failure with error message
+   * Creates a new {@link Runtime.ChocolateLibrary | ChocolateLibrary} instance.
+   * @param params - Optional {@link Runtime.IChocolateLibraryCreateParams | creation parameters}
+   * @returns `Success` with new instance, or `Failure` with error message
    * @public
    */
-  public static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary> {
+  public static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary> {
     const builtinSpec = params?.builtin ?? true;
     const fileSources = normalizeFileSources(params?.fileSources);
 
-    // --- INGREDIENTS ---
-    // All sources (builtin, fileSources, libraries) are merged together
     const ingredientsResult = IngredientsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients'),
       mergeLibraries: params?.libraries?.ingredients
     });
 
-    // --- RECIPES ---
-    // All sources (builtin, fileSources, libraries) are merged together
     const recipesResult = RecipesLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'recipes'),
       mergeLibraries: params?.libraries?.recipes
     });
 
-    // Combine results
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) => Success.with(new ChocolateLibrary(ingredients, recipes)))
     );
@@ -167,32 +162,24 @@ export class ChocolateLibrary {
     }));
   }
 
-  // ============================================================================
-  // Read-only accessors
-  // ============================================================================
-
   /**
-   * The ingredients library
+   * The {@link Ingredients.IngredientsLibrary | ingredients library}.
    */
   public get ingredients(): IngredientsLibrary {
     return this._ingredients;
   }
 
   /**
-   * The recipes library
+   * The {@link Recipes.RecipesLibrary | recipes library}.
    */
   public get recipes(): RecipesLibrary {
     return this._recipes;
   }
 
-  // ============================================================================
-  // Convenience methods - Ingredient lookup
-  // ============================================================================
-
   /**
-   * Gets an ingredient by its composite ID
-   * @param id - Composite ingredient ID
-   * @returns Success with ingredient, or Failure if not found
+   * Gets an {@link Ingredients.Ingredient | ingredient} by its {@link IngredientId | composite ID}
+   * @param id - The {@link IngredientId | id} of the ingredient to retrieve.
+   * @returns `Success` with ingredient, or `Failure` if not found
    */
   public getIngredient(id: IngredientId): Result<Ingredient> {
     return this._ingredients.get(id);
@@ -200,21 +187,17 @@ export class ChocolateLibrary {
 
   /**
    * Checks if an ingredient exists
-   * @param id - Composite ingredient ID
-   * @returns True if ingredient exists
+   * @param id - The {@link IngredientId | id} of the ingredient to check.
+   * @returns `true` if the ingredient exists
    */
   public hasIngredient(id: IngredientId): boolean {
     return this._ingredients.has(id);
   }
 
-  // ============================================================================
-  // Convenience methods - Recipe lookup
-  // ============================================================================
-
   /**
-   * Gets a recipe by its composite ID
-   * @param id - Composite recipe ID
-   * @returns Success with recipe, or Failure if not found
+   * Gets a {@link Recipes.Recipe | recipe} by its {@link RecipeId | composite ID}
+   * @param id - The {@link RecipeId | id} of the recipe to retrieve.
+   * @returns `Success` with recipe, or `Failure` if not found
    */
   public getRecipe(id: RecipeId): Result<IRecipe> {
     return this._recipes.get(id);
@@ -222,46 +205,42 @@ export class ChocolateLibrary {
 
   /**
    * Checks if a recipe exists
-   * @param id - Composite recipe ID
-   * @returns True if recipe exists
+   * @param id - The {@link RecipeId | id} of the recipe to check.
+   * @returns `true` if the recipe exists
    */
   public hasRecipe(id: RecipeId): boolean {
     return this._recipes.has(id);
   }
 
-  // ============================================================================
-  // Recipe scaling
-  // ============================================================================
-
   /**
    * Scales a recipe to a target weight
    *
-   * @param id - Recipe ID to scale
+   * @param id - The {@link RecipeId | id} of the recipe to scale
    * @param targetWeight - Target total weight in grams
-   * @param options - Optional scaling options
-   * @returns Success with scaled recipe version, or Failure if recipe not found or invalid
+   * @param options - Optional {@link Recipes.IRecipeScaleOptions | scaling options}.
+   * @returns `Success` with computed scaled recipe, or `Failure` if recipe not found or invalid
    */
   public scaleRecipe(
     id: RecipeId,
     targetWeight: Grams,
     options?: IRecipeScaleOptions
-  ): Result<IScaledRecipeVersion> {
-    return this.getRecipe(id).onSuccess((recipe) => scaleRecipe(recipe, targetWeight, options));
+  ): Result<IComputedScaledRecipe> {
+    return this.getRecipe(id).onSuccess((recipe) => scaleRecipe(recipe, id, targetWeight, options));
   }
 
   /**
    * Scales a recipe by a multiplicative factor
    *
-   * @param id - Recipe ID to scale
+   * @param id - The {@link RecipeId | id} of the recipe to scale
    * @param factor - Multiplicative factor (e.g., 2.0 for double)
-   * @param options - Optional scaling options
-   * @returns Success with scaled recipe version, or Failure if recipe not found or invalid
+   * @param options - Optional {@link Recipes.IRecipeScaleOptions | scaling options}.
+   * @returns `Success` with computed scaled recipe, or `Failure` if recipe not found or invalid
    */
   public scaleRecipeByFactor(
     id: RecipeId,
     factor: number,
     options?: IRecipeScaleOptions
-  ): Result<IScaledRecipeVersion> {
+  ): Result<IComputedScaledRecipe> {
     return this.getRecipe(id).onSuccess((recipe) => {
       // Get the version to scale (default to golden version)
       const versionSpec = options?.versionSpec ?? recipe.goldenVersionSpec;
@@ -273,7 +252,7 @@ export class ChocolateLibrary {
       }
 
       const targetWeight = (version.baseWeight * factor) as Grams;
-      return scaleRecipe(recipe, targetWeight, options);
+      return scaleRecipe(recipe, id, targetWeight, options);
     });
   }
 

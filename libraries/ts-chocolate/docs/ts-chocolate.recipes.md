@@ -102,7 +102,7 @@ Recalculates base weight for recipe version and returns updated version
 </td></tr>
 <tr><td>
 
-[scaleRecipe(recipe, targetWeight, options)](./ts-chocolate.recipes.scalerecipe.md)
+[scaleRecipe(recipe, recipeId, targetWeight, options)](./ts-chocolate.recipes.scalerecipe.md)
 
 
 </td><td>
@@ -113,12 +113,12 @@ Scales a recipe to a target weight
 </td></tr>
 <tr><td>
 
-[scaleRecipeByFactor(recipe, factor, options)](./ts-chocolate.recipes.scalerecipebyfactor.md)
+[scaleRecipeByFactor(recipe, recipeId, factor, options)](./ts-chocolate.recipes.scalerecipebyfactor.md)
 
 
 </td><td>
 
-Scales a recipe by a multiplicative factor
+Scales a [recipe](./ts-chocolate.recipes.irecipe.md) by a supplied multiplier.
 
 
 </td></tr>
@@ -139,12 +139,45 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)
+
+
+</td><td>
+
+A computed scaled recipe with full ingredient data. This is the output format from the scaler - a runtime object with all calculated values. Not intended for persistence - use IScaledRecipeVersion for that.
+
+
+</td></tr>
+<tr><td>
+
+[IIngredientSnapshot](./ts-chocolate.recipes.iingredientsnapshot.md)
+
+
+</td><td>
+
+Optional ingredient snapshot for archival purposes. Used when the source recipe might become unavailable.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipe](./ts-chocolate.recipes.irecipe.md)
 
 
 </td><td>
 
 Complete recipe with version history
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeDerivation](./ts-chocolate.recipes.irecipederivation.md)
+
+
+</td><td>
+
+Reference to a source recipe+version from which a recipe was derived. Used to track lineage when a user edits a read-only recipe and creates a new recipe in a writable collection.
 
 
 </td></tr>
@@ -210,7 +243,7 @@ Complete details for a single version of a recipe
 
 </td><td>
 
-Scaled ingredient with original and scaled amounts
+Scaled ingredient with original and scaled amounts. Used at runtime when computing scaled recipes; not typically persisted.
 
 
 </td></tr>
@@ -221,7 +254,18 @@ Scaled ingredient with original and scaled amounts
 
 </td><td>
 
-A scaled recipe version - mirrors IRecipeVersion structure for interoperability
+A scaled recipe version - reference-based by default. Scaling is primarily a runtime operation; this represents what gets persisted (e.g., in a journal record).
+
+
+</td></tr>
+<tr><td>
+
+[IScalingRef](./ts-chocolate.recipes.iscalingref.md)
+
+
+</td><td>
+
+Lightweight scaling reference - the default storage format for scaled recipes. Stores only the reference and scale parameters, not ingredient snapshots.
 
 
 </td></tr>
@@ -232,7 +276,7 @@ A scaled recipe version - mirrors IRecipeVersion structure for interoperability
 
 </td><td>
 
-Information about the source of a scaled recipe
+Information about the source of a scaled recipe. Used at runtime for computed scaled versions.
 
 
 </td></tr>

@@ -54,7 +54,7 @@ Description
 
 </td><td>
 
-The ingredients library
+The [ingredients library](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -75,7 +75,7 @@ The ingredients library
 
 </td><td>
 
-The recipes library
+The [recipes library](./ts-chocolate.recipes.recipeslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -139,7 +139,7 @@ Calculates ganache characteristics for a recipe object Useful when working with 
 
 </td><td>
 
-Creates a new ChocolateLibrary instance
+Creates a new [ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md) instance.
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Creates an ingredient resolver that looks up ingredients from this library
 
 </td><td>
 
-Gets an ingredient by its composite ID
+Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
 
 
 </td></tr>
@@ -181,7 +181,7 @@ Gets an ingredient by its composite ID
 
 </td><td>
 
-Gets a recipe by its composite ID
+Gets a [recipe](./ts-chocolate.recipes.recipe.md) by its [composite ID](./ts-chocolate.recipeid.md)
 
 
 </td></tr>

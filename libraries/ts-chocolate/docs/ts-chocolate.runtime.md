@@ -155,17 +155,6 @@ A resolved view of a sugar ingredient with navigation capabilities. Immutable - 
 </td></tr>
 <tr><td>
 
-[RuntimeUsage](./ts-chocolate.runtime.runtimeusage.md)
-
-
-</td><td>
-
-A resolved view of a recipe usage record with linked versions.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeVersion](./ts-chocolate.runtime.runtimeversion.md)
 
 
@@ -409,12 +398,12 @@ Filter by ingredient category.
 </td></tr>
 <tr><td>
 
-[IChocolateLibraryParams](./ts-chocolate.runtime.ichocolatelibraryparams.md)
+[IChocolateLibraryCreateParams](./ts-chocolate.runtime.ichocolatelibrarycreateparams.md)
 
 
 </td><td>
 
-Parameters for creating a ChocolateLibrary
+Parameters for creating a [ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)<!-- -->.
 
 Sources are processed in order: 1. Built-in collections (if enabled) 2. File tree sources (in array order) 3. Pre-instantiated libraries (merged in)
 
@@ -451,7 +440,7 @@ Information about how an ingredient is used in a recipe.
 
 </td><td>
 
-Pre-built library instances to include. Useful for testing or when libraries are constructed through other means.
+Pre-built library instances to include in a [ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)<!-- -->. Useful for testing or when libraries are constructed through other means.
 
 
 </td></tr>
@@ -680,6 +669,15 @@ Description
 <tbody><tr><td>
 
 [Indexers](./ts-chocolate.runtime.indexers.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Session](./ts-chocolate.runtime.session.md)
 
 
 </td><td>

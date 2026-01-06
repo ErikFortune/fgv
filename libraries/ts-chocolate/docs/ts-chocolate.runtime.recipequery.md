@@ -94,20 +94,6 @@ Search by description (case-insensitive partial match).
 </td></tr>
 <tr><td>
 
-[everUsed()](./ts-chocolate.runtime.recipequery.everused.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Filter to recipes that have been used at least once.
-
-
-</td></tr>
-<tr><td>
-
 [execute()](./ts-chocolate.runtime.recipequery.execute.md)
 
 
@@ -229,62 +215,6 @@ Filter by minimum version count.
 </td><td>
 
 Search by name (case-insensitive partial match).
-
-
-</td></tr>
-<tr><td>
-
-[neverUsed()](./ts-chocolate.runtime.recipequery.neverused.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Filter to recipes never used.
-
-
-</td></tr>
-<tr><td>
-
-[usedAfter(date)](./ts-chocolate.runtime.recipequery.usedafter.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Filter to recipes used after a specific date.
-
-
-</td></tr>
-<tr><td>
-
-[usedAtLeast(count)](./ts-chocolate.runtime.recipequery.usedatleast.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Filter to recipes used at least N times.
-
-
-</td></tr>
-<tr><td>
-
-[usedBetween(startDate, endDate)](./ts-chocolate.runtime.recipequery.usedbetween.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Filter to recipes used within a date range.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipeData variable
 
-Converter for IRecipe data structure
+Converter for [IRecipe](./ts-chocolate.recipes.irecipe.md) data structure
 
 **Signature:**
 

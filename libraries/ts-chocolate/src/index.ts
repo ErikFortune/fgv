@@ -28,8 +28,9 @@ export * from './packlets/common';
 import * as BuiltIn from './packlets/built-in';
 import * as Calculations from './packlets/calculations';
 import * as Ingredients from './packlets/ingredients';
+import * as Journal from './packlets/journal';
 import * as LibraryData from './packlets/library-data';
 import * as Recipes from './packlets/recipes';
 import * as Runtime from './packlets/runtime';
 
-export { BuiltIn, Calculations, Ingredients, LibraryData, Recipes, Runtime };
+export { BuiltIn, Calculations, Ingredients, Journal, LibraryData, Recipes, Runtime };

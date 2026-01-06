@@ -40,7 +40,7 @@ import {
   IAlcoholIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, IRecipeUsage, RecipesLibrary } from '../../../packlets/recipes';
+import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
 import {
   ChocolateLibrary,
   RuntimeContext,
@@ -176,12 +176,6 @@ describe('Query Filters and Builders', () => {
     }
   };
 
-  const usage1: IRecipeUsage = {
-    date: '2026-01-15',
-    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
-    scaledWeight: 600 as Grams
-  };
-
   const darkGanacheRecipe: IRecipe = {
     baseId: 'dark-ganache' as BaseRecipeId,
     name: 'Dark Ganache' as RecipeName,
@@ -207,8 +201,7 @@ describe('Query Filters and Builders', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: [usage1]
+    ]
   };
 
   const milkGanacheRecipe: IRecipe = {
@@ -226,8 +219,7 @@ describe('Query Filters and Builders', () => {
         ],
         baseWeight: 350 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   const whiteGanacheRecipe: IRecipe = {
@@ -245,8 +237,7 @@ describe('Query Filters and Builders', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   let ctx: RuntimeContext;
@@ -869,39 +860,6 @@ describe('Query Filters and Builders', () => {
       });
     });
 
-    describe('usage filters', () => {
-      test('everUsed() filters to used recipes', () => {
-        const query = new RecipeQuery(ctx);
-        const results = query.everUsed().execute();
-        expect(results.length).toBe(1);
-        expect(results[0].name).toBe('Dark Ganache');
-      });
-
-      test('neverUsed() filters to unused recipes', () => {
-        const query = new RecipeQuery(ctx);
-        const results = query.neverUsed().execute();
-        expect(results.length).toBe(2);
-      });
-
-      test('usedAtLeast() filters by usage count', () => {
-        const query = new RecipeQuery(ctx);
-        const results = query.usedAtLeast(1).execute();
-        expect(results.length).toBe(1);
-      });
-
-      test('usedBetween() filters by date range', () => {
-        const query = new RecipeQuery(ctx);
-        const results = query.usedBetween('2026-01-01', '2026-01-31').execute();
-        expect(results.length).toBe(1);
-      });
-
-      test('usedAfter() filters by date', () => {
-        const query = new RecipeQuery(ctx);
-        const results = query.usedAfter('2026-01-01').execute();
-        expect(results.length).toBe(1);
-      });
-    });
-
     describe('version filters', () => {
       test('hasMultipleVersions() filters to multi-version recipes', () => {
         const query = new RecipeQuery(ctx);
@@ -967,7 +925,7 @@ describe('Query Filters and Builders', () => {
     describe('chained queries', () => {
       test('multiple filters combine with AND logic', () => {
         const query = new RecipeQuery(ctx);
-        const results = query.withTag('classic').everUsed().execute();
+        const results = query.withTag('classic').hasMultipleVersions().execute();
         expect(results.length).toBe(1);
         expect(results[0].name).toBe('Dark Ganache');
       });

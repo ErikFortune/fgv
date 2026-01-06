@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipeIngredient variable
 
-Converter for IRecipeIngredient
+Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->.
 
 **Signature:**
 

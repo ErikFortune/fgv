@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipeConverter variable
 
-Converter for Recipe type (currently same as IRecipe, extensible)
+Converter for [Recipe](./ts-chocolate.recipes.recipe.md) type (currently same as IRecipe, extensible)
 
 **Signature:**
 

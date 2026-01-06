@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipe variable
 
-Converter for Recipe Validates that goldenVersionSpec exists in versions and creates Recipe instance
+Converter for [Recipe](./ts-chocolate.recipes.recipe.md) Validates that goldenVersionSpec exists in versions and creates Recipe instance
 
 **Signature:**
 

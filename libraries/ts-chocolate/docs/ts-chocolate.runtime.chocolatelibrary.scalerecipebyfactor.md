@@ -9,7 +9,7 @@ Scales a recipe by a multiplicative factor
 **Signature:**
 
 ```typescript
-scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 ```
 
 ## Parameters
@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-Recipe ID to scale
+The [id](./ts-chocolate.recipeid.md) of the recipe to scale
 
 
 </td></tr>
@@ -74,7 +74,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional scaling options
+_(Optional)_ Optional [scaling options](./ts-chocolate.recipes.irecipescaleoptions.md)<!-- -->.
 
 
 </td></tr>
@@ -82,7 +82,7 @@ _(Optional)_ Optional scaling options
 
 **Returns:**
 
-Result&lt;[IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md)<!-- -->&gt;
+Result&lt;[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)<!-- -->&gt;
 
-Success with scaled recipe version, or Failure if recipe not found or invalid
+`Success` with computed scaled recipe, or `Failure` if recipe not found or invalid
 

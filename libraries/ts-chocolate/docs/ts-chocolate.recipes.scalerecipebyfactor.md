@@ -4,12 +4,12 @@
 
 ## Recipes.scaleRecipeByFactor() function
 
-Scales a recipe by a multiplicative factor
+Scales a [recipe](./ts-chocolate.recipes.irecipe.md) by a supplied multiplier.
 
 **Signature:**
 
 ```typescript
-export declare function scaleRecipeByFactor(recipe: IRecipe, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+export declare function scaleRecipeByFactor(recipe: IRecipe, recipeId: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 ```
 
 ## Parameters
@@ -42,7 +42,23 @@ recipe
 
 </td><td>
 
-The recipe to scale
+The [recipe](./ts-chocolate.recipes.irecipe.md) to scale.
+
+
+</td></tr>
+<tr><td>
+
+recipeId
+
+
+</td><td>
+
+[RecipeId](./ts-chocolate.recipeid.md)
+
+
+</td><td>
+
+The full composite [recipe ID](./ts-chocolate.recipeid.md)<!-- -->.
 
 
 </td></tr>
@@ -58,7 +74,7 @@ number
 
 </td><td>
 
-Multiplicative factor (e.g., 2.0 for double, 0.5 for half)
+Multiplicative factor (e.g., 2.0 for double, 0.5 for half).
 
 
 </td></tr>
@@ -74,7 +90,7 @@ options
 
 </td><td>
 
-_(Optional)_ Optional scaling options
+_(Optional)_ Optional [scaling options](./ts-chocolate.recipes.irecipescaleoptions.md)<!-- -->.
 
 
 </td></tr>
@@ -82,7 +98,7 @@ _(Optional)_ Optional scaling options
 
 **Returns:**
 
-Result&lt;[IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md)<!-- -->&gt;
+Result&lt;[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)<!-- -->&gt;
 
-Success with scaled recipe version, or Failure if invalid
+`Success` with computed scaled recipe, or `Failure` if invalid.
 

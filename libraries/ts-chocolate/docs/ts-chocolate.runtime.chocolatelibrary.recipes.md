@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.recipes property
 
-The recipes library
+The [recipes library](./ts-chocolate.recipes.recipeslibrary.md)<!-- -->.
 
 **Signature:**
 

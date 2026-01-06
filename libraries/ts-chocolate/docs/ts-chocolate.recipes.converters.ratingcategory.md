@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.ratingCategory variable
 
-Converter for RatingCategory
+Converter for [RatingCategory](./ts-chocolate.recipes.ratingcategory.md)<!-- -->.
 
 **Signature:**
 

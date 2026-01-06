@@ -34,6 +34,8 @@ import {
   DegreesMacMichael,
   Grams,
   IngredientId,
+  JOURNAL_ID_PATTERN,
+  JournalId,
   Percentage,
   RatingScore,
   RECIPE_VERSION_SPEC_PATTERN,
@@ -41,6 +43,8 @@ import {
   RecipeName,
   RecipeVersionId,
   RecipeVersionSpec,
+  SESSION_ID_PATTERN,
+  SessionId,
   SourceId,
   VERSION_ID_SEPARATOR
 } from './model';
@@ -260,6 +264,31 @@ export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
   );
 }
 
+/**
+ * Type guard for {@link SessionId | SessionId}.
+ * @param from - Value to check
+ * @returns True if the value is a valid SessionId
+ * @public
+ */
+export function isValidSessionId(from: unknown): from is SessionId {
+  return typeof from === 'string' && SESSION_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to {@link SessionId | SessionId}.
+ * @param from - Value to convert
+ * @returns Result with SessionId or error
+ * @public
+ */
+export function toSessionId(from: unknown): Result<SessionId> {
+  if (isValidSessionId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `${from}: Invalid SessionId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
+}
+
 // ============================================================================
 // Numeric Validators
 // ============================================================================
@@ -377,4 +406,33 @@ export function toRatingScore(from: unknown): Result<RatingScore> {
     return Success.with(from);
   }
   return Failure.with(`${from}: Invalid RatingScore: must be an integer between 1 and 5`);
+}
+
+// ============================================================================
+// Journal ID Validators
+// ============================================================================
+
+/**
+ * Type guard for JournalId
+ * @param from - Value to check
+ * @returns True if the value is a valid JournalId
+ * @public
+ */
+export function isValidJournalId(from: unknown): from is JournalId {
+  return typeof from === 'string' && JOURNAL_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to JournalId
+ * @param from - Value to convert
+ * @returns Result with JournalId or error
+ * @public
+ */
+export function toJournalId(from: unknown): Result<JournalId> {
+  if (isValidJournalId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    `${from}: Invalid JournalId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
+  );
 }

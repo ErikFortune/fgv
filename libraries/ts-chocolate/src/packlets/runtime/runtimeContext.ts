@@ -25,10 +25,18 @@
 
 import { Failure, Result, ResultMap, Success } from '@fgv/ts-utils';
 
-import { ChocolateType, Grams, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
-import { IRecipeScaleOptions, IScaledRecipeVersion } from '../recipes';
+import {
+  ChocolateType,
+  Grams,
+  Helpers,
+  IngredientId,
+  RecipeId,
+  RecipeVersionSpec,
+  Validation
+} from '../common';
+import { IComputedScaledRecipe, IRecipeScaleOptions } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
-import { ChocolateLibrary, IChocolateLibraryParams } from './chocolateLibrary';
+import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
   IIngredientUsageInfo,
@@ -61,7 +69,7 @@ export interface IRuntimeContextCreateParams {
   /**
    * Parameters for creating the underlying ChocolateLibrary
    */
-  readonly libraryParams?: IChocolateLibraryParams;
+  readonly libraryParams?: IChocolateLibraryCreateParams;
 
   /**
    * Whether to pre-warm the reverse index on context creation.
@@ -326,25 +334,19 @@ export class RuntimeContext
   }
 
   /**
-   * Gets the source version for a scaled recipe version.
+   * Gets the source version for a computed scaled recipe.
    * Used internally by RuntimeScaledVersion to resolve the source reference.
-   * @param scaled - The scaled version containing source IDs
+   * @param scaled - The computed scaled recipe containing source IDs
    * @returns Success with the resolved source version, or Failure if not found
    * @internal
    */
-  public getSourceVersion(scaled: IScaledRecipeVersion): Result<IRuntimeRecipeVersion> {
-    // The IScalingSource contains BaseRecipeId, which we need to resolve to a full RecipeId.
-    // We search through all recipes to find the one with matching baseId.
-    // This is a linear scan, but scaled versions are not created frequently.
-    const { recipeId: baseRecipeId, versionSpec } = scaled.scaledFrom;
-
-    for (const recipe of this.recipes()) {
-      if (recipe.baseId === baseRecipeId) {
-        return recipe.getVersion(versionSpec);
-      }
-    }
-    /* c8 ignore next 2 - defensive coding: scaled versions are created from existing recipes */
-    return Failure.with(`Source recipe not found: ${baseRecipeId}`);
+  public getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion> {
+    // Parse the composite RecipeVersionId to get recipeId and versionSpec
+    return Helpers.parseRecipeVersionId(scaled.scaledFrom.sourceVersionId).onSuccess((parsed) => {
+      const recipeId = parsed.collectionId;
+      const versionSpec = parsed.itemId;
+      return this.getRecipe(recipeId).onSuccess((recipe) => recipe.getVersion(versionSpec));
+    });
   }
 
   /**

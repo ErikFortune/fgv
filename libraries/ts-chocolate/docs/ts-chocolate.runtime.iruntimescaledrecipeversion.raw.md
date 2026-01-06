@@ -9,5 +9,5 @@ Gets the underlying raw scaled version data.
 **Signature:**
 
 ```typescript
-readonly raw: IScaledRecipeVersion;
+readonly raw: IComputedScaledRecipe;
 ```

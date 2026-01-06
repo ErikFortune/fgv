@@ -66,6 +66,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Journal](./ts-chocolate.journal.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [LibraryData](./ts-chocolate.librarydata.md)
 
 
@@ -249,6 +258,17 @@ Separator character used in composite IDs
 </td></tr>
 <tr><td>
 
+[JOURNAL\_ID\_PATTERN](./ts-chocolate.journal_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid journal IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
+
+
+</td></tr>
+<tr><td>
+
 [RECIPE\_VERSION\_ID\_PATTERN](./ts-chocolate.recipe_version_id_pattern.md)
 
 
@@ -266,6 +286,17 @@ Pattern for valid recipe version IDs Format: recipeId<!-- -->@<!-- -->versionSpe
 </td><td>
 
 Pattern for valid recipe version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+
+
+</td></tr>
+<tr><td>
+
+[SESSION\_ID\_PATTERN](./ts-chocolate.session_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid session IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- -->8<!-- -->} Example: "2026-01-15-143025-a1b2c3d4"
 
 
 </td></tr>
@@ -462,6 +493,17 @@ Globally unique ingredient identifier (composite) Format: "sourceId.baseIngredie
 </td></tr>
 <tr><td>
 
+[JournalId](./ts-chocolate.journalid.md)
+
+
+</td><td>
+
+Unique identifier for a cooking journal record Format: UUID or "recipeId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
+
+
+</td></tr>
+<tr><td>
+
 [Percentage](./ts-chocolate.percentage.md)
 
 
@@ -523,6 +565,17 @@ Globally unique recipe version identifier (composite) Format: "recipeId<!-- -->@
 </td><td>
 
 Specifier for a recipe version within a recipe Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+
+
+</td></tr>
+<tr><td>
+
+[SessionId](./ts-chocolate.sessionid.md)
+
+
+</td><td>
+
+Unique identifier for an editing session Format: UUID
 
 
 </td></tr>

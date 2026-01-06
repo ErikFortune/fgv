@@ -19,12 +19,23 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ingredientSnapshot](./ts-chocolate.recipes.converters.ingredientsnapshot.md)
+
+
+</td><td>
+
+Converter for [IIngredientSnapshot](./ts-chocolate.recipes.iingredientsnapshot.md) (for archival)
+
+
+</td></tr>
+<tr><td>
+
 [ratingCategory](./ts-chocolate.recipes.converters.ratingcategory.md)
 
 
 </td><td>
 
-Converter for RatingCategory
+Converter for [RatingCategory](./ts-chocolate.recipes.ratingcategory.md)<!-- -->.
 
 
 </td></tr>
@@ -35,7 +46,7 @@ Converter for RatingCategory
 
 </td><td>
 
-Converter for Recipe Validates that goldenVersionSpec exists in versions and creates Recipe instance
+Converter for [Recipe](./ts-chocolate.recipes.recipe.md) Validates that goldenVersionSpec exists in versions and creates Recipe instance
 
 
 </td></tr>
@@ -46,7 +57,7 @@ Converter for Recipe Validates that goldenVersionSpec exists in versions and cre
 
 </td><td>
 
-Converter for Recipe type (currently same as IRecipe, extensible)
+Converter for [Recipe](./ts-chocolate.recipes.recipe.md) type (currently same as IRecipe, extensible)
 
 
 </td></tr>
@@ -57,7 +68,18 @@ Converter for Recipe type (currently same as IRecipe, extensible)
 
 </td><td>
 
-Converter for IRecipe data structure
+Converter for [IRecipe](./ts-chocolate.recipes.irecipe.md) data structure
+
+
+</td></tr>
+<tr><td>
+
+[recipeDerivation](./ts-chocolate.recipes.converters.recipederivation.md)
+
+
+</td><td>
+
+Converter for [IRecipeDerivation](./ts-chocolate.recipes.irecipederivation.md)
 
 
 </td></tr>
@@ -68,7 +90,7 @@ Converter for IRecipe data structure
 
 </td><td>
 
-Converter for IRecipeIngredient
+Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->.
 
 
 </td></tr>
@@ -85,23 +107,12 @@ Converter for [IRecipeRating](./ts-chocolate.recipes.ireciperating.md)
 </td></tr>
 <tr><td>
 
-[recipeUsage](./ts-chocolate.recipes.converters.recipeusage.md)
-
-
-</td><td>
-
-Converter for IRecipeUsage
-
-
-</td></tr>
-<tr><td>
-
 [recipeVersion](./ts-chocolate.recipes.converters.recipeversion.md)
 
 
 </td><td>
 
-Converter for IRecipeVersion
+Converter for [IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->.
 
 
 </td></tr>
@@ -112,7 +123,7 @@ Converter for IRecipeVersion
 
 </td><td>
 
-Converter for IScaledRecipeIngredient
+Converter for [IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)<!-- -->.
 
 
 </td></tr>
@@ -123,7 +134,18 @@ Converter for IScaledRecipeIngredient
 
 </td><td>
 
-Converter for IScaledRecipeVersion
+Converter for [IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md) (reference-based)
+
+
+</td></tr>
+<tr><td>
+
+[scalingRef](./ts-chocolate.recipes.converters.scalingref.md)
+
+
+</td><td>
+
+Converter for [IScalingRef](./ts-chocolate.recipes.iscalingref.md) (lightweight reference-based format)
 
 
 </td></tr>
@@ -134,7 +156,7 @@ Converter for IScaledRecipeVersion
 
 </td><td>
 
-Converter for IScalingSource
+Converter for [IScalingSource](./ts-chocolate.recipes.iscalingsource.md) (runtime format with full ingredient data)
 
 
 </td></tr>

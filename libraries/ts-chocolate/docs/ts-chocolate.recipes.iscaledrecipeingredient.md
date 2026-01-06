@@ -4,7 +4,7 @@
 
 ## Recipes.IScaledRecipeIngredient interface
 
-Scaled ingredient with original and scaled amounts
+Scaled ingredient with original and scaled amounts. Used at runtime when computing scaled recipes; not typically persisted.
 
 **Signature:**
 

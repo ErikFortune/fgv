@@ -4,7 +4,7 @@
 
 ## Recipes.IScalingSource interface
 
-Information about the source of a scaled recipe
+Information about the source of a scaled recipe. Used at runtime for computed scaled versions.
 
 **Signature:**
 
@@ -37,27 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[recipeId](./ts-chocolate.recipes.iscalingsource.recipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[BaseRecipeId](./ts-chocolate.baserecipeid.md)
-
-
-</td><td>
-
-ID of the recipe this was scaled from
-
-
-</td></tr>
-<tr><td>
-
 [scaleFactor](./ts-chocolate.recipes.iscalingsource.scalefactor.md)
 
 
@@ -79,6 +58,27 @@ Scaling factor applied
 </td></tr>
 <tr><td>
 
+[sourceVersionId](./ts-chocolate.recipes.iscalingsource.sourceversionid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+
+
+</td><td>
+
+Source recipe version ID (format: "sourceId.recipeId<!-- -->@<!-- -->versionSpec")
+
+
+</td></tr>
+<tr><td>
+
 [targetWeight](./ts-chocolate.recipes.iscalingsource.targetweight.md)
 
 
@@ -95,27 +95,6 @@ Scaling factor applied
 </td><td>
 
 Resulting target weight
-
-
-</td></tr>
-<tr><td>
-
-[versionSpec](./ts-chocolate.recipes.iscalingsource.versionspec.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
-
-
-</td><td>
-
-Exact version that was scaled
 
 
 </td></tr>

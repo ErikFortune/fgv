@@ -140,8 +140,7 @@ describe('Indexers', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   const milkGanacheRecipe: IRecipe = {
@@ -159,8 +158,7 @@ describe('Indexers', () => {
         ],
         baseWeight: 350 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   let library: ChocolateLibrary;

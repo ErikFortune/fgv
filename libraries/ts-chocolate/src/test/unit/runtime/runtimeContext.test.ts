@@ -38,7 +38,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, IRecipeUsage, RecipesLibrary } from '../../../packlets/recipes';
+import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeContext', () => {
@@ -102,21 +102,6 @@ describe('RuntimeContext', () => {
     tags: ['fresh']
   };
 
-  const usage1: IRecipeUsage = {
-    date: '2026-01-15',
-    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
-    scaledWeight: 600 as Grams,
-    scaleFactor: 2.0,
-    notes: 'First batch'
-  };
-
-  const usage2: IRecipeUsage = {
-    date: '2026-01-20',
-    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
-    scaledWeight: 900 as Grams,
-    scaleFactor: 3.0
-  };
-
   const darkGanacheRecipe: IRecipe = {
     baseId: 'dark-ganache' as BaseRecipeId,
     name: 'Dark Ganache' as RecipeName,
@@ -148,8 +133,7 @@ describe('RuntimeContext', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: [usage1, usage2]
+    ]
   };
 
   const milkGanacheRecipe: IRecipe = {
@@ -167,8 +151,7 @@ describe('RuntimeContext', () => {
         ],
         baseWeight: 350 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   let library: ChocolateLibrary;

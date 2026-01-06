@@ -20,7 +20,7 @@
     "test": "heft test --clean",
     "build-docs": "api-documenter markdown --input-folder ./temp --output-folder docs",
     "build-all": "rushx build && rushx build-docs",
-    "coverage": "jest --coverage",
+    "coverage": "hest test --clean",
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix"
   },

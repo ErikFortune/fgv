@@ -135,7 +135,7 @@ Optional ratings from the source version.
 
 </td><td>
 
-[IScaledRecipeVersion](./ts-chocolate.recipes.iscaledrecipeversion.md)
+[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)
 
 
 </td><td>

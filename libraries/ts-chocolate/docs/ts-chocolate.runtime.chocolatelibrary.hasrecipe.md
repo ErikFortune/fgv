@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-Composite recipe ID
+The [id](./ts-chocolate.recipeid.md) of the recipe to check.
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Composite recipe ID
 
 boolean
 
-True if recipe exists
+`true` if the recipe exists
 

@@ -104,6 +104,20 @@ export type IndexerId = Brand<string, 'IndexerId'>;
  */
 export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
 
+/**
+ * Unique identifier for a cooking journal record
+ * Format: UUID or "recipeId\@versionSpec\@date"
+ * @public
+ */
+export type JournalId = Brand<string, 'JournalId'>;
+
+/**
+ * Unique identifier for an editing session
+ * Format: UUID
+ * @public
+ */
+export type SessionId = Brand<string, 'SessionId'>;
+
 // ============================================================================
 // Branded Numeric Types
 // ============================================================================
@@ -365,3 +379,19 @@ export const VERSION_ID_SEPARATOR: string = '@';
  */
 export const RECIPE_VERSION_ID_PATTERN: RegExp =
   /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+
+/**
+ * Pattern for valid session IDs
+ * Format: YYYY-MM-DD-HHMMSS-[0-9a-f]\{8\}
+ * Example: "2026-01-15-143025-a1b2c3d4"
+ * @public
+ */
+export const SESSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+
+/**
+ * Pattern for valid journal IDs
+ * Format: YYYY-MM-DD-HHMMSS-[0-9a-f]\{8\}
+ * Example: "2026-01-15-143025-a1b2c3d4"
+ * @public
+ */
+export const JOURNAL_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;

@@ -224,8 +224,7 @@ describe('Ganache Calculator', () => {
       baseId: 'test-ganache' as BaseRecipeId,
       name: 'Test Ganache' as RecipeName,
       versions: [testVersion],
-      goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
-      usage: []
+      goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec
     };
 
     test('calculates for golden version by default', () => {
@@ -426,8 +425,7 @@ describe('Ganache Calculator', () => {
       baseId: 'test' as BaseRecipeId,
       name: 'Test' as RecipeName,
       versions: [testVersion],
-      goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
-      usage: []
+      goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec
     };
 
     test('returns complete calculation with analysis and validation', () => {

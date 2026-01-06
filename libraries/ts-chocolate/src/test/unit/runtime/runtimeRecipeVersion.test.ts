@@ -39,7 +39,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, IRecipeUsage, RecipesLibrary } from '../../../packlets/recipes';
+import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
 import { ChocolateLibrary, RuntimeContext, RuntimeRecipe, RuntimeVersion } from '../../../packlets/runtime';
 
 describe('RuntimeRecipe and RuntimeVersion', () => {
@@ -104,20 +104,6 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     }
   };
 
-  const usage1: IRecipeUsage = {
-    date: '2026-01-15',
-    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
-    scaledWeight: 600 as Grams,
-    scaleFactor: 2.0,
-    notes: 'First batch'
-  };
-
-  const usage2: IRecipeUsage = {
-    date: '2026-01-20',
-    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
-    scaledWeight: 900 as Grams
-  };
-
   const darkGanacheRecipe: IRecipe = {
     baseId: 'dark-ganache' as BaseRecipeId,
     name: 'Dark Ganache' as RecipeName,
@@ -153,8 +139,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: [usage1, usage2]
+    ]
   };
 
   const emptyRecipe: IRecipe = {
@@ -168,8 +153,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         ingredients: [{ ingredientId: 'test.dark-chocolate' as IngredientId, amount: 100 as Grams }],
         baseWeight: 100 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   let ctx: RuntimeContext;
@@ -309,39 +293,6 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       test('versionCount returns correct count', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.versionCount).toBe(2);
-      });
-    });
-
-    describe('usage history', () => {
-      test('provides usage records', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.usage.length).toBe(2);
-      });
-
-      test('hasBeenUsed returns true when used', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.hasBeenUsed).toBe(true);
-      });
-
-      test('hasBeenUsed returns false when never used', () => {
-        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
-        expect(recipe.hasBeenUsed).toBe(false);
-      });
-
-      test('usageCount returns correct count', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.usageCount).toBe(2);
-      });
-
-      test('latestUsage returns most recent usage', () => {
-        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
-        const latest = recipe.latestUsage;
-        expect(latest?.date).toBe('2026-01-20');
-      });
-
-      test('latestUsage returns undefined when no usage', () => {
-        const recipe = ctx.getRecipe('test.empty-recipe' as RecipeId).orThrow();
-        expect(recipe.latestUsage).toBeUndefined();
       });
     });
 
@@ -638,6 +589,177 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       test('create factory method succeeds', () => {
         const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
         expect(RuntimeVersion.create(ctx as never, recipe.id, recipe.goldenVersion.raw)).toSucceed();
+      });
+    });
+  });
+
+  // ============================================================================
+  // RuntimeScaledVersion Tests
+  // ============================================================================
+
+  describe('RuntimeScaledVersion', () => {
+    describe('getIngredients filtering', () => {
+      test('getIngredients with no filter returns all ingredients', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients()).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(2);
+          });
+        });
+      });
+
+      test('getIngredients with empty array returns nothing', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients([])).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(0);
+          });
+        });
+      });
+
+      test('getIngredients with string filter matches exact ID', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients(['test.dark-chocolate'])).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(1);
+            expect(ingredients[0].ingredient.id).toBe('test.dark-chocolate');
+          });
+        });
+      });
+
+      test('getIngredients with regex filter matches pattern', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients([/^test\.dark/])).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(1);
+            expect(ingredients[0].ingredient.id).toBe('test.dark-chocolate');
+          });
+        });
+      });
+
+      test('getIngredients with category filter matches category', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients([{ category: 'dairy' }])).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(1);
+            expect(ingredients[0].ingredient.category).toBe('dairy');
+          });
+        });
+      });
+
+      test('getIngredients with category regex filter matches pattern', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients([{ category: /^choc/ }])).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(1);
+            expect(ingredients[0].ingredient.category).toBe('chocolate');
+          });
+        });
+      });
+
+      test('getIngredients with multiple filters uses OR semantics', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(
+            scaled.getIngredients([{ category: 'chocolate' }, { category: 'dairy' }])
+          ).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(2);
+          });
+        });
+      });
+
+      test('getIngredients with non-matching filter returns empty', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.getIngredients(['test.nonexistent'])).toSucceedAndSatisfy((iter) => {
+            const ingredients = [...iter];
+            expect(ingredients.length).toBe(0);
+          });
+        });
+      });
+    });
+
+    describe('scaled properties', () => {
+      test('scaledFrom contains source version reference', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.scaledFrom.sourceVersion.versionSpec).toBe('2026-01-01-01');
+          expect(scaled.scaledFrom.scaleFactor).toBe(2);
+          expect(scaled.scaledFrom.targetWeight).toBe(600);
+        });
+      });
+
+      test('targetWeight returns requested weight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.targetWeight).toBe(600);
+        });
+      });
+
+      test('baseWeight matches target weight', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.baseWeight).toBe(600);
+        });
+      });
+
+      test('createdDate is present', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.createdDate).toBeDefined();
+          expect(typeof scaled.createdDate).toBe('string');
+        });
+      });
+
+      test('yields is accessible', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          // yield may or may not be defined based on source
+          expect(() => scaled.yield).not.toThrow();
+        });
+      });
+
+      test('notes is accessible', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          // notes may or may not be defined based on source
+          expect(() => scaled.notes).not.toThrow();
+        });
+      });
+
+      test('ratings returns array', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(Array.isArray(scaled.ratings)).toBe(true);
+        });
+      });
+
+      test('raw returns underlying computed scaled recipe', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.raw).toBeDefined();
+          expect(scaled.raw.scaledFrom).toBeDefined();
+          expect(scaled.raw.ingredients).toBeDefined();
+        });
+      });
+    });
+
+    describe('calculateGanache', () => {
+      test('calculateGanache uses scaled amounts', () => {
+        const recipe = ctx.getRecipe('test.dark-ganache' as RecipeId).orThrow();
+        expect(recipe.scale(600 as Grams)).toSucceedAndSatisfy((scaled) => {
+          expect(scaled.calculateGanache()).toSucceedAndSatisfy((calc) => {
+            // Scaled to 2x, so total weight should be 600
+            expect(calc.analysis.totalWeight).toBe(600);
+          });
+        });
       });
     });
   });

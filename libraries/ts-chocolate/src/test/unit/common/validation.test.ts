@@ -26,11 +26,13 @@ import {
   Grams,
   Helpers,
   IngredientId,
+  JournalId,
   Percentage,
   RatingScore,
   RecipeId,
   RecipeVersionId,
   RecipeVersionSpec,
+  SessionId,
   SourceId,
   Validation
 } from '../../../packlets/common';
@@ -44,6 +46,8 @@ const {
   isValidRecipeName,
   isValidRecipeVersionSpec,
   isValidRecipeVersionId,
+  isValidSessionId,
+  isValidJournalId,
   isValidRatingScore,
   isValidGrams,
   isValidPercentage,
@@ -57,6 +61,8 @@ const {
   toRecipeName,
   toRecipeVersionSpec,
   toRecipeVersionId,
+  toSessionId,
+  toJournalId,
   toRatingScore,
   toGrams,
   toPercentage,
@@ -353,6 +359,102 @@ describe('Common validation', () => {
 
     test('fails with non-string', () => {
       expect(toRecipeVersionSpec(123)).toFailWith(/Invalid RecipeVersionSpec/);
+    });
+  });
+
+  // ============================================================================
+  // SessionId Validation
+  // ============================================================================
+
+  describe('SessionId validation', () => {
+    const validSessionIds: [string, string][] = [
+      ['basic format', '2026-01-15-143025-a1b2c3d4'],
+      ['midnight', '2026-01-01-000000-00000000'],
+      ['end of day', '2026-12-31-235959-ffffffff'],
+      ['hex digits', '2026-06-15-120030-abcdef12']
+    ];
+
+    const invalidSessionIds: [string, unknown][] = [
+      ['empty string', ''],
+      ['missing random part', '2026-01-15-143025'],
+      ['wrong date format', '26-01-15-143025-a1b2c3d4'],
+      ['uppercase hex', '2026-01-15-143025-A1B2C3D4'],
+      ['too short random', '2026-01-15-143025-a1b2c3'],
+      ['too long random', '2026-01-15-143025-a1b2c3d4e5'],
+      ['non-hex characters', '2026-01-15-143025-ghijklmn'],
+      ['too short time (4 digits)', '2026-01-15-1430-a1b2c3d4'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined],
+      ['old format', 'l1234567-abc12345']
+    ];
+
+    describe('isValidSessionId', () => {
+      test.each(validSessionIds)('returns true for %s', (_desc, value) => {
+        expect(isValidSessionId(value)).toBe(true);
+      });
+
+      test.each(invalidSessionIds)('returns false for %s', (_desc, value) => {
+        expect(isValidSessionId(value)).toBe(false);
+      });
+    });
+
+    describe('toSessionId', () => {
+      test.each(validSessionIds)('succeeds with %s', (_desc, value) => {
+        expect(toSessionId(value)).toSucceedWith(value as SessionId);
+      });
+
+      test.each(invalidSessionIds)('fails with %s', (_desc, value) => {
+        expect(toSessionId(value)).toFailWith(/Invalid SessionId/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // JournalId Validation
+  // ============================================================================
+
+  describe('JournalId validation', () => {
+    const validJournalIds: [string, string][] = [
+      ['basic format', '2026-01-15-143025-a1b2c3d4'],
+      ['midnight', '2026-01-01-000000-00000000'],
+      ['end of day', '2026-12-31-235959-ffffffff'],
+      ['hex digits', '2026-06-15-120030-abcdef12']
+    ];
+
+    const invalidJournalIds: [string, unknown][] = [
+      ['empty string', ''],
+      ['missing random part', '2026-01-15-143025'],
+      ['wrong date format', '26-01-15-143025-a1b2c3d4'],
+      ['uppercase hex', '2026-01-15-143025-A1B2C3D4'],
+      ['too short random', '2026-01-15-143025-a1b2c3'],
+      ['too long random', '2026-01-15-143025-a1b2c3d4e5'],
+      ['non-hex characters', '2026-01-15-143025-ghijklmn'],
+      ['too short time (4 digits)', '2026-01-15-1430-a1b2c3d4'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined],
+      ['old format', 'journal-l1234567-abc12345']
+    ];
+
+    describe('isValidJournalId', () => {
+      test.each(validJournalIds)('returns true for %s', (_desc, value) => {
+        expect(isValidJournalId(value)).toBe(true);
+      });
+
+      test.each(invalidJournalIds)('returns false for %s', (_desc, value) => {
+        expect(isValidJournalId(value)).toBe(false);
+      });
+    });
+
+    describe('toJournalId', () => {
+      test.each(validJournalIds)('succeeds with %s', (_desc, value) => {
+        expect(toJournalId(value)).toSucceedWith(value as JournalId);
+      });
+
+      test.each(invalidJournalIds)('fails with %s', (_desc, value) => {
+        expect(toJournalId(value)).toFailWith(/Invalid JournalId/);
+      });
     });
   });
 

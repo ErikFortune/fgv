@@ -26,7 +26,7 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Grams } from '../common';
-import { IScaledRecipeVersion, IRecipeRating } from '../recipes';
+import { IComputedScaledRecipe, IRecipeRating } from '../recipes';
 import {
   IGanacheCalculation,
   calculateFromIngredients,
@@ -98,7 +98,7 @@ function matchesFilter(
  */
 export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   private readonly _context: ScaledVersionContext;
-  private readonly _scaled: IScaledRecipeVersion;
+  private readonly _scaled: IComputedScaledRecipe;
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedScaledIngredient<AnyRuntimeIngredient>> | undefined;
@@ -110,7 +110,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
    * Creates a RuntimeScaledVersion.
    * @internal
    */
-  public constructor(context: ScaledVersionContext, scaled: IScaledRecipeVersion) {
+  public constructor(context: ScaledVersionContext, scaled: IComputedScaledRecipe) {
     this._context = context;
     this._scaled = scaled;
   }
@@ -118,12 +118,12 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * Factory method for creating a RuntimeScaledVersion.
    * @param context - The runtime context
-   * @param scaled - The raw scaled version data
+   * @param scaled - The computed scaled recipe data
    * @returns Success with RuntimeScaledVersion
    */
   public static create(
     context: ScaledVersionContext,
-    scaled: IScaledRecipeVersion
+    scaled: IComputedScaledRecipe
   ): Result<RuntimeScaledVersion> {
     return Success.with(new RuntimeScaledVersion(context, scaled));
   }
@@ -317,7 +317,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * Gets the underlying raw scaled version data
    */
-  public get raw(): IScaledRecipeVersion {
+  public get raw(): IComputedScaledRecipe {
     return this._scaled;
   }
 

@@ -146,27 +146,6 @@ The ID of the golden (approved default) version.
 </td></tr>
 <tr><td>
 
-[hasBeenUsed](./ts-chocolate.runtime.iruntimerecipe.hasbeenused.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-Whether this recipe has ever been used.
-
-
-</td></tr>
-<tr><td>
-
 [id](./ts-chocolate.runtime.iruntimerecipe.id.md)
 
 
@@ -204,27 +183,6 @@ ReadonlyArray&lt;[IResolvedRecipeIngredient](./ts-chocolate.runtime.iresolvedrec
 </td><td>
 
 Gets resolved ingredients from the golden version. Convenience method - same as goldenVersion.ingredients
-
-
-</td></tr>
-<tr><td>
-
-[latestUsage](./ts-chocolate.runtime.iruntimerecipe.latestusage.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md) \| undefined
-
-
-</td><td>
-
-Gets the most recent usage record.
 
 
 </td></tr>
@@ -330,48 +288,6 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_ Optional tags for categorization and search.
-
-
-</td></tr>
-<tr><td>
-
-[usage](./ts-chocolate.runtime.iruntimerecipe.usage.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IRecipeUsage](./ts-chocolate.recipes.irecipeusage.md)<!-- -->&gt;
-
-
-</td><td>
-
-Raw usage history for all versions of this recipe.
-
-
-</td></tr>
-<tr><td>
-
-[usageCount](./ts-chocolate.runtime.iruntimerecipe.usagecount.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-number
-
-
-</td><td>
-
-Number of times this recipe has been used.
 
 
 </td></tr>

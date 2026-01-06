@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_5 } from '@fgv/ts-utils';
+import { Converters as Converters_6 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
@@ -48,6 +48,9 @@ export const allFluidityStars: FluidityStars[];
 
 // @public
 export const allIngredientCategories: IngredientCategory[];
+
+// @public
+const allJournalEventTypes: JournalEventType[];
 
 // @public
 const allRatingCategories: RatingCategory[];
@@ -204,16 +207,24 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 class ChocolateLibrary {
     calculateGanache(id: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     calculateGanacheForRecipe(recipe: IRecipe, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
-    static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
     createIngredientResolver(): IngredientResolver;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<Ingredient>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: RecipeId): Result<IRecipe>;
     hasIngredient(id: IngredientId): boolean;
     hasRecipe(id: RecipeId): boolean;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get recipes(): RecipesLibrary;
-    scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
-    scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    scaleRecipe(id: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    scaleRecipeByFactor(id: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 }
 
 // @public
@@ -281,6 +292,7 @@ declare namespace Converters {
         baseRecipeId,
         ingredientId,
         recipeId,
+        journalId,
         ParsedIngredientId,
         parsedIngredientId,
         ParsedRecipeId,
@@ -290,6 +302,7 @@ declare namespace Converters {
         recipeVersionId,
         ParsedRecipeVersionId,
         parsedRecipeVersionId,
+        sessionId,
         grams,
         percentage,
         celsius,
@@ -323,6 +336,14 @@ declare namespace Converters_2 {
 
 declare namespace Converters_3 {
     export {
+        journalEventType,
+        journalEntry,
+        journalRecord
+    }
+}
+
+declare namespace Converters_4 {
+    export {
         removeExtension,
         collection,
         removeJsonExtension,
@@ -330,18 +351,20 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_4 {
+declare namespace Converters_5 {
     export {
         recipeIngredient,
         ratingCategory,
         recipeRating,
-        recipeUsage,
+        recipeDerivation,
         recipeVersion,
         recipeData,
         recipe,
         scaledRecipeIngredient,
-        scalingSource,
+        scalingRef,
+        ingredientSnapshot,
         scaledRecipeVersion,
+        scalingSource,
         recipeConverter
     }
 }
@@ -358,9 +381,6 @@ function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): RecipeId;
 // @public
 function createRecipeVersionId(recipeId: RecipeId, versionSpec: RecipeVersionSpec): RecipeVersionId;
 
-// @internal
-function createRuntimeUsages(recipe: RuntimeRecipe): RuntimeUsage[];
-
 // @public
 const dairyIngredient: Converter<IDairyIngredient>;
 
@@ -369,6 +389,40 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 
 // @public
 const degreesMacMichael: Converter<DegreesMacMichael>;
+
+// @public
+class EditingSession implements ISessionState {
+    addIngredient(id: IngredientId, amount: Grams): Result<void>;
+    addIngredientAmount(id: IngredientId, additional: Grams): Result<void>;
+    addNote(text: string): void;
+    static create(params: IEditingSessionParams): Result<EditingSession>;
+    getIngredient(id: IngredientId): Result<ISessionIngredient>;
+    // (undocumented)
+    get ingredients(): ReadonlyMap<IngredientId, ISessionIngredient>;
+    // (undocumented)
+    get isDirty(): boolean;
+    // (undocumented)
+    get isJournalingEnabled(): boolean;
+    // (undocumented)
+    get journalEntries(): ReadonlyArray<IJournalEntry>;
+    removeIngredient(id: IngredientId): Result<void>;
+    save(options: ISaveOptions): Result<ISaveResult>;
+    // (undocumented)
+    get scaleFactor(): number;
+    // (undocumented)
+    get sessionId(): SessionId;
+    setIngredientAmount(id: IngredientId, amount: Grams): Result<void>;
+    setScaleFactor(factor: number): Result<void>;
+    setTargetWeight(weight: Grams): Result<void>;
+    // (undocumented)
+    get sourceVersion(): IRuntimeRecipeVersion;
+    substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Grams): Result<void>;
+    // (undocumented)
+    get targetWeight(): Grams;
+    toJournalRecord(notes?: string): Result<IJournalRecord>;
+    toRecipeIngredients(): IRecipeIngredient[];
+    toRecipeVersion(versionSpec: string): Result<IRecipeVersion>;
+}
 
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
@@ -420,9 +474,6 @@ function getRecipeVersionSpec(id: RecipeVersionId): RecipeVersionSpec;
 
 // @public
 function getSubLibraryPath(subLibraryId: SubLibraryId): string;
-
-// @internal
-function getUsagesSortedByDate(recipe: RuntimeRecipe): RuntimeUsage[];
 
 // @public
 export type Grams = Brand<number, 'Grams'>;
@@ -482,10 +533,15 @@ interface IChocolateIngredient extends IIngredient {
     readonly viscosityMcM?: DegreesMacMichael;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-interface IChocolateLibraryParams {
+interface IChocolateLibraryCreateParams {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly builtin?: FullLibraryLoadSpec;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly libraries?: IInstantiatedLibrarySource;
 }
 
@@ -545,6 +601,17 @@ interface ICollectionSet<TCollectionId extends string = string> {
 }
 
 // @public
+interface IComputedScaledRecipe {
+    readonly baseWeight: Grams;
+    readonly createdDate: string;
+    readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
+    readonly notes?: string;
+    readonly ratings?: ReadonlyArray<IRecipeRating>;
+    readonly scaledFrom: IScalingSource;
+    readonly yield?: string;
+}
+
+// @public
 export const ID_SEPARATOR: string;
 
 // @public
@@ -552,6 +619,14 @@ interface IDairyIngredient extends IIngredient {
     readonly category: 'dairy';
     readonly fatContent?: Percentage;
     readonly waterContent?: Percentage;
+}
+
+// @public
+interface IEditingSessionParams {
+    readonly enableJournal?: boolean;
+    readonly scaleFactor?: number;
+    readonly sourceVersion: IRuntimeRecipeVersion;
+    readonly targetWeight?: Grams;
 }
 
 // @public
@@ -680,11 +755,21 @@ interface IIngredientsByTagConfig {
 type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 
 // @public
+interface IIngredientSnapshot {
+    readonly ingredientId: IngredientId;
+    readonly notes?: string;
+    readonly originalAmount: Grams;
+    readonly scaledAmount: Grams;
+}
+
+// @public
 interface IIngredientUsageInfo {
     readonly isPrimary: boolean;
     readonly recipeId: RecipeId;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 interface IInstantiatedLibrarySource {
     readonly ingredients?: IngredientsLibrary;
@@ -695,6 +780,36 @@ interface IInstantiatedLibrarySource {
 interface IIterationOptions {
     readonly limit?: number;
     readonly offset?: number;
+}
+
+// @public
+interface IJournalEntry {
+    readonly eventType: JournalEventType;
+    readonly ingredientId?: IngredientId;
+    readonly newAmount?: Grams;
+    readonly originalAmount?: Grams;
+    readonly substituteIngredientId?: IngredientId;
+    readonly text?: string;
+    readonly timestamp: string;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IJournalLibraryParams {
+    readonly journals?: ReadonlyArray<IJournalRecord>;
+}
+
+// @public
+interface IJournalRecord {
+    readonly date: string;
+    readonly entries?: ReadonlyArray<IJournalEntry>;
+    readonly journalId: JournalId;
+    readonly modifiedVersionId?: RecipeVersionId;
+    readonly notes?: string;
+    readonly recipeVersionId: RecipeVersionId;
+    readonly scaleFactor: number;
+    readonly targetWeight: Grams;
 }
 
 // @public
@@ -923,6 +1038,11 @@ class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, 
 // @public
 type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientSnapshot: Converter<IIngredientSnapshot>;
+
 // @public
 type IngredientUsageType = 'primary' | 'alternate' | 'any';
 
@@ -951,17 +1071,24 @@ interface IQueryResult<T> {
 // @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
+    readonly derivedFrom?: IRecipeDerivation;
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly name: RecipeName;
     readonly tags?: ReadonlyArray<string>;
-    readonly usage: ReadonlyArray<IRecipeUsage>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
 
 // @internal
 interface IRecipeContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IVersionContext<TIngredient> {
     scaleRecipe(recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+}
+
+// @public
+interface IRecipeDerivation {
+    readonly derivedDate: string;
+    readonly notes?: string;
+    readonly sourceVersionId: RecipeVersionId;
 }
 
 // @public
@@ -1134,7 +1261,7 @@ interface IRuntimeContext {
 
 // @public
 interface IRuntimeContextCreateParams {
-    readonly libraryParams?: IChocolateLibraryParams;
+    readonly libraryParams?: IChocolateLibraryCreateParams;
     readonly preWarm?: boolean;
 }
 
@@ -1195,10 +1322,8 @@ interface IRuntimeRecipe {
     getVersion(versionSpec: RecipeVersionSpec): Result<IRuntimeRecipeVersion>;
     readonly goldenVersion: IRuntimeRecipeVersion;
     readonly goldenVersionSpec: RecipeVersionSpec;
-    readonly hasBeenUsed: boolean;
     readonly id: RecipeId;
     readonly ingredients: ReadonlyArray<IResolvedRecipeIngredient<IRuntimeIngredient>>;
-    readonly latestUsage: IRecipeUsage | undefined;
     readonly latestVersion: IRuntimeRecipeVersion;
     readonly name: RecipeName;
     readonly raw: IRecipe;
@@ -1207,8 +1332,6 @@ interface IRuntimeRecipe {
     scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<IRuntimeScaledRecipeVersion>;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
-    readonly usage: ReadonlyArray<IRecipeUsage>;
-    readonly usageCount: number;
     usesIngredient(ingredientId: IngredientId): boolean;
     readonly versionCount: number;
     readonly versions: ReadonlyArray<IRuntimeRecipeVersion>;
@@ -1238,7 +1361,7 @@ interface IRuntimeScaledRecipeVersion {
     getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
     readonly notes?: string;
     readonly ratings: ReadonlyArray<IRecipeRating>;
-    readonly raw: IScaledRecipeVersion;
+    readonly raw: IComputedScaledRecipe;
     readonly scaledFrom: IRuntimeScalingSource;
     readonly targetWeight: Grams;
     readonly weightDifference: Grams;
@@ -1267,6 +1390,20 @@ interface IRuntimeSugarIngredient extends IRuntimeIngredient {
 function isAlcoholIngredient(ingredient: Ingredient): ingredient is IAlcoholIngredient;
 
 // @public
+interface ISaveOptions {
+    readonly createJournalRecord?: boolean;
+    readonly createNewVersion?: boolean;
+    readonly journalNotes?: string;
+    readonly versionLabel?: string;
+}
+
+// @public
+interface ISaveResult {
+    readonly journalId?: string;
+    readonly newVersionSpec?: string;
+}
+
+// @public
 interface IScaledRecipeIngredient extends IRecipeIngredient {
     readonly originalAmount: Grams;
     readonly scaleFactor: number;
@@ -1274,27 +1411,30 @@ interface IScaledRecipeIngredient extends IRecipeIngredient {
 
 // @public
 interface IScaledRecipeVersion {
-    readonly baseWeight: Grams;
-    readonly createdDate: string;
-    readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
     readonly notes?: string;
-    readonly ratings?: ReadonlyArray<IRecipeRating>;
-    readonly scaledFrom: IScalingSource;
-    readonly yield?: string;
+    readonly scalingRef: IScalingRef;
+    readonly snapshotIngredients?: ReadonlyArray<IIngredientSnapshot>;
 }
 
 // @internal
 interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     getIngredient(id: IngredientId): Result<TIngredient>;
-    getSourceVersion(scaled: IScaledRecipeVersion): Result<IRuntimeRecipeVersion>;
+    getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
+}
+
+// @public
+interface IScalingRef {
+    readonly createdDate: string;
+    readonly scaleFactor: number;
+    readonly sourceVersionId: RecipeVersionId;
+    readonly targetWeight: Grams;
 }
 
 // @public
 interface IScalingSource {
-    readonly recipeId: BaseRecipeId;
     readonly scaleFactor: number;
+    readonly sourceVersionId: RecipeVersionId;
     readonly targetWeight: Grams;
-    readonly versionSpec: RecipeVersionSpec;
 }
 
 // @public
@@ -1302,6 +1442,28 @@ function isChocolateIngredient(ingredient: Ingredient): ingredient is IChocolate
 
 // @public
 function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredient;
+
+// @public
+interface ISessionIngredient {
+    amount: Grams;
+    readonly ingredientId: IngredientId;
+    notes?: string;
+    readonly originalAmount: Grams;
+    readonly status: SessionIngredientStatus;
+    readonly substitutedFor?: IngredientId;
+}
+
+// @public
+interface ISessionState {
+    readonly ingredients: ReadonlyMap<IngredientId, ISessionIngredient>;
+    readonly isDirty: boolean;
+    readonly isJournalingEnabled: boolean;
+    readonly journalEntries: ReadonlyArray<IJournalEntry>;
+    readonly scaleFactor: number;
+    readonly sessionId: SessionId;
+    readonly sourceVersion: IRuntimeRecipeVersion;
+    readonly targetWeight: Grams;
+}
 
 // @public
 function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
@@ -1361,6 +1523,9 @@ function isValidGrams(from: unknown): from is Grams;
 function isValidIngredientId(from: unknown): from is IngredientId;
 
 // @public
+function isValidJournalId(from: unknown): from is JournalId;
+
+// @public
 function isValidPercentage(from: unknown): from is Percentage;
 
 // @public
@@ -1379,6 +1544,9 @@ function isValidRecipeVersionId(from: unknown): from is RecipeVersionId;
 function isValidRecipeVersionSpec(from: unknown): from is RecipeVersionSpec;
 
 // @public
+function isValidSessionId(from: unknown): from is SessionId;
+
+// @public
 function isValidSourceId(from: unknown): from is SourceId;
 
 // @public
@@ -1394,9 +1562,70 @@ interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngre
     getRecipe(id: RecipeId): Result<IRuntimeRecipe>;
 }
 
+declare namespace Journal {
+    export {
+        JournalLibrary,
+        IJournalLibraryParams,
+        Converters_3 as Converters,
+        JournalEventType,
+        allJournalEventTypes,
+        IJournalEntry,
+        IJournalRecord
+    }
+}
+export { Journal }
+
+// @public
+export const JOURNAL_ID_PATTERN: RegExp;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const journalEntry: Converter<IJournalEntry>;
+
+// @public
+type JournalEventType = 'ingredient-add' | 'ingredient-remove' | 'ingredient-modify' | 'ingredient-substitute' | 'scale-adjust' | 'note';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const journalEventType: Converter<JournalEventType>;
+
+// @public
+export type JournalId = Brand<string, 'JournalId'>;
+
+// @public
+const journalId: Converter<JournalId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class JournalLibrary {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addJournal(journal: IJournalRecord): Result<JournalId>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
+    getAllJournals(): ReadonlyArray<IJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournal(journalId: JournalId): Result<IJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    removeJournal(journalId: JournalId): Result<IJournalRecord>;
+    get size(): number;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const journalRecord: Converter<IJournalRecord>;
+
 declare namespace LibraryData {
     export {
-        Converters_3 as Converters,
+        Converters_4 as Converters,
         resolveSubLibraryLoadSpec,
         FilterPattern,
         ILibraryLoadParams,
@@ -1487,19 +1716,19 @@ function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPr
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-type ParsedIngredientId = Converters_5.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_6.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedRecipeId = Converters_5.ICompositeId<SourceId, BaseRecipeId>;
+type ParsedRecipeId = Converters_6.ICompositeId<SourceId, BaseRecipeId>;
 
 // @public
 const parsedRecipeId: Converter<ParsedRecipeId>;
 
 // @public
-type ParsedRecipeVersionId = Converters_5.ICompositeId<RecipeId, RecipeVersionSpec>;
+type ParsedRecipeVersionId = Converters_6.ICompositeId<RecipeId, RecipeVersionSpec>;
 
 // @public
 const parsedRecipeVersionId: Converter<ParsedRecipeVersionId>;
@@ -1522,6 +1751,8 @@ const percentage: Converter<Percentage>;
 // @public
 type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const ratingCategory: Converter<RatingCategory>;
 
@@ -1540,6 +1771,8 @@ class Recipe implements IRecipe {
     readonly baseId: BaseRecipeId;
     static create(data: IRecipe): Result<Recipe>;
     // (undocumented)
+    readonly derivedFrom?: IRecipeDerivation;
+    // (undocumented)
     readonly description?: string;
     getVersion(versionSpec: RecipeVersionSpec): Result<IRecipeVersion>;
     // (undocumented)
@@ -1551,11 +1784,11 @@ class Recipe implements IRecipe {
     // (undocumented)
     readonly tags?: ReadonlyArray<string>;
     // (undocumented)
-    readonly usage: ReadonlyArray<IRecipeUsage>;
-    // (undocumented)
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const recipe: Converter<Recipe>;
 
@@ -1580,11 +1813,20 @@ const recipeCollections: Record<string, JsonObject>;
 // @public
 type RecipeCollectionValidator = SubLibraryCollectionValidator<RecipeId, Recipe>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const recipeConverter: Converter<Recipe>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const recipeData: Converter<IRecipe>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeDerivation: Converter<IRecipeDerivation>;
 
 // @public
 type RecipeFilter = FilterPredicate<RuntimeRecipe>;
@@ -1607,6 +1849,8 @@ class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeRecipe, 
     warmUp(): void;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const recipeIngredient: Converter<IRecipeIngredient>;
 
@@ -1624,7 +1868,6 @@ class RecipeQuery {
     constructor(context: RuntimeContext);
     count(): number;
     descriptionContains(text: string): RecipeQuery;
-    everUsed(): RecipeQuery;
     execute(): ReadonlyArray<RuntimeRecipe>;
     exists(): boolean;
     first(): RuntimeRecipe | undefined;
@@ -1634,10 +1877,6 @@ class RecipeQuery {
     hasMultipleVersions(): RecipeQuery;
     minVersions(count: number): RecipeQuery;
     nameContains(text: string): RecipeQuery;
-    neverUsed(): RecipeQuery;
-    usedAfter(date: string): RecipeQuery;
-    usedAtLeast(count: number): RecipeQuery;
-    usedBetween(startDate: string, endDate: string): RecipeQuery;
     validGanache(): RecipeQuery;
     where(predicate: RecipeFilter): RecipeQuery;
     withAllIngredients(ingredientIds: IngredientId[]): RecipeQuery;
@@ -1667,7 +1906,7 @@ type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
 
 declare namespace Recipes {
     export {
-        Converters_4 as Converters,
+        Converters_5 as Converters,
         isScaledRecipeVersion,
         isRecipeVersion,
         IRecipeIngredient,
@@ -1676,10 +1915,14 @@ declare namespace Recipes {
         IRecipeRating,
         IRecipeUsage,
         IRecipeVersion,
+        IRecipeDerivation,
         IRecipe,
         IScaledRecipeIngredient,
-        IScalingSource,
+        IScalingRef,
+        IIngredientSnapshot,
         IScaledRecipeVersion,
+        IScalingSource,
+        IComputedScaledRecipe,
         AnyRecipeVersion,
         Recipe,
         RecipeCollectionEntry,
@@ -1777,9 +2020,8 @@ class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
 // @public
 type RecipesMergeSource = SubLibraryMergeSource<RecipesLibrary>;
 
-// @public
-const recipeUsage: Converter<IRecipeUsage>;
-
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const recipeVersion: Converter<IRecipeVersion>;
 
@@ -1832,13 +2074,11 @@ declare namespace Runtime {
         AnyRuntimeIngredient,
         RuntimeRecipe,
         RuntimeVersion,
-        RuntimeUsage,
-        createRuntimeUsages,
-        getUsagesSortedByDate,
         RuntimeScaledVersion,
         Indexers,
+        Session,
         IInstantiatedLibrarySource,
-        IChocolateLibraryParams,
+        IChocolateLibraryCreateParams,
         ChocolateLibrary,
         IRuntimeIngredient,
         IRuntimeChocolateIngredient,
@@ -1965,7 +2205,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IRecipeCo
     // @internal
     getRecipesWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[];
     // @internal
-    getSourceVersion(scaled: IScaledRecipeVersion): Result<IRuntimeRecipeVersion>;
+    getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
     hasIngredient(id: IngredientId): boolean;
     hasRecipe(id: RecipeId): boolean;
     ingredients(): IterableIterator<AnyRuntimeIngredient>;
@@ -2084,10 +2324,8 @@ class RuntimeRecipe implements IRuntimeRecipe {
     getVersion(versionSpec: RecipeVersionSpec): Result<RuntimeVersion>;
     get goldenVersion(): RuntimeVersion;
     get goldenVersionSpec(): RecipeVersionSpec;
-    get hasBeenUsed(): boolean;
     get id(): RecipeId;
     get ingredients(): ReadonlyArray<IResolvedRecipeIngredient<AnyRuntimeIngredient>>;
-    get latestUsage(): IRecipeUsage | undefined;
     get latestVersion(): RuntimeVersion;
     get name(): RecipeName;
     get raw(): IRecipe;
@@ -2097,8 +2335,6 @@ class RuntimeRecipe implements IRuntimeRecipe {
     scaleVersion(versionSpec: RecipeVersionSpec, targetWeight: Grams, options?: Omit<IRecipeScaleOptions, 'versionSpec'>): Result<IRuntimeScaledRecipeVersion>;
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string>;
-    get usage(): ReadonlyArray<IRecipeUsage>;
-    get usageCount(): number;
     usesIngredient(ingredientId: IngredientId): boolean;
     get versionCount(): number;
     get versions(): ReadonlyArray<RuntimeVersion>;
@@ -2125,15 +2361,15 @@ class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
     // Warning: (ae-forgotten-export) The symbol "ScaledVersionContext" needs to be exported by the entry point index.d.ts
     //
     // @internal
-    constructor(context: ScaledVersionContext, scaled: IScaledRecipeVersion);
+    constructor(context: ScaledVersionContext, scaled: IComputedScaledRecipe);
     get baseWeight(): Grams;
     calculateGanache(): Result<IGanacheCalculation>;
-    static create(context: ScaledVersionContext, scaled: IScaledRecipeVersion): Result<RuntimeScaledVersion>;
+    static create(context: ScaledVersionContext, scaled: IComputedScaledRecipe): Result<RuntimeScaledVersion>;
     get createdDate(): string;
     getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<AnyRuntimeIngredient>>>;
     get notes(): string | undefined;
     get ratings(): ReadonlyArray<IRecipeRating>;
-    get raw(): IScaledRecipeVersion;
+    get raw(): IComputedScaledRecipe;
     get scaledFrom(): IRuntimeScalingSource;
     get targetWeight(): Grams;
     get weightDifference(): Grams;
@@ -2151,27 +2387,6 @@ class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSu
     get hydrationNumber(): number | undefined;
     get raw(): ISugarIngredient;
     get sweetnessPotency(): number | undefined;
-}
-
-// @public
-class RuntimeUsage {
-    // @internal
-    constructor(recipe: RuntimeRecipe, usage: IRecipeUsage);
-    static create(recipe: RuntimeRecipe, usage: IRecipeUsage): Result<RuntimeUsage>;
-    get date(): string;
-    get dateAsDate(): Date;
-    get hasModification(): boolean;
-    get modifiedVersion(): RuntimeVersion | undefined;
-    get modifiedVersionSpec(): RecipeVersionSpec | undefined;
-    get notes(): string | undefined;
-    get raw(): IRecipeUsage;
-    get recipe(): RuntimeRecipe;
-    get scaledWeight(): Grams;
-    get scaleFactor(): number | undefined;
-    tryGetModifiedVersion(): Result<RuntimeVersion | undefined>;
-    tryGetVersion(): Result<RuntimeVersion>;
-    get version(): RuntimeVersion;
-    get versionSpec(): RecipeVersionSpec;
 }
 
 // @public
@@ -2195,20 +2410,62 @@ class RuntimeVersion implements IRuntimeRecipeVersion {
     get yield(): string | undefined;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const scaledRecipeIngredient: Converter<IScaledRecipeIngredient>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const scaledRecipeVersion: Converter<IScaledRecipeVersion>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function scaleRecipe(recipe: IRecipe, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-function scaleRecipeByFactor(recipe: IRecipe, factor: number, options?: IRecipeScaleOptions): Result<IScaledRecipeVersion>;
+function scaleRecipeByFactor(recipe: IRecipe, recipeId: RecipeId, factor: number, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const scalingRef: Converter<IScalingRef>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
 const scalingSource: Converter<IScalingSource>;
+
+declare namespace Session {
+    export {
+        EditingSession,
+        SessionIngredientStatus,
+        ISessionIngredient,
+        IEditingSessionParams,
+        ISessionState,
+        ISaveOptions,
+        ISaveResult
+    }
+}
+
+// @public
+export const SESSION_ID_PATTERN: RegExp;
+
+// @public
+export type SessionId = Brand<string, 'SessionId'>;
+
+// @public
+const sessionId: Converter<SessionId>;
+
+// @public
+type SessionIngredientStatus = 'original' | 'modified' | 'added' | 'removed' | 'substituted';
 
 // @public
 export type SourceId = Brand<string, 'SourceId'>;
@@ -2277,6 +2534,9 @@ function toGrams(from: unknown): Result<Grams>;
 function toIngredientId(from: unknown): Result<IngredientId>;
 
 // @public
+function toJournalId(from: unknown): Result<JournalId>;
+
+// @public
 function toPercentage(from: unknown): Result<Percentage>;
 
 // @public
@@ -2293,6 +2553,9 @@ function toRecipeVersionId(from: unknown): Result<RecipeVersionId>;
 
 // @public
 function toRecipeVersionSpec(from: unknown): Result<RecipeVersionSpec>;
+
+// @public
+function toSessionId(from: unknown): Result<SessionId>;
 
 // @public
 function toSourceId(from: unknown): Result<SourceId>;
@@ -2318,6 +2581,8 @@ declare namespace Validation {
         toRecipeVersionSpec,
         isValidRecipeVersionId,
         toRecipeVersionId,
+        isValidSessionId,
+        toSessionId,
         isValidGrams,
         toGrams,
         isValidPercentage,
@@ -2327,7 +2592,9 @@ declare namespace Validation {
         isValidDegreesMacMichael,
         toDegreesMacMichael,
         isValidRatingScore,
-        toRatingScore
+        toRatingScore,
+        isValidJournalId,
+        toJournalId
     }
 }
 export { Validation }
@@ -2340,5 +2607,9 @@ export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
 
 // @public
 const weightUnit: Converter<WeightUnit>;
+
+// Warnings were encountered during analysis:
+//
+// src/packlets/journal/journalLibrary.ts:58:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

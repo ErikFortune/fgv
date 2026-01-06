@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getIngredient() method
 
-Gets an ingredient by its composite ID
+Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
 
 **Signature:**
 
@@ -42,7 +42,7 @@ id
 
 </td><td>
 
-Composite ingredient ID
+The [id](./ts-chocolate.ingredientid.md) of the ingredient to retrieve.
 
 
 </td></tr>
@@ -52,5 +52,5 @@ Composite ingredient ID
 
 Result&lt;[Ingredient](./ts-chocolate.ingredients.ingredient.md)<!-- -->&gt;
 
-Success with ingredient, or Failure if not found
+`Success` with ingredient, or `Failure` if not found
 

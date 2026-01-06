@@ -167,8 +167,7 @@ describe('RuntimeIngredient', () => {
         ],
         baseWeight: 300 as Grams
       }
-    ],
-    usage: []
+    ]
   };
 
   let ctx: RuntimeContext;

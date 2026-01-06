@@ -40,12 +40,14 @@ import {
   ID_SEPARATOR,
   IngredientCategory,
   IngredientId,
+  JournalId,
   Percentage,
   RatingScore,
   RecipeId,
   RecipeName,
   RecipeVersionId,
   RecipeVersionSpec,
+  SessionId,
   SourceId,
   VERSION_ID_SEPARATOR,
   WeightUnit,
@@ -65,12 +67,14 @@ import {
   toDegreesMacMichael,
   toGrams,
   toIngredientId,
+  toJournalId,
   toPercentage,
   toRatingScore,
   toRecipeId,
   toRecipeName,
   toRecipeVersionId,
   toRecipeVersionSpec,
+  toSessionId,
   toSourceId
 } from './validation';
 
@@ -107,6 +111,12 @@ export const ingredientId: Converter<IngredientId> = Converters.generic(toIngred
  * @public
  */
 export const recipeId: Converter<RecipeId> = Converters.generic(toRecipeId);
+
+/**
+ * Converter for JournalId
+ * @public
+ */
+export const journalId: Converter<JournalId> = Converters.generic(toJournalId);
 
 // ============================================================================
 // Composite ID Converters (parsing to structured form)
@@ -177,6 +187,12 @@ export const parsedRecipeVersionId: Converter<ParsedRecipeVersionId> = Converter
   VERSION_ID_SEPARATOR,
   recipeVersionSpec
 );
+
+/**
+ * Converter for {@link SessionId | SessionId}.
+ * @public
+ */
+export const sessionId: Converter<SessionId> = Converters.generic(toSessionId);
 
 // ============================================================================
 // Numeric Converters

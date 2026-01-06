@@ -62,13 +62,12 @@ import {
   ITemperatureCurve
 } from '../ingredients';
 import {
+  IComputedScaledRecipe,
   IRecipe,
   IRecipeIngredient,
   IRecipeScaleOptions,
-  IRecipeUsage,
   IRecipeVersion,
   IScaledRecipeIngredient,
-  IScaledRecipeVersion,
   IRecipeRating as IRecipeRating
 } from '../recipes';
 import { IGanacheCalculation } from '../calculations';
@@ -599,7 +598,7 @@ export interface IRuntimeScaledRecipeVersion {
   /**
    * Gets the underlying raw scaled version data.
    */
-  readonly raw: IScaledRecipeVersion;
+  readonly raw: IComputedScaledRecipe;
 }
 
 // ============================================================================
@@ -662,11 +661,6 @@ export interface IRuntimeRecipe {
    */
   readonly goldenVersionSpec: RecipeVersionSpec;
 
-  /**
-   * Raw usage history for all versions of this recipe.
-   */
-  readonly usage: ReadonlyArray<IRecipeUsage>;
-
   // ---- Version navigation (resolved) ----
 
   /**
@@ -695,23 +689,6 @@ export interface IRuntimeRecipe {
    * Number of versions.
    */
   readonly versionCount: number;
-
-  // ---- Usage helpers ----
-
-  /**
-   * Whether this recipe has ever been used.
-   */
-  readonly hasBeenUsed: boolean;
-
-  /**
-   * Number of times this recipe has been used.
-   */
-  readonly usageCount: number;
-
-  /**
-   * Gets the most recent usage record.
-   */
-  readonly latestUsage: IRecipeUsage | undefined;
 
   // ---- Ingredient queries ----
 
@@ -1035,8 +1012,8 @@ export interface IRecipeContext<TIngredient extends IRuntimeIngredient = IRuntim
 export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
   /** Gets a resolved runtime ingredient by ID. */
   getIngredient(id: IngredientId): Result<TIngredient>;
-  /** Gets the source version for a scaled recipe version. */
-  getSourceVersion(scaled: IScaledRecipeVersion): Result<IRuntimeRecipeVersion>;
+  /** Gets the source version for a computed scaled recipe. */
+  getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
 }
 
 /**

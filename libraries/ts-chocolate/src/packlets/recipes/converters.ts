@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * Converters for recipe types
+ * Converters for recipe types.
  * @packageDocumentation
  */
 
@@ -28,24 +28,22 @@ import { Converter, Converters, Failure, Result } from '@fgv/ts-utils';
 import { Converters as CommonConverters } from '../common';
 import {
   allRatingCategories,
+  IIngredientSnapshot,
   IRecipe,
+  IRecipeDerivation,
   IRecipeIngredient,
-  IRecipeUsage,
   IRecipeVersion,
   IScaledRecipeIngredient,
   IScaledRecipeVersion,
+  IScalingRef,
   IScalingSource,
   IRecipeRating,
   RatingCategory
 } from './model';
 import { Recipe } from './recipe';
 
-// ============================================================================
-// Recipe Ingredient Converter
-// ============================================================================
-
 /**
- * Converter for IRecipeIngredient
+ * Converter for {@link Recipes.IRecipeIngredient | IRecipeIngredient}.
  * @public
  */
 export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<IRecipeIngredient>({
@@ -55,12 +53,8 @@ export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<
   notes: Converters.string.optional()
 });
 
-// ============================================================================
-// Version Rating Converter
-// ============================================================================
-
 /**
- * Converter for RatingCategory
+ * Converter for {@link Recipes.RatingCategory | RatingCategory}.
  * @public
  */
 export const ratingCategory: Converter<RatingCategory> = Converters.enumeratedValue(allRatingCategories);
@@ -75,29 +69,18 @@ export const recipeRating: Converter<IRecipeRating> = Converters.object<IRecipeR
   notes: Converters.string.optional()
 });
 
-// ============================================================================
-// Recipe Usage Converter
-// ============================================================================
-
 /**
- * Converter for IRecipeUsage
+ * Converter for {@link Recipes.IRecipeDerivation | IRecipeDerivation}
  * @public
  */
-export const recipeUsage: Converter<IRecipeUsage> = Converters.object<IRecipeUsage>({
-  date: Converters.string, // ISO 8601 date string
-  versionSpec: CommonConverters.recipeVersionSpec,
-  scaledWeight: CommonConverters.grams,
-  scaleFactor: Converters.number.optional(),
-  notes: Converters.string.optional(),
-  modifiedVersionSpec: CommonConverters.recipeVersionSpec.optional()
+export const recipeDerivation: Converter<IRecipeDerivation> = Converters.object<IRecipeDerivation>({
+  sourceVersionId: CommonConverters.recipeVersionId,
+  derivedDate: Converters.string, // ISO 8601 date string
+  notes: Converters.string.optional()
 });
 
-// ============================================================================
-// Recipe Version Converter
-// ============================================================================
-
 /**
- * Converter for IRecipeVersion
+ * Converter for {@link Recipes.IRecipeVersion | IRecipeVersion}.
  * @public
  */
 export const recipeVersion: Converter<IRecipeVersion> = Converters.object<IRecipeVersion>({
@@ -110,12 +93,8 @@ export const recipeVersion: Converter<IRecipeVersion> = Converters.object<IRecip
   ratings: Converters.arrayOf(recipeRating).optional()
 });
 
-// ============================================================================
-// Recipe Converter
-// ============================================================================
-
 /**
- * Converter for IRecipe data structure
+ * Converter for {@link Recipes.IRecipe | IRecipe} data structure
  * @public
  */
 export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
@@ -125,11 +104,11 @@ export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
   tags: Converters.arrayOf(Converters.string).optional(),
   versions: Converters.arrayOf(recipeVersion),
   goldenVersionSpec: CommonConverters.recipeVersionSpec,
-  usage: Converters.arrayOf(recipeUsage)
+  derivedFrom: recipeDerivation.optional()
 });
 
 /**
- * Converter for Recipe
+ * Converter for {@link Recipes.Recipe | Recipe}
  * Validates that goldenVersionSpec exists in versions and creates Recipe instance
  * @public
  */
@@ -151,12 +130,8 @@ export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unkno
   });
 });
 
-// ============================================================================
-// Scaled Recipe Ingredient Converter
-// ============================================================================
-
 /**
- * Converter for IScaledRecipeIngredient
+ * Converter for {@link Recipes.IScaledRecipeIngredient | IScaledRecipeIngredient}.
  * @public
  */
 export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
@@ -169,45 +144,50 @@ export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
     scaleFactor: Converters.number
   });
 
-// ============================================================================
-// Scaling Source Converter
-// ============================================================================
+/**
+ * Converter for {@link Recipes.IScalingRef | IScalingRef} (lightweight reference-based format)
+ * @public
+ */
+export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>({
+  sourceVersionId: CommonConverters.recipeVersionId,
+  scaleFactor: Converters.number,
+  targetWeight: CommonConverters.grams,
+  createdDate: Converters.string
+});
 
 /**
- * Converter for IScalingSource
+ * Converter for {@link Recipes.IIngredientSnapshot | IIngredientSnapshot} (for archival)
+ * @public
+ */
+export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.object<IIngredientSnapshot>({
+  ingredientId: CommonConverters.ingredientId,
+  originalAmount: CommonConverters.grams,
+  scaledAmount: CommonConverters.grams,
+  notes: Converters.string.optional()
+});
+
+/**
+ * Converter for {@link Recipes.IScaledRecipeVersion | IScaledRecipeVersion} (reference-based)
+ * @public
+ */
+export const scaledRecipeVersion: Converter<IScaledRecipeVersion> = Converters.object<IScaledRecipeVersion>({
+  scalingRef: scalingRef,
+  snapshotIngredients: Converters.arrayOf(ingredientSnapshot).optional(),
+  notes: Converters.string.optional()
+});
+
+/**
+ * Converter for {@link Recipes.IScalingSource | IScalingSource} (runtime format with full ingredient data)
  * @public
  */
 export const scalingSource: Converter<IScalingSource> = Converters.object<IScalingSource>({
-  recipeId: CommonConverters.baseRecipeId,
-  versionSpec: CommonConverters.recipeVersionSpec,
+  sourceVersionId: CommonConverters.recipeVersionId,
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.grams
 });
 
-// ============================================================================
-// Scaled Recipe Version Converter
-// ============================================================================
-
 /**
- * Converter for IScaledRecipeVersion
- * @public
- */
-export const scaledRecipeVersion: Converter<IScaledRecipeVersion> = Converters.object<IScaledRecipeVersion>({
-  scaledFrom: scalingSource,
-  createdDate: Converters.string,
-  ingredients: Converters.arrayOf(scaledRecipeIngredient),
-  baseWeight: CommonConverters.grams,
-  yield: Converters.string.optional(),
-  notes: Converters.string.optional(),
-  ratings: Converters.arrayOf(recipeRating).optional()
-});
-
-// ============================================================================
-// Recipe Discriminated Union
-// ============================================================================
-
-/**
- * Converter for Recipe type (currently same as IRecipe, extensible)
+ * Converter for {@link Recipes.Recipe | Recipe} type (currently same as IRecipe, extensible)
  * @public
  */
 export const recipeConverter: Converter<Recipe> = recipe;

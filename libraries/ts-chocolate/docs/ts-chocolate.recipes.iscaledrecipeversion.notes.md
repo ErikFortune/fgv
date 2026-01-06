@@ -4,7 +4,7 @@
 
 ## Recipes.IScaledRecipeVersion.notes property
 
-Optional notes from the source version
+Optional notes
 
 **Signature:**
 

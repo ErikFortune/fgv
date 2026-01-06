@@ -23,11 +23,15 @@
  * @packageDocumentation
  */
 
-import { BaseRecipeId, Grams, IngredientId, RatingScore, RecipeName, RecipeVersionSpec } from '../common';
-
-// ============================================================================
-// Recipe Ingredient Reference
-// ============================================================================
+import {
+  BaseRecipeId,
+  Grams,
+  IngredientId,
+  RatingScore,
+  RecipeName,
+  RecipeVersionId,
+  RecipeVersionSpec
+} from '../common';
 
 /**
  * Reference to an ingredient used in a recipe
@@ -55,10 +59,6 @@ export interface IRecipeIngredient {
    */
   readonly notes?: string;
 }
-
-// ============================================================================
-// Version Rating
-// ============================================================================
 
 /**
  * Categories for rating a recipe version
@@ -100,10 +100,6 @@ export interface IRecipeRating {
   readonly notes?: string;
 }
 
-// ============================================================================
-// Recipe Usage Tracking
-// ============================================================================
-
 /**
  * Record of a recipe being used (for production tracking)
  * @public
@@ -140,10 +136,6 @@ export interface IRecipeUsage {
    */
   readonly modifiedVersionSpec?: RecipeVersionSpec;
 }
-
-// ============================================================================
-// Recipe Version
-// ============================================================================
 
 /**
  * Complete details for a single version of a recipe
@@ -186,9 +178,28 @@ export interface IRecipeVersion {
   readonly ratings?: ReadonlyArray<IRecipeRating>;
 }
 
-// ============================================================================
-// Recipe Interface
-// ============================================================================
+/**
+ * Reference to a source recipe+version from which a recipe was derived.
+ * Used to track lineage when a user edits a read-only recipe and creates
+ * a new recipe in a writable collection.
+ * @public
+ */
+export interface IRecipeDerivation {
+  /**
+   * Source recipe version ID (format: "sourceId.recipeId\@versionSpec")
+   */
+  readonly sourceVersionId: RecipeVersionId;
+
+  /**
+   * Date of derivation (ISO 8601 format)
+   */
+  readonly derivedDate: string;
+
+  /**
+   * Optional notes about the derivation
+   */
+  readonly notes?: string;
+}
 
 /**
  * Complete recipe with version history
@@ -226,17 +237,15 @@ export interface IRecipe {
   readonly goldenVersionSpec: RecipeVersionSpec;
 
   /**
-   * Usage history for all versions of this recipe
+   * Optional derivation info - tracks lineage if this recipe was forked
+   * from another recipe (e.g., when editing a read-only recipe)
    */
-  readonly usage: ReadonlyArray<IRecipeUsage>;
+  readonly derivedFrom?: IRecipeDerivation;
 }
 
-// ============================================================================
-// Scaled Recipe Output
-// ============================================================================
-
 /**
- * Scaled ingredient with original and scaled amounts
+ * Scaled ingredient with original and scaled amounts.
+ * Used at runtime when computing scaled recipes; not typically persisted.
  * @public
  */
 export interface IScaledRecipeIngredient extends IRecipeIngredient {
@@ -252,19 +261,93 @@ export interface IScaledRecipeIngredient extends IRecipeIngredient {
 }
 
 /**
- * Information about the source of a scaled recipe
+ * Lightweight scaling reference - the default storage format for scaled recipes.
+ * Stores only the reference and scale parameters, not ingredient snapshots.
+ * @public
+ */
+export interface IScalingRef {
+  /**
+   * Source recipe version ID (format: "sourceId.recipeId\@versionSpec")
+   */
+  readonly sourceVersionId: RecipeVersionId;
+
+  /**
+   * Scaling factor applied
+   */
+  readonly scaleFactor: number;
+
+  /**
+   * Target weight requested
+   */
+  readonly targetWeight: Grams;
+
+  /**
+   * Date the scaling was created (ISO 8601 format)
+   */
+  readonly createdDate: string;
+}
+
+/**
+ * Optional ingredient snapshot for archival purposes.
+ * Used when the source recipe might become unavailable.
+ * @public
+ */
+export interface IIngredientSnapshot {
+  /**
+   * The ingredient ID
+   */
+  readonly ingredientId: IngredientId;
+
+  /**
+   * Original amount before scaling
+   */
+  readonly originalAmount: Grams;
+
+  /**
+   * Scaled amount after applying scale factor
+   */
+  readonly scaledAmount: Grams;
+
+  /**
+   * Optional notes for this ingredient
+   */
+  readonly notes?: string;
+}
+
+/**
+ * A scaled recipe version - reference-based by default.
+ * Scaling is primarily a runtime operation; this represents what gets persisted
+ * (e.g., in a journal record).
+ * @public
+ */
+export interface IScaledRecipeVersion {
+  /**
+   * Reference to source recipe version with scaling parameters
+   */
+  readonly scalingRef: IScalingRef;
+
+  /**
+   * Optional snapshot of ingredients for archival.
+   * Only present when explicitly requested (e.g., before losing access to source).
+   */
+  readonly snapshotIngredients?: ReadonlyArray<IIngredientSnapshot>;
+
+  /**
+   * Optional notes
+   */
+  readonly notes?: string;
+}
+
+/**
+ * Information about the source of a scaled recipe.
+ * Used at runtime for computed scaled versions.
  * @public
  */
 export interface IScalingSource {
   /**
-   * ID of the recipe this was scaled from
+   * Source recipe version ID (format: "sourceId.recipeId\@versionSpec")
    */
-  readonly recipeId: BaseRecipeId;
-
-  /**
-   * Exact version that was scaled
-   */
-  readonly versionSpec: RecipeVersionSpec;
+  readonly sourceVersionId: RecipeVersionId;
 
   /**
    * Scaling factor applied
@@ -278,10 +361,12 @@ export interface IScalingSource {
 }
 
 /**
- * A scaled recipe version - mirrors IRecipeVersion structure for interoperability
+ * A computed scaled recipe with full ingredient data.
+ * This is the output format from the scaler - a runtime object with all calculated values.
+ * Not intended for persistence - use IScaledRecipeVersion for that.
  * @public
  */
-export interface IScaledRecipeVersion {
+export interface IComputedScaledRecipe {
   /**
    * Information about the source recipe and version that was scaled
    */
@@ -303,7 +388,7 @@ export interface IScaledRecipeVersion {
   readonly baseWeight: Grams;
 
   /**
-   * Optional yield description (may be scaled from original)
+   * Optional yield description (from source version)
    */
   readonly yield?: string;
 
@@ -331,7 +416,7 @@ export type AnyRecipeVersion = IRecipeVersion | IScaledRecipeVersion;
  * @public
  */
 export function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRecipeVersion {
-  return 'scaledFrom' in version;
+  return 'scalingRef' in version;
 }
 
 /**

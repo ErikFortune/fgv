@@ -112,8 +112,8 @@ export abstract class BaseIndexerOrchestrator<TEntity, TId> {
         } else {
           errors.push(resolved.message);
         }
+        /* c8 ignore next 3 - defensive: current indexers return IDs not entities */
       } else {
-      /* c8 ignore next 3 - defensive: current indexers return IDs not entities */
         entities.push(item);
       }
     }

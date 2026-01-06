@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.scalingSource variable
 
-Converter for IScalingSource
+Converter for [IScalingSource](./ts-chocolate.recipes.iscalingsource.md) (runtime format with full ingredient data)
 
 **Signature:**
 

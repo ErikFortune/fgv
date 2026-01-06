@@ -4,12 +4,12 @@
 
 ## Runtime.ChocolateLibrary.create() method
 
-Creates a new ChocolateLibrary instance
+Creates a new [ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md) instance.
 
 **Signature:**
 
 ```typescript
-static create(params?: IChocolateLibraryParams): Result<ChocolateLibrary>;
+static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ params
 
 </td><td>
 
-[IChocolateLibraryParams](./ts-chocolate.runtime.ichocolatelibraryparams.md)
+[IChocolateLibraryCreateParams](./ts-chocolate.runtime.ichocolatelibrarycreateparams.md)
 
 
 </td><td>
 
-_(Optional)_ Optional creation parameters
+_(Optional)_ Optional [creation parameters](./ts-chocolate.runtime.ichocolatelibrarycreateparams.md)
 
 
 </td></tr>
@@ -52,5 +52,5 @@ _(Optional)_ Optional creation parameters
 
 Result&lt;[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)<!-- -->&gt;
 
-Success with new instance, or Failure with error message
+`Success` with new instance, or `Failure` with error message
 

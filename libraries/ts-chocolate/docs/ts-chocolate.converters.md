@@ -162,6 +162,17 @@ Converter for IngredientId (composite)
 </td></tr>
 <tr><td>
 
+[journalId](./ts-chocolate.converters.journalid.md)
+
+
+</td><td>
+
+Converter for JournalId
+
+
+</td></tr>
+<tr><td>
+
 [parsedIngredientId](./ts-chocolate.converters.parsedingredientid.md)
 
 
@@ -256,6 +267,17 @@ Converter for RecipeVersionId (composite)
 </td><td>
 
 Converter for RecipeVersionSpec
+
+
+</td></tr>
+<tr><td>
+
+[sessionId](./ts-chocolate.converters.sessionid.md)
+
+
+</td><td>
+
+Converter for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 
 
 </td></tr>

@@ -9,5 +9,5 @@ Parameters for creating the underlying ChocolateLibrary
 **Signature:**
 
 ```typescript
-readonly libraryParams?: IChocolateLibraryParams;
+readonly libraryParams?: IChocolateLibraryCreateParams;
 ```
