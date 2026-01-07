@@ -67,6 +67,18 @@ export interface IRecipeIngredient {
 export type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
 
 /**
+ * Categories for classifying recipes by type
+ * @public
+ */
+export type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
+
+/**
+ * All possible recipe categories
+ * @public
+ */
+export const allRecipeCategories: RecipeCategory[] = ['ganache', 'caramel', 'gianduja'];
+
+/**
  * All possible rating categories
  * @public
  */
@@ -215,6 +227,11 @@ export interface IRecipe {
    * Human-readable recipe name
    */
   readonly name: RecipeName;
+
+  /**
+   * Category for classifying the recipe type
+   */
+  readonly category: RecipeCategory;
 
   /**
    * Optional description of the recipe

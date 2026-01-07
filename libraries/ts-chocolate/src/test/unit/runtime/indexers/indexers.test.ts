@@ -48,12 +48,14 @@ const {
   RecipesByTagIndexer,
   IngredientsByTagIndexer,
   RecipesByChocolateTypeIndexer,
+  RecipesByCategoryIndexer,
   RecipeIndexerOrchestrator,
   IngredientIndexerOrchestrator,
   recipesByIngredientConfig,
   recipesByTagConfig,
   ingredientsByTagConfig,
-  recipesByChocolateTypeConfig
+  recipesByChocolateTypeConfig,
+  recipesByCategoryConfig
 } = Indexers;
 
 // Type aliases for types from Indexers namespace
@@ -61,6 +63,7 @@ type RecipesByIngredientIndexerType = InstanceType<typeof RecipesByIngredientInd
 type RecipesByTagIndexerType = InstanceType<typeof RecipesByTagIndexer>;
 type IngredientsByTagIndexerType = InstanceType<typeof IngredientsByTagIndexer>;
 type RecipesByChocolateTypeIndexerType = InstanceType<typeof RecipesByChocolateTypeIndexer>;
+type RecipesByCategoryIndexerType = InstanceType<typeof RecipesByCategoryIndexer>;
 
 describe('Indexers', () => {
   // ============================================================================
@@ -124,6 +127,7 @@ describe('Indexers', () => {
   const darkGanacheRecipe: IRecipe = {
     baseId: 'dark-ganache' as BaseRecipeId,
     name: 'Dark Ganache' as RecipeName,
+    category: 'ganache',
     tags: ['classic', 'dark'],
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
     versions: [
@@ -146,6 +150,7 @@ describe('Indexers', () => {
   const milkGanacheRecipe: IRecipe = {
     baseId: 'milk-ganache' as BaseRecipeId,
     name: 'Milk Ganache' as RecipeName,
+    category: 'ganache',
     tags: ['classic', 'milk'],
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
     versions: [
@@ -157,6 +162,22 @@ describe('Indexers', () => {
           { ingredientId: 'test.cream' as IngredientId, amount: 150 as Grams }
         ],
         baseWeight: 350 as Grams
+      }
+    ]
+  };
+
+  const saltedCaramelRecipe: IRecipe = {
+    baseId: 'salted-caramel' as BaseRecipeId,
+    name: 'Salted Caramel' as RecipeName,
+    category: 'caramel',
+    tags: ['classic', 'salted'],
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [{ ingredientId: 'test.cream' as IngredientId, amount: 200 as Grams }],
+        baseWeight: 200 as Grams
       }
     ]
   };
@@ -191,7 +212,8 @@ describe('Indexers', () => {
           items: {
             /* eslint-disable @typescript-eslint/naming-convention */
             'dark-ganache': darkGanacheRecipe,
-            'milk-ganache': milkGanacheRecipe
+            'milk-ganache': milkGanacheRecipe,
+            'salted-caramel': saltedCaramelRecipe
             /* eslint-enable @typescript-eslint/naming-convention */
           }
         }
@@ -240,9 +262,11 @@ describe('Indexers', () => {
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
-        expect(ids).toHaveLength(2);
+        // All three recipes use cream
+        expect(ids).toHaveLength(3);
         expect(ids).toContain('test.dark-ganache');
         expect(ids).toContain('test.milk-ganache');
+        expect(ids).toContain('test.salted-caramel');
       });
     });
 
@@ -259,7 +283,8 @@ describe('Indexers', () => {
       const config = recipesByIngredientConfig('test.cream' as IngredientId);
       const result = indexer.find(config);
       expect(result).toSucceedAndSatisfy((ids) => {
-        expect(ids).toHaveLength(2);
+        // All three recipes use cream
+        expect(ids).toHaveLength(3);
       });
     });
 
@@ -273,7 +298,8 @@ describe('Indexers', () => {
       // Index should be rebuilt on next query
       const result = indexer.find(recipesByIngredientConfig('test.cream' as IngredientId));
       expect(result).toSucceedAndSatisfy((ids) => {
-        expect(ids).toHaveLength(2);
+        // All three recipes use cream
+        expect(ids).toHaveLength(3);
       });
     });
   });
@@ -294,9 +320,11 @@ describe('Indexers', () => {
       const result = indexer.find(config);
 
       expect(result).toSucceedAndSatisfy((ids) => {
-        expect(ids).toHaveLength(2);
+        // All three recipes have the 'classic' tag
+        expect(ids).toHaveLength(3);
         expect(ids).toContain('test.dark-ganache');
         expect(ids).toContain('test.milk-ganache');
+        expect(ids).toContain('test.salted-caramel');
       });
     });
 
@@ -322,6 +350,7 @@ describe('Indexers', () => {
       expect(tags).toContain('classic');
       expect(tags).toContain('dark');
       expect(tags).toContain('milk');
+      expect(tags).toContain('salted');
     });
   });
 
@@ -417,6 +446,70 @@ describe('Indexers', () => {
   });
 
   // ============================================================================
+  // RecipesByCategoryIndexer Tests
+  // ============================================================================
+
+  describe('RecipesByCategoryIndexer', () => {
+    let indexer: RecipesByCategoryIndexerType;
+
+    beforeEach(() => {
+      indexer = new RecipesByCategoryIndexer(library);
+    });
+
+    test('finds recipes by ganache category', () => {
+      const config = recipesByCategoryConfig('ganache');
+      const result = indexer.find(config);
+
+      expect(result).toSucceedAndSatisfy((ids) => {
+        expect(ids).toHaveLength(2);
+        expect(ids).toContain('test.dark-ganache');
+        expect(ids).toContain('test.milk-ganache');
+      });
+    });
+
+    test('finds recipes by caramel category', () => {
+      const config = recipesByCategoryConfig('caramel');
+      const result = indexer.find(config);
+
+      expect(result).toSucceedAndSatisfy((ids) => {
+        expect(ids).toHaveLength(1);
+        expect(ids).toContain('test.salted-caramel');
+      });
+    });
+
+    test('getAllCategories returns all categories with recipes', () => {
+      const categories = indexer.getAllCategories();
+      expect(categories).toContain('ganache');
+      expect(categories).toContain('caramel');
+      expect(categories).toHaveLength(2);
+    });
+
+    test('warmUp pre-builds the index', () => {
+      indexer.warmUp();
+      // Subsequent query should work without rebuilding
+      const config = recipesByCategoryConfig('ganache');
+      const result = indexer.find(config);
+      expect(result).toSucceedAndSatisfy((ids) => {
+        expect(ids).toHaveLength(2);
+      });
+    });
+
+    test('invalidate clears the index', () => {
+      // First query to build index
+      indexer.find(recipesByCategoryConfig('ganache'));
+
+      // Invalidate
+      indexer.invalidate();
+
+      // Index should be rebuilt on next query
+      const result = indexer.find(recipesByCategoryConfig('ganache'));
+      expect(result).toSucceedAndSatisfy((ids) => {
+        expect(ids).toHaveLength(2);
+      });
+    });
+  });
+
+  // ============================================================================
   // RecipeIndexerOrchestrator Tests
   // ============================================================================
 
@@ -442,7 +535,34 @@ describe('Indexers', () => {
       });
 
       expect(result).toSucceedAndSatisfy((recipes) => {
+        // All three recipes have the 'classic' tag
+        expect(recipes).toHaveLength(3);
+      });
+    });
+
+    test('finds recipes by category', () => {
+      const result = orchestrator.find({
+        byCategory: { category: 'ganache' }
+      });
+
+      expect(result).toSucceedAndSatisfy((recipes) => {
         expect(recipes).toHaveLength(2);
+        const ids = recipes.map((r) => r.id);
+        expect(ids).toContain('test.dark-ganache');
+        expect(ids).toContain('test.milk-ganache');
+      });
+    });
+
+    test('finds recipes by category and tag intersection', () => {
+      const result = orchestrator.find({
+        byCategory: { category: 'ganache' },
+        byTag: { tag: 'dark' }
+      });
+
+      expect(result).toSucceedAndSatisfy((recipes) => {
+        // Only dark-ganache has both ganache category AND dark tag
+        expect(recipes).toHaveLength(1);
+        expect(recipes[0].id).toBe('test.dark-ganache');
       });
     });
 

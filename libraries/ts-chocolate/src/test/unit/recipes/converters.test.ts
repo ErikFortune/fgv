@@ -130,6 +130,7 @@ describe('Recipe Converters', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
@@ -145,6 +146,7 @@ describe('Recipe Converters', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         description: 'A test recipe',
         tags: ['dark', 'ganache'],
         versions: [validVersion],
@@ -160,6 +162,7 @@ describe('Recipe Converters', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         versions: [],
         goldenVersionSpec: '2026-01-01-01'
       };
@@ -170,6 +173,7 @@ describe('Recipe Converters', () => {
       const input = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         versions: [validVersion],
         goldenVersionSpec: '2026-12-31-99'
       };
@@ -180,6 +184,7 @@ describe('Recipe Converters', () => {
       const input = {
         baseId: 'invalid.id',
         name: 'Test Recipe',
+        category: 'ganache',
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
@@ -190,6 +195,7 @@ describe('Recipe Converters', () => {
       const input = {
         baseId: 'test-recipe',
         name: '',
+        category: 'ganache',
         versions: [validVersion],
         goldenVersionSpec: '2026-01-01-01'
       };
@@ -359,6 +365,7 @@ describe('Recipe Converters', () => {
       const recipeData = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         versions: [version1, version2],
         goldenVersionSpec: '2026-01-01-01'
       };
@@ -379,6 +386,7 @@ describe('Recipe Converters', () => {
       const recipeData = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         versions: [version1],
         goldenVersionSpec: '2026-01-01-01'
       };

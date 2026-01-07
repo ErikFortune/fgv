@@ -740,6 +740,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'dark-ganache-classic': {
       baseId: 'dark-ganache-classic',
       name: 'Classic Dark Ganache',
+      category: 'ganache',
       description:
         'Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.',
       tags: ['classic', 'dark', 'truffle', 'bonbon'],
@@ -774,6 +775,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'milk-ganache-classic': {
       baseId: 'milk-ganache-classic',
       name: 'Classic Milk Ganache',
+      category: 'ganache',
       description:
         'Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.',
       tags: ['classic', 'milk', 'truffle', 'bonbon'],
@@ -807,6 +809,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'white-ganache-classic': {
       baseId: 'white-ganache-classic',
       name: 'Classic White Ganache',
+      category: 'ganache',
       description:
         'Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.',
       tags: ['classic', 'white', 'truffle', 'bonbon'],
@@ -840,6 +843,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'vegan-ganache-coconut-cream': {
       baseId: 'vegan-ganache-coconut-cream',
       name: 'Vegan Ganache (Coconut Cream)',
+      category: 'ganache',
       description:
         'Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.',
       tags: ['vegan', 'dairy-free', 'dark', 'coconut'],
@@ -869,6 +873,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'vegan-ganache-coconut-oil': {
       baseId: 'vegan-ganache-coconut-oil',
       name: 'Vegan Ganache (Coconut Oil)',
+      category: 'ganache',
       description:
         'Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.',
       tags: ['vegan', 'dairy-free', 'dark', 'neutral'],
@@ -903,6 +908,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'caramelized-ganache': {
       baseId: 'caramelized-ganache',
       name: 'Caramelized Ganache',
+      category: 'ganache',
       description:
         'Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.',
       tags: ['caramelized', 'blonde', 'truffle', 'bonbon', 'salted-caramel'],
@@ -936,6 +942,7 @@ export const recipeCollections: Record<string, JsonObject> = {
     'gianduja-basic': {
       baseId: 'gianduja-basic',
       name: 'Basic Gianduja',
+      category: 'ganache',
       description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
       tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
       goldenVersionSpec: '2026-01-01-01',

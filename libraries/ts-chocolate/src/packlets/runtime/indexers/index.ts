@@ -69,6 +69,14 @@ export {
   recipesByChocolateTypeConfigConverter
 } from './recipesByChocolateTypeIndexer';
 
+// Concrete indexers - recipes by category
+export {
+  IRecipesByCategoryConfig,
+  RecipesByCategoryIndexer,
+  recipesByCategoryConfig,
+  recipesByCategoryConfigConverter
+} from './recipesByCategoryIndexer';
+
 // Recipe orchestrator with query spec types
 export {
   IRecipeQuerySpec,

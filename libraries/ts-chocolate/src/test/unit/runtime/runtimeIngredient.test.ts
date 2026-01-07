@@ -156,6 +156,7 @@ describe('RuntimeIngredient', () => {
   const testRecipe: IRecipe = {
     baseId: 'ganache' as BaseRecipeId,
     name: 'Test Ganache' as RecipeName,
+    category: 'ganache',
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
     versions: [
       {

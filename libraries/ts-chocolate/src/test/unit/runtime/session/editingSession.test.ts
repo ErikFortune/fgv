@@ -110,6 +110,7 @@ describe('EditingSession', () => {
   const testRecipe: IRecipe = {
     baseId: 'test-ganache' as BaseRecipeId,
     name: 'Test Ganache' as RecipeName,
+    category: 'ganache',
     description: 'A test ganache recipe',
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
     versions: [

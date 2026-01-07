@@ -356,6 +356,17 @@ All possible rating categories
 
 
 </td></tr>
+<tr><td>
+
+[allRecipeCategories](./ts-chocolate.recipes.allrecipecategories.md)
+
+
+</td><td>
+
+All possible recipe categories
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases
@@ -423,6 +434,17 @@ Parameters for creating a RecipesLibrary instance synchronously.
 </td><td>
 
 Categories for rating a recipe version
+
+
+</td></tr>
+<tr><td>
+
+[RecipeCategory](./ts-chocolate.recipes.recipecategory.md)
+
+
+</td><td>
+
+Categories for classifying recipes by type
 
 
 </td></tr>

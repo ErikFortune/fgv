@@ -19,8 +19,7 @@
 // SOFTWARE.
 
 import * as yaml from 'yaml';
-import { Grams, RecipeId, RecipeName, RecipeVersionSpec, SourceId } from '@fgv/ts-chocolate';
-import { Recipes } from '@fgv/ts-chocolate';
+import { Grams, RecipeId, RecipeName, Recipes, RecipeVersionSpec, SourceId } from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
 
@@ -31,6 +30,7 @@ export interface IRecipeListItem {
   id: RecipeId;
   name: RecipeName;
   sourceId: SourceId;
+  category: Recipes.RecipeCategory;
   description?: string;
   tags?: ReadonlyArray<string>;
   versionCount: number;
@@ -77,18 +77,27 @@ function formatRecipeListHuman(recipes: IRecipeListItem[]): string {
   // Find max lengths for table alignment
   const maxIdLen = Math.max(...recipes.map((r) => r.id.length), 2);
   const maxNameLen = Math.max(...recipes.map((r) => r.name.length), 4);
+  const maxCategoryLen = Math.max(...recipes.map((r) => (r.category ?? '').length), 8);
 
   // Header
-  lines.push(`${padRight('ID', maxIdLen)}  ${padRight('Name', maxNameLen)}  Versions  Tags`);
-  lines.push(`${'-'.repeat(maxIdLen)}  ${'-'.repeat(maxNameLen)}  --------  ----`);
+  lines.push(
+    `${padRight('ID', maxIdLen)}  ${padRight('Name', maxNameLen)}  ${padRight(
+      'Category',
+      maxCategoryLen
+    )}  Versions  Tags`
+  );
+  lines.push(
+    `${'-'.repeat(maxIdLen)}  ${'-'.repeat(maxNameLen)}  ${'-'.repeat(maxCategoryLen)}  --------  ----`
+  );
 
   for (const recipe of recipes) {
     const tags = recipe.tags?.join(', ') ?? '';
+    const category = recipe.category;
     lines.push(
       `${padRight(recipe.id, maxIdLen)}  ${padRight(recipe.name, maxNameLen)}  ${padRight(
-        String(recipe.versionCount),
-        8
-      )}  ${tags}`
+        category,
+        maxCategoryLen
+      )}  ${padRight(String(recipe.versionCount), 8)}  ${tags}`
     );
   }
 
@@ -108,24 +117,30 @@ function formatRecipeListTable(recipes: IRecipeListItem[]): string {
   // Find max lengths for table alignment
   const maxIdLen = Math.max(...recipes.map((r) => r.id.length), 2);
   const maxNameLen = Math.max(...recipes.map((r) => r.name.length), 4);
+  const maxCategoryLen = Math.max(...recipes.map((r) => (r.category ?? '').length), 8);
   const maxVersionsLen = Math.max(...recipes.map((r) => String(r.versionCount).length), 8);
 
   // Header
   lines.push(
     `${padRight('ID', maxIdLen)} | ${padRight('Name', maxNameLen)} | ${padRight(
-      'Versions',
-      maxVersionsLen
-    )} | Tags`
+      'Category',
+      maxCategoryLen
+    )} | ${padRight('Versions', maxVersionsLen)} | Tags`
   );
-  lines.push(`${'-'.repeat(maxIdLen)}-+-${'-'.repeat(maxNameLen)}-+-${'-'.repeat(maxVersionsLen)}-+------`);
+  lines.push(
+    `${'-'.repeat(maxIdLen)}-+-${'-'.repeat(maxNameLen)}-+-${'-'.repeat(maxCategoryLen)}-+-${'-'.repeat(
+      maxVersionsLen
+    )}-+------`
+  );
 
   for (const recipe of recipes) {
     const tags = recipe.tags?.join(', ') ?? '';
+    const category = recipe.category;
     lines.push(
       `${padRight(recipe.id, maxIdLen)} | ${padRight(recipe.name, maxNameLen)} | ${padRight(
-        String(recipe.versionCount),
-        maxVersionsLen
-      )} | ${tags}`
+        category,
+        maxCategoryLen
+      )} | ${padRight(String(recipe.versionCount), maxVersionsLen)} | ${tags}`
     );
   }
 
@@ -165,6 +180,7 @@ function formatRecipeHuman(
 
   lines.push(`Recipe: ${recipe.name}`);
   lines.push(`ID: ${recipeId}`);
+  lines.push(`Category: ${recipe.category}`);
 
   if (recipe.description) {
     lines.push(`Description: ${recipe.description}`);

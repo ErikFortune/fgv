@@ -28,6 +28,7 @@ import { Converter, Converters, Failure, Result } from '@fgv/ts-utils';
 import { Converters as CommonConverters } from '../common';
 import {
   allRatingCategories,
+  allRecipeCategories,
   IIngredientSnapshot,
   IRecipe,
   IRecipeDerivation,
@@ -38,7 +39,8 @@ import {
   IScalingRef,
   IScalingSource,
   IRecipeRating,
-  RatingCategory
+  RatingCategory,
+  RecipeCategory
 } from './model';
 import { Recipe } from './recipe';
 
@@ -58,6 +60,12 @@ export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<
  * @public
  */
 export const ratingCategory: Converter<RatingCategory> = Converters.enumeratedValue(allRatingCategories);
+
+/**
+ * Converter for {@link Recipes.RecipeCategory | RecipeCategory}.
+ * @public
+ */
+export const recipeCategory: Converter<RecipeCategory> = Converters.enumeratedValue(allRecipeCategories);
 
 /**
  * Converter for {@link Recipes.IRecipeRating | IRecipeRating}
@@ -100,6 +108,7 @@ export const recipeVersion: Converter<IRecipeVersion> = Converters.object<IRecip
 export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
   baseId: CommonConverters.baseRecipeId,
   name: CommonConverters.recipeName,
+  category: recipeCategory,
   description: Converters.string.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   versions: Converters.arrayOf(recipeVersion),

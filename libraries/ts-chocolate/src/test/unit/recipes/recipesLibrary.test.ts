@@ -66,6 +66,7 @@ describe('RecipesLibrary', () => {
   const testRecipeData: IRecipe = {
     baseId: 'test-ganache' as BaseRecipeId,
     name: 'Test Ganache' as RecipeName,
+    category: 'ganache',
     description: 'A test ganache recipe',
     tags: ['test', 'dark'],
     versions: [testRecipeVersion],
@@ -332,6 +333,7 @@ describe('RecipesLibrary', () => {
       'test-recipe': {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         description: 'A test recipe',
         tags: ['test'],
         goldenVersionSpec: '2026-01-01-01',
@@ -350,6 +352,7 @@ describe('RecipesLibrary', () => {
       'other-recipe': {
         baseId: 'other-recipe',
         name: 'Other Recipe',
+        category: 'ganache',
         goldenVersionSpec: '2026-01-01-01',
         versions: [
           {
@@ -513,6 +516,7 @@ describe('RecipesLibrary', () => {
       'test-recipe': {
         baseId: 'test-recipe',
         name: 'Test Recipe',
+        category: 'ganache',
         description: 'A test recipe',
         tags: ['test'],
         goldenVersionSpec: '2026-01-01-01',
@@ -531,6 +535,7 @@ describe('RecipesLibrary', () => {
       'other-recipe': {
         baseId: 'other-recipe',
         name: 'Other Recipe',
+        category: 'ganache',
         goldenVersionSpec: '2026-01-01-01',
         versions: [
           {
@@ -961,6 +966,7 @@ describe('Recipe scaling', () => {
   const testRecipe: IRecipe = {
     baseId: 'test' as BaseRecipeId,
     name: 'Test' as RecipeName,
+    category: 'ganache',
     versions: [testVersion],
     goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
   };
@@ -1110,6 +1116,7 @@ describe('Recipe scaling', () => {
       const zeroWeightRecipe: IRecipe = {
         baseId: 'zero' as BaseRecipeId,
         name: 'Zero' as RecipeName,
+        category: 'ganache',
         versions: [zeroWeightVersion],
         goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
       };
@@ -1187,6 +1194,7 @@ describe('Recipe scaling', () => {
             'external-recipe': {
               baseId: 'external-recipe',
               name: 'External Recipe',
+              category: 'ganache',
               versions: [
                 {
                   versionSpec: '2026-01-01-01',
@@ -1226,6 +1234,7 @@ describe('Recipe scaling', () => {
         'secret-recipe': {
           baseId: 'secret-recipe',
           name: 'Secret Recipe',
+          category: 'ganache',
           versions: [
             {
               versionSpec: '2026-01-01-01',
@@ -1284,6 +1293,7 @@ describe('Recipe scaling', () => {
         'secret-recipe': {
           baseId: 'secret-recipe',
           name: 'Secret Recipe',
+          category: 'ganache',
           versions: [
             {
               versionSpec: '2026-01-01-01',
@@ -1335,6 +1345,7 @@ describe('Recipe scaling', () => {
         'plain-recipe': {
           baseId: 'plain-recipe',
           name: 'Plain Recipe',
+          category: 'ganache',
           versions: [
             {
               versionSpec: '2026-01-01-01',
@@ -1352,6 +1363,7 @@ describe('Recipe scaling', () => {
         'secret-recipe': {
           baseId: 'secret-recipe',
           name: 'Secret Recipe',
+          category: 'ganache',
           versions: [
             {
               versionSpec: '2026-01-01-01',

@@ -107,6 +107,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
   const darkGanacheRecipe: IRecipe = {
     baseId: 'dark-ganache' as BaseRecipeId,
     name: 'Dark Ganache' as RecipeName,
+    category: 'ganache',
     description: 'Classic dark chocolate ganache',
     tags: ['classic', 'dark'],
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
@@ -145,6 +146,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
   const emptyRecipe: IRecipe = {
     baseId: 'empty-recipe' as BaseRecipeId,
     name: 'Empty Recipe' as RecipeName,
+    category: 'ganache',
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
     versions: [
       {

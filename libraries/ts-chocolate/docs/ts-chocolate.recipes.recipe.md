@@ -57,6 +57,27 @@ Description
 </td></tr>
 <tr><td>
 
+[category?](./ts-chocolate.recipes.recipe.category.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeCategory](./ts-chocolate.recipes.recipecategory.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [derivedFrom?](./ts-chocolate.recipes.recipe.derivedfrom.md)
 
 

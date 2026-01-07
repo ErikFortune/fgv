@@ -75,6 +75,7 @@ describe('ChocolateLibrary', () => {
   const testRecipe: IRecipe = {
     baseId: 'testRecipe' as BaseRecipeId,
     name: 'Test Recipe' as RecipeName,
+    category: 'ganache',
     versions: [testRecipeVersion],
     goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
   };
@@ -315,6 +316,7 @@ describe('ChocolateLibrary', () => {
       'file-recipe': {
         baseId: 'file-recipe',
         name: 'File Source Recipe',
+        category: 'ganache',
         description: 'A recipe from file source',
         tags: ['file'],
         goldenVersionSpec: '2026-01-01-01',

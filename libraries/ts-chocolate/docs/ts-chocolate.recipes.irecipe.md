@@ -58,6 +58,27 @@ Base recipe identifier (unique within source)
 </td></tr>
 <tr><td>
 
+[category?](./ts-chocolate.recipes.irecipe.category.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[RecipeCategory](./ts-chocolate.recipes.recipecategory.md)
+
+
+</td><td>
+
+_(Optional)_ Optional category for classifying the recipe type
+
+
+</td></tr>
+<tr><td>
+
 [derivedFrom?](./ts-chocolate.recipes.irecipe.derivedfrom.md)
 
 

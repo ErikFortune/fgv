@@ -40,6 +40,11 @@ import {
   RecipesByChocolateTypeIndexer,
   recipesByChocolateTypeConfigConverter
 } from './recipesByChocolateTypeIndexer';
+import {
+  IRecipesByCategoryConfig,
+  RecipesByCategoryIndexer,
+  recipesByCategoryConfigConverter
+} from './recipesByCategoryIndexer';
 
 /**
  * Query specification for recipe indexers.
@@ -50,6 +55,7 @@ export interface IRecipeQuerySpec {
   readonly byTag?: IRecipesByTagConfig;
   readonly byIngredient?: IRecipesByIngredientConfig;
   readonly byChocolateType?: IRecipesByChocolateTypeConfig;
+  readonly byCategory?: IRecipesByCategoryConfig;
 }
 
 /**
@@ -66,7 +72,8 @@ export const recipeQuerySpecConverter: Converter<IRecipeQuerySpec> =
   Converters.strictObject<IRecipeQuerySpec>({
     byTag: recipesByTagConfigConverter.optional(),
     byIngredient: recipesByIngredientConfigConverter.optional(),
-    byChocolateType: recipesByChocolateTypeConfigConverter.optional()
+    byChocolateType: recipesByChocolateTypeConfigConverter.optional(),
+    byCategory: recipesByCategoryConfigConverter.optional()
   });
 
 /**
@@ -90,6 +97,7 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
     byTag: RecipesByTagIndexer;
     byIngredient: RecipesByIngredientIndexer;
     byChocolateType: RecipesByChocolateTypeIndexer;
+    byCategory: RecipesByCategoryIndexer;
   };
 
   /**
@@ -106,7 +114,8 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
     this._indexers = {
       byTag: new RecipesByTagIndexer(library),
       byIngredient: new RecipesByIngredientIndexer(library),
-      byChocolateType: new RecipesByChocolateTypeIndexer(library)
+      byChocolateType: new RecipesByChocolateTypeIndexer(library),
+      byCategory: new RecipesByCategoryIndexer(library)
     };
   }
 
@@ -140,6 +149,13 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
     if (spec.byChocolateType !== undefined) {
       this._indexers.byChocolateType
         .find(spec.byChocolateType)
+        .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
+        .aggregateError(errors);
+    }
+
+    if (spec.byCategory !== undefined) {
+      this._indexers.byCategory
+        .find(spec.byCategory)
         .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
         .aggregateError(errors);
     }
@@ -180,6 +196,7 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
     this._indexers.byTag.invalidate();
     this._indexers.byIngredient.invalidate();
     this._indexers.byChocolateType.invalidate();
+    this._indexers.byCategory.invalidate();
   }
 
   /**
@@ -189,5 +206,6 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
     this._indexers.byTag.warmUp();
     this._indexers.byIngredient.warmUp();
     this._indexers.byChocolateType.warmUp();
+    this._indexers.byCategory.warmUp();
   }
 }

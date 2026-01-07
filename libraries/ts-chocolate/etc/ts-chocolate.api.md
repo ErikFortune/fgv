@@ -61,6 +61,9 @@ const allJournalEventTypes: JournalEventType[];
 const allRatingCategories: RatingCategory[];
 
 // @public
+const allRecipeCategories: RecipeCategory[];
+
+// @public
 const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
 
 // @public
@@ -393,6 +396,7 @@ declare namespace Converters_6 {
     export {
         recipeIngredient,
         ratingCategory,
+        recipeCategory,
         recipeRating,
         recipeDerivation,
         recipeVersion,
@@ -1109,6 +1113,10 @@ declare namespace Indexers {
         RecipesByChocolateTypeIndexer,
         recipesByChocolateTypeConfig,
         recipesByChocolateTypeConfigConverter,
+        IRecipesByCategoryConfig,
+        RecipesByCategoryIndexer,
+        recipesByCategoryConfig,
+        recipesByCategoryConfigConverter,
         IRecipeQuerySpec,
         RecipeIndexerName,
         RecipeIndexerOrchestrator,
@@ -1331,6 +1339,7 @@ interface IReadOnlyValidatingLibrary<TK extends string, TV, TSpec> extends Colle
 // @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
+    readonly category: RecipeCategory;
     readonly derivedFrom?: IRecipeDerivation;
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
@@ -1360,6 +1369,8 @@ interface IRecipeIngredient {
 // @public
 interface IRecipeQuerySpec {
     // (undocumented)
+    readonly byCategory?: IRecipesByCategoryConfig;
+    // (undocumented)
     readonly byChocolateType?: IRecipesByChocolateTypeConfig;
     // (undocumented)
     readonly byIngredient?: IRecipesByIngredientConfig;
@@ -1372,6 +1383,11 @@ interface IRecipeRating {
     readonly category: RatingCategory;
     readonly notes?: string;
     readonly score: RatingScore;
+}
+
+// @public
+interface IRecipesByCategoryConfig {
+    readonly category: RecipeCategory;
 }
 
 // @public
@@ -2055,6 +2071,8 @@ function recalculateRecipeVersion(version: IRecipeVersion): IRecipeVersion;
 class Recipe implements IRecipe {
     // (undocumented)
     readonly baseId: BaseRecipeId;
+    // (undocumented)
+    readonly category: RecipeCategory;
     static create(data: IRecipe): Result<Recipe>;
     // (undocumented)
     readonly derivedFrom?: IRecipeDerivation;
@@ -2083,6 +2101,14 @@ export const RECIPE_VERSION_ID_PATTERN: RegExp;
 
 // @public
 export const RECIPE_VERSION_SPEC_PATTERN: RegExp;
+
+// @public
+type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeCategory: Converter<RecipeCategory>;
 
 // @public
 type RecipeCollection = SubLibraryCollection<BaseRecipeId, Recipe>;
@@ -2197,6 +2223,8 @@ declare namespace Recipes {
         isRecipeVersion,
         IRecipeIngredient,
         RatingCategory,
+        RecipeCategory,
+        allRecipeCategories,
         allRatingCategories,
         IRecipeRating,
         IRecipeUsage,
@@ -2230,6 +2258,30 @@ declare namespace Recipes {
     }
 }
 export { Recipes }
+
+// @public
+function recipesByCategoryConfig(category: RecipeCategory): IRecipesByCategoryConfig;
+
+// @public
+const recipesByCategoryConfigConverter: Converter<IRecipesByCategoryConfig>;
+
+// @public
+class RecipesByCategoryIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipesByCategoryConfig> {
+    constructor(library: ChocolateLibrary);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _buildIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _clearIndex(): void;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    protected _findInternal(config: IRecipesByCategoryConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>>;
+    getAllCategories(): ReadonlyArray<RecipeCategory>;
+}
 
 // @public
 function recipesByChocolateTypeConfig(chocolateType: ChocolateType): IRecipesByChocolateTypeConfig;

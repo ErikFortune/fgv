@@ -223,6 +223,7 @@ describe('Ganache Calculator', () => {
     const testRecipe: IRecipe = {
       baseId: 'test-ganache' as BaseRecipeId,
       name: 'Test Ganache' as RecipeName,
+      category: 'ganache',
       versions: [testVersion],
       goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec
     };
@@ -424,6 +425,7 @@ describe('Ganache Calculator', () => {
     const testRecipe: IRecipe = {
       baseId: 'test' as BaseRecipeId,
       name: 'Test' as RecipeName,
+      category: 'ganache',
       versions: [testVersion],
       goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec
     };

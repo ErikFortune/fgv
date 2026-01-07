@@ -26,7 +26,7 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeName, RecipeVersionSpec } from '../common';
-import { IRecipe, IRecipeDerivation, IRecipeVersion } from './model';
+import { IRecipe, IRecipeDerivation, IRecipeVersion, RecipeCategory } from './model';
 
 // ============================================================================
 // Recipe Class
@@ -39,6 +39,7 @@ import { IRecipe, IRecipeDerivation, IRecipeVersion } from './model';
 export class Recipe implements IRecipe {
   public readonly baseId: BaseRecipeId;
   public readonly name: RecipeName;
+  public readonly category: RecipeCategory;
   public readonly description?: string;
   public readonly tags?: ReadonlyArray<string>;
   public readonly versions: ReadonlyArray<IRecipeVersion>;
@@ -50,6 +51,7 @@ export class Recipe implements IRecipe {
   private constructor(data: IRecipe, goldenVersion: IRecipeVersion) {
     this.baseId = data.baseId;
     this.name = data.name;
+    this.category = data.category;
     this.description = data.description;
     this.tags = data.tags;
     this.versions = data.versions;

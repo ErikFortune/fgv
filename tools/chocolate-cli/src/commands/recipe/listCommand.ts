@@ -110,6 +110,7 @@ export function createListSubcommand(): Command {
           id: recipeId,
           name: recipe.name,
           sourceId,
+          category: recipe.category,
           description: recipe.description,
           tags: recipe.tags,
           versionCount: recipe.versions.length,

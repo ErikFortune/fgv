@@ -108,6 +108,7 @@ describe('RuntimeContext', () => {
   const darkGanacheRecipe: IRecipe = {
     baseId: 'dark-ganache' as BaseRecipeId,
     name: 'Dark Ganache' as RecipeName,
+    category: 'ganache',
     description: 'A classic dark chocolate ganache',
     tags: ['classic', 'dark'],
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
@@ -142,6 +143,7 @@ describe('RuntimeContext', () => {
   const milkGanacheRecipe: IRecipe = {
     baseId: 'milk-ganache' as BaseRecipeId,
     name: 'Milk Ganache' as RecipeName,
+    category: 'ganache',
     tags: ['classic', 'milk'],
     goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
     versions: [

@@ -52,6 +52,17 @@ Converter for [Recipe](./ts-chocolate.recipes.recipe.md) Validates that goldenVe
 </td></tr>
 <tr><td>
 
+[recipeCategory](./ts-chocolate.recipes.converters.recipecategory.md)
+
+
+</td><td>
+
+Converter for [RecipeCategory](./ts-chocolate.recipes.recipecategory.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [recipeConverter](./ts-chocolate.recipes.converters.recipeconverter.md)
 
 
