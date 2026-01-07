@@ -21,7 +21,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
-import { captureResult, Result, fail } from '@fgv/ts-utils';
+import { captureResult, Result, fail, succeed } from '@fgv/ts-utils';
 import { JsonValue } from '@fgv/ts-json-base';
 import { Crypto } from '@fgv/ts-chocolate';
 import * as yaml from 'yaml';
@@ -30,33 +30,18 @@ import * as yaml from 'yaml';
  * Command-line options for the publish-data command
  */
 interface IPublishDataCommandOptions {
-  secretName: string;
+  secretName?: string;
   key?: string;
-  source?: string;
-  dest?: string;
+  secretsFile?: string;
+  source: string;
+  dest: string;
   dryRun?: boolean;
 }
 
 /**
- * Default paths relative to repo root
+ * Secrets file format: mapping from secret name to base64-encoded key
  */
-const DEFAULT_SOURCE: string = 'temp/data/chocolate';
-const DEFAULT_DEST: string = 'data/published/chocolate';
-const DEFAULT_SECRET_NAME: string = 'choco-data';
-
-/**
- * Finds the repository root by looking for rush.json
- */
-function findRepoRoot(): Result<string> {
-  let current = process.cwd();
-  while (current !== path.dirname(current)) {
-    if (fs.existsSync(path.join(current, 'rush.json'))) {
-      return captureResult(() => current);
-    }
-    current = path.dirname(current);
-  }
-  return fail('Could not find repository root (no rush.json found)');
-}
+type SecretsFile = Record<string, string>;
 
 /**
  * Supported source file extensions
@@ -112,6 +97,21 @@ function readDataFile(filePath: string): Result<JsonValue> {
 }
 
 /**
+ * Reads and parses a secrets file (YAML or JSON).
+ * Format: `{ "secretName": "base64-key", ... }`
+ */
+function readSecretsFile(filePath: string): Result<SecretsFile> {
+  return captureResult(() => {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const ext = path.extname(filePath).toLowerCase();
+    if (YAML_EXTENSIONS.includes(ext)) {
+      return yaml.parse(content) as SecretsFile;
+    }
+    return JSON.parse(content) as SecretsFile;
+  }).withErrorFormat((e) => `Failed to read secrets file "${filePath}": ${e}`);
+}
+
+/**
  * Converts a source file path to a destination path with .json extension.
  * YAML files (.yaml, .yml) are converted to .json.
  */
@@ -148,50 +148,93 @@ function decodeKey(keyBase64: string): Result<Uint8Array> {
 }
 
 /**
+ * Resolves the secret name and key to use for a given file.
+ * With --secrets-file: uses directory name as secret name, looks up key from file.
+ * With --secret-name + --key: uses those for all files.
+ */
+function resolveSecret(
+  filePath: string,
+  sourceDir: string,
+  options: IPublishDataCommandOptions,
+  secrets?: SecretsFile
+): Result<{ secretName: string; key: Uint8Array }> {
+  if (options.secretsFile && secrets) {
+    // Use directory name as secret name
+    const relativePath = path.relative(sourceDir, filePath);
+    const topDir = relativePath.split(path.sep)[0];
+    const secretName = topDir || path.basename(sourceDir);
+
+    const keyBase64 = secrets[secretName];
+    if (!keyBase64) {
+      return fail(`No key found for secret "${secretName}" in secrets file`);
+    }
+
+    return decodeKey(keyBase64).onSuccess((key) => succeed({ secretName, key }));
+  }
+
+  // Single secret mode
+  const secretName = options.secretName;
+  if (!secretName) {
+    return fail('No secret name provided. Use --secret-name or --secrets-file');
+  }
+
+  const keyBase64 = options.key ?? process.env.CHOCO_ENCRYPTION_KEY;
+  if (!keyBase64) {
+    return fail('No encryption key provided. Use --key, --secrets-file, or set CHOCO_ENCRYPTION_KEY env var');
+  }
+
+  return decodeKey(keyBase64).onSuccess((key) => succeed({ secretName, key }));
+}
+
+/**
  * Creates the publish-data command.
- * Encrypts YAML/JSON files from temp/data to data folder as encrypted JSON.
+ * Encrypts YAML/JSON files from source directory to destination as encrypted JSON.
  */
 export function createPublishDataCommand(): Command {
   const cmd = new Command('publish-data');
 
   cmd
-    .description('Encrypt and publish YAML/JSON files from temp/data to data folder (outputs encrypted JSON)')
-    .option('-s, --secret-name <name>', 'Name of the secret for encryption', DEFAULT_SECRET_NAME)
+    .description('Encrypt and publish YAML/JSON files as encrypted JSON')
+    .requiredOption('--source <dir>', 'Source directory containing files to encrypt')
+    .requiredOption('--dest <dir>', 'Destination directory for encrypted output')
+    .option('-s, --secret-name <name>', 'Name of the secret for encryption (single-secret mode)')
     .option(
       '-k, --key <base64>',
       'Base64-encoded 32-byte encryption key (or use CHOCO_ENCRYPTION_KEY env var)'
     )
-    .option('--source <dir>', 'Source directory relative to repo root', DEFAULT_SOURCE)
-    .option('--dest <dir>', 'Destination directory relative to repo root', DEFAULT_DEST)
+    .option('--secrets-file <path>', 'Path to secrets file (YAML/JSON) mapping secret names to base64 keys')
     .option('--dry-run', 'Show what would be done without making changes', false)
     .action(async (options: IPublishDataCommandOptions) => {
-      // Get encryption key from option or environment
-      const keyBase64 = options.key ?? process.env.CHOCO_ENCRYPTION_KEY;
-      if (!keyBase64) {
-        console.error(
-          'Error: No encryption key provided. Use --key or set CHOCO_ENCRYPTION_KEY environment variable.'
-        );
+      // Validate options
+      if (options.secretsFile && (options.secretName || options.key)) {
+        console.error('Error: Cannot use --secrets-file with --secret-name or --key');
         process.exit(1);
       }
 
-      const keyResult = decodeKey(keyBase64);
-      if (keyResult.isFailure()) {
-        console.error(`Error: ${keyResult.message}`);
+      if (!options.secretsFile && !options.secretName) {
+        console.error('Error: Must provide either --secrets-file or --secret-name');
         process.exit(1);
       }
-      const key = keyResult.value;
 
-      // Find repo root
-      const repoRootResult = findRepoRoot();
-      if (repoRootResult.isFailure()) {
-        console.error(`Error: ${repoRootResult.message}`);
+      // Load secrets file if provided
+      let secrets: SecretsFile | undefined;
+      if (options.secretsFile) {
+        const secretsResult = readSecretsFile(options.secretsFile);
+        if (secretsResult.isFailure()) {
+          console.error(`Error: ${secretsResult.message}`);
+          process.exit(1);
+        }
+        secrets = secretsResult.value;
+      }
+
+      const sourceDir = path.resolve(options.source);
+      const destDir = path.resolve(options.dest);
+
+      // Verify source exists
+      if (!fs.existsSync(sourceDir)) {
+        console.error(`Error: Source directory does not exist: ${sourceDir}`);
         process.exit(1);
       }
-      const repoRoot = repoRootResult.value;
-
-      const sourceDir = path.join(repoRoot, options.source ?? DEFAULT_SOURCE);
-      const destDir = path.join(repoRoot, options.dest ?? DEFAULT_DEST);
-      const secretName = options.secretName ?? DEFAULT_SECRET_NAME;
 
       // Find all data files (YAML and JSON) in source
       const dataFiles = findDataFiles(sourceDir);
@@ -203,7 +246,11 @@ export function createPublishDataCommand(): Command {
       console.log(`Found ${dataFiles.length} data file(s) to encrypt`);
       console.log(`Source: ${sourceDir}`);
       console.log(`Destination: ${destDir}`);
-      console.log(`Secret name: ${secretName}`);
+      if (options.secretsFile) {
+        console.log(`Secrets file: ${options.secretsFile}`);
+      } else {
+        console.log(`Secret name: ${options.secretName}`);
+      }
       if (options.dryRun) {
         console.log('(Dry run - no files will be modified)\n');
       } else {
@@ -218,6 +265,15 @@ export function createPublishDataCommand(): Command {
         // Convert YAML paths to JSON for output
         const destRelativePath = toJsonPath(relativePath);
         const destFile = path.join(destDir, destRelativePath);
+
+        // Resolve secret for this file
+        const secretResult = resolveSecret(sourceFile, sourceDir, options, secrets);
+        if (secretResult.isFailure()) {
+          console.error(`  ERROR: ${relativePath} - ${secretResult.message}`);
+          errorCount++;
+          continue;
+        }
+        const { secretName, key } = secretResult.value;
 
         // Read source file (YAML or JSON)
         const dataResult = readDataFile(sourceFile);
@@ -242,7 +298,7 @@ export function createPublishDataCommand(): Command {
         }
 
         if (options.dryRun) {
-          console.log(`  Would encrypt: ${relativePath} -> ${destRelativePath}`);
+          console.log(`  Would encrypt: ${relativePath} -> ${destRelativePath} (secret: ${secretName})`);
         } else {
           const writeResult = writeJsonFile(destFile, encryptResult.value);
           if (writeResult.isFailure()) {
@@ -250,7 +306,7 @@ export function createPublishDataCommand(): Command {
             errorCount++;
             continue;
           }
-          console.log(`  Encrypted: ${relativePath} -> ${destRelativePath}`);
+          console.log(`  Encrypted: ${relativePath} -> ${destRelativePath} (secret: ${secretName})`);
         }
         successCount++;
       }

@@ -13,10 +13,10 @@
     "clean": "heft clean",
     "lint": "eslint src --ext .ts",
     "fixlint": "eslint src --ext .ts --fix",
-    "data:publish": "node lib/cli.js publish-data",
-    "data:fetch": "node lib/cli.js fetch-data",
-    "data:sync": "node lib/cli.js sync-data",
-    "data:clean": "node lib/cli.js clean-data"
+    "data:publish": "node lib/cli.js publish-data --source ../../temp/data/chocolate --dest ../../data/published/chocolate",
+    "data:fetch": "node lib/cli.js fetch-data --source ../../data/published/chocolate --dest ../../temp/data/chocolate",
+    "data:sync": "cp -r ../../data/published/chocolate data/published",
+    "data:clean": "rm -rf data/published"
   },
   "keywords": [
     "chocolate",

@@ -24,9 +24,7 @@ import {
   createDecryptCommand,
   createKeygenCommand,
   createPublishDataCommand,
-  createFetchDataCommand,
-  createSyncDataCommand,
-  createCleanDataCommand
+  createFetchDataCommand
 } from './commands';
 
 const program: Command = new Command();
@@ -39,7 +37,5 @@ program.addCommand(createDecryptCommand());
 program.addCommand(createKeygenCommand());
 program.addCommand(createPublishDataCommand());
 program.addCommand(createFetchDataCommand());
-program.addCommand(createSyncDataCommand());
-program.addCommand(createCleanDataCommand());
 
 program.parse();

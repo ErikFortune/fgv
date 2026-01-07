@@ -56,20 +56,24 @@
       "incremental": false
     },
     {
-      "name": "sync-data",
-      "commandKind": "global",
-      "summary": "Sync published chocolate data to all packages",
-      "description": "Copies chocolate data from data/published/chocolate to target packages (ts-chocolate, chocolate-cli, chocolate-web). Use --force to overwrite existing data.",
+      "name": "data:sync",
+      "commandKind": "bulk",
+      "summary": "Sync published chocolate data to packages",
+      "description": "Runs the 'data:sync' npm script for each project. Projects without this script will be skipped.",
       "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "node tools/chocolate-cli/lib/cli.js sync-data"
+      "enableParallelism": true,
+      "ignoreDependencyOrder": true,
+      "ignoreMissingScript": true
     },
     {
-      "name": "clean-data",
-      "commandKind": "global",
+      "name": "data:clean",
+      "commandKind": "bulk",
       "summary": "Clean synced chocolate data from packages",
-      "description": "Removes synced chocolate data from chocolate-cli and chocolate-web. Use --all to also clean ts-chocolate library.",
+      "description": "Runs the 'data:clean' npm script for each project. Projects without this script will be skipped.",
       "safeForSimultaneousRushProcesses": true,
-      "shellCommand": "node tools/chocolate-cli/lib/cli.js clean-data"
+      "enableParallelism": true,
+      "ignoreDependencyOrder": true,
+      "ignoreMissingScript": true
     }
     // {
     //   /**

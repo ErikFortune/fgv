@@ -31,32 +31,23 @@ import * as yaml from 'yaml';
  */
 interface IFetchDataCommandOptions {
   key?: string;
-  source?: string;
-  dest?: string;
+  secretsFile?: string;
+  source: string;
+  dest: string;
   dryRun?: boolean;
   skipPlain?: boolean;
   format?: 'yaml' | 'json';
 }
 
 /**
- * Default paths relative to repo root
+ * Secrets file format: mapping from secret name to base64-encoded key
  */
-const DEFAULT_SOURCE: string = 'data/published/chocolate';
-const DEFAULT_DEST: string = 'temp/data/chocolate';
+type SecretsFile = Record<string, string>;
 
 /**
- * Finds the repository root by looking for rush.json
+ * YAML file extensions
  */
-function findRepoRoot(): Result<string> {
-  let current = process.cwd();
-  while (current !== path.dirname(current)) {
-    if (fs.existsSync(path.join(current, 'rush.json'))) {
-      return captureResult(() => current);
-    }
-    current = path.dirname(current);
-  }
-  return fail('Could not find repository root (no rush.json found)');
-}
+const YAML_EXTENSIONS: ReadonlyArray<string> = ['.yaml', '.yml'];
 
 /**
  * Recursively finds all JSON files in a directory
@@ -88,6 +79,21 @@ function readJsonFile(filePath: string): Result<JsonValue> {
     const content = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(content) as JsonValue;
   }).withErrorFormat((e) => `Failed to read JSON file "${filePath}": ${e}`);
+}
+
+/**
+ * Reads and parses a secrets file (YAML or JSON).
+ * Format: `{ "secretName": "base64-key", ... }`
+ */
+function readSecretsFile(filePath: string): Result<SecretsFile> {
+  return captureResult(() => {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const ext = path.extname(filePath).toLowerCase();
+    if (YAML_EXTENSIONS.includes(ext)) {
+      return yaml.parse(content) as SecretsFile;
+    }
+    return JSON.parse(content) as SecretsFile;
+  }).withErrorFormat((e) => `Failed to read secrets file "${filePath}": ${e}`);
 }
 
 /**
@@ -143,51 +149,80 @@ function decodeKey(keyBase64: string): Result<Uint8Array> {
 }
 
 /**
+ * Resolves the key to use for decrypting a file with the given secret name.
+ * With --secrets-file: looks up key by secret name from file.
+ * With --key: uses that key for all files.
+ */
+function resolveKey(
+  secretName: string,
+  options: IFetchDataCommandOptions,
+  secrets?: SecretsFile
+): Result<Uint8Array> {
+  if (options.secretsFile && secrets) {
+    const keyBase64 = secrets[secretName];
+    if (!keyBase64) {
+      return fail(`No key found for secret "${secretName}" in secrets file`);
+    }
+    return decodeKey(keyBase64);
+  }
+
+  // Single key mode
+  const keyBase64 = options.key ?? process.env.CHOCO_ENCRYPTION_KEY;
+  if (!keyBase64) {
+    return fail('No decryption key provided. Use --key, --secrets-file, or set CHOCO_ENCRYPTION_KEY env var');
+  }
+
+  return decodeKey(keyBase64);
+}
+
+/**
  * Creates the fetch-data command.
- * Decrypts JSON files from data folder to temp/data as YAML.
+ * Decrypts JSON files from source directory to destination (outputs YAML by default).
  */
 export function createFetchDataCommand(): Command {
   const cmd = new Command('fetch-data');
 
   cmd
-    .description('Decrypt encrypted JSON files from data folder to temp/data (outputs YAML by default)')
+    .description('Decrypt encrypted JSON files (outputs YAML by default)')
+    .requiredOption('--source <dir>', 'Source directory containing encrypted files')
+    .requiredOption('--dest <dir>', 'Destination directory for decrypted output')
     .option(
       '-k, --key <base64>',
       'Base64-encoded 32-byte decryption key (or use CHOCO_ENCRYPTION_KEY env var)'
     )
-    .option('--source <dir>', 'Source directory relative to repo root', DEFAULT_SOURCE)
-    .option('--dest <dir>', 'Destination directory relative to repo root', DEFAULT_DEST)
+    .option('--secrets-file <path>', 'Path to secrets file (YAML/JSON) mapping secret names to base64 keys')
     .option('--dry-run', 'Show what would be done without making changes', false)
     .option('--skip-plain', 'Skip files that are not encrypted (default: copy them as-is)', false)
     .option('-f, --format <format>', 'Output format: yaml or json', 'yaml')
     .action(async (options: IFetchDataCommandOptions) => {
-      // Get decryption key from option or environment
-      const keyBase64 = options.key ?? process.env.CHOCO_ENCRYPTION_KEY;
-      if (!keyBase64) {
+      // Validate that at least one key source is provided
+      if (!options.secretsFile && !options.key && !process.env.CHOCO_ENCRYPTION_KEY) {
         console.error(
-          'Error: No decryption key provided. Use --key or set CHOCO_ENCRYPTION_KEY environment variable.'
+          'Error: No decryption key provided. Use --key, --secrets-file, or set CHOCO_ENCRYPTION_KEY env var'
         );
         process.exit(1);
       }
 
-      const keyResult = decodeKey(keyBase64);
-      if (keyResult.isFailure()) {
-        console.error(`Error: ${keyResult.message}`);
-        process.exit(1);
+      // Load secrets file if provided
+      let secrets: SecretsFile | undefined;
+      if (options.secretsFile) {
+        const secretsResult = readSecretsFile(options.secretsFile);
+        if (secretsResult.isFailure()) {
+          console.error(`Error: ${secretsResult.message}`);
+          process.exit(1);
+        }
+        secrets = secretsResult.value;
       }
-      const key = keyResult.value;
 
-      // Find repo root
-      const repoRootResult = findRepoRoot();
-      if (repoRootResult.isFailure()) {
-        console.error(`Error: ${repoRootResult.message}`);
-        process.exit(1);
-      }
-      const repoRoot = repoRootResult.value;
-
-      const sourceDir = path.join(repoRoot, options.source ?? DEFAULT_SOURCE);
-      const destDir = path.join(repoRoot, options.dest ?? DEFAULT_DEST);
+      const sourceDir = path.resolve(options.source);
+      const destDir = path.resolve(options.dest);
       const outputFormat = (options.format ?? 'yaml') as 'yaml' | 'json';
+
+      // Verify source exists
+      if (!fs.existsSync(sourceDir)) {
+        console.error(`Error: Source directory does not exist: ${sourceDir}`);
+        process.exit(1);
+      }
 
       // Find all JSON files in source
       const jsonFiles = findJsonFiles(sourceDir);
@@ -200,6 +235,9 @@ export function createFetchDataCommand(): Command {
       console.log(`Source: ${sourceDir}`);
       console.log(`Destination: ${destDir}`);
       console.log(`Output format: ${outputFormat}`);
+      if (options.secretsFile) {
+        console.log(`Secrets file: ${options.secretsFile}`);
+      }
       if (options.dryRun) {
         console.log('(Dry run - no files will be modified)\n');
       } else {
@@ -229,10 +267,27 @@ export function createFetchDataCommand(): Command {
 
         // Check if this is an encrypted file
         if (Crypto.isEncryptedCollectionFile(json)) {
-          // Decrypt the content (cast is safe after type guard check)
+          const encryptedFile = json as JsonObject;
+          const secretName = (encryptedFile as { secretName?: string }).secretName;
+
+          if (!secretName) {
+            console.error(`  ERROR: ${relativePath} - Encrypted file missing secretName`);
+            errorCount++;
+            continue;
+          }
+
+          // Resolve key for this secret
+          const keyResult = resolveKey(secretName, options, secrets);
+          if (keyResult.isFailure()) {
+            console.error(`  ERROR: ${relativePath} - ${keyResult.message}`);
+            errorCount++;
+            continue;
+          }
+
+          // Decrypt the content
           const decryptResult = await Crypto.tryDecryptCollectionFile(
-            json as JsonObject,
-            key,
+            encryptedFile,
+            keyResult.value,
             Crypto.nodeCryptoProvider
           );
 
@@ -243,7 +298,7 @@ export function createFetchDataCommand(): Command {
           }
 
           if (options.dryRun) {
-            console.log(`  Would decrypt: ${relativePath} -> ${destRelativePath}`);
+            console.log(`  Would decrypt: ${relativePath} -> ${destRelativePath} (secret: ${secretName})`);
           } else {
             const writeResult = writeDataFile(destFile, decryptResult.value, outputFormat);
             if (writeResult.isFailure()) {
@@ -251,7 +306,7 @@ export function createFetchDataCommand(): Command {
               errorCount++;
               continue;
             }
-            console.log(`  Decrypted: ${relativePath} -> ${destRelativePath}`);
+            console.log(`  Decrypted: ${relativePath} -> ${destRelativePath} (secret: ${secretName})`);
           }
           decryptedCount++;
         } else {
