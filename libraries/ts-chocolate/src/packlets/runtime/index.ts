@@ -37,7 +37,15 @@ export * from './model';
 export { RuntimeReverseIndex } from './runtimeReverseIndex';
 
 // Runtime context
-export { RuntimeContext, IRuntimeContextCreateParams, RuntimeContextValidator } from './runtimeContext';
+export { RuntimeContext, IRuntimeContextCreateParams } from './runtimeContext';
+
+// ValidatingLibrary - extends ValidatingResultMap with find functionality
+export {
+  IFindOrchestrator,
+  IReadOnlyValidatingLibrary,
+  IValidatingLibraryParams,
+  ValidatingLibrary
+} from './validatingLibrary';
 
 // Runtime ingredient classes
 export {

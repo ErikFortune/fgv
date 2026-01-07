@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeContext.recipes property
 
-A read-only map of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached.
+A searchable library of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached.
 
 **Signature:**
 
 ```typescript
-get recipes(): Collections.IReadOnlyValidatingResultMap<RecipeId, RuntimeRecipe>;
+get recipes(): IReadOnlyValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec>;
 ```

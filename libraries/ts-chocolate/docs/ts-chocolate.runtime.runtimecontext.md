@@ -92,12 +92,12 @@ Gets the number of cached recipes.
 
 </td><td>
 
-Collections.IReadOnlyValidatingResultMap&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.runtime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A read-only map of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached.
 
 
 </td></tr>
@@ -133,33 +133,12 @@ A read-only map of all ingredients, keyed by composite ID. Ingredients are resol
 
 </td><td>
 
-Collections.IReadOnlyValidatingResultMap&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)<!-- -->, [IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A read-only map of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached.
-
-
-</td></tr>
-<tr><td>
-
-[validating](./ts-chocolate.runtime.runtimecontext.validating.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RuntimeContextValidator](./ts-chocolate.runtime.runtimecontextvalidator.md)
-
-
-</td><td>
-
-Provides access to methods that validate string inputs before lookup. Use this when working with untyped string inputs that need validation.
+A searchable library of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached.
 
 
 </td></tr>
@@ -184,20 +163,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[calculateGanache(recipeId, versionSpec)](./ts-chocolate.runtime.runtimecontext.calculateganache.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Calculates ganache characteristics for a recipe version. Convenience method for ID-based lookups.
-
-
-</td></tr>
-<tr><td>
 
 [clearCache()](./ts-chocolate.runtime.runtimecontext.clearcache.md)
 
@@ -224,38 +189,6 @@ Clears all cached runtime objects. Use if underlying library data has changed.
 </td><td>
 
 Creates a RuntimeContext with a new or default ChocolateLibrary. This is the primary factory method for most use cases.
-
-
-</td></tr>
-<tr><td>
-
-[findIngredients(spec, options)](./ts-chocolate.runtime.runtimecontext.findingredients.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds ingredients matching a query specification.
-
-This is the unified entry point for ingredient queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
-
-
-</td></tr>
-<tr><td>
-
-[findRecipes(spec, options)](./ts-chocolate.runtime.runtimecontext.findrecipes.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Finds recipes matching a query specification.
-
-This is the unified entry point for recipe queries. Query specifications are keyed by indexer name, allowing multiple criteria to be combined.
 
 
 </td></tr>

@@ -89,17 +89,6 @@ This is the primary entry point for consumers who want resolved views of recipes
 </td></tr>
 <tr><td>
 
-[RuntimeContextValidator](./ts-chocolate.runtime.runtimecontextvalidator.md)
-
-
-</td><td>
-
-Provides validated access to RuntimeContext methods. Accepts untyped strings, validates them, and delegates to RuntimeContext.
-
-
-</td></tr>
-<tr><td>
-
 [RuntimeDairyIngredient](./ts-chocolate.runtime.runtimedairyingredient.md)
 
 
@@ -161,6 +150,19 @@ A resolved view of a sugar ingredient with navigation capabilities. Immutable - 
 </td><td>
 
 A resolved view of a recipe version with all ingredients resolved.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingLibrary](./ts-chocolate.runtime.validatinglibrary.md)
+
+
+</td><td>
+
+A ValidatingResultMap with integrated find functionality. Combines map-based access (get, has, values) with query-based search (find).
+
+This provides a symmetric API where both `library.get(id)` and `library.find({ byTag: {...} })` work together naturally.
 
 
 </td></tr>
@@ -413,6 +415,17 @@ When multiple sources provide the same collection ID within a sub-library, an er
 </td></tr>
 <tr><td>
 
+[IFindOrchestrator](./ts-chocolate.runtime.ifindorchestrator.md)
+
+
+</td><td>
+
+Interface for an orchestrator that provides find functionality.
+
+
+</td></tr>
+<tr><td>
+
 [IIngredientResolutionResult](./ts-chocolate.runtime.iingredientresolutionresult.md)
 
 
@@ -474,6 +487,17 @@ Range specification for numeric filtering
 </td><td>
 
 Result of a query execution with metadata
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)
+
+
+</td><td>
+
+Read-only interface for ValidatingLibrary. Extends IReadOnlyValidatingResultMap with a find method for query-based search.
 
 
 </td></tr>
@@ -648,6 +672,17 @@ Runtime-specific scaling source with resolved version reference. Extends the bas
 </td><td>
 
 Runtime ingredient narrowed to sugar type.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingLibraryParams](./ts-chocolate.runtime.ivalidatinglibraryparams.md)
+
+
+</td><td>
+
+Parameters for ValidatingLibrary construction.
 
 
 </td></tr>

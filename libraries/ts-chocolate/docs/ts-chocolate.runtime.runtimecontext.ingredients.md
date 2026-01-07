@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeContext.ingredients property
 
-A read-only map of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached.
 
 **Signature:**
 
 ```typescript
-get ingredients(): Collections.IReadOnlyValidatingResultMap<IngredientId, AnyRuntimeIngredient>;
+get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
 ```

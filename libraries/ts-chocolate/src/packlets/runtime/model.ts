@@ -30,6 +30,9 @@
 
 import { Collections, Result } from '@fgv/ts-utils';
 
+import { IIngredientQuerySpec, IRecipeQuerySpec } from './indexers';
+import { IReadOnlyValidatingLibrary } from './validatingLibrary';
+
 import {
   Allergen,
   BaseIngredientId,
@@ -1016,20 +1019,20 @@ export interface IRuntimeContext {
   // ---- Ingredients and Recipes ----
 
   /**
-   * A read-only map of all ingredients, keyed by composite ID.
+   * A searchable library of all ingredients, keyed by composite ID.
    * Ingredients are resolved eagerly on first access and cached.
-   * Use `.get(id)` for Result-based access, `.has(id)` for existence checks,
-   * `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+   * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
+   * `.has(id)` for existence checks, `.values()` for iteration.
    */
-  readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient>;
+  readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
 
   /**
-   * A read-only map of all recipes, keyed by composite ID.
+   * A searchable library of all recipes, keyed by composite ID.
    * Recipes are resolved eagerly on first access and cached.
-   * Use `.get(id)` for Result-based access, `.has(id)` for existence checks,
-   * `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+   * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
+   * `.has(id)` for existence checks, `.values()` for iteration.
    */
-  readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
+  readonly recipes: IReadOnlyValidatingLibrary<RecipeId, IRuntimeRecipe, IRecipeQuerySpec>;
 
   // ---- Reverse Lookups ----
 
@@ -1051,17 +1054,6 @@ export interface IRuntimeContext {
    * Gets all unique tags used across ingredients.
    */
   getAllIngredientTags(): ReadonlyArray<string>;
-
-  // ---- Operations ----
-
-  /**
-   * Calculates ganache characteristics for a recipe version.
-   * Convenience method for ID-based lookups.
-   * @param recipeId - Recipe ID to analyze
-   * @param versionSpec - Optional version spec (default: golden version)
-   * @returns Success with ganache calculation, or Failure
-   */
-  calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
 
   // ---- Cache Management ----
 

@@ -93,12 +93,12 @@ Gets the number of cached recipes.
 
 </td><td>
 
-Collections.IReadOnlyValidatingResultMap&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->, [IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)<!-- -->, [IIngredientQuerySpec](./ts-chocolate.runtime.indexers.iingredientqueryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A read-only map of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 
 </td></tr>
@@ -135,12 +135,12 @@ The underlying ChocolateLibrary for direct access when needed.
 
 </td><td>
 
-Collections.IReadOnlyValidatingResultMap&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)<!-- -->&gt;
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)<!-- -->, [IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)<!-- -->&gt;
 
 
 </td><td>
 
-A read-only map of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+A searchable library of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 
 </td></tr>
@@ -160,17 +160,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[calculateGanache(recipeId, versionSpec)](./ts-chocolate.runtime.iruntimecontext.calculateganache.md)
-
-
-</td><td>
-
-Calculates ganache characteristics for a recipe version. Convenience method for ID-based lookups.
-
-
-</td></tr>
-<tr><td>
 
 [clearCache()](./ts-chocolate.runtime.iruntimecontext.clearcache.md)
 

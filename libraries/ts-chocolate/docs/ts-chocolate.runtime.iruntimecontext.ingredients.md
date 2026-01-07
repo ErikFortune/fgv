@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeContext.ingredients property
 
-A read-only map of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+A searchable library of all ingredients, keyed by composite ID. Ingredients are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 **Signature:**
 
 ```typescript
-readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient>;
+readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
 ```

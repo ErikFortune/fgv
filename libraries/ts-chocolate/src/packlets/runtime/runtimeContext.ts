@@ -23,15 +23,16 @@
  * @packageDocumentation
  */
 
-import { Collections, fail, Failure, Result, succeed, Success, ValidatingResultMap } from '@fgv/ts-utils';
+import { Collections, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 
-import { Helpers, IngredientId, RecipeId, RecipeVersionSpec, Validation } from '../common';
+import { Helpers, IngredientId, RecipeId, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
-import { IGanacheCalculation } from '../calculations';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
   IIngredientUsageInfo,
+  IRuntimeIngredient,
+  IRuntimeRecipe,
   IRuntimeRecipeVersion,
   IScaledVersionContext,
   IVersionContext
@@ -40,12 +41,12 @@ import { RuntimeReverseIndex } from './runtimeReverseIndex';
 import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
 import { RuntimeRecipe } from './runtimeRecipe';
 import {
-  IFindOptions,
   IIngredientQuerySpec,
   IRecipeQuerySpec,
   IngredientIndexerOrchestrator,
   RecipeIndexerOrchestrator
 } from './indexers';
+import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibrary';
 
 // ============================================================================
 // RuntimeContext Parameters
@@ -66,125 +67,6 @@ export interface IRuntimeContextCreateParams {
    * @defaultValue false
    */
   readonly preWarm?: boolean;
-}
-
-// ============================================================================
-// RuntimeContextValidator Class (forward declaration needed by RuntimeContext)
-// ============================================================================
-
-/**
- * Provides validated access to RuntimeContext methods.
- * Accepts untyped strings, validates them, and delegates to RuntimeContext.
- * @public
- */
-export class RuntimeContextValidator {
-  private readonly _context: RuntimeContext;
-  private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
-  private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
-
-  /** @internal */
-  public constructor(
-    context: RuntimeContext,
-    recipeOrchestrator: RecipeIndexerOrchestrator,
-    ingredientOrchestrator: IngredientIndexerOrchestrator
-  ) {
-    this._context = context;
-    this._recipeOrchestrator = recipeOrchestrator;
-    this._ingredientOrchestrator = ingredientOrchestrator;
-  }
-
-  /** Gets a resolved runtime ingredient by validating a string ID. */
-  public getIngredient(id: string): Result<AnyRuntimeIngredient> {
-    return this._context.ingredients.validating.get(id);
-  }
-
-  /** Gets a resolved runtime recipe by validating a string ID. */
-  public getRecipe(id: string): Result<RuntimeRecipe> {
-    return this._context.recipes.validating.get(id);
-  }
-
-  /** Checks if an ingredient exists by validating a string ID. */
-  public hasIngredient(id: string): Result<boolean> {
-    return Validation.toIngredientId(id).onSuccess((iid) => Success.with(this._context.ingredients.has(iid)));
-  }
-
-  /** Checks if a recipe exists by validating a string ID. */
-  public hasRecipe(id: string): Result<boolean> {
-    return Validation.toRecipeId(id).onSuccess((rid) => Success.with(this._context.recipes.has(rid)));
-  }
-
-  /** Calculates ganache characteristics for a recipe by validating string IDs. */
-  public calculateGanache(recipeId: string, versionSpec?: string): Result<IGanacheCalculation> {
-    return Validation.toRecipeId(recipeId).onSuccess((rid) => {
-      if (versionSpec === undefined) {
-        return this._context.calculateGanache(rid);
-      }
-      return Validation.toRecipeVersionSpec(versionSpec).onSuccess((vid) =>
-        this._context.calculateGanache(rid, vid)
-      );
-    });
-  }
-
-  /**
-   * Finds recipes matching a JSON query specification.
-   *
-   * This unified method accepts plain JSON objects and converts them to typed
-   * query specifications. Use this when working with user input or configuration.
-   *
-   * @param json - JSON object with indexer ID strings as keys and config objects as values
-   * @param options - Optional find options (aggregation mode)
-   * @returns Array of matching RuntimeRecipe objects
-   *
-   * @example
-   * ```typescript
-   * // Find recipes by tag
-   * ctx.validating.findRecipes({
-   *   'recipes-by-tag': { tag: 'classic' }
-   * });
-   *
-   * // Find recipes by multiple criteria (intersection)
-   * ctx.validating.findRecipes({
-   *   'recipes-by-tag': { tag: 'ganache' },
-   *   'recipes-by-chocolate-type': { chocolateType: 'dark' }
-   * });
-   *
-   * // Find recipes by ingredient
-   * ctx.validating.findRecipes({
-   *   'recipes-by-ingredient': { ingredientId: 'felchlin.maracaibo-65', usageType: 'primary' }
-   * });
-   * ```
-   */
-  public findRecipes(json: unknown, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>> {
-    return this._recipeOrchestrator
-      .convertConfig(json)
-      .onSuccess((spec) => this._context.findRecipes(spec, options) as Result<ReadonlyArray<RuntimeRecipe>>);
-  }
-
-  /**
-   * Finds ingredients matching a JSON query specification.
-   *
-   * This unified method accepts plain JSON objects and converts them to typed
-   * query specifications. Use this when working with user input or configuration.
-   *
-   * @param json - JSON object with indexer ID strings as keys and config objects as values
-   * @param options - Optional find options (aggregation mode)
-   * @returns Array of matching RuntimeIngredient objects
-   *
-   * @example
-   * ```typescript
-   * // Find ingredients by tag
-   * ctx.validating.findIngredients({
-   *   'ingredients-by-tag': { tag: 'chocolate' }
-   * });
-   * ```
-   */
-  public findIngredients(json: unknown, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>> {
-    return this._ingredientOrchestrator
-      .convertConfig(json)
-      .onSuccess(
-        (spec) => this._context.findIngredients(spec, options) as Result<ReadonlyArray<AnyRuntimeIngredient>>
-      );
-  }
 }
 
 // ============================================================================
@@ -209,9 +91,12 @@ export class RuntimeContext
   private readonly _library: ChocolateLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
 
-  // Lazily-populated caches exposed as IReadOnlyValidatingResultMap
-  private _ingredients: ValidatingResultMap<IngredientId, AnyRuntimeIngredient> | undefined;
-  private _recipes: ValidatingResultMap<RecipeId, RuntimeRecipe> | undefined;
+  // Lazily-populated libraries with integrated find support
+  // The fourth type parameter is the orchestrator's entity type (interface type)
+  private _ingredients:
+    | ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IRuntimeIngredient>
+    | undefined;
+  private _recipes: ValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec, IRuntimeRecipe> | undefined;
 
   // Extensible indexer orchestrators
   private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
@@ -273,18 +158,22 @@ export class RuntimeContext
   // ============================================================================
 
   /**
-   * A read-only map of all ingredients, keyed by composite ID.
+   * A searchable library of all ingredients, keyed by composite ID.
    * Ingredients are resolved eagerly on first access and cached.
    */
-  public get ingredients(): Collections.IReadOnlyValidatingResultMap<IngredientId, AnyRuntimeIngredient> {
+  public get ingredients(): IReadOnlyValidatingLibrary<
+    IngredientId,
+    AnyRuntimeIngredient,
+    IIngredientQuerySpec
+  > {
     return this._resolveIngredients();
   }
 
   /**
-   * A read-only map of all recipes, keyed by composite ID.
+   * A searchable library of all recipes, keyed by composite ID.
    * Recipes are resolved eagerly on first access and cached.
    */
-  public get recipes(): Collections.IReadOnlyValidatingResultMap<RecipeId, RuntimeRecipe> {
+  public get recipes(): IReadOnlyValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec> {
     return this._resolveRecipes();
   }
 
@@ -292,17 +181,23 @@ export class RuntimeContext
    * Resolves and caches all ingredients from the library.
    * @internal
    */
-  private _resolveIngredients(): ValidatingResultMap<IngredientId, AnyRuntimeIngredient> {
+  private _resolveIngredients(): ValidatingLibrary<
+    IngredientId,
+    AnyRuntimeIngredient,
+    IIngredientQuerySpec,
+    IRuntimeIngredient
+  > {
     if (this._ingredients === undefined) {
-      this._ingredients = new ValidatingResultMap({
+      this._ingredients = new ValidatingLibrary({
         converters: new Collections.KeyValueConverters<IngredientId, AnyRuntimeIngredient>({
           key: Validation.toIngredientId,
-          /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
+          /* c8 ignore next 4 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
             from instanceof RuntimeIngredient
               ? succeed(from as AnyRuntimeIngredient)
               : fail('not a runtime ingredient')
-        })
+        }),
+        orchestrator: this._ingredientOrchestrator
       });
       // Populate from library
       for (const [id, ingredient] of this._library.ingredients.entries()) {
@@ -319,15 +214,16 @@ export class RuntimeContext
    * Resolves and caches all recipes from the library.
    * @internal
    */
-  private _resolveRecipes(): ValidatingResultMap<RecipeId, RuntimeRecipe> {
+  private _resolveRecipes(): ValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec, IRuntimeRecipe> {
     if (this._recipes === undefined) {
-      this._recipes = new ValidatingResultMap({
+      this._recipes = new ValidatingLibrary({
         converters: new Collections.KeyValueConverters<RecipeId, RuntimeRecipe>({
           key: Validation.toRecipeId,
-          /* c8 ignore next - defensive code: value converter only used for external validation, not internal population */
+          /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
             from instanceof RuntimeRecipe ? succeed(from) : fail('not a runtime recipe')
-        })
+        }),
+        orchestrator: this._recipeOrchestrator
       });
       // Populate from library
       for (const [id, recipe] of this._library.recipes.entries()) {
@@ -448,26 +344,6 @@ export class RuntimeContext
   }
 
   // ============================================================================
-  // Operations
-  // ============================================================================
-
-  /**
-   * Calculates ganache characteristics for a recipe version.
-   * Convenience method for ID-based lookups.
-   * @param recipeId - Recipe ID to analyze
-   * @param versionSpec - Optional version spec (default: golden version)
-   * @returns Success with ganache calculation, or Failure
-   */
-  public calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation> {
-    return this._getRecipe(recipeId).onSuccess((recipe: RuntimeRecipe) => {
-      if (versionSpec !== undefined) {
-        return recipe.getVersion(versionSpec).onSuccess((version) => version.calculateGanache());
-      }
-      return recipe.goldenVersion.calculateGanache();
-    });
-  }
-
-  // ============================================================================
   // Cache Management
   // ============================================================================
 
@@ -506,63 +382,6 @@ export class RuntimeContext
     this._ingredientOrchestrator.warmUp();
   }
 
-  // ============================================================================
-  // Unified Find Interface (Extensible Indexer System)
-  // ============================================================================
-
-  /**
-   * Finds recipes matching a query specification.
-   *
-   * This is the unified entry point for recipe queries. Query specifications
-   * are keyed by indexer name, allowing multiple criteria to be combined.
-   *
-   * @param spec - Query specification with configs keyed by indexer name
-   * @param options - Optional find options (aggregation mode)
-   * @returns Array of matching RuntimeRecipe objects
-   *
-   * @example
-   * ```typescript
-   * // Find recipes by ingredient
-   * ctx.findRecipes({
-   *   'recipes-by-ingredient': { ingredientId: someIngredientId }
-   * });
-   *
-   * // Find recipes by tag AND chocolate type (intersection)
-   * ctx.findRecipes({
-   *   'recipes-by-tag': { tag: 'ganache' },
-   *   'recipes-by-chocolate-type': { chocolateType: 'dark' }
-   * });
-   * ```
-   */
-  public findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>> {
-    return this._recipeOrchestrator.find(spec, options) as Result<ReadonlyArray<RuntimeRecipe>>;
-  }
-
-  /**
-   * Finds ingredients matching a query specification.
-   *
-   * This is the unified entry point for ingredient queries. Query specifications
-   * are keyed by indexer name, allowing multiple criteria to be combined.
-   *
-   * @param spec - Query specification with configs keyed by indexer name
-   * @param options - Optional find options (aggregation mode)
-   * @returns Array of matching RuntimeIngredient objects
-   *
-   * @example
-   * ```typescript
-   * // Find ingredients by tag
-   * ctx.findIngredients({
-   *   'ingredients-by-tag': { tag: 'chocolate' }
-   * });
-   * ```
-   */
-  public findIngredients(
-    spec: IIngredientQuerySpec,
-    options?: IFindOptions
-  ): Result<ReadonlyArray<AnyRuntimeIngredient>> {
-    return this._ingredientOrchestrator.find(spec, options) as Result<ReadonlyArray<AnyRuntimeIngredient>>;
-  }
-
   /**
    * Invalidates all indexer caches.
    * Call this when underlying library data changes.
@@ -570,26 +389,5 @@ export class RuntimeContext
   public invalidateIndexers(): void {
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();
-  }
-
-  // ============================================================================
-  // Validating Accessor
-  // ============================================================================
-
-  /**
-   * Provides access to methods that validate string inputs before lookup.
-   * Use this when working with untyped string inputs that need validation.
-   *
-   * @example
-   * ```typescript
-   * // When you have an untyped string (e.g., from user input)
-   * ctx.validating.getIngredient('felchlin.maracaibo-65')
-   *
-   * // When you already have a typed ID
-   * ctx.getIngredient(knownIngredientId)
-   * ```
-   */
-  public get validating(): RuntimeContextValidator {
-    return new RuntimeContextValidator(this, this._recipeOrchestrator, this._ingredientOrchestrator);
   }
 }

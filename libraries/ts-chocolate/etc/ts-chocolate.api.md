@@ -11,6 +11,7 @@ import { Converters as Converters_6 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
+import { ValidatingResultMap } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
@@ -693,6 +694,14 @@ interface IFindOptions {
 }
 
 // @public
+interface IFindOrchestrator<TEntity, TSpec> {
+    convertConfig(json: unknown): Result<TSpec>;
+    find(spec: TSpec, options?: IFindOptions): Result<ReadonlyArray<TEntity>>;
+    invalidate(): void;
+    warmUp(): void;
+}
+
+// @public
 interface IGanacheAnalysis {
     readonly characteristics: IGanacheCharacteristics;
     readonly fatToWaterRatio: number;
@@ -1099,6 +1108,11 @@ interface IReadOnlyEditingSessionValidator {
 }
 
 // @public
+interface IReadOnlyValidatingLibrary<TK extends string, TV, TSpec> extends Collections.IReadOnlyValidatingResultMap<TK, TV> {
+    find(spec: TSpec, options?: IFindOptions): Result<ReadonlyArray<TV>>;
+}
+
+// @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
     readonly derivedFrom?: IRecipeDerivation;
@@ -1256,14 +1270,13 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
 interface IRuntimeContext {
     readonly cachedIngredientCount: number;
     readonly cachedRecipeCount: number;
-    calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipeTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, IRuntimeIngredient>;
+    readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
     readonly library: ChocolateLibrary;
-    readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
+    readonly recipes: IReadOnlyValidatingLibrary<RecipeId, IRuntimeRecipe, IRecipeQuerySpec>;
     warmUp(): void;
 }
 
@@ -1559,6 +1572,11 @@ interface ITemperatureCurve {
     readonly cool: Celsius;
     readonly melt: Celsius;
     readonly working: Celsius;
+}
+
+// @public
+interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = TV> extends Collections.IValidatingResultMapConstructorParams<TK, TV> {
+    orchestrator: IFindOrchestrator<TOrchEntity, TSpec>;
 }
 
 // @internal
@@ -2075,7 +2093,10 @@ declare namespace Runtime {
         RuntimeReverseIndex,
         RuntimeContext,
         IRuntimeContextCreateParams,
-        RuntimeContextValidator,
+        IFindOrchestrator,
+        IReadOnlyValidatingLibrary,
+        IValidatingLibraryParams,
+        ValidatingLibrary,
         RuntimeIngredientBase,
         RuntimeChocolateIngredient,
         RuntimeDairyIngredient,
@@ -2183,11 +2204,8 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
 class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext {
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
-    calculateGanache(recipeId: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     clearCache(): void;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
-    findIngredients(spec: IIngredientQuerySpec, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
-    findRecipes(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipeTags(): ReadonlyArray<string>;
@@ -2204,28 +2222,14 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getRecipesWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[];
     // @internal
     getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
-    get ingredients(): Collections.IReadOnlyValidatingResultMap<IngredientId, AnyRuntimeIngredient>;
+    get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     get library(): ChocolateLibrary;
-    get recipes(): Collections.IReadOnlyValidatingResultMap<RecipeId, RuntimeRecipe>;
-    get validating(): RuntimeContextValidator;
+    get recipes(): IReadOnlyValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec>;
     warmUp(): void;
-}
-
-// @public
-class RuntimeContextValidator {
-    // @internal
-    constructor(context: RuntimeContext, recipeOrchestrator: RecipeIndexerOrchestrator, ingredientOrchestrator: IngredientIndexerOrchestrator);
-    calculateGanache(recipeId: string, versionSpec?: string): Result<IGanacheCalculation>;
-    findIngredients(json: unknown, options?: IFindOptions): Result<ReadonlyArray<AnyRuntimeIngredient>>;
-    findRecipes(json: unknown, options?: IFindOptions): Result<ReadonlyArray<RuntimeRecipe>>;
-    getIngredient(id: string): Result<AnyRuntimeIngredient>;
-    getRecipe(id: string): Result<RuntimeRecipe>;
-    hasIngredient(id: string): Result<boolean>;
-    hasRecipe(id: string): Result<boolean>;
 }
 
 // @public
@@ -2561,6 +2565,13 @@ function toSourceId(from: unknown): Result<SourceId>;
 
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
+
+// @public
+class ValidatingLibrary<TK extends string, TV, TSpec, TOrchEntity = TV> extends ValidatingResultMap<TK, TV> implements IReadOnlyValidatingLibrary<TK, TV, TSpec> {
+    constructor(params: IValidatingLibraryParams<TK, TV, TSpec, TOrchEntity>);
+    find(spec: TSpec, options?: IFindOptions): Result<ReadonlyArray<TV>>;
+    toReadOnly(): IReadOnlyValidatingLibrary<TK, TV, TSpec>;
+}
 
 declare namespace Validation {
     export {

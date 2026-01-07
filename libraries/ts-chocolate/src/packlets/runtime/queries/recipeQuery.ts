@@ -125,8 +125,8 @@ export class RecipeQuery {
    */
   public withChocolateType(type: ChocolateType): RecipeQuery {
     // Get recipe IDs from reverse index for efficiency
-    const matchingRecipes = this._context.findRecipes({ byChocolateType: { chocolateType: type } });
-    /* c8 ignore next 2 - defensive coding: findRecipes with valid spec always succeeds */
+    const matchingRecipes = this._context.recipes.find({ byChocolateType: { chocolateType: type } });
+    /* c8 ignore next 2 - defensive coding: recipes.find with valid spec always succeeds */
     const matchingIds = new Set<string>(
       matchingRecipes.isSuccess() ? matchingRecipes.value.map((r) => r.id as string) : []
     );

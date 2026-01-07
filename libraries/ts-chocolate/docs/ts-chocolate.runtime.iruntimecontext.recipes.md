@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeContext.recipes property
 
-A read-only map of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached. Use `.get(id)` for Result-based access, `.has(id)` for existence checks, `.values()` for iteration, and `.validating.get(stringId)` for string-based lookups.
+A searchable library of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
 
 **Signature:**
 
 ```typescript
-readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
+readonly recipes: IReadOnlyValidatingLibrary<RecipeId, IRuntimeRecipe, IRecipeQuerySpec>;
 ```
