@@ -12,7 +12,9 @@
     "coverage": "heft test --clean --coverage",
     "clean": "heft clean",
     "lint": "eslint src --ext .ts",
-    "fixlint": "eslint src --ext .ts --fix"
+    "fixlint": "eslint src --ext .ts --fix",
+    "data:publish": "node lib/cli.js publish-data",
+    "data:fetch": "node lib/cli.js fetch-data"
   },
   "keywords": [
     "chocolate",
@@ -30,7 +32,9 @@
     "@fgv/ts-chocolate": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "commander": "^11.0.0",
-    "chalk": "^5.3.0"
+    "chalk": "^5.3.0",
+    "@fgv/ts-json-base": "workspace:*",
+    "yaml": "~2.8.2"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

@@ -20,10 +20,15 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters, Failure, Success } from '@fgv/ts-utils';
-import { FileTree } from '@fgv/ts-json-base';
+import { Converters, fail, Failure, succeed, Success } from '@fgv/ts-utils';
+import { FileTree, JsonObject, JsonValue } from '@fgv/ts-json-base';
 
 import { CollectionLoader } from '../../../packlets/library-data';
+import {
+  createEncryptedCollectionFile,
+  ENCRYPTED_COLLECTION_FORMAT,
+  nodeCryptoProvider
+} from '../../../packlets/crypto';
 
 // Branded string types for testing
 type TestCollectionId = string & { readonly __testCollectionId: unique symbol };
@@ -447,6 +452,680 @@ describe('CollectionLoader', () => {
             expect(collections[0].id).toBe('test');
           });
         });
+      });
+    });
+
+    test('fails when encountering encrypted collection file', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret Item', value: 42 }
+      };
+      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          expect(loader.loadFromFileTree(dir)).toFailWith(/use loadFromFileTreeAsync instead/i);
+        });
+      });
+    });
+  });
+
+  // ============================================================================
+  // loadFromFileTreeAsync Tests (Encrypted Collections)
+  // ============================================================================
+
+  describe('loadFromFileTreeAsync', () => {
+    let loader: CollectionLoader<ITestItem, TestCollectionId, TestItemId>;
+    let testKey: Uint8Array;
+
+    beforeEach(async () => {
+      loader = new CollectionLoader({
+        itemConverter: testItemConverter,
+        collectionIdConverter: testCollectionIdConverter,
+        itemIdConverter: testItemIdConverter
+      });
+      testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+    });
+
+    test('loads plain (non-encrypted) collections', async () => {
+      const collectionData = {
+        /* eslint-disable @typescript-eslint/naming-convention */
+        'item-1': { name: 'Item One', value: 1 },
+        'item-2': { name: 'Item Two', value: 2 }
+        /* eslint-enable @typescript-eslint/naming-convention */
+      };
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/test-collection.json', contents: collectionData }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir);
+
+      expect(result).toSucceedAndSatisfy((collections) => {
+        expect(collections).toHaveLength(1);
+        expect(collections[0].id).toBe('test-collection');
+        expect(Object.keys(collections[0].items)).toHaveLength(2);
+      });
+    });
+
+    test('loads encrypted collection with matching secret', async () => {
+      const collectionData = {
+        /* eslint-disable @typescript-eslint/naming-convention */
+        'item-1': { name: 'Secret Item', value: 42 },
+        'item-2': { name: 'Another Secret', value: 100 }
+        /* eslint-enable @typescript-eslint/naming-convention */
+      };
+
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'my-secret',
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir, {
+        encryption: {
+          secrets: [{ name: 'my-secret', key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        }
+      });
+
+      expect(result).toSucceedAndSatisfy((collections) => {
+        expect(collections).toHaveLength(1);
+        expect(collections[0].id).toBe('encrypted');
+        expect(collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Secret Item', value: 42 });
+        expect(collections[0].items['item-2' as TestItemId]).toEqual({ name: 'Another Secret', value: 100 });
+      });
+    });
+
+    test('loads mixed encrypted and plain collections', async () => {
+      const plainData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'plain-item': { name: 'Plain', value: 1 }
+      };
+
+      const encryptedData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret-item': { name: 'Secret', value: 2 }
+      };
+
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: encryptedData,
+          secretName: 'test-secret',
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/plain.json', contents: plainData },
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir, {
+        encryption: {
+          secrets: [{ name: 'test-secret', key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        }
+      });
+
+      expect(result).toSucceedAndSatisfy((collections) => {
+        expect(collections).toHaveLength(2);
+        const plain = collections.find((c) => c.id === 'plain');
+        const enc = collections.find((c) => c.id === 'encrypted');
+        expect(plain?.items['plain-item' as TestItemId]).toEqual({ name: 'Plain', value: 1 });
+        expect(enc?.items['secret-item' as TestItemId]).toEqual({ name: 'Secret', value: 2 });
+      });
+    });
+
+    test('fails when encrypted file found but no encryption config provided', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret', value: 42 }
+      };
+
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'my-secret',
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir);
+
+      expect(result).toFailWith(/no encryption config provided/i);
+    });
+
+    // ============================================================================
+    // onMissingKey Error Mode Tests
+    // ============================================================================
+
+    describe('onMissingKey error modes', () => {
+      test('fails by default when secret is not found', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'unknown-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'different-secret', key: testKey }],
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toFailWith(/missing key.*unknown-secret/i);
+      });
+
+      test('skips encrypted file when onMissingKey is "skip"', async () => {
+        const plainData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-item': { name: 'Plain', value: 1 }
+        };
+
+        const encryptedData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'secret-item': { name: 'Secret', value: 2 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: encryptedData,
+            secretName: 'unknown-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/plain.json', contents: plainData },
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [], // No secrets provided
+            cryptoProvider: nodeCryptoProvider,
+            onMissingKey: 'skip'
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          // Only plain collection should be loaded, encrypted should be skipped
+          expect(collections).toHaveLength(1);
+          expect(collections[0].id).toBe('plain');
+        });
+      });
+
+      test('warns and skips when onMissingKey is "warn"', async () => {
+        const plainData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-item': { name: 'Plain', value: 1 }
+        };
+
+        const encryptedData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'secret-item': { name: 'Secret', value: 2 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: encryptedData,
+            secretName: 'unknown-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/plain.json', contents: plainData },
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        // Spy on console.warn
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [],
+            cryptoProvider: nodeCryptoProvider,
+            onMissingKey: 'warn'
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          expect(collections).toHaveLength(1);
+          expect(collections[0].id).toBe('plain');
+        });
+
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/missing key.*unknown-secret/i));
+        warnSpy.mockRestore();
+      });
+    });
+
+    // ============================================================================
+    // onDecryptionError Error Mode Tests
+    // ============================================================================
+
+    describe('onDecryptionError error modes', () => {
+      test('fails by default when decryption fails (wrong key)', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'my-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'my-secret', key: wrongKey }],
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toFailWith(/decryption failed/i);
+      });
+
+      test('skips file when onDecryptionError is "skip"', async () => {
+        const plainData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-item': { name: 'Plain', value: 1 }
+        };
+
+        const encryptedData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'secret-item': { name: 'Secret', value: 2 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: encryptedData,
+            secretName: 'my-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/plain.json', contents: plainData },
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'my-secret', key: wrongKey }],
+            cryptoProvider: nodeCryptoProvider,
+            onDecryptionError: 'skip'
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          expect(collections).toHaveLength(1);
+          expect(collections[0].id).toBe('plain');
+        });
+      });
+
+      test('warns and skips when onDecryptionError is "warn"', async () => {
+        const plainData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-item': { name: 'Plain', value: 1 }
+        };
+
+        const encryptedData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'secret-item': { name: 'Secret', value: 2 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: encryptedData,
+            secretName: 'my-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/plain.json', contents: plainData },
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'my-secret', key: wrongKey }],
+            cryptoProvider: nodeCryptoProvider,
+            onDecryptionError: 'warn'
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          expect(collections).toHaveLength(1);
+          expect(collections[0].id).toBe('plain');
+        });
+
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/decryption failed/i));
+        warnSpy.mockRestore();
+      });
+
+      test('handles invalid encrypted file format with onDecryptionError', async () => {
+        // Create a malformed encrypted file (has format field but missing other required fields)
+        const malformed = {
+          format: ENCRYPTED_COLLECTION_FORMAT,
+          secretName: 'test-secret'
+          // Missing: algorithm, iv, authTag, encryptedData
+        };
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/malformed.json', contents: malformed }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'test-secret', key: testKey }],
+            cryptoProvider: nodeCryptoProvider,
+            onDecryptionError: 'skip'
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          // Malformed file should be skipped
+          expect(collections).toHaveLength(0);
+        });
+      });
+    });
+
+    // ============================================================================
+    // secretProvider Tests
+    // ============================================================================
+
+    describe('secretProvider', () => {
+      test('uses secretProvider when secret not in secrets array', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'dynamic-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        const secretProvider = jest.fn().mockResolvedValue(succeed(testKey));
+
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secretProvider,
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          expect(collections).toHaveLength(1);
+          expect(collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Secret', value: 42 });
+        });
+
+        expect(secretProvider).toHaveBeenCalledWith('dynamic-secret');
+      });
+
+      test('prefers secrets array over secretProvider', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'known-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        const secretProvider = jest.fn().mockResolvedValue(fail('Should not be called'));
+
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'known-secret', key: testKey }],
+            secretProvider,
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toSucceed();
+        expect(secretProvider).not.toHaveBeenCalled();
+      });
+
+      test('handles secretProvider failure', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'unknown-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        const secretProvider = jest.fn().mockResolvedValue(fail('Secret not found in vault'));
+
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secretProvider,
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toFailWith(/missing key.*unknown-secret/i);
+      });
+    });
+
+    // ============================================================================
+    // Mutability Tests with Encrypted Collections
+    // ============================================================================
+
+    describe('mutability with encrypted collections', () => {
+      test('respects mutable option for encrypted collections', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'my-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          mutable: true,
+          encryption: {
+            secrets: [{ name: 'my-secret', key: testKey }],
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toSucceedAndSatisfy((collections) => {
+          expect(collections).toHaveLength(1);
+          expect(collections[0].isMutable).toBe(true);
+        });
+      });
+    });
+
+    // ============================================================================
+    // Error Handling Tests
+    // ============================================================================
+
+    describe('error handling', () => {
+      test('fails when filterDirectory fails', async () => {
+        const files: FileTree.IInMemoryFile[] = [{ path: '/file.json', contents: {} }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const file = tree.getItem('/file.json').orThrow();
+        const result = await loader.loadFromFileTreeAsync(file);
+
+        expect(result).toFailWith(/not a directory/i);
+      });
+
+      test('fails when getContents fails', async () => {
+        // Create a mock file tree item that fails on getContents
+        const mockFileItem: FileTree.IFileTreeFileItem = {
+          name: 'failing.json',
+          type: 'file',
+          absolutePath: '/collections/failing.json',
+          baseName: 'failing',
+          extension: '.json',
+          contentType: undefined,
+          getContents: () => fail<JsonValue>('File read error'),
+          getRawContents: () => fail<string>('File read error')
+        };
+        const mockDir: FileTree.IFileTreeDirectoryItem = {
+          name: 'collections',
+          type: 'directory',
+          absolutePath: '/collections',
+          getChildren: () => succeed([mockFileItem])
+        };
+
+        const result = await loader.loadFromFileTreeAsync(mockDir);
+        expect(result).toFailWith(/file read error/i);
+      });
+
+      test('fails when item conversion fails', async () => {
+        const invalidCollection = {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          'valid-item': { name: 'Valid', value: 1 },
+          'invalid-item': { name: 'Missing Value' } // missing 'value' field
+          /* eslint-enable @typescript-eslint/naming-convention */
+        };
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/test.json', contents: invalidCollection }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir);
+
+        expect(result).toFail();
       });
     });
   });

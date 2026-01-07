@@ -74,7 +74,21 @@ Description
 
 </td><td>
 
-Loads collections from a `FileTree` using optional filtering parameters.
+Loads collections from a `FileTree` using optional filtering parameters. Note: This synchronous method does not support encrypted collections. Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) for encrypted files.
+
+
+</td></tr>
+<tr><td>
+
+[loadFromFileTreeAsync(fileTree, params)](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Loads collections from a `FileTree` asynchronously, supporting encrypted files.
 
 
 </td></tr>

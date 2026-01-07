@@ -38,6 +38,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[encryption?](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.encryption.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+IEncryptionConfig
+
+
+</td><td>
+
+_(Optional)_ Optional encryption configuration for decrypting encrypted collection files. If not provided, encrypted files will be treated as regular JSON (and likely fail validation).
+
+
+</td></tr>
+<tr><td>
+
 [mutable?](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.mutable.md)
 
 

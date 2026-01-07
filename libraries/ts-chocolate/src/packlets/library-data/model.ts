@@ -19,6 +19,8 @@
 // SOFTWARE.
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
+import { Result } from '@fgv/ts-utils';
+import { EncryptedCollectionErrorMode, ICryptoProvider, INamedSecret } from '../crypto';
 
 /**
  * A pattern for matching collection or item names. Can be a string (exact match) or RegExp.
@@ -247,4 +249,55 @@ export interface IMergeLibrarySource<TLibrary, TCollectionId extends string = st
    * - `ILibraryLoadParams`: Fine-grained control using include/exclude patterns.
    */
   readonly filter?: LibraryLoadSpec<TCollectionId>;
+}
+
+// ============================================================================
+// Encryption Types
+// ============================================================================
+
+/**
+ * Function type for providing encryption keys by secret name.
+ * Used for dynamic key lookup (e.g., from environment variables or key stores).
+ * @public
+ */
+export type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+/**
+ * Configuration for handling encrypted collections during loading.
+ * @public
+ */
+export interface IEncryptionConfig {
+  /**
+   * Array of named secrets to use for decryption.
+   * Each secret has a name and a 32-byte key for AES-256 encryption.
+   */
+  readonly secrets?: ReadonlyArray<INamedSecret>;
+
+  /**
+   * Optional function to dynamically provide keys by secret name.
+   * Called when a secret is not found in the `secrets` array.
+   */
+  readonly secretProvider?: SecretProvider;
+
+  /**
+   * The crypto provider to use for decryption.
+   * Use `nodeCryptoProvider` for Node.js or `BrowserCryptoProvider` for browsers.
+   */
+  readonly cryptoProvider: ICryptoProvider;
+
+  /**
+   * How to handle encrypted files when the required secret is not available.
+   * - `'fail'` (default): Fail the entire load operation.
+   * - `'skip'`: Skip the encrypted file and continue loading other files.
+   * - `'warn'`: Log a warning and skip the encrypted file.
+   */
+  readonly onMissingKey?: EncryptedCollectionErrorMode;
+
+  /**
+   * How to handle decryption errors (e.g., wrong key, corrupted data).
+   * - `'fail'` (default): Fail the entire load operation.
+   * - `'skip'`: Skip the file and continue loading other files.
+   * - `'warn'`: Log a warning and skip the file.
+   */
+  readonly onDecryptionError?: EncryptedCollectionErrorMode;
 }

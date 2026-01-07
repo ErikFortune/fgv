@@ -7,12 +7,16 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_6 } from '@fgv/ts-utils';
+import { Converters as Converters_7 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
+import { JsonValue } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
+
+// @public
+const AES_256_KEY_SIZE: number;
 
 // @public
 type AggregationMode = 'intersection' | 'union';
@@ -78,6 +82,9 @@ function atLeast<T>(min: number, getter: (item: T) => number | undefined): Filte
 function atMost<T>(max: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
+const base64String: Converter<string>;
+
+// @public
 export const BASE_ID_PATTERN: RegExp;
 
 // @public
@@ -124,6 +131,15 @@ export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
 
 // @public
 const baseRecipeId: Converter<BaseRecipeId>;
+
+// @public
+class BrowserCryptoProvider implements ICryptoProvider {
+    constructor(cryptoApi?: Crypto);
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    generateKey(): Promise<Result<Uint8Array>>;
+}
 
 declare namespace BuiltIn {
     export {
@@ -270,7 +286,10 @@ class CollectionFilter<T extends string> {
 class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {
     constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     loadFromFileTree(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    loadFromFileTreeAsync(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>>;
 }
 
 // @public
@@ -319,6 +338,20 @@ export { Converters }
 
 declare namespace Converters_2 {
     export {
+        isEncryptedCollectionFile,
+        encryptionAlgorithm,
+        encryptedCollectionFormat,
+        encryptedCollectionErrorMode,
+        base64String,
+        encryptedCollectionMetadata,
+        encryptedCollectionFile,
+        uint8ArrayFromBase64,
+        namedSecret
+    }
+}
+
+declare namespace Converters_3 {
+    export {
         ganacheCharacteristics,
         temperatureCurve,
         baseIngredient,
@@ -331,7 +364,7 @@ declare namespace Converters_2 {
     }
 }
 
-declare namespace Converters_3 {
+declare namespace Converters_4 {
     export {
         journalEventType,
         journalEntry,
@@ -339,7 +372,7 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_4 {
+declare namespace Converters_5 {
     export {
         removeExtension,
         collection,
@@ -348,7 +381,7 @@ declare namespace Converters_4 {
     }
 }
 
-declare namespace Converters_5 {
+declare namespace Converters_6 {
     export {
         recipeIngredient,
         ratingCategory,
@@ -367,6 +400,12 @@ declare namespace Converters_5 {
 }
 
 // @public
+function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
+
+// @public
+function createEncryptedCollectionFile(params: ICreateEncryptedFileParams): Promise<Result<IEncryptedCollectionFile>>;
+
+// @public
 function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryLoadSpec<TCollectionId>, nameConverter: Converter<TCollectionId> | Validator<TCollectionId>): CollectionFilter<TCollectionId>;
 
 // @public
@@ -378,8 +417,46 @@ function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): RecipeId;
 // @public
 function createRecipeVersionId(recipeId: RecipeId, versionSpec: RecipeVersionSpec): RecipeVersionId;
 
+declare namespace Crypto_2 {
+    export {
+        Converters_2 as Converters,
+        isEncryptedCollectionFile,
+        NodeCryptoProvider,
+        nodeCryptoProvider,
+        BrowserCryptoProvider,
+        createBrowserCryptoProvider,
+        createEncryptedCollectionFile,
+        decryptCollectionFile,
+        tryDecryptCollectionFile,
+        EncryptionHelper,
+        ICreateEncryptedFileParams,
+        EncryptionAlgorithm,
+        EncryptedCollectionFormat,
+        INamedSecret,
+        IEncryptionResult,
+        IEncryptedCollectionMetadata,
+        IEncryptedCollectionFile,
+        ICryptoProvider,
+        EncryptedCollectionErrorMode,
+        SecretProvider,
+        IEncryptionConfig,
+        ENCRYPTED_COLLECTION_FORMAT,
+        DEFAULT_ALGORITHM,
+        AES_256_KEY_SIZE,
+        GCM_IV_SIZE,
+        GCM_AUTH_TAG_SIZE
+    }
+}
+export { Crypto_2 as Crypto }
+
 // @public
 const dairyIngredient: Converter<IDairyIngredient>;
+
+// @public
+function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
+
+// @public
+const DEFAULT_ALGORITHM: EncryptionAlgorithm;
 
 // @public
 export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
@@ -438,6 +515,44 @@ class EditingSessionValidator implements IEditingSessionValidator {
 }
 
 // @public
+const ENCRYPTED_COLLECTION_FORMAT: EncryptedCollectionFormat;
+
+// @public
+type EncryptedCollectionErrorMode = 'fail' | 'skip' | 'warn';
+
+// @public
+const encryptedCollectionErrorMode: Converter<EncryptedCollectionErrorMode>;
+
+// @public
+const encryptedCollectionFile: Converter<IEncryptedCollectionFile>;
+
+// @public
+type EncryptedCollectionFormat = 'encrypted-collection-v1';
+
+// @public
+const encryptedCollectionFormat: Converter<EncryptedCollectionFormat>;
+
+// @public
+const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
+
+// @public
+type EncryptionAlgorithm = 'AES-256-GCM';
+
+// @public
+const encryptionAlgorithm: Converter<EncryptionAlgorithm>;
+
+// @public
+class EncryptionHelper {
+    constructor(cryptoProvider: ICryptoProvider);
+    get cryptoProvider(): ICryptoProvider;
+    decrypt(tombstone: IEncryptedCollectionFile, key: Uint8Array): Promise<Result<JsonObject>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata): Promise<Result<IEncryptedCollectionFile>>;
+    generateKey(): Promise<Result<Uint8Array>>;
+    isEncrypted(json: unknown): boolean;
+}
+
+// @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
 
 // @public
@@ -460,6 +575,12 @@ type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', Li
 
 // @public
 const ganacheCharacteristics: Converter<IGanacheCharacteristics>;
+
+// @public
+const GCM_AUTH_TAG_SIZE: number;
+
+// @public
+const GCM_IV_SIZE: number;
 
 // @public
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
@@ -625,6 +746,23 @@ interface IComputedScaledRecipe {
 }
 
 // @public
+interface ICreateEncryptedFileParams {
+    readonly content: JsonValue;
+    readonly cryptoProvider: ICryptoProvider;
+    readonly key: Uint8Array;
+    readonly metadata?: IEncryptedCollectionMetadata;
+    readonly secretName: string;
+}
+
+// @public
+interface ICryptoProvider {
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    generateKey(): Promise<Result<Uint8Array>>;
+}
+
+// @public
 export const ID_SEPARATOR: string;
 
 // @public
@@ -651,6 +789,49 @@ interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
     setTargetWeight(weight: number): Result<void>;
     substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
+}
+
+// @public
+interface IEncryptedCollectionFile {
+    readonly algorithm: EncryptionAlgorithm;
+    readonly authTag: string;
+    readonly encryptedData: string;
+    readonly format: EncryptedCollectionFormat;
+    readonly iv: string;
+    readonly metadata?: IEncryptedCollectionMetadata;
+    readonly secretName: string;
+}
+
+// @public
+interface IEncryptedCollectionMetadata {
+    readonly collectionId?: string;
+    readonly description?: string;
+    readonly itemCount?: number;
+}
+
+// @public
+interface IEncryptionConfig {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly onDecryptionError?: EncryptedCollectionErrorMode;
+    readonly onMissingKey?: EncryptedCollectionErrorMode;
+    readonly secretProvider?: SecretProvider;
+    readonly secrets?: ReadonlyArray<INamedSecret>;
+}
+
+// @public
+interface IEncryptionConfig_2 {
+    readonly cryptoProvider: ICryptoProvider;
+    readonly onDecryptionError?: EncryptedCollectionErrorMode;
+    readonly onMissingKey?: EncryptedCollectionErrorMode;
+    readonly secretProvider?: SecretProvider_2;
+    readonly secrets?: ReadonlyArray<INamedSecret>;
+}
+
+// @public
+interface IEncryptionResult {
+    readonly authTag: Uint8Array;
+    readonly encryptedData: Uint8Array;
+    readonly iv: Uint8Array;
 }
 
 // @public
@@ -860,6 +1041,7 @@ interface ILibraryLoadParams {
 
 // @public
 interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extends Omit<ICollectionFilterInitParams<TCOLLECTIONID>, 'nameConverter'> {
+    readonly encryption?: IEncryptionConfig_2;
     readonly mutable?: MutabilitySpec;
     // (undocumented)
     readonly recurseWithDelimiter?: string;
@@ -869,6 +1051,12 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
 interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
     readonly filter?: LibraryLoadSpec<TCollectionId>;
     readonly library: TLibrary;
+}
+
+// @public
+interface INamedSecret {
+    readonly key: Uint8Array;
+    readonly name: string;
 }
 
 // @public
@@ -1011,7 +1199,7 @@ type IngredientResolver_2 = (id: IngredientId) => Result<IRuntimeIngredient>;
 
 declare namespace Ingredients {
     export {
-        Converters_2 as Converters,
+        Converters_3 as Converters,
         isChocolateIngredient,
         isSugarIngredient,
         isDairyIngredient,
@@ -1462,6 +1650,9 @@ function isChocolateIngredient(ingredient: Ingredient): ingredient is IChocolate
 function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredient;
 
 // @public
+function isEncryptedCollectionFile(json: unknown): boolean;
+
+// @public
 interface ISessionIngredient {
     amount: Grams;
     readonly ingredientId: IngredientId;
@@ -1594,7 +1785,7 @@ declare namespace Journal {
     export {
         JournalLibrary,
         IJournalLibraryParams,
-        Converters_3 as Converters,
+        Converters_4 as Converters,
         JournalEventType,
         allJournalEventTypes,
         IJournalEntry,
@@ -1653,7 +1844,7 @@ const journalRecord: Converter<IJournalRecord>;
 
 declare namespace LibraryData {
     export {
-        Converters_4 as Converters,
+        Converters_5 as Converters,
         resolveSubLibraryLoadSpec,
         FilterPattern,
         ILibraryLoadParams,
@@ -1666,6 +1857,8 @@ declare namespace LibraryData {
         IFileTreeSource,
         ILibraryFileTreeSource,
         IMergeLibrarySource,
+        SecretProvider_2 as SecretProvider,
+        IEncryptionConfig_2 as IEncryptionConfig,
         createFilterFromSpec,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
@@ -1721,10 +1914,24 @@ type MutabilitySpec = boolean | ReadonlyArray<string> | {
 };
 
 // @public
+const namedSecret: Converter<INamedSecret>;
+
+// @public
 function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function navigateToSubLibrary(tree: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+class NodeCryptoProvider implements ICryptoProvider {
+    decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
+    deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
+    encrypt(plaintext: string, key: Uint8Array): Promise<Result<IEncryptionResult>>;
+    generateKey(): Promise<Result<Uint8Array>>;
+}
+
+// @public
+const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
 function normalizeFileSources<T extends {
@@ -1744,19 +1951,19 @@ function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPr
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-type ParsedIngredientId = Converters_6.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_7.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedRecipeId = Converters_6.ICompositeId<SourceId, BaseRecipeId>;
+type ParsedRecipeId = Converters_7.ICompositeId<SourceId, BaseRecipeId>;
 
 // @public
 const parsedRecipeId: Converter<ParsedRecipeId>;
 
 // @public
-type ParsedRecipeVersionId = Converters_6.ICompositeId<RecipeId, RecipeVersionSpec>;
+type ParsedRecipeVersionId = Converters_7.ICompositeId<RecipeId, RecipeVersionSpec>;
 
 // @public
 const parsedRecipeVersionId: Converter<ParsedRecipeVersionId>;
@@ -1934,7 +2141,7 @@ type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
 
 declare namespace Recipes {
     export {
-        Converters_5 as Converters,
+        Converters_6 as Converters,
         isScaledRecipeVersion,
         isRecipeVersion,
         IRecipeIngredient,
@@ -2443,6 +2650,12 @@ const scalingRef: Converter<IScalingRef>;
 // @public
 const scalingSource: Converter<IScalingSource>;
 
+// @public
+type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
+
+// @public
+type SecretProvider_2 = (secretName: string) => Promise<Result<Uint8Array>>;
+
 declare namespace Session {
     export {
         EditingSession,
@@ -2562,6 +2775,12 @@ function toSessionId(from: unknown): Result<SessionId>;
 
 // @public
 function toSourceId(from: unknown): Result<SourceId>;
+
+// @public
+function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
+
+// @public
+const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;

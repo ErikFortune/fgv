@@ -1440,6 +1440,9 @@ importers:
       '@fgv/ts-chocolate':
         specifier: workspace:*
         version: link:../../libraries/ts-chocolate
+      '@fgv/ts-json-base':
+        specifier: workspace:*
+        version: link:../../libraries/ts-json-base
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../../libraries/ts-utils
@@ -1449,6 +1452,9 @@ importers:
       commander:
         specifier: ^11.0.0
         version: 11.1.0
+      yaml:
+        specifier: ~2.8.2
+        version: 2.8.2
     devDependencies:
       '@fgv/ts-utils-jest':
         specifier: workspace:*
@@ -13930,7 +13936,6 @@ packages:
     resolution: {integrity: sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==}
     engines: {node: '>= 14.6'}
     hasBin: true
-    dev: true
 
   /yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}

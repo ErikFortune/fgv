@@ -19,11 +19,23 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
+import {
+  createEncryptCommand,
+  createDecryptCommand,
+  createKeygenCommand,
+  createPublishDataCommand,
+  createFetchDataCommand
+} from './commands';
 
 const program: Command = new Command();
 
 program.name('choco').description('Chocolate recipe management CLI').version('0.1.0');
 
-// Commands will be added in subsequent stages
+// Register commands
+program.addCommand(createEncryptCommand());
+program.addCommand(createDecryptCommand());
+program.addCommand(createKeygenCommand());
+program.addCommand(createPublishDataCommand());
+program.addCommand(createFetchDataCommand());
 
 program.parse();

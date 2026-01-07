@@ -314,6 +314,17 @@ A collection set for collision detection.
 </td></tr>
 <tr><td>
 
+[IEncryptionConfig](./ts-chocolate.librarydata.iencryptionconfig.md)
+
+
+</td><td>
+
+Configuration for handling encrypted collections during loading.
+
+
+</td></tr>
+<tr><td>
+
 [IFileTreeSource](./ts-chocolate.librarydata.ifiletreesource.md)
 
 
@@ -562,6 +573,17 @@ Specifies which collections from a library should be loaded.
 </td><td>
 
 Specifies which collections should be mutable. - `true`<!-- -->: All collections are mutable. - `false`<!-- -->: All collections are immutable. - `ReadonlyArray<string>`<!-- -->: Only the specified collections are mutable, all others are immutable. - `{ immutable: ReadonlyArray<string> }`<!-- -->: Only the specified collections are immutable, all others are mutable.
+
+
+</td></tr>
+<tr><td>
+
+[SecretProvider](./ts-chocolate.librarydata.secretprovider.md)
+
+
+</td><td>
+
+Function type for providing encryption keys by secret name. Used for dynamic key lookup (e.g., from environment variables or key stores).
 
 
 </td></tr>

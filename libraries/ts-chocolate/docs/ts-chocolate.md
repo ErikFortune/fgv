@@ -48,6 +48,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Crypto\_2](./ts-chocolate.crypto_2.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Helpers](./ts-chocolate.helpers.md)
 
 
