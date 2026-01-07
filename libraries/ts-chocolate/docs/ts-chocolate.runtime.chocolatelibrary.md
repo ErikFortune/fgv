@@ -6,7 +6,7 @@
 
 Main entry point for the chocolate library
 
-Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Recipe scaling - Ganache characteristic calculations
+Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Journal management (cooking session records) - Recipe scaling - Ganache characteristic calculations
 
 **Signature:**
 
@@ -60,6 +60,27 @@ The [ingredients library](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- 
 </td></tr>
 <tr><td>
 
+[journals](./ts-chocolate.runtime.chocolatelibrary.journals.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[JournalLibrary](./ts-chocolate.journal.journallibrary.md)
+
+
+</td><td>
+
+The [journals library](./ts-chocolate.journal.journallibrary.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [recipes](./ts-chocolate.runtime.chocolatelibrary.recipes.md)
 
 
@@ -100,6 +121,20 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[addJournal(journal)](./ts-chocolate.runtime.chocolatelibrary.addjournal.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
+
+
+</td></tr>
+<tr><td>
 
 [calculateGanache(id, versionSpec)](./ts-chocolate.runtime.chocolatelibrary.calculateganache.md)
 
@@ -168,6 +203,34 @@ Creates an ingredient resolver that looks up ingredients from this library
 </td><td>
 
 Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
+
+
+</td></tr>
+<tr><td>
+
+[getJournalsForRecipe(recipeId)](./ts-chocolate.runtime.chocolatelibrary.getjournalsforrecipe.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recipe (across all versions)
+
+
+</td></tr>
+<tr><td>
+
+[getJournalsForVersion(versionId)](./ts-chocolate.runtime.chocolatelibrary.getjournalsforversion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a specific recipe version
 
 
 </td></tr>

@@ -23,11 +23,30 @@
  * @packageDocumentation
  */
 
-import { captureResult, Failure, Result, Success } from '@fgv/ts-utils';
+import { captureResult, Failure, mapResults, Result, Success } from '@fgv/ts-utils';
 
 import { JournalId, RecipeId, RecipeVersionId, Converters as CommonConverters } from '../common';
 import { IJournalRecord } from './model';
 import { journalRecord as journalRecordConverter } from './converters';
+
+/**
+ * Result of importing journals into the library
+ * @public
+ */
+export interface IJournalImportResult {
+  /**
+   * Number of journals successfully imported
+   */
+  readonly imported: number;
+  /**
+   * Number of journals that were skipped (already exist)
+   */
+  readonly skipped: number;
+  /**
+   * IDs of journals that were skipped
+   */
+  readonly skippedIds: ReadonlyArray<JournalId>;
+}
 
 /**
  * Parameters for creating a {@link Journal.JournalLibrary | JournalLibrary} instance
@@ -244,5 +263,71 @@ export class JournalLibrary {
    */
   private _extractRecipeId(versionId: RecipeVersionId): RecipeId {
     return CommonConverters.parsedRecipeVersionId.convert(versionId).orThrow().collectionId;
+  }
+
+  // ============================================================================
+  // Import/Export Methods
+  // ============================================================================
+
+  /**
+   * Imports journal records from an array.
+   * Validates each journal and adds it to the library.
+   * Journals that already exist are skipped.
+   *
+   * @param journals - Array of journal records to import
+   * @returns `Success` with import results, or `Failure` if validation fails
+   * @public
+   */
+  public importJournals(journals: ReadonlyArray<unknown>): Result<IJournalImportResult> {
+    // First validate all journals
+    return mapResults(journals.map((j) => journalRecordConverter.convert(j))).onSuccess((validated) => {
+      let imported = 0;
+      let skipped = 0;
+      const skippedIds: JournalId[] = [];
+
+      for (const journal of validated) {
+        if (this._journals.has(journal.journalId)) {
+          skipped++;
+          skippedIds.push(journal.journalId);
+        } else {
+          this._addJournalInternal(journal);
+          imported++;
+        }
+      }
+
+      return Success.with({ imported, skipped, skippedIds });
+    });
+  }
+
+  /**
+   * Exports all journal records as an array.
+   * The returned array can be serialized to JSON for persistence.
+   *
+   * @returns Array of all journal records
+   * @public
+   */
+  public exportJournals(): ReadonlyArray<IJournalRecord> {
+    return this.getAllJournals();
+  }
+
+  /**
+   * Checks if a journal with the given ID exists in the library.
+   *
+   * @param journalId - The journal ID to check
+   * @returns `true` if the journal exists
+   * @public
+   */
+  public hasJournal(journalId: JournalId): boolean {
+    return this._journals.has(journalId);
+  }
+
+  /**
+   * Clears all journals from the library.
+   * @public
+   */
+  public clear(): void {
+    this._journals.clear();
+    this._byRecipeId.clear();
+    this._byVersionId.clear();
   }
 }

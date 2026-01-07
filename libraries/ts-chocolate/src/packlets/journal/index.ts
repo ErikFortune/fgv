@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 export * from './model';
-export { JournalLibrary, IJournalLibraryParams } from './journalLibrary';
+export { JournalLibrary, IJournalLibraryParams, IJournalImportResult } from './journalLibrary';
 
 import * as Converters from './converters';
 export { Converters };

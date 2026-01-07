@@ -205,7 +205,7 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
 /**
  * Parameters for creating a sub-library instance asynchronously.
  *
- * Extends {@link ISubLibraryParams} with encryption support for decrypting
+ * Extends {@link LibraryData.ISubLibraryParams | ISubLibraryParams} with encryption support for decrypting
  * encrypted collections during async loading.
  *
  * @typeParam TLibrary - The library type (e.g., `IngredientsLibrary`)

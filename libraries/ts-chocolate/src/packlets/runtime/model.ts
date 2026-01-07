@@ -73,6 +73,7 @@ import {
   IVersionScaleOptions,
   IRecipeRating as IRecipeRating
 } from '../recipes';
+import { IJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { ChocolateLibrary } from './chocolateLibrary';
 
@@ -1033,6 +1034,29 @@ export interface IRuntimeContext {
    * `.has(id)` for existence checks, `.values()` for iteration.
    */
   readonly recipes: IReadOnlyValidatingLibrary<RecipeId, IRuntimeRecipe, IRecipeQuerySpec>;
+
+  // ---- Journals ----
+
+  /**
+   * The journals library for managing cooking session records.
+   * Provides storage and lookup for journal records indexed by journal ID,
+   * recipe ID, or version ID.
+   */
+  readonly journals: JournalLibrary;
+
+  /**
+   * Gets all journal records for a recipe (across all versions).
+   * @param recipeId - The recipe ID to search for
+   * @returns Array of journal records (empty if none found)
+   */
+  getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+
+  /**
+   * Gets all journal records for a specific recipe version.
+   * @param versionId - The recipe version ID to search for
+   * @returns Array of journal records (empty if none found)
+   */
+  getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
 
   // ---- Reverse Lookups ----
 

@@ -285,6 +285,108 @@ describe('JournalLibrary', () => {
   });
 
   // ============================================================================
+  // Import/Export Tests
+  // ============================================================================
+
+  describe('importJournals', () => {
+    test('imports valid journals', () => {
+      const lib = JournalLibrary.create().orThrow();
+      expect(lib.importJournals([journal1, journal2])).toSucceedAndSatisfy((result) => {
+        expect(result.imported).toBe(2);
+        expect(result.skipped).toBe(0);
+        expect(result.skippedIds).toHaveLength(0);
+      });
+      expect(lib.size).toBe(2);
+    });
+
+    test('skips existing journals', () => {
+      const lib = JournalLibrary.create({ journals: [journal1] }).orThrow();
+      expect(lib.importJournals([journal1, journal2])).toSucceedAndSatisfy((result) => {
+        expect(result.imported).toBe(1);
+        expect(result.skipped).toBe(1);
+        expect(result.skippedIds).toContain(journal1.journalId);
+      });
+      expect(lib.size).toBe(2);
+    });
+
+    test('fails for invalid journal data', () => {
+      const lib = JournalLibrary.create().orThrow();
+      const invalidData = [{ invalid: 'data' }];
+      expect(lib.importJournals(invalidData)).toFail();
+    });
+
+    test('imports empty array successfully', () => {
+      const lib = JournalLibrary.create().orThrow();
+      expect(lib.importJournals([])).toSucceedAndSatisfy((result) => {
+        expect(result.imported).toBe(0);
+        expect(result.skipped).toBe(0);
+      });
+    });
+  });
+
+  describe('exportJournals', () => {
+    test('exports all journals', () => {
+      const lib = JournalLibrary.create({ journals: [journal1, journal2, journal3] }).orThrow();
+      const exported = lib.exportJournals();
+      expect(exported).toHaveLength(3);
+      expect(exported.map((j) => j.journalId)).toContain(journal1.journalId);
+      expect(exported.map((j) => j.journalId)).toContain(journal2.journalId);
+      expect(exported.map((j) => j.journalId)).toContain(journal3.journalId);
+    });
+
+    test('exports empty array for empty library', () => {
+      const lib = JournalLibrary.create().orThrow();
+      const exported = lib.exportJournals();
+      expect(exported).toHaveLength(0);
+    });
+  });
+
+  describe('hasJournal', () => {
+    test('returns true for existing journal', () => {
+      const lib = JournalLibrary.create({ journals: [journal1] }).orThrow();
+      expect(lib.hasJournal(journal1.journalId)).toBe(true);
+    });
+
+    test('returns false for non-existing journal', () => {
+      const lib = JournalLibrary.create().orThrow();
+      expect(lib.hasJournal('non-existent' as JournalId)).toBe(false);
+    });
+  });
+
+  describe('clear', () => {
+    test('removes all journals', () => {
+      const lib = JournalLibrary.create({ journals: [journal1, journal2, journal3] }).orThrow();
+      expect(lib.size).toBe(3);
+      lib.clear();
+      expect(lib.size).toBe(0);
+      expect(lib.getAllJournals()).toHaveLength(0);
+    });
+
+    test('clears recipe index', () => {
+      const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
+      lib.clear();
+      const result = lib.getJournalsForRecipe(
+        'source.recipe-a' as import('../../../packlets/common').RecipeId
+      );
+      expect(result).toHaveLength(0);
+    });
+
+    test('clears version index', () => {
+      const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
+      lib.clear();
+      const result = lib.getJournalsForVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
+      expect(result).toHaveLength(0);
+    });
+
+    test('allows adding journals after clear', () => {
+      const lib = JournalLibrary.create({ journals: [journal1] }).orThrow();
+      lib.clear();
+      expect(lib.addJournal(journal1)).toSucceed();
+      expect(lib.size).toBe(1);
+    });
+  });
+
+  // ============================================================================
   // Edge Cases
   // ============================================================================
 

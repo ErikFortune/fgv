@@ -6,7 +6,7 @@
 
 Parameters for creating a sub-library instance asynchronously.
 
-Extends  with encryption support for decrypting encrypted collections during async loading.
+Extends [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md) with encryption support for decrypting encrypted collections during async loading.
 
 **Signature:**
 

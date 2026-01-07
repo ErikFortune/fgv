@@ -24,7 +24,7 @@
  */
 
 import { Grams, IngredientId, SessionId } from '../../common';
-import { IJournalEntry } from '../../journal';
+import { IJournalEntry, IJournalRecord } from '../../journal';
 import { IRuntimeRecipeVersion } from '../model';
 
 // ============================================================================
@@ -189,9 +189,15 @@ export interface ISaveOptions {
  */
 export interface ISaveResult {
   /**
-   * The journal record if one was created
+   * The journal ID if a journal record was created
    */
   readonly journalId?: string;
+
+  /**
+   * The full journal record if one was created.
+   * Callers can use this to persist the journal via `context.journals.addJournal(record)`.
+   */
+  readonly journalRecord?: IJournalRecord;
 
   /**
    * The new version spec if one was created

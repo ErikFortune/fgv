@@ -52,7 +52,28 @@ string
 
 </td><td>
 
-_(Optional)_ The journal record if one was created
+_(Optional)_ The journal ID if a journal record was created
+
+
+</td></tr>
+<tr><td>
+
+[journalRecord?](./ts-chocolate.runtime.session.isaveresult.journalrecord.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)
+
+
+</td><td>
+
+_(Optional)_ The full journal record if one was created. Callers can use this to persist the journal via `context.journals.addJournal(record)`<!-- -->.
 
 
 </td></tr>

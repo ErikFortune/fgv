@@ -58,6 +58,17 @@ A single event entry within a cooking journal. Records what actually happened du
 </td></tr>
 <tr><td>
 
+[IJournalImportResult](./ts-chocolate.journal.ijournalimportresult.md)
+
+
+</td><td>
+
+Result of importing journals into the library
+
+
+</td></tr>
+<tr><td>
+
 [IJournalLibraryParams](./ts-chocolate.journal.ijournallibraryparams.md)
 
 

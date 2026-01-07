@@ -23,6 +23,7 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 import {
   getIngredientsDirectory,
+  getJournalsDirectory,
   getRecipesDirectory,
   LibraryPaths,
   navigateToDirectory
@@ -34,6 +35,7 @@ describe('LibraryData Navigation', () => {
     { path: '/library/data/ingredients/common.json', contents: { items: [] } },
     { path: '/library/data/ingredients/custom.json', contents: { items: [] } },
     { path: '/library/data/recipes/ganache.json', contents: { items: [] } },
+    { path: '/library/data/journals/session.json', contents: { items: [] } },
     { path: '/library/other/file.txt', contents: 'some content' }
   ];
 
@@ -61,6 +63,10 @@ describe('LibraryData Navigation', () => {
 
     test('has correct recipes path', () => {
       expect(LibraryPaths.recipes).toBe('data/recipes');
+    });
+
+    test('has correct journals path', () => {
+      expect(LibraryPaths.journals).toBe('data/journals');
     });
   });
 
@@ -188,6 +194,42 @@ describe('LibraryData Navigation', () => {
       const file = fileResult.orThrow();
 
       expect(getRecipesDirectory(file)).toFailWith(/not a directory/i);
+    });
+  });
+
+  // ============================================================================
+  // getJournalsDirectory Tests
+  // ============================================================================
+
+  describe('getJournalsDirectory', () => {
+    test('returns journals directory from library tree', () => {
+      expect(getJournalsDirectory(mockLibraryTree)).toSucceedAndSatisfy((dir) => {
+        expect(dir.name).toBe('journals');
+        expect(dir.type).toBe('directory');
+      });
+    });
+
+    test('fails when journals directory does not exist', () => {
+      const noJournalsFiles: FileTree.IInMemoryFile[] = [
+        { path: '/library/data/recipes/test.json', contents: {} }
+      ];
+
+      expect(FileTree.inMemory(noJournalsFiles)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/library')).toSucceedAndSatisfy((libraryDir) => {
+          expect(getJournalsDirectory(libraryDir)).toFailWith(/directory not found/i);
+        });
+      });
+    });
+
+    test('fails when starting from non-directory', () => {
+      const treeResult = FileTree.inMemory(mockLibraryFiles);
+      expect(treeResult).toSucceed();
+      const tree = treeResult.orThrow();
+      const fileResult = tree.getItem('/library/other/file.txt');
+      expect(fileResult).toSucceed();
+      const file = fileResult.orThrow();
+
+      expect(getJournalsDirectory(file)).toFailWith(/not a directory/i);
     });
   });
 });

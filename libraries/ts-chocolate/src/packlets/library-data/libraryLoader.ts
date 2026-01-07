@@ -100,6 +100,8 @@ export function getSubLibraryPath(subLibraryId: SubLibraryId): string {
       return LibraryPaths.ingredients;
     case 'recipes':
       return LibraryPaths.recipes;
+    case 'journals':
+      return LibraryPaths.journals;
   }
 }
 

@@ -12,5 +12,6 @@ Canonical paths within a chocolate library tree.
 LibraryPaths: {
     readonly ingredients: "data/ingredients";
     readonly recipes: "data/recipes";
+    readonly journals: "data/journals";
 }
 ```

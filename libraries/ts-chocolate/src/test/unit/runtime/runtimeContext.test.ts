@@ -25,12 +25,15 @@ import {
   BaseRecipeId,
   Grams,
   IngredientId,
+  JournalId,
   Percentage,
   RecipeId,
   RecipeName,
+  RecipeVersionId,
   RecipeVersionSpec,
   SourceId
 } from '../../../packlets/common';
+import { IJournalRecord, JournalLibrary } from '../../../packlets/journal';
 
 import {
   IGanacheCharacteristics,
@@ -534,6 +537,108 @@ describe('RuntimeContext', () => {
       expect(ctx.recipes.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
         expect(recipes.length).toBe(2);
       });
+    });
+  });
+
+  // ============================================================================
+  // Journal Access Tests
+  // ============================================================================
+
+  describe('journals', () => {
+    const testJournalRecord: IJournalRecord = {
+      journalId: '2026-03-15-100000-00000001' as JournalId,
+      recipeVersionId: 'test.dark-ganache@2026-01-01-01' as RecipeVersionId,
+      date: '2026-03-15',
+      targetWeight: 450 as Grams,
+      scaleFactor: 1.5,
+      entries: [
+        {
+          eventType: 'scale-adjust',
+          timestamp: '2026-03-15T10:00:00Z',
+          text: 'Scaled from 1.0 to 1.5'
+        }
+      ]
+    };
+
+    const testJournalRecord2: IJournalRecord = {
+      journalId: '2026-03-16-100000-00000002' as JournalId,
+      recipeVersionId: 'test.dark-ganache@2026-02-01-01' as RecipeVersionId,
+      date: '2026-03-16',
+      targetWeight: 600 as Grams,
+      scaleFactor: 2.0
+    };
+
+    const testJournalRecord3: IJournalRecord = {
+      journalId: '2026-03-17-100000-00000003' as JournalId,
+      recipeVersionId: 'test.milk-ganache@2026-01-01-01' as RecipeVersionId,
+      date: '2026-03-17',
+      targetWeight: 350 as Grams,
+      scaleFactor: 1.0
+    };
+
+    test('journals getter returns JournalLibrary', () => {
+      const ctx = RuntimeContext.fromLibrary(library).orThrow();
+      expect(ctx.journals).toBeInstanceOf(JournalLibrary);
+    });
+
+    test('getJournalsForRecipe returns journals for a recipe', () => {
+      // Create library with pre-populated journals
+      const journalsLib = JournalLibrary.create().orThrow();
+      journalsLib.addJournal(testJournalRecord).orThrow();
+      journalsLib.addJournal(testJournalRecord2).orThrow();
+      journalsLib.addJournal(testJournalRecord3).orThrow();
+
+      const libWithJournals = ChocolateLibrary.create({
+        builtin: false,
+        libraries: {
+          ingredients: library.ingredients,
+          recipes: library.recipes,
+          journals: journalsLib
+        }
+      }).orThrow();
+
+      const ctx = RuntimeContext.fromLibrary(libWithJournals).orThrow();
+
+      // Get journals for dark-ganache recipe (should have 2)
+      const journals = ctx.getJournalsForRecipe('test.dark-ganache' as RecipeId);
+      expect(journals.length).toBe(2);
+      expect(journals.map((j) => j.journalId)).toContain('2026-03-15-100000-00000001');
+      expect(journals.map((j) => j.journalId)).toContain('2026-03-16-100000-00000002');
+    });
+
+    test('getJournalsForRecipe returns empty array for recipe with no journals', () => {
+      const ctx = RuntimeContext.fromLibrary(library).orThrow();
+      const journals = ctx.getJournalsForRecipe('test.dark-ganache' as RecipeId);
+      expect(journals).toEqual([]);
+    });
+
+    test('getJournalsForVersion returns journals for a specific version', () => {
+      // Create library with pre-populated journals
+      const journalsLib = JournalLibrary.create().orThrow();
+      journalsLib.addJournal(testJournalRecord).orThrow();
+      journalsLib.addJournal(testJournalRecord2).orThrow();
+
+      const libWithJournals = ChocolateLibrary.create({
+        builtin: false,
+        libraries: {
+          ingredients: library.ingredients,
+          recipes: library.recipes,
+          journals: journalsLib
+        }
+      }).orThrow();
+
+      const ctx = RuntimeContext.fromLibrary(libWithJournals).orThrow();
+
+      // Get journals for specific version
+      const journals = ctx.getJournalsForVersion('test.dark-ganache@2026-01-01-01' as RecipeVersionId);
+      expect(journals.length).toBe(1);
+      expect(journals[0].journalId).toBe('2026-03-15-100000-00000001');
+    });
+
+    test('getJournalsForVersion returns empty array for version with no journals', () => {
+      const ctx = RuntimeContext.fromLibrary(library).orThrow();
+      const journals = ctx.getJournalsForVersion('test.dark-ganache@2026-01-01-01' as RecipeVersionId);
+      expect(journals).toEqual([]);
     });
   });
 });

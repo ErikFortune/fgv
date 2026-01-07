@@ -222,6 +222,8 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 
 // @public
 class ChocolateLibrary {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    addJournal(journal: IJournalRecord): Result<JournalId>;
     calculateGanache(id: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     calculateGanacheForRecipe(recipe: IRecipe, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -231,11 +233,17 @@ class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<Ingredient>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: RecipeId): Result<IRecipe>;
     hasIngredient(id: IngredientId): boolean;
     hasRecipe(id: RecipeId): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get journals(): JournalLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get recipes(): RecipesLibrary;
 }
@@ -593,6 +601,9 @@ function getIngredientsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.I
 
 // @public
 function getIngredientSourceId(id: IngredientId): SourceId;
+
+// @public
+function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getRecipeBaseId(id: RecipeId): BaseRecipeId;
@@ -992,6 +1003,7 @@ interface IIngredientUsageInfo {
 // @public
 interface IInstantiatedLibrarySource {
     readonly ingredients?: IngredientsLibrary;
+    readonly journals?: JournalLibrary;
     readonly recipes?: RecipesLibrary;
 }
 
@@ -1010,6 +1022,13 @@ interface IJournalEntry {
     readonly substituteIngredientId?: IngredientId;
     readonly text?: string;
     readonly timestamp: string;
+}
+
+// @public
+interface IJournalImportResult {
+    readonly imported: number;
+    readonly skipped: number;
+    readonly skippedIds: ReadonlyArray<JournalId>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1474,7 +1493,10 @@ interface IRuntimeContext {
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipeTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
     readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
+    readonly journals: JournalLibrary;
     readonly library: ChocolateLibrary;
     readonly recipes: IReadOnlyValidatingLibrary<RecipeId, IRuntimeRecipe, IRecipeQuerySpec>;
     warmUp(): void;
@@ -1618,6 +1640,7 @@ interface ISaveOptions {
 // @public
 interface ISaveResult {
     readonly journalId?: string;
+    readonly journalRecord?: IJournalRecord;
     readonly newVersionSpec?: string;
 }
 
@@ -1701,7 +1724,7 @@ function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRec
 // @public
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISubLibraryParams"
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
 interface ISubLibraryAsyncParams<TLibrary, TEntryInit> extends ISubLibraryParams<TLibrary, TEntryInit> {
@@ -1804,6 +1827,7 @@ declare namespace Journal {
     export {
         JournalLibrary,
         IJournalLibraryParams,
+        IJournalImportResult,
         Converters_4 as Converters,
         JournalEventType,
         allJournalEventTypes,
@@ -1841,9 +1865,11 @@ const journalId: Converter<JournalId>;
 class JournalLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addJournal(journal: IJournalRecord): Result<JournalId>;
+    clear(): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
+    exportJournals(): ReadonlyArray<IJournalRecord>;
     getAllJournals(): ReadonlyArray<IJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getJournal(journalId: JournalId): Result<IJournalRecord>;
@@ -1851,6 +1877,8 @@ class JournalLibrary {
     getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    hasJournal(journalId: JournalId): boolean;
+    importJournals(journals: ReadonlyArray<unknown>): Result<IJournalImportResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     removeJournal(journalId: JournalId): Result<IJournalRecord>;
     get size(): number;
@@ -1890,6 +1918,7 @@ declare namespace LibraryData {
         navigateToDirectory,
         getIngredientsDirectory,
         getRecipesDirectory,
+        getJournalsDirectory,
         LibraryPaths,
         specToLoadParams,
         getSubLibraryPath,
@@ -1927,6 +1956,7 @@ type LibraryLoadSpec<TCollectionId extends string = string> = boolean | Readonly
 const LibraryPaths: {
     readonly ingredients: "data/ingredients";
     readonly recipes: "data/recipes";
+    readonly journals: "data/journals";
 };
 
 // @public
@@ -2442,6 +2472,8 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     // @internal
     _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
     // @internal
     _getRecipe(id: RecipeId): Result<RuntimeRecipe>;
     // @internal
@@ -2454,6 +2486,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
+    get journals(): JournalLibrary;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -2744,7 +2777,7 @@ type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Aggregated
 type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
-type SubLibraryId = 'ingredients' | 'recipes';
+type SubLibraryId = 'ingredients' | 'recipes' | 'journals';
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
@@ -2863,6 +2896,6 @@ const weightUnit: Converter<WeightUnit>;
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/journal/journalLibrary.ts:58:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/journal/journalLibrary.ts:77:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

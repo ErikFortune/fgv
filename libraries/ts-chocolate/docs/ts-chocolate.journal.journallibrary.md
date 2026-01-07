@@ -94,6 +94,20 @@ Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
 </td></tr>
 <tr><td>
 
+[clear()](./ts-chocolate.journal.journallibrary.clear.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Clears all journals from the library.
+
+
+</td></tr>
+<tr><td>
+
 [create(params)](./ts-chocolate.journal.journallibrary.create.md)
 
 
@@ -105,6 +119,20 @@ Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
 </td><td>
 
 Creates a new [JournalLibrary](./ts-chocolate.journal.journallibrary.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+[exportJournals()](./ts-chocolate.journal.journallibrary.exportjournals.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Exports all journal records as an array. The returned array can be serialized to JSON for persistence.
 
 
 </td></tr>
@@ -161,6 +189,34 @@ Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recip
 </td><td>
 
 Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a specific recipe version
+
+
+</td></tr>
+<tr><td>
+
+[hasJournal(journalId)](./ts-chocolate.journal.journallibrary.hasjournal.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a journal with the given ID exists in the library.
+
+
+</td></tr>
+<tr><td>
+
+[importJournals(journals)](./ts-chocolate.journal.journallibrary.importjournals.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped.
 
 
 </td></tr>

@@ -121,6 +121,17 @@ Gets the ingredients directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getJournalsDirectory(tree)](./ts-chocolate.librarydata.getjournalsdirectory.md)
+
+
+</td><td>
+
+Gets the journals directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getRecipesDirectory(tree)](./ts-chocolate.librarydata.getrecipesdirectory.md)
 
 
@@ -437,7 +448,7 @@ Result of resolving a file tree source for a specific sub-library.
 
 Parameters for creating a sub-library instance asynchronously.
 
-Extends  with encryption support for decrypting encrypted collections during async loading.
+Extends [ISubLibraryParams](./ts-chocolate.librarydata.isublibraryparams.md) with encryption support for decrypting encrypted collections during async loading.
 
 
 </td></tr>

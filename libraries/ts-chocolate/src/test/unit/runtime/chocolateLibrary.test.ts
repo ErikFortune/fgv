@@ -26,11 +26,15 @@ import {
   BaseRecipeId,
   Grams,
   IngredientId,
+  JournalId,
   Percentage,
   RecipeId,
   RecipeName,
+  RecipeVersionId,
   SourceId
 } from '../../../packlets/common';
+
+import { IJournalRecord, JournalLibrary } from '../../../packlets/journal';
 
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
 
@@ -467,6 +471,97 @@ describe('ChocolateLibrary', () => {
       ).toSucceedAndSatisfy((lib) => {
         // Should still have builtin collections
         expect(lib.hasIngredient('felchlin.maracaibo-65' as IngredientId)).toBe(true);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Journal Integration Tests
+  // ============================================================================
+
+  describe('journals', () => {
+    const testJournal: IJournalRecord = {
+      journalId: '2026-01-01-120000-abcd1234' as JournalId,
+      recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
+      date: '2026-01-01',
+      targetWeight: 200 as Grams,
+      scaleFactor: 2.0
+    };
+
+    const testJournal2: IJournalRecord = {
+      journalId: '2026-01-02-120000-efgh5678' as JournalId,
+      recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
+      date: '2026-01-02',
+      targetWeight: 300 as Grams,
+      scaleFactor: 3.0
+    };
+
+    test('journals accessor returns JournalLibrary', () => {
+      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
+        expect(lib.journals).toBeInstanceOf(JournalLibrary);
+      });
+    });
+
+    test('creates with empty journals by default', () => {
+      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
+        expect(lib.journals.size).toBe(0);
+      });
+    });
+
+    test('creates with provided journals library', () => {
+      const journals = JournalLibrary.create({ journals: [testJournal] }).orThrow();
+
+      expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
+        (lib) => {
+          expect(lib.journals.size).toBe(1);
+        }
+      );
+    });
+
+    test('addJournal adds a journal record', () => {
+      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
+        expect(lib.addJournal(testJournal)).toSucceedWith(testJournal.journalId);
+        expect(lib.journals.size).toBe(1);
+      });
+    });
+
+    test('getJournalsForRecipe returns journals for a recipe', () => {
+      const journals = JournalLibrary.create({ journals: [testJournal, testJournal2] }).orThrow();
+
+      expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
+        (lib) => {
+          const recipeJournals = lib.getJournalsForRecipe('test.testRecipe' as RecipeId);
+          expect(recipeJournals.length).toBe(2);
+        }
+      );
+    });
+
+    test('getJournalsForRecipe returns empty array for non-existent recipe', () => {
+      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
+        const recipeJournals = lib.getJournalsForRecipe('test.nonexistent' as RecipeId);
+        expect(recipeJournals.length).toBe(0);
+      });
+    });
+
+    test('getJournalsForVersion returns journals for a specific version', () => {
+      const journals = JournalLibrary.create({ journals: [testJournal, testJournal2] }).orThrow();
+
+      expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
+        (lib) => {
+          const versionJournals = lib.getJournalsForVersion(
+            'test.testRecipe@2026-01-01-01' as RecipeVersionId
+          );
+          expect(versionJournals.length).toBe(2);
+        }
+      );
+    });
+
+    test('getJournalsForVersion returns empty array for non-existent version', () => {
+      expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
+        const versionJournals = lib.getJournalsForVersion(
+          'test.nonexistent@2026-01-01-01' as RecipeVersionId
+        );
+        expect(versionJournals.length).toBe(0);
       });
     });
   });

@@ -4,7 +4,7 @@
 
 ## Runtime.Session.ISaveResult.journalId property
 
-The journal record if one was created
+The journal ID if a journal record was created
 
 **Signature:**
 

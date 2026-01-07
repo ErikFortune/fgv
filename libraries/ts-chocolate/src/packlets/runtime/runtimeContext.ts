@@ -25,8 +25,9 @@
 
 import { Collections, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
 
-import { Helpers, IngredientId, RecipeId, Validation } from '../common';
+import { Helpers, IngredientId, RecipeId, RecipeVersionId, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
+import { IJournalRecord, JournalLibrary } from '../journal';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
@@ -151,6 +152,35 @@ export class RuntimeContext
    */
   public get library(): ChocolateLibrary {
     return this._library;
+  }
+
+  // ============================================================================
+  // Journals
+  // ============================================================================
+
+  /**
+   * The journals library for managing cooking session records.
+   */
+  public get journals(): JournalLibrary {
+    return this._library.journals;
+  }
+
+  /**
+   * Gets all journal records for a recipe (across all versions).
+   * @param recipeId - The recipe ID to search for
+   * @returns Array of journal records (empty if none found)
+   */
+  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord> {
+    return this._library.getJournalsForRecipe(recipeId);
+  }
+
+  /**
+   * Gets all journal records for a specific recipe version.
+   * @param versionId - The recipe version ID to search for
+   * @returns Array of journal records (empty if none found)
+   */
+  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord> {
+    return this._library.getJournalsForVersion(versionId);
   }
 
   // ============================================================================

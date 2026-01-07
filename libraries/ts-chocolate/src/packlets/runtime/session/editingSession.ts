@@ -533,6 +533,7 @@ export class EditingSession implements ISessionState {
         return journalResult as unknown as Result<ISaveResult>;
       }
       (result as { journalId: string }).journalId = journalResult.value.journalId;
+      (result as { journalRecord: IJournalRecord }).journalRecord = journalResult.value;
     }
 
     if (options.createNewVersion) {

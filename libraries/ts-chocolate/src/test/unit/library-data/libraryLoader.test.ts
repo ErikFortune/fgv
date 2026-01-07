@@ -135,6 +135,10 @@ describe('libraryLoader', () => {
     test('returns correct path for recipes', () => {
       expect(getSubLibraryPath('recipes')).toBe(LibraryPaths.recipes);
     });
+
+    test('returns correct path for journals', () => {
+      expect(getSubLibraryPath('journals')).toBe(LibraryPaths.journals);
+    });
   });
 
   // ============================================================================

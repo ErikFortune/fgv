@@ -25,9 +25,10 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { IngredientId, RecipeId, RecipeVersionSpec, SourceId } from '../common';
+import { IngredientId, JournalId, RecipeId, RecipeVersionId, RecipeVersionSpec, SourceId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, RecipesLibrary } from '../recipes';
+import { IJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,
@@ -57,6 +58,11 @@ export interface IInstantiatedLibrarySource {
    * Pre-built recipes library
    */
   readonly recipes?: RecipesLibrary;
+
+  /**
+   * Pre-built journals library
+   */
+  readonly journals?: JournalLibrary;
 }
 
 /**
@@ -107,6 +113,7 @@ export interface IChocolateLibraryCreateParams {
  * Provides unified access to:
  * - Ingredient management (multi-source with built-ins)
  * - Recipe management (multi-source)
+ * - Journal management (cooking session records)
  * - Recipe scaling
  * - Ganache characteristic calculations
  *
@@ -115,10 +122,12 @@ export interface IChocolateLibraryCreateParams {
 export class ChocolateLibrary {
   private readonly _ingredients: IngredientsLibrary;
   private readonly _recipes: RecipesLibrary;
+  private readonly _journals: JournalLibrary;
 
-  private constructor(ingredients: IngredientsLibrary, recipes: RecipesLibrary) {
+  private constructor(ingredients: IngredientsLibrary, recipes: RecipesLibrary, journals: JournalLibrary) {
     this._ingredients = ingredients;
     this._recipes = recipes;
+    this._journals = journals;
   }
 
   /**
@@ -143,8 +152,18 @@ export class ChocolateLibrary {
       mergeLibraries: params?.libraries?.recipes
     });
 
+    // Create journals library - use provided library or create empty one
+    const journalsResult =
+      params?.libraries?.journals !== undefined
+        ? Success.with(params.libraries.journals)
+        : JournalLibrary.create();
+
     return ingredientsResult.onSuccess((ingredients) =>
-      recipesResult.onSuccess((recipes) => Success.with(new ChocolateLibrary(ingredients, recipes)))
+      recipesResult.onSuccess((recipes) =>
+        journalsResult.onSuccess((journals) =>
+          Success.with(new ChocolateLibrary(ingredients, recipes, journals))
+        )
+      )
     );
   }
 
@@ -174,6 +193,13 @@ export class ChocolateLibrary {
    */
   public get recipes(): RecipesLibrary {
     return this._recipes;
+  }
+
+  /**
+   * The {@link Journal.JournalLibrary | journals library}.
+   */
+  public get journals(): JournalLibrary {
+    return this._journals;
   }
 
   /**
@@ -250,5 +276,39 @@ export class ChocolateLibrary {
     versionSpec?: RecipeVersionSpec
   ): Result<IGanacheCalculation> {
     return calculateGanache(recipe, this.createIngredientResolver(), versionSpec);
+  }
+
+  // ============================================================================
+  // Journal convenience methods
+  // ============================================================================
+
+  /**
+   * Gets all {@link Journal.IJournalRecord | journal records} for a recipe (across all versions)
+   * @param recipeId - The {@link RecipeId | recipe ID} to search for
+   * @returns Array of journal records (empty if none found)
+   * @public
+   */
+  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord> {
+    return this._journals.getJournalsForRecipe(recipeId);
+  }
+
+  /**
+   * Gets all {@link Journal.IJournalRecord | journal records} for a specific recipe version
+   * @param versionId - The {@link RecipeVersionId | recipe version ID} to search for
+   * @returns Array of journal records (empty if none found)
+   * @public
+   */
+  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord> {
+    return this._journals.getJournalsForVersion(versionId);
+  }
+
+  /**
+   * Adds a {@link Journal.IJournalRecord | journal record} to the library
+   * @param journal - The journal record to add
+   * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
+   * @public
+   */
+  public addJournal(journal: IJournalRecord): Result<JournalId> {
+    return this._journals.addJournal(journal);
   }
 }
