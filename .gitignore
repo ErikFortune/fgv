@@ -78,3 +78,4 @@ common/autoinstallers/*/.npmrc
 # built output
 lib/
 dist/
+temp/

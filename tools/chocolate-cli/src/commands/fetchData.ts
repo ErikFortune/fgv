@@ -41,8 +41,8 @@ interface IFetchDataCommandOptions {
 /**
  * Default paths relative to repo root
  */
-const DEFAULT_SOURCE: string = 'data';
-const DEFAULT_DEST: string = 'temp/data';
+const DEFAULT_SOURCE: string = 'data/published/chocolate';
+const DEFAULT_DEST: string = 'temp/data/chocolate';
 
 /**
  * Finds the repository root by looking for rush.json

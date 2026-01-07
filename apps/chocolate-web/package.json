@@ -7,7 +7,9 @@
     "build": "webpack --mode production",
     "dev": "webpack serve --mode development",
     "clean": "rimraf dist",
-    "test": "echo 'No tests configured for chocolate-web - this is a React frontend' && exit 0"
+    "test": "echo 'No tests configured for chocolate-web - this is a React frontend' && exit 0",
+    "data:sync": "node ../../tools/chocolate-cli/lib/cli.js sync-data --target chocolate-web",
+    "data:clean": "rm -rf data/published"
   },
   "keywords": [
     "chocolate",

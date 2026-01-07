@@ -40,8 +40,8 @@ interface IPublishDataCommandOptions {
 /**
  * Default paths relative to repo root
  */
-const DEFAULT_SOURCE: string = 'temp/data';
-const DEFAULT_DEST: string = 'data';
+const DEFAULT_SOURCE: string = 'temp/data/chocolate';
+const DEFAULT_DEST: string = 'data/published/chocolate';
 const DEFAULT_SECRET_NAME: string = 'choco-data';
 
 /**

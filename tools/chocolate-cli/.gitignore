@@ -24,3 +24,6 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+
+# Synced chocolate data (copied from repo root, not committed here)
+data/published/

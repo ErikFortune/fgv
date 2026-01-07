@@ -22,7 +22,9 @@
     "build-all": "rushx build && rushx build-docs",
     "coverage": "hest test --clean",
     "lint": "eslint src --ext .ts",
-    "fixlint": "eslint src --ext .ts --fix"
+    "fixlint": "eslint src --ext .ts --fix",
+    "data:sync": "node ../../tools/chocolate-cli/lib/cli.js sync-data --target ts-chocolate",
+    "data:clean": "rm -rf data/published"
   },
   "sideEffects": false,
   "keywords": [
