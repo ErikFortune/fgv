@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { FileTree } from '@fgv/ts-json-base';
+import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import {
   BaseRecipeId,
@@ -44,6 +44,8 @@ import {
   isScaledRecipeVersion,
   isRecipeVersion
 } from '../../../packlets/recipes';
+
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 
 describe('RecipesLibrary', () => {
   // ============================================================================
@@ -1132,6 +1134,279 @@ describe('Recipe scaling', () => {
       };
       const recalced = recalculateRecipeVersion(version);
       expect(recalced.baseWeight).toBe(150);
+    });
+  });
+
+  // ============================================================================
+  // Async Creation Tests (with encryption support)
+  // ============================================================================
+
+  describe('createAsync', () => {
+    // Test secret for encryption tests (not a real secret - for testing only)
+    const TEST_SECRET_NAME = 'test-secret';
+    let testKey: Uint8Array;
+
+    beforeAll(async () => {
+      // Generate a test key for encryption tests
+      testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+    });
+
+    test('creates library with built-ins using onMissingKey skip mode', async () => {
+      // When loading built-ins with encrypted files but no key, use onMissingKey: 'skip'
+      const result = await RecipesLibrary.createAsync({
+        encryption: {
+          cryptoProvider: nodeCryptoProvider,
+          onMissingKey: 'skip' // Skip encrypted files that we don't have keys for
+        }
+      });
+      expect(result).toSucceedAndSatisfy((lib) => {
+        // Should have at least the common built-in collection (fgv is skipped since no key)
+        expect(lib.collections.has('common' as SourceId)).toBe(true);
+      });
+    });
+
+    test('fails when built-ins include encrypted files with no encryption config', async () => {
+      // Without any encryption config, encountering encrypted built-ins should fail
+      const result = await RecipesLibrary.createAsync();
+      expect(result).toFailWith(/encrypted.*no encryption config/i);
+    });
+
+    test('creates library without built-ins when builtin: false', async () => {
+      const result = await RecipesLibrary.createAsync({ builtin: false });
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collections.size).toBe(0);
+      });
+    });
+
+    test('creates library with file sources', async () => {
+      const files: FileTree.IInMemoryFile[] = [
+        {
+          path: '/data/recipes/external.json',
+          contents: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'external-recipe': {
+              baseId: 'external-recipe',
+              name: 'External Recipe',
+              versions: [
+                {
+                  versionSpec: '2026-01-01-01',
+                  createdDate: '2026-01-01',
+                  ingredients: [{ ingredientId: 'common.butter-82', amount: 100 }],
+                  baseWeight: 100
+                }
+              ],
+              goldenVersionSpec: '2026-01-01-01'
+            }
+          } as unknown as JsonObject
+        }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const rootDir = tree.getItem('/').orThrow();
+      const fileSource: IRecipeFileTreeSource = {
+        directory: rootDir as FileTree.IFileTreeDirectoryItem,
+        mutable: true
+      };
+
+      const result = await RecipesLibrary.createAsync({
+        builtin: false,
+        fileSources: fileSource
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collections.has('external' as SourceId)).toBe(true);
+        expect(lib.get('external.external-recipe' as RecipeId)).toSucceed();
+      });
+    });
+
+    test('decrypts encrypted file sources with encryption config', async () => {
+      // Create encrypted recipe data
+      const secretRecipeData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret-recipe': {
+          baseId: 'secret-recipe',
+          name: 'Secret Recipe',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'common.butter-82', amount: 50 }],
+              baseWeight: 50
+            }
+          ],
+          goldenVersionSpec: '2026-01-01-01'
+        }
+      };
+
+      const encryptedFile = (
+        await createEncryptedCollectionFile({
+          content: secretRecipeData,
+          secretName: TEST_SECRET_NAME,
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        {
+          path: '/data/recipes/secret.json',
+          contents: encryptedFile as unknown as JsonObject
+        }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const rootDir = tree.getItem('/').orThrow();
+      const fileSource: IRecipeFileTreeSource = {
+        directory: rootDir as FileTree.IFileTreeDirectoryItem,
+        mutable: false
+      };
+
+      const result = await RecipesLibrary.createAsync({
+        builtin: false,
+        fileSources: fileSource,
+        encryption: {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        }
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        expect(lib.collections.has('secret' as SourceId)).toBe(true);
+        expect(lib.get('secret.secret-recipe' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+          expect(recipe.name).toBe('Secret Recipe');
+        });
+      });
+    });
+
+    test('fails on encrypted files when no encryption config provided', async () => {
+      const secretRecipeData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret-recipe': {
+          baseId: 'secret-recipe',
+          name: 'Secret Recipe',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'common.butter-82', amount: 50 }],
+              baseWeight: 50
+            }
+          ],
+          goldenVersionSpec: '2026-01-01-01'
+        }
+      };
+
+      const encryptedFile = (
+        await createEncryptedCollectionFile({
+          content: secretRecipeData,
+          secretName: TEST_SECRET_NAME,
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        {
+          path: '/data/recipes/secret.json',
+          contents: encryptedFile as unknown as JsonObject
+        }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const rootDir = tree.getItem('/').orThrow();
+      const fileSource: IRecipeFileTreeSource = {
+        directory: rootDir as FileTree.IFileTreeDirectoryItem,
+        mutable: false
+      };
+
+      // Without encryption config, encrypted files should fail (default behavior)
+      const result = await RecipesLibrary.createAsync({
+        builtin: false,
+        fileSources: fileSource
+      });
+
+      // Should fail because no encryption config was provided
+      expect(result).toFailWith(/encrypted.*no encryption config/i);
+    });
+
+    test('handles mixed encrypted and plain files', async () => {
+      const plainRecipeData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'plain-recipe': {
+          baseId: 'plain-recipe',
+          name: 'Plain Recipe',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'common.butter-82', amount: 25 }],
+              baseWeight: 25
+            }
+          ],
+          goldenVersionSpec: '2026-01-01-01'
+        }
+      };
+
+      const secretRecipeData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret-recipe': {
+          baseId: 'secret-recipe',
+          name: 'Secret Recipe',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'common.butter-82', amount: 75 }],
+              baseWeight: 75
+            }
+          ],
+          goldenVersionSpec: '2026-01-01-01'
+        }
+      };
+
+      const encryptedFile = (
+        await createEncryptedCollectionFile({
+          content: secretRecipeData,
+          secretName: TEST_SECRET_NAME,
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        {
+          path: '/data/recipes/plain.json',
+          contents: plainRecipeData as unknown as JsonObject
+        },
+        {
+          path: '/data/recipes/secret.json',
+          contents: encryptedFile as unknown as JsonObject
+        }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const rootDir = tree.getItem('/').orThrow();
+      const fileSource: IRecipeFileTreeSource = {
+        directory: rootDir as FileTree.IFileTreeDirectoryItem,
+        mutable: false
+      };
+
+      const result = await RecipesLibrary.createAsync({
+        builtin: false,
+        fileSources: fileSource,
+        encryption: {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        }
+      });
+
+      expect(result).toSucceedAndSatisfy((lib) => {
+        // Both collections should be loaded
+        expect(lib.collections.has('plain' as SourceId)).toBe(true);
+        expect(lib.collections.has('secret' as SourceId)).toBe(true);
+        expect(lib.get('plain.plain-recipe' as RecipeId)).toSucceed();
+        expect(lib.get('secret.secret-recipe' as RecipeId)).toSucceed();
+      });
     });
   });
 });

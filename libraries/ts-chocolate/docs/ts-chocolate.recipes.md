@@ -395,12 +395,23 @@ File tree source for recipe data.
 </td></tr>
 <tr><td>
 
+[IRecipesLibraryAsyncParams](./ts-chocolate.recipes.irecipeslibraryasyncparams.md)
+
+
+</td><td>
+
+Parameters for creating a RecipesLibrary instance asynchronously with encryption support.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipesLibraryParams](./ts-chocolate.recipes.irecipeslibraryparams.md)
 
 
 </td><td>
 
-Parameters for creating a RecipesLibrary instance.
+Parameters for creating a RecipesLibrary instance synchronously.
 
 
 </td></tr>

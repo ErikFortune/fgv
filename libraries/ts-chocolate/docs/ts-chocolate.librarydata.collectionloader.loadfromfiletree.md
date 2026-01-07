@@ -4,7 +4,11 @@
 
 ## LibraryData.CollectionLoader.loadFromFileTree() method
 
-Loads collections from a `FileTree` using optional filtering parameters. Note: This synchronous method does not support encrypted collections. Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) for encrypted files.
+Loads collections from a `FileTree` using optional filtering parameters.
+
+Encrypted collections are handled according to `onEncryptedFile`<!-- -->: - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip (default)
+
+Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) to decrypt encrypted files.
 
 **Signature:**
 

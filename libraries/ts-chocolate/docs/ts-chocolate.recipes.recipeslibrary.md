@@ -49,5 +49,23 @@ Creates a new RecipesLibrary instance
 
 
 </td></tr>
+<tr><td>
+
+[createAsync(params)](./ts-chocolate.recipes.recipeslibrary.createasync.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a new RecipesLibrary instance asynchronously with encryption support.
+
+Use this factory method when you need to decrypt encrypted collections. Pass encryption config via `params.encryption`<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 

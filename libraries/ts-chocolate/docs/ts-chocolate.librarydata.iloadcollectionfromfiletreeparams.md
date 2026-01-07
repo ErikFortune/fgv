@@ -80,6 +80,29 @@ _(Optional)_ Overrides the default mutability specification for this load operat
 </td></tr>
 <tr><td>
 
+[onEncryptedFile?](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.onencryptedfile.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[EncryptedFileHandling](./ts-chocolate.librarydata.encryptedfilehandling.md)
+
+
+</td><td>
+
+_(Optional)_ How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files (default for built-in data) - `'warn'`<!-- -->: Log warning and skip encrypted files (default for external files)
+
+Defaults to `'warn'` to help users discover that async loading is needed. Pass `'skip'` for built-in data to avoid console noise.
+
+
+</td></tr>
+<tr><td>
+
 [recurseWithDelimiter?](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.recursewithdelimiter.md)
 
 

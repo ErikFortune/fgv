@@ -536,6 +536,9 @@ const encryptedCollectionFormat: Converter<EncryptedCollectionFormat>;
 const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
 
 // @public
+type EncryptedFileHandling = 'fail' | 'skip' | 'warn';
+
+// @public
 type EncryptionAlgorithm = 'AES-256-GCM';
 
 // @public
@@ -965,6 +968,9 @@ interface IIngredientsByTagConfig {
 }
 
 // @public
+type IIngredientsLibraryAsyncParams = ISubLibraryAsyncParams<IngredientsLibrary, IngredientCollectionEntryInit>;
+
+// @public
 type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
 
 // @public
@@ -1043,6 +1049,7 @@ interface ILibraryLoadParams {
 interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extends Omit<ICollectionFilterInitParams<TCOLLECTIONID>, 'nameConverter'> {
     readonly encryption?: IEncryptionConfig_2;
     readonly mutable?: MutabilitySpec;
+    readonly onEncryptedFile?: EncryptedFileHandling;
     // (undocumented)
     readonly recurseWithDelimiter?: string;
 }
@@ -1221,6 +1228,7 @@ declare namespace Ingredients {
         IIngredientFileTreeSource,
         IngredientsMergeSource,
         IIngredientsLibraryParams,
+        IIngredientsLibraryAsyncParams,
         IngredientsLibrary
     }
 }
@@ -1253,6 +1261,7 @@ class IngredientsByTagIndexer extends BaseIndexer<IRuntimeIngredient, Ingredient
 // @public
 class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredientId, Ingredient> {
     static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary>;
+    static createAsync(params?: IIngredientsLibraryAsyncParams): Promise<Result<IngredientsLibrary>>;
 }
 
 // @public
@@ -1366,6 +1375,9 @@ interface IRecipesByTagConfig {
 interface IRecipeScaleOptions extends IVersionScaleOptions {
     readonly versionSpec?: RecipeVersionSpec;
 }
+
+// @public
+type IRecipesLibraryAsyncParams = ISubLibraryAsyncParams<RecipesLibrary, RecipeCollectionEntryInit>;
 
 // @public
 type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionEntryInit>;
@@ -1689,6 +1701,13 @@ function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRec
 // @public
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "ISubLibraryParams"
+//
+// @public
+interface ISubLibraryAsyncParams<TLibrary, TEntryInit> extends ISubLibraryParams<TLibrary, TEntryInit> {
+    readonly encryption?: IEncryptionConfig_2;
+}
+
 // @public
 interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem> {
     readonly builtInTreeProvider: SubLibraryBuiltInTreeProvider;
@@ -1865,6 +1884,7 @@ declare namespace LibraryData {
         IFilteredItem,
         CollectionFilter,
         ICollectionLoaderInitParams,
+        EncryptedFileHandling,
         ILoadCollectionFromFileTreeParams,
         CollectionLoader,
         navigateToDirectory,
@@ -1893,6 +1913,7 @@ declare namespace LibraryData {
         SubLibraryDirectoryNavigator,
         SubLibraryBuiltInTreeProvider,
         ISubLibraryParams,
+        ISubLibraryAsyncParams,
         ISubLibraryCreateParams,
         SubLibraryBase
     }
@@ -2167,6 +2188,7 @@ declare namespace Recipes {
         IRecipeFileTreeSource,
         RecipesMergeSource,
         IRecipesLibraryParams,
+        IRecipesLibraryAsyncParams,
         RecipesLibrary,
         scaleVersion,
         scaleRecipe,
@@ -2252,6 +2274,7 @@ class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipes
 // @public
 class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recipe> {
     static create(params?: IRecipesLibraryParams): Result<RecipesLibrary>;
+    static createAsync(params?: IRecipesLibraryAsyncParams): Promise<Result<RecipesLibrary>>;
 }
 
 // @public
@@ -2695,6 +2718,7 @@ function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TC
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
+    protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<SubLibraryEntryInit<TBaseId, TItem>[]>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
 }
 

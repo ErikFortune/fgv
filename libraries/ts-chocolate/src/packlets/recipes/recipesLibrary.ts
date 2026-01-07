@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, fail, Result } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeId } from '../common';
 import { Converters as CommonConverters } from '../common';
@@ -32,6 +32,8 @@ import { recipe as recipeConverter } from './converters';
 import { RecipeCollectionEntryInit } from './recipesCollection';
 import {
   getRecipesDirectory,
+  ISubLibraryAsyncParams,
+  ISubLibraryCreateParams,
   ISubLibraryParams,
   SubLibraryBase,
   SubLibraryFileTreeSource,
@@ -63,10 +65,16 @@ export type IRecipeFileTreeSource = SubLibraryFileTreeSource;
 export type RecipesMergeSource = SubLibraryMergeSource<RecipesLibrary>;
 
 /**
- * Parameters for creating a RecipesLibrary instance.
+ * Parameters for creating a RecipesLibrary instance synchronously.
  * @public
  */
 export type IRecipesLibraryParams = ISubLibraryParams<RecipesLibrary, RecipeCollectionEntryInit>;
+
+/**
+ * Parameters for creating a RecipesLibrary instance asynchronously with encryption support.
+ * @public
+ */
+export type IRecipesLibraryAsyncParams = ISubLibraryAsyncParams<RecipesLibrary, RecipeCollectionEntryInit>;
 
 /**
  * Multi-source recipe library with type-safe access
@@ -98,5 +106,42 @@ export class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recip
    */
   public static create(params?: IRecipesLibraryParams): Result<RecipesLibrary> {
     return captureResult(() => new RecipesLibrary(params));
+  }
+
+  /**
+   * Creates a new RecipesLibrary instance asynchronously with encryption support.
+   *
+   * Use this factory method when you need to decrypt encrypted collections.
+   * Pass encryption config via `params.encryption`.
+   *
+   * @param params - Optional creation parameters with initial collections and encryption config
+   * @returns Promise resolving to Success with new instance, or Failure with error message
+   * @public
+   */
+  public static async createAsync(params?: IRecipesLibraryAsyncParams): Promise<Result<RecipesLibrary>> {
+    const createParams: ISubLibraryCreateParams<RecipesLibrary, BaseRecipeId, Recipe> = {
+      itemIdConverter: CommonConverters.baseRecipeId,
+      itemConverter: recipeConverter,
+      directoryNavigator: getRecipesDirectory,
+      builtInTreeProvider: BuiltInData.getLibraryTree,
+      libraryParams: params
+    };
+
+    // Load all collections asynchronously with encryption support
+    const collectionsResult = await SubLibraryBase.loadAllCollectionsAsync(createParams);
+    if (collectionsResult.isFailure()) {
+      return fail(collectionsResult.message);
+    }
+
+    // Create library with pre-loaded collections (no file sources, no built-in - already loaded)
+    return captureResult(
+      () =>
+        new RecipesLibrary({
+          ...params,
+          builtin: false, // Already loaded
+          fileSources: undefined, // Already loaded
+          collections: collectionsResult.value
+        })
+    );
   }
 }

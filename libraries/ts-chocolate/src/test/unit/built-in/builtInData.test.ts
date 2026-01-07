@@ -157,7 +157,8 @@ describe('BuiltInData', () => {
       expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const names = children.map((c) => c.name).sort();
-          expect(names).toEqual(['common.json']);
+          // common.json is unencrypted public recipes, fgv.json is encrypted private recipes
+          expect(names).toEqual(['common.json', 'fgv.json']);
         });
       });
     });
@@ -190,8 +191,8 @@ describe('BuiltInData', () => {
   describe('source data validation', () => {
     // The test runs from lib/test/unit/built-in/, so we need to go up to the library root
     const libraryRoot = path.resolve(__dirname, '..', '..', '..', '..');
-    const ingredientsSourceDir = path.join(libraryRoot, 'data', 'ingredients');
-    const recipesSourceDir = path.join(libraryRoot, 'data', 'recipes');
+    const ingredientsSourceDir = path.join(libraryRoot, 'data', 'published', 'ingredients');
+    const recipesSourceDir = path.join(libraryRoot, 'data', 'published', 'recipes');
 
     test('generated ingredient data matches source YAML files', () => {
       // Read source YAML files directly
@@ -213,17 +214,22 @@ describe('BuiltInData', () => {
     });
 
     test('generated recipe data matches source YAML files', () => {
-      // Read source YAML files directly
+      // Read source YAML files directly (unencrypted recipes)
       const sourceFiles = fs
         .readdirSync(recipesSourceDir)
         .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'));
 
-      // Compare collection names
-      const generatedNames = Object.keys(recipeCollections).sort();
-      const sourceNames = sourceFiles.map((f) => path.basename(f, path.extname(f))).sort();
-      expect(generatedNames).toEqual(sourceNames);
+      // Also check for JSON files (encrypted recipes)
+      const jsonFiles = fs.readdirSync(recipesSourceDir).filter((f) => f.endsWith('.json'));
 
-      // Compare each collection's content
+      // All source files (YAML unencrypted + JSON encrypted) should match generated collections
+      const generatedNames = Object.keys(recipeCollections).sort();
+      const yamlSourceNames = sourceFiles.map((f) => path.basename(f, path.extname(f)));
+      const jsonSourceNames = jsonFiles.map((f) => path.basename(f, path.extname(f)));
+      const allSourceNames = [...yamlSourceNames, ...jsonSourceNames].sort();
+      expect(generatedNames).toEqual(allSourceNames);
+
+      // Compare each YAML collection's content (JSON files are encrypted and content comparison is separate)
       for (const file of sourceFiles) {
         const name = path.basename(file, path.extname(file));
         const sourceContent = yaml.parse(fs.readFileSync(path.join(recipesSourceDir, file), 'utf-8'));

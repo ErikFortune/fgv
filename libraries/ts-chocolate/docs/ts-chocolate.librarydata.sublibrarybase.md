@@ -75,6 +75,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[loadAllCollectionsAsync(params)](./ts-chocolate.librarydata.sublibrarybase.loadallcollectionsasync.md)
+
+
+</td><td>
+
+`protected`
+
+`static`
+
+
+</td><td>
+
+Loads all collections asynchronously with encryption support.
+
+This is a protected helper for derived class `createAsync()` methods. It handles built-in collections, file sources, and merge libraries.
+
+Encryption configuration is read from `params.libraryParams.encryption`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [loadFromFileTreeSource(source)](./ts-chocolate.librarydata.sublibrarybase.loadfromfiletreesource.md)
 
 

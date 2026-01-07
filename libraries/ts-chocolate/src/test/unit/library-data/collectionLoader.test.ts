@@ -455,7 +455,7 @@ describe('CollectionLoader', () => {
       });
     });
 
-    test('fails when encountering encrypted collection file', async () => {
+    test('fails when encountering encrypted collection file with onEncryptedFile: fail', async () => {
       const collectionData = {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'item-1': { name: 'Secret Item', value: 42 }
@@ -476,9 +476,83 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(loader.loadFromFileTree(dir)).toFailWith(/use loadFromFileTreeAsync instead/i);
+          expect(loader.loadFromFileTree(dir, { onEncryptedFile: 'fail' })).toFailWith(
+            /use loadFromFileTreeAsync instead/i
+          );
         });
       });
+    });
+
+    test('skips encrypted collection file with default behavior (warn)', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret Item', value: 42 }
+      };
+      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      // Use jest.spyOn to capture the warning
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          // Default behavior should warn and skip, returning empty array
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
+            expect(collections).toHaveLength(0);
+          });
+        });
+      });
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping encrypted collection'));
+      warnSpy.mockRestore();
+    });
+
+    test('silently skips encrypted collection file with onEncryptedFile: skip', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret Item', value: 42 }
+      };
+      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      // Use jest.spyOn to verify no warning is logged
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          // Skip mode should silently skip, returning empty array
+          expect(loader.loadFromFileTree(dir, { onEncryptedFile: 'skip' })).toSucceedAndSatisfy(
+            (collections) => {
+              expect(collections).toHaveLength(0);
+            }
+          );
+        });
+      });
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 

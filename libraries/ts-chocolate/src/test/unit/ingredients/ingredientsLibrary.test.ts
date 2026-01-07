@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { FileTree } from '@fgv/ts-json-base';
+import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../packlets/common';
 
@@ -35,6 +35,8 @@ import {
   isSugarIngredient,
   isAlcoholIngredient
 } from '../../../packlets/ingredients';
+
+import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 
 describe('IngredientsLibrary', () => {
   // ============================================================================
@@ -1062,5 +1064,182 @@ describe('Ingredient type guards', () => {
     ['isAlcoholIngredient', isAlcoholIngredient, chocolateIngredient, false]
   ])('%s returns %p for %p', (name, fn, input, expected) => {
     expect(fn(input)).toBe(expected);
+  });
+});
+
+// ============================================================================
+// createAsync Tests (with encryption support)
+// ============================================================================
+
+describe('IngredientsLibrary.createAsync', () => {
+  const TEST_SECRET_NAME = 'test-secret';
+  let testKey: Uint8Array;
+
+  beforeAll(async () => {
+    testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+  });
+
+  test('creates library with built-ins by default', async () => {
+    // Built-in ingredients don't include encrypted files, so this should work
+    const result = await IngredientsLibrary.createAsync();
+    expect(result).toSucceedAndSatisfy((lib) => {
+      // Should have built-in collections like common, guittard, etc.
+      expect(lib.collections.has('common' as SourceId)).toBe(true);
+    });
+  });
+
+  test('creates library without built-ins when builtin: false', async () => {
+    const result = await IngredientsLibrary.createAsync({ builtin: false });
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.size).toBe(0);
+    });
+  });
+
+  test('creates library with file sources', async () => {
+    const files: FileTree.IInMemoryFile[] = [
+      {
+        path: '/data/ingredients/external.json',
+        contents: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'external-butter': {
+            baseId: 'external-butter',
+            name: 'External Butter',
+            category: 'fat',
+            ganacheCharacteristics: {
+              cacaoFat: 0,
+              sugar: 0,
+              milkFat: 82,
+              water: 16,
+              solids: 2,
+              otherFats: 0
+            }
+          }
+        } as unknown as JsonObject
+      }
+    ];
+
+    const tree = FileTree.inMemory(files).orThrow();
+    const rootDir = tree.getItem('/').orThrow();
+    const fileSource: IIngredientFileTreeSource = {
+      directory: rootDir as FileTree.IFileTreeDirectoryItem,
+      mutable: true
+    };
+
+    const result = await IngredientsLibrary.createAsync({
+      builtin: false,
+      fileSources: fileSource
+    });
+
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.has('external' as SourceId)).toBe(true);
+      expect(lib.get('external.external-butter' as IngredientId)).toSucceed();
+    });
+  });
+
+  test('decrypts encrypted file sources with encryption config', async () => {
+    const secretIngredientData = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      'secret-ingredient': {
+        baseId: 'secret-ingredient',
+        name: 'Secret Ingredient',
+        category: 'sugar',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 100,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        }
+      }
+    };
+
+    const encryptedFile = (
+      await createEncryptedCollectionFile({
+        content: secretIngredientData,
+        secretName: TEST_SECRET_NAME,
+        key: testKey,
+        cryptoProvider: nodeCryptoProvider
+      })
+    ).orThrow();
+
+    const files: FileTree.IInMemoryFile[] = [
+      {
+        path: '/data/ingredients/secret.json',
+        contents: encryptedFile as unknown as JsonObject
+      }
+    ];
+
+    const tree = FileTree.inMemory(files).orThrow();
+    const rootDir = tree.getItem('/').orThrow();
+    const fileSource: IIngredientFileTreeSource = {
+      directory: rootDir as FileTree.IFileTreeDirectoryItem,
+      mutable: false
+    };
+
+    const result = await IngredientsLibrary.createAsync({
+      builtin: false,
+      fileSources: fileSource,
+      encryption: {
+        secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+        cryptoProvider: nodeCryptoProvider
+      }
+    });
+
+    expect(result).toSucceedAndSatisfy((lib) => {
+      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.get('secret.secret-ingredient' as IngredientId)).toSucceedAndSatisfy((ingredient) => {
+        expect(ingredient.name).toBe('Secret Ingredient');
+      });
+    });
+  });
+
+  test('fails on encrypted files when no encryption config provided', async () => {
+    const secretIngredientData = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      'secret-ingredient': {
+        baseId: 'secret-ingredient',
+        name: 'Secret Ingredient',
+        category: 'sugar',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 100,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        }
+      }
+    };
+
+    const encryptedFile = (
+      await createEncryptedCollectionFile({
+        content: secretIngredientData,
+        secretName: TEST_SECRET_NAME,
+        key: testKey,
+        cryptoProvider: nodeCryptoProvider
+      })
+    ).orThrow();
+
+    const files: FileTree.IInMemoryFile[] = [
+      {
+        path: '/data/ingredients/secret.json',
+        contents: encryptedFile as unknown as JsonObject
+      }
+    ];
+
+    const tree = FileTree.inMemory(files).orThrow();
+    const rootDir = tree.getItem('/').orThrow();
+    const fileSource: IIngredientFileTreeSource = {
+      directory: rootDir as FileTree.IFileTreeDirectoryItem,
+      mutable: false
+    };
+
+    const result = await IngredientsLibrary.createAsync({
+      builtin: false,
+      fileSources: fileSource
+    });
+
+    expect(result).toFailWith(/encrypted.*no encryption config/i);
   });
 });

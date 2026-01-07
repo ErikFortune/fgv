@@ -4,7 +4,7 @@
 
 ## Recipes.IRecipesLibraryParams type
 
-Parameters for creating a RecipesLibrary instance.
+Parameters for creating a RecipesLibrary instance synchronously.
 
 **Signature:**
 

@@ -2,11 +2,12 @@
 // Run 'rushx build:data' to regenerate from source YAML files
 //
 // Source files:
-//   - data/ingredients/cacao-barry.yaml
-//   - data/ingredients/common.yaml
-//   - data/ingredients/felchlin.yaml
-//   - data/ingredients/guittard.yaml
-//   - data/recipes/common.yaml
+//   - data/published/ingredients/cacao-barry.yaml
+//   - data/published/ingredients/common.yaml
+//   - data/published/ingredients/felchlin.yaml
+//   - data/published/ingredients/guittard.yaml
+//   - data/published/recipes/common.yaml
+//   - data/published/recipes/fgv.json
 
 import { JsonObject } from '@fgv/ts-json-base';
 
@@ -965,6 +966,15 @@ export const recipeCollections: Record<string, JsonObject> = {
         }
       ]
     }
+  },
+  fgv: {
+    format: 'encrypted-collection-v1',
+    secretName: 'fgv',
+    algorithm: 'AES-256-GCM',
+    iv: 'yij12pBqW/s1CpD5',
+    authTag: 'QD6LKikvZ5CxW6wKTnWGbw==',
+    encryptedData:
+      'KGQAPNRXz8KB4DgNddd1ZyHqbNo8R+u5VfXSgwK0VaCSnesuTC9HeyTeGJ420d/pd12zgb/v5QCRbjQPk2ayBLQ578DZs/kNjvJziHsSgJsiS48ihNVVtTkKKvLwfl71woYPvPiPjNNVQKksC9Q1Sjye6Qrv85DNjjCEQr7NJ2h6hs3mgY9jGYeZ8ZI5Vwdo6mmw/mlQYqPo4Mkct2kQqPGwTjfGuBsedU9BIoeAr3EPJfU8JfZTZ5XCjEMNGuRUl88t7ZXopzxdGssr+VUIDbUUtc3UMrqbdp9XgmF0EC/ZNcOYzMdxhQBBq3U2auW3FtVCgQr9Y2UpcrEXx7NcOiBunqYOPUyNRAdqzPLEKT/c3R9qJoKUSIQbTV5kZJ0r2b81Nj3VgsK180mrZC2TBjkSXKwFTSBAmtpUw79n1t31SNcJhFZj24PfzYESw1yJCaAgJ1A0jF7Be/ry903L5hd9RTJl3EmzvguU2KUdQHHTE/g80ex64MZeS3rwhtyCDYyKrqHrRDlVlii5sPOGuDqDXQam+fEuYypHxHvzhlMurCPEjUNgVUWrf1536BXxPl9Fjh8Z9m5TK4M+n4Ou/yuXw/t9MziioL1yHKXHkSO9As8KFVhgK65oy/wRxWGaF1lDFudcwEO3l4xQq617UvjHfIiLw6dqQJM4iHyqr7EfxniBz2F+ukRr5aMwVV90YN12zUwBhD+z4UtrwGF7uN7kuf7oDpDsgayacBs='
   }
 };
 /* eslint-enable @typescript-eslint/naming-convention */

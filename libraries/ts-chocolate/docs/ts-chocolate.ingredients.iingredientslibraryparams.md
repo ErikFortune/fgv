@@ -4,7 +4,7 @@
 
 ## Ingredients.IIngredientsLibraryParams type
 
-Parameters for creating an IngredientsLibrary instance.
+Parameters for creating an IngredientsLibrary instance synchronously.
 
 **Signature:**
 

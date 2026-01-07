@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, Result } from '@fgv/ts-utils';
+import { captureResult, fail, Result } from '@fgv/ts-utils';
 
 import { BaseIngredientId, IngredientId } from '../common';
 import { Converters as CommonConverters } from '../common';
@@ -32,6 +32,8 @@ import { ingredient as ingredientConverter } from './converters';
 import { IngredientCollectionEntryInit } from './ingredientsCollection';
 import {
   getIngredientsDirectory,
+  ISubLibraryAsyncParams,
+  ISubLibraryCreateParams,
   ISubLibraryParams,
   SubLibraryBase,
   SubLibraryFileTreeSource,
@@ -56,10 +58,19 @@ export type IIngredientFileTreeSource = SubLibraryFileTreeSource;
 export type IngredientsMergeSource = SubLibraryMergeSource<IngredientsLibrary>;
 
 /**
- * Parameters for creating an IngredientsLibrary instance.
+ * Parameters for creating an IngredientsLibrary instance synchronously.
  * @public
  */
 export type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, IngredientCollectionEntryInit>;
+
+/**
+ * Parameters for creating an IngredientsLibrary instance asynchronously with encryption support.
+ * @public
+ */
+export type IIngredientsLibraryAsyncParams = ISubLibraryAsyncParams<
+  IngredientsLibrary,
+  IngredientCollectionEntryInit
+>;
 
 // ============================================================================
 // IngredientsLibrary Class
@@ -95,5 +106,44 @@ export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredi
    */
   public static create(params?: IIngredientsLibraryParams): Result<IngredientsLibrary> {
     return captureResult(() => new IngredientsLibrary(params));
+  }
+
+  /**
+   * Creates a new IngredientsLibrary instance asynchronously with encryption support.
+   *
+   * Use this factory method when you need to decrypt encrypted collections.
+   * Pass encryption config via `params.encryption`.
+   *
+   * @param params - Optional creation parameters with initial collections and encryption config
+   * @returns Promise resolving to Success with new instance, or Failure with error message
+   * @public
+   */
+  public static async createAsync(
+    params?: IIngredientsLibraryAsyncParams
+  ): Promise<Result<IngredientsLibrary>> {
+    const createParams: ISubLibraryCreateParams<IngredientsLibrary, BaseIngredientId, Ingredient> = {
+      itemIdConverter: CommonConverters.baseIngredientId,
+      itemConverter: ingredientConverter,
+      directoryNavigator: getIngredientsDirectory,
+      builtInTreeProvider: BuiltInData.getLibraryTree,
+      libraryParams: params
+    };
+
+    // Load all collections asynchronously with encryption support
+    const collectionsResult = await SubLibraryBase.loadAllCollectionsAsync(createParams);
+    if (collectionsResult.isFailure()) {
+      return fail(collectionsResult.message);
+    }
+
+    // Create library with pre-loaded collections (no file sources, no built-in - already loaded)
+    return captureResult(
+      () =>
+        new IngredientsLibrary({
+          ...params,
+          builtin: false, // Already loaded
+          fileSources: undefined, // Already loaded
+          collections: collectionsResult.value
+        })
+    );
   }
 }

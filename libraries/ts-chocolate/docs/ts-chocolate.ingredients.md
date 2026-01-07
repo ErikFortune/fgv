@@ -255,12 +255,23 @@ File tree source for ingredient data.
 </td></tr>
 <tr><td>
 
+[IIngredientsLibraryAsyncParams](./ts-chocolate.ingredients.iingredientslibraryasyncparams.md)
+
+
+</td><td>
+
+Parameters for creating an IngredientsLibrary instance asynchronously with encryption support.
+
+
+</td></tr>
+<tr><td>
+
 [IIngredientsLibraryParams](./ts-chocolate.ingredients.iingredientslibraryparams.md)
 
 
 </td><td>
 
-Parameters for creating an IngredientsLibrary instance.
+Parameters for creating an IngredientsLibrary instance synchronously.
 
 
 </td></tr>

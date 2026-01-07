@@ -50,6 +50,15 @@ export interface ICollectionLoaderInitParams<
 }
 
 /**
+ * How to handle encrypted files in synchronous loading.
+ * - `'fail'`: Fail the entire load operation (original behavior)
+ * - `'skip'`: Silently skip encrypted files
+ * - `'warn'`: Log warning and skip encrypted files
+ * @public
+ */
+export type EncryptedFileHandling = 'fail' | 'skip' | 'warn';
+
+/**
  * Parameters used to load collections from a file tree.
  * @public
  */
@@ -66,6 +75,16 @@ export interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string>
    * If not provided, encrypted files will be treated as regular JSON (and likely fail validation).
    */
   readonly encryption?: IEncryptionConfig;
+  /**
+   * How to handle encrypted files in synchronous loading.
+   * - `'fail'`: Fail the entire load operation
+   * - `'skip'`: Silently skip encrypted files (default for built-in data)
+   * - `'warn'`: Log warning and skip encrypted files (default for external files)
+   *
+   * Defaults to `'warn'` to help users discover that async loading is needed.
+   * Pass `'skip'` for built-in data to avoid console noise.
+   */
+  readonly onEncryptedFile?: EncryptedFileHandling;
 }
 
 /**
@@ -101,8 +120,15 @@ export class CollectionLoader<
 
   /**
    * Loads collections from a `FileTree` using optional filtering parameters.
-   * Note: This synchronous method does not support encrypted collections.
-   * Use {@link LibraryData.CollectionLoader.loadFromFileTreeAsync | loadFromFileTreeAsync} for encrypted files.
+   *
+   * Encrypted collections are handled according to `onEncryptedFile`:
+   * - `'fail'`: Fail the entire load operation
+   * - `'skip'`: Silently skip encrypted files
+   * - `'warn'`: Log warning and skip (default)
+   *
+   * Use {@link LibraryData.CollectionLoader.loadFromFileTreeAsync | loadFromFileTreeAsync}
+   * to decrypt encrypted files.
+   *
    * @param fileTree - The `FileTree` from which to load collections.
    * @param params - optional {@link LibraryData.ILoadCollectionFromFileTreeParams | parameters} to control filtering
    * and recursion.
@@ -114,6 +140,7 @@ export class CollectionLoader<
   ): Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>> {
     params = params ?? {};
     const mutabilitySpec = params.mutable ?? this._mutableDefault;
+    const onEncryptedFile = params.onEncryptedFile ?? 'warn';
     const filterParams: ICollectionFilterInitParams<TCOLLECTIONID> = {
       ...pick(params, ['included', 'excluded', 'errorOnInvalidName']),
       nameConverter: this._fileNameToCollectionIdConverter
@@ -121,14 +148,22 @@ export class CollectionLoader<
     const dirParams: IFilterDirectoryParams = pick(params, ['recurseWithDelimiter']);
     const filter = new CollectionFilter<TCOLLECTIONID>(filterParams);
     return filter.filterDirectory(fileTree, dirParams).onSuccess((filteredItems) => {
-      return mapResults(
-        filteredItems.map((item) => {
-          return item.item.getContents().onSuccess((json) => {
+      const results = filteredItems.map((item) => {
+        return item.item
+          .getContents()
+          .onSuccess((json): Result<ICollection<T, TCOLLECTIONID, TITEMID> | undefined> => {
             // Check if this is an encrypted collection file
             if (isEncryptedCollectionFile(json)) {
-              return fail<ICollection<T, TCOLLECTIONID, TITEMID>>(
-                `Encrypted collection "${item.name}" found - use loadFromFileTreeAsync instead`
-              );
+              if (onEncryptedFile === 'fail') {
+                return fail(`Encrypted collection "${item.name}" found - use loadFromFileTreeAsync instead`);
+              }
+              if (onEncryptedFile === 'warn') {
+                console.warn(
+                  `[CollectionLoader] Skipping encrypted collection "${item.name}" in sync mode - use loadFromFileTreeAsync`
+                );
+              }
+              // Skip this file (return undefined to filter out)
+              return succeed(undefined);
             }
             return this._collectionConverter.convert({
               id: item.name,
@@ -136,7 +171,9 @@ export class CollectionLoader<
               items: json
             });
           });
-        })
+      });
+      return mapResults(results).onSuccess((collections) =>
+        succeed(collections.filter((c): c is ICollection<T, TCOLLECTIONID, TITEMID> => c !== undefined))
       );
     });
   }

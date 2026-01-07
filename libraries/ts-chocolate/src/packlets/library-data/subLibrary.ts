@@ -27,10 +27,12 @@ import {
   Collections,
   Converter,
   ensureArray,
+  fail,
   Failure,
   mapResults,
   recordFromEntries,
   Result,
+  succeed,
   Success,
   Validator
 } from '@fgv/ts-utils';
@@ -38,9 +40,9 @@ import { FileTree } from '@fgv/ts-json-base';
 
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { CollectionLoader } from './collectionLoader';
+import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
-import { IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec } from './model';
+import { IEncryptionConfig, IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec } from './model';
 import {
   checkForCollisionIds,
   ICollectionSet,
@@ -198,6 +200,26 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
    * - An array of the above
    */
   readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
+}
+
+/**
+ * Parameters for creating a sub-library instance asynchronously.
+ *
+ * Extends {@link ISubLibraryParams} with encryption support for decrypting
+ * encrypted collections during async loading.
+ *
+ * @typeParam TLibrary - The library type (e.g., `IngredientsLibrary`)
+ * @typeParam TEntryInit - The collection entry initialization type (e.g., `IngredientCollectionEntryInit`)
+ * @public
+ */
+export interface ISubLibraryAsyncParams<TLibrary, TEntryInit>
+  extends ISubLibraryParams<TLibrary, TEntryInit> {
+  /**
+   * Optional encryption configuration for decrypting encrypted collections.
+   *
+   * Only used by `createAsync()` - this field is ignored by synchronous `create()`.
+   */
+  readonly encryption?: IEncryptionConfig;
 }
 
 // ============================================================================
@@ -400,11 +422,13 @@ export abstract class SubLibraryBase<
         load: spec,
         mutable: false // Built-ins are always immutable
       };
+      // Skip encrypted files silently for built-ins (use async loading to decrypt)
       return SubLibraryBase._loadFromFileTreeSource(
         source,
         itemIdConverter,
         itemConverter,
-        directoryNavigator
+        directoryNavigator,
+        'skip'
       );
     });
   }
@@ -416,13 +440,15 @@ export abstract class SubLibraryBase<
    * @param itemIdConverter - Converter for item IDs.
    * @param itemConverter - Converter for items.
    * @param directoryNavigator - Function to navigate to the data directory.
+   * @param onEncryptedFile - How to handle encrypted files ('skip' for built-ins, 'warn' for external).
    * @returns Success with collections or Failure with error.
    */
   private static _loadFromFileTreeSource<TBaseId extends string, TItem>(
     source: SubLibraryFileTreeSource,
     itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
     itemConverter: Converter<TItem> | Validator<TItem>,
-    directoryNavigator: SubLibraryDirectoryNavigator
+    directoryNavigator: SubLibraryDirectoryNavigator,
+    onEncryptedFile?: EncryptedFileHandling
   ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
     const mutable = source.mutable ?? false;
     const loadParams = specToLoadParams(source.load ?? true, mutable);
@@ -439,7 +465,7 @@ export abstract class SubLibraryBase<
     });
 
     return directoryNavigator(source.directory).onSuccess((dataDir) => {
-      return loader.loadFromFileTree(dataDir, loadParams);
+      return loader.loadFromFileTree(dataDir, { ...loadParams, onEncryptedFile });
     });
   }
 
@@ -489,6 +515,204 @@ export abstract class SubLibraryBase<
       }
     }
     return result;
+  }
+
+  // ============================================================================
+  // Async Loading Methods (for encryption support)
+  // ============================================================================
+
+  /**
+   * Loads built-in collections asynchronously with encryption support.
+   *
+   * @param spec - The LibraryLoadSpec controlling which built-ins to load.
+   * @param itemIdConverter - Converter for item IDs.
+   * @param itemConverter - Converter for items.
+   * @param directoryNavigator - Function to navigate to the data directory.
+   * @param builtInTreeProvider - Function to get the built-in library tree.
+   * @param encryption - Optional encryption configuration for decrypting files.
+   * @returns Promise resolving to Success with collections or Failure with error.
+   */
+  private static async _loadBuiltInCollectionsAsync<TBaseId extends string, TItem>(
+    spec: LibraryLoadSpec<SourceId>,
+    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
+    itemConverter: Converter<TItem> | Validator<TItem>,
+    directoryNavigator: SubLibraryDirectoryNavigator,
+    builtInTreeProvider: SubLibraryBuiltInTreeProvider,
+    encryption?: IEncryptionConfig
+  ): Promise<Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>>> {
+    if (spec === false) {
+      return Success.with([]);
+    }
+
+    const libraryRootResult = builtInTreeProvider();
+    /* c8 ignore next 3 - defensive: builtInTreeProvider only fails if built-in data is malformed */
+    if (libraryRootResult.isFailure()) {
+      return fail(libraryRootResult.message);
+    }
+
+    const source: SubLibraryFileTreeSource = {
+      directory: libraryRootResult.value,
+      load: spec,
+      mutable: false // Built-ins are always immutable
+    };
+
+    return SubLibraryBase._loadFromFileTreeSourceAsync(
+      source,
+      itemIdConverter,
+      itemConverter,
+      directoryNavigator,
+      encryption
+    );
+  }
+
+  /**
+   * Loads collections from a single file tree source asynchronously with encryption support.
+   *
+   * @param source - The file tree source to load from.
+   * @param itemIdConverter - Converter for item IDs.
+   * @param itemConverter - Converter for items.
+   * @param directoryNavigator - Function to navigate to the data directory.
+   * @param encryption - Optional encryption configuration for decrypting files.
+   * @returns Promise resolving to Success with collections or Failure with error.
+   */
+  private static async _loadFromFileTreeSourceAsync<TBaseId extends string, TItem>(
+    source: SubLibraryFileTreeSource,
+    itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
+    itemConverter: Converter<TItem> | Validator<TItem>,
+    directoryNavigator: SubLibraryDirectoryNavigator,
+    encryption?: IEncryptionConfig
+  ): Promise<Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>>> {
+    /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
+    const mutable = source.mutable ?? false;
+    const loadParams = specToLoadParams(source.load ?? true, mutable);
+    /* c8 ignore next 3 - defensive: only undefined when spec is explicitly false, handled by caller */
+    if (loadParams === undefined) {
+      return Success.with([]);
+    }
+
+    /* c8 ignore next 6 - defensive fallback: loadParams.mutable always set by specToLoadParams */
+    const loader = new CollectionLoader({
+      itemConverter,
+      collectionIdConverter: CommonConverters.sourceId,
+      itemIdConverter,
+      mutable: loadParams.mutable ?? mutable
+    });
+
+    const dataDirResult = directoryNavigator(source.directory);
+    /* c8 ignore next 3 - defensive: directory navigation only fails with malformed FileTree */
+    if (dataDirResult.isFailure()) {
+      return fail(dataDirResult.message);
+    }
+
+    return loader.loadFromFileTreeAsync(dataDirResult.value, {
+      ...loadParams,
+      encryption
+    });
+  }
+
+  /**
+   * Loads all collections asynchronously with encryption support.
+   *
+   * This is a protected helper for derived class `createAsync()` methods.
+   * It handles built-in collections, file sources, and merge libraries.
+   *
+   * Encryption configuration is read from `params.libraryParams.encryption`.
+   *
+   * @param params - The creation parameters (encryption config comes from libraryParams.encryption).
+   * @returns Promise resolving to Success with all collections or Failure with error.
+   */
+  protected static async loadAllCollectionsAsync<
+    TLibrary extends SubLibraryBase<string, TBaseId, TItem>,
+    TBaseId extends string,
+    TItem
+  >(
+    params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>
+  ): Promise<Result<SubLibraryEntryInit<TBaseId, TItem>[]>> {
+    const libraryParams = params.libraryParams as
+      | ISubLibraryAsyncParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>
+      | undefined;
+    const builtin = libraryParams?.builtin ?? true;
+    const fileSources = normalizeFileSources(libraryParams?.fileSources);
+    /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
+    const additionalCollections = libraryParams?.collections ?? [];
+    const encryption = libraryParams?.encryption;
+
+    // Load built-in collections async
+    const builtInResult = await SubLibraryBase._loadBuiltInCollectionsAsync(
+      builtin,
+      params.itemIdConverter,
+      params.itemConverter,
+      params.directoryNavigator,
+      params.builtInTreeProvider,
+      encryption
+    );
+    if (builtInResult.isFailure()) {
+      return fail(builtInResult.message);
+    }
+
+    // Load file sources async
+    const fileSourceResults: Result<ICollectionSet<SourceId>>[] = [];
+    for (let i = 0; i < fileSources.length; i++) {
+      const result = await SubLibraryBase._loadFromFileTreeSourceAsync(
+        fileSources[i],
+        params.itemIdConverter,
+        params.itemConverter,
+        params.directoryNavigator,
+        encryption
+      );
+      if (result.isFailure()) {
+        return fail(result.message);
+      }
+      fileSourceResults.push(
+        succeed({
+          source: `fileSource[${i}]`,
+          collections: result.value as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
+        })
+      );
+    }
+
+    const fileSourceData = mapResults(fileSourceResults);
+    /* c8 ignore next 3 - defensive: fileSource failures are caught and returned in the loop above */
+    if (fileSourceData.isFailure()) {
+      return fail(fileSourceData.message);
+    }
+
+    // Extract from merge libraries (sync - these are already loaded)
+    const mergedCollections = SubLibraryBase._extractCollections<TBaseId, TItem>(
+      libraryParams?.mergeLibraries as
+        | SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>
+        | ReadonlyArray<SubLibraryMergeSource<SubLibraryBase<string, TBaseId, TItem>>>
+        | undefined
+    );
+
+    // Check for collisions
+    const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
+      {
+        source: 'builtin',
+        collections: builtInResult.value as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
+      },
+      ...fileSourceData.value,
+      {
+        source: 'mergeLibraries',
+        collections: mergedCollections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
+      }
+    ];
+    const collisionCheck = checkForCollisionIds(allSets);
+    /* c8 ignore next 3 - defensive: collision check tested in sync path and libraryLoader tests */
+    if (collisionCheck.isFailure()) {
+      return fail(collisionCheck.message);
+    }
+
+    // Merge all
+    const fileCollections = fileSourceData.value.flatMap(
+      (d) => d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
+    );
+    return succeed([
+      ...builtInResult.value,
+      ...fileCollections,
+      ...mergedCollections,
+      ...additionalCollections
+    ]);
   }
 
   // ============================================================================

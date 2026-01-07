@@ -430,6 +430,19 @@ Result of resolving a file tree source for a specific sub-library.
 </td></tr>
 <tr><td>
 
+[ISubLibraryAsyncParams](./ts-chocolate.librarydata.isublibraryasyncparams.md)
+
+
+</td><td>
+
+Parameters for creating a sub-library instance asynchronously.
+
+Extends  with encryption support for decrypting encrypted collections during async loading.
+
+
+</td></tr>
+<tr><td>
+
 [ISubLibraryCreateParams](./ts-chocolate.librarydata.isublibrarycreateparams.md)
 
 
@@ -529,6 +542,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[EncryptedFileHandling](./ts-chocolate.librarydata.encryptedfilehandling.md)
+
+
+</td><td>
+
+How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation (original behavior) - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files
+
+
+</td></tr>
+<tr><td>
 
 [FilterPattern](./ts-chocolate.librarydata.filterpattern.md)
 
