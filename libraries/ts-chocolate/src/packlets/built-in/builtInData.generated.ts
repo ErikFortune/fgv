@@ -519,8 +519,8 @@ export const ingredientCollections: Record<string, JsonObject> = {
       vegan: true,
       tags: ['vegan', 'dairy-free', 'coconut']
     },
-    'generic-dark-64': {
-      baseId: 'generic-dark-64',
+    'chocolate-dark-64': {
+      baseId: 'chocolate-dark-64',
       name: 'Generic Dark Chocolate (64%)',
       description: 'Reference dark chocolate for recipe substitution. Use any quality 64% dark couverture.',
       category: 'chocolate',
@@ -536,8 +536,8 @@ export const ingredientCollections: Record<string, JsonObject> = {
       },
       tags: ['generic', 'dark', 'substitutable']
     },
-    'generic-milk-38': {
-      baseId: 'generic-milk-38',
+    'chocolate-milk-38': {
+      baseId: 'chocolate-milk-38',
       name: 'Generic Milk Chocolate (38%)',
       description: 'Reference milk chocolate for recipe substitution. Use any quality 38% milk couverture.',
       category: 'chocolate',
@@ -554,8 +554,8 @@ export const ingredientCollections: Record<string, JsonObject> = {
       allergens: ['milk'],
       tags: ['generic', 'milk', 'substitutable']
     },
-    'generic-white-34': {
-      baseId: 'generic-white-34',
+    'chocolate-white-34': {
+      baseId: 'chocolate-white-34',
       name: 'Generic White Chocolate (34%)',
       description: 'Reference white chocolate for recipe substitution. Use any quality 34% white couverture.',
       category: 'chocolate',
@@ -971,7 +971,7 @@ export const recipeCollections: Record<string, JsonObject> = {
           ingredients: [
             {
               ingredientId: 'cacao-barry.guayaquil-64',
-              alternateIngredientIds: ['common.generic-dark-64', 'felchlin.arriba-72'],
+              alternateIngredientIds: ['common.chocolate-dark-64', 'felchlin.arriba-72'],
               amount: 400
             },
             {
@@ -1196,10 +1196,10 @@ export const recipeCollections: Record<string, JsonObject> = {
     format: 'encrypted-collection-v1',
     secretName: 'fgv',
     algorithm: 'AES-256-GCM',
-    iv: 'bYBRjJVLLU7sL6PX',
-    authTag: 'RfLWi44hR5+QrSzBT9IDPg==',
+    iv: 'wahGSDH3kK5gip21',
+    authTag: '65vgjJTEuAK4KR9ADF21Iw==',
     encryptedData:
-      'PPAZMEAOasi1Xn96wki/gymHGmO9lFAZ8/XnpDoljDgpnYeAM8ZKIA3IHkwstS4Txcf1pucLFK8I7r1ffVow9KW+iHhk2ObTrS05sDgpHqkGLpX6viOaYhoRPrH7AuZNh/JNqkXLqFbof3BT9Q1DADlsl0k5o+mksAcUUsHogc2uJDp2e+6Tj4A4OF9yHyFGli4Ic1YIO7F2qjD1dLM1FU5xrk2gOsqe0/V5j56s5sknTW5WtJ2yRmyxHyRdPDd6WWNKS6Tad/VVmoCUP7Yiw1+jhYii7r1lai910JtbJ654eFLKRS/U4gcrdmTnNpVIL68sBhvMeRCUQARVKJYeMU96yQYA83IIvgb/nXXxpWQqj/9tQJ5Pv2QbzOttkFcpu+BEe1X3J85miNusfWmS6xp9JyKqp+Mbn4mdxRpH1oTVh1dF1IZh8RpXUczYvadtZC8pJpdHYsL3nxnnOIkeHbVTqOLiKMRDWNqnQD1h1OfZxSFBBrZbforI4Hh/AXm96GcbJX1ynFKicjEa5o4MiquHl8OGX+kNVkjeNiEP0knicGd8dswvDlbj/xeVDhZIYlhvWPsjz5RNhWc1nVP51fwWEUQ8mpj0SkMcViN0w2YOneY+TjHEFRbZa3fyWSo3bvmG5p2JmIKau1tdwUq+fWeapPXjgqD2hfSSCDZEDOVhu6zj7bfpqCKiKJRKXxmujlq47JTc1JgjXy1oCg3evEFkT4ra+QmdYQ3pRMh763RIatHLObqi+dwi4qrZYsAZLWs='
+      'd1L1YYkR7SmODEanqUgpV0PToCFagUhSfNLGigFrESHR/ChA8hmiXY7t3akBeHo+WWtQpU4bY6fp192IeRfRnM672igBdf1fB7XN+1DBYrtMAo4gqIGXzECF/m1YoK3HZvVu05ldLWZILtJfPqxY/UjmKqBVefjt+RyeTcUOrUKKvH77GGg0NthY4oc9+BuyaIb2sf+2p3rxZ+MpdUiyqi1pRTAc+Oc2RpyXRmhaA3AGHeD53q0aOQ/M3HMJGY7VaHU498HQ1xOUCPLcOiY3g3fIdq8RLTvS+RkIYbZTLRYhWjiSrmhJAUqbg1gkDw8vTMma0NHTK7fNZyy74J2JsTZ6ScYkI62JDWQEjqI5uMtLna2RUo6vbb4mnn4Qovv3BjCqypI9WECri6rW38o/5VHXC7qyh1abzcv+zKY8S87Xl+UJquAi3l9Fe5oU2eeymBlDjlOdPml0VSH7fW7oW9E4FsILMExc33Hp3LRV43QzgvjRUzRLUc0bzAK/zltrLF8PIAUqS82jl652Qm2ni1WKlbyhojCrKFZN3vWf8bw16dJ/pcgkF1L8JO7DKEu4ScDvH08v5lmQmkJccvH0vdrirQhRzUePAXy2IvmMflOykqWGerQ4Zw3uC6ZPSKlegC6AdUCRc9PV8PTUYVK3W3jA/9v2MpQv+zv3JrFp/ZJumUvyxt1jQmqsmEN22/pta2BeppwxKKoralg5TW1MMOYkgrpxWZUw7/M5lTxXR+aor2LhLVl3q6FsSY25YURyxmoG6w=='
   }
 };
 /* eslint-enable @typescript-eslint/naming-convention */
