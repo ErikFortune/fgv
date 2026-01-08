@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_7 } from '@fgv/ts-utils';
+import { Converters as Converters_9 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -57,6 +57,9 @@ export const allIngredientCategories: IngredientCategory[];
 
 // @public
 const allJournalEventTypes: JournalEventType[];
+
+// @public
+export const allMoldFormats: MoldFormat[];
 
 // @public
 const allRatingCategories: RatingCategory[];
@@ -137,6 +140,18 @@ export type BaseIngredientId = Brand<string, 'BaseIngredientId'>;
 const baseIngredientId: Converter<BaseIngredientId>;
 
 // @public
+export type BaseMoldId = Brand<string, 'BaseMoldId'>;
+
+// @public
+const baseMoldId: Converter<BaseMoldId>;
+
+// @public
+export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
+
+// @public
+const baseProcedureId: Converter<BaseProcedureId>;
+
+// @public
 export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
 
 // @public
@@ -166,6 +181,8 @@ class BuiltInData {
     static clearCache(): void;
     static getIngredientsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
     static getLibraryTree(): Result<FileTree.IFileTreeDirectoryItem>;
+    static getMoldsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
+    static getProceduresDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
     static getRecipesDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
 }
 
@@ -205,6 +222,11 @@ declare namespace Calculations {
     }
 }
 export { Calculations }
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const cavityDimensions: Converter<ICavityDimensions>;
 
 // @public
 export type Celsius = Brand<number, 'Celsius'>;
@@ -247,14 +269,24 @@ class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getMold(id: MoldId): Result<Mold>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getProcedure(id: ProcedureId): Result<Procedure>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: RecipeId): Result<IRecipe>;
     hasIngredient(id: IngredientId): boolean;
+    hasMold(id: MoldId): boolean;
+    hasProcedure(id: ProcedureId): boolean;
     hasRecipe(id: RecipeId): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get journals(): JournalLibrary;
     readonly logger: Logging.LogReporter<unknown>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get molds(): MoldsLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get procedures(): ProceduresLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get recipes(): RecipesLibrary;
 }
@@ -331,13 +363,21 @@ declare namespace Converters {
         sourceId,
         baseIngredientId,
         baseRecipeId,
+        baseMoldId,
+        baseProcedureId,
         ingredientId,
         recipeId,
+        moldId,
+        procedureId,
         journalId,
         ParsedIngredientId,
         parsedIngredientId,
         ParsedRecipeId,
         parsedRecipeId,
+        ParsedMoldId,
+        parsedMoldId,
+        ParsedProcedureId,
+        parsedProcedureId,
         recipeName,
         recipeVersionSpec,
         recipeVersionId,
@@ -349,6 +389,8 @@ declare namespace Converters {
         celsius,
         degreesMacMichael,
         ratingScore,
+        minutes,
+        millimeters,
         ingredientCategory,
         chocolateType,
         chocolateVariety,
@@ -356,7 +398,8 @@ declare namespace Converters {
         weightUnit,
         allergen,
         certification,
-        chocolateApplication
+        chocolateApplication,
+        moldFormat
     }
 }
 export { Converters }
@@ -409,6 +452,24 @@ declare namespace Converters_5 {
 }
 
 declare namespace Converters_6 {
+    export {
+        cavityDimensions,
+        moldData,
+        mold,
+        moldConverter
+    }
+}
+
+declare namespace Converters_7 {
+    export {
+        procedureStep,
+        procedureData,
+        procedure,
+        procedureConverter
+    }
+}
+
+declare namespace Converters_8 {
     export {
         recipeIngredient,
         ratingCategory,
@@ -626,6 +687,12 @@ function getIngredientSourceId(id: IngredientId): SourceId;
 function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
+function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
 function getRecipeBaseId(id: RecipeId): BaseRecipeId;
 
 // @public
@@ -686,6 +753,13 @@ interface IAlcoholIngredient extends IIngredient {
 // @public
 interface ICategoryFilter {
     readonly category: IngredientCategory | RegExp;
+}
+
+// @public
+interface ICavityDimensions {
+    readonly depth: Millimeters;
+    readonly length: Millimeters;
+    readonly width: Millimeters;
 }
 
 // @public
@@ -1042,6 +1116,8 @@ interface IIngredientUsageInfo {
 interface IInstantiatedLibrarySource {
     readonly ingredients?: IngredientsLibrary;
     readonly journals?: JournalLibrary;
+    readonly molds?: MoldsLibrary;
+    readonly procedures?: ProceduresLibrary;
     readonly recipes?: RecipesLibrary;
 }
 
@@ -1117,6 +1193,29 @@ interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
     readonly filter?: LibraryLoadSpec<TCollectionId>;
     readonly library: TLibrary;
 }
+
+// @public
+interface IMold {
+    readonly baseId: BaseMoldId;
+    readonly cavityCount: number;
+    readonly cavityDimensions?: ICavityDimensions;
+    readonly cavityWeight?: Grams;
+    readonly description?: string;
+    readonly format: MoldFormat;
+    readonly manufacturer: string;
+    readonly notes?: string;
+    readonly productNumber: string;
+    readonly tags?: ReadonlyArray<string>;
+}
+
+// @public
+type IMoldFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+type IMoldsLibraryAsyncParams = ISubLibraryAsyncParams<MoldsLibrary, MoldCollectionEntryInit>;
+
+// @public
+type IMoldsLibraryParams = ISubLibraryParams<MoldsLibrary, MoldCollectionEntryInit>;
 
 // @public
 interface INamedSecret {
@@ -1353,6 +1452,44 @@ interface INumericRange {
 }
 
 // @public
+interface IProcedure {
+    readonly baseId: BaseProcedureId;
+    readonly category?: RecipeCategory;
+    readonly description?: string;
+    readonly name: string;
+    readonly notes?: string;
+    readonly steps: ReadonlyArray<IProcedureStep>;
+    readonly tags?: ReadonlyArray<string>;
+}
+
+// @public
+type IProcedureFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IProcedureRenderContext {
+    readonly library: unknown;
+    readonly mold?: IMold;
+    readonly recipe: IComputedScaledRecipe;
+}
+
+// @public
+type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
+
+// @public
+type IProceduresLibraryParams = ISubLibraryParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
+
+// @public
+interface IProcedureStep {
+    readonly activeTime?: Minutes;
+    readonly description: string;
+    readonly holdTime?: Minutes;
+    readonly notes?: string;
+    readonly order: number;
+    readonly temperature?: Celsius;
+    readonly waitTime?: Minutes;
+}
+
+// @public
 interface IQueryResult<T> {
     readonly hasMore: boolean;
     readonly items: ReadonlyArray<T>;
@@ -1471,6 +1608,21 @@ interface IRecipeVersion {
     readonly ratings?: ReadonlyArray<IRecipeRating>;
     readonly versionSpec: RecipeVersionSpec;
     readonly yield?: string;
+}
+
+// @public
+interface IRenderedProcedure {
+    readonly description?: string;
+    readonly name: string;
+    readonly steps: ReadonlyArray<IRenderedProcedureStep>;
+    readonly totalActiveTime?: number;
+    readonly totalHoldTime?: number;
+    readonly totalWaitTime?: number;
+}
+
+// @public
+interface IRenderedProcedureStep extends IProcedureStep {
+    readonly renderedDescription: string;
 }
 
 // @public
@@ -1812,6 +1964,12 @@ interface ISugarIngredient extends IIngredient {
 function isValidBaseIngredientId(from: unknown): from is BaseIngredientId;
 
 // @public
+function isValidBaseMoldId(from: unknown): from is BaseMoldId;
+
+// @public
+function isValidBaseProcedureId(from: unknown): from is BaseProcedureId;
+
+// @public
 function isValidBaseRecipeId(from: unknown): from is BaseRecipeId;
 
 // @public
@@ -1830,7 +1988,19 @@ function isValidIngredientId(from: unknown): from is IngredientId;
 function isValidJournalId(from: unknown): from is JournalId;
 
 // @public
+function isValidMillimeters(from: unknown): from is Millimeters;
+
+// @public
+function isValidMinutes(from: unknown): from is Minutes;
+
+// @public
+function isValidMoldId(from: unknown): from is MoldId;
+
+// @public
 function isValidPercentage(from: unknown): from is Percentage;
+
+// @public
+function isValidProcedureId(from: unknown): from is ProcedureId;
 
 // @public
 function isValidRatingScore(from: unknown): from is RatingScore;
@@ -1974,6 +2144,8 @@ declare namespace LibraryData {
         getIngredientsDirectory,
         getRecipesDirectory,
         getJournalsDirectory,
+        getMoldsDirectory,
+        getProceduresDirectory,
         LibraryPaths,
         specToLoadParams,
         getSubLibraryPath,
@@ -2012,7 +2184,113 @@ const LibraryPaths: {
     readonly ingredients: "data/ingredients";
     readonly recipes: "data/recipes";
     readonly journals: "data/journals";
+    readonly molds: "data/molds";
+    readonly procedures: "data/procedures";
 };
+
+// @public
+export type Millimeters = Brand<number, 'Millimeters'>;
+
+// @public
+const millimeters: Converter<Millimeters>;
+
+// @public
+export type Minutes = Brand<number, 'Minutes'>;
+
+// @public
+const minutes: Converter<Minutes>;
+
+// @public
+class Mold implements IMold {
+    // (undocumented)
+    readonly baseId: BaseMoldId;
+    // (undocumented)
+    readonly cavityCount: number;
+    // (undocumented)
+    readonly cavityDimensions?: ICavityDimensions;
+    // (undocumented)
+    readonly cavityWeight?: Grams;
+    static create(data: IMold): Result<Mold>;
+    // (undocumented)
+    readonly description?: string;
+    get displayName(): string;
+    // (undocumented)
+    readonly format: MoldFormat;
+    // (undocumented)
+    readonly manufacturer: string;
+    // (undocumented)
+    readonly notes?: string;
+    // (undocumented)
+    readonly productNumber: string;
+    // (undocumented)
+    readonly tags?: ReadonlyArray<string>;
+    get totalCapacity(): Grams | undefined;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const mold: Converter<Mold>;
+
+// @public
+type MoldCollection = SubLibraryCollection<BaseMoldId, Mold>;
+
+// @public
+type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, Mold>;
+
+// @public
+type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, Mold>;
+
+// @public
+type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, Mold>;
+
+// @public
+const moldConverter: Converter<Mold>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const moldData: Converter<IMold>;
+
+// @public
+export type MoldFormat = 'series-1000' | 'series-2000';
+
+// @public
+const moldFormat: Converter<MoldFormat>;
+
+// @public
+export type MoldId = Brand<string, 'MoldId'>;
+
+// @public
+const moldId: Converter<MoldId>;
+
+declare namespace Molds {
+    export {
+        Converters_6 as Converters,
+        ICavityDimensions,
+        IMold,
+        Mold,
+        MoldCollectionEntry,
+        MoldCollectionEntryInit,
+        MoldCollectionValidator,
+        MoldCollection,
+        IMoldFileTreeSource,
+        MoldsMergeSource,
+        IMoldsLibraryParams,
+        IMoldsLibraryAsyncParams,
+        MoldsLibrary
+    }
+}
+export { Molds }
+
+// @public
+class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, Mold> {
+    static create(params?: IMoldsLibraryParams): Result<MoldsLibrary>;
+    static createAsync(params?: IMoldsLibraryAsyncParams): Promise<Result<MoldsLibrary>>;
+}
+
+// @public
+type MoldsMergeSource = SubLibraryMergeSource<MoldsLibrary>;
 
 // @public
 type MutabilitySpec = boolean | ReadonlyArray<string> | {
@@ -2057,19 +2335,31 @@ function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPr
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-type ParsedIngredientId = Converters_7.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_9.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedRecipeId = Converters_7.ICompositeId<SourceId, BaseRecipeId>;
+type ParsedMoldId = Converters_9.ICompositeId<SourceId, BaseMoldId>;
+
+// @public
+const parsedMoldId: Converter<ParsedMoldId>;
+
+// @public
+type ParsedProcedureId = Converters_9.ICompositeId<SourceId, BaseProcedureId>;
+
+// @public
+const parsedProcedureId: Converter<ParsedProcedureId>;
+
+// @public
+type ParsedRecipeId = Converters_9.ICompositeId<SourceId, BaseRecipeId>;
 
 // @public
 const parsedRecipeId: Converter<ParsedRecipeId>;
 
 // @public
-type ParsedRecipeVersionId = Converters_7.ICompositeId<RecipeId, RecipeVersionSpec>;
+type ParsedRecipeVersionId = Converters_9.ICompositeId<RecipeId, RecipeVersionSpec>;
 
 // @public
 const parsedRecipeVersionId: Converter<ParsedRecipeVersionId>;
@@ -2088,6 +2378,99 @@ export type Percentage = Brand<number, 'Percentage'>;
 
 // @public
 const percentage: Converter<Percentage>;
+
+// @public
+class Procedure implements IProcedure {
+    // (undocumented)
+    readonly baseId: BaseProcedureId;
+    // (undocumented)
+    readonly category?: RecipeCategory;
+    static create(data: IProcedure): Result<Procedure>;
+    // (undocumented)
+    readonly description?: string;
+    get isCategorySpecific(): boolean;
+    // (undocumented)
+    readonly name: string;
+    // (undocumented)
+    readonly notes?: string;
+    render(_context: IProcedureRenderContext): Result<IRenderedProcedure>;
+    get stepCount(): number;
+    // (undocumented)
+    readonly steps: ReadonlyArray<IProcedureStep>;
+    // (undocumented)
+    readonly tags?: ReadonlyArray<string>;
+    get totalActiveTime(): Minutes | undefined;
+    get totalHoldTime(): Minutes | undefined;
+    get totalTime(): Minutes | undefined;
+    get totalWaitTime(): Minutes | undefined;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const procedure: Converter<Procedure>;
+
+// @public
+type ProcedureCollection = SubLibraryCollection<BaseProcedureId, Procedure>;
+
+// @public
+type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, Procedure>;
+
+// @public
+type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, Procedure>;
+
+// @public
+type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, Procedure>;
+
+// @public
+const procedureConverter: Converter<Procedure>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const procedureData: Converter<IProcedure>;
+
+// @public
+export type ProcedureId = Brand<string, 'ProcedureId'>;
+
+// @public
+const procedureId: Converter<ProcedureId>;
+
+declare namespace Procedures {
+    export {
+        Converters_7 as Converters,
+        IProcedureStep,
+        IProcedure,
+        Procedure,
+        ProcedureCollectionEntry,
+        ProcedureCollectionEntryInit,
+        ProcedureCollectionValidator,
+        ProcedureCollection,
+        IProcedureFileTreeSource,
+        ProceduresMergeSource,
+        IProceduresLibraryParams,
+        IProceduresLibraryAsyncParams,
+        ProceduresLibrary,
+        IProcedureRenderContext,
+        IRenderedProcedureStep,
+        IRenderedProcedure
+    }
+}
+export { Procedures }
+
+// @public
+class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, Procedure> {
+    static create(params?: IProceduresLibraryParams): Result<ProceduresLibrary>;
+    static createAsync(params?: IProceduresLibraryAsyncParams): Promise<Result<ProceduresLibrary>>;
+}
+
+// @public
+type ProceduresMergeSource = SubLibraryMergeSource<ProceduresLibrary>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const procedureStep: Converter<IProcedureStep>;
 
 // @public
 type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
@@ -2257,7 +2640,7 @@ type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
 
 declare namespace Recipes {
     export {
-        Converters_6 as Converters,
+        Converters_8 as Converters,
         isScaledRecipeVersion,
         isRecipeVersion,
         IRecipeIngredient,
@@ -2869,7 +3252,7 @@ type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Aggregated
 type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
-type SubLibraryId = 'ingredients' | 'recipes' | 'journals';
+type SubLibraryId = 'ingredients' | 'recipes' | 'journals' | 'molds' | 'procedures';
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
@@ -2882,6 +3265,12 @@ const temperatureCurve: Converter<ITemperatureCurve>;
 
 // @public
 function toBaseIngredientId(from: unknown): Result<BaseIngredientId>;
+
+// @public
+function toBaseMoldId(from: unknown): Result<BaseMoldId>;
+
+// @public
+function toBaseProcedureId(from: unknown): Result<BaseProcedureId>;
 
 // @public
 function toBaseRecipeId(from: unknown): Result<BaseRecipeId>;
@@ -2902,7 +3291,19 @@ function toIngredientId(from: unknown): Result<IngredientId>;
 function toJournalId(from: unknown): Result<JournalId>;
 
 // @public
+function toMillimeters(from: unknown): Result<Millimeters>;
+
+// @public
+function toMinutes(from: unknown): Result<Minutes>;
+
+// @public
+function toMoldId(from: unknown): Result<MoldId>;
+
+// @public
 function toPercentage(from: unknown): Result<Percentage>;
+
+// @public
+function toProcedureId(from: unknown): Result<ProcedureId>;
 
 // @public
 function toRatingScore(from: unknown): Result<RatingScore>;
@@ -2949,10 +3350,18 @@ declare namespace Validation {
         toBaseIngredientId,
         isValidBaseRecipeId,
         toBaseRecipeId,
+        isValidBaseMoldId,
+        toBaseMoldId,
+        isValidBaseProcedureId,
+        toBaseProcedureId,
         isValidIngredientId,
         toIngredientId,
         isValidRecipeId,
         toRecipeId,
+        isValidMoldId,
+        toMoldId,
+        isValidProcedureId,
+        toProcedureId,
         isValidRecipeName,
         toRecipeName,
         isValidRecipeVersionSpec,
@@ -2971,6 +3380,10 @@ declare namespace Validation {
         toDegreesMacMichael,
         isValidRatingScore,
         toRatingScore,
+        isValidMinutes,
+        toMinutes,
+        isValidMillimeters,
+        toMillimeters,
         isValidJournalId,
         toJournalId
     }

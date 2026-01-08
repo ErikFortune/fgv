@@ -1,0 +1,82 @@
+# Common procedures collection
+# Standard chocolate-making procedures
+
+metadata:
+  name: Common Procedures
+  description: Standard chocolate-making procedures
+
+items:
+  ganache-cold-method:
+    baseId: ganache-cold-method
+    name: Ganache (Cold Method)
+    category: ganache
+    steps:
+      - order: 1
+        description: Melt chocolate to 40-45C
+        activeTime: 5
+        temperature: 45
+      - order: 2
+        description: Warm cream to 35C
+        activeTime: 3
+        temperature: 35
+      - order: 3
+        description: Combine and emulsify with immersion blender
+        activeTime: 5
+      - order: 4
+        description: Add butter at 35C and blend until smooth
+        activeTime: 2
+        temperature: 35
+      - order: 5
+        description: Rest at room temperature
+        waitTime: 30
+    tags: [ganache, emulsion, cold-process]
+
+  ganache-hot-method:
+    baseId: ganache-hot-method
+    name: Ganache (Hot Method)
+    category: ganache
+    steps:
+      - order: 1
+        description: Bring cream to boil
+        activeTime: 5
+        temperature: 100
+      - order: 2
+        description: Pour over finely chopped chocolate
+        activeTime: 1
+      - order: 3
+        description: Let stand 1-2 minutes
+        waitTime: 2
+      - order: 4
+        description: Stir from center outward to emulsify
+        activeTime: 5
+      - order: 5
+        description: Add butter and blend until smooth
+        activeTime: 2
+    tags: [ganache, emulsion, hot-process]
+
+  gianduja:
+    baseId: gianduja
+    name: Gianduja
+    category: gianduja
+    steps:
+      - order: 1
+        description: Roast hazelnuts at 150C until golden
+        activeTime: 15
+        temperature: 150
+      - order: 2
+        description: Rub off skins while warm
+        activeTime: 5
+      - order: 3
+        description: Grind to paste in food processor
+        activeTime: 10
+      - order: 4
+        description: Melt chocolate to 45C
+        activeTime: 5
+        temperature: 45
+      - order: 5
+        description: Combine paste and chocolate, mix until smooth
+        activeTime: 5
+      - order: 6
+        description: Temper and pour into molds
+        activeTime: 15
+    tags: [gianduja, hazelnut, nut-paste]

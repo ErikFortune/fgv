@@ -53,6 +53,22 @@ export type BaseIngredientId = Brand<string, 'BaseIngredientId'>;
  */
 export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
 
+/**
+ * Mold identifier within a single source
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type BaseMoldId = Brand<string, 'BaseMoldId'>;
+
+/**
+ * Procedure identifier within a single source
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
+
 // ============================================================================
 // Branded String Types - Composite IDs (exactly one dot)
 // ============================================================================
@@ -74,6 +90,24 @@ export type IngredientId = Brand<string, 'IngredientId'>;
  * @public
  */
 export type RecipeId = Brand<string, 'RecipeId'>;
+
+/**
+ * Globally unique mold identifier (composite)
+ * Format: "sourceId.baseMoldId"
+ * Must contain exactly one dot separator
+ * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type MoldId = Brand<string, 'MoldId'>;
+
+/**
+ * Globally unique procedure identifier (composite)
+ * Format: "sourceId.baseProcedureId"
+ * Must contain exactly one dot separator
+ * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type ProcedureId = Brand<string, 'ProcedureId'>;
 
 /**
  * Non-unique recipe name used for display and grouping
@@ -151,6 +185,18 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
  * @public
  */
 export type RatingScore = Brand<number, 'RatingScore'>;
+
+/**
+ * Time in minutes
+ * @public
+ */
+export type Minutes = Brand<number, 'Minutes'>;
+
+/**
+ * Length in millimeters
+ * @public
+ */
+export type Millimeters = Brand<number, 'Millimeters'>;
 
 // ============================================================================
 // Enumerations
@@ -349,6 +395,21 @@ export type BuiltInSource = 'built-in';
  * @public
  */
 export const allBuiltInSources: BuiltInSource[] = ['built-in'];
+
+/**
+ * Chocolate World mold format series.
+ * Each series corresponds to a specific frame size:
+ * - series-1000: 275x135mm
+ * - series-2000: 275x175mm
+ * @public
+ */
+export type MoldFormat = 'series-1000' | 'series-2000';
+
+/**
+ * All possible mold formats
+ * @public
+ */
+export const allMoldFormats: MoldFormat[] = ['series-1000', 'series-2000'];
 
 // ============================================================================
 // Constants

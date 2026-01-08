@@ -68,9 +68,45 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   ├── felchlin.json
     │   ├── cacao-barry.json
     │   └── guittard.json
-    └── recipes/
+    ├── recipes/
+    │   └── common.json
+    ├── molds/
+    │   └── common.json
+    └── procedures/
         └── common.json
 ```
+
+
+</td></tr>
+<tr><td>
+
+[getMoldsDirectory()](./ts-chocolate.builtin.builtindata.getmoldsdirectory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets the molds directory from the built-in library tree.
+
+
+</td></tr>
+<tr><td>
+
+[getProceduresDirectory()](./ts-chocolate.builtin.builtindata.getproceduresdirectory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets the procedures directory from the built-in library tree.
 
 
 </td></tr>

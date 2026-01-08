@@ -25,10 +25,21 @@
 
 import { Logging, Result, Success } from '@fgv/ts-utils';
 
-import { IngredientId, JournalId, RecipeId, RecipeVersionId, RecipeVersionSpec, SourceId } from '../common';
+import {
+  IngredientId,
+  JournalId,
+  MoldId,
+  ProcedureId,
+  RecipeId,
+  RecipeVersionId,
+  RecipeVersionSpec,
+  SourceId
+} from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, RecipesLibrary } from '../recipes';
 import { IJournalRecord, JournalLibrary } from '../journal';
+import { Mold, MoldsLibrary } from '../molds';
+import { Procedure, ProceduresLibrary } from '../procedures';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,
@@ -63,6 +74,16 @@ export interface IInstantiatedLibrarySource {
    * Pre-built journals library
    */
   readonly journals?: JournalLibrary;
+
+  /**
+   * Pre-built molds library
+   */
+  readonly molds?: MoldsLibrary;
+
+  /**
+   * Pre-built procedures library
+   */
+  readonly procedures?: ProceduresLibrary;
 }
 
 /**
@@ -128,6 +149,8 @@ export class ChocolateLibrary {
   private readonly _ingredients: IngredientsLibrary;
   private readonly _recipes: RecipesLibrary;
   private readonly _journals: JournalLibrary;
+  private readonly _molds: MoldsLibrary;
+  private readonly _procedures: ProceduresLibrary;
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -138,6 +161,8 @@ export class ChocolateLibrary {
     ingredients: IngredientsLibrary,
     recipes: RecipesLibrary,
     journals: JournalLibrary,
+    molds: MoldsLibrary,
+    procedures: ProceduresLibrary,
     logger?: Logging.ILogger
   ) {
     /* c8 ignore next - default logger branch tested implicitly via create() */
@@ -145,6 +170,8 @@ export class ChocolateLibrary {
     this._ingredients = ingredients;
     this._recipes = recipes;
     this._journals = journals;
+    this._molds = molds;
+    this._procedures = procedures;
     this.logger = new Logging.LogReporter({ logger });
   }
 
@@ -183,13 +210,40 @@ export class ChocolateLibrary {
         : JournalLibrary.create({ logger })
     ).report(logger);
 
+    const moldsResult = MoldsLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'molds'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'molds'),
+      mergeLibraries: params.libraries?.molds,
+      logger
+    }).report(logger);
+
+    const proceduresResult = ProceduresLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'procedures'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'procedures'),
+      mergeLibraries: params.libraries?.procedures,
+      logger
+    }).report(logger);
+
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
-        journalsResult.onSuccess((journals) => {
-          const library = new ChocolateLibrary(ingredients, recipes, journals, logger.logger);
-          logger.info(`ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes`);
-          return Success.with(library);
-        })
+        journalsResult.onSuccess((journals) =>
+          moldsResult.onSuccess((molds) =>
+            proceduresResult.onSuccess((procedures) => {
+              const library = new ChocolateLibrary(
+                ingredients,
+                recipes,
+                journals,
+                molds,
+                procedures,
+                logger.logger
+              );
+              logger.info(
+                `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures`
+              );
+              return Success.with(library);
+            })
+          )
+        )
       )
     );
   }
@@ -230,6 +284,20 @@ export class ChocolateLibrary {
   }
 
   /**
+   * The {@link Molds.MoldsLibrary | molds library}.
+   */
+  public get molds(): MoldsLibrary {
+    return this._molds;
+  }
+
+  /**
+   * The {@link Procedures.ProceduresLibrary | procedures library}.
+   */
+  public get procedures(): ProceduresLibrary {
+    return this._procedures;
+  }
+
+  /**
    * Gets an {@link Ingredients.Ingredient | ingredient} by its {@link IngredientId | composite ID}
    * @param id - The {@link IngredientId | id} of the ingredient to retrieve.
    * @returns `Success` with ingredient, or `Failure` if not found
@@ -263,6 +331,42 @@ export class ChocolateLibrary {
    */
   public hasRecipe(id: RecipeId): boolean {
     return this._recipes.has(id);
+  }
+
+  /**
+   * Gets a {@link Molds.Mold | mold} by its {@link MoldId | composite ID}
+   * @param id - The {@link MoldId | id} of the mold to retrieve.
+   * @returns `Success` with mold, or `Failure` if not found
+   */
+  public getMold(id: MoldId): Result<Mold> {
+    return this._molds.get(id);
+  }
+
+  /**
+   * Checks if a mold exists
+   * @param id - The {@link MoldId | id} of the mold to check.
+   * @returns `true` if the mold exists
+   */
+  public hasMold(id: MoldId): boolean {
+    return this._molds.has(id);
+  }
+
+  /**
+   * Gets a {@link Procedures.Procedure | procedure} by its {@link ProcedureId | composite ID}
+   * @param id - The {@link ProcedureId | id} of the procedure to retrieve.
+   * @returns `Success` with procedure, or `Failure` if not found
+   */
+  public getProcedure(id: ProcedureId): Result<Procedure> {
+    return this._procedures.get(id);
+  }
+
+  /**
+   * Checks if a procedure exists
+   * @param id - The {@link ProcedureId | id} of the procedure to check.
+   * @returns `true` if the procedure exists
+   */
+  public hasProcedure(id: ProcedureId): boolean {
+    return this._procedures.has(id);
   }
 
   // ============================================================================

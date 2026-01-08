@@ -79,6 +79,48 @@ _(Optional)_ Pre-built journals library
 </td></tr>
 <tr><td>
 
+[molds?](./ts-chocolate.runtime.iinstantiatedlibrarysource.molds.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[MoldsLibrary](./ts-chocolate.molds.moldslibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built molds library
+
+
+</td></tr>
+<tr><td>
+
+[procedures?](./ts-chocolate.runtime.iinstantiatedlibrarysource.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ProceduresLibrary](./ts-chocolate.procedures.procedureslibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built procedures library
+
+
+</td></tr>
+<tr><td>
+
 [recipes?](./ts-chocolate.runtime.iinstantiatedlibrarysource.recipes.md)
 
 

@@ -9,6 +9,8 @@
 //   - data/published/ingredients/guittard.yaml
 //   - data/published/recipes/common.yaml
 //   - data/published/recipes/fgv.json
+//   - data/published/molds/common.yaml
+//   - data/published/procedures/common.yaml
 
 import { JsonObject } from '@fgv/ts-json-base';
 
@@ -1279,6 +1281,161 @@ export const recipeCollections: Record<string, JsonObject> = {
     authTag: '9lX1AeMiw+XQGud1kNzEAg==',
     encryptedData:
       '36XwpREG1wwixCc1DvyCyXcyI2YjThOXJu2Q2SDMKDAmF4YitiFq7uP9lr76Ari+DfKGr/lSpqT4oF1cojeSy6Hu3y+SYynm7AE4Q+FkWUbvHl5muA7YAsY6do+/07QA5wor+lquUl0BNGCzH98nuWc81CeARMGghfr705ghebdk2f6/KhqZZIxap6rHwugRAdQczC8Xc7BSXmVO5+I5DytcPYouInKxHrGbv/zeP2BvP+b2JlBEoiqB1Wz7zT/O4oUgJPfonXVCy1dULJZqYU7NRWAAJtKq8MO4RQa/SYhgB6DQWKW6xL+xsciQ2Zz6yVA/eYc/JDcD1bF9pavjN62VjbOtkQudynW4oUPWxkS7+SGb8RzttnS8PcUjpDcJjzgHKkGW3vxLvTOlYvAgAB0kb7UduSN50xMh95h5GJC5et5ilAhCHMOwIE6AtbaTJ9SEMMpjr2YWgIo5l83wiw3rwY6RFFp4hk8/wd7t4w8WbQVhIftPOVxwx+C76qw0g/jSt/TXWKWOtQzlnISmDFFmsqMjF795XjKl3ctwajCZHYgujFTFwnLNlcon6rlBCD/oZYpIZVIMxfJBOXcRnWXbi81a3D+8V1jwS+MuuS6ajCiBouX1UzzDssM/4rsNVs0hekXRTOp/sT4b7lTmC2JeYmwVdkRcqSTu+9clix8E/QN5FskECnN9/vE5BIw2uaditTUyX1P5zPdMyfMFoE4W9ng7Awh3XaOjiWpUu+8XfHV5oZV+1lzLnbo6+7CCZ7xPJA=='
+  }
+};
+
+/**
+ * Generated mold collections from source YAML files.
+ * @public
+ */
+export const moldCollections: Record<string, JsonObject> = {
+  common: {
+    metadata: {
+      name: 'Common Molds',
+      description: 'Chocolate mold inventory'
+    },
+    items: {
+      'chocolate-world-cw-2227': {
+        baseId: 'chocolate-world-cw-2227',
+        manufacturer: 'Chocolate World',
+        productNumber: 'CW 2227',
+        description: 'Hex Swirl',
+        cavityCount: 32,
+        cavityWeight: 10,
+        cavityDimensions: {
+          width: 30,
+          length: 30,
+          depth: 16
+        },
+        format: 'series-2000',
+        tags: ['hex-swirl', 'praline']
+      }
+    }
+  }
+};
+
+/**
+ * Generated procedure collections from source YAML files.
+ * @public
+ */
+export const procedureCollections: Record<string, JsonObject> = {
+  common: {
+    metadata: {
+      name: 'Common Procedures',
+      description: 'Standard chocolate-making procedures'
+    },
+    items: {
+      'ganache-cold-method': {
+        baseId: 'ganache-cold-method',
+        name: 'Ganache (Cold Method)',
+        category: 'ganache',
+        steps: [
+          {
+            order: 1,
+            description: 'Melt chocolate to 40-45C',
+            activeTime: 5,
+            temperature: 45
+          },
+          {
+            order: 2,
+            description: 'Warm cream to 35C',
+            activeTime: 3,
+            temperature: 35
+          },
+          {
+            order: 3,
+            description: 'Combine and emulsify with immersion blender',
+            activeTime: 5
+          },
+          {
+            order: 4,
+            description: 'Add butter at 35C and blend until smooth',
+            activeTime: 2,
+            temperature: 35
+          },
+          {
+            order: 5,
+            description: 'Rest at room temperature',
+            waitTime: 30
+          }
+        ],
+        tags: ['ganache', 'emulsion', 'cold-process']
+      },
+      'ganache-hot-method': {
+        baseId: 'ganache-hot-method',
+        name: 'Ganache (Hot Method)',
+        category: 'ganache',
+        steps: [
+          {
+            order: 1,
+            description: 'Bring cream to boil',
+            activeTime: 5,
+            temperature: 100
+          },
+          {
+            order: 2,
+            description: 'Pour over finely chopped chocolate',
+            activeTime: 1
+          },
+          {
+            order: 3,
+            description: 'Let stand 1-2 minutes',
+            waitTime: 2
+          },
+          {
+            order: 4,
+            description: 'Stir from center outward to emulsify',
+            activeTime: 5
+          },
+          {
+            order: 5,
+            description: 'Add butter and blend until smooth',
+            activeTime: 2
+          }
+        ],
+        tags: ['ganache', 'emulsion', 'hot-process']
+      },
+      gianduja: {
+        baseId: 'gianduja',
+        name: 'Gianduja',
+        category: 'gianduja',
+        steps: [
+          {
+            order: 1,
+            description: 'Roast hazelnuts at 150C until golden',
+            activeTime: 15,
+            temperature: 150
+          },
+          {
+            order: 2,
+            description: 'Rub off skins while warm',
+            activeTime: 5
+          },
+          {
+            order: 3,
+            description: 'Grind to paste in food processor',
+            activeTime: 10
+          },
+          {
+            order: 4,
+            description: 'Melt chocolate to 45C',
+            activeTime: 5,
+            temperature: 45
+          },
+          {
+            order: 5,
+            description: 'Combine paste and chocolate, mix until smooth',
+            activeTime: 5
+          },
+          {
+            order: 6,
+            description: 'Temper and pour into molds',
+            activeTime: 15
+          }
+        ],
+        tags: ['gianduja', 'hazelnut', 'nut-paste']
+      }
+    }
   }
 };
 /* eslint-enable @typescript-eslint/naming-convention */

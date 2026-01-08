@@ -93,6 +93,24 @@ Description
 </td></tr>
 <tr><td>
 
+[Molds](./ts-chocolate.molds.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[Procedures](./ts-chocolate.procedures.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Recipes](./ts-chocolate.recipes.md)
 
 
@@ -218,6 +236,17 @@ All possible fluidity star ratings
 </td><td>
 
 All possible ingredient categories
+
+
+</td></tr>
+<tr><td>
+
+[allMoldFormats](./ts-chocolate.allmoldformats.md)
+
+
+</td><td>
+
+All possible mold formats
 
 
 </td></tr>
@@ -354,6 +383,28 @@ Common allergens that may be present in ingredients
 </td><td>
 
 Ingredient identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[BaseMoldId](./ts-chocolate.basemoldid.md)
+
+
+</td><td>
+
+Mold identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[BaseProcedureId](./ts-chocolate.baseprocedureid.md)
+
+
+</td><td>
+
+Procedure identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -513,12 +564,67 @@ Unique identifier for a cooking journal record Format: UUID or "recipeId<!-- -->
 </td></tr>
 <tr><td>
 
+[Millimeters](./ts-chocolate.millimeters.md)
+
+
+</td><td>
+
+Length in millimeters
+
+
+</td></tr>
+<tr><td>
+
+[Minutes](./ts-chocolate.minutes.md)
+
+
+</td><td>
+
+Time in minutes
+
+
+</td></tr>
+<tr><td>
+
+[MoldFormat](./ts-chocolate.moldformat.md)
+
+
+</td><td>
+
+Chocolate World mold format series. Each series corresponds to a specific frame size: - series-1000: 275x135mm - series-2000: 275x175mm
+
+
+</td></tr>
+<tr><td>
+
+[MoldId](./ts-chocolate.moldid.md)
+
+
+</td><td>
+
+Globally unique mold identifier (composite) Format: "sourceId.baseMoldId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
 [Percentage](./ts-chocolate.percentage.md)
 
 
 </td><td>
 
 Percentage value (0-100)
+
+
+</td></tr>
+<tr><td>
+
+[ProcedureId](./ts-chocolate.procedureid.md)
+
+
+</td><td>
+
+Globally unique procedure identifier (composite) Format: "sourceId.baseProcedureId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>

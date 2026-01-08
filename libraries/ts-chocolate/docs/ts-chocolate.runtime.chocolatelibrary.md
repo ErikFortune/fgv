@@ -102,6 +102,48 @@ Logger used by this library and its sub-libraries.
 </td></tr>
 <tr><td>
 
+[molds](./ts-chocolate.runtime.chocolatelibrary.molds.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[MoldsLibrary](./ts-chocolate.molds.moldslibrary.md)
+
+
+</td><td>
+
+The [molds library](./ts-chocolate.molds.moldslibrary.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[procedures](./ts-chocolate.runtime.chocolatelibrary.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ProceduresLibrary](./ts-chocolate.procedures.procedureslibrary.md)
+
+
+</td><td>
+
+The [procedures library](./ts-chocolate.procedures.procedureslibrary.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [recipes](./ts-chocolate.runtime.chocolatelibrary.recipes.md)
 
 
@@ -257,6 +299,34 @@ Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a speci
 </td></tr>
 <tr><td>
 
+[getMold(id)](./ts-chocolate.runtime.chocolatelibrary.getmold.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [mold](./ts-chocolate.molds.mold.md) by its [composite ID](./ts-chocolate.moldid.md)
+
+
+</td></tr>
+<tr><td>
+
+[getProcedure(id)](./ts-chocolate.runtime.chocolatelibrary.getprocedure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [procedure](./ts-chocolate.procedures.procedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
+
+
+</td></tr>
+<tr><td>
+
 [getRecipe(id)](./ts-chocolate.runtime.chocolatelibrary.getrecipe.md)
 
 
@@ -280,6 +350,34 @@ Gets a [recipe](./ts-chocolate.recipes.recipe.md) by its [composite ID](./ts-cho
 </td><td>
 
 Checks if an ingredient exists
+
+
+</td></tr>
+<tr><td>
+
+[hasMold(id)](./ts-chocolate.runtime.chocolatelibrary.hasmold.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a mold exists
+
+
+</td></tr>
+<tr><td>
+
+[hasProcedure(id)](./ts-chocolate.runtime.chocolatelibrary.hasprocedure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a procedure exists
 
 
 </td></tr>

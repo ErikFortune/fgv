@@ -28,6 +28,8 @@ import { Converter, Converters } from '@fgv/ts-utils';
 import {
   Allergen,
   BaseIngredientId,
+  BaseMoldId,
+  BaseProcedureId,
   BaseRecipeId,
   CacaoVariety,
   Celsius,
@@ -41,7 +43,12 @@ import {
   IngredientCategory,
   IngredientId,
   JournalId,
+  Millimeters,
+  Minutes,
+  MoldFormat,
+  MoldId,
   Percentage,
+  ProcedureId,
   RatingScore,
   RecipeId,
   RecipeName,
@@ -58,17 +65,24 @@ import {
   allChocolateTypes,
   allFluidityStars,
   allIngredientCategories,
+  allMoldFormats,
   allWeightUnits
 } from './model';
 import {
   toBaseIngredientId,
+  toBaseMoldId,
+  toBaseProcedureId,
   toBaseRecipeId,
   toCelsius,
   toDegreesMacMichael,
   toGrams,
   toIngredientId,
   toJournalId,
+  toMillimeters,
+  toMinutes,
+  toMoldId,
   toPercentage,
+  toProcedureId,
   toRatingScore,
   toRecipeId,
   toRecipeName,
@@ -101,6 +115,18 @@ export const baseIngredientId: Converter<BaseIngredientId> = Converters.generic(
 export const baseRecipeId: Converter<BaseRecipeId> = Converters.generic(toBaseRecipeId);
 
 /**
+ * Converter for BaseMoldId
+ * @public
+ */
+export const baseMoldId: Converter<BaseMoldId> = Converters.generic(toBaseMoldId);
+
+/**
+ * Converter for BaseProcedureId
+ * @public
+ */
+export const baseProcedureId: Converter<BaseProcedureId> = Converters.generic(toBaseProcedureId);
+
+/**
  * Converter for IngredientId (composite)
  * @public
  */
@@ -111,6 +137,18 @@ export const ingredientId: Converter<IngredientId> = Converters.generic(toIngred
  * @public
  */
 export const recipeId: Converter<RecipeId> = Converters.generic(toRecipeId);
+
+/**
+ * Converter for MoldId (composite)
+ * @public
+ */
+export const moldId: Converter<MoldId> = Converters.generic(toMoldId);
+
+/**
+ * Converter for ProcedureId (composite)
+ * @public
+ */
+export const procedureId: Converter<ProcedureId> = Converters.generic(toProcedureId);
 
 /**
  * Converter for JournalId
@@ -152,6 +190,38 @@ export const parsedRecipeId: Converter<ParsedRecipeId> = Converters.compositeId(
   sourceId,
   ID_SEPARATOR,
   baseRecipeId
+);
+
+/**
+ * Type alias for parsed MoldId components
+ * @public
+ */
+export type ParsedMoldId = Converters.ICompositeId<SourceId, BaseMoldId>;
+
+/**
+ * Converter that parses a MoldId string into its component parts
+ * @public
+ */
+export const parsedMoldId: Converter<ParsedMoldId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  baseMoldId
+);
+
+/**
+ * Type alias for parsed ProcedureId components
+ * @public
+ */
+export type ParsedProcedureId = Converters.ICompositeId<SourceId, BaseProcedureId>;
+
+/**
+ * Converter that parses a ProcedureId string into its component parts
+ * @public
+ */
+export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  baseProcedureId
 );
 
 /**
@@ -228,6 +298,18 @@ export const degreesMacMichael: Converter<DegreesMacMichael> = Converters.generi
  */
 export const ratingScore: Converter<RatingScore> = Converters.generic(toRatingScore);
 
+/**
+ * Converter for Minutes
+ * @public
+ */
+export const minutes: Converter<Minutes> = Converters.generic(toMinutes);
+
+/**
+ * Converter for Millimeters
+ * @public
+ */
+export const millimeters: Converter<Millimeters> = Converters.generic(toMillimeters);
+
 // ============================================================================
 // Enum Converters
 // ============================================================================
@@ -281,3 +363,9 @@ export const certification: Converter<Certification> = Converters.enumeratedValu
  */
 export const chocolateApplication: Converter<ChocolateApplication> =
   Converters.enumeratedValue(allChocolateApplications);
+
+/**
+ * Converter for MoldFormat
+ * @public
+ */
+export const moldFormat: Converter<MoldFormat> = Converters.enumeratedValue(allMoldFormats);

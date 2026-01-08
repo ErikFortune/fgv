@@ -23,11 +23,16 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
 import {
+  BaseMoldId,
+  BaseProcedureId,
   BaseRecipeId,
   Grams,
   IngredientId,
   JournalId,
+  Millimeters,
+  MoldId,
   Percentage,
+  ProcedureId,
   RecipeId,
   RecipeName,
   RecipeVersionId,
@@ -39,6 +44,10 @@ import { IJournalRecord, JournalLibrary } from '../../../packlets/journal';
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
 
 import { IRecipe, IRecipeVersion, RecipesLibrary } from '../../../packlets/recipes';
+
+import { IMold, Mold, MoldsLibrary } from '../../../packlets/molds';
+
+import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
 
 import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
@@ -240,6 +249,118 @@ describe('ChocolateLibrary', () => {
   });
 
   // ============================================================================
+  // Mold Lookup Tests
+  // ============================================================================
+
+  describe('mold lookup', () => {
+    const testMoldData: IMold = {
+      baseId: 'test-mold' as BaseMoldId,
+      manufacturer: 'Test Manufacturer',
+      productNumber: 'TM-001',
+      description: 'Test Mold',
+      cavityCount: 24,
+      cavityWeight: 10 as Grams,
+      cavityDimensions: {
+        width: 30 as Millimeters,
+        length: 30 as Millimeters,
+        depth: 15 as Millimeters
+      },
+      format: 'series-2000',
+      tags: ['test'],
+      notes: 'Test notes'
+    };
+
+    let library: ChocolateLibrary;
+
+    beforeEach(() => {
+      const testMold = Mold.create(testMoldData).orThrow();
+      const molds = MoldsLibrary.create({
+        builtin: false,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        collections: [{ id: 'test' as SourceId, isMutable: true, items: { 'test-mold': testMold } }]
+      }).orThrow();
+
+      library = ChocolateLibrary.create({ builtin: false, libraries: { molds } }).orThrow();
+    });
+
+    test('molds getter returns molds library', () => {
+      expect(library.molds).toBeDefined();
+      expect(library.molds.size).toBe(1);
+    });
+
+    test('getMold returns existing mold', () => {
+      expect(library.getMold('test.test-mold' as MoldId)).toSucceedAndSatisfy((mold) => {
+        expect(mold.manufacturer).toBe('Test Manufacturer');
+      });
+    });
+
+    test('getMold fails for non-existent', () => {
+      expect(library.getMold('test.nonexistent' as MoldId)).toFail();
+    });
+
+    test('hasMold returns true for existing', () => {
+      expect(library.hasMold('test.test-mold' as MoldId)).toBe(true);
+    });
+
+    test('hasMold returns false for non-existent', () => {
+      expect(library.hasMold('test.nonexistent' as MoldId)).toBe(false);
+    });
+  });
+
+  // ============================================================================
+  // Procedure Lookup Tests
+  // ============================================================================
+
+  describe('procedure lookup', () => {
+    const testProcedureData: IProcedure = {
+      baseId: 'test-procedure' as BaseProcedureId,
+      name: 'Test Procedure',
+      description: 'A test procedure',
+      steps: [
+        { order: 1, description: 'Step 1' },
+        { order: 2, description: 'Step 2' }
+      ],
+      tags: ['test']
+    };
+
+    let library: ChocolateLibrary;
+
+    beforeEach(() => {
+      const testProcedure = Procedure.create(testProcedureData).orThrow();
+      const procedures = ProceduresLibrary.create({
+        builtin: false,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        collections: [{ id: 'test' as SourceId, isMutable: true, items: { 'test-procedure': testProcedure } }]
+      }).orThrow();
+
+      library = ChocolateLibrary.create({ builtin: false, libraries: { procedures } }).orThrow();
+    });
+
+    test('procedures getter returns procedures library', () => {
+      expect(library.procedures).toBeDefined();
+      expect(library.procedures.size).toBe(1);
+    });
+
+    test('getProcedure returns existing procedure', () => {
+      expect(library.getProcedure('test.test-procedure' as ProcedureId)).toSucceedAndSatisfy((procedure) => {
+        expect(procedure.name).toBe('Test Procedure');
+      });
+    });
+
+    test('getProcedure fails for non-existent', () => {
+      expect(library.getProcedure('test.nonexistent' as ProcedureId)).toFail();
+    });
+
+    test('hasProcedure returns true for existing', () => {
+      expect(library.hasProcedure('test.test-procedure' as ProcedureId)).toBe(true);
+    });
+
+    test('hasProcedure returns false for non-existent', () => {
+      expect(library.hasProcedure('test.nonexistent' as ProcedureId)).toBe(false);
+    });
+  });
+
+  // ============================================================================
   // Ganache Calculation Tests
   // ============================================================================
 
@@ -340,7 +461,9 @@ describe('ChocolateLibrary', () => {
     const createFileTreeSource = (ingredientData: object, recipeData: object): ILibraryFileTreeSource => {
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/file-source.json', contents: ingredientData },
-        { path: '/data/recipes/file-source.json', contents: recipeData }
+        { path: '/data/recipes/file-source.json', contents: recipeData },
+        { path: '/data/molds/.gitkeep', contents: '' },
+        { path: '/data/procedures/.gitkeep', contents: '' }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -367,7 +490,9 @@ describe('ChocolateLibrary', () => {
       // Create two separate file sources
       const files1: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/source1.json', contents: fileIngredientData },
-        { path: '/data/recipes/source1.json', contents: fileRecipeData }
+        { path: '/data/recipes/source1.json', contents: fileRecipeData },
+        { path: '/data/molds/.gitkeep', contents: '' },
+        { path: '/data/procedures/.gitkeep', contents: '' }
       ];
       const tree1 = FileTree.inMemory(files1).orThrow();
       const root1 = tree1.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -393,7 +518,9 @@ describe('ChocolateLibrary', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
 
       const files2: FileTree.IInMemoryFile[] = [
-        { path: '/data/ingredients/source2.json', contents: secondIngredientData }
+        { path: '/data/ingredients/source2.json', contents: secondIngredientData },
+        { path: '/data/molds/.gitkeep', contents: '' },
+        { path: '/data/procedures/.gitkeep', contents: '' }
       ];
       const tree2 = FileTree.inMemory(files2).orThrow();
       const root2 = tree2.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -451,7 +578,9 @@ describe('ChocolateLibrary', () => {
       /* eslint-enable @typescript-eslint/naming-convention */
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/data/ingredients/felchlin.json', contents: conflictingData }
+        { path: '/data/ingredients/felchlin.json', contents: conflictingData },
+        { path: '/data/molds/.gitkeep', contents: '' },
+        { path: '/data/procedures/.gitkeep', contents: '' }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -468,7 +597,9 @@ describe('ChocolateLibrary', () => {
       // Create file source with directories but no matching .json files
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/readme.txt', contents: 'empty' },
-        { path: '/data/recipes/readme.txt', contents: 'empty' }
+        { path: '/data/recipes/readme.txt', contents: 'empty' },
+        { path: '/data/molds/.gitkeep', contents: '' },
+        { path: '/data/procedures/.gitkeep', contents: '' }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;

@@ -40,8 +40,12 @@ import {
 const {
   isValidSourceId,
   isValidBaseIngredientId,
+  isValidBaseMoldId,
+  isValidBaseProcedureId,
   isValidBaseRecipeId,
   isValidIngredientId,
+  isValidMoldId,
+  isValidProcedureId,
   isValidRecipeId,
   isValidRecipeName,
   isValidRecipeVersionSpec,
@@ -55,8 +59,12 @@ const {
   isValidDegreesMacMichael,
   toSourceId,
   toBaseIngredientId,
+  toBaseMoldId,
+  toBaseProcedureId,
   toBaseRecipeId,
   toIngredientId,
+  toMoldId,
+  toProcedureId,
   toRecipeId,
   toRecipeName,
   toRecipeVersionSpec,
@@ -110,6 +118,8 @@ describe('Common validation', () => {
     describe.each([
       ['isValidSourceId', isValidSourceId],
       ['isValidBaseIngredientId', isValidBaseIngredientId],
+      ['isValidBaseMoldId', isValidBaseMoldId],
+      ['isValidBaseProcedureId', isValidBaseProcedureId],
       ['isValidBaseRecipeId', isValidBaseRecipeId]
     ])('%s', (_name, fn) => {
       test.each(validBaseIds)('returns true for %s', (_desc, input) => {
@@ -144,6 +154,8 @@ describe('Common validation', () => {
 
     describe.each([
       ['isValidIngredientId', isValidIngredientId],
+      ['isValidMoldId', isValidMoldId],
+      ['isValidProcedureId', isValidProcedureId],
       ['isValidRecipeId', isValidRecipeId]
     ])('%s', (_name, fn) => {
       test.each(validCompositeIds)('returns true for %s', (_desc, input) => {
@@ -275,6 +287,8 @@ describe('Common validation', () => {
     describe.each([
       ['toSourceId', toSourceId, 'felchlin', 'source.id', /Invalid SourceId/],
       ['toBaseIngredientId', toBaseIngredientId, 'maracaibo-65', 'base.id', /Invalid BaseIngredientId/],
+      ['toBaseMoldId', toBaseMoldId, 'cw-2227', 'mold.id', /Invalid BaseMoldId/],
+      ['toBaseProcedureId', toBaseProcedureId, 'ganache-cold', 'proc.id', /Invalid BaseProcedureId/],
       ['toBaseRecipeId', toBaseRecipeId, 'classic-ganache', 'recipe.id', /Invalid BaseRecipeId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {
@@ -300,6 +314,8 @@ describe('Common validation', () => {
   describe('Composite ID converters', () => {
     describe.each([
       ['toIngredientId', toIngredientId, 'felchlin.maracaibo-65', 'maracaibo-65', /Invalid IngredientId/],
+      ['toMoldId', toMoldId, 'common.cw-2227', 'cw-2227', /Invalid MoldId/],
+      ['toProcedureId', toProcedureId, 'common.ganache-cold', 'ganache-cold', /Invalid ProcedureId/],
       ['toRecipeId', toRecipeId, 'user.classic-ganache', 'classic-ganache', /Invalid RecipeId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {

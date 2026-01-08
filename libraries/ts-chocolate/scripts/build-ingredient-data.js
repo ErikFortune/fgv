@@ -5,7 +5,11 @@
  *
  * Usage: rushx build:data
  *
- * This script reads all YAML and JSON files from data/published/ingredients/ and data/published/recipes/
+ * This script reads all YAML and JSON files from:
+ *   - data/published/ingredients/
+ *   - data/published/recipes/
+ *   - data/published/molds/
+ *   - data/published/procedures/
  * and generates a TypeScript file with the data embedded as JSON objects.
  *
  * - YAML files are parsed and converted to JSON objects (unencrypted data)
@@ -18,6 +22,8 @@ const yaml = require('yaml');
 
 const INGREDIENTS_DIR = path.join(__dirname, '../data/published/ingredients');
 const RECIPES_DIR = path.join(__dirname, '../data/published/recipes');
+const MOLDS_DIR = path.join(__dirname, '../data/published/molds');
+const PROCEDURES_DIR = path.join(__dirname, '../data/published/procedures');
 const OUTPUT_FILE = path.join(__dirname, '../src/packlets/built-in/builtInData.generated.ts');
 
 /**
@@ -73,10 +79,18 @@ const ingredients = loadCollectionsFromDir(INGREDIENTS_DIR);
 // Load recipes
 const recipes = loadCollectionsFromDir(RECIPES_DIR);
 
+// Load molds
+const molds = loadCollectionsFromDir(MOLDS_DIR);
+
+// Load procedures
+const procedures = loadCollectionsFromDir(PROCEDURES_DIR);
+
 // Build source file comments
 const sourceComments = [
   ...ingredients.files.map((f) => `//   - data/published/ingredients/${f}`),
-  ...recipes.files.map((f) => `//   - data/published/recipes/${f}`)
+  ...recipes.files.map((f) => `//   - data/published/recipes/${f}`),
+  ...molds.files.map((f) => `//   - data/published/molds/${f}`),
+  ...procedures.files.map((f) => `//   - data/published/procedures/${f}`)
 ].join('\n');
 
 // Generate TypeScript with embedded JSON
@@ -104,17 +118,36 @@ export const ingredientCollections: Record<string, JsonObject> = ${JSON.stringif
  * @public
  */
 export const recipeCollections: Record<string, JsonObject> = ${JSON.stringify(recipes.collections, null, 2)};
+
+/**
+ * Generated mold collections from source YAML files.
+ * @public
+ */
+export const moldCollections: Record<string, JsonObject> = ${JSON.stringify(molds.collections, null, 2)};
+
+/**
+ * Generated procedure collections from source YAML files.
+ * @public
+ */
+export const procedureCollections: Record<string, JsonObject> = ${JSON.stringify(
+  procedures.collections,
+  null,
+  2
+)};
 /* eslint-enable @typescript-eslint/naming-convention */
 `;
 
 fs.writeFileSync(OUTPUT_FILE, output);
 
 // Count file types for reporting
-const yamlCount = [...ingredients.files, ...recipes.files].filter(isYamlFile).length;
-const jsonCount = [...ingredients.files, ...recipes.files].filter(isJsonFile).length;
+const allFiles = [...ingredients.files, ...recipes.files, ...molds.files, ...procedures.files];
+const yamlCount = allFiles.filter(isYamlFile).length;
+const jsonCount = allFiles.filter(isJsonFile).length;
 
 console.log(
   `Generated ${path.relative(process.cwd(), OUTPUT_FILE)} from ${
     ingredients.files.length
-  } ingredient files and ${recipes.files.length} recipe files (${yamlCount} YAML, ${jsonCount} JSON)`
+  } ingredient files, ${recipes.files.length} recipe files, ${molds.files.length} mold files, and ${
+    procedures.files.length
+  } procedure files (${yamlCount} YAML, ${jsonCount} JSON)`
 );

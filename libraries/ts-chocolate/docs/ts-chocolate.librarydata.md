@@ -132,6 +132,28 @@ Gets the journals directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getMoldsDirectory(tree)](./ts-chocolate.librarydata.getmoldsdirectory.md)
+
+
+</td><td>
+
+Gets the molds directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
+[getProceduresDirectory(tree)](./ts-chocolate.librarydata.getproceduresdirectory.md)
+
+
+</td><td>
+
+Gets the procedures directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getRecipesDirectory(tree)](./ts-chocolate.librarydata.getrecipesdirectory.md)
 
 

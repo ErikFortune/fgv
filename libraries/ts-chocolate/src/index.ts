@@ -31,7 +31,20 @@ import * as Crypto from './packlets/crypto';
 import * as Ingredients from './packlets/ingredients';
 import * as Journal from './packlets/journal';
 import * as LibraryData from './packlets/library-data';
+import * as Molds from './packlets/molds';
+import * as Procedures from './packlets/procedures';
 import * as Recipes from './packlets/recipes';
 import * as Runtime from './packlets/runtime';
 
-export { BuiltIn, Calculations, Crypto, Ingredients, Journal, LibraryData, Recipes, Runtime };
+export {
+  BuiltIn,
+  Calculations,
+  Crypto,
+  Ingredients,
+  Journal,
+  LibraryData,
+  Molds,
+  Procedures,
+  Recipes,
+  Runtime
+};

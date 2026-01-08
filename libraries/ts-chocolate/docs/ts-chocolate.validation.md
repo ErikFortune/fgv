@@ -30,6 +30,28 @@ Type guard for BaseIngredientId
 </td></tr>
 <tr><td>
 
+[isValidBaseMoldId(from)](./ts-chocolate.validation.isvalidbasemoldid.md)
+
+
+</td><td>
+
+Type guard for BaseMoldId
+
+
+</td></tr>
+<tr><td>
+
+[isValidBaseProcedureId(from)](./ts-chocolate.validation.isvalidbaseprocedureid.md)
+
+
+</td><td>
+
+Type guard for BaseProcedureId
+
+
+</td></tr>
+<tr><td>
+
 [isValidBaseRecipeId(from)](./ts-chocolate.validation.isvalidbaserecipeid.md)
 
 
@@ -96,12 +118,56 @@ Type guard for JournalId
 </td></tr>
 <tr><td>
 
+[isValidMillimeters(from)](./ts-chocolate.validation.isvalidmillimeters.md)
+
+
+</td><td>
+
+Type guard for Millimeters
+
+
+</td></tr>
+<tr><td>
+
+[isValidMinutes(from)](./ts-chocolate.validation.isvalidminutes.md)
+
+
+</td><td>
+
+Type guard for Minutes
+
+
+</td></tr>
+<tr><td>
+
+[isValidMoldId(from)](./ts-chocolate.validation.isvalidmoldid.md)
+
+
+</td><td>
+
+Type guard for MoldId
+
+
+</td></tr>
+<tr><td>
+
 [isValidPercentage(from)](./ts-chocolate.validation.isvalidpercentage.md)
 
 
 </td><td>
 
 Type guard for Percentage
+
+
+</td></tr>
+<tr><td>
+
+[isValidProcedureId(from)](./ts-chocolate.validation.isvalidprocedureid.md)
+
+
+</td><td>
+
+Type guard for ProcedureId
 
 
 </td></tr>
@@ -195,6 +261,28 @@ Converts unknown value to BaseIngredientId
 </td></tr>
 <tr><td>
 
+[toBaseMoldId(from)](./ts-chocolate.validation.tobasemoldid.md)
+
+
+</td><td>
+
+Converts unknown value to BaseMoldId
+
+
+</td></tr>
+<tr><td>
+
+[toBaseProcedureId(from)](./ts-chocolate.validation.tobaseprocedureid.md)
+
+
+</td><td>
+
+Converts unknown value to BaseProcedureId
+
+
+</td></tr>
+<tr><td>
+
 [toBaseRecipeId(from)](./ts-chocolate.validation.tobaserecipeid.md)
 
 
@@ -261,12 +349,56 @@ Converts unknown value to JournalId
 </td></tr>
 <tr><td>
 
+[toMillimeters(from)](./ts-chocolate.validation.tomillimeters.md)
+
+
+</td><td>
+
+Converts unknown value to Millimeters
+
+
+</td></tr>
+<tr><td>
+
+[toMinutes(from)](./ts-chocolate.validation.tominutes.md)
+
+
+</td><td>
+
+Converts unknown value to Minutes
+
+
+</td></tr>
+<tr><td>
+
+[toMoldId(from)](./ts-chocolate.validation.tomoldid.md)
+
+
+</td><td>
+
+Converts unknown value to MoldId
+
+
+</td></tr>
+<tr><td>
+
 [toPercentage(from)](./ts-chocolate.validation.topercentage.md)
 
 
 </td><td>
 
 Converts unknown value to Percentage
+
+
+</td></tr>
+<tr><td>
+
+[toProcedureId(from)](./ts-chocolate.validation.toprocedureid.md)
+
+
+</td><td>
+
+Converts unknown value to ProcedureId
 
 
 </td></tr>

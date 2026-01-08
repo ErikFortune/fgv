@@ -28,6 +28,8 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 import {
   BASE_ID_PATTERN,
   BaseIngredientId,
+  BaseMoldId,
+  BaseProcedureId,
   BaseRecipeId,
   Celsius,
   COMPOSITE_ID_PATTERN,
@@ -36,7 +38,11 @@ import {
   IngredientId,
   JOURNAL_ID_PATTERN,
   JournalId,
+  Millimeters,
+  Minutes,
+  MoldId,
   Percentage,
+  ProcedureId,
   RatingScore,
   RECIPE_VERSION_SPEC_PATTERN,
   RecipeId,
@@ -126,6 +132,54 @@ export function toBaseRecipeId(from: unknown): Result<BaseRecipeId> {
   );
 }
 
+/**
+ * Type guard for BaseMoldId
+ * @param from - Value to check
+ * @returns True if the value is a valid BaseMoldId
+ * @public
+ */
+export function isValidBaseMoldId(from: unknown): from is BaseMoldId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to BaseMoldId
+ * @param from - Value to convert
+ * @returns Result with BaseMoldId or error
+ * @public
+ */
+export function toBaseMoldId(from: unknown): Result<BaseMoldId> {
+  if (isValidBaseMoldId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid BaseMoldId: must be non-empty alphanumeric with dashes/underscores, no dots');
+}
+
+/**
+ * Type guard for BaseProcedureId
+ * @param from - Value to check
+ * @returns True if the value is a valid BaseProcedureId
+ * @public
+ */
+export function isValidBaseProcedureId(from: unknown): from is BaseProcedureId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to BaseProcedureId
+ * @param from - Value to convert
+ * @returns Result with BaseProcedureId or error
+ * @public
+ */
+export function toBaseProcedureId(from: unknown): Result<BaseProcedureId> {
+  if (isValidBaseProcedureId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid BaseProcedureId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
+}
+
 // ============================================================================
 // Composite ID Validators (exactly one dot)
 // ============================================================================
@@ -177,6 +231,56 @@ export function toRecipeId(from: unknown): Result<RecipeId> {
   }
   return Failure.with(
     'Invalid RecipeId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
+  );
+}
+
+/**
+ * Type guard for MoldId
+ * @param from - Value to check
+ * @returns True if the value is a valid composite MoldId
+ * @public
+ */
+export function isValidMoldId(from: unknown): from is MoldId {
+  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to MoldId
+ * @param from - Value to convert
+ * @returns Result with MoldId or error
+ * @public
+ */
+export function toMoldId(from: unknown): Result<MoldId> {
+  if (isValidMoldId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid MoldId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
+  );
+}
+
+/**
+ * Type guard for ProcedureId
+ * @param from - Value to check
+ * @returns True if the value is a valid composite ProcedureId
+ * @public
+ */
+export function isValidProcedureId(from: unknown): from is ProcedureId {
+  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to ProcedureId
+ * @param from - Value to convert
+ * @returns Result with ProcedureId or error
+ * @public
+ */
+export function toProcedureId(from: unknown): Result<ProcedureId> {
+  if (isValidProcedureId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid ProcedureId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
   );
 }
 
@@ -406,6 +510,52 @@ export function toRatingScore(from: unknown): Result<RatingScore> {
     return Success.with(from);
   }
   return Failure.with(`${from}: Invalid RatingScore: must be an integer between 1 and 5`);
+}
+
+/**
+ * Type guard for Minutes
+ * @param from - Value to check
+ * @returns True if the value is a valid Minutes value
+ * @public
+ */
+export function isValidMinutes(from: unknown): from is Minutes {
+  return typeof from === 'number' && Number.isFinite(from) && from >= 0;
+}
+
+/**
+ * Converts unknown value to Minutes
+ * @param from - Value to convert
+ * @returns Result with Minutes or error
+ * @public
+ */
+export function toMinutes(from: unknown): Result<Minutes> {
+  if (isValidMinutes(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid Minutes: must be a non-negative finite number');
+}
+
+/**
+ * Type guard for Millimeters
+ * @param from - Value to check
+ * @returns True if the value is a valid Millimeters value
+ * @public
+ */
+export function isValidMillimeters(from: unknown): from is Millimeters {
+  return typeof from === 'number' && Number.isFinite(from) && from >= 0;
+}
+
+/**
+ * Converts unknown value to Millimeters
+ * @param from - Value to convert
+ * @returns Result with Millimeters or error
+ * @public
+ */
+export function toMillimeters(from: unknown): Result<Millimeters> {
+  if (isValidMillimeters(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid Millimeters: must be a non-negative finite number');
 }
 
 // ============================================================================

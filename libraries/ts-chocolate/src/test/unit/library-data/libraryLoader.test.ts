@@ -139,6 +139,14 @@ describe('libraryLoader', () => {
     test('returns correct path for journals', () => {
       expect(getSubLibraryPath('journals')).toBe(LibraryPaths.journals);
     });
+
+    test('returns correct path for molds', () => {
+      expect(getSubLibraryPath('molds')).toBe(LibraryPaths.molds);
+    });
+
+    test('returns correct path for procedures', () => {
+      expect(getSubLibraryPath('procedures')).toBe(LibraryPaths.procedures);
+    });
   });
 
   // ============================================================================

@@ -20,12 +20,22 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { getIngredientsDirectory, getRecipesDirectory } from '../library-data';
-import { ingredientCollections, recipeCollections } from './builtInData.generated';
+import {
+  getIngredientsDirectory,
+  getMoldsDirectory,
+  getProceduresDirectory,
+  getRecipesDirectory
+} from '../library-data';
+import {
+  ingredientCollections,
+  moldCollections,
+  procedureCollections,
+  recipeCollections
+} from './builtInData.generated';
 
 /**
  * Built-in library file specifications for creating the InMemoryFileTree.
- * Transforms the generated ingredient and recipe collections into file tree entries.
+ * Transforms the generated collections into file tree entries.
  * @internal
  */
 const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
@@ -35,6 +45,14 @@ const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
   })),
   ...Object.entries(recipeCollections).map(([name, data]) => ({
     path: `/data/recipes/${name}.json`,
+    contents: data
+  })),
+  ...Object.entries(moldCollections).map(([name, data]) => ({
+    path: `/data/molds/${name}.json`,
+    contents: data
+  })),
+  ...Object.entries(procedureCollections).map(([name, data]) => ({
+    path: `/data/procedures/${name}.json`,
     contents: data
   }))
 ];
@@ -58,7 +76,11 @@ export class BuiltInData {
    *     │   ├── felchlin.json
    *     │   ├── cacao-barry.json
    *     │   └── guittard.json
-   *     └── recipes/
+   *     ├── recipes/
+   *     │   └── common.json
+   *     ├── molds/
+   *     │   └── common.json
+   *     └── procedures/
    *         └── common.json
    * ```
    * @returns `Success` with the library tree root directory, or `Failure` with an error message.
@@ -95,6 +117,22 @@ export class BuiltInData {
    */
   public static getRecipesDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
     return BuiltInData.getLibraryTree().onSuccess((tree) => getRecipesDirectory(tree));
+  }
+
+  /**
+   * Gets the molds directory from the built-in library tree.
+   * @returns `Success` with the molds directory, or `Failure` if not found.
+   */
+  public static getMoldsDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    return BuiltInData.getLibraryTree().onSuccess((tree) => getMoldsDirectory(tree));
+  }
+
+  /**
+   * Gets the procedures directory from the built-in library tree.
+   * @returns `Success` with the procedures directory, or `Failure` if not found.
+   */
+  public static getProceduresDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    return BuiltInData.getLibraryTree().onSuccess((tree) => getProceduresDirectory(tree));
   }
 
   /**

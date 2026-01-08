@@ -13,5 +13,7 @@ LibraryPaths: {
     readonly ingredients: "data/ingredients";
     readonly recipes: "data/recipes";
     readonly journals: "data/journals";
+    readonly molds: "data/molds";
+    readonly procedures: "data/procedures";
 }
 ```

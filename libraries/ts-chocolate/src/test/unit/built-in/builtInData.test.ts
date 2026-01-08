@@ -191,6 +191,84 @@ describe('BuiltInData', () => {
   });
 
   // ============================================================================
+  // getMoldsDirectory Tests
+  // ============================================================================
+
+  describe('getMoldsDirectory', () => {
+    test('returns the molds directory', () => {
+      expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.type).toBe('directory');
+        expect(dir.name).toBe('molds');
+      });
+    });
+
+    test('molds directory contains expected collections', () => {
+      expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const names = children.map((c) => c.name).sort();
+          expect(names).toContain('common.json');
+        });
+      });
+    });
+
+    test('common.json contains expected molds', () => {
+      expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const commonFile = children.find((c) => c.name === 'common.json');
+          expect(commonFile).toBeDefined();
+          expect(commonFile?.type).toBe('file');
+
+          if (commonFile?.type === 'file') {
+            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['chocolate-world-cw-2227']).toBeDefined();
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // ============================================================================
+  // getProceduresDirectory Tests
+  // ============================================================================
+
+  describe('getProceduresDirectory', () => {
+    test('returns the procedures directory', () => {
+      expect(BuiltInData.getProceduresDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.type).toBe('directory');
+        expect(dir.name).toBe('procedures');
+      });
+    });
+
+    test('procedures directory contains expected collections', () => {
+      expect(BuiltInData.getProceduresDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const names = children.map((c) => c.name).sort();
+          expect(names).toContain('common.json');
+        });
+      });
+    });
+
+    test('common.json contains expected procedures', () => {
+      expect(BuiltInData.getProceduresDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const commonFile = children.find((c) => c.name === 'common.json');
+          expect(commonFile).toBeDefined();
+          expect(commonFile?.type).toBe('file');
+
+          if (commonFile?.type === 'file') {
+            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['ganache-cold-method']).toBeDefined();
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // ============================================================================
   // Source Data Validation Tests
   // ============================================================================
 

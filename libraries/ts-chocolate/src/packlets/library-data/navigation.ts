@@ -37,7 +37,15 @@ export const LibraryPaths = {
   /**
    * Path to the journals data directory.
    */
-  journals: 'data/journals'
+  journals: 'data/journals',
+  /**
+   * Path to the molds data directory.
+   */
+  molds: 'data/molds',
+  /**
+   * Path to the procedures data directory.
+   */
+  procedures: 'data/procedures'
 } as const;
 
 /**
@@ -114,4 +122,24 @@ export function getRecipesDirectory(tree: FileTree.FileTreeItem): Result<FileTre
  */
 export function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
   return navigateToDirectory(tree, LibraryPaths.journals);
+}
+
+/**
+ * Gets the molds directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the molds directory or `Failure` if not found.
+ * @public
+ */
+export function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.molds);
+}
+
+/**
+ * Gets the procedures directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the procedures directory or `Failure` if not found.
+ * @public
+ */
+export function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.procedures);
 }
