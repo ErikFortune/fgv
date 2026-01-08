@@ -175,6 +175,27 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
+[recipeProcedures?](./ts-chocolate.recipes.recipe.recipeprocedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeProcedures](./ts-chocolate.recipes.irecipeprocedures.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [tags?](./ts-chocolate.recipes.recipe.tags.md)
 
 

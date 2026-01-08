@@ -163,6 +163,27 @@ Human-readable recipe name
 </td></tr>
 <tr><td>
 
+[recipeProcedures?](./ts-chocolate.recipes.irecipe.recipeprocedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeProcedures](./ts-chocolate.recipes.irecipeprocedures.md)
+
+
+</td><td>
+
+_(Optional)_ Optional procedures associated with this recipe. Contains available procedures and the recommended default.
+
+
+</td></tr>
+<tr><td>
+
 [tags?](./ts-chocolate.recipes.irecipe.tags.md)
 
 

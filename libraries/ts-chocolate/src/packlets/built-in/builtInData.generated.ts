@@ -1241,7 +1241,7 @@ export const recipeCollections: Record<string, JsonObject> = {
       'gianduja-basic': {
         baseId: 'gianduja-basic',
         name: 'Basic Gianduja',
-        category: 'ganache',
+        category: 'gianduja',
         description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
         tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
         goldenVersionSpec: '2026-01-01-01',

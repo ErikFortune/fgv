@@ -27,6 +27,7 @@ import {
   BaseRecipeId,
   Grams,
   IngredientId,
+  ProcedureId,
   RatingScore,
   RecipeName,
   RecipeVersionId,
@@ -214,6 +215,41 @@ export interface IRecipeDerivation {
 }
 
 /**
+ * Reference to a procedure that can be used with a recipe.
+ * Contains the procedure ID and a placeholder for future templating instructions.
+ * @public
+ */
+export interface IRecipeProcedureRef {
+  /**
+   * Composite procedure ID (e.g., "common.ganache-cold-method")
+   */
+  readonly procedureId: ProcedureId;
+
+  /**
+   * Optional notes specific to using this procedure with the recipe
+   */
+  readonly notes?: string;
+
+  // Future: templating instructions, parameter overrides, etc.
+}
+
+/**
+ * Collection of procedures associated with a recipe.
+ * @public
+ */
+export interface IRecipeProcedures {
+  /**
+   * Available procedures for this recipe
+   */
+  readonly procedures: ReadonlyArray<IRecipeProcedureRef>;
+
+  /**
+   * ID of the recommended/default procedure
+   */
+  readonly recommendedProcedureId?: ProcedureId;
+}
+
+/**
  * Complete recipe with version history
  * @public
  */
@@ -258,6 +294,12 @@ export interface IRecipe {
    * from another recipe (e.g., when editing a read-only recipe)
    */
   readonly derivedFrom?: IRecipeDerivation;
+
+  /**
+   * Optional procedures associated with this recipe.
+   * Contains available procedures and the recommended default.
+   */
+  readonly recipeProcedures?: IRecipeProcedures;
 }
 
 /**

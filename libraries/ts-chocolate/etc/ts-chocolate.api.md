@@ -476,6 +476,8 @@ declare namespace Converters_8 {
         recipeCategory,
         recipeRating,
         recipeDerivation,
+        recipeProcedureRef,
+        recipeProcedures,
         recipeVersion,
         recipeData,
         recipe,
@@ -1516,6 +1518,7 @@ interface IRecipe {
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly name: RecipeName;
+    readonly recipeProcedures?: IRecipeProcedures;
     readonly tags?: ReadonlyArray<string>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
@@ -1536,6 +1539,18 @@ interface IRecipeIngredient {
     readonly amount: Grams;
     readonly ingredientId: IngredientId;
     readonly notes?: string;
+}
+
+// @public
+interface IRecipeProcedureRef {
+    readonly notes?: string;
+    readonly procedureId: ProcedureId;
+}
+
+// @public
+interface IRecipeProcedures {
+    readonly procedures: ReadonlyArray<IRecipeProcedureRef>;
+    readonly recommendedProcedureId?: ProcedureId;
 }
 
 // @public
@@ -2508,6 +2523,8 @@ class Recipe implements IRecipe {
     // (undocumented)
     readonly name: RecipeName;
     // (undocumented)
+    readonly recipeProcedures?: IRecipeProcedures;
+    // (undocumented)
     readonly tags?: ReadonlyArray<string>;
     // (undocumented)
     readonly versions: ReadonlyArray<IRecipeVersion>;
@@ -2597,6 +2614,16 @@ export type RecipeName = Brand<string, 'RecipeName'>;
 // @public
 const recipeName: Converter<RecipeName>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeProcedureRef: Converter<IRecipeProcedureRef>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeProcedures: Converter<IRecipeProcedures>;
+
 // @public
 class RecipeQuery {
     constructor(context: RuntimeContext);
@@ -2652,6 +2679,8 @@ declare namespace Recipes {
         IRecipeUsage,
         IRecipeVersion,
         IRecipeDerivation,
+        IRecipeProcedureRef,
+        IRecipeProcedures,
         IRecipe,
         IScaledRecipeIngredient,
         IScalingRef,

@@ -209,6 +209,28 @@ Reference to an ingredient used in a recipe Uses composite IngredientId to suppo
 </td></tr>
 <tr><td>
 
+[IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)
+
+
+</td><td>
+
+Reference to a procedure that can be used with a recipe. Contains the procedure ID and a placeholder for future templating instructions.
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeProcedures](./ts-chocolate.recipes.irecipeprocedures.md)
+
+
+</td><td>
+
+Collection of procedures associated with a recipe.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeRating](./ts-chocolate.recipes.ireciperating.md)
 
 

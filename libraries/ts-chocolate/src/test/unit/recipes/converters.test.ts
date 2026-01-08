@@ -27,7 +27,9 @@ import {
   recipe,
   scaledRecipeIngredient,
   scalingRef,
-  scaledRecipeVersion
+  scaledRecipeVersion,
+  recipeProcedureRef,
+  recipeProcedures
 } from '../../../packlets/recipes/converters';
 
 describe('Recipe Converters', () => {
@@ -158,6 +160,43 @@ describe('Recipe Converters', () => {
       });
     });
 
+    test('converts recipe with procedures', () => {
+      const input = {
+        baseId: 'test-recipe',
+        name: 'Test Recipe',
+        category: 'ganache',
+        versions: [validVersion],
+        goldenVersionSpec: '2026-01-01-01',
+        recipeProcedures: {
+          procedures: [
+            { procedureId: 'common.ganache-cold-method', notes: 'Preferred' },
+            { procedureId: 'common.ganache-hot-method' }
+          ],
+          recommendedProcedureId: 'common.ganache-cold-method'
+        }
+      };
+      expect(recipe.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.recipeProcedures).toBeDefined();
+        expect(result.recipeProcedures!.procedures.length).toBe(2);
+        expect(result.recipeProcedures!.procedures[0].procedureId).toBe('common.ganache-cold-method');
+        expect(result.recipeProcedures!.procedures[0].notes).toBe('Preferred');
+        expect(result.recipeProcedures!.recommendedProcedureId).toBe('common.ganache-cold-method');
+      });
+    });
+
+    test('converts recipe without procedures', () => {
+      const input = {
+        baseId: 'test-recipe',
+        name: 'Test Recipe',
+        category: 'ganache',
+        versions: [validVersion],
+        goldenVersionSpec: '2026-01-01-01'
+      };
+      expect(recipe.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.recipeProcedures).toBeUndefined();
+      });
+    });
+
     test('fails for recipe with empty versions array', () => {
       const input = {
         baseId: 'test-recipe',
@@ -200,6 +239,128 @@ describe('Recipe Converters', () => {
         goldenVersionSpec: '2026-01-01-01'
       };
       expect(recipe.convert(input)).toFail();
+    });
+  });
+
+  // ============================================================================
+  // recipeProcedureRef Converter
+  // ============================================================================
+
+  describe('recipeProcedureRef', () => {
+    test('converts valid procedure reference', () => {
+      const input = {
+        procedureId: 'common.ganache-cold-method'
+      };
+      expect(recipeProcedureRef.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.procedureId).toBe('common.ganache-cold-method');
+        expect(result.notes).toBeUndefined();
+      });
+    });
+
+    test('converts procedure reference with notes', () => {
+      const input = {
+        procedureId: 'common.ganache-hot-method',
+        notes: 'Use for this specific chocolate'
+      };
+      expect(recipeProcedureRef.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.procedureId).toBe('common.ganache-hot-method');
+        expect(result.notes).toBe('Use for this specific chocolate');
+      });
+    });
+
+    test('fails for invalid procedure ID format', () => {
+      const input = {
+        procedureId: 'invalid'
+      };
+      expect(recipeProcedureRef.convert(input)).toFail();
+    });
+
+    test('fails for missing procedure ID', () => {
+      const input = {
+        notes: 'Some notes'
+      };
+      expect(recipeProcedureRef.convert(input)).toFail();
+    });
+  });
+
+  // ============================================================================
+  // recipeProcedures Converter
+  // ============================================================================
+
+  describe('recipeProcedures', () => {
+    test('converts valid procedures collection', () => {
+      const input = {
+        procedures: [
+          { procedureId: 'common.ganache-cold-method' },
+          { procedureId: 'common.ganache-hot-method' }
+        ]
+      };
+      expect(recipeProcedures.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.procedures.length).toBe(2);
+        expect(result.procedures[0].procedureId).toBe('common.ganache-cold-method');
+        expect(result.procedures[1].procedureId).toBe('common.ganache-hot-method');
+        expect(result.recommendedProcedureId).toBeUndefined();
+      });
+    });
+
+    test('converts procedures with recommended ID', () => {
+      const input = {
+        procedures: [
+          { procedureId: 'common.ganache-cold-method' },
+          { procedureId: 'common.ganache-hot-method' }
+        ],
+        recommendedProcedureId: 'common.ganache-cold-method'
+      };
+      expect(recipeProcedures.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.procedures.length).toBe(2);
+        expect(result.recommendedProcedureId).toBe('common.ganache-cold-method');
+      });
+    });
+
+    test('converts procedures with notes on individual refs', () => {
+      const input = {
+        procedures: [
+          { procedureId: 'common.ganache-cold-method', notes: 'Preferred for dark chocolate' },
+          { procedureId: 'common.ganache-hot-method', notes: 'Alternative method' }
+        ],
+        recommendedProcedureId: 'common.ganache-cold-method'
+      };
+      expect(recipeProcedures.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.procedures[0].notes).toBe('Preferred for dark chocolate');
+        expect(result.procedures[1].notes).toBe('Alternative method');
+      });
+    });
+
+    test('fails for empty procedures array', () => {
+      const input = {
+        procedures: []
+      };
+      // Empty array is valid - no minimum requirement
+      expect(recipeProcedures.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.procedures.length).toBe(0);
+      });
+    });
+
+    test('fails for invalid procedure ID in array', () => {
+      const input = {
+        procedures: [{ procedureId: 'common.ganache-cold-method' }, { procedureId: 'invalid' }]
+      };
+      expect(recipeProcedures.convert(input)).toFail();
+    });
+
+    test('fails for invalid recommended procedure ID', () => {
+      const input = {
+        procedures: [{ procedureId: 'common.ganache-cold-method' }],
+        recommendedProcedureId: 'invalid'
+      };
+      expect(recipeProcedures.convert(input)).toFail();
+    });
+
+    test('fails for missing procedures field', () => {
+      const input = {
+        recommendedProcedureId: 'common.ganache-cold-method'
+      };
+      expect(recipeProcedures.convert(input)).toFail();
     });
   });
 
