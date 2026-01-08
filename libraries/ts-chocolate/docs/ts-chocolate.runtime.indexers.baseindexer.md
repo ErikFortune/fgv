@@ -15,6 +15,42 @@ export declare abstract class BaseIndexer<TEntity, TId, TConfig> implements IInd
 ```
 **Implements:** [IIndexer](./ts-chocolate.runtime.indexers.iindexer.md)<!-- -->&lt;TEntity, TId, TConfig&gt;
 
+## Constructors
+
+<table><thead><tr><th>
+
+Constructor
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[(constructor)(library)](./ts-chocolate.runtime.indexers.baseindexer._constructor_.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Creates a new indexer with optional logging.
+
+
+</td></tr>
+</tbody></table>
+
 ## Properties
 
 <table><thead><tr><th>
@@ -40,6 +76,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_indexerName](./ts-chocolate.runtime.indexers.baseindexer._indexername.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+string
+
+
+</td><td>
+
+Returns the name of this indexer for logging purposes. Subclasses should override to provide a meaningful name.
+
+
+</td></tr>
+<tr><td>
+
 [\_isBuilt](./ts-chocolate.runtime.indexers.baseindexer._isbuilt.md)
 
 
@@ -56,6 +115,50 @@ boolean
 </td><td>
 
 Flag indicating if the index has been built.
+
+
+</td></tr>
+<tr><td>
+
+[\_logger](./ts-chocolate.runtime.indexers.baseindexer._logger.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+Logger for reporting index operations.
+
+
+</td></tr>
+<tr><td>
+
+[library](./ts-chocolate.runtime.indexers.baseindexer.library.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+
+
+</td><td>
+
+The chocolate library being indexed.
 
 
 </td></tr>

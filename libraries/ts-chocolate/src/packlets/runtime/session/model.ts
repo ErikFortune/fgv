@@ -23,6 +23,8 @@
  * @packageDocumentation
  */
 
+import { Logging } from '@fgv/ts-utils';
+
 import { Grams, IngredientId, SessionId } from '../../common';
 import { IJournalEntry, IJournalRecord } from '../../journal';
 import { IRuntimeRecipeVersion } from '../model';
@@ -101,6 +103,11 @@ export interface IEditingSessionParams {
    * Whether to track detailed journal entries (default: true)
    */
   readonly enableJournal?: boolean;
+
+  /**
+   * Optional logger for reporting operations
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // ============================================================================

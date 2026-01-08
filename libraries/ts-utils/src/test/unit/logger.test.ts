@@ -372,6 +372,39 @@ describe('Logger class', () => {
       });
     });
 
+    describe('createDefault static factory', () => {
+      test('should create LogReporter with NoOpLogger when no logger provided', () => {
+        expect(LogReporter.createDefault()).toSucceedAndSatisfy((reporter) => {
+          expect(reporter).toBeInstanceOf(LogReporter);
+          expect(reporter.logger).toBeInstanceOf(NoOpLogger);
+        });
+      });
+
+      test('should create LogReporter with provided logger', () => {
+        const logger = new InMemoryLogger();
+        expect(LogReporter.createDefault(logger)).toSucceedAndSatisfy((reporter) => {
+          expect(reporter.logger).toBe(logger);
+        });
+      });
+
+      test('should use default value formatter (tryFormatObject)', () => {
+        const logger = new InMemoryLogger();
+        expect(LogReporter.createDefault(logger)).toSucceedAndSatisfy((reporter) => {
+          reporter.reportSuccess('info', { key: 'value' });
+          expect(logger.logged[0]).toBe('{"key":"value"}');
+        });
+      });
+
+      test('should return typed LogReporter<unknown>', () => {
+        expect(LogReporter.createDefault()).toSucceedAndSatisfy((reporter) => {
+          // Should accept any value type
+          reporter.reportSuccess('info', 'string value');
+          reporter.reportSuccess('info', 42);
+          reporter.reportSuccess('info', { complex: 'object' });
+        });
+      });
+    });
+
     describe('ILogger interface implementation', () => {
       let logger: InMemoryLogger;
       let reporter: LogReporter<string>;

@@ -73,8 +73,6 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
   RecipeId,
   IRecipesByChocolateTypeConfig
 > {
-  private readonly _library: ChocolateLibrary;
-
   // Index structure: chocolate type -> recipe IDs
   private _typeToRecipes: Map<ChocolateType, Set<RecipeId>> | undefined;
 
@@ -83,21 +81,23 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
    * @param library - The chocolate library to index
    */
   public constructor(library: ChocolateLibrary) {
-    super();
-    this._library = library;
+    super(library);
   }
 
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._typeToRecipes = new Map<ChocolateType, Set<RecipeId>>();
-    const recipes = this._library.recipes;
-    const ingredients = this._library.ingredients;
+    const recipes = this.library.recipes;
+    const ingredients = this.library.ingredients;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       // Check golden version for chocolate types
       const goldenVersion = recipe.versions.find((v) => v.versionSpec === recipe.goldenVersionSpec);
-      /* c8 ignore next - defensive: data validation ensures golden version exists */
-      if (!goldenVersion) continue;
+      /* c8 ignore next 4 - defensive: data validation ensures golden version exists */
+      if (!goldenVersion) {
+        this._logger.error(`Recipe ${recipeId} is missing golden version ${recipe.goldenVersionSpec}`);
+        continue;
+      }
 
       for (const ri of goldenVersion.ingredients) {
         const ingredientResult = ingredients.get(ri.ingredientId);

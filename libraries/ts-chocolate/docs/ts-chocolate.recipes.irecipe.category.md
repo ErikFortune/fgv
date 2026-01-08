@@ -4,10 +4,10 @@
 
 ## Recipes.IRecipe.category property
 
-Optional category for classifying the recipe type
+Category for classifying the recipe type
 
 **Signature:**
 
 ```typescript
-readonly category?: RecipeCategory;
+readonly category: RecipeCategory;
 ```

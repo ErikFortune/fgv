@@ -106,7 +106,7 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
    * @param resolver - Function to resolve recipe IDs to entities
    */
   public constructor(library: ChocolateLibrary, resolver: RecipeResolver) {
-    super({
+    super(library, {
       resolve: resolver,
       isId: (value): value is RecipeId => typeof value === 'string'
     });
@@ -136,28 +136,32 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
       this._indexers.byTag
         .find(spec.byTag)
         .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
-        .aggregateError(errors);
+        .aggregateError(errors)
+        .report(this._logger);
     }
 
     if (spec.byIngredient !== undefined) {
       this._indexers.byIngredient
         .find(spec.byIngredient)
         .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
-        .aggregateError(errors);
+        .aggregateError(errors)
+        .report(this._logger);
     }
 
     if (spec.byChocolateType !== undefined) {
       this._indexers.byChocolateType
         .find(spec.byChocolateType)
         .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
-        .aggregateError(errors);
+        .aggregateError(errors)
+        .report(this._logger);
     }
 
     if (spec.byCategory !== undefined) {
       this._indexers.byCategory
         .find(spec.byCategory)
         .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
-        .aggregateError(errors);
+        .aggregateError(errors)
+        .report(this._logger);
     }
 
     if (indexerResults.length === 0) {

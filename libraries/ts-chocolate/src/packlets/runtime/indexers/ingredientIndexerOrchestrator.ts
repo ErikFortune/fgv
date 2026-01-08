@@ -90,11 +90,12 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRunt
    * @param resolver - Function to resolve ingredient IDs to entities
    */
   public constructor(library: ChocolateLibrary, resolver: IngredientResolver) {
-    super({
+    super(library, {
       resolve: resolver,
       isId: (value): value is IngredientId => typeof value === 'string'
     });
 
+    // Get logger from library for all indexers
     this._indexers = {
       byTag: new IngredientsByTagIndexer(library)
     };
@@ -117,7 +118,8 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRunt
       this._indexers.byTag
         .find(spec.byTag)
         .onSuccess((result) => Success.with(indexerResults.push(new Set(result))))
-        .aggregateError(errors);
+        .aggregateError(errors)
+        .report(this._logger);
     }
 
     if (indexerResults.length === 0) {
@@ -137,7 +139,7 @@ export class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRunt
     }
 
     // Resolve IDs to entities
-    return this._resolveToEntities(aggregatedSet);
+    return this._resolveToEntities(aggregatedSet).report(this._logger);
   }
 
   /**

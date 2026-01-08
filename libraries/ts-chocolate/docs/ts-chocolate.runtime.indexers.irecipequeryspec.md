@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[byCategory?](./ts-chocolate.runtime.indexers.irecipequeryspec.bycategory.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.irecipesbycategoryconfig.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [byChocolateType?](./ts-chocolate.runtime.indexers.irecipequeryspec.bychocolatetype.md)
 
 

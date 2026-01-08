@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Collections, fail, Failure, Result, succeed, Success } from '@fgv/ts-utils';
+import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@fgv/ts-utils';
 
 import { Helpers, IngredientId, RecipeId, RecipeVersionId, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
@@ -92,6 +92,11 @@ export class RuntimeContext
   private readonly _library: ChocolateLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
 
+  /**
+   * Logger used by this runtime context and its libraries.
+   */
+  public readonly logger: Logging.LogReporter<unknown>;
+
   // Lazily-populated libraries with integrated find support
   // The fourth type parameter is the orchestrator's entity type (interface type)
   private _ingredients:
@@ -105,9 +110,12 @@ export class RuntimeContext
 
   private constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
+    this.logger = library.logger;
+
     this._reverseIndex = new RuntimeReverseIndex(library);
 
     // Initialize orchestrators with resolver functions bound to this context
+    // Orchestrators get logger from library automatically
     this._recipeOrchestrator = new RecipeIndexerOrchestrator(library, (id) => this._getRecipe(id));
     this._ingredientOrchestrator = new IngredientIndexerOrchestrator(library, (id) =>
       this._getIngredient(id)
@@ -229,12 +237,11 @@ export class RuntimeContext
         }),
         orchestrator: this._ingredientOrchestrator
       });
-      // Populate from library
+      // Populate from library - report unexpected creation errors
       for (const [id, ingredient] of this._library.ingredients.entries()) {
-        RuntimeIngredient.create(this, id, ingredient).onSuccess((ri) => {
-          this._ingredients!.set(id, ri);
-          return succeed(ri);
-        });
+        RuntimeIngredient.create(this, id, ingredient)
+          .onSuccess((ri) => this._ingredients!.set(id, ri))
+          .report(this.logger);
       }
     }
     return this._ingredients;
@@ -401,6 +408,7 @@ export class RuntimeContext
     this._reverseIndex.invalidate();
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();
+    this.logger.info('RuntimeContext cache cleared');
   }
 
   /**
@@ -410,6 +418,7 @@ export class RuntimeContext
     this._reverseIndex.warmUp();
     this._recipeOrchestrator.warmUp();
     this._ingredientOrchestrator.warmUp();
+    this.logger.info('RuntimeContext indexes warmed up');
   }
 
   /**

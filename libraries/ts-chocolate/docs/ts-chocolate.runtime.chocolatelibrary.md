@@ -81,6 +81,27 @@ The [journals library](./ts-chocolate.journal.journallibrary.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[logger](./ts-chocolate.runtime.chocolatelibrary.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+Logger used by this library and its sub-libraries.
+
+
+</td></tr>
+<tr><td>
+
 [recipes](./ts-chocolate.runtime.chocolatelibrary.recipes.md)
 
 

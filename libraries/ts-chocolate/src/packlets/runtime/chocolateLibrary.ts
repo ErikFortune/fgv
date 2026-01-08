@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, Success } from '@fgv/ts-utils';
+import { Logging, Result, Success } from '@fgv/ts-utils';
 
 import { IngredientId, JournalId, RecipeId, RecipeVersionId, RecipeVersionSpec, SourceId } from '../common';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
@@ -101,6 +101,11 @@ export interface IChocolateLibraryCreateParams {
    * If provided along with other sources, collections are combined.
    */
   readonly libraries?: IInstantiatedLibrarySource;
+
+  /**
+   * Optional logger for reporting load/merge issues.
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // ============================================================================
@@ -124,10 +129,23 @@ export class ChocolateLibrary {
   private readonly _recipes: RecipesLibrary;
   private readonly _journals: JournalLibrary;
 
-  private constructor(ingredients: IngredientsLibrary, recipes: RecipesLibrary, journals: JournalLibrary) {
+  /**
+   * Logger used by this library and its sub-libraries.
+   */
+  public readonly logger: Logging.LogReporter<unknown>;
+
+  private constructor(
+    ingredients: IngredientsLibrary,
+    recipes: RecipesLibrary,
+    journals: JournalLibrary,
+    logger?: Logging.ILogger
+  ) {
+    /* c8 ignore next - default logger branch tested implicitly via create() */
+    logger = logger ?? new Logging.NoOpLogger();
     this._ingredients = ingredients;
     this._recipes = recipes;
     this._journals = journals;
+    this.logger = new Logging.LogReporter({ logger });
   }
 
   /**
@@ -137,32 +155,41 @@ export class ChocolateLibrary {
    * @public
    */
   public static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary> {
+    params = params ?? {};
+    /* c8 ignore next 1 - optional param branches tested implicitly via create() */
     const builtinSpec = params?.builtin ?? true;
-    const fileSources = normalizeFileSources(params?.fileSources);
+    const fileSources = normalizeFileSources(params.fileSources);
+    /* c8 ignore next - default logger branch tested implicitly */
+    const logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     const ingredientsResult = IngredientsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'ingredients'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'ingredients'),
-      mergeLibraries: params?.libraries?.ingredients
-    });
+      mergeLibraries: params.libraries?.ingredients,
+      logger
+    }).report(logger);
 
     const recipesResult = RecipesLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'recipes'),
-      mergeLibraries: params?.libraries?.recipes
-    });
+      mergeLibraries: params.libraries?.recipes,
+      logger
+    }).report(logger);
 
     // Create journals library - use provided library or create empty one
-    const journalsResult =
-      params?.libraries?.journals !== undefined
+    const journalsResult = (
+      params.libraries?.journals !== undefined
         ? Success.with(params.libraries.journals)
-        : JournalLibrary.create();
+        : JournalLibrary.create({ logger })
+    ).report(logger);
 
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
-        journalsResult.onSuccess((journals) =>
-          Success.with(new ChocolateLibrary(ingredients, recipes, journals))
-        )
+        journalsResult.onSuccess((journals) => {
+          const library = new ChocolateLibrary(ingredients, recipes, journals, logger.logger);
+          logger.info(`ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes`);
+          return Success.with(library);
+        })
       )
     );
   }
@@ -309,6 +336,6 @@ export class ChocolateLibrary {
    * @public
    */
   public addJournal(journal: IJournalRecord): Result<JournalId> {
-    return this._journals.addJournal(journal);
+    return this._journals.addJournal(journal).report(this.logger);
   }
 }

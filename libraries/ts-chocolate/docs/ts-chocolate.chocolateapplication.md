@@ -9,5 +9,5 @@ Recommended applications for chocolate
 **Signature:**
 
 ```typescript
-export type ChocolateApplication = 'baking' | 'confectionary' | 'cremeux' | 'drinks' | 'enrobing' | 'ganache' | 'ice-cream' | 'molding' | 'mousse' | 'sorbet';
+export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cremeux' | 'drinks' | 'enrobing' | 'frozen-desserts' | 'ganache' | 'glazes' | 'ice-cream' | 'molding' | 'mousse' | 'pralines' | 'sauces' | 'sorbet';
 ```

@@ -9,7 +9,7 @@ Creates a new BaseIndexerOrchestrator.
 **Signature:**
 
 ```typescript
-protected constructor(resolver: IEntityResolver<TEntity, TId>);
+protected constructor(library: ChocolateLibrary, resolver: IEntityResolver<TEntity, TId>);
 ```
 
 ## Parameters
@@ -31,6 +31,20 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+library
+
+
+</td><td>
+
+[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 resolver
 

@@ -58,6 +58,27 @@ _(Optional)_ Whether to track detailed journal entries (default: true)
 </td></tr>
 <tr><td>
 
+[logger?](./ts-chocolate.runtime.session.ieditingsessionparams.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional logger for reporting operations
+
+
+</td></tr>
+<tr><td>
+
 [scaleFactor?](./ts-chocolate.runtime.session.ieditingsessionparams.scalefactor.md)
 
 

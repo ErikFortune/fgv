@@ -121,8 +121,6 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
   RecipeId,
   IRecipesByIngredientConfig
 > {
-  private readonly _library: ChocolateLibrary;
-
   // Index structure: ingredient -> usage info
   private _ingredientUsage: Map<IngredientId, IIngredientUsageEntry[]> | undefined;
 
@@ -131,14 +129,13 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
    * @param library - The chocolate library to index
    */
   public constructor(library: ChocolateLibrary) {
-    super();
-    this._library = library;
+    super(library);
   }
 
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._ingredientUsage = new Map<IngredientId, IIngredientUsageEntry[]>();
-    const recipes = this._library.recipes;
+    const recipes = this.library.recipes;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       // Index ingredients from all versions

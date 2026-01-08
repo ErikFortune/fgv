@@ -11,6 +11,7 @@ import { Converters as Converters_7 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
+import { Logging } from '@fgv/ts-utils';
 import { Result } from '@fgv/ts-utils';
 import { ValidatingResultMap } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
@@ -92,6 +93,7 @@ export const BASE_ID_PATTERN: RegExp;
 
 // @public
 abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
+    protected constructor(library: ChocolateLibrary);
     protected _addToSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey, value: TValue): void;
     protected abstract _buildIndex(): void;
     protected abstract _clearIndex(): void;
@@ -100,11 +102,14 @@ abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, T
     find(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
     protected abstract _findInternal(config: TConfig): Result<ReadonlyArray<TEntity | TId>>;
     protected _getFromSetIndex<TKey, TValue>(index: Map<TKey, Set<TValue>>, key: TKey): ReadonlyArray<TValue>;
+    protected get _indexerName(): string;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
     invalidate(): void;
     protected _isBuilt: boolean;
+    readonly library: ChocolateLibrary;
+    protected get _logger(): Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // (undocumented)
@@ -113,8 +118,10 @@ abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, T
 
 // @public
 abstract class BaseIndexerOrchestrator<TEntity, TId> {
-    protected constructor(resolver: IEntityResolver<TEntity, TId>);
+    protected constructor(library: ChocolateLibrary, resolver: IEntityResolver<TEntity, TId>);
     protected _intersect(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
+    readonly library: ChocolateLibrary;
+    protected get _logger(): Logging.LogReporter<unknown>;
     protected readonly _resolver: IEntityResolver<TEntity, TId>;
     protected _resolveToEntities(items: Set<TId | TEntity>): Result<ReadonlyArray<TEntity>>;
     protected _union(sets: Array<Set<TId | TEntity>>): Set<TId | TEntity>;
@@ -206,7 +213,7 @@ export type Celsius = Brand<number, 'Celsius'>;
 const celsius: Converter<Celsius>;
 
 // @public
-export type Certification = 'all-natural' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
+export type Certification = 'all-natural' | 'cocoa-horizons' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
 
 // @public
 const certification: Converter<Certification>;
@@ -215,7 +222,7 @@ const certification: Converter<Certification>;
 function checkForCollisionIds<TCollectionId extends string>(collectionSets: ReadonlyArray<ICollectionSet<TCollectionId>>): Result<true>;
 
 // @public
-export type ChocolateApplication = 'baking' | 'confectionary' | 'cremeux' | 'drinks' | 'enrobing' | 'ganache' | 'ice-cream' | 'molding' | 'mousse' | 'sorbet';
+export type ChocolateApplication = 'baking' | 'confectionary' | 'cookies' | 'cremeux' | 'drinks' | 'enrobing' | 'frozen-desserts' | 'ganache' | 'glazes' | 'ice-cream' | 'molding' | 'mousse' | 'pralines' | 'sauces' | 'sorbet';
 
 // @public
 const chocolateApplication: Converter<ChocolateApplication>;
@@ -247,6 +254,7 @@ class ChocolateLibrary {
     get ingredients(): IngredientsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get journals(): JournalLibrary;
+    readonly logger: Logging.LogReporter<unknown>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get recipes(): RecipesLibrary;
 }
@@ -695,6 +703,7 @@ interface IChocolateLibraryCreateParams {
     readonly fileSources?: ILibraryFileTreeSource | ReadonlyArray<ILibraryFileTreeSource>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly libraries?: IInstantiatedLibrarySource;
+    readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // @public
@@ -793,6 +802,7 @@ interface IDairyIngredient extends IIngredient {
 // @public
 interface IEditingSessionParams {
     readonly enableJournal?: boolean;
+    readonly logger?: Logging.LogReporter<unknown>;
     readonly scaleFactor?: number;
     readonly sourceVersion: IRuntimeRecipeVersion;
     readonly targetWeight?: Grams;
@@ -1040,6 +1050,7 @@ interface IJournalImportResult {
 // @public
 interface IJournalLibraryParams {
     readonly journals?: ReadonlyArray<IJournalRecord>;
+    readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // @public
@@ -1754,6 +1765,7 @@ interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem> {
     readonly itemConverter: Converter<TItem> | Validator<TItem>;
     readonly itemIdConverter: Converter<TBaseId> | Validator<TBaseId>;
     readonly libraryParams?: ISubLibraryParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>;
+    readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // @public
@@ -1761,6 +1773,7 @@ interface ISubLibraryParams<TLibrary, TEntryInit> {
     readonly builtin?: LibraryLoadSpec<SourceId>;
     readonly collections?: ReadonlyArray<TEntryInit>;
     readonly fileSources?: SubLibraryFileTreeSource | ReadonlyArray<SubLibraryFileTreeSource>;
+    readonly logger?: Logging.LogReporter<unknown>;
     readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
 }
 
@@ -2543,6 +2556,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     //
     // (undocumented)
     get library(): ChocolateLibrary;
+    readonly logger: Logging.LogReporter<unknown>;
     get recipes(): IReadOnlyValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec>;
     warmUp(): void;
 }
@@ -2948,6 +2962,6 @@ const weightUnit: Converter<WeightUnit>;
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/journal/journalLibrary.ts:77:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/journal/journalLibrary.ts:82:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, Failure, mapResults, Result, Success } from '@fgv/ts-utils';
+import { captureResult, Failure, Logging, mapResults, Result, Success } from '@fgv/ts-utils';
 
 import { JournalId, RecipeId, RecipeVersionId, Converters as CommonConverters } from '../common';
 import { IJournalRecord } from './model';
@@ -57,6 +57,11 @@ export interface IJournalLibraryParams {
    * Initial journal records to populate the library with
    */
   readonly journals?: ReadonlyArray<IJournalRecord>;
+
+  /**
+   * Optional logger for reporting operations
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 /**
@@ -86,10 +91,16 @@ export class JournalLibrary {
    */
   private readonly _byVersionId: Map<RecipeVersionId, Set<JournalId>>;
 
+  /**
+   * Logger for reporting operations
+   */
+  private readonly _logger: Logging.LogReporter<unknown>;
+
   private constructor(params?: IJournalLibraryParams) {
     this._journals = new Map();
     this._byRecipeId = new Map();
     this._byVersionId = new Map();
+    this._logger = params?.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Add initial journals if provided
     if (params?.journals) {
@@ -179,14 +190,17 @@ export class JournalLibrary {
    * @public
    */
   public addJournal(journal: IJournalRecord): Result<JournalId> {
-    // Validate the journal using the converter
-    return journalRecordConverter.convert(journal).onSuccess((validated) => {
-      if (this._journals.has(validated.journalId)) {
-        return Failure.with(`Journal already exists: ${validated.journalId}`);
-      }
-      this._addJournalInternal(validated);
-      return Success.with(validated.journalId);
-    });
+    // Validate the journal using the converter - report validation errors (unexpected)
+    return journalRecordConverter
+      .convert(journal)
+      .onSuccess((validated) => {
+        if (this._journals.has(validated.journalId)) {
+          return Failure.with<JournalId>(`Journal already exists: ${validated.journalId}`);
+        }
+        this._addJournalInternal(validated);
+        return Success.with(validated.journalId);
+      })
+      .report(this._logger);
   }
 
   /**
@@ -279,24 +293,29 @@ export class JournalLibrary {
    * @public
    */
   public importJournals(journals: ReadonlyArray<unknown>): Result<IJournalImportResult> {
-    // First validate all journals
-    return mapResults(journals.map((j) => journalRecordConverter.convert(j))).onSuccess((validated) => {
-      let imported = 0;
-      let skipped = 0;
-      const skippedIds: JournalId[] = [];
+    // First validate all journals - report validation errors (unexpected)
+    return mapResults(journals.map((j) => journalRecordConverter.convert(j)))
+      .report(this._logger)
+      .onSuccess((validated) => {
+        let imported = 0;
+        let skipped = 0;
+        const skippedIds: JournalId[] = [];
 
-      for (const journal of validated) {
-        if (this._journals.has(journal.journalId)) {
-          skipped++;
-          skippedIds.push(journal.journalId);
-        } else {
-          this._addJournalInternal(journal);
-          imported++;
+        for (const journal of validated) {
+          if (this._journals.has(journal.journalId)) {
+            skipped++;
+            skippedIds.push(journal.journalId);
+          } else {
+            this._addJournalInternal(journal);
+            imported++;
+          }
         }
-      }
 
-      return Success.with({ imported, skipped, skippedIds });
-    });
+        // Log import summary
+        this._logger.info(`Imported ${imported} journals, skipped ${skipped} duplicates`);
+
+        return Success.with({ imported, skipped, skippedIds });
+      });
   }
 
   /**

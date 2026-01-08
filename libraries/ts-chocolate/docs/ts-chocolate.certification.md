@@ -9,5 +9,5 @@ Certifications that an ingredient may have.
 **Signature:**
 
 ```typescript
-export type Certification = 'all-natural' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
+export type Certification = 'all-natural' | 'cocoa-horizons' | 'fair-trade' | 'gluten-free' | 'halal' | 'kosher-dairy' | 'non-gmo' | 'organic' | 'peanut-free' | 'real-vanilla' | 'traceable-beans' | 'vegan' | 'vegetarian' | 'without-lecithin';
 ```

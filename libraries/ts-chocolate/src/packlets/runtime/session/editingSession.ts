@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, Failure, Result, Success } from '@fgv/ts-utils';
+import { captureResult, Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
 import { Grams, IngredientId, JournalId, SessionId, Converters as CommonConverters } from '../../common';
 import { IJournalEntry, IJournalRecord, JournalEventType } from '../../journal';
@@ -98,6 +98,7 @@ export class EditingSession implements ISessionState {
   private readonly _sourceVersion: IRuntimeRecipeVersion;
   private readonly _enableJournal: boolean;
   private readonly _validator: EditingSessionValidator;
+  private readonly _logger: Logging.LogReporter<unknown>;
 
   private _scaleFactor: number;
   private _targetWeight: Grams;
@@ -109,6 +110,8 @@ export class EditingSession implements ISessionState {
     this._sessionId = generateSessionId().orThrow();
     this._sourceVersion = params.sourceVersion;
     this._enableJournal = params.enableJournal ?? true;
+    /* c8 ignore next - default logger branch tested implicitly */
+    this._logger = params.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Calculate initial scale factor and target weight
     if (params.targetWeight !== undefined) {
@@ -219,6 +222,8 @@ export class EditingSession implements ISessionState {
     });
     this._isDirty = true;
 
+    this._logger.info(`Session ${this._sessionId}: scale factor set to ${factor.toFixed(2)}`);
+
     return Success.with(undefined);
   }
 
@@ -293,6 +298,8 @@ export class EditingSession implements ISessionState {
     });
     this._isDirty = true;
 
+    this._logger.info(`Session ${this._sessionId}: ingredient ${id} amount set to ${amount}g`);
+
     return Success.with(undefined);
   }
 
@@ -342,6 +349,8 @@ export class EditingSession implements ISessionState {
     });
     this._isDirty = true;
 
+    this._logger.info(`Session ${this._sessionId}: ingredient ${id} added with amount ${amount}g`);
+
     return Success.with(undefined);
   }
 
@@ -374,6 +383,8 @@ export class EditingSession implements ISessionState {
       originalAmount: ingredient.amount
     });
     this._isDirty = true;
+
+    this._logger.info(`Session ${this._sessionId}: ingredient ${id} removed`);
 
     return Success.with(undefined);
   }
@@ -426,6 +437,9 @@ export class EditingSession implements ISessionState {
     });
     this._isDirty = true;
 
+    this._logger.info(
+      `Session ${this._sessionId}: ingredient ${originalId} substituted with ${substituteId} amount ${newAmount}g`
+    );
     return Success.with(undefined);
   }
 
@@ -527,7 +541,7 @@ export class EditingSession implements ISessionState {
     const result: ISaveResult = {};
 
     if (options.createJournalRecord) {
-      const journalResult = this.toJournalRecord(options.journalNotes);
+      const journalResult = this.toJournalRecord(options.journalNotes).report(this._logger);
       /* c8 ignore next 3 - toJournalRecord only constructs an object, cannot fail in practice */
       if (journalResult.isFailure()) {
         return journalResult as unknown as Result<ISaveResult>;
@@ -540,15 +554,28 @@ export class EditingSession implements ISessionState {
       if (!options.versionLabel) {
         return Failure.with('versionLabel is required when createNewVersion is true');
       }
-      const versionResult = this.toRecipeVersion(options.versionLabel);
+      const versionResult = this.toRecipeVersion(options.versionLabel).report(this._logger);
       /* c8 ignore next 3 - toRecipeVersion fails only with no ingredients, tested via toRecipeVersion */
       if (versionResult.isFailure()) {
-        return versionResult as unknown as Result<ISaveResult>;
+        return Failure.with(versionResult.message);
       }
       (result as { newVersionSpec: string }).newVersionSpec = versionResult.value.versionSpec;
     }
 
     this._isDirty = false;
+
+    // Log save summary
+    const actions: string[] = [];
+    if (result.journalId) {
+      actions.push(`journal ${result.journalId}`);
+    }
+    if (result.newVersionSpec) {
+      actions.push(`version ${result.newVersionSpec}`);
+    }
+    if (actions.length > 0) {
+      this._logger.info(`Session ${this._sessionId} saved: ${actions.join(', ')}`);
+    }
+
     return Success.with(result);
   }
 

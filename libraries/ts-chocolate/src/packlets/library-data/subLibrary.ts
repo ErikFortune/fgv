@@ -29,6 +29,7 @@ import {
   ensureArray,
   fail,
   Failure,
+  Logging,
   mapResults,
   recordFromEntries,
   Result,
@@ -200,6 +201,11 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
    * - An array of the above
    */
   readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
+
+  /**
+   * Optional logger for reporting loading progress and issues.
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 /**
@@ -263,6 +269,9 @@ export interface ISubLibraryCreateParams<TLibrary, TBaseId extends string, TItem
    * Library creation parameters (builtin, fileSources, collections, mergeLibraries).
    */
   readonly libraryParams?: ISubLibraryParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>;
+
+  /** Optional logger for reporting loading progress and issues. */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 // ============================================================================
@@ -309,6 +318,8 @@ export abstract class SubLibraryBase<
    */
   private readonly _directoryNavigator: SubLibraryDirectoryNavigator;
 
+  private readonly _logger: Logging.LogReporter<unknown>;
+
   /**
    * Creates a new SubLibraryBase instance with full loading support.
    *
@@ -328,6 +339,8 @@ export abstract class SubLibraryBase<
     const builtin = libraryParams?.builtin ?? true;
     const fileSources = normalizeFileSources(libraryParams?.fileSources);
     const additionalCollections = libraryParams?.collections ?? [];
+    /* c8 ignore next - default logger branch tested implicitly */
+    const logger = params.logger ?? new Logging.LogReporter<unknown>();
 
     // Load built-in collections
     const builtInCollections = SubLibraryBase._loadBuiltInCollections(
@@ -345,12 +358,14 @@ export abstract class SubLibraryBase<
         params.itemIdConverter,
         params.itemConverter,
         params.directoryNavigator
-      ).onSuccess((collections) =>
-        Success.with<ICollectionSet<SourceId>>({
-          source: `fileSource[${i}]`,
-          collections
-        })
       )
+        .onSuccess((collections) =>
+          Success.with<ICollectionSet<SourceId>>({
+            source: `fileSource[${i}]`,
+            collections
+          })
+        )
+        .report(logger)
     );
     const fileSourceData = mapResults(fileSourceResults).orThrow();
 
@@ -365,7 +380,7 @@ export abstract class SubLibraryBase<
       ...fileSourceData,
       { source: 'mergeLibraries', collections: mergedLibraryCollections }
     ];
-    checkForCollisionIds(allSets).orThrow();
+    checkForCollisionIds(allSets).report(logger).orThrow();
 
     // Merge all collections
     const fileCollections = fileSourceData.flatMap(
@@ -389,6 +404,7 @@ export abstract class SubLibraryBase<
     this._loaderItemIdConverter = params.itemIdConverter;
     this._loaderItemConverter = params.itemConverter;
     this._directoryNavigator = params.directoryNavigator;
+    this._logger = logger;
   }
 
   // ============================================================================
@@ -737,7 +753,9 @@ export abstract class SubLibraryBase<
       const existingIds = new Set(this.collections.keys());
       for (const coll of collections) {
         if (existingIds.has(coll.id)) {
-          return Failure.with(`Collection ID '${coll.id}' already exists in this library`);
+          return Failure.with<number>(`Collection ID '${coll.id}' already exists in this library`).report(
+            this._logger
+          );
         }
       }
 
@@ -746,6 +764,7 @@ export abstract class SubLibraryBase<
         this.addCollectionEntry(coll);
       }
 
+      this._logger.info(`Loaded ${collections.length} collections from file source`);
       return Success.with(collections.length);
     });
   }

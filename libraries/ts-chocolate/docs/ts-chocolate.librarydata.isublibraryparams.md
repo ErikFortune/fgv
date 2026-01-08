@@ -102,6 +102,27 @@ _(Optional)_ File tree sources to load collections from. Collections are loaded 
 </td></tr>
 <tr><td>
 
+[logger?](./ts-chocolate.librarydata.isublibraryparams.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional logger for reporting loading progress and issues.
+
+
+</td></tr>
+<tr><td>
+
 [mergeLibraries?](./ts-chocolate.librarydata.isublibraryparams.mergelibraries.md)
 
 

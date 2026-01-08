@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[(constructor)(resolver)](./ts-chocolate.runtime.indexers.baseindexerorchestrator._constructor_.md)
+[(constructor)(library, resolver)](./ts-chocolate.runtime.indexers.baseindexerorchestrator._constructor_.md)
 
 
 </td><td>
@@ -73,6 +73,29 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_logger](./ts-chocolate.runtime.indexers.baseindexerorchestrator._logger.md)
+
+
+</td><td>
+
+`protected`
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+Logger for reporting indexer or orchestrator operations.
+
+
+</td></tr>
+<tr><td>
+
 [\_resolver](./ts-chocolate.runtime.indexers.baseindexerorchestrator._resolver.md)
 
 
@@ -91,6 +114,27 @@ Description
 </td><td>
 
 The entity resolver for converting IDs to entities.
+
+
+</td></tr>
+<tr><td>
+
+[library](./ts-chocolate.runtime.indexers.baseindexerorchestrator.library.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+
+
+</td><td>
+
+The chocolate library being indexed.
 
 
 </td></tr>

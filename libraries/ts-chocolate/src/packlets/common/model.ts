@@ -236,13 +236,18 @@ export const allFluidityStars: FluidityStars[] = [1, 2, 3, 4, 5];
 export type ChocolateApplication =
   | 'baking'
   | 'confectionary'
+  | 'cookies'
   | 'cremeux'
   | 'drinks'
   | 'enrobing'
+  | 'frozen-desserts'
   | 'ganache'
+  | 'glazes'
   | 'ice-cream'
   | 'molding'
   | 'mousse'
+  | 'pralines'
+  | 'sauces'
   | 'sorbet';
 
 /**
@@ -252,13 +257,19 @@ export type ChocolateApplication =
 export const allChocolateApplications: ChocolateApplication[] = [
   'baking',
   'confectionary',
+  'baking',
+  'cookies',
   'cremeux',
   'drinks',
   'enrobing',
+  'frozen-desserts',
   'ganache',
+  'glazes',
   'ice-cream',
   'molding',
   'mousse',
+  'pralines',
+  'sauces',
   'sorbet'
 ];
 
@@ -292,6 +303,7 @@ export const allAllergens: Allergen[] = ['milk', 'soy', 'nuts', 'gluten', 'eggs'
  */
 export type Certification =
   | 'all-natural'
+  | 'cocoa-horizons'
   | 'fair-trade'
   | 'gluten-free'
   | 'halal'
@@ -311,6 +323,7 @@ export type Certification =
  */
 export const allCertifications: Certification[] = [
   'all-natural',
+  'cocoa-horizons',
   'fair-trade',
   'gluten-free',
   'halal',

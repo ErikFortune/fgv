@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, fail, Result } from '@fgv/ts-utils';
+import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseIngredientId, IngredientId } from '../common';
 import { Converters as CommonConverters } from '../common';
@@ -121,16 +121,20 @@ export class IngredientsLibrary extends SubLibraryBase<IngredientId, BaseIngredi
   public static async createAsync(
     params?: IIngredientsLibraryAsyncParams
   ): Promise<Result<IngredientsLibrary>> {
+    /* c8 ignore next - default logger branch tested implicitly */
+    const logger = params?.logger ?? new Logging.LogReporter<unknown>();
+
     const createParams: ISubLibraryCreateParams<IngredientsLibrary, BaseIngredientId, Ingredient> = {
       itemIdConverter: CommonConverters.baseIngredientId,
       itemConverter: ingredientConverter,
       directoryNavigator: getIngredientsDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
-      libraryParams: params
+      libraryParams: params,
+      logger
     };
 
     // Load all collections asynchronously with encryption support
-    const collectionsResult = await SubLibraryBase.loadAllCollectionsAsync(createParams);
+    const collectionsResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
     if (collectionsResult.isFailure()) {
       return fail(collectionsResult.message);
     }

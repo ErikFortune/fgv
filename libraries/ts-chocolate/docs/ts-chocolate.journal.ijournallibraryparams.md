@@ -56,5 +56,26 @@ _(Optional)_ Initial journal records to populate the library with
 
 
 </td></tr>
+<tr><td>
+
+[logger?](./ts-chocolate.journal.ijournallibraryparams.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional logger for reporting operations
+
+
+</td></tr>
 </tbody></table>
 

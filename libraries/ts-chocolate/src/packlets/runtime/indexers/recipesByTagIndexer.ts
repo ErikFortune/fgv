@@ -72,8 +72,6 @@ export const recipesByTagConfigConverter: Converter<IRecipesByTagConfig> =
  * @public
  */
 export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipesByTagConfig> {
-  private readonly _library: ChocolateLibrary;
-
   // Index structure: lowercase tag -> recipe IDs
   private _tagToRecipes: Map<string, Set<RecipeId>> | undefined;
 
@@ -82,8 +80,7 @@ export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, I
    * @param library - The chocolate library to index
    */
   public constructor(library: ChocolateLibrary) {
-    super();
-    this._library = library;
+    super(library);
   }
 
   /**
@@ -99,7 +96,7 @@ export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, I
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._tagToRecipes = new Map<string, Set<RecipeId>>();
-    const recipes = this._library.recipes;
+    const recipes = this.library.recipes;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       if (recipe.tags) {

@@ -56,6 +56,17 @@ Encapsulates all recipe-related indexers and provides a unified find interface. 
 </td></tr>
 <tr><td>
 
+[RecipesByCategoryIndexer](./ts-chocolate.runtime.indexers.recipesbycategoryindexer.md)
+
+
+</td><td>
+
+Indexer that finds recipes with a specific category.
+
+
+</td></tr>
+<tr><td>
+
 [RecipesByChocolateTypeIndexer](./ts-chocolate.runtime.indexers.recipesbychocolatetypeindexer.md)
 
 
@@ -151,6 +162,17 @@ Description
 </td><td>
 
 Creates an IngredientsByTag config.
+
+
+</td></tr>
+<tr><td>
+
+[recipesByCategoryConfig(category)](./ts-chocolate.runtime.indexers.recipesbycategoryconfig.md)
+
+
+</td><td>
+
+Creates a RecipesByCategory config.
 
 
 </td></tr>
@@ -274,6 +296,17 @@ Query specification for recipe indexers. Each key corresponds to an indexer, and
 </td></tr>
 <tr><td>
 
+[IRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.irecipesbycategoryconfig.md)
+
+
+</td><td>
+
+Configuration for the RecipesByCategory indexer.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.irecipesbychocolatetypeconfig.md)
 
 
@@ -350,6 +383,17 @@ Converter for IngredientsByTag config from JSON.
 </td><td>
 
 Converter for recipe query specification from JSON.
+
+
+</td></tr>
+<tr><td>
+
+[recipesByCategoryConfigConverter](./ts-chocolate.runtime.indexers.recipesbycategoryconfigconverter.md)
+
+
+</td><td>
+
+Converter for RecipesByCategory config from JSON.
 
 
 </td></tr>

@@ -134,6 +134,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[createDefault(logger)](./ts-utils.logging.logreporter.createdefault.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Creates a default [LogReporter](./ts-utils.logging.logreporter.md) with a [NoOpLogger](./ts-utils.logging.nooplogger.md) with the supplied parameters, returning both the logger and reporter.
+
+
+</td></tr>
+<tr><td>
+
 [detail(message, parameters)](./ts-utils.logging.logreporter.detail.md)
 
 

@@ -142,5 +142,26 @@ _(Optional)_ Library creation parameters (builtin, fileSources, collections, mer
 
 
 </td></tr>
+<tr><td>
+
+[logger?](./ts-chocolate.librarydata.isublibrarycreateparams.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional logger for reporting loading progress and issues.
+
+
+</td></tr>
 </tbody></table>
 

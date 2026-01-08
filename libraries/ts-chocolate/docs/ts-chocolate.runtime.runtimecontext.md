@@ -144,6 +144,27 @@ The journals library for managing cooking session records.
 </td></tr>
 <tr><td>
 
+[logger](./ts-chocolate.runtime.runtimecontext.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+Logger used by this runtime context and its libraries.
+
+
+</td></tr>
+<tr><td>
+
 [recipes](./ts-chocolate.runtime.runtimecontext.recipes.md)
 
 

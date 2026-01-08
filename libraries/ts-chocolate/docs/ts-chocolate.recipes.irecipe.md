@@ -58,7 +58,7 @@ Base recipe identifier (unique within source)
 </td></tr>
 <tr><td>
 
-[category?](./ts-chocolate.recipes.irecipe.category.md)
+[category](./ts-chocolate.recipes.irecipe.category.md)
 
 
 </td><td>
@@ -73,7 +73,7 @@ Base recipe identifier (unique within source)
 
 </td><td>
 
-_(Optional)_ Optional category for classifying the recipe type
+Category for classifying the recipe type
 
 
 </td></tr>

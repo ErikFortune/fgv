@@ -76,8 +76,6 @@ export class IngredientsByTagIndexer extends BaseIndexer<
   IngredientId,
   IIngredientsByTagConfig
 > {
-  private readonly _library: ChocolateLibrary;
-
   // Index structure: lowercase tag -> ingredient IDs
   private _tagToIngredients: Map<string, Set<IngredientId>> | undefined;
 
@@ -86,8 +84,7 @@ export class IngredientsByTagIndexer extends BaseIndexer<
    * @param library - The chocolate library to index
    */
   public constructor(library: ChocolateLibrary) {
-    super();
-    this._library = library;
+    super(library);
   }
 
   /**
@@ -103,12 +100,12 @@ export class IngredientsByTagIndexer extends BaseIndexer<
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._tagToIngredients = new Map<string, Set<IngredientId>>();
-    const ingredients = this._library.ingredients;
+    const ingredients = this.library.ingredients;
 
     for (const [ingredientId, ingredient] of ingredients.entries()) {
       if (ingredient.tags) {
         for (const tag of ingredient.tags) {
-          this._addToSetIndex(this._tagToIngredients, tag.toLowerCase(), ingredientId as IngredientId);
+          this._addToSetIndex(this._tagToIngredients, tag.toLowerCase(), ingredientId);
         }
       }
     }

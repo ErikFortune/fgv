@@ -23,8 +23,9 @@
  * @packageDocumentation
  */
 
-import { Failure, Result, Success } from '@fgv/ts-utils';
+import { Failure, Logging, Result, Success } from '@fgv/ts-utils';
 import { IEntityResolver } from './model';
+import { ChocolateLibrary } from '../chocolateLibrary';
 
 /**
  * Base class for index orchestrators that provides common
@@ -37,15 +38,28 @@ import { IEntityResolver } from './model';
  */
 export abstract class BaseIndexerOrchestrator<TEntity, TId> {
   /**
+   * The chocolate library being indexed.
+   */
+  public readonly library: ChocolateLibrary;
+
+  /**
    * The entity resolver for converting IDs to entities.
    */
   protected readonly _resolver: IEntityResolver<TEntity, TId>;
 
   /**
+   * Logger for reporting indexer or orchestrator operations.
+   */
+  protected get _logger(): Logging.LogReporter<unknown> {
+    return this.library.logger;
+  }
+
+  /**
    * Creates a new BaseIndexerOrchestrator.
    * @param resolver - The entity resolver
    */
-  protected constructor(resolver: IEntityResolver<TEntity, TId>) {
+  protected constructor(library: ChocolateLibrary, resolver: IEntityResolver<TEntity, TId>) {
+    this.library = library;
     this._resolver = resolver;
   }
 

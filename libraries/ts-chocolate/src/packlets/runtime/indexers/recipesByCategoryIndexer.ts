@@ -76,8 +76,6 @@ export class RecipesByCategoryIndexer extends BaseIndexer<
   RecipeId,
   IRecipesByCategoryConfig
 > {
-  private readonly _library: ChocolateLibrary;
-
   // Index structure: category -> recipe IDs
   private _categoryToRecipes: Map<RecipeCategory, Set<RecipeId>> | undefined;
 
@@ -86,8 +84,7 @@ export class RecipesByCategoryIndexer extends BaseIndexer<
    * @param library - The chocolate library to index
    */
   public constructor(library: ChocolateLibrary) {
-    super();
-    this._library = library;
+    super(library);
   }
 
   /**
@@ -103,7 +100,7 @@ export class RecipesByCategoryIndexer extends BaseIndexer<
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._categoryToRecipes = new Map<RecipeCategory, Set<RecipeId>>();
-    const recipes = this._library.recipes;
+    const recipes = this.library.recipes;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       if (recipe.category) {

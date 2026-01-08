@@ -104,5 +104,26 @@ _(Optional)_ Pre-instantiated [library sources](./ts-chocolate.runtime.iinstanti
 
 
 </td></tr>
+<tr><td>
+
+[logger?](./ts-chocolate.runtime.ichocolatelibrarycreateparams.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional logger for reporting load/merge issues.
+
+
+</td></tr>
 </tbody></table>
 

@@ -23,8 +23,9 @@
  * @packageDocumentation
  */
 
-import { Result, Success } from '@fgv/ts-utils';
+import { Logging, Result, Success } from '@fgv/ts-utils';
 import { IIndexer } from './model';
+import { ChocolateLibrary } from '../chocolateLibrary';
 
 /**
  * Abstract base class for indexers providing common functionality.
@@ -37,9 +38,29 @@ import { IIndexer } from './model';
  */
 export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
   /**
+   * The chocolate library being indexed.
+   */
+  public readonly library: ChocolateLibrary;
+
+  /**
    * Flag indicating if the index has been built.
    */
   protected _isBuilt: boolean = false;
+
+  /**
+   * Logger for reporting index operations.
+   */
+  protected get _logger(): Logging.LogReporter<unknown> {
+    return this.library.logger;
+  }
+
+  /**
+   * Creates a new indexer with optional logging.
+   * @param logger - Optional logger for reporting index operations
+   */
+  protected constructor(library: ChocolateLibrary) {
+    this.library = library;
+  }
 
   /**
    * Finds entities or IDs matching the given configuration.
@@ -70,9 +91,20 @@ export abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEn
    */
   protected _ensureBuilt(): void {
     if (!this._isBuilt) {
+      const start = Date.now();
       this._buildIndex();
       this._isBuilt = true;
+      const elapsed = Date.now() - start;
+      this._logger.info(`${this._indexerName} index built in ${elapsed}ms`);
     }
+  }
+
+  /**
+   * Returns the name of this indexer for logging purposes.
+   * Subclasses should override to provide a meaningful name.
+   */
+  protected get _indexerName(): string {
+    return this.constructor.name;
   }
 
   /**

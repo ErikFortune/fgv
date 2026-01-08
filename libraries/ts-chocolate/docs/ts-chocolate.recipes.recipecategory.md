@@ -9,5 +9,5 @@ Categories for classifying recipes by type
 **Signature:**
 
 ```typescript
-export type RecipeCategory = 'ganache' | 'caramel';
+export type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
 ```

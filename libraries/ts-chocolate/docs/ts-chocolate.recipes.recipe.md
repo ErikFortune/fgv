@@ -57,7 +57,7 @@ Description
 </td></tr>
 <tr><td>
 
-[category?](./ts-chocolate.recipes.recipe.category.md)
+[category](./ts-chocolate.recipes.recipe.category.md)
 
 
 </td><td>
@@ -71,8 +71,6 @@ Description
 
 
 </td><td>
-
-_(Optional)_
 
 
 </td></tr>

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { captureResult, fail, Result } from '@fgv/ts-utils';
+import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeId } from '../common';
 import { Converters as CommonConverters } from '../common';
@@ -119,16 +119,20 @@ export class RecipesLibrary extends SubLibraryBase<RecipeId, BaseRecipeId, Recip
    * @public
    */
   public static async createAsync(params?: IRecipesLibraryAsyncParams): Promise<Result<RecipesLibrary>> {
+    /* c8 ignore next - default logger branch tested implicitly */
+    const logger = params?.logger ?? new Logging.LogReporter<unknown>();
+
     const createParams: ISubLibraryCreateParams<RecipesLibrary, BaseRecipeId, Recipe> = {
       itemIdConverter: CommonConverters.baseRecipeId,
       itemConverter: recipeConverter,
       directoryNavigator: getRecipesDirectory,
       builtInTreeProvider: BuiltInData.getLibraryTree,
-      libraryParams: params
+      libraryParams: params,
+      logger
     };
 
     // Load all collections asynchronously with encryption support
-    const collectionsResult = await SubLibraryBase.loadAllCollectionsAsync(createParams);
+    const collectionsResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
     if (collectionsResult.isFailure()) {
       return fail(collectionsResult.message);
     }
