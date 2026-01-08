@@ -98,7 +98,13 @@ describe('BuiltInData', () => {
       expect(BuiltInData.getIngredientsDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const names = children.map((c) => c.name).sort();
-          expect(names).toEqual(['cacao-barry.json', 'common.json', 'felchlin.json', 'guittard.json']);
+          expect(names).toEqual([
+            'cacao-barry.json',
+            'callebaut.json',
+            'common.json',
+            'felchlin.json',
+            'guittard.json'
+          ]);
         });
       });
     });

@@ -3,6 +3,7 @@
 //
 // Source files:
 //   - data/published/ingredients/cacao-barry.yaml
+//   - data/published/ingredients/callebaut.yaml
 //   - data/published/ingredients/common.yaml
 //   - data/published/ingredients/felchlin.yaml
 //   - data/published/ingredients/guittard.yaml
@@ -127,6 +128,223 @@ export const ingredientCollections: Record<string, JsonObject> = {
       origins: ['Tanzania', 'Lake Malawi regions'],
       beanVarieties: ['Criollo', 'Trinitario'],
       certifications: ['halal', 'vegetarian', 'kosher-dairy', 'without-lecithin']
+    }
+  },
+  callebaut: {
+    '811-dark-54': {
+      baseId: '811-dark-54',
+      name: 'Callebaut Recipe N° 811 Dark 54.5%',
+      category: 'chocolate',
+      chocolateType: 'dark',
+      cacaoPercentage: 54.5,
+      ganacheCharacteristics: {
+        cacaoFat: 37,
+        sugar: 43,
+        milkFat: 0,
+        water: 1,
+        solids: 19,
+        otherFats: 0
+      },
+      fluidityStars: 3,
+      description:
+        "Iconic Belgian dark chocolate with full-bodied taste, solid cocoa body and fine fruity notes. One of Octaaf Callebaut's original recipes, loved by chefs worldwide for its exceptional versatility",
+      manufacturer: 'Callebaut',
+      tags: ['dark', 'semisweet', 'versatile', 'fruity', 'roasted-cocoa', 'iconic'],
+      origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
+      beanVarieties: ['Forastero', 'Trinitario'],
+      applications: [
+        'confectionery',
+        'ganache',
+        'mousse',
+        'enrobing',
+        'molding',
+        'baking',
+        'sauces',
+        'drinks'
+      ],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'vegan', 'cocoa-horizons'],
+      traceAllergens: ['milk', 'soy'],
+      temperingCurve: {
+        meltingPoint: 45,
+        workingTemperature: 31
+      },
+      vegan: true
+    },
+    '823-milk-33': {
+      baseId: '823-milk-33',
+      name: 'Callebaut Recipe N° 823 Milk 33.6%',
+      category: 'chocolate',
+      chocolateType: 'milk',
+      cacaoPercentage: 33.6,
+      ganacheCharacteristics: {
+        cacaoFat: 30,
+        sugar: 42,
+        milkFat: 6,
+        water: 1,
+        solids: 21,
+        otherFats: 0
+      },
+      fluidityStars: 3,
+      description:
+        'Classic Belgian milk chocolate with deep warm color, smooth cocoa body and sweet caramelly notes. Full-bodied taste and great workability, pairs well with spicy, fruity, dairy or liqueur-like flavors',
+      manufacturer: 'Callebaut',
+      tags: ['milk', 'caramel', 'smooth', 'versatile', 'classic', 'full-bodied'],
+      origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
+      beanVarieties: ['Forastero'],
+      applications: ['molding', 'enrobing', 'ganache', 'mousse', 'confectionery'],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
+      allergens: ['milk', 'soy'],
+      temperingCurve: {
+        meltingPoint: 45,
+        workingTemperature: 30
+      },
+      vegan: false
+    },
+    'w2-white-28': {
+      baseId: 'w2-white-28',
+      name: 'Callebaut Recipe N° W2 White 28%',
+      category: 'chocolate',
+      chocolateType: 'white',
+      cacaoPercentage: 28,
+      ganacheCharacteristics: {
+        cacaoFat: 30,
+        sugar: 45,
+        milkFat: 6,
+        water: 1,
+        solids: 18,
+        otherFats: 0
+      },
+      fluidityStars: 3,
+      description:
+        'All-purpose white chocolate with pronounced milky, creamy, caramelly and vanilla notes in perfect balance. Smooth and creamy mouthfeel with elegant satin shine and crisp snap when tempered',
+      manufacturer: 'Callebaut',
+      tags: ['white', 'creamy', 'vanilla', 'balanced', 'versatile', 'milky'],
+      origins: ['Belgium', 'West Africa'],
+      applications: ['ganache', 'mousse', 'confectionery', 'enrobing', 'glazes', 'ice-cream'],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'gluten-free', 'cocoa-horizons'],
+      allergens: ['milk', 'soy'],
+      temperingCurve: {
+        meltingPoint: 40,
+        workingTemperature: 28
+      },
+      vegan: false
+    },
+    '70-30-38-dark-70': {
+      baseId: '70-30-38-dark-70',
+      name: 'Callebaut Recipe N° 70-30-38 Extra Bitter 70.5%',
+      category: 'chocolate',
+      chocolateType: 'dark',
+      cacaoPercentage: 70.5,
+      ganacheCharacteristics: {
+        cacaoFat: 38,
+        sugar: 26,
+        milkFat: 0,
+        water: 1,
+        solids: 33,
+        otherFats: 2
+      },
+      fluidityStars: 2,
+      description:
+        'Intense yet balanced dark chocolate with solid body of roasted cocoa, powerful bitter notes and fresh fruity hints. Lower fluidity makes it ideal for flavoring cremeux, dessert sauces and baked goods',
+      manufacturer: 'Callebaut',
+      tags: ['dark', 'extra-bitter', 'intense', 'roasted', 'fruity', 'powerful'],
+      origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
+      beanVarieties: ['Forastero', 'Trinitario'],
+      applications: ['cremeux', 'sauces', 'baking', 'ganache', 'mousse', 'cookies'],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'vegan', 'cocoa-horizons'],
+      traceAllergens: ['soy'],
+      temperingCurve: {
+        meltingPoint: 45,
+        workingTemperature: 32
+      },
+      vegan: true
+    },
+    'gold-caramel-30': {
+      baseId: 'gold-caramel-30',
+      name: 'Callebaut Gold Caramelized White 30.4%',
+      category: 'chocolate',
+      chocolateType: 'caramelized',
+      cacaoPercentage: 30.4,
+      ganacheCharacteristics: {
+        cacaoFat: 30,
+        sugar: 38,
+        milkFat: 7,
+        water: 1,
+        solids: 22,
+        otherFats: 2
+      },
+      fluidityStars: 3,
+      description:
+        'Unique caramelized white chocolate with pale amber color and golden hue. Rich notes of toffee, butter, cream and an exciting dash of salt. Expertly crafted with caramelized sugar and caramelized milk',
+      manufacturer: 'Callebaut',
+      tags: ['caramelized', 'white', 'toffee', 'buttery', 'salted', 'golden', 'unique'],
+      applications: ['confectionery', 'desserts', 'baking', 'ice-cream', 'ganache', 'mousse'],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'gluten-free', 'non-gmo', 'cocoa-horizons'],
+      allergens: ['milk', 'soy'],
+      temperingCurve: {
+        meltingPoint: 40,
+        workingTemperature: 28
+      },
+      vegan: false
+    },
+    'ruby-rb1-33': {
+      baseId: 'ruby-rb1-33',
+      name: 'Callebaut Ruby RB1 33.6%',
+      category: 'chocolate',
+      chocolateType: 'ruby',
+      cacaoPercentage: 33.6,
+      ganacheCharacteristics: {
+        cacaoFat: 30,
+        sugar: 36,
+        milkFat: 6,
+        water: 1,
+        solids: 27,
+        otherFats: 0
+      },
+      fluidityStars: 3,
+      description:
+        'Revolutionary ruby chocolate born from the ruby cocoa bean with intense fruitiness and fresh sour notes. Natural pink color without added colorants or fruit flavorings. A completely new chocolate experience',
+      manufacturer: 'Callebaut',
+      tags: ['ruby', 'fruity', 'sour', 'pink', 'natural', 'innovative', 'unique'],
+      origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
+      applications: ['pralines', 'frozen-desserts', 'mousse', 'glazes', 'confectionery'],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
+      allergens: ['milk', 'soy'],
+      temperingCurve: {
+        meltingPoint: 40,
+        workingTemperature: 28
+      },
+      vegan: false
+    },
+    '845-milk-32': {
+      baseId: '845-milk-32',
+      name: 'Callebaut Recipe N° 845 Milk 32.7%',
+      category: 'chocolate',
+      chocolateType: 'milk',
+      cacaoPercentage: 32.7,
+      ganacheCharacteristics: {
+        cacaoFat: 30,
+        sugar: 40,
+        milkFat: 7,
+        water: 1,
+        solids: 22,
+        otherFats: 0
+      },
+      fluidityStars: 3,
+      description:
+        'Intense milk chocolate with pronounced caramel notes and rich milky taste. Special milk selection shapes the creamy notes after conching. All-round chocolate for molded or enrobed confectionery and ganaches',
+      manufacturer: 'Callebaut',
+      tags: ['milk', 'caramel', 'intense', 'creamy', 'rich', 'all-round'],
+      origins: ['Ivory Coast', 'Ghana', 'Ecuador'],
+      beanVarieties: ['Forastero'],
+      applications: ['molding', 'enrobing', 'ganache', 'confectionery', 'mousse'],
+      certifications: ['halal', 'kosher-dairy', 'vegetarian', 'cocoa-horizons'],
+      allergens: ['milk', 'soy'],
+      temperingCurve: {
+        meltingPoint: 45,
+        workingTemperature: 30
+      },
+      vegan: false
     }
   },
   common: {
@@ -978,10 +1196,10 @@ export const recipeCollections: Record<string, JsonObject> = {
     format: 'encrypted-collection-v1',
     secretName: 'fgv',
     algorithm: 'AES-256-GCM',
-    iv: 'yij12pBqW/s1CpD5',
-    authTag: 'QD6LKikvZ5CxW6wKTnWGbw==',
+    iv: 'bYBRjJVLLU7sL6PX',
+    authTag: 'RfLWi44hR5+QrSzBT9IDPg==',
     encryptedData:
-      'KGQAPNRXz8KB4DgNddd1ZyHqbNo8R+u5VfXSgwK0VaCSnesuTC9HeyTeGJ420d/pd12zgb/v5QCRbjQPk2ayBLQ578DZs/kNjvJziHsSgJsiS48ihNVVtTkKKvLwfl71woYPvPiPjNNVQKksC9Q1Sjye6Qrv85DNjjCEQr7NJ2h6hs3mgY9jGYeZ8ZI5Vwdo6mmw/mlQYqPo4Mkct2kQqPGwTjfGuBsedU9BIoeAr3EPJfU8JfZTZ5XCjEMNGuRUl88t7ZXopzxdGssr+VUIDbUUtc3UMrqbdp9XgmF0EC/ZNcOYzMdxhQBBq3U2auW3FtVCgQr9Y2UpcrEXx7NcOiBunqYOPUyNRAdqzPLEKT/c3R9qJoKUSIQbTV5kZJ0r2b81Nj3VgsK180mrZC2TBjkSXKwFTSBAmtpUw79n1t31SNcJhFZj24PfzYESw1yJCaAgJ1A0jF7Be/ry903L5hd9RTJl3EmzvguU2KUdQHHTE/g80ex64MZeS3rwhtyCDYyKrqHrRDlVlii5sPOGuDqDXQam+fEuYypHxHvzhlMurCPEjUNgVUWrf1536BXxPl9Fjh8Z9m5TK4M+n4Ou/yuXw/t9MziioL1yHKXHkSO9As8KFVhgK65oy/wRxWGaF1lDFudcwEO3l4xQq617UvjHfIiLw6dqQJM4iHyqr7EfxniBz2F+ukRr5aMwVV90YN12zUwBhD+z4UtrwGF7uN7kuf7oDpDsgayacBs='
+      'PPAZMEAOasi1Xn96wki/gymHGmO9lFAZ8/XnpDoljDgpnYeAM8ZKIA3IHkwstS4Txcf1pucLFK8I7r1ffVow9KW+iHhk2ObTrS05sDgpHqkGLpX6viOaYhoRPrH7AuZNh/JNqkXLqFbof3BT9Q1DADlsl0k5o+mksAcUUsHogc2uJDp2e+6Tj4A4OF9yHyFGli4Ic1YIO7F2qjD1dLM1FU5xrk2gOsqe0/V5j56s5sknTW5WtJ2yRmyxHyRdPDd6WWNKS6Tad/VVmoCUP7Yiw1+jhYii7r1lai910JtbJ654eFLKRS/U4gcrdmTnNpVIL68sBhvMeRCUQARVKJYeMU96yQYA83IIvgb/nXXxpWQqj/9tQJ5Pv2QbzOttkFcpu+BEe1X3J85miNusfWmS6xp9JyKqp+Mbn4mdxRpH1oTVh1dF1IZh8RpXUczYvadtZC8pJpdHYsL3nxnnOIkeHbVTqOLiKMRDWNqnQD1h1OfZxSFBBrZbforI4Hh/AXm96GcbJX1ynFKicjEa5o4MiquHl8OGX+kNVkjeNiEP0knicGd8dswvDlbj/xeVDhZIYlhvWPsjz5RNhWc1nVP51fwWEUQ8mpj0SkMcViN0w2YOneY+TjHEFRbZa3fyWSo3bvmG5p2JmIKau1tdwUq+fWeapPXjgqD2hfSSCDZEDOVhu6zj7bfpqCKiKJRKXxmujlq47JTc1JgjXy1oCg3evEFkT4ra+QmdYQ3pRMh763RIatHLObqi+dwi4qrZYsAZLWs='
   }
 };
 /* eslint-enable @typescript-eslint/naming-convention */
