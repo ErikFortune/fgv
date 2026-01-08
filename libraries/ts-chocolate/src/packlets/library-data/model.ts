@@ -22,6 +22,59 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
 import { EncryptedCollectionErrorMode, ICryptoProvider, INamedSecret } from '../crypto';
 
+// ============================================================================
+// Collection Source Metadata Types
+// ============================================================================
+
+/**
+ * Optional metadata for collection source files.
+ * When present in source files, provides additional information about the collection.
+ * @public
+ */
+export interface ICollectionSourceMetadata {
+  /**
+   * Secret name for encryption/decryption.
+   * If provided, the publish command uses this to look up the encryption key.
+   */
+  readonly secretName?: string;
+
+  /**
+   * Human-readable name for the collection.
+   */
+  readonly name?: string;
+
+  /**
+   * Description of the collection's purpose/contents.
+   */
+  readonly description?: string;
+
+  /**
+   * Version identifier for the collection.
+   */
+  readonly version?: string;
+
+  /**
+   * Tags for categorization/search.
+   */
+  readonly tags?: ReadonlyArray<string>;
+}
+
+/**
+ * Structure of collection source files (YAML/JSON).
+ * @public
+ */
+export interface ICollectionSourceFile<T = JsonObject> {
+  /**
+   * Optional metadata about the collection.
+   */
+  readonly metadata?: ICollectionSourceMetadata;
+
+  /**
+   * The actual collection items, keyed by item ID.
+   */
+  readonly items: Record<string, T>;
+}
+
 /**
  * A pattern for matching collection or item names. Can be a string (exact match) or RegExp.
  * @public
@@ -90,6 +143,11 @@ export interface ICollection<
   readonly id: TCOLLECTIONID;
   readonly isMutable: boolean;
   readonly items: Record<TITEMID, T>;
+  /**
+   * Optional metadata from the source file.
+   * May be undefined for collections created programmatically.
+   */
+  readonly metadata?: ICollectionSourceMetadata;
 }
 
 // ============================================================================

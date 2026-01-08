@@ -137,10 +137,12 @@ describe('CollectionLoader', () => {
 
     test('loads single collection from directory', () => {
       const collectionData = {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        'item-1': { name: 'Item One', value: 1 },
-        'item-2': { name: 'Item Two', value: 2 }
-        /* eslint-enable @typescript-eslint/naming-convention */
+        items: {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          'item-1': { name: 'Item One', value: 1 },
+          'item-2': { name: 'Item Two', value: 2 }
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
       };
 
       const files: FileTree.IInMemoryFile[] = [
@@ -161,12 +163,16 @@ describe('CollectionLoader', () => {
 
     test('loads multiple collections from directory', () => {
       const collection1 = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'item-a': { name: 'Item A', value: 10 }
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-a': { name: 'Item A', value: 10 }
+        }
       };
       const collection2 = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'item-b': { name: 'Item B', value: 20 }
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-b': { name: 'Item B', value: 20 }
+        }
       };
 
       const files: FileTree.IInMemoryFile[] = [
@@ -194,7 +200,7 @@ describe('CollectionLoader', () => {
       });
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/test.json', contents: { item: { name: 'Test', value: 1 } } }
+        { path: '/collections/test.json', contents: { items: { item: { name: 'Test', value: 1 } } } }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -216,7 +222,7 @@ describe('CollectionLoader', () => {
       });
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/test.json', contents: { item: { name: 'Test', value: 1 } } }
+        { path: '/collections/test.json', contents: { items: { item: { name: 'Test', value: 1 } } } }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -231,8 +237,11 @@ describe('CollectionLoader', () => {
 
     test('marks specific collections as mutable with array spec', () => {
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/immutable.json', contents: { item: { name: 'Immutable', value: 1 } } },
-        { path: '/collections/mutable.json', contents: { item: { name: 'Mutable', value: 2 } } }
+        {
+          path: '/collections/immutable.json',
+          contents: { items: { item: { name: 'Immutable', value: 1 } } }
+        },
+        { path: '/collections/mutable.json', contents: { items: { item: { name: 'Mutable', value: 2 } } } }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -252,8 +261,11 @@ describe('CollectionLoader', () => {
 
     test('marks specific collections as immutable with immutable object spec', () => {
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/immutable.json', contents: { item: { name: 'Immutable', value: 1 } } },
-        { path: '/collections/mutable.json', contents: { item: { name: 'Mutable', value: 2 } } }
+        {
+          path: '/collections/immutable.json',
+          contents: { items: { item: { name: 'Immutable', value: 1 } } }
+        },
+        { path: '/collections/mutable.json', contents: { items: { item: { name: 'Mutable', value: 2 } } } }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -281,7 +293,7 @@ describe('CollectionLoader', () => {
       });
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/test.json', contents: { item: { name: 'Test', value: 1 } } }
+        { path: '/collections/test.json', contents: { items: { item: { name: 'Test', value: 1 } } } }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -299,8 +311,11 @@ describe('CollectionLoader', () => {
 
     test('loads with recurseWithDelimiter option', () => {
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/root.json', contents: { item: { name: 'Root', value: 1 } } },
-        { path: '/collections/subdir/nested.json', contents: { item: { name: 'Nested', value: 2 } } }
+        { path: '/collections/root.json', contents: { items: { item: { name: 'Root', value: 1 } } } },
+        {
+          path: '/collections/subdir/nested.json',
+          contents: { items: { item: { name: 'Nested', value: 2 } } }
+        }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -317,7 +332,9 @@ describe('CollectionLoader', () => {
     });
 
     test('handles empty directory', () => {
-      const files: FileTree.IInMemoryFile[] = [{ path: '/collections/subdir/file.json', contents: {} }];
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/subdir/file.json', contents: { items: {} } }
+      ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
@@ -330,10 +347,12 @@ describe('CollectionLoader', () => {
 
     test('fails when file contains invalid item structure', () => {
       const invalidCollection = {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        'valid-item': { name: 'Valid', value: 1 },
-        'invalid-item': { name: 'Missing Value' } // missing 'value' field
-        /* eslint-enable @typescript-eslint/naming-convention */
+        items: {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          'valid-item': { name: 'Valid', value: 1 },
+          'invalid-item': { name: 'Missing Value' } // missing 'value' field
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
       };
 
       const files: FileTree.IInMemoryFile[] = [
@@ -378,9 +397,12 @@ describe('CollectionLoader', () => {
       });
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/valid.json', contents: { item: { name: 'Valid', value: 1 } } },
-        { path: '/collections/INVALID.json', contents: { item: { name: 'Invalid', value: 2 } } },
-        { path: '/collections/also-invalid.json', contents: { item: { name: 'Also Invalid', value: 3 } } }
+        { path: '/collections/valid.json', contents: { items: { item: { name: 'Valid', value: 1 } } } },
+        { path: '/collections/INVALID.json', contents: { items: { item: { name: 'Invalid', value: 2 } } } },
+        {
+          path: '/collections/also-invalid.json',
+          contents: { items: { item: { name: 'Also Invalid', value: 3 } } }
+        }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -395,10 +417,12 @@ describe('CollectionLoader', () => {
 
     test('loads collections with complex nested data', () => {
       const complexCollection = {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        'item-1': { name: 'Complex Item', value: 42 },
-        'item-2': { name: 'Another Item', value: 100 }
-        /* eslint-enable @typescript-eslint/naming-convention */
+        items: {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          'item-1': { name: 'Complex Item', value: 42 },
+          'item-2': { name: 'Another Item', value: 100 }
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
       };
 
       const files: FileTree.IInMemoryFile[] = [
@@ -440,8 +464,8 @@ describe('CollectionLoader', () => {
       });
 
       const files: FileTree.IInMemoryFile[] = [
-        { path: '/collections/test.yaml', contents: { item: { name: 'YAML Item', value: 42 } } },
-        { path: '/collections/ignored.json', contents: { item: { name: 'JSON Item', value: 1 } } }
+        { path: '/collections/test.yaml', contents: { items: { item: { name: 'YAML Item', value: 42 } } } },
+        { path: '/collections/ignored.json', contents: { items: { item: { name: 'JSON Item', value: 1 } } } }
       ];
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
@@ -575,10 +599,12 @@ describe('CollectionLoader', () => {
 
     test('loads plain (non-encrypted) collections', async () => {
       const collectionData = {
-        /* eslint-disable @typescript-eslint/naming-convention */
-        'item-1': { name: 'Item One', value: 1 },
-        'item-2': { name: 'Item Two', value: 2 }
-        /* eslint-enable @typescript-eslint/naming-convention */
+        items: {
+          /* eslint-disable @typescript-eslint/naming-convention */
+          'item-1': { name: 'Item One', value: 1 },
+          'item-2': { name: 'Item Two', value: 2 }
+          /* eslint-enable @typescript-eslint/naming-convention */
+        }
       };
 
       const files: FileTree.IInMemoryFile[] = [
@@ -636,8 +662,10 @@ describe('CollectionLoader', () => {
 
     test('loads mixed encrypted and plain collections', async () => {
       const plainData = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'plain-item': { name: 'Plain', value: 1 }
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-item': { name: 'Plain', value: 1 }
+        }
       };
 
       const encryptedData = {
@@ -741,8 +769,10 @@ describe('CollectionLoader', () => {
 
       test('skips encrypted file when onMissingKey is "skip"', async () => {
         const plainData = {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          'plain-item': { name: 'Plain', value: 1 }
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'plain-item': { name: 'Plain', value: 1 }
+          }
         };
 
         const encryptedData = {
@@ -783,8 +813,10 @@ describe('CollectionLoader', () => {
 
       test('warns and skips when onMissingKey is "warn"', async () => {
         const plainData = {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          'plain-item': { name: 'Plain', value: 1 }
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'plain-item': { name: 'Plain', value: 1 }
+          }
         };
 
         const encryptedData = {
@@ -870,8 +902,10 @@ describe('CollectionLoader', () => {
 
       test('skips file when onDecryptionError is "skip"', async () => {
         const plainData = {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          'plain-item': { name: 'Plain', value: 1 }
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'plain-item': { name: 'Plain', value: 1 }
+          }
         };
 
         const encryptedData = {
@@ -913,8 +947,10 @@ describe('CollectionLoader', () => {
 
       test('warns and skips when onDecryptionError is "warn"', async () => {
         const plainData = {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          'plain-item': { name: 'Plain', value: 1 }
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'plain-item': { name: 'Plain', value: 1 }
+          }
         };
 
         const encryptedData = {
@@ -1185,10 +1221,12 @@ describe('CollectionLoader', () => {
 
       test('fails when item conversion fails', async () => {
         const invalidCollection = {
-          /* eslint-disable @typescript-eslint/naming-convention */
-          'valid-item': { name: 'Valid', value: 1 },
-          'invalid-item': { name: 'Missing Value' } // missing 'value' field
-          /* eslint-enable @typescript-eslint/naming-convention */
+          items: {
+            /* eslint-disable @typescript-eslint/naming-convention */
+            'valid-item': { name: 'Valid', value: 1 },
+            'invalid-item': { name: 'Missing Value' } // missing 'value' field
+            /* eslint-enable @typescript-eslint/naming-convention */
+          }
         };
 
         const files: FileTree.IInMemoryFile[] = [

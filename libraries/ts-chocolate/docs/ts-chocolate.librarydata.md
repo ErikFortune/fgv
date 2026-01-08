@@ -325,6 +325,28 @@ A collection set for collision detection.
 </td></tr>
 <tr><td>
 
+[ICollectionSourceFile](./ts-chocolate.librarydata.icollectionsourcefile.md)
+
+
+</td><td>
+
+Structure of collection source files (YAML/JSON).
+
+
+</td></tr>
+<tr><td>
+
+[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
+
+
+</td><td>
+
+Optional metadata for collection source files. When present in source files, provides additional information about the collection.
+
+
+</td></tr>
+<tr><td>
+
 [IEncryptionConfig](./ts-chocolate.librarydata.iencryptionconfig.md)
 
 

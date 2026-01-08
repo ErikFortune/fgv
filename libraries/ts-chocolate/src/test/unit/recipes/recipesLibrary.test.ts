@@ -330,38 +330,42 @@ describe('RecipesLibrary', () => {
     // Valid recipe JSON data for testing
     /* eslint-disable @typescript-eslint/naming-convention */
     const validRecipeData = {
-      'test-recipe': {
-        baseId: 'test-recipe',
-        name: 'Test Recipe',
-        category: 'ganache',
-        description: 'A test recipe',
-        tags: ['test'],
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
-          {
-            versionSpec: '2026-01-01-01',
-            createdDate: '2026-01-01',
-            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
-            baseWeight: 100
-          }
-        ]
+      items: {
+        'test-recipe': {
+          baseId: 'test-recipe',
+          name: 'Test Recipe',
+          category: 'ganache',
+          description: 'A test recipe',
+          tags: ['test'],
+          goldenVersionSpec: '2026-01-01-01',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
+              baseWeight: 100
+            }
+          ]
+        }
       }
     };
 
     const secondRecipeData = {
-      'other-recipe': {
-        baseId: 'other-recipe',
-        name: 'Other Recipe',
-        category: 'ganache',
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
-          {
-            versionSpec: '2026-01-01-01',
-            createdDate: '2026-01-01',
-            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
-            baseWeight: 200
-          }
-        ]
+      items: {
+        'other-recipe': {
+          baseId: 'other-recipe',
+          name: 'Other Recipe',
+          category: 'ganache',
+          goldenVersionSpec: '2026-01-01-01',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
+              baseWeight: 200
+            }
+          ]
+        }
       }
     };
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -513,38 +517,42 @@ describe('RecipesLibrary', () => {
   describe('loadFromFileTreeSource instance method', () => {
     /* eslint-disable @typescript-eslint/naming-convention */
     const validRecipeData = {
-      'test-recipe': {
-        baseId: 'test-recipe',
-        name: 'Test Recipe',
-        category: 'ganache',
-        description: 'A test recipe',
-        tags: ['test'],
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
-          {
-            versionSpec: '2026-01-01-01',
-            createdDate: '2026-01-01',
-            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
-            baseWeight: 100
-          }
-        ]
+      items: {
+        'test-recipe': {
+          baseId: 'test-recipe',
+          name: 'Test Recipe',
+          category: 'ganache',
+          description: 'A test recipe',
+          tags: ['test'],
+          goldenVersionSpec: '2026-01-01-01',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
+              baseWeight: 100
+            }
+          ]
+        }
       }
     };
 
     const secondRecipeData = {
-      'other-recipe': {
-        baseId: 'other-recipe',
-        name: 'Other Recipe',
-        category: 'ganache',
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
-          {
-            versionSpec: '2026-01-01-01',
-            createdDate: '2026-01-01',
-            ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
-            baseWeight: 200
-          }
-        ]
+      items: {
+        'other-recipe': {
+          baseId: 'other-recipe',
+          name: 'Other Recipe',
+          category: 'ganache',
+          goldenVersionSpec: '2026-01-01-01',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
+              baseWeight: 200
+            }
+          ]
+        }
       }
     };
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -1190,20 +1198,22 @@ describe('Recipe scaling', () => {
         {
           path: '/data/recipes/external.json',
           contents: {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            'external-recipe': {
-              baseId: 'external-recipe',
-              name: 'External Recipe',
-              category: 'ganache',
-              versions: [
-                {
-                  versionSpec: '2026-01-01-01',
-                  createdDate: '2026-01-01',
-                  ingredients: [{ ingredientId: 'common.butter-82', amount: 100 }],
-                  baseWeight: 100
-                }
-              ],
-              goldenVersionSpec: '2026-01-01-01'
+            items: {
+              // eslint-disable-next-line @typescript-eslint/naming-convention
+              'external-recipe': {
+                baseId: 'external-recipe',
+                name: 'External Recipe',
+                category: 'ganache',
+                versions: [
+                  {
+                    versionSpec: '2026-01-01-01',
+                    createdDate: '2026-01-01',
+                    ingredients: [{ ingredientId: 'common.butter-82', amount: 100 }],
+                    baseWeight: 100
+                  }
+                ],
+                goldenVersionSpec: '2026-01-01-01'
+              }
             }
           } as unknown as JsonObject
         }
@@ -1341,20 +1351,22 @@ describe('Recipe scaling', () => {
 
     test('handles mixed encrypted and plain files', async () => {
       const plainRecipeData = {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        'plain-recipe': {
-          baseId: 'plain-recipe',
-          name: 'Plain Recipe',
-          category: 'ganache',
-          versions: [
-            {
-              versionSpec: '2026-01-01-01',
-              createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'common.butter-82', amount: 25 }],
-              baseWeight: 25
-            }
-          ],
-          goldenVersionSpec: '2026-01-01-01'
+        items: {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'plain-recipe': {
+            baseId: 'plain-recipe',
+            name: 'Plain Recipe',
+            category: 'ganache',
+            versions: [
+              {
+                versionSpec: '2026-01-01-01',
+                createdDate: '2026-01-01',
+                ingredients: [{ ingredientId: 'common.butter-82', amount: 25 }],
+                baseWeight: 25
+              }
+            ],
+            goldenVersionSpec: '2026-01-01-01'
+          }
         }
       };
 

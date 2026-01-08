@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Converter, Converters, Failure, Result, Success, Validator } from '@fgv/ts-utils';
-import { ICollection } from './model';
+import { ICollection, ICollectionSourceFile, ICollectionSourceMetadata } from './model';
 
 /**
  * Returns a converter that removes one of the specified extensions from the end of a string.
@@ -55,6 +55,41 @@ export function removeExtension(extensions: ReadonlyArray<string>): Converter<st
 export const removeJsonExtension: Converter<string> = removeExtension(['.json']);
 
 /**
+ * Converter for collection source metadata.
+ * All fields are optional.
+ * @public
+ */
+export const collectionSourceMetadata: Converter<ICollectionSourceMetadata> =
+  Converters.object<ICollectionSourceMetadata>(
+    {
+      secretName: Converters.string,
+      name: Converters.string,
+      description: Converters.string,
+      version: Converters.string,
+      tags: Converters.arrayOf(Converters.string)
+    },
+    { optionalFields: ['secretName', 'name', 'description', 'version', 'tags'] }
+  );
+
+/**
+ * Creates a converter for collection source files with the new format.
+ * @param itemConverter - Converter or validator for individual items.
+ * @returns Converter for the source file format.
+ * @public
+ */
+export function collectionSourceFile<T>(
+  itemConverter: Converter<T> | Validator<T>
+): Converter<ICollectionSourceFile<T>> {
+  return Converters.object<ICollectionSourceFile<T>>(
+    {
+      metadata: collectionSourceMetadata,
+      items: Converters.recordOf(itemConverter)
+    },
+    { optionalFields: ['metadata'] }
+  );
+}
+
+/**
  * Initialization parameters for the {@link LibraryData.Converters.collection | collection} converter.
  * @public
  */
@@ -74,9 +109,13 @@ export interface ICollectionConverterParams<TCOLLECTIONID extends string, TITEMI
 export function collection<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
   params: ICollectionConverterParams<TCOLLECTIONID, TITEMID, TITEM>
 ): Converter<ICollection<TITEM, TCOLLECTIONID, TITEMID>> {
-  return Converters.strictObject<ICollection<TITEM, TCOLLECTIONID, TITEMID>>({
-    id: params.collectionIdConverter,
-    isMutable: Converters.boolean,
-    items: Converters.recordOf(params.itemConverter, { keyConverter: params.itemIdConverter })
-  });
+  return Converters.object<ICollection<TITEM, TCOLLECTIONID, TITEMID>>(
+    {
+      id: params.collectionIdConverter,
+      isMutable: Converters.boolean,
+      items: Converters.recordOf(params.itemConverter, { keyConverter: params.itemIdConverter }),
+      metadata: collectionSourceMetadata
+    },
+    { optionalFields: ['metadata'] }
+  );
 }

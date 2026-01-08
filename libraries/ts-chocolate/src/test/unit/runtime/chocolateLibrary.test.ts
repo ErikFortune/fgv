@@ -294,40 +294,44 @@ describe('ChocolateLibrary', () => {
     // Valid ingredient JSON data for file tree
     /* eslint-disable @typescript-eslint/naming-convention */
     const fileIngredientData = {
-      'file-chocolate': {
-        baseId: 'file-chocolate',
-        name: 'File Source Chocolate',
-        category: 'chocolate',
-        chocolateType: 'dark',
-        cacaoPercentage: 70,
-        ganacheCharacteristics: {
-          cacaoFat: 38,
-          sugar: 28,
-          milkFat: 0,
-          water: 1,
-          solids: 33,
-          otherFats: 0
+      items: {
+        'file-chocolate': {
+          baseId: 'file-chocolate',
+          name: 'File Source Chocolate',
+          category: 'chocolate',
+          chocolateType: 'dark',
+          cacaoPercentage: 70,
+          ganacheCharacteristics: {
+            cacaoFat: 38,
+            sugar: 28,
+            milkFat: 0,
+            water: 1,
+            solids: 33,
+            otherFats: 0
+          }
         }
       }
     };
 
     // Valid recipe JSON data for file tree
     const fileRecipeData = {
-      'file-recipe': {
-        baseId: 'file-recipe',
-        name: 'File Source Recipe',
-        category: 'ganache',
-        description: 'A recipe from file source',
-        tags: ['file'],
-        goldenVersionSpec: '2026-01-01-01',
-        versions: [
-          {
-            versionSpec: '2026-01-01-01',
-            createdDate: '2026-01-01',
-            ingredients: [{ ingredientId: 'file-source.file-chocolate', amount: 100 }],
-            baseWeight: 100
-          }
-        ]
+      items: {
+        'file-recipe': {
+          baseId: 'file-recipe',
+          name: 'File Source Recipe',
+          category: 'ganache',
+          description: 'A recipe from file source',
+          tags: ['file'],
+          goldenVersionSpec: '2026-01-01-01',
+          versions: [
+            {
+              versionSpec: '2026-01-01-01',
+              createdDate: '2026-01-01',
+              ingredients: [{ ingredientId: 'file-source.file-chocolate', amount: 100 }],
+              baseWeight: 100
+            }
+          ]
+        }
       }
     };
     /* eslint-enable @typescript-eslint/naming-convention */
@@ -370,17 +374,19 @@ describe('ChocolateLibrary', () => {
 
       /* eslint-disable @typescript-eslint/naming-convention */
       const secondIngredientData = {
-        'second-chocolate': {
-          baseId: 'second-chocolate',
-          name: 'Second Source Chocolate',
-          category: 'chocolate',
-          ganacheCharacteristics: {
-            cacaoFat: 35,
-            sugar: 35,
-            milkFat: 0,
-            water: 1,
-            solids: 29,
-            otherFats: 0
+        items: {
+          'second-chocolate': {
+            baseId: 'second-chocolate',
+            name: 'Second Source Chocolate',
+            category: 'chocolate',
+            ganacheCharacteristics: {
+              cacaoFat: 35,
+              sugar: 35,
+              milkFat: 0,
+              water: 1,
+              solids: 29,
+              otherFats: 0
+            }
           }
         }
       };
@@ -426,17 +432,19 @@ describe('ChocolateLibrary', () => {
       // Create a file source with 'felchlin' collection ID (same as builtin)
       /* eslint-disable @typescript-eslint/naming-convention */
       const conflictingData = {
-        'conflict-chocolate': {
-          baseId: 'conflict-chocolate',
-          name: 'Conflicting Chocolate',
-          category: 'chocolate',
-          ganacheCharacteristics: {
-            cacaoFat: 35,
-            sugar: 35,
-            milkFat: 0,
-            water: 1,
-            solids: 29,
-            otherFats: 0
+        items: {
+          'conflict-chocolate': {
+            baseId: 'conflict-chocolate',
+            name: 'Conflicting Chocolate',
+            category: 'chocolate',
+            ganacheCharacteristics: {
+              cacaoFat: 35,
+              sugar: 35,
+              milkFat: 0,
+              water: 1,
+              solids: 29,
+              otherFats: 0
+            }
           }
         }
       };

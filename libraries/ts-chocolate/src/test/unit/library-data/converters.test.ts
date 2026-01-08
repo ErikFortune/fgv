@@ -207,15 +207,22 @@ describe('LibraryData.Converters', () => {
       expect(collectionConverter.convert(123)).toFail();
     });
 
-    test('fails for extra properties (strictObject)', () => {
+    test('ignores extra properties', () => {
+      // The collection converter uses Converters.object (not strictObject)
+      // because it has optional fields like metadata. Extra properties are ignored.
       const input = {
         id: 'test-collection',
         isMutable: true,
         items: {},
-        extraField: 'should fail'
+        extraField: 'should be ignored'
       };
 
-      expect(collectionConverter.convert(input)).toFail();
+      expect(collectionConverter.convert(input)).toSucceedAndSatisfy((collection) => {
+        expect(collection.id).toBe('test-collection');
+        expect(collection.isMutable).toBe(true);
+        // extraField is not included in the result
+        expect(Object.keys(collection)).not.toContain('extraField');
+      });
     });
   });
 });

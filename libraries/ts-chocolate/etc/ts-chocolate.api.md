@@ -312,6 +312,12 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 }
 
 // @public
+function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
+
+// @public
+const collectionSourceMetadata: Converter<ICollectionSourceMetadata>;
+
+// @public
 type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 
 // @public
@@ -394,8 +400,10 @@ declare namespace Converters_4 {
 declare namespace Converters_5 {
     export {
         removeExtension,
+        collectionSourceFile,
         collection,
         removeJsonExtension,
+        collectionSourceMetadata,
         ICollectionConverterParams
     }
 }
@@ -714,6 +722,7 @@ interface ICollection<T = JsonObject, TCOLLECTIONID extends string = string, TIT
     readonly isMutable: boolean;
     // (undocumented)
     readonly items: Record<TITEMID, T>;
+    readonly metadata?: ICollectionSourceMetadata;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -759,6 +768,21 @@ interface ICollectionSet<TCollectionId extends string = string> {
         readonly id: TCollectionId;
     }>;
     readonly source: string;
+}
+
+// @public
+interface ICollectionSourceFile<T = JsonObject> {
+    readonly items: Record<string, T>;
+    readonly metadata?: ICollectionSourceMetadata;
+}
+
+// @public
+interface ICollectionSourceMetadata {
+    readonly description?: string;
+    readonly name?: string;
+    readonly secretName?: string;
+    readonly tags?: ReadonlyArray<string>;
+    readonly version?: string;
 }
 
 // @public
@@ -1922,6 +1946,8 @@ declare namespace LibraryData {
     export {
         Converters_5 as Converters,
         resolveSubLibraryLoadSpec,
+        ICollectionSourceMetadata,
+        ICollectionSourceFile,
         FilterPattern,
         ILibraryLoadParams,
         LibraryLoadSpec,

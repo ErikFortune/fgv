@@ -118,10 +118,10 @@ describe('BuiltInData', () => {
 
           if (commonFile?.type === 'file') {
             expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const data = contents as Record<string, unknown>;
-              expect(data['heavy-cream-35']).toBeDefined();
-              expect(data['butter-82']).toBeDefined();
-              expect(data['glucose-de43']).toBeDefined();
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['heavy-cream-35']).toBeDefined();
+              expect(sourceFile.items['butter-82']).toBeDefined();
+              expect(sourceFile.items['glucose-de43']).toBeDefined();
             });
           }
         });
@@ -137,9 +137,9 @@ describe('BuiltInData', () => {
 
           if (felchlinFile?.type === 'file') {
             expect(felchlinFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const data = contents as Record<string, unknown>;
-              expect(data['maracaibo-65']).toBeDefined();
-              expect(data['arriba-72']).toBeDefined();
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['maracaibo-65']).toBeDefined();
+              expect(sourceFile.items['arriba-72']).toBeDefined();
             });
           }
         });
@@ -178,11 +178,11 @@ describe('BuiltInData', () => {
 
           if (commonFile?.type === 'file') {
             expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
-              const data = contents as Record<string, unknown>;
-              expect(data['dark-ganache-classic']).toBeDefined();
-              expect(data['milk-ganache-classic']).toBeDefined();
-              expect(data['white-ganache-classic']).toBeDefined();
-              expect(data['vegan-ganache-coconut-cream']).toBeDefined();
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['dark-ganache-classic']).toBeDefined();
+              expect(sourceFile.items['milk-ganache-classic']).toBeDefined();
+              expect(sourceFile.items['white-ganache-classic']).toBeDefined();
+              expect(sourceFile.items['vegan-ganache-coconut-cream']).toBeDefined();
             });
           }
         });
@@ -255,9 +255,12 @@ describe('BuiltInData', () => {
         // Should parse without error
         expect(() => yaml.parse(content)).not.toThrow();
 
+        // Data should have the new { metadata?, items } structure
+        const sourceFile = yaml.parse(content) as { items: Record<string, Record<string, unknown>> };
+        expect(sourceFile.items).toBeDefined();
+
         // Each ingredient should have required fields
-        const data = yaml.parse(content) as Record<string, Record<string, unknown>>;
-        for (const [id, ingredient] of Object.entries(data)) {
+        for (const [id, ingredient] of Object.entries(sourceFile.items)) {
           expect(ingredient.baseId).toBe(id);
           expect(ingredient.name).toBeDefined();
           expect(ingredient.category).toBeDefined();
@@ -277,9 +280,12 @@ describe('BuiltInData', () => {
         // Should parse without error
         expect(() => yaml.parse(content)).not.toThrow();
 
+        // Data should have the new { metadata?, items } structure
+        const sourceFile = yaml.parse(content) as { items: Record<string, Record<string, unknown>> };
+        expect(sourceFile.items).toBeDefined();
+
         // Each recipe should have required fields
-        const data = yaml.parse(content) as Record<string, Record<string, unknown>>;
-        for (const [id, recipe] of Object.entries(data)) {
+        for (const [id, recipe] of Object.entries(sourceFile.items)) {
           expect(recipe.baseId).toBe(id);
           expect(recipe.name).toBeDefined();
           expect(recipe.versions).toBeDefined();

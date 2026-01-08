@@ -402,37 +402,41 @@ describe('IngredientsLibrary', () => {
     // Valid ingredient JSON data for testing
     /* eslint-disable @typescript-eslint/naming-convention */
     const validIngredientData = {
-      'test-chocolate': {
-        baseId: 'test-chocolate',
-        name: 'Test Chocolate',
-        category: 'chocolate',
-        chocolateType: 'dark',
-        cacaoPercentage: 65,
-        ganacheCharacteristics: {
-          cacaoFat: 36,
-          sugar: 34,
-          milkFat: 0,
-          water: 1,
-          solids: 29,
-          otherFats: 0
+      items: {
+        'test-chocolate': {
+          baseId: 'test-chocolate',
+          name: 'Test Chocolate',
+          category: 'chocolate',
+          chocolateType: 'dark',
+          cacaoPercentage: 65,
+          ganacheCharacteristics: {
+            cacaoFat: 36,
+            sugar: 34,
+            milkFat: 0,
+            water: 1,
+            solids: 29,
+            otherFats: 0
+          }
         }
       }
     };
 
     const secondIngredientData = {
-      'other-chocolate': {
-        baseId: 'other-chocolate',
-        name: 'Other Chocolate',
-        category: 'chocolate',
-        chocolateType: 'milk',
-        cacaoPercentage: 40,
-        ganacheCharacteristics: {
-          cacaoFat: 30,
-          sugar: 40,
-          milkFat: 5,
-          water: 1,
-          solids: 24,
-          otherFats: 0
+      items: {
+        'other-chocolate': {
+          baseId: 'other-chocolate',
+          name: 'Other Chocolate',
+          category: 'chocolate',
+          chocolateType: 'milk',
+          cacaoPercentage: 40,
+          ganacheCharacteristics: {
+            cacaoFat: 30,
+            sugar: 40,
+            milkFat: 5,
+            water: 1,
+            solids: 24,
+            otherFats: 0
+          }
         }
       }
     };
@@ -585,37 +589,41 @@ describe('IngredientsLibrary', () => {
   describe('loadFromFileTreeSource instance method', () => {
     /* eslint-disable @typescript-eslint/naming-convention */
     const validIngredientData = {
-      'test-chocolate': {
-        baseId: 'test-chocolate',
-        name: 'Test Chocolate',
-        category: 'chocolate',
-        chocolateType: 'dark',
-        cacaoPercentage: 65,
-        ganacheCharacteristics: {
-          cacaoFat: 36,
-          sugar: 34,
-          milkFat: 0,
-          water: 1,
-          solids: 29,
-          otherFats: 0
+      items: {
+        'test-chocolate': {
+          baseId: 'test-chocolate',
+          name: 'Test Chocolate',
+          category: 'chocolate',
+          chocolateType: 'dark',
+          cacaoPercentage: 65,
+          ganacheCharacteristics: {
+            cacaoFat: 36,
+            sugar: 34,
+            milkFat: 0,
+            water: 1,
+            solids: 29,
+            otherFats: 0
+          }
         }
       }
     };
 
     const secondIngredientData = {
-      'other-chocolate': {
-        baseId: 'other-chocolate',
-        name: 'Other Chocolate',
-        category: 'chocolate',
-        chocolateType: 'milk',
-        cacaoPercentage: 40,
-        ganacheCharacteristics: {
-          cacaoFat: 30,
-          sugar: 40,
-          milkFat: 5,
-          water: 1,
-          solids: 24,
-          otherFats: 0
+      items: {
+        'other-chocolate': {
+          baseId: 'other-chocolate',
+          name: 'Other Chocolate',
+          category: 'chocolate',
+          chocolateType: 'milk',
+          cacaoPercentage: 40,
+          ganacheCharacteristics: {
+            cacaoFat: 30,
+            sugar: 40,
+            milkFat: 5,
+            water: 1,
+            solids: 24,
+            otherFats: 0
+          }
         }
       }
     };
@@ -1100,18 +1108,20 @@ describe('IngredientsLibrary.createAsync', () => {
       {
         path: '/data/ingredients/external.json',
         contents: {
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          'external-butter': {
-            baseId: 'external-butter',
-            name: 'External Butter',
-            category: 'fat',
-            ganacheCharacteristics: {
-              cacaoFat: 0,
-              sugar: 0,
-              milkFat: 82,
-              water: 16,
-              solids: 2,
-              otherFats: 0
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'external-butter': {
+              baseId: 'external-butter',
+              name: 'External Butter',
+              category: 'fat',
+              ganacheCharacteristics: {
+                cacaoFat: 0,
+                sugar: 0,
+                milkFat: 82,
+                water: 16,
+                solids: 2,
+                otherFats: 0
+              }
             }
           }
         } as unknown as JsonObject

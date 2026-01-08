@@ -21,7 +21,7 @@
 import { Converter, fail, mapResults, pick, Result, succeed, Validator } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { CollectionFilter, ICollectionFilterInitParams, IFilterDirectoryParams } from './collectionFilter';
-import { ICollection, IEncryptionConfig, MutabilitySpec } from './model';
+import { ICollection, ICollectionSourceFile, IEncryptionConfig, MutabilitySpec } from './model';
 import * as LibraryConverters from './converters';
 import { decryptCollectionFile, isEncryptedCollectionFile, Converters as CryptoConverters } from '../crypto';
 
@@ -102,6 +102,7 @@ export class CollectionLoader<
   private readonly _itemConverter: Converter<T> | Validator<T>;
   private readonly _mutableDefault: MutabilitySpec;
   private readonly _collectionConverter: Converter<ICollection<T, TCOLLECTIONID, TITEMID>>;
+  private readonly _sourceFileConverter: Converter<ICollectionSourceFile<T>>;
 
   public constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>) {
     this._collectionIdConverter = params.collectionIdConverter;
@@ -116,6 +117,7 @@ export class CollectionLoader<
       itemIdConverter: this._itemIdConverter,
       collectionIdConverter: this._collectionIdConverter
     });
+    this._sourceFileConverter = LibraryConverters.collectionSourceFile(this._itemConverter);
   }
 
   /**
@@ -165,10 +167,14 @@ export class CollectionLoader<
               // Skip this file (return undefined to filter out)
               return succeed(undefined);
             }
-            return this._collectionConverter.convert({
-              id: item.name,
-              isMutable: this._isMutable(item.name, mutabilitySpec),
-              items: json
+            // Parse as source file format { metadata?, items }
+            return this._sourceFileConverter.convert(json).onSuccess((sourceFile) => {
+              return this._collectionConverter.convert({
+                id: item.name,
+                isMutable: this._isMutable(item.name, mutabilitySpec),
+                items: sourceFile.items,
+                metadata: sourceFile.metadata
+              });
             });
           });
       });
@@ -232,11 +238,17 @@ export class CollectionLoader<
         }
         results.push(encryptedResult);
       } else {
-        // Plain JSON - convert directly
+        // Plain JSON - parse as source file format { metadata?, items }
+        const sourceFileResult = this._sourceFileConverter.convert(json);
+        if (sourceFileResult.isFailure()) {
+          return fail(`Collection "${item.name}": ${sourceFileResult.message}`);
+        }
+        const sourceFile = sourceFileResult.value;
         const collectionResult = this._collectionConverter.convert({
           id: item.name,
           isMutable: this._isMutable(item.name, mutabilitySpec),
-          items: json
+          items: sourceFile.items,
+          metadata: sourceFile.metadata
         });
         results.push(collectionResult);
       }

@@ -92,5 +92,26 @@ Record&lt;TITEMID, T&gt;
 
 
 </td></tr>
+<tr><td>
+
+[metadata?](./ts-chocolate.librarydata.icollection.metadata.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
+
+
+</td><td>
+
+_(Optional)_ Optional metadata from the source file. May be undefined for collections created programmatically.
+
+
+</td></tr>
 </tbody></table>
 

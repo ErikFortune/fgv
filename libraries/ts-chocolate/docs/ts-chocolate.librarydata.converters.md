@@ -30,6 +30,17 @@ Returns a converter that validates a [collection](./ts-chocolate.librarydata.ico
 </td></tr>
 <tr><td>
 
+[collectionSourceFile(itemConverter)](./ts-chocolate.librarydata.converters.collectionsourcefile.md)
+
+
+</td><td>
+
+Creates a converter for collection source files with the new format.
+
+
+</td></tr>
+<tr><td>
+
 [removeExtension(extensions)](./ts-chocolate.librarydata.converters.removeextension.md)
 
 
@@ -81,6 +92,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[collectionSourceMetadata](./ts-chocolate.librarydata.converters.collectionsourcemetadata.md)
+
+
+</td><td>
+
+Converter for collection source metadata. All fields are optional.
+
+
+</td></tr>
+<tr><td>
 
 [removeJsonExtension](./ts-chocolate.librarydata.converters.removejsonextension.md)
 

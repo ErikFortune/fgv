@@ -1,172 +1,177 @@
 # Common ganache recipes - seed data for the recipes library
 
-# Classic dark chocolate ganache (2:1 ratio)
-dark-ganache-classic:
-  baseId: dark-ganache-classic
-  name: Classic Dark Ganache
-  category: ganache
-  description: Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.
-  tags: [classic, dark, truffle, bonbon]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: cacao-barry.guayaquil-64
-          alternateIngredientIds:
-            - common.chocolate-dark-64
-            - felchlin.arriba-72
-          amount: 400
-        - ingredientId: common.heavy-cream-35
-          amount: 200
-        - ingredientId: common.butter-82
-          amount: 20
-          notes: Added at 35°C for shine
-      baseWeight: 620
-      yield: '~50 bonbons'
-      notes: Standard 2:1 ratio with butter finish
+metadata:
+  name: Common Recipes
+  description: Seed data ganache recipes for the recipes library
 
-# Classic milk chocolate ganache (~1.75:1 ratio)
-milk-ganache-classic:
-  baseId: milk-ganache-classic
-  name: Classic Milk Ganache
-  category: ganache
-  description: Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.
-  tags: [classic, milk, truffle, bonbon]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: guittard.soleil-dor-38
-          amount: 350
-        - ingredientId: common.heavy-cream-35
-          amount: 200
-        - ingredientId: common.butter-82
-          amount: 20
-          notes: Added at 35°C for shine
-      baseWeight: 570
-      yield: '~45 bonbons'
-      notes: 1.75:1 ratio for proper set with milk chocolate
+items:
+  # Classic dark chocolate ganache (2:1 ratio)
+  dark-ganache-classic:
+    baseId: dark-ganache-classic
+    name: Classic Dark Ganache
+    category: ganache
+    description: Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.
+    tags: [classic, dark, truffle, bonbon]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: cacao-barry.guayaquil-64
+            alternateIngredientIds:
+              - common.chocolate-dark-64
+              - felchlin.arriba-72
+            amount: 400
+          - ingredientId: common.heavy-cream-35
+            amount: 200
+          - ingredientId: common.butter-82
+            amount: 20
+            notes: Added at 35°C for shine
+        baseWeight: 620
+        yield: '~50 bonbons'
+        notes: Standard 2:1 ratio with butter finish
 
-# Classic white chocolate ganache (~2.5:1 ratio)
-white-ganache-classic:
-  baseId: white-ganache-classic
-  name: Classic White Ganache
-  category: ganache
-  description: Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.
-  tags: [classic, white, truffle, bonbon]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: cacao-barry.zephyr-white-34
-          amount: 500
-        - ingredientId: common.heavy-cream-35
-          amount: 200
-        - ingredientId: common.butter-82
-          amount: 15
-          notes: Added at 32°C for shine
-      baseWeight: 715
-      yield: '~55 bonbons'
-      notes: 2.5:1 ratio essential for white chocolate emulsion
+  # Classic milk chocolate ganache (~1.75:1 ratio)
+  milk-ganache-classic:
+    baseId: milk-ganache-classic
+    name: Classic Milk Ganache
+    category: ganache
+    description: Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.
+    tags: [classic, milk, truffle, bonbon]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: guittard.soleil-dor-38
+            amount: 350
+          - ingredientId: common.heavy-cream-35
+            amount: 200
+          - ingredientId: common.butter-82
+            amount: 20
+            notes: Added at 35°C for shine
+        baseWeight: 570
+        yield: '~45 bonbons'
+        notes: 1.75:1 ratio for proper set with milk chocolate
 
-# Vegan ganache with coconut cream
-vegan-ganache-coconut-cream:
-  baseId: vegan-ganache-coconut-cream
-  name: Vegan Ganache (Coconut Cream)
-  category: ganache
-  description: Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.
-  tags: [vegan, dairy-free, dark, coconut]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: cacao-barry.guayaquil-64
-          amount: 400
-        - ingredientId: common.coconut-cream
-          amount: 200
-          notes: Use full-fat, refrigerate and use solid portion
-      baseWeight: 600
-      yield: '~48 bonbons'
-      notes: Coconut cream provides fat and moisture similar to dairy cream
+  # Classic white chocolate ganache (~2.5:1 ratio)
+  white-ganache-classic:
+    baseId: white-ganache-classic
+    name: Classic White Ganache
+    category: ganache
+    description: Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.
+    tags: [classic, white, truffle, bonbon]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: cacao-barry.zephyr-white-34
+            amount: 500
+          - ingredientId: common.heavy-cream-35
+            amount: 200
+          - ingredientId: common.butter-82
+            amount: 15
+            notes: Added at 32°C for shine
+        baseWeight: 715
+        yield: '~55 bonbons'
+        notes: 2.5:1 ratio essential for white chocolate emulsion
 
-# Vegan ganache with coconut oil method
-vegan-ganache-coconut-oil:
-  baseId: vegan-ganache-coconut-oil
-  name: Vegan Ganache (Coconut Oil)
-  category: ganache
-  description: Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.
-  tags: [vegan, dairy-free, dark, neutral]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: cacao-barry.guayaquil-64
-          amount: 400
-        - ingredientId: common.coconut-oil
-          amount: 150
-          notes: Melted, at 35°C
-        - ingredientId: common.glucose-de43
-          amount: 30
-          notes: For texture and shelf life
-      baseWeight: 580
-      yield: '~46 bonbons'
-      notes: Oil-based method gives firmer set and neutral flavor
+  # Vegan ganache with coconut cream
+  vegan-ganache-coconut-cream:
+    baseId: vegan-ganache-coconut-cream
+    name: Vegan Ganache (Coconut Cream)
+    category: ganache
+    description: Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.
+    tags: [vegan, dairy-free, dark, coconut]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: cacao-barry.guayaquil-64
+            amount: 400
+          - ingredientId: common.coconut-cream
+            amount: 200
+            notes: Use full-fat, refrigerate and use solid portion
+        baseWeight: 600
+        yield: '~48 bonbons'
+        notes: Coconut cream provides fat and moisture similar to dairy cream
 
-# Caramelized/blonde chocolate ganache
-caramelized-ganache:
-  baseId: caramelized-ganache
-  name: Caramelized Ganache
-  category: ganache
-  description: Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.
-  tags: [caramelized, blonde, truffle, bonbon, salted-caramel]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: cacao-barry.zephyr-caramel-35
-          amount: 450
-        - ingredientId: common.heavy-cream-35
-          amount: 180
-        - ingredientId: common.butter-82
-          amount: 20
-          notes: Salted butter works beautifully here
-      baseWeight: 650
-      yield: '~52 bonbons'
-      notes: Slightly higher chocolate ratio for caramelized varieties
+  # Vegan ganache with coconut oil method
+  vegan-ganache-coconut-oil:
+    baseId: vegan-ganache-coconut-oil
+    name: Vegan Ganache (Coconut Oil)
+    category: ganache
+    description: Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.
+    tags: [vegan, dairy-free, dark, neutral]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: cacao-barry.guayaquil-64
+            amount: 400
+          - ingredientId: common.coconut-oil
+            amount: 150
+            notes: Melted, at 35°C
+          - ingredientId: common.glucose-de43
+            amount: 30
+            notes: For texture and shelf life
+        baseWeight: 580
+        yield: '~46 bonbons'
+        notes: Oil-based method gives firmer set and neutral flavor
 
-# Basic gianduja
-gianduja-basic:
-  baseId: gianduja-basic
-  name: Basic Gianduja
-  category: ganache
-  description: Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.
-  tags: [gianduja, hazelnut, italian, praline]
-  goldenVersionSpec: '2026-01-01-01'
-  usage: []
-  versions:
-    - versionSpec: '2026-01-01-01'
-      createdDate: '2026-01-01'
-      ingredients:
-        - ingredientId: felchlin.sao-palme-43
-          amount: 300
-        - ingredientId: common.hazelnut-paste
-          amount: 200
-          notes: 100% roasted hazelnuts, finely ground
-        - ingredientId: common.butter-82
-          amount: 50
-          notes: For smoothness
-      baseWeight: 550
-      yield: '~44 bonbons'
-      notes: Traditional 60:40 chocolate to hazelnut ratio
+  # Caramelized/blonde chocolate ganache
+  caramelized-ganache:
+    baseId: caramelized-ganache
+    name: Caramelized Ganache
+    category: ganache
+    description: Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.
+    tags: [caramelized, blonde, truffle, bonbon, salted-caramel]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: cacao-barry.zephyr-caramel-35
+            amount: 450
+          - ingredientId: common.heavy-cream-35
+            amount: 180
+          - ingredientId: common.butter-82
+            amount: 20
+            notes: Salted butter works beautifully here
+        baseWeight: 650
+        yield: '~52 bonbons'
+        notes: Slightly higher chocolate ratio for caramelized varieties
+
+  # Basic gianduja
+  gianduja-basic:
+    baseId: gianduja-basic
+    name: Basic Gianduja
+    category: ganache
+    description: Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.
+    tags: [gianduja, hazelnut, italian, praline]
+    goldenVersionSpec: '2026-01-01-01'
+    usage: []
+    versions:
+      - versionSpec: '2026-01-01-01'
+        createdDate: '2026-01-01'
+        ingredients:
+          - ingredientId: felchlin.sao-palme-43
+            amount: 300
+          - ingredientId: common.hazelnut-paste
+            amount: 200
+            notes: 100% roasted hazelnuts, finely ground
+          - ingredientId: common.butter-82
+            amount: 50
+            notes: For smoothness
+        baseWeight: 550
+        yield: '~44 bonbons'
+        notes: Traditional 60:40 chocolate to hazelnut ratio

@@ -148,18 +148,67 @@ function decodeKey(keyBase64: string): Result<Uint8Array> {
 }
 
 /**
+ * Extracts the secretName from source file metadata, if present.
+ */
+function getSecretNameFromMetadata(sourceData: JsonValue): string | undefined {
+  if (typeof sourceData === 'object' && sourceData !== null && !Array.isArray(sourceData)) {
+    const obj = sourceData as Record<string, unknown>;
+    if (typeof obj.metadata === 'object' && obj.metadata !== null) {
+      const metadata = obj.metadata as Record<string, unknown>;
+      if (typeof metadata.secretName === 'string') {
+        return metadata.secretName;
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Extracts the items from source file data (new format), or returns the data as-is (legacy format).
+ */
+function getItemsFromSourceData(sourceData: JsonValue): JsonValue {
+  if (typeof sourceData === 'object' && sourceData !== null && !Array.isArray(sourceData)) {
+    const obj = sourceData as Record<string, unknown>;
+    if ('items' in obj) {
+      return obj.items as JsonValue;
+    }
+  }
+  // Legacy format or unexpected structure - return as-is
+  return sourceData;
+}
+
+/**
  * Resolves the secret name and key to use for a given file.
- * With --secrets-file: uses directory name as secret name, looks up key from file.
- * With --secret-name + --key: uses those for all files.
+ * Priority:
+ * 1. metadata.secretName from source file (if present and --secrets-file provided)
+ * 2. Directory name with --secrets-file
+ * 3. --secret-name flag with --key or env var
+ *
+ * If metadata.secretName is specified but key not found in secrets file, returns error (no fallback).
  */
 function resolveSecret(
   filePath: string,
   sourceDir: string,
   options: IPublishDataCommandOptions,
-  secrets?: SecretsFile
+  secrets?: SecretsFile,
+  metadataSecretName?: string
 ): Result<{ secretName: string; key: Uint8Array }> {
+  // If metadata specifies a secret name, use it (requires secrets file)
+  if (metadataSecretName) {
+    if (!options.secretsFile || !secrets) {
+      return fail(
+        `File specifies secretName "${metadataSecretName}" in metadata but no --secrets-file provided`
+      );
+    }
+    const keyBase64 = secrets[metadataSecretName];
+    if (!keyBase64) {
+      return fail(`No key found for secret "${metadataSecretName}" (from file metadata) in secrets file`);
+    }
+    return decodeKey(keyBase64).onSuccess((key) => succeed({ secretName: metadataSecretName, key }));
+  }
+
+  // Secrets file mode: use directory name as secret name
   if (options.secretsFile && secrets) {
-    // Use directory name as secret name
     const relativePath = path.relative(sourceDir, filePath);
     const topDir = relativePath.split(path.sep)[0];
     const secretName = topDir || path.basename(sourceDir);
@@ -266,15 +315,6 @@ export function createPublishDataCommand(): Command {
         const destRelativePath = toJsonPath(relativePath);
         const destFile = path.join(destDir, destRelativePath);
 
-        // Resolve secret for this file
-        const secretResult = resolveSecret(sourceFile, sourceDir, options, secrets);
-        if (secretResult.isFailure()) {
-          console.error(`  ERROR: ${relativePath} - ${secretResult.message}`);
-          errorCount++;
-          continue;
-        }
-        const { secretName, key } = secretResult.value;
-
         // Read source file (YAML or JSON)
         const dataResult = readDataFile(sourceFile);
         if (dataResult.isFailure()) {
@@ -283,9 +323,24 @@ export function createPublishDataCommand(): Command {
           continue;
         }
 
+        // Extract metadata.secretName if present
+        const metadataSecretName = getSecretNameFromMetadata(dataResult.value);
+
+        // Resolve secret for this file (using metadata.secretName if available)
+        const secretResult = resolveSecret(sourceFile, sourceDir, options, secrets, metadataSecretName);
+        if (secretResult.isFailure()) {
+          console.error(`  ERROR: ${relativePath} - ${secretResult.message}`);
+          errorCount++;
+          continue;
+        }
+        const { secretName, key } = secretResult.value;
+
+        // Extract items to encrypt (only items, not metadata wrapper)
+        const contentToEncrypt = getItemsFromSourceData(dataResult.value);
+
         // Encrypt the content
         const encryptResult = await Crypto.createEncryptedCollectionFile({
-          content: dataResult.value,
+          content: contentToEncrypt,
           secretName,
           key,
           cryptoProvider: Crypto.nodeCryptoProvider
