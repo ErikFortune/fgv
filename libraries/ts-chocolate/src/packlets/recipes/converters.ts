@@ -33,6 +33,8 @@ import {
   IRecipe,
   IRecipeDerivation,
   IRecipeIngredient,
+  IRecipeMoldRef,
+  IRecipeMolds,
   IRecipeProcedureRef,
   IRecipeProcedures,
   IRecipeVersion,
@@ -108,6 +110,24 @@ export const recipeProcedures: Converter<IRecipeProcedures> = Converters.object<
 });
 
 /**
+ * Converter for {@link Recipes.IRecipeMoldRef | IRecipeMoldRef}
+ * @public
+ */
+export const recipeMoldRef: Converter<IRecipeMoldRef> = Converters.object<IRecipeMoldRef>({
+  moldId: CommonConverters.moldId,
+  notes: Converters.string.optional()
+});
+
+/**
+ * Converter for {@link Recipes.IRecipeMolds | IRecipeMolds}
+ * @public
+ */
+export const recipeMolds: Converter<IRecipeMolds> = Converters.object<IRecipeMolds>({
+  molds: Converters.arrayOf(recipeMoldRef),
+  recommendedMoldId: CommonConverters.moldId.optional()
+});
+
+/**
  * Converter for {@link Recipes.IRecipeVersion | IRecipeVersion}.
  * @public
  */
@@ -134,7 +154,8 @@ export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
   versions: Converters.arrayOf(recipeVersion),
   goldenVersionSpec: CommonConverters.recipeVersionSpec,
   derivedFrom: recipeDerivation.optional(),
-  recipeProcedures: recipeProcedures.optional()
+  recipeProcedures: recipeProcedures.optional(),
+  recipeMolds: recipeMolds.optional()
 });
 
 /**

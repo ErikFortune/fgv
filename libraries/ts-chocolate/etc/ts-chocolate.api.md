@@ -478,6 +478,8 @@ declare namespace Converters_8 {
         recipeDerivation,
         recipeProcedureRef,
         recipeProcedures,
+        recipeMoldRef,
+        recipeMolds,
         recipeVersion,
         recipeData,
         recipe,
@@ -1518,6 +1520,7 @@ interface IRecipe {
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly name: RecipeName;
+    readonly recipeMolds?: IRecipeMolds;
     readonly recipeProcedures?: IRecipeProcedures;
     readonly tags?: ReadonlyArray<string>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
@@ -1539,6 +1542,18 @@ interface IRecipeIngredient {
     readonly amount: Grams;
     readonly ingredientId: IngredientId;
     readonly notes?: string;
+}
+
+// @public
+interface IRecipeMoldRef {
+    readonly moldId: MoldId;
+    readonly notes?: string;
+}
+
+// @public
+interface IRecipeMolds {
+    readonly molds: ReadonlyArray<IRecipeMoldRef>;
+    readonly recommendedMoldId?: MoldId;
 }
 
 // @public
@@ -1796,6 +1811,7 @@ interface IRuntimeRecipe {
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly id: RecipeId;
     readonly latestVersion: IRuntimeRecipeVersion;
+    readonly molds?: IRuntimeRecipeMolds;
     readonly name: RecipeName;
     readonly procedures?: IResolvedRecipeProcedures;
     readonly raw: IRecipe;
@@ -1804,6 +1820,19 @@ interface IRuntimeRecipe {
     usesIngredient(ingredientId: IngredientId): boolean;
     readonly versionCount: number;
     readonly versions: ReadonlyArray<IRuntimeRecipeVersion>;
+}
+
+// @public
+interface IRuntimeRecipeMold {
+    readonly mold: Mold;
+    readonly notes?: string;
+    readonly raw: IRecipeMoldRef;
+}
+
+// @public
+interface IRuntimeRecipeMolds {
+    readonly molds: ReadonlyArray<IRuntimeRecipeMold>;
+    readonly recommendedMold?: Mold;
 }
 
 // @public
@@ -2066,6 +2095,7 @@ interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = T
 
 // @internal
 interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
+    getMold(id: string): Result<Mold>;
     getProcedure(id: string): Result<Procedure>;
     readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
 }
@@ -2538,6 +2568,8 @@ class Recipe implements IRecipe {
     // (undocumented)
     readonly name: RecipeName;
     // (undocumented)
+    readonly recipeMolds?: IRecipeMolds;
+    // (undocumented)
     readonly recipeProcedures?: IRecipeProcedures;
     // (undocumented)
     readonly tags?: ReadonlyArray<string>;
@@ -2623,6 +2655,16 @@ const recipeIngredient: Converter<IRecipeIngredient>;
 // @public
 type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeMoldRef: Converter<IRecipeMoldRef>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeMolds: Converter<IRecipeMolds>;
+
 // @public
 export type RecipeName = Brand<string, 'RecipeName'>;
 
@@ -2696,6 +2738,8 @@ declare namespace Recipes {
         IRecipeDerivation,
         IRecipeProcedureRef,
         IRecipeProcedures,
+        IRecipeMoldRef,
+        IRecipeMolds,
         IRecipe,
         IScaledRecipeIngredient,
         IScalingRef,
@@ -2904,6 +2948,8 @@ declare namespace Runtime {
         IRuntimeScaledRecipeVersion,
         IResolvedRecipeProcedure,
         IResolvedRecipeProcedures,
+        IRuntimeRecipeMold,
+        IRuntimeRecipeMolds,
         IRuntimeRecipe,
         IResolvedRecipeIngredient,
         IResolvedScaledIngredient,
@@ -2994,6 +3040,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
     getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    getMold(id: string): Result<Mold>;
     getProcedure(id: string): Result<Procedure>;
     // @internal
     _getRecipe(id: RecipeId): Result<RuntimeRecipe>;
@@ -3105,6 +3152,7 @@ class RuntimeRecipe implements IRuntimeRecipe {
     get goldenVersionSpec(): RecipeVersionSpec;
     get id(): RecipeId;
     get latestVersion(): RuntimeVersion;
+    get molds(): IRuntimeRecipeMolds | undefined;
     get name(): RecipeName;
     get procedures(): IResolvedRecipeProcedures | undefined;
     get raw(): IRecipe;

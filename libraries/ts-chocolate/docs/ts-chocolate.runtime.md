@@ -647,6 +647,28 @@ Note: Does not extend `IRecipe` because `versions` has a different type (resolve
 </td></tr>
 <tr><td>
 
+[IRuntimeRecipeMold](./ts-chocolate.runtime.iruntimerecipemold.md)
+
+
+</td><td>
+
+A runtime mold reference with the full mold object. Used in runtime recipes to provide direct access to mold details.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeRecipeMolds](./ts-chocolate.runtime.iruntimerecipemolds.md)
+
+
+</td><td>
+
+Collection of molds associated with a recipe at runtime.
+
+
+</td></tr>
+<tr><td>
+
 [IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
 
 

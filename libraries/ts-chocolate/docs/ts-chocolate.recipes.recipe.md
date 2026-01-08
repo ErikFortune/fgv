@@ -175,6 +175,27 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
+[recipeMolds?](./ts-chocolate.recipes.recipe.recipemolds.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeMolds](./ts-chocolate.recipes.irecipemolds.md)
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
+<tr><td>
+
 [recipeProcedures?](./ts-chocolate.recipes.recipe.recipeprocedures.md)
 
 

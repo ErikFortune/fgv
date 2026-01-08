@@ -209,6 +209,28 @@ Reference to an ingredient used in a recipe Uses composite IngredientId to suppo
 </td></tr>
 <tr><td>
 
+[IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)
+
+
+</td><td>
+
+Reference to a mold that can be used with a recipe. Contains the mold ID and optional notes.
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeMolds](./ts-chocolate.recipes.irecipemolds.md)
+
+
+</td><td>
+
+Collection of molds associated with a recipe.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)
 
 

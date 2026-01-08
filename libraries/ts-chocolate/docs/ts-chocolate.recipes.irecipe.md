@@ -163,6 +163,27 @@ Human-readable recipe name
 </td></tr>
 <tr><td>
 
+[recipeMolds?](./ts-chocolate.recipes.irecipe.recipemolds.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRecipeMolds](./ts-chocolate.recipes.irecipemolds.md)
+
+
+</td><td>
+
+_(Optional)_ Optional molds associated with this recipe. Contains available molds and the recommended default.
+
+
+</td></tr>
+<tr><td>
+
 [recipeProcedures?](./ts-chocolate.recipes.irecipe.recipeprocedures.md)
 
 

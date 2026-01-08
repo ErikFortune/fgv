@@ -189,6 +189,27 @@ Gets the latest version (by created date). Resolved lazily on first access.
 </td></tr>
 <tr><td>
 
+[molds](./ts-chocolate.runtime.runtimerecipe.molds.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRuntimeRecipeMolds](./ts-chocolate.runtime.iruntimerecipemolds.md) \| undefined
+
+
+</td><td>
+
+Molds associated with this recipe. Undefined if the recipe has no associated molds. Loaded lazily on first access.
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-chocolate.runtime.runtimerecipe.name.md)
 
 

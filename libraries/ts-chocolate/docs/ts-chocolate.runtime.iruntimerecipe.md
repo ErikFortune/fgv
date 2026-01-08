@@ -188,6 +188,27 @@ Gets the latest version (by created date).
 </td></tr>
 <tr><td>
 
+[molds?](./ts-chocolate.runtime.iruntimerecipe.molds.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRuntimeRecipeMolds](./ts-chocolate.runtime.iruntimerecipemolds.md)
+
+
+</td><td>
+
+_(Optional)_ Molds associated with this recipe. Undefined if the recipe has no associated molds.
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-chocolate.runtime.iruntimerecipe.name.md)
 
 

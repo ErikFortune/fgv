@@ -25,9 +25,10 @@
 
 import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@fgv/ts-utils';
 
-import { Helpers, IngredientId, ProcedureId, RecipeId, RecipeVersionId, Validation } from '../common';
+import { Helpers, IngredientId, MoldId, ProcedureId, RecipeId, RecipeVersionId, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
 import { IJournalRecord, JournalLibrary } from '../journal';
+import { Mold } from '../molds';
 import { Procedure } from '../procedures';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
@@ -315,6 +316,16 @@ export class RuntimeContext
    */
   public getProcedure(id: string): Result<Procedure> {
     return this._library.getProcedure(id as ProcedureId);
+  }
+
+  /**
+   * Gets a mold by its composite ID.
+   * Used internally by RuntimeRecipe for mold resolution.
+   * @param id - The mold ID (composite format: sourceId.baseMoldId)
+   * @returns Success with Mold, or Failure if not found
+   */
+  public getMold(id: string): Result<Mold> {
+    return this._library.getMold(id as MoldId);
   }
 
   // ============================================================================

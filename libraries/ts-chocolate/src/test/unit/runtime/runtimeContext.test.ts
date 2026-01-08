@@ -22,13 +22,16 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
+  BaseMoldId,
   BaseProcedureId,
   BaseRecipeId,
   Celsius,
   Grams,
   IngredientId,
   JournalId,
+  Millimeters,
   Minutes,
+  MoldId,
   Percentage,
   ProcedureId,
   RecipeId,
@@ -45,8 +48,9 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
+import { IMold, Mold, MoldsLibrary } from '../../../packlets/molds';
 import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
-import { IRecipe, IRecipeProcedures, RecipesLibrary } from '../../../packlets/recipes';
+import { IRecipe, IRecipeMolds, IRecipeProcedures, RecipesLibrary } from '../../../packlets/recipes';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeContext', () => {
@@ -246,6 +250,86 @@ describe('RuntimeContext', () => {
     ],
     recipeProcedures: {
       procedures: [{ procedureId: 'test.nonexistent-procedure' as ProcedureId }]
+    }
+  };
+
+  // Mold test data
+  const pralineMold: IMold = {
+    baseId: 'cw-2227' as BaseMoldId,
+    manufacturer: 'Chocolate World',
+    productNumber: 'CW 2227',
+    description: 'Hex Swirl',
+    cavityCount: 32,
+    cavityWeight: 10 as Grams,
+    cavityDimensions: {
+      width: 30 as Millimeters,
+      length: 30 as Millimeters,
+      depth: 16 as Millimeters
+    },
+    format: 'series-2000',
+    tags: ['praline', 'hex-swirl']
+  };
+
+  const barMold: IMold = {
+    baseId: 'cw-1000' as BaseMoldId,
+    manufacturer: 'Chocolate World',
+    productNumber: 'CW 1000',
+    description: 'Classic Bar',
+    cavityCount: 4,
+    cavityWeight: 50 as Grams,
+    format: 'series-1000',
+    tags: ['bar', 'classic']
+  };
+
+  // Recipe with molds
+  const recipeWithMolds: IRecipeMolds = {
+    molds: [
+      { moldId: 'test.cw-2227' as MoldId, notes: 'Ideal for this recipe' },
+      { moldId: 'test.cw-1000' as MoldId }
+    ],
+    recommendedMoldId: 'test.cw-2227' as MoldId
+  };
+
+  const darkGanacheWithMoldsRecipe: IRecipe = {
+    baseId: 'dark-ganache-with-molds' as BaseRecipeId,
+    name: 'Dark Ganache with Molds' as RecipeName,
+    category: 'ganache',
+    description: 'A dark ganache with linked molds',
+    tags: ['classic', 'dark'],
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [
+          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
+          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+        ],
+        baseWeight: 300 as Grams
+      }
+    ],
+    recipeMolds: recipeWithMolds
+  };
+
+  // Recipe with missing mold reference (for error handling test)
+  const recipeWithMissingMold: IRecipe = {
+    baseId: 'ganache-missing-mold' as BaseRecipeId,
+    name: 'Ganache Missing Mold' as RecipeName,
+    category: 'ganache',
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [
+          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
+          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+        ],
+        baseWeight: 300 as Grams
+      }
+    ],
+    recipeMolds: {
+      molds: [{ moldId: 'test.nonexistent-mold' as MoldId }]
     }
   };
 
@@ -860,6 +944,129 @@ describe('RuntimeContext', () => {
           expect(procs1).toBe(procs2); // Same object reference
         }
       );
+    });
+  });
+
+  // ============================================================================
+  // Runtime Recipe Molds Tests
+  // ============================================================================
+
+  describe('runtime recipe molds', () => {
+    let libraryWithMolds: ChocolateLibrary;
+
+    beforeEach(() => {
+      // Create molds library
+      const pralineMoldObj = Mold.create(pralineMold).orThrow();
+      const barMoldObj = Mold.create(barMold).orThrow();
+      const molds = MoldsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as SourceId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'cw-2227': pralineMoldObj,
+              'cw-1000': barMoldObj
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      // Create recipes library with mold references
+      const recipes = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as SourceId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-ganache': darkGanacheRecipe, // No molds
+              'dark-ganache-with-molds': darkGanacheWithMoldsRecipe,
+              'ganache-missing-mold': recipeWithMissingMold
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      libraryWithMolds = ChocolateLibrary.create({
+        builtin: false,
+        libraries: {
+          ingredients: library.ingredients,
+          recipes,
+          molds
+        }
+      }).orThrow();
+    });
+
+    test('recipe without molds returns undefined', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        expect(recipe.molds).toBeUndefined();
+      });
+    });
+
+    test('recipe with molds resolves mold objects', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache-with-molds' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        expect(recipe.molds).toBeDefined();
+        expect(recipe.molds!.molds).toHaveLength(2);
+
+        // Check first mold (praline)
+        const pralineResolved = recipe.molds!.molds[0];
+        expect(pralineResolved.mold.productNumber).toBe('CW 2227');
+        expect(pralineResolved.notes).toBe('Ideal for this recipe');
+        expect(pralineResolved.raw.moldId).toBe('test.cw-2227');
+
+        // Check second mold (bar)
+        const barResolved = recipe.molds!.molds[1];
+        expect(barResolved.mold.productNumber).toBe('CW 1000');
+        expect(barResolved.notes).toBeUndefined();
+      });
+    });
+
+    test('recipe with molds resolves recommended mold', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache-with-molds' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        expect(recipe.molds).toBeDefined();
+        expect(recipe.molds!.recommendedMold).toBeDefined();
+        expect(recipe.molds!.recommendedMold!.productNumber).toBe('CW 2227');
+      });
+    });
+
+    test('recipe with missing mold reference returns undefined molds', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.recipes.get('test.ganache-missing-mold' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        // When all mold references fail to resolve, molds returns undefined
+        expect(recipe.molds).toBeUndefined();
+      });
+    });
+
+    test('getMold returns mold by id', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.getMold('test.cw-2227')).toSucceedAndSatisfy((mold) => {
+        expect(mold.productNumber).toBe('CW 2227');
+        expect(mold.cavityCount).toBe(32);
+      });
+    });
+
+    test('getMold fails for non-existent mold', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.getMold('test.nonexistent')).toFail();
+    });
+
+    test('molds are lazily resolved and cached', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithMolds).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache-with-molds' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        // First access
+        const molds1 = recipe.molds;
+        // Second access should return cached value
+        const molds2 = recipe.molds;
+        expect(molds1).toBe(molds2); // Same object reference
+      });
     });
   });
 });

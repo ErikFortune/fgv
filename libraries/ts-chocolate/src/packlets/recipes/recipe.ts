@@ -26,7 +26,14 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { BaseRecipeId, RecipeName, RecipeVersionSpec } from '../common';
-import { IRecipe, IRecipeDerivation, IRecipeProcedures, IRecipeVersion, RecipeCategory } from './model';
+import {
+  IRecipe,
+  IRecipeDerivation,
+  IRecipeMolds,
+  IRecipeProcedures,
+  IRecipeVersion,
+  RecipeCategory
+} from './model';
 
 // ============================================================================
 // Recipe Class
@@ -46,6 +53,7 @@ export class Recipe implements IRecipe {
   public readonly goldenVersionSpec: RecipeVersionSpec;
   public readonly derivedFrom?: IRecipeDerivation;
   public readonly recipeProcedures?: IRecipeProcedures;
+  public readonly recipeMolds?: IRecipeMolds;
 
   public readonly goldenVersion: IRecipeVersion;
 
@@ -59,6 +67,7 @@ export class Recipe implements IRecipe {
     this.goldenVersionSpec = data.goldenVersionSpec;
     this.derivedFrom = data.derivedFrom;
     this.recipeProcedures = data.recipeProcedures;
+    this.recipeMolds = data.recipeMolds;
     this.goldenVersion = goldenVersion;
   }
 

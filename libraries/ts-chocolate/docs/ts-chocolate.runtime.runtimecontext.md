@@ -322,6 +322,20 @@ Gets all journal records for a specific recipe version.
 </td></tr>
 <tr><td>
 
+[getMold(id)](./ts-chocolate.runtime.runtimecontext.getmold.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a mold by its composite ID. Used internally by RuntimeRecipe for mold resolution.
+
+
+</td></tr>
+<tr><td>
+
 [getProcedure(id)](./ts-chocolate.runtime.runtimecontext.getprocedure.md)
 
 

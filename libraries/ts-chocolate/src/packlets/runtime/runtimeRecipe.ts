@@ -39,6 +39,8 @@ import {
   IResolvedRecipeProcedure,
   IResolvedRecipeProcedures,
   IRuntimeRecipe,
+  IRuntimeRecipeMold,
+  IRuntimeRecipeMolds,
   IVersionContext
 } from './model';
 import { RuntimeVersion } from './runtimeVersion';
@@ -69,6 +71,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   private _latestVersion: RuntimeVersion | undefined;
   private _allIngredientIds: Set<IngredientId> | undefined;
   private _procedures: IResolvedRecipeProcedures | undefined | null; // null = no procedures
+  private _molds: IRuntimeRecipeMolds | undefined | null; // null = no molds
 
   /**
    * Creates a RuntimeRecipe.
@@ -317,6 +320,66 @@ export class RuntimeRecipe implements IRuntimeRecipe {
     return {
       procedures: resolvedProcedures,
       recommendedProcedure
+    };
+  }
+
+  // ============================================================================
+  // Molds (lazy)
+  // ============================================================================
+
+  /**
+   * Molds associated with this recipe.
+   * Undefined if the recipe has no associated molds.
+   * Loaded lazily on first access.
+   */
+  public get molds(): IRuntimeRecipeMolds | undefined {
+    // Use null to distinguish "not yet loaded" from "no molds"
+    if (this._molds === undefined) {
+      this._molds = this._loadMolds();
+    }
+    return this._molds ?? undefined;
+  }
+
+  /**
+   * Loads mold references to full mold objects.
+   * @returns Runtime molds, or null if recipe has no molds
+   */
+  private _loadMolds(): IRuntimeRecipeMolds | null {
+    const rawMolds = this._recipe.recipeMolds;
+    if (!rawMolds || rawMolds.molds.length === 0) {
+      return null;
+    }
+
+    const runtimeMolds: IRuntimeRecipeMold[] = [];
+    for (const ref of rawMolds.molds) {
+      const moldResult = this._context.getMold(ref.moldId);
+      if (moldResult.isSuccess()) {
+        runtimeMolds.push({
+          mold: moldResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip molds that fail to load (e.g., missing from library)
+    }
+
+    // Load recommended mold if specified
+    let recommendedMold = undefined;
+    if (rawMolds.recommendedMoldId) {
+      const recommendedResult = this._context.getMold(rawMolds.recommendedMoldId);
+      if (recommendedResult.isSuccess()) {
+        recommendedMold = recommendedResult.value;
+      }
+    }
+
+    // Return null if all molds failed to load
+    if (runtimeMolds.length === 0 && !recommendedMold) {
+      return null;
+    }
+
+    return {
+      molds: runtimeMolds,
+      recommendedMold
     };
   }
 

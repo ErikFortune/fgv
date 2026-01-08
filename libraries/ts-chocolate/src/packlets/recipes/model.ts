@@ -27,6 +27,7 @@ import {
   BaseRecipeId,
   Grams,
   IngredientId,
+  MoldId,
   ProcedureId,
   RatingScore,
   RecipeName,
@@ -250,6 +251,39 @@ export interface IRecipeProcedures {
 }
 
 /**
+ * Reference to a mold that can be used with a recipe.
+ * Contains the mold ID and optional notes.
+ * @public
+ */
+export interface IRecipeMoldRef {
+  /**
+   * Composite mold ID (e.g., "common.chocolate-world-cw-2227")
+   */
+  readonly moldId: MoldId;
+
+  /**
+   * Optional notes specific to using this mold with the recipe
+   */
+  readonly notes?: string;
+}
+
+/**
+ * Collection of molds associated with a recipe.
+ * @public
+ */
+export interface IRecipeMolds {
+  /**
+   * Available molds for this recipe
+   */
+  readonly molds: ReadonlyArray<IRecipeMoldRef>;
+
+  /**
+   * ID of the recommended/default mold
+   */
+  readonly recommendedMoldId?: MoldId;
+}
+
+/**
  * Complete recipe with version history
  * @public
  */
@@ -300,6 +334,12 @@ export interface IRecipe {
    * Contains available procedures and the recommended default.
    */
   readonly recipeProcedures?: IRecipeProcedures;
+
+  /**
+   * Optional molds associated with this recipe.
+   * Contains available molds and the recommended default.
+   */
+  readonly recipeMolds?: IRecipeMolds;
 }
 
 /**

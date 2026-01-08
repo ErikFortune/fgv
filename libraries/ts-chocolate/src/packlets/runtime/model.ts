@@ -68,6 +68,7 @@ import {
   IComputedScaledRecipe,
   IRecipe,
   IRecipeIngredient,
+  IRecipeMoldRef,
   IRecipeProcedureRef,
   IRecipeVersion,
   IScaledRecipeIngredient,
@@ -77,6 +78,7 @@ import {
 import { IJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
+import { Mold } from '../molds';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================
@@ -676,6 +678,49 @@ export interface IResolvedRecipeProcedures {
 }
 
 // ============================================================================
+// Runtime Mold Reference
+// ============================================================================
+
+/**
+ * A runtime mold reference with the full mold object.
+ * Used in runtime recipes to provide direct access to mold details.
+ * @public
+ */
+export interface IRuntimeRecipeMold {
+  /**
+   * The mold object.
+   */
+  readonly mold: Mold;
+
+  /**
+   * Optional notes specific to using this mold with the recipe.
+   */
+  readonly notes?: string;
+
+  /**
+   * The original raw mold reference data.
+   */
+  readonly raw: IRecipeMoldRef;
+}
+
+/**
+ * Collection of molds associated with a recipe at runtime.
+ * @public
+ */
+export interface IRuntimeRecipeMolds {
+  /**
+   * Available molds for this recipe.
+   */
+  readonly molds: ReadonlyArray<IRuntimeRecipeMold>;
+
+  /**
+   * The recommended/default mold.
+   * Undefined if no recommended mold is specified.
+   */
+  readonly recommendedMold?: Mold;
+}
+
+// ============================================================================
 // Runtime Recipe Interface
 // ============================================================================
 
@@ -785,6 +830,14 @@ export interface IRuntimeRecipe {
    * Undefined if the recipe has no associated procedures.
    */
   readonly procedures?: IResolvedRecipeProcedures;
+
+  // ---- Molds ----
+
+  /**
+   * Molds associated with this recipe.
+   * Undefined if the recipe has no associated molds.
+   */
+  readonly molds?: IRuntimeRecipeMolds;
 
   // ---- Raw access ----
 
@@ -1030,6 +1083,8 @@ export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRunti
   readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
   /** Gets a procedure by its composite ID. */
   getProcedure(id: string): Result<Procedure>;
+  /** Gets a mold by its composite ID. */
+  getMold(id: string): Result<Mold>;
 }
 
 /**

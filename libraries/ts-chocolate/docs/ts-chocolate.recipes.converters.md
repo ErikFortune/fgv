@@ -107,6 +107,28 @@ Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!
 </td></tr>
 <tr><td>
 
+[recipeMoldRef](./ts-chocolate.recipes.converters.recipemoldref.md)
+
+
+</td><td>
+
+Converter for [IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)
+
+
+</td></tr>
+<tr><td>
+
+[recipeMolds](./ts-chocolate.recipes.converters.recipemolds.md)
+
+
+</td><td>
+
+Converter for [IRecipeMolds](./ts-chocolate.recipes.irecipemolds.md)
+
+
+</td></tr>
+<tr><td>
+
 [recipeProcedureRef](./ts-chocolate.recipes.converters.recipeprocedureref.md)
 
 
