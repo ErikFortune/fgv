@@ -207,11 +207,12 @@ describe('BuiltInData', () => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const names = children.map((c) => c.name).sort();
           expect(names).toContain('common.json');
+          expect(names).toContain('cw.json');
         });
       });
     });
 
-    test('common.json contains expected molds', () => {
+    test('common.json contains expected generic molds', () => {
       expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const commonFile = children.find((c) => c.name === 'common.json');
@@ -220,6 +221,24 @@ describe('BuiltInData', () => {
 
           if (commonFile?.type === 'file') {
             expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['dome-25mm']).toBeDefined();
+              expect(sourceFile.items['dome-30mm']).toBeDefined();
+            });
+          }
+        });
+      });
+    });
+
+    test('cw.json contains Chocolate World molds', () => {
+      expect(BuiltInData.getMoldsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const cwFile = children.find((c) => c.name === 'cw.json');
+          expect(cwFile).toBeDefined();
+          expect(cwFile?.type).toBe('file');
+
+          if (cwFile?.type === 'file') {
+            expect(cwFile.getContents()).toSucceedAndSatisfy((contents) => {
               const sourceFile = contents as { items: Record<string, unknown> };
               expect(sourceFile.items['chocolate-world-cw-2227']).toBeDefined();
             });

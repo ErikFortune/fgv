@@ -69,7 +69,7 @@ export type IMoldsLibraryAsyncParams = ISubLibraryAsyncParams<MoldsLibrary, Mold
  * Multi-source mold library with type-safe access
  *
  * Wraps AggregatedResultMap to provide:
- * - Composite ID access (e.g., "common.chocolate-world-cw-2227")
+ * - Composite ID access (e.g., "cw.chocolate-world-cw-2227")
  * - Multi-source management (built-in, user, app-local, etc.)
  * - Mutable vs immutable collection distinction
  * - Weakly-typed validating access for external data

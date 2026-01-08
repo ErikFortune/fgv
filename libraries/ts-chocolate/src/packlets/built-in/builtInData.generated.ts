@@ -10,6 +10,7 @@
 //   - data/published/recipes/common.yaml
 //   - data/published/recipes/fgv.json
 //   - data/published/molds/common.yaml
+//   - data/published/molds/cw.yaml
 //   - data/published/procedures/common.yaml
 
 import { JsonObject } from '@fgv/ts-json-base';
@@ -1292,7 +1293,79 @@ export const moldCollections: Record<string, JsonObject> = {
   common: {
     metadata: {
       name: 'Common Molds',
-      description: 'Chocolate mold inventory'
+      description: 'Generic chocolate mold shapes'
+    },
+    items: {
+      'dome-25mm': {
+        baseId: 'dome-25mm',
+        manufacturer: 'Generic',
+        productNumber: 'DOME-25',
+        description: '25mm hemisphere dome',
+        cavityCount: 24,
+        cavityWeight: 8,
+        cavityDimensions: {
+          width: 25,
+          length: 25,
+          depth: 12
+        },
+        format: 'series-2000',
+        tags: ['dome', 'hemisphere', 'truffle'],
+        notes: 'Standard 25mm dome for truffles'
+      },
+      'dome-30mm': {
+        baseId: 'dome-30mm',
+        manufacturer: 'Generic',
+        productNumber: 'DOME-30',
+        description: '30mm hemisphere dome',
+        cavityCount: 15,
+        cavityWeight: 14,
+        cavityDimensions: {
+          width: 30,
+          length: 30,
+          depth: 15
+        },
+        format: 'series-2000',
+        tags: ['dome', 'hemisphere', 'truffle'],
+        notes: 'Standard 30mm dome for larger truffles'
+      },
+      'bullet-28mm': {
+        baseId: 'bullet-28mm',
+        manufacturer: 'Generic',
+        productNumber: 'BULLET-28',
+        description: '28mm bullet/ogive shape',
+        cavityCount: 21,
+        cavityWeight: 10,
+        cavityDimensions: {
+          width: 28,
+          length: 28,
+          depth: 18
+        },
+        format: 'series-2000',
+        tags: ['bullet', 'ogive', 'praline'],
+        notes: 'Classic bullet shape for pralines'
+      },
+      'square-25mm': {
+        baseId: 'square-25mm',
+        manufacturer: 'Generic',
+        productNumber: 'SQ-25',
+        description: '25mm square',
+        cavityCount: 24,
+        cavityWeight: 10,
+        cavityDimensions: {
+          width: 25,
+          length: 25,
+          depth: 16
+        },
+        format: 'series-2000',
+        tags: ['square', 'geometric'],
+        notes: 'Simple square mold for ganache'
+      }
+    }
+  },
+  cw: {
+    metadata: {
+      name: 'Chocolate World Molds',
+      description: 'Chocolate World polycarbonate molds'
     },
     items: {
       'chocolate-world-cw-2227': {

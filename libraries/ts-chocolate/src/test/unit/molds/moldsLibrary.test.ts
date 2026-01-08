@@ -67,7 +67,7 @@ describe('MoldsLibrary', () => {
     test('creates library with built-ins by default', () => {
       expect(MoldsLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.size).toBeGreaterThan(0);
-        expect(lib.collectionCount).toBe(1); // common.yaml
+        expect(lib.collectionCount).toBe(2); // common.yaml + cw.yaml
       });
     });
 
@@ -105,9 +105,9 @@ describe('MoldsLibrary', () => {
       });
 
       expect(result).toSucceedAndSatisfy((lib) => {
-        expect(lib.collectionCount).toBe(2); // 1 built-in + 1 custom
+        expect(lib.collectionCount).toBe(3); // 2 built-in + 1 custom
         expect(lib.validating.has('test.testMold')).toBe(true);
-        expect(lib.validating.has('common.chocolate-world-cw-2227')).toBe(true);
+        expect(lib.validating.has('cw.chocolate-world-cw-2227')).toBe(true);
       });
     });
   });
@@ -124,7 +124,7 @@ describe('MoldsLibrary', () => {
     });
 
     test('gets existing mold', () => {
-      const id = 'common.chocolate-world-cw-2227';
+      const id = 'cw.chocolate-world-cw-2227';
       expect(library.validating.get(id)).toSucceedAndSatisfy((mold) => {
         expect(mold.manufacturer).toBe('Chocolate World');
       });
@@ -136,7 +136,7 @@ describe('MoldsLibrary', () => {
     });
 
     test('has returns true for existing mold', () => {
-      expect(library.has('common.chocolate-world-cw-2227' as MoldId)).toBe(true);
+      expect(library.has('cw.chocolate-world-cw-2227' as MoldId)).toBe(true);
     });
 
     test('has returns false for non-existent mold', () => {

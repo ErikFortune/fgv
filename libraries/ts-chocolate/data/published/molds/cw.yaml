@@ -1,0 +1,20 @@
+# Chocolate World molds collection
+
+metadata:
+  name: Chocolate World Molds
+  description: Chocolate World polycarbonate molds
+
+items:
+  chocolate-world-cw-2227:
+    baseId: chocolate-world-cw-2227
+    manufacturer: Chocolate World
+    productNumber: CW 2227
+    description: Hex Swirl
+    cavityCount: 32
+    cavityWeight: 10
+    cavityDimensions:
+      width: 30
+      length: 30
+      depth: 16
+    format: series-2000
+    tags: [hex-swirl, praline]
