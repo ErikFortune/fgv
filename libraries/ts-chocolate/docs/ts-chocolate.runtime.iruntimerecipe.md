@@ -6,7 +6,7 @@
 
 A resolved runtime view of a recipe with navigation and version access.
 
-This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries
+This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
 
 Note: Does not extend `IRecipe` because `versions` has a different type (resolved vs raw versions).
 
@@ -204,6 +204,27 @@ Gets the latest version (by created date).
 </td><td>
 
 Human-readable recipe name.
+
+
+</td></tr>
+<tr><td>
+
+[procedures?](./ts-chocolate.runtime.iruntimerecipe.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedRecipeProcedures](./ts-chocolate.runtime.iresolvedrecipeprocedures.md)
+
+
+</td><td>
+
+_(Optional)_ Resolved procedures associated with this recipe. Undefined if the recipe has no associated procedures.
 
 
 </td></tr>

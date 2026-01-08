@@ -322,6 +322,20 @@ Gets all journal records for a specific recipe version.
 </td></tr>
 <tr><td>
 
+[getProcedure(id)](./ts-chocolate.runtime.runtimecontext.getprocedure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+
+
+</td></tr>
+<tr><td>
+
 [invalidateIndexers()](./ts-chocolate.runtime.runtimecontext.invalidateindexers.md)
 
 

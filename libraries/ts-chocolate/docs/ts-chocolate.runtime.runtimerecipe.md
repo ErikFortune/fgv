@@ -210,6 +210,27 @@ Human-readable recipe name
 </td></tr>
 <tr><td>
 
+[procedures](./ts-chocolate.runtime.runtimerecipe.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedRecipeProcedures](./ts-chocolate.runtime.iresolvedrecipeprocedures.md) \| undefined
+
+
+</td><td>
+
+Resolved procedures associated with this recipe. Undefined if the recipe has no associated procedures. Resolved lazily on first access.
+
+
+</td></tr>
+<tr><td>
+
 [raw](./ts-chocolate.runtime.runtimerecipe.raw.md)
 
 

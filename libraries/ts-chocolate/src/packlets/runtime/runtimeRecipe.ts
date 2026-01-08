@@ -35,7 +35,12 @@ import {
   SourceId
 } from '../common';
 import { IRecipe, Recipe } from '../recipes';
-import { IRuntimeRecipe, IVersionContext } from './model';
+import {
+  IResolvedRecipeProcedure,
+  IResolvedRecipeProcedures,
+  IRuntimeRecipe,
+  IVersionContext
+} from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';
 
@@ -63,6 +68,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   private _versions: ReadonlyArray<RuntimeVersion> | undefined;
   private _latestVersion: RuntimeVersion | undefined;
   private _allIngredientIds: Set<IngredientId> | undefined;
+  private _procedures: IResolvedRecipeProcedures | undefined | null; // null = no procedures
 
   /**
    * Creates a RuntimeRecipe.
@@ -252,6 +258,66 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   public usesIngredient(ingredientId: IngredientId): boolean {
     return this.allIngredientIds.has(ingredientId);
+  }
+
+  // ============================================================================
+  // Procedures (lazy)
+  // ============================================================================
+
+  /**
+   * Resolved procedures associated with this recipe.
+   * Undefined if the recipe has no associated procedures.
+   * Resolved lazily on first access.
+   */
+  public get procedures(): IResolvedRecipeProcedures | undefined {
+    // Use null to distinguish "not yet resolved" from "no procedures"
+    if (this._procedures === undefined) {
+      this._procedures = this._resolveProcedures();
+    }
+    return this._procedures ?? undefined;
+  }
+
+  /**
+   * Resolves procedure references to full procedure objects.
+   * @returns Resolved procedures, or null if recipe has no procedures
+   */
+  private _resolveProcedures(): IResolvedRecipeProcedures | null {
+    const rawProcedures = this._recipe.recipeProcedures;
+    if (!rawProcedures || rawProcedures.procedures.length === 0) {
+      return null;
+    }
+
+    const resolvedProcedures: IResolvedRecipeProcedure[] = [];
+    for (const ref of rawProcedures.procedures) {
+      const procedureResult = this._context.getProcedure(ref.procedureId);
+      if (procedureResult.isSuccess()) {
+        resolvedProcedures.push({
+          procedure: procedureResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip procedures that fail to resolve (e.g., missing from library)
+    }
+
+    // Resolve recommended procedure if specified
+    let recommendedProcedure = undefined;
+    if (rawProcedures.recommendedProcedureId) {
+      const recommendedResult = this._context.getProcedure(rawProcedures.recommendedProcedureId);
+      if (recommendedResult.isSuccess()) {
+        recommendedProcedure = recommendedResult.value;
+      }
+    }
+
+    // Return null if all procedures failed to resolve
+    if (resolvedProcedures.length === 0 && !recommendedProcedure) {
+      return null;
+    }
+
+    return {
+      procedures: resolvedProcedures,
+      recommendedProcedure
+    };
   }
 
   // ============================================================================

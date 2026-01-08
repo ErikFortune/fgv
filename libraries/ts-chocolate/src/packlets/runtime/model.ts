@@ -68,6 +68,7 @@ import {
   IComputedScaledRecipe,
   IRecipe,
   IRecipeIngredient,
+  IRecipeProcedureRef,
   IRecipeVersion,
   IScaledRecipeIngredient,
   IVersionScaleOptions,
@@ -75,6 +76,7 @@ import {
 } from '../recipes';
 import { IJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
+import { Procedure } from '../procedures';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================
@@ -631,6 +633,49 @@ export interface IRuntimeScaledRecipeVersion {
 }
 
 // ============================================================================
+// Runtime Procedure Reference
+// ============================================================================
+
+/**
+ * A resolved procedure reference with the full procedure object.
+ * Used in runtime recipes to provide direct access to procedure details.
+ * @public
+ */
+export interface IResolvedRecipeProcedure {
+  /**
+   * The fully resolved procedure object.
+   */
+  readonly procedure: Procedure;
+
+  /**
+   * Optional notes specific to using this procedure with the recipe.
+   */
+  readonly notes?: string;
+
+  /**
+   * The original raw procedure reference data.
+   */
+  readonly raw: IRecipeProcedureRef;
+}
+
+/**
+ * Collection of resolved procedures associated with a recipe.
+ * @public
+ */
+export interface IResolvedRecipeProcedures {
+  /**
+   * Available procedures for this recipe - fully resolved.
+   */
+  readonly procedures: ReadonlyArray<IResolvedRecipeProcedure>;
+
+  /**
+   * The recommended/default procedure - fully resolved.
+   * Undefined if no recommended procedure is specified.
+   */
+  readonly recommendedProcedure?: Procedure;
+}
+
+// ============================================================================
 // Runtime Recipe Interface
 // ============================================================================
 
@@ -642,6 +687,7 @@ export interface IRuntimeScaledRecipeVersion {
  * - Resolved version access (full objects, not just raw data)
  * - Scaling and calculation operations
  * - Usage and ingredient queries
+ * - Resolved procedure access
  *
  * Note: Does not extend `IRecipe` because `versions` has a different
  * type (resolved vs raw versions).
@@ -731,6 +777,14 @@ export interface IRuntimeRecipe {
    * @returns True if the ingredient is used in any version
    */
   usesIngredient(ingredientId: IngredientId): boolean;
+
+  // ---- Procedures (resolved) ----
+
+  /**
+   * Resolved procedures associated with this recipe.
+   * Undefined if the recipe has no associated procedures.
+   */
+  readonly procedures?: IResolvedRecipeProcedures;
 
   // ---- Raw access ----
 
@@ -974,6 +1028,8 @@ export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRunti
   extends IScaledVersionContext<TIngredient> {
   /** Map of all recipes, keyed by composite ID. */
   readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
+  /** Gets a procedure by its composite ID. */
+  getProcedure(id: string): Result<Procedure>;
 }
 
 /**

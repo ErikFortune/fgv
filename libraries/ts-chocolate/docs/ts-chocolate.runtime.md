@@ -514,6 +514,28 @@ A resolved ingredient reference with full ingredient data and alternates. This i
 </td></tr>
 <tr><td>
 
+[IResolvedRecipeProcedure](./ts-chocolate.runtime.iresolvedrecipeprocedure.md)
+
+
+</td><td>
+
+A resolved procedure reference with the full procedure object. Used in runtime recipes to provide direct access to procedure details.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedRecipeProcedures](./ts-chocolate.runtime.iresolvedrecipeprocedures.md)
+
+
+</td><td>
+
+Collection of resolved procedures associated with a recipe.
+
+
+</td></tr>
+<tr><td>
+
 [IResolvedScaledIngredient](./ts-chocolate.runtime.iresolvedscaledingredient.md)
 
 
@@ -617,7 +639,7 @@ Note: Does not extend `IIngredient` directly because the class implementation pr
 
 A resolved runtime view of a recipe with navigation and version access.
 
-This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries
+This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
 
 Note: Does not extend `IRecipe` because `versions` has a different type (resolved vs raw versions).
 

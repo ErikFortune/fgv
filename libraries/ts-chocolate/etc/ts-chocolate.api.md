@@ -1658,6 +1658,19 @@ interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredient = IRu
 }
 
 // @public
+interface IResolvedRecipeProcedure {
+    readonly notes?: string;
+    readonly procedure: Procedure;
+    readonly raw: IRecipeProcedureRef;
+}
+
+// @public
+interface IResolvedRecipeProcedures {
+    readonly procedures: ReadonlyArray<IResolvedRecipeProcedure>;
+    readonly recommendedProcedure?: Procedure;
+}
+
+// @public
 interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Grams;
@@ -1784,6 +1797,7 @@ interface IRuntimeRecipe {
     readonly id: RecipeId;
     readonly latestVersion: IRuntimeRecipeVersion;
     readonly name: RecipeName;
+    readonly procedures?: IResolvedRecipeProcedures;
     readonly raw: IRecipe;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
@@ -2052,6 +2066,7 @@ interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = T
 
 // @internal
 interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
+    getProcedure(id: string): Result<Procedure>;
     readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
 }
 
@@ -2887,6 +2902,8 @@ declare namespace Runtime {
         IRuntimeRecipeVersion,
         IRuntimeScalingSource,
         IRuntimeScaledRecipeVersion,
+        IResolvedRecipeProcedure,
+        IResolvedRecipeProcedures,
         IRuntimeRecipe,
         IResolvedRecipeIngredient,
         IResolvedScaledIngredient,
@@ -2977,6 +2994,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
     getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    getProcedure(id: string): Result<Procedure>;
     // @internal
     _getRecipe(id: RecipeId): Result<RuntimeRecipe>;
     // @internal
@@ -3088,6 +3106,7 @@ class RuntimeRecipe implements IRuntimeRecipe {
     get id(): RecipeId;
     get latestVersion(): RuntimeVersion;
     get name(): RecipeName;
+    get procedures(): IResolvedRecipeProcedures | undefined;
     get raw(): IRecipe;
     get rawAsRecipe(): Recipe | undefined;
     get sourceId(): SourceId;

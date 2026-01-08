@@ -22,11 +22,15 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
+  BaseProcedureId,
   BaseRecipeId,
+  Celsius,
   Grams,
   IngredientId,
   JournalId,
+  Minutes,
   Percentage,
+  ProcedureId,
   RecipeId,
   RecipeName,
   RecipeVersionId,
@@ -41,7 +45,8 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
+import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
+import { IRecipe, IRecipeProcedures, RecipesLibrary } from '../../../packlets/recipes';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeContext', () => {
@@ -157,6 +162,91 @@ describe('RuntimeContext', () => {
         baseWeight: 350 as Grams
       }
     ]
+  };
+
+  // Procedure test data
+  const coldMethodProcedure: IProcedure = {
+    baseId: 'ganache-cold-method' as BaseProcedureId,
+    name: 'Ganache (Cold Method)',
+    description: 'Cold method for making ganache',
+    category: 'ganache',
+    steps: [
+      {
+        order: 1,
+        description: 'Melt chocolate to 40-45C',
+        activeTime: 5 as Minutes,
+        temperature: 45 as Celsius
+      },
+      { order: 2, description: 'Warm cream to 35C', activeTime: 3 as Minutes, temperature: 35 as Celsius },
+      { order: 3, description: 'Combine and emulsify', activeTime: 5 as Minutes },
+      { order: 4, description: 'Rest at room temperature', waitTime: 30 as Minutes }
+    ],
+    tags: ['ganache', 'cold-process']
+  };
+
+  const hotMethodProcedure: IProcedure = {
+    baseId: 'ganache-hot-method' as BaseProcedureId,
+    name: 'Ganache (Hot Method)',
+    description: 'Hot method for making ganache',
+    category: 'ganache',
+    steps: [
+      { order: 1, description: 'Bring cream to boil', activeTime: 5 as Minutes, temperature: 100 as Celsius },
+      { order: 2, description: 'Pour over chocolate', activeTime: 2 as Minutes },
+      { order: 3, description: 'Stir to emulsify', activeTime: 5 as Minutes }
+    ],
+    tags: ['ganache', 'hot-process']
+  };
+
+  // Recipe with procedures
+  const recipeWithProcedures: IRecipeProcedures = {
+    procedures: [
+      { procedureId: 'test.ganache-cold-method' as ProcedureId, notes: 'Preferred method for this recipe' },
+      { procedureId: 'test.ganache-hot-method' as ProcedureId }
+    ],
+    recommendedProcedureId: 'test.ganache-cold-method' as ProcedureId
+  };
+
+  const darkGanacheWithProceduresRecipe: IRecipe = {
+    baseId: 'dark-ganache-with-procedures' as BaseRecipeId,
+    name: 'Dark Ganache with Procedures' as RecipeName,
+    category: 'ganache',
+    description: 'A dark ganache with linked procedures',
+    tags: ['classic', 'dark'],
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [
+          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
+          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+        ],
+        baseWeight: 300 as Grams
+      }
+    ],
+    recipeProcedures: recipeWithProcedures
+  };
+
+  // Recipe with missing procedure reference (for error handling test)
+  const recipeWithMissingProcedure: IRecipe = {
+    baseId: 'ganache-missing-proc' as BaseRecipeId,
+    name: 'Ganache Missing Proc' as RecipeName,
+    category: 'ganache',
+    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    versions: [
+      {
+        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [
+          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
+          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+        ],
+        baseWeight: 300 as Grams
+      }
+    ],
+    recipeProcedures: {
+      procedures: [{ procedureId: 'test.nonexistent-procedure' as ProcedureId }]
+    }
   };
 
   let library: ChocolateLibrary;
@@ -641,6 +731,135 @@ describe('RuntimeContext', () => {
       const ctx = RuntimeContext.fromLibrary(library).orThrow();
       const journals = ctx.getJournalsForVersion('test.dark-ganache@2026-01-01-01' as RecipeVersionId);
       expect(journals).toEqual([]);
+    });
+  });
+
+  // ============================================================================
+  // Runtime Recipe Procedures Tests
+  // ============================================================================
+
+  describe('runtime recipe procedures', () => {
+    let libraryWithProcedures: ChocolateLibrary;
+
+    beforeEach(() => {
+      // Create procedures library
+      const coldProc = Procedure.create(coldMethodProcedure).orThrow();
+      const hotProc = Procedure.create(hotMethodProcedure).orThrow();
+      const procedures = ProceduresLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as SourceId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'ganache-cold-method': coldProc,
+              'ganache-hot-method': hotProc
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      // Create recipes library with procedure references
+      const recipes = RecipesLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as SourceId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'dark-ganache': darkGanacheRecipe, // No procedures
+              'dark-ganache-with-procedures': darkGanacheWithProceduresRecipe,
+              'ganache-missing-proc': recipeWithMissingProcedure
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      libraryWithProcedures = ChocolateLibrary.create({
+        builtin: false,
+        libraries: {
+          ingredients: library.ingredients,
+          recipes,
+          procedures
+        }
+      }).orThrow();
+    });
+
+    test('recipe without procedures returns undefined', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        expect(recipe.procedures).toBeUndefined();
+      });
+    });
+
+    test('recipe with procedures resolves procedure objects', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache-with-procedures' as RecipeId)).toSucceedAndSatisfy(
+        (recipe) => {
+          expect(recipe.procedures).toBeDefined();
+          expect(recipe.procedures!.procedures).toHaveLength(2);
+
+          // Check first procedure (cold method)
+          const coldResolved = recipe.procedures!.procedures[0];
+          expect(coldResolved.procedure.name).toBe('Ganache (Cold Method)');
+          expect(coldResolved.notes).toBe('Preferred method for this recipe');
+          expect(coldResolved.raw.procedureId).toBe('test.ganache-cold-method');
+
+          // Check second procedure (hot method)
+          const hotResolved = recipe.procedures!.procedures[1];
+          expect(hotResolved.procedure.name).toBe('Ganache (Hot Method)');
+          expect(hotResolved.notes).toBeUndefined();
+        }
+      );
+    });
+
+    test('recipe with procedures resolves recommended procedure', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache-with-procedures' as RecipeId)).toSucceedAndSatisfy(
+        (recipe) => {
+          expect(recipe.procedures).toBeDefined();
+          expect(recipe.procedures!.recommendedProcedure).toBeDefined();
+          expect(recipe.procedures!.recommendedProcedure!.name).toBe('Ganache (Cold Method)');
+        }
+      );
+    });
+
+    test('recipe with missing procedure reference returns undefined procedures', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.recipes.get('test.ganache-missing-proc' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+        // When all procedure references fail to resolve, procedures returns undefined
+        expect(recipe.procedures).toBeUndefined();
+      });
+    });
+
+    test('getProcedure returns procedure by id', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.getProcedure('test.ganache-cold-method')).toSucceedAndSatisfy((proc) => {
+        expect(proc.name).toBe('Ganache (Cold Method)');
+        expect(proc.steps).toHaveLength(4);
+      });
+    });
+
+    test('getProcedure fails for non-existent procedure', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.getProcedure('test.nonexistent')).toFail();
+    });
+
+    test('procedures are lazily resolved and cached', () => {
+      const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
+      expect(ctx.recipes.get('test.dark-ganache-with-procedures' as RecipeId)).toSucceedAndSatisfy(
+        (recipe) => {
+          // First access
+          const procs1 = recipe.procedures;
+          // Second access should return cached value
+          const procs2 = recipe.procedures;
+          expect(procs1).toBe(procs2); // Same object reference
+        }
+      );
     });
   });
 });

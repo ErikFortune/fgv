@@ -25,9 +25,10 @@
 
 import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@fgv/ts-utils';
 
-import { Helpers, IngredientId, RecipeId, RecipeVersionId, Validation } from '../common';
+import { Helpers, IngredientId, ProcedureId, RecipeId, RecipeVersionId, Validation } from '../common';
 import { IComputedScaledRecipe } from '../recipes';
 import { IJournalRecord, JournalLibrary } from '../journal';
+import { Procedure } from '../procedures';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
@@ -300,6 +301,20 @@ export class RuntimeContext
       const versionSpec = parsed.itemId;
       return this._getRecipe(recipeId).onSuccess((recipe) => recipe.getVersion(versionSpec));
     });
+  }
+
+  // ============================================================================
+  // Procedure Lookups (for RuntimeRecipe procedure resolution)
+  // ============================================================================
+
+  /**
+   * Gets a procedure by its composite ID.
+   * Used internally by RuntimeRecipe for procedure resolution.
+   * @param id - The procedure ID (composite format: sourceId.baseProcedureId)
+   * @returns Success with Procedure, or Failure if not found
+   */
+  public getProcedure(id: string): Result<Procedure> {
+    return this._library.getProcedure(id as ProcedureId);
   }
 
   // ============================================================================
