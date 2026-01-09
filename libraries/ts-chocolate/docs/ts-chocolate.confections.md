@@ -161,7 +161,7 @@ Description
 
 </td><td>
 
-Additional chocolate specification with purpose Used for seal chocolate, decoration chocolate, etc.
+Additional chocolate specification with purpose. Used for seal chocolate, decoration chocolate, etc.
 
 
 </td></tr>
@@ -184,28 +184,6 @@ Bar truffle confection Ganache slab cut into squares and enrobed
 </td><td>
 
 Single bonbon dimensions for bar truffle cutting
-
-
-</td></tr>
-<tr><td>
-
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
-
-
-</td><td>
-
-Chocolate specification for shell, enrobing, or coating
-
-
-</td></tr>
-<tr><td>
-
-[ICoatings](./ts-chocolate.confections.icoatings.md)
-
-
-</td><td>
-
-Coating specification for rolled truffles
 
 
 </td></tr>
@@ -498,6 +476,28 @@ Union type for filling option IDs. Can be either a RecipeId or IngredientId - di
 </td><td>
 
 Discriminator for filling option types
+
+
+</td></tr>
+<tr><td>
+
+[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+
+
+</td><td>
+
+Chocolate specification for shell, enrobing, or coating. Uses IIdsWithPreferred pattern - `ids` contains all valid chocolates, `preferredId` indicates the default/recommended one.
+
+
+</td></tr>
+<tr><td>
+
+[ICoatings](./ts-chocolate.confections.icoatings.md)
+
+
+</td><td>
+
+Coating specification for rolled truffles. Uses IIdsWithPreferred pattern - `ids` contains all valid coating ingredients, `preferredId` indicates the default/recommended one.
 
 
 </td></tr>

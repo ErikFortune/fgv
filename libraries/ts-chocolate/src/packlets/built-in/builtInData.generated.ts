@@ -1576,8 +1576,8 @@ export const confectionCollections: Record<string, JsonObject> = {
           preferredId: 'common.dome-25mm'
         },
         shellChocolate: {
-          ingredientId: 'cacao-barry.guayaquil-64',
-          alternateIngredientIds: ['common.chocolate-dark-64']
+          ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64'],
+          preferredId: 'cacao-barry.guayaquil-64'
         },
         versions: [
           {
@@ -1623,7 +1623,8 @@ export const confectionCollections: Record<string, JsonObject> = {
           height: 25
         },
         enrobingChocolate: {
-          ingredientId: 'cacao-barry.guayaquil-64'
+          ids: ['cacao-barry.guayaquil-64'],
+          preferredId: 'cacao-barry.guayaquil-64'
         },
         versions: [
           {
@@ -1660,12 +1661,8 @@ export const confectionCollections: Record<string, JsonObject> = {
           }
         ],
         coatings: {
-          ingredients: [
-            {
-              ingredientId: 'common.cocoa-powder'
-            }
-          ],
-          recommendedIngredientId: 'common.cocoa-powder'
+          ids: ['common.cocoa-powder'],
+          preferredId: 'common.cocoa-powder'
         },
         versions: [
           {

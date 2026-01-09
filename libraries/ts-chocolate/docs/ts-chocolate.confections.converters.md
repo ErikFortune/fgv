@@ -79,7 +79,7 @@ Converter for IBonBonDimensions
 
 </td><td>
 
-Converter for IChocolateSpec
+Converter for IChocolateSpec (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 
 </td></tr>
@@ -90,7 +90,7 @@ Converter for IChocolateSpec
 
 </td><td>
 
-Converter for ICoatings
+Converter for ICoatings (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 
 </td></tr>

@@ -2,80 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Confections](./ts-chocolate.confections.md) &gt; [ICoatings](./ts-chocolate.confections.icoatings.md)
 
-## Confections.ICoatings interface
+## Confections.ICoatings type
 
-Coating specification for rolled truffles
+Coating specification for rolled truffles. Uses IIdsWithPreferred pattern - `ids` contains all valid coating ingredients, `preferredId` indicates the default/recommended one.
 
 **Signature:**
 
 ```typescript
-export interface ICoatings 
+export type ICoatings = IIdsWithPreferred<IngredientId>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[ingredients](./ts-chocolate.confections.icoatings.ingredients.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)<!-- -->&gt;
-
-
-</td><td>
-
-Available coating ingredients
-
-
-</td></tr>
-<tr><td>
-
-[recommendedIngredientId?](./ts-chocolate.confections.icoatings.recommendedingredientid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IngredientId](./ts-chocolate.ingredientid.md)
-
-
-</td><td>
-
-_(Optional)_ Recommended coating ingredient ID
-
-
-</td></tr>
-</tbody></table>
+**References:** [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
 

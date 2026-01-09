@@ -4,7 +4,7 @@
 
 ## Confections.Converters.chocolateSpec variable
 
-Converter for IChocolateSpec
+Converter for IChocolateSpec (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 **Signature:**
 

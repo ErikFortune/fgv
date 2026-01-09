@@ -44,7 +44,7 @@ describe('ConfectionsLibrary', () => {
       options: [{ id: 'common.dome-25mm' }]
     },
     shellChocolate: {
-      ingredientId: 'common.chocolate-dark-64'
+      ids: ['common.chocolate-dark-64']
     },
     versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
   };

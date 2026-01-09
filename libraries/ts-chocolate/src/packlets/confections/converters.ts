@@ -140,21 +140,21 @@ export const fillingSlot: Converter<IFillingSlot> = Converters.object<IFillingSl
 // ============================================================================
 
 /**
- * Converter for IChocolateSpec
+ * Converter for IChocolateSpec (IIdsWithPreferred<IngredientId>).
+ * Validates that preferredId (if specified) exists in ids.
  * @public
  */
-export const chocolateSpec: Converter<IChocolateSpec> = Converters.object<IChocolateSpec>({
-  ingredientId: CommonConverters.ingredientId,
-  alternateIngredientIds: Converters.arrayOf(CommonConverters.ingredientId).optional()
-});
+export const chocolateSpec: Converter<IChocolateSpec> = CommonConverters.idsWithPreferred(
+  CommonConverters.ingredientId,
+  'chocolateSpec'
+);
 
 /**
  * Converter for IAdditionalChocolate
  * @public
  */
 export const additionalChocolate: Converter<IAdditionalChocolate> = Converters.object<IAdditionalChocolate>({
-  ingredientId: CommonConverters.ingredientId,
-  alternateIngredientIds: Converters.arrayOf(CommonConverters.ingredientId).optional(),
+  chocolate: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'additionalChocolate'),
   purpose: CommonConverters.additionalChocolatePurpose
 });
 
@@ -230,13 +230,14 @@ export const bonBonDimensions: Converter<IBonBonDimensions> = Converters.object<
 // ============================================================================
 
 /**
- * Converter for ICoatings
+ * Converter for ICoatings (IIdsWithPreferred<IngredientId>).
+ * Validates that preferredId (if specified) exists in ids.
  * @public
  */
-export const coatings: Converter<ICoatings> = Converters.object<ICoatings>({
-  ingredients: Converters.arrayOf(chocolateSpec),
-  recommendedIngredientId: CommonConverters.ingredientId.optional()
-});
+export const coatings: Converter<ICoatings> = CommonConverters.idsWithPreferred(
+  CommonConverters.ingredientId,
+  'coatings'
+);
 
 // ============================================================================
 // Version Converters

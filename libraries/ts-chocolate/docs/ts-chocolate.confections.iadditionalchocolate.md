@@ -4,14 +4,13 @@
 
 ## Confections.IAdditionalChocolate interface
 
-Additional chocolate specification with purpose Used for seal chocolate, decoration chocolate, etc.
+Additional chocolate specification with purpose. Used for seal chocolate, decoration chocolate, etc.
 
 **Signature:**
 
 ```typescript
-export interface IAdditionalChocolate extends IChocolateSpec 
+export interface IAdditionalChocolate 
 ```
-**Extends:** [IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
 
 ## Properties
 
@@ -37,6 +36,27 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[chocolate](./ts-chocolate.confections.iadditionalchocolate.chocolate.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
+
+
+</td><td>
+
+Available chocolate options with preferred selection
+
+
+</td></tr>
+<tr><td>
 
 [purpose](./ts-chocolate.confections.iadditionalchocolate.purpose.md)
 

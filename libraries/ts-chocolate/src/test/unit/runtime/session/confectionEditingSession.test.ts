@@ -88,12 +88,15 @@ describe('ConfectionEditingSession', () => {
       preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId,
-      alternateIngredientIds: ['common.chocolate-dark-70' as IngredientId]
+      ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-dark-70' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     additionalChocolates: [
       {
-        ingredientId: 'common.chocolate-dark-64' as IngredientId,
+        chocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        },
         purpose: 'seal'
       }
     ],
@@ -143,7 +146,8 @@ describe('ConfectionEditingSession', () => {
       height: 25 as Millimeters
     },
     enrobingChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId
+      ids: ['common.chocolate-dark-64' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     versions: [
       {
@@ -174,14 +178,12 @@ describe('ConfectionEditingSession', () => {
       }
     ],
     enrobingChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId
+      ids: ['common.chocolate-dark-64' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     coatings: {
-      ingredients: [
-        { ingredientId: 'common.cocoa-powder' as IngredientId },
-        { ingredientId: 'common.powdered-sugar' as IngredientId }
-      ],
-      recommendedIngredientId: 'common.cocoa-powder' as IngredientId
+      ids: ['common.cocoa-powder' as IngredientId, 'common.powdered-sugar' as IngredientId],
+      preferredId: 'common.cocoa-powder' as IngredientId
     },
     versions: [
       {
@@ -999,23 +1001,20 @@ describe('ConfectionEditingSession', () => {
       expect(session.coating?.status).toBe('modified');
     });
 
-    test('initializes coating from first ingredient when no recommended', () => {
-      // Create a rolled truffle with coatings but no recommendedIngredientId
-      // This covers the recommendedId ?? coatings.ingredients[0]?.ingredientId branch
-      const noRecommendedCoatingData: IRolledTruffle = {
+    test('initializes coating from first id when no preferred', () => {
+      // Create a rolled truffle with coatings but no preferredId
+      // This covers the preferredId ?? ids[0] branch
+      const noPreferredCoatingData: IRolledTruffle = {
         ...rolledTruffleData,
         coatings: {
-          ingredients: [
-            { ingredientId: 'common.powdered-sugar' as IngredientId },
-            { ingredientId: 'common.cocoa-powder' as IngredientId }
-          ]
-          // No recommendedIngredientId
+          ids: ['common.powdered-sugar' as IngredientId, 'common.cocoa-powder' as IngredientId]
+          // No preferredId
         }
       };
       const confection = RuntimeRolledTruffle.create(
         mockContext,
         'test.rolled-no-rec-coating' as ConfectionId,
-        noRecommendedCoatingData
+        noPreferredCoatingData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
@@ -1025,25 +1024,25 @@ describe('ConfectionEditingSession', () => {
       expect(session.coating?.status).toBe('original');
     });
 
-    test('handles empty ingredients array with no recommended coating', () => {
-      // Create a rolled truffle with coatings but empty ingredients array and no recommended
-      // This covers the coatings.ingredients[0]?.ingredientId short-circuit branch (line 680)
-      const emptyIngredientsCoatingData: IRolledTruffle = {
+    test('handles empty ids array with no preferred coating', () => {
+      // Create a rolled truffle with coatings but empty ids array and no preferred
+      // This covers the ids[0] short-circuit branch
+      const emptyIdsCoatingData: IRolledTruffle = {
         ...rolledTruffleData,
         coatings: {
-          ingredients: []
-          // No recommendedIngredientId
+          ids: []
+          // No preferredId
         }
       };
       const confection = RuntimeRolledTruffle.create(
         mockContext,
-        'test.rolled-empty-coating-ingr' as ConfectionId,
-        emptyIngredientsCoatingData
+        'test.rolled-empty-coating-ids' as ConfectionId,
+        emptyIdsCoatingData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      // Coating should be undefined since there are no ingredients to pick from
+      // Coating should be undefined since there are no ids to pick from
       expect(session.coating).toBeUndefined();
     });
   });

@@ -58,8 +58,8 @@ describe('Confections converters', () => {
       preferredId: 'common.dome-25mm'
     },
     shellChocolate: {
-      ingredientId: 'cacao-barry.guayaquil-64',
-      alternateIngredientIds: ['common.chocolate-dark-64']
+      ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64'],
+      preferredId: 'cacao-barry.guayaquil-64'
     },
     versions: [
       {
@@ -91,7 +91,8 @@ describe('Confections converters', () => {
       height: 25
     },
     enrobingChocolate: {
-      ingredientId: 'cacao-barry.guayaquil-64'
+      ids: ['cacao-barry.guayaquil-64'],
+      preferredId: 'cacao-barry.guayaquil-64'
     },
     versions: [
       {
@@ -114,8 +115,8 @@ describe('Confections converters', () => {
       weightPerPiece: 15
     },
     coatings: {
-      ingredients: [{ ingredientId: 'common.cocoa-powder' }],
-      recommendedIngredientId: 'common.cocoa-powder'
+      ids: ['common.cocoa-powder'],
+      preferredId: 'common.cocoa-powder'
     },
     versions: [
       {
@@ -192,33 +193,44 @@ describe('Confections converters', () => {
   // ============================================================================
 
   describe('chocolateSpec', () => {
-    test('converts valid spec with alternates', () => {
+    test('converts valid spec with preferredId', () => {
       const input = {
-        ingredientId: 'cacao-barry.guayaquil-64',
-        alternateIngredientIds: ['common.chocolate-dark-64', 'felchlin.maracaibo-65']
+        ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64', 'felchlin.maracaibo-65'],
+        preferredId: 'cacao-barry.guayaquil-64'
       };
       expect(ConfectionConverters.chocolateSpec.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredientId).toBe('cacao-barry.guayaquil-64');
-        expect(result.alternateIngredientIds).toHaveLength(2);
+        expect(result.ids).toHaveLength(3);
+        expect(result.ids[0]).toBe('cacao-barry.guayaquil-64');
+        expect(result.preferredId).toBe('cacao-barry.guayaquil-64');
       });
     });
 
-    test('converts valid spec without alternates', () => {
-      const input = { ingredientId: 'cacao-barry.guayaquil-64' };
+    test('converts valid spec without preferredId', () => {
+      const input = { ids: ['cacao-barry.guayaquil-64'] };
       expect(ConfectionConverters.chocolateSpec.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredientId).toBe('cacao-barry.guayaquil-64');
-        expect(result.alternateIngredientIds).toBeUndefined();
+        expect(result.ids).toHaveLength(1);
+        expect(result.preferredId).toBeUndefined();
       });
     });
 
-    test('fails for missing ingredientId', () => {
-      const input = { alternateIngredientIds: ['common.chocolate-dark-64'] };
+    test('fails for missing ids', () => {
+      const input = { preferredId: 'common.chocolate-dark-64' };
       expect(ConfectionConverters.chocolateSpec.convert(input)).toFail();
     });
 
     test('fails for invalid ingredient ID format', () => {
-      const input = { ingredientId: 'invalid-no-dot' };
+      const input = { ids: ['invalid-no-dot'] };
       expect(ConfectionConverters.chocolateSpec.convert(input)).toFail();
+    });
+
+    test('fails when preferredId is not in ids', () => {
+      const input = {
+        ids: ['cacao-barry.guayaquil-64'],
+        preferredId: 'common.nonexistent-chocolate'
+      };
+      expect(ConfectionConverters.chocolateSpec.convert(input)).toFailWith(
+        /chocolateSpec: preferredId 'common.nonexistent-chocolate' not found in ids/
+      );
     });
   });
 
@@ -683,31 +695,53 @@ describe('Confections converters', () => {
   describe('additionalChocolate', () => {
     test('converts valid additional chocolate for seal', () => {
       const input = {
-        ingredientId: 'common.chocolate-dark-64',
+        chocolate: {
+          ids: ['common.chocolate-dark-64'],
+          preferredId: 'common.chocolate-dark-64'
+        },
         purpose: 'seal'
       };
       expect(ConfectionConverters.additionalChocolate.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredientId).toBe('common.chocolate-dark-64');
+        expect(result.chocolate.ids[0]).toBe('common.chocolate-dark-64');
+        expect(result.chocolate.preferredId).toBe('common.chocolate-dark-64');
         expect(result.purpose).toBe('seal');
       });
     });
 
     test('converts valid additional chocolate for decoration', () => {
       const input = {
-        ingredientId: 'common.chocolate-white',
+        chocolate: {
+          ids: ['common.chocolate-white']
+        },
         purpose: 'decoration'
       };
       expect(ConfectionConverters.additionalChocolate.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.purpose).toBe('decoration');
+        expect(result.chocolate.preferredId).toBeUndefined();
       });
     });
 
     test('fails for invalid purpose', () => {
       const input = {
-        ingredientId: 'common.chocolate-dark-64',
+        chocolate: {
+          ids: ['common.chocolate-dark-64']
+        },
         purpose: 'invalid'
       };
       expect(ConfectionConverters.additionalChocolate.convert(input)).toFail();
+    });
+
+    test('fails when preferredId is not in ids', () => {
+      const input = {
+        chocolate: {
+          ids: ['common.chocolate-dark-64'],
+          preferredId: 'common.nonexistent-chocolate'
+        },
+        purpose: 'seal'
+      };
+      expect(ConfectionConverters.additionalChocolate.convert(input)).toFailWith(
+        /additionalChocolate: preferredId 'common.nonexistent-chocolate' not found in ids/
+      );
     });
   });
 
@@ -716,24 +750,35 @@ describe('Confections converters', () => {
   // ============================================================================
 
   describe('coatings', () => {
-    test('converts valid coatings', () => {
+    test('converts valid coatings with preferredId', () => {
       const input = {
-        ingredients: [{ ingredientId: 'common.cocoa-powder' }, { ingredientId: 'common.chopped-nuts' }],
-        recommendedIngredientId: 'common.cocoa-powder'
+        ids: ['common.cocoa-powder', 'common.chopped-nuts'],
+        preferredId: 'common.cocoa-powder'
       };
       expect(ConfectionConverters.coatings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredients).toHaveLength(2);
-        expect(result.recommendedIngredientId).toBe('common.cocoa-powder');
+        expect(result.ids).toHaveLength(2);
+        expect(result.preferredId).toBe('common.cocoa-powder');
       });
     });
 
-    test('converts coatings without recommended', () => {
+    test('converts coatings without preferredId', () => {
       const input = {
-        ingredients: [{ ingredientId: 'common.cocoa-powder' }]
+        ids: ['common.cocoa-powder']
       };
       expect(ConfectionConverters.coatings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.recommendedIngredientId).toBeUndefined();
+        expect(result.ids).toHaveLength(1);
+        expect(result.preferredId).toBeUndefined();
       });
+    });
+
+    test('fails when preferredId is not in ids', () => {
+      const input = {
+        ids: ['common.cocoa-powder'],
+        preferredId: 'common.nonexistent-coating'
+      };
+      expect(ConfectionConverters.coatings.convert(input)).toFailWith(
+        /coatings: preferredId 'common.nonexistent-coating' not found in ids/
+      );
     });
   });
 

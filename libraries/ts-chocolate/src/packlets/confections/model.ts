@@ -24,11 +24,13 @@
  */
 
 import {
+  AdditionalChocolatePurpose,
   BaseConfectionId,
   ConfectionName,
   ConfectionType,
   ConfectionVersionSpec,
   Grams,
+  IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
   IRefWithNotes,
@@ -36,8 +38,7 @@ import {
   MoldId,
   ProcedureId,
   RecipeId,
-  SlotId,
-  AdditionalChocolatePurpose
+  SlotId
 } from '../common';
 
 // ============================================================================
@@ -137,22 +138,21 @@ export interface IFillingSlot {
 // ============================================================================
 
 /**
- * Chocolate specification for shell, enrobing, or coating
+ * Chocolate specification for shell, enrobing, or coating.
+ * Uses IIdsWithPreferred pattern - `ids` contains all valid chocolates,
+ * `preferredId` indicates the default/recommended one.
  * @public
  */
-export interface IChocolateSpec {
-  /** Primary chocolate ingredient ID */
-  readonly ingredientId: IngredientId;
-  /** Alternate chocolate ingredient IDs */
-  readonly alternateIngredientIds?: ReadonlyArray<IngredientId>;
-}
+export type IChocolateSpec = IIdsWithPreferred<IngredientId>;
 
 /**
- * Additional chocolate specification with purpose
+ * Additional chocolate specification with purpose.
  * Used for seal chocolate, decoration chocolate, etc.
  * @public
  */
-export interface IAdditionalChocolate extends IChocolateSpec {
+export interface IAdditionalChocolate {
+  /** Available chocolate options with preferred selection */
+  readonly chocolate: IIdsWithPreferred<IngredientId>;
   /** Purpose of this additional chocolate */
   readonly purpose: AdditionalChocolatePurpose;
 }
@@ -212,15 +212,12 @@ export interface IBonBonDimensions {
 // ============================================================================
 
 /**
- * Coating specification for rolled truffles
+ * Coating specification for rolled truffles.
+ * Uses IIdsWithPreferred pattern - `ids` contains all valid coating ingredients,
+ * `preferredId` indicates the default/recommended one.
  * @public
  */
-export interface ICoatings {
-  /** Available coating ingredients */
-  readonly ingredients: ReadonlyArray<IChocolateSpec>;
-  /** Recommended coating ingredient ID */
-  readonly recommendedIngredientId?: IngredientId;
-}
+export type ICoatings = IIdsWithPreferred<IngredientId>;
 
 // ============================================================================
 // Version Types

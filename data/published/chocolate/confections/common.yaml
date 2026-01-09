@@ -29,9 +29,10 @@ items:
         - id: common.dome-25mm
       preferredId: common.dome-25mm
     shellChocolate:
-      ingredientId: cacao-barry.guayaquil-64
-      alternateIngredientIds:
+      ids:
+        - cacao-barry.guayaquil-64
         - common.chocolate-dark-64
+      preferredId: cacao-barry.guayaquil-64
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
@@ -64,7 +65,9 @@ items:
       width: 25
       height: 25
     enrobingChocolate:
-      ingredientId: cacao-barry.guayaquil-64
+      ids:
+        - cacao-barry.guayaquil-64
+      preferredId: cacao-barry.guayaquil-64
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'
@@ -90,9 +93,9 @@ items:
               id: common.dark-ganache-classic
           preferredId: common.dark-ganache-classic
     coatings:
-      ingredients:
-        - ingredientId: common.cocoa-powder
-      recommendedIngredientId: common.cocoa-powder
+      ids:
+        - common.cocoa-powder
+      preferredId: common.cocoa-powder
     versions:
       - versionSpec: '2026-01-01-01'
         createdDate: '2026-01-01'

@@ -1094,7 +1094,8 @@ declare namespace Helpers {
 export { Helpers }
 
 // @public
-interface IAdditionalChocolate extends IChocolateSpec {
+interface IAdditionalChocolate {
+    readonly chocolate: IIdsWithPreferred<IngredientId>;
     readonly purpose: AdditionalChocolatePurpose;
 }
 
@@ -1158,16 +1159,10 @@ interface IChocolateLibraryCreateParams {
 }
 
 // @public
-interface IChocolateSpec {
-    readonly alternateIngredientIds?: ReadonlyArray<IngredientId>;
-    readonly ingredientId: IngredientId;
-}
+type IChocolateSpec = IIdsWithPreferred<IngredientId>;
 
 // @public
-interface ICoatings {
-    readonly ingredients: ReadonlyArray<IChocolateSpec>;
-    readonly recommendedIngredientId?: IngredientId;
-}
+type ICoatings = IIdsWithPreferred<IngredientId>;
 
 // @public
 interface ICollection<T = JsonObject, TCOLLECTIONID extends string = string, TITEMID extends string = string> {

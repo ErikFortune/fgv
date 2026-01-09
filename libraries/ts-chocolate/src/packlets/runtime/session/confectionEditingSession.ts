@@ -27,6 +27,7 @@ import { captureResult, fail, Logging, MessageAggregator, Result, succeed, Succe
 
 import {
   Grams,
+  Helpers,
   IngredientId,
   MoldId,
   ProcedureId,
@@ -617,45 +618,57 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   private _initializeChocolates(): void {
     if (this._sourceConfection.isMoldedBonBon()) {
       const shellChocolate = this._sourceConfection.shellChocolate;
-      this._chocolates.set('shell', {
-        role: 'shell',
-        ingredientId: shellChocolate.ingredientId,
-        originalIngredientId: shellChocolate.ingredientId,
-        status: 'original'
-      });
+      const shellIngredientId = Helpers.getPreferredIdOrFirst(shellChocolate);
+      if (shellIngredientId) {
+        this._chocolates.set('shell', {
+          role: 'shell',
+          ingredientId: shellIngredientId,
+          originalIngredientId: shellIngredientId,
+          status: 'original'
+        });
+      }
 
       // Initialize additional chocolates if present
       const additionalChocolates = this._sourceConfection.additionalChocolates;
       if (additionalChocolates) {
         for (const additional of additionalChocolates) {
           const role = additional.purpose;
-          this._chocolates.set(role, {
-            role,
-            ingredientId: additional.ingredientId,
-            originalIngredientId: additional.ingredientId,
-            status: 'original'
-          });
+          const ingredientId = Helpers.getPreferredIdOrFirst(additional.chocolate);
+          if (ingredientId) {
+            this._chocolates.set(role, {
+              role,
+              ingredientId,
+              originalIngredientId: ingredientId,
+              status: 'original'
+            });
+          }
         }
       }
     } else if (this._sourceConfection.isBarTruffle()) {
       const enrobingChocolate = this._sourceConfection.enrobingChocolate;
       if (enrobingChocolate) {
-        this._chocolates.set('enrobing', {
-          role: 'enrobing',
-          ingredientId: enrobingChocolate.ingredientId,
-          originalIngredientId: enrobingChocolate.ingredientId,
-          status: 'original'
-        });
+        const ingredientId = Helpers.getPreferredIdOrFirst(enrobingChocolate);
+        if (ingredientId) {
+          this._chocolates.set('enrobing', {
+            role: 'enrobing',
+            ingredientId,
+            originalIngredientId: ingredientId,
+            status: 'original'
+          });
+        }
       }
     } else if (this._sourceConfection.isRolledTruffle()) {
       const enrobingChocolate = this._sourceConfection.enrobingChocolate;
       if (enrobingChocolate) {
-        this._chocolates.set('enrobing', {
-          role: 'enrobing',
-          ingredientId: enrobingChocolate.ingredientId,
-          originalIngredientId: enrobingChocolate.ingredientId,
-          status: 'original'
-        });
+        const ingredientId = Helpers.getPreferredIdOrFirst(enrobingChocolate);
+        if (ingredientId) {
+          this._chocolates.set('enrobing', {
+            role: 'enrobing',
+            ingredientId,
+            originalIngredientId: ingredientId,
+            status: 'original'
+          });
+        }
       }
     }
   }
@@ -687,8 +700,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return;
     }
 
-    const recommendedId = coatings.recommendedIngredientId;
-    const ingredientId = recommendedId ?? coatings.ingredients[0]?.ingredientId;
+    const ingredientId = Helpers.getPreferredIdOrFirst(coatings);
 
     if (ingredientId) {
       this._coating = {

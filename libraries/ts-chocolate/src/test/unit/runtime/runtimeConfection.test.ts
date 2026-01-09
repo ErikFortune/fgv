@@ -73,12 +73,15 @@ describe('RuntimeConfection', () => {
       preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId,
-      alternateIngredientIds: ['common.chocolate-dark-70' as IngredientId]
+      ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-dark-70' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     additionalChocolates: [
       {
-        ingredientId: 'common.chocolate-dark-64' as IngredientId,
+        chocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        },
         purpose: 'seal'
       }
     ],
@@ -117,7 +120,8 @@ describe('RuntimeConfection', () => {
       height: 25 as Millimeters
     },
     enrobingChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId
+      ids: ['common.chocolate-dark-64' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     versions: [
       {
@@ -137,11 +141,12 @@ describe('RuntimeConfection', () => {
       unit: 'pieces'
     },
     enrobingChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId
+      ids: ['common.chocolate-dark-64' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     coatings: {
-      ingredients: [{ ingredientId: 'common.cocoa-powder' as IngredientId }],
-      recommendedIngredientId: 'common.cocoa-powder' as IngredientId
+      ids: ['common.cocoa-powder' as IngredientId],
+      preferredId: 'common.cocoa-powder' as IngredientId
     },
     versions: [
       {
@@ -259,8 +264,9 @@ describe('RuntimeConfection', () => {
     test('exposes molded bonbon-specific properties', () => {
       expect(runtime.molds.options).toHaveLength(1);
       expect(runtime.molds.preferredId).toBe('common.dome-25mm');
-      expect(runtime.shellChocolate.ingredientId).toBe('common.chocolate-dark-64');
-      expect(runtime.shellChocolate.alternateIngredientIds).toContain('common.chocolate-dark-70');
+      expect(runtime.shellChocolate.ids).toContain('common.chocolate-dark-64');
+      expect(runtime.shellChocolate.ids).toContain('common.chocolate-dark-70');
+      expect(runtime.shellChocolate.preferredId).toBe('common.chocolate-dark-64');
       expect(runtime.additionalChocolates).toHaveLength(1);
       expect(runtime.additionalChocolates?.[0].purpose).toBe('seal');
     });
@@ -312,7 +318,7 @@ describe('RuntimeConfection', () => {
       expect(runtime.frameDimensions.depth).toBe(8);
       expect(runtime.singleBonBonDimensions.width).toBe(25);
       expect(runtime.singleBonBonDimensions.height).toBe(25);
-      expect(runtime.enrobingChocolate?.ingredientId).toBe('common.chocolate-dark-64');
+      expect(runtime.enrobingChocolate?.ids[0]).toBe('common.chocolate-dark-64');
     });
 
     test('type guards work correctly', () => {
@@ -353,9 +359,9 @@ describe('RuntimeConfection', () => {
     });
 
     test('exposes rolled truffle-specific properties', () => {
-      expect(runtime.enrobingChocolate?.ingredientId).toBe('common.chocolate-dark-64');
-      expect(runtime.coatings?.ingredients).toHaveLength(1);
-      expect(runtime.coatings?.recommendedIngredientId).toBe('common.cocoa-powder');
+      expect(runtime.enrobingChocolate?.ids[0]).toBe('common.chocolate-dark-64');
+      expect(runtime.coatings?.ids).toHaveLength(1);
+      expect(runtime.coatings?.preferredId).toBe('common.cocoa-powder');
     });
 
     test('type guards work correctly', () => {
@@ -384,7 +390,7 @@ describe('RuntimeConfection', () => {
         options: [{ id: 'common.dome-25mm' as MoldId }]
       },
       shellChocolate: {
-        ingredientId: 'common.chocolate-dark-64' as IngredientId
+        ids: ['common.chocolate-dark-64' as IngredientId]
       },
       versions: [
         {

@@ -59,7 +59,8 @@ describe('Confection Scaler', () => {
       preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
-      ingredientId: 'common.chocolate-dark-64' as IngredientId
+      ids: ['common.chocolate-dark-64' as IngredientId],
+      preferredId: 'common.chocolate-dark-64' as IngredientId
     },
     versions: [{ versionSpec: '2026-01-01-01' as ConfectionVersionSpec, createdDate: '2026-01-01' }]
   };

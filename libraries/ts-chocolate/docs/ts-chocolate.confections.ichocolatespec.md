@@ -2,80 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Confections](./ts-chocolate.confections.md) &gt; [IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
 
-## Confections.IChocolateSpec interface
+## Confections.IChocolateSpec type
 
-Chocolate specification for shell, enrobing, or coating
+Chocolate specification for shell, enrobing, or coating. Uses IIdsWithPreferred pattern - `ids` contains all valid chocolates, `preferredId` indicates the default/recommended one.
 
 **Signature:**
 
 ```typescript
-export interface IChocolateSpec 
+export type IChocolateSpec = IIdsWithPreferred<IngredientId>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[alternateIngredientIds?](./ts-chocolate.confections.ichocolatespec.alternateingredientids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Alternate chocolate ingredient IDs
-
-
-</td></tr>
-<tr><td>
-
-[ingredientId](./ts-chocolate.confections.ichocolatespec.ingredientid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IngredientId](./ts-chocolate.ingredientid.md)
-
-
-</td><td>
-
-Primary chocolate ingredient ID
-
-
-</td></tr>
-</tbody></table>
+**References:** [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
 

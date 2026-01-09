@@ -4,7 +4,7 @@
 
 ## Confections.Converters.coatings variable
 
-Converter for ICoatings
+Converter for ICoatings (IIdsWithPreferred<IngredientId>). Validates that preferredId (if specified) exists in ids.
 
 **Signature:**
 

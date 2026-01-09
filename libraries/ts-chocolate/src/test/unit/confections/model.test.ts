@@ -70,8 +70,8 @@ describe('Confections model', () => {
       preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
-      ingredientId: 'cacao-barry.guayaquil-64' as IngredientId,
-      alternateIngredientIds: ['common.chocolate-dark-64' as IngredientId]
+      ids: ['cacao-barry.guayaquil-64' as IngredientId, 'common.chocolate-dark-64' as IngredientId],
+      preferredId: 'cacao-barry.guayaquil-64' as IngredientId
     },
     versions: [
       {
@@ -113,7 +113,8 @@ describe('Confections model', () => {
       height: 25 as Millimeters
     },
     enrobingChocolate: {
-      ingredientId: 'cacao-barry.guayaquil-64' as IngredientId
+      ids: ['cacao-barry.guayaquil-64' as IngredientId],
+      preferredId: 'cacao-barry.guayaquil-64' as IngredientId
     },
     versions: [
       {
@@ -146,8 +147,8 @@ describe('Confections model', () => {
       }
     ],
     coatings: {
-      ingredients: [{ ingredientId: 'common.cocoa-powder' as IngredientId }],
-      recommendedIngredientId: 'common.cocoa-powder' as IngredientId
+      ids: ['common.cocoa-powder' as IngredientId],
+      preferredId: 'common.cocoa-powder' as IngredientId
     },
     versions: [
       {
@@ -270,8 +271,9 @@ describe('Confections model', () => {
       });
 
       test('shellChocolate structure is correct', () => {
-        expect(baseMoldedBonBon.shellChocolate.ingredientId).toBe('cacao-barry.guayaquil-64');
-        expect(baseMoldedBonBon.shellChocolate.alternateIngredientIds).toHaveLength(1);
+        expect(baseMoldedBonBon.shellChocolate.ids).toHaveLength(2);
+        expect(baseMoldedBonBon.shellChocolate.ids[0]).toBe('cacao-barry.guayaquil-64');
+        expect(baseMoldedBonBon.shellChocolate.preferredId).toBe('cacao-barry.guayaquil-64');
       });
     });
 
@@ -315,9 +317,9 @@ describe('Confections model', () => {
       });
 
       test('coatings structure is correct', () => {
-        expect(baseRolledTruffle.coatings?.ingredients).toHaveLength(1);
-        expect(baseRolledTruffle.coatings?.ingredients[0].ingredientId).toBe('common.cocoa-powder');
-        expect(baseRolledTruffle.coatings?.recommendedIngredientId).toBe('common.cocoa-powder');
+        expect(baseRolledTruffle.coatings?.ids).toHaveLength(1);
+        expect(baseRolledTruffle.coatings?.ids[0]).toBe('common.cocoa-powder');
+        expect(baseRolledTruffle.coatings?.preferredId).toBe('common.cocoa-powder');
       });
     });
 
