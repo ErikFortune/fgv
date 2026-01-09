@@ -390,4 +390,27 @@ describe('BuiltInData', () => {
       }
     });
   });
+
+  // ============================================================================
+  // getConfectionsDirectory Tests
+  // ============================================================================
+
+  describe('getConfectionsDirectory', () => {
+    test('returns the confections directory', () => {
+      expect(BuiltInData.getConfectionsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.type).toBe('directory');
+        expect(dir.name).toBe('confections');
+      });
+    });
+
+    test('confections directory contains expected files', () => {
+      expect(BuiltInData.getConfectionsDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          // Should contain common.json
+          const names = children.map((c) => c.name);
+          expect(names).toContain('common.json');
+        });
+      });
+    });
+  });
 });

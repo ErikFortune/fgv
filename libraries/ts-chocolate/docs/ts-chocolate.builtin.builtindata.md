@@ -32,6 +32,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[getConfectionsDirectory()](./ts-chocolate.builtin.builtindata.getconfectionsdirectory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets the confections directory from the built-in library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory()](./ts-chocolate.builtin.builtindata.getingredientsdirectory.md)
 
 
@@ -72,7 +88,9 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   └── common.json
     ├── molds/
     │   └── common.json
-    └── procedures/
+    ├── procedures/
+    │   └── common.json
+    └── confections/
         └── common.json
 ```
 

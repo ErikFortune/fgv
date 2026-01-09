@@ -45,7 +45,11 @@ export const LibraryPaths = {
   /**
    * Path to the procedures data directory.
    */
-  procedures: 'data/procedures'
+  procedures: 'data/procedures',
+  /**
+   * Path to the confections data directory.
+   */
+  confections: 'data/confections'
 } as const;
 
 /**
@@ -142,4 +146,16 @@ export function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.
  */
 export function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
   return navigateToDirectory(tree, LibraryPaths.procedures);
+}
+
+/**
+ * Gets the confections directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the confections directory or `Failure` if not found.
+ * @public
+ */
+export function getConfectionsDirectory(
+  tree: FileTree.FileTreeItem
+): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.confections);
 }

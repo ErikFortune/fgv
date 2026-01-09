@@ -39,6 +39,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Confections](./ts-chocolate.confections.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Converters](./ts-chocolate.converters.md)
 
 
@@ -153,6 +162,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[allAdditionalChocolatePurposes](./ts-chocolate.alladditionalchocolatepurposes.md)
+
+
+</td><td>
+
+All possible additional chocolate purposes
+
+
+</td></tr>
+<tr><td>
+
 [allAllergens](./ts-chocolate.allallergens.md)
 
 
@@ -219,6 +239,17 @@ All possible chocolate types
 </td></tr>
 <tr><td>
 
+[allConfectionTypes](./ts-chocolate.allconfectiontypes.md)
+
+
+</td><td>
+
+All possible confection types
+
+
+</td></tr>
+<tr><td>
+
 [allFluidityStars](./ts-chocolate.allfluiditystars.md)
 
 
@@ -252,6 +283,17 @@ All possible mold formats
 </td></tr>
 <tr><td>
 
+[allRecipeCategories](./ts-chocolate.allrecipecategories.md)
+
+
+</td><td>
+
+All possible recipe categories
+
+
+</td></tr>
+<tr><td>
+
 [allWeightUnits](./ts-chocolate.allweightunits.md)
 
 
@@ -280,6 +322,28 @@ Pattern for valid base IDs (no dots allowed)
 </td><td>
 
 Pattern for valid composite IDs (exactly one dot)
+
+
+</td></tr>
+<tr><td>
+
+[CONFECTION\_VERSION\_ID\_PATTERN](./ts-chocolate.confection_version_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid confection version IDs Format: confectionId<!-- -->@<!-- -->versionSpec where confectionId is sourceId.baseConfectionId
+
+
+</td></tr>
+<tr><td>
+
+[CONFECTION\_VERSION\_SPEC\_PATTERN](./ts-chocolate.confection_version_spec_pattern.md)
+
+
+</td><td>
+
+Pattern for valid confection version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes) Same pattern as recipe version specs
 
 
 </td></tr>
@@ -366,12 +430,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AdditionalChocolatePurpose](./ts-chocolate.additionalchocolatepurpose.md)
+
+
+</td><td>
+
+Purpose for additional chocolates in molded bonbons
+
+
+</td></tr>
+<tr><td>
+
 [Allergen](./ts-chocolate.allergen.md)
 
 
 </td><td>
 
 Common allergens that may be present in ingredients
+
+
+</td></tr>
+<tr><td>
+
+[BaseConfectionId](./ts-chocolate.baseconfectionid.md)
+
+
+</td><td>
+
+Confection identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -482,6 +568,61 @@ Recommended applications for chocolate
 </td><td>
 
 Types of chocolate
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionId](./ts-chocolate.confectionid.md)
+
+
+</td><td>
+
+Globally unique confection identifier (composite) Format: "sourceId.baseConfectionId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionName](./ts-chocolate.confectionname.md)
+
+
+</td><td>
+
+Non-unique confection name used for display
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionType](./ts-chocolate.confectiontype.md)
+
+
+</td><td>
+
+Types of confections (discriminator for confection union)
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionVersionId](./ts-chocolate.confectionversionid.md)
+
+
+</td><td>
+
+Globally unique confection version identifier (composite) Format: "confectionId<!-- -->@<!-- -->versionSpec" where confectionId is "sourceId.baseConfectionId" Examples: "user.dark-dome-bonbon<!-- -->@<!-- -->2026-01-03-01"
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)
+
+
+</td><td>
+
+Specifier for a confection version within a confection Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
 
 
 </td></tr>
@@ -636,6 +777,17 @@ Globally unique procedure identifier (composite) Format: "sourceId.baseProcedure
 </td><td>
 
 Rating score (1-5 scale)
+
+
+</td></tr>
+<tr><td>
+
+[RecipeCategory](./ts-chocolate.recipecategory.md)
+
+
+</td><td>
+
+Recipe category for classification
 
 
 </td></tr>

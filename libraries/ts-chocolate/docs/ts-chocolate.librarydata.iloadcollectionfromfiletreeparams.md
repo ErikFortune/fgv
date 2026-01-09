@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-IEncryptionConfig
+[IEncryptionConfig](./ts-chocolate.librarydata.iencryptionconfig.md)
 
 
 </td><td>

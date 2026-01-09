@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[confections?](./ts-chocolate.runtime.iinstantiatedlibrarysource.confections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built confections library
+
+
+</td></tr>
+<tr><td>
+
 [ingredients?](./ts-chocolate.runtime.iinstantiatedlibrarysource.ingredients.md)
 
 

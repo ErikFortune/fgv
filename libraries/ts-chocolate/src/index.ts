@@ -27,6 +27,7 @@ export * from './packlets/common';
 
 import * as BuiltIn from './packlets/built-in';
 import * as Calculations from './packlets/calculations';
+import * as Confections from './packlets/confections';
 import * as Crypto from './packlets/crypto';
 import * as Ingredients from './packlets/ingredients';
 import * as Journal from './packlets/journal';
@@ -39,6 +40,7 @@ import * as Runtime from './packlets/runtime';
 export {
   BuiltIn,
   Calculations,
+  Confections,
   Crypto,
   Ingredients,
   Journal,

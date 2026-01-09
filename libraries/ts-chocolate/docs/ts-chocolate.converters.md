@@ -19,12 +19,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[additionalChocolatePurpose](./ts-chocolate.converters.additionalchocolatepurpose.md)
+
+
+</td><td>
+
+Converter for AdditionalChocolatePurpose
+
+
+</td></tr>
+<tr><td>
+
 [allergen](./ts-chocolate.converters.allergen.md)
 
 
 </td><td>
 
 Converter for Allergen
+
+
+</td></tr>
+<tr><td>
+
+[baseConfectionId](./ts-chocolate.converters.baseconfectionid.md)
+
+
+</td><td>
+
+Converter for BaseConfectionId
 
 
 </td></tr>
@@ -124,6 +146,61 @@ Converter for ChocolateType
 </td><td>
 
 Converter for ChocolateVariety
+
+
+</td></tr>
+<tr><td>
+
+[confectionId](./ts-chocolate.converters.confectionid.md)
+
+
+</td><td>
+
+Converter for ConfectionId (composite)
+
+
+</td></tr>
+<tr><td>
+
+[confectionName](./ts-chocolate.converters.confectionname.md)
+
+
+</td><td>
+
+Converter for ConfectionName
+
+
+</td></tr>
+<tr><td>
+
+[confectionType](./ts-chocolate.converters.confectiontype.md)
+
+
+</td><td>
+
+Converter for ConfectionType
+
+
+</td></tr>
+<tr><td>
+
+[confectionVersionId](./ts-chocolate.converters.confectionversionid.md)
+
+
+</td><td>
+
+Converter for ConfectionVersionId (composite)
+
+
+</td></tr>
+<tr><td>
+
+[confectionVersionSpec](./ts-chocolate.converters.confectionversionspec.md)
+
+
+</td><td>
+
+Converter for ConfectionVersionSpec
 
 
 </td></tr>
@@ -239,6 +316,28 @@ Converter for MoldId (composite)
 </td></tr>
 <tr><td>
 
+[parsedConfectionId](./ts-chocolate.converters.parsedconfectionid.md)
+
+
+</td><td>
+
+Converter that parses a ConfectionId string into its component parts
+
+
+</td></tr>
+<tr><td>
+
+[parsedConfectionVersionId](./ts-chocolate.converters.parsedconfectionversionid.md)
+
+
+</td><td>
+
+Converter that parses a ConfectionVersionId string into its component parts
+
+
+</td></tr>
+<tr><td>
+
 [parsedIngredientId](./ts-chocolate.converters.parsedingredientid.md)
 
 
@@ -322,6 +421,17 @@ Converter for ProcedureId (composite)
 </td><td>
 
 Converter for RatingScore (1-5)
+
+
+</td></tr>
+<tr><td>
+
+[recipeCategory](./ts-chocolate.converters.recipecategory.md)
+
+
+</td><td>
+
+Converter for RecipeCategory
 
 
 </td></tr>
@@ -418,6 +528,28 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ParsedConfectionId](./ts-chocolate.converters.parsedconfectionid.md)
+
+
+</td><td>
+
+Type alias for parsed ConfectionId components
+
+
+</td></tr>
+<tr><td>
+
+[ParsedConfectionVersionId](./ts-chocolate.converters.parsedconfectionversionid.md)
+
+
+</td><td>
+
+Type alias for parsed ConfectionVersionId components
+
+
+</td></tr>
+<tr><td>
 
 [ParsedIngredientId](./ts-chocolate.converters.parsedingredientid.md)
 

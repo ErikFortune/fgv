@@ -13,7 +13,7 @@ getAllCategories(): ReadonlyArray<RecipeCategory>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[RecipeCategory](./ts-chocolate.recipes.recipecategory.md)<!-- -->&gt;
+ReadonlyArray&lt;RecipeCategory&gt;
 
 Array of categories
 

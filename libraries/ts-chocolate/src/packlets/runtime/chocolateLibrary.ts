@@ -26,6 +26,7 @@
 import { Logging, Result, Success } from '@fgv/ts-utils';
 
 import {
+  ConfectionId,
   IngredientId,
   JournalId,
   MoldId,
@@ -35,6 +36,7 @@ import {
   RecipeVersionSpec,
   SourceId
 } from '../common';
+import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, RecipesLibrary } from '../recipes';
 import { IJournalRecord, JournalLibrary } from '../journal';
@@ -84,6 +86,11 @@ export interface IInstantiatedLibrarySource {
    * Pre-built procedures library
    */
   readonly procedures?: ProceduresLibrary;
+
+  /**
+   * Pre-built confections library
+   */
+  readonly confections?: ConfectionsLibrary;
 }
 
 /**
@@ -151,6 +158,7 @@ export class ChocolateLibrary {
   private readonly _journals: JournalLibrary;
   private readonly _molds: MoldsLibrary;
   private readonly _procedures: ProceduresLibrary;
+  private readonly _confections: ConfectionsLibrary;
 
   /**
    * Logger used by this library and its sub-libraries.
@@ -163,6 +171,7 @@ export class ChocolateLibrary {
     journals: JournalLibrary,
     molds: MoldsLibrary,
     procedures: ProceduresLibrary,
+    confections: ConfectionsLibrary,
     logger?: Logging.ILogger
   ) {
     /* c8 ignore next - default logger branch tested implicitly via create() */
@@ -172,6 +181,7 @@ export class ChocolateLibrary {
     this._journals = journals;
     this._molds = molds;
     this._procedures = procedures;
+    this._confections = confections;
     this.logger = new Logging.LogReporter({ logger });
   }
 
@@ -224,24 +234,34 @@ export class ChocolateLibrary {
       logger
     }).report(logger);
 
+    const confectionsResult = ConfectionsLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'confections'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'confections'),
+      mergeLibraries: params.libraries?.confections,
+      logger
+    }).report(logger);
+
     return ingredientsResult.onSuccess((ingredients) =>
       recipesResult.onSuccess((recipes) =>
         journalsResult.onSuccess((journals) =>
           moldsResult.onSuccess((molds) =>
-            proceduresResult.onSuccess((procedures) => {
-              const library = new ChocolateLibrary(
-                ingredients,
-                recipes,
-                journals,
-                molds,
-                procedures,
-                logger.logger
-              );
-              logger.info(
-                `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures`
-              );
-              return Success.with(library);
-            })
+            proceduresResult.onSuccess((procedures) =>
+              confectionsResult.onSuccess((confections) => {
+                const library = new ChocolateLibrary(
+                  ingredients,
+                  recipes,
+                  journals,
+                  molds,
+                  procedures,
+                  confections,
+                  logger.logger
+                );
+                logger.info(
+                  `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${confections.size} confections`
+                );
+                return Success.with(library);
+              })
+            )
           )
         )
       )
@@ -295,6 +315,13 @@ export class ChocolateLibrary {
    */
   public get procedures(): ProceduresLibrary {
     return this._procedures;
+  }
+
+  /**
+   * The {@link Confections.ConfectionsLibrary | confections library}.
+   */
+  public get confections(): ConfectionsLibrary {
+    return this._confections;
   }
 
   /**
@@ -367,6 +394,24 @@ export class ChocolateLibrary {
    */
   public hasProcedure(id: ProcedureId): boolean {
     return this._procedures.has(id);
+  }
+
+  /**
+   * Gets a {@link Confections.ConfectionData | confection} by its {@link ConfectionId | composite ID}
+   * @param id - The {@link ConfectionId | id} of the confection to retrieve.
+   * @returns `Success` with confection data, or `Failure` if not found
+   */
+  public getConfection(id: ConfectionId): Result<ConfectionData> {
+    return this._confections.get(id);
+  }
+
+  /**
+   * Checks if a confection exists
+   * @param id - The {@link ConfectionId | id} of the confection to check.
+   * @returns `true` if the confection exists
+   */
+  public hasConfection(id: ConfectionId): boolean {
+    return this._confections.has(id);
   }
 
   // ============================================================================

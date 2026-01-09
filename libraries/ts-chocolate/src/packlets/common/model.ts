@@ -146,6 +146,45 @@ export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
 export type JournalId = Brand<string, 'JournalId'>;
 
 /**
+ * Confection identifier within a single source
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type BaseConfectionId = Brand<string, 'BaseConfectionId'>;
+
+/**
+ * Globally unique confection identifier (composite)
+ * Format: "sourceId.baseConfectionId"
+ * Must contain exactly one dot separator
+ * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type ConfectionId = Brand<string, 'ConfectionId'>;
+
+/**
+ * Non-unique confection name used for display
+ * @public
+ */
+export type ConfectionName = Brand<string, 'ConfectionName'>;
+
+/**
+ * Specifier for a confection version within a confection
+ * Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter
+ * Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+ * @public
+ */
+export type ConfectionVersionSpec = Brand<string, 'ConfectionVersionSpec'>;
+
+/**
+ * Globally unique confection version identifier (composite)
+ * Format: "confectionId\@versionSpec" where confectionId is "sourceId.baseConfectionId"
+ * Examples: "user.dark-dome-bonbon\@2026-01-03-01"
+ * @public
+ */
+export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
+
+/**
  * Unique identifier for an editing session
  * Format: UUID
  * @public
@@ -411,6 +450,42 @@ export type MoldFormat = 'series-1000' | 'series-2000';
  */
 export const allMoldFormats: MoldFormat[] = ['series-1000', 'series-2000'];
 
+/**
+ * Types of confections (discriminator for confection union)
+ * @public
+ */
+export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
+
+/**
+ * All possible confection types
+ * @public
+ */
+export const allConfectionTypes: ConfectionType[] = ['molded-bonbon', 'bar-truffle', 'rolled-truffle'];
+
+/**
+ * Purpose for additional chocolates in molded bonbons
+ * @public
+ */
+export type AdditionalChocolatePurpose = 'seal' | 'deco';
+
+/**
+ * All possible additional chocolate purposes
+ * @public
+ */
+export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[] = ['seal', 'deco'];
+
+/**
+ * Recipe category for classification
+ * @public
+ */
+export type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
+
+/**
+ * All possible recipe categories
+ * @public
+ */
+export const allRecipeCategories: RecipeCategory[] = ['ganache', 'caramel', 'gianduja'];
+
 // ============================================================================
 // Constants
 // ============================================================================
@@ -469,3 +544,19 @@ export const SESSION_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$
  * @public
  */
 export const JOURNAL_ID_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{6}-[0-9a-f]{8}$/;
+
+/**
+ * Pattern for valid confection version specs
+ * Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+ * Same pattern as recipe version specs
+ * @public
+ */
+export const CONFECTION_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+
+/**
+ * Pattern for valid confection version IDs
+ * Format: confectionId\@versionSpec where confectionId is sourceId.baseConfectionId
+ * @public
+ */
+export const CONFECTION_VERSION_ID_PATTERN: RegExp =
+  /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;

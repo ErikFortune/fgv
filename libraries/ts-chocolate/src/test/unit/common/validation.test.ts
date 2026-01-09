@@ -21,8 +21,13 @@
 import '@fgv/ts-utils-jest';
 
 import {
+  BaseConfectionId,
   BaseIngredientId,
   BaseRecipeId,
+  ConfectionId,
+  ConfectionName,
+  ConfectionVersionId,
+  ConfectionVersionSpec,
   Grams,
   Helpers,
   IngredientId,
@@ -75,7 +80,13 @@ const {
   toGrams,
   toPercentage,
   toCelsius,
-  toDegreesMacMichael
+  toDegreesMacMichael,
+  toBaseConfectionId,
+  toConfectionId,
+  toConfectionName,
+  toConfectionVersionSpec,
+  isValidConfectionVersionId,
+  toConfectionVersionId
 } = Validation;
 
 const {
@@ -712,6 +723,92 @@ describe('Common validation', () => {
       test('getRecipeVersionSpec extracts version spec with label', () => {
         const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as RecipeVersionId;
         expect(getRecipeVersionSpec(id)).toBe('2026-01-03-02-less-sugar');
+      });
+    });
+  });
+
+  // ============================================================================
+  // Confection ID Validators
+  // ============================================================================
+
+  describe('Confection ID validators', () => {
+    describe('toBaseConfectionId', () => {
+      test('succeeds with valid ID', () => {
+        expect(toBaseConfectionId('dark-dome-bonbon')).toSucceedWith('dark-dome-bonbon' as BaseConfectionId);
+      });
+
+      test('fails with empty string', () => {
+        expect(toBaseConfectionId('')).toFailWith(/Invalid BaseConfectionId/);
+      });
+
+      test('fails with dots', () => {
+        expect(toBaseConfectionId('bad.id')).toFailWith(/Invalid BaseConfectionId/);
+      });
+    });
+
+    describe('toConfectionId', () => {
+      test('succeeds with valid composite ID', () => {
+        expect(toConfectionId('common.dark-dome-bonbon')).toSucceedWith(
+          'common.dark-dome-bonbon' as ConfectionId
+        );
+      });
+
+      test('fails with missing dot', () => {
+        expect(toConfectionId('nobonbondot')).toFailWith(/Invalid ConfectionId/);
+      });
+    });
+
+    describe('toConfectionName', () => {
+      test('succeeds with valid name', () => {
+        expect(toConfectionName('Classic Dark Dome Bonbon')).toSucceedWith(
+          'Classic Dark Dome Bonbon' as ConfectionName
+        );
+      });
+
+      test('fails with empty string', () => {
+        expect(toConfectionName('')).toFailWith(/Invalid ConfectionName/);
+      });
+    });
+
+    describe('toConfectionVersionSpec', () => {
+      test('succeeds with valid spec', () => {
+        expect(toConfectionVersionSpec('2026-01-01-01')).toSucceedWith(
+          '2026-01-01-01' as ConfectionVersionSpec
+        );
+      });
+
+      test('fails with invalid format', () => {
+        expect(toConfectionVersionSpec('invalid')).toFailWith(/Invalid ConfectionVersionSpec/);
+      });
+    });
+
+    describe('isValidConfectionVersionId', () => {
+      test('returns true for valid ID', () => {
+        expect(isValidConfectionVersionId('common.bonbon@2026-01-01-01')).toBe(true);
+      });
+
+      test('returns false for non-string', () => {
+        expect(isValidConfectionVersionId(123)).toBe(false);
+      });
+
+      test('returns false for missing separator', () => {
+        expect(isValidConfectionVersionId('common.bonbon')).toBe(false);
+      });
+
+      test('returns false for invalid confection ID part', () => {
+        expect(isValidConfectionVersionId('nobonbondot@2026-01-01-01')).toBe(false);
+      });
+    });
+
+    describe('toConfectionVersionId', () => {
+      test('succeeds with valid ID', () => {
+        expect(toConfectionVersionId('common.bonbon@2026-01-01-01')).toSucceedWith(
+          'common.bonbon@2026-01-01-01' as ConfectionVersionId
+        );
+      });
+
+      test('fails with invalid format', () => {
+        expect(toConfectionVersionId('invalid')).toFailWith(/Invalid ConfectionVersionId/);
       });
     });
   });

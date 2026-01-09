@@ -25,7 +25,17 @@
 
 import { Collections, fail, Failure, Logging, Result, succeed, Success } from '@fgv/ts-utils';
 
-import { Helpers, IngredientId, MoldId, ProcedureId, RecipeId, RecipeVersionId, Validation } from '../common';
+import {
+  ConfectionId,
+  Helpers,
+  IngredientId,
+  MoldId,
+  ProcedureId,
+  RecipeId,
+  RecipeVersionId,
+  Validation
+} from '../common';
+import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { IComputedScaledRecipe } from '../recipes';
 import { IJournalRecord, JournalLibrary } from '../journal';
 import { Mold } from '../molds';
@@ -191,6 +201,35 @@ export class RuntimeContext
    */
   public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord> {
     return this._library.getJournalsForVersion(versionId);
+  }
+
+  // ============================================================================
+  // Confections
+  // ============================================================================
+
+  /**
+   * The confections library for accessing confection data.
+   */
+  public get confections(): ConfectionsLibrary {
+    return this._library.confections;
+  }
+
+  /**
+   * Gets a confection by ID.
+   * @param id - The confection ID
+   * @returns Success with confection data, or Failure if not found
+   */
+  public getConfection(id: ConfectionId): Result<ConfectionData> {
+    return this._library.getConfection(id);
+  }
+
+  /**
+   * Checks if a confection exists.
+   * @param id - The confection ID to check
+   * @returns true if the confection exists
+   */
+  public hasConfection(id: ConfectionId): boolean {
+    return this._library.hasConfection(id);
   }
 
   // ============================================================================

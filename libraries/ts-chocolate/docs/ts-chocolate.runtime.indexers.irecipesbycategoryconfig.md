@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[RecipeCategory](./ts-chocolate.recipes.recipecategory.md)
+RecipeCategory
 
 
 </td><td>

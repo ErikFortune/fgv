@@ -82,6 +82,27 @@ Gets the number of cached recipes.
 </td></tr>
 <tr><td>
 
+[confections](./ts-chocolate.runtime.runtimecontext.confections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
+
+
+</td><td>
+
+The confections library for accessing confection data.
+
+
+</td></tr>
+<tr><td>
+
 [ingredients](./ts-chocolate.runtime.runtimecontext.ingredients.md)
 
 
@@ -280,6 +301,20 @@ Gets all unique tags used across recipes.
 </td></tr>
 <tr><td>
 
+[getConfection(id)](./ts-chocolate.runtime.runtimecontext.getconfection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a confection by ID.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientUsage(ingredientId)](./ts-chocolate.runtime.runtimecontext.getingredientusage.md)
 
 
@@ -345,6 +380,20 @@ Gets a mold by its composite ID. Used internally by RuntimeRecipe for mold resol
 </td><td>
 
 Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+
+
+</td></tr>
+<tr><td>
+
+[hasConfection(id)](./ts-chocolate.runtime.runtimecontext.hasconfection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a confection exists.
 
 
 </td></tr>

@@ -110,6 +110,17 @@ This helper provides a consistent way to convert the various forms of LibraryLoa
 </td></tr>
 <tr><td>
 
+[getConfectionsDirectory(tree)](./ts-chocolate.librarydata.getconfectionsdirectory.md)
+
+
+</td><td>
+
+Gets the confections directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory(tree)](./ts-chocolate.librarydata.getingredientsdirectory.md)
 
 

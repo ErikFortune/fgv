@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_9 } from '@fgv/ts-utils';
+import { Converters as Converters_10 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -17,6 +17,15 @@ import { ValidatingResultMap } from '@fgv/ts-utils';
 import { Validator } from '@fgv/ts-utils';
 
 // @public
+const additionalChocolate: Converter<IAdditionalChocolate>;
+
+// @public
+export type AdditionalChocolatePurpose = 'seal' | 'deco';
+
+// @public
+const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
+
+// @public
 const AES_256_KEY_SIZE: number;
 
 // @public
@@ -24,6 +33,9 @@ type AggregationMode = 'intersection' | 'union';
 
 // @public
 const alcoholIngredient: Converter<IAlcoholIngredient>;
+
+// @public
+export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[];
 
 // @public
 export const allAllergens: Allergen[];
@@ -42,6 +54,9 @@ export const allChocolateApplications: ChocolateApplication[];
 
 // @public
 export const allChocolateTypes: ChocolateType[];
+
+// @public
+export const allConfectionTypes: ConfectionType[];
 
 // @public
 export type Allergen = 'milk' | 'soy' | 'nuts' | 'gluten' | 'eggs' | 'peanuts';
@@ -65,7 +80,10 @@ export const allMoldFormats: MoldFormat[];
 const allRatingCategories: RatingCategory[];
 
 // @public
-const allRecipeCategories: RecipeCategory[];
+export const allRecipeCategories: RecipeCategory[];
+
+// @public
+const allRecipeCategories_2: RecipeCategory_2[];
 
 // @public
 const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
@@ -80,6 +98,9 @@ function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 type AnyRecipeVersion = IRecipeVersion | IScaledRecipeVersion;
 
 // @public
+type AnyRuntimeConfection = RuntimeMoldedBonBon | RuntimeBarTruffle | RuntimeRolledTruffle;
+
+// @public
 type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient;
 
 // @public
@@ -89,10 +110,22 @@ function atLeast<T>(min: number, getter: (item: T) => number | undefined): Filte
 function atMost<T>(max: number, getter: (item: T) => number | undefined): FilterPredicate<T>;
 
 // @public
+const barTruffle: Converter<IBarTruffle>;
+
+// @public
 const base64String: Converter<string>;
 
 // @public
 export const BASE_ID_PATTERN: RegExp;
+
+// @public
+const baseConfection: Converter<IConfection>;
+
+// @public
+export type BaseConfectionId = Brand<string, 'BaseConfectionId'>;
+
+// @public
+const baseConfectionId: Converter<BaseConfectionId>;
 
 // @public
 abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
@@ -158,6 +191,9 @@ export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
 const baseRecipeId: Converter<BaseRecipeId>;
 
 // @public
+const bonBonDimensions: Converter<IBonBonDimensions>;
+
+// @public
 class BrowserCryptoProvider implements ICryptoProvider {
     constructor(cryptoApi?: Crypto);
     decrypt(encryptedData: Uint8Array, key: Uint8Array, iv: Uint8Array, authTag: Uint8Array): Promise<Result<string>>;
@@ -168,6 +204,7 @@ class BrowserCryptoProvider implements ICryptoProvider {
 
 declare namespace BuiltIn {
     export {
+        confectionCollections,
         ingredientCollections,
         recipeCollections,
         BuiltInData
@@ -179,6 +216,7 @@ export { BuiltIn }
 class BuiltInData {
     // @internal
     static clearCache(): void;
+    static getConfectionsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
     static getIngredientsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
     static getLibraryTree(): Result<FileTree.IFileTreeDirectoryItem>;
     static getMoldsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
@@ -223,6 +261,9 @@ declare namespace Calculations {
 }
 export { Calculations }
 
+// @public
+function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -259,9 +300,13 @@ class ChocolateLibrary {
     calculateGanache(id: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     calculateGanacheForRecipe(recipe: IRecipe, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get confections(): ConfectionsLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IChocolateLibraryCreateParams): Result<ChocolateLibrary>;
     createIngredientResolver(): IngredientResolver;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getConfection(id: ConfectionId): Result<ConfectionData>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<Ingredient>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -274,6 +319,7 @@ class ChocolateLibrary {
     getProcedure(id: ProcedureId): Result<Procedure>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: RecipeId): Result<IRecipe>;
+    hasConfection(id: ConfectionId): boolean;
     hasIngredient(id: IngredientId): boolean;
     hasMold(id: MoldId): boolean;
     hasProcedure(id: ProcedureId): boolean;
@@ -292,6 +338,9 @@ class ChocolateLibrary {
 }
 
 // @public
+const chocolateSpec: Converter<IChocolateSpec>;
+
+// @public
 export type ChocolateType = 'dark' | 'milk' | 'white' | 'caramelized' | 'ruby' | 'flavored';
 
 // @public
@@ -299,6 +348,9 @@ const chocolateType: Converter<ChocolateType>;
 
 // @public
 const chocolateVariety: Converter<CacaoVariety>;
+
+// @public
+const coatings: Converter<ICoatings>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -355,6 +407,147 @@ type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 // @public
 export const COMPOSITE_ID_PATTERN: RegExp;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const confection: Converter<ConfectionData>;
+
+// @public
+export const CONFECTION_VERSION_ID_PATTERN: RegExp;
+
+// @public
+export const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
+
+// @public
+type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
+
+// @public
+type ConfectionCollectionEntry = SubLibraryCollectionEntry<BaseConfectionId, ConfectionData>;
+
+// @public
+type ConfectionCollectionEntryInit = SubLibraryEntryInit<BaseConfectionId, ConfectionData>;
+
+// @public
+const confectionCollections: Record<string, JsonObject>;
+
+// @public
+type ConfectionCollectionValidator = SubLibraryCollectionValidator<ConfectionId, ConfectionData>;
+
+// @public
+type ConfectionData = IMoldedBonBon | IBarTruffle | IRolledTruffle;
+
+// @public
+const confectionData: Converter<ConfectionData>;
+
+// @public
+const confectionDecoration: Converter<IConfectionDecoration>;
+
+// @public
+const confectionFillings: Converter<IConfectionFillings>;
+
+// @public
+export type ConfectionId = Brand<string, 'ConfectionId'>;
+
+// @public
+const confectionId: Converter<ConfectionId>;
+
+// @public
+const confectionMoldRef: Converter<IConfectionMoldRef>;
+
+// @public
+const confectionMolds: Converter<IConfectionMolds>;
+
+// @public
+export type ConfectionName = Brand<string, 'ConfectionName'>;
+
+// @public
+const confectionName: Converter<ConfectionName>;
+
+// @public
+const confectionProcedureRef: Converter<IConfectionProcedureRef>;
+
+// @public
+const confectionProcedures: Converter<IConfectionProcedures>;
+
+declare namespace Confections {
+    export {
+        Converters_2 as Converters,
+        isMoldedBonBon,
+        isBarTruffle,
+        isRolledTruffle,
+        IConfectionYield,
+        IConfectionDecoration,
+        IConfectionFillings,
+        IChocolateSpec,
+        IAdditionalChocolate,
+        IConfectionMoldRef,
+        IConfectionMolds,
+        IConfectionProcedureRef,
+        IConfectionProcedures,
+        IFrameDimensions,
+        IBonBonDimensions,
+        ICoatings,
+        IConfectionVersion,
+        IConfection,
+        IMoldedBonBon,
+        IBarTruffle,
+        IRolledTruffle,
+        ConfectionData,
+        ConfectionCollectionEntry,
+        ConfectionCollectionEntryInit,
+        ConfectionCollectionValidator,
+        ConfectionCollection,
+        IConfectionFileTreeSource,
+        ConfectionsMergeSource,
+        IConfectionsLibraryParams,
+        IConfectionsLibraryAsyncParams,
+        ConfectionsLibrary,
+        scaleConfectionByFactor,
+        scaleConfectionToCount,
+        scaleMoldedBonBonByFrames,
+        scaleConfection,
+        canScaleByFrames,
+        IScaledConfectionYield,
+        IScaledConfection,
+        IConfectionScaleOptions,
+        IFrameScaleOptions
+    }
+}
+export { Confections }
+
+// @public
+class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, ConfectionData> {
+    static create(params?: IConfectionsLibraryParams): Result<ConfectionsLibrary>;
+    static createAsync(params?: IConfectionsLibraryAsyncParams): Promise<Result<ConfectionsLibrary>>;
+}
+
+// @public
+type ConfectionsMergeSource = SubLibraryMergeSource<ConfectionsLibrary>;
+
+// @public
+export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
+
+// @public
+const confectionType: Converter<ConfectionType>;
+
+// @public
+const confectionVersion: Converter<IConfectionVersion>;
+
+// @public
+export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
+
+// @public
+const confectionVersionId: Converter<ConfectionVersionId>;
+
+// @public
+export type ConfectionVersionSpec = Brand<string, 'ConfectionVersionSpec'>;
+
+// @public
+const confectionVersionSpec: Converter<ConfectionVersionSpec>;
+
+// @public
+const confectionYield: Converter<IConfectionYield>;
+
 // @public
 function containsIgnoreCase<T>(text: string, getter: (item: T) => string | undefined): FilterPredicate<T>;
 
@@ -365,10 +558,12 @@ declare namespace Converters {
         baseRecipeId,
         baseMoldId,
         baseProcedureId,
+        baseConfectionId,
         ingredientId,
         recipeId,
         moldId,
         procedureId,
+        confectionId,
         journalId,
         ParsedIngredientId,
         parsedIngredientId,
@@ -384,6 +579,13 @@ declare namespace Converters {
         ParsedRecipeVersionId,
         parsedRecipeVersionId,
         sessionId,
+        ParsedConfectionId,
+        parsedConfectionId,
+        confectionName,
+        confectionVersionSpec,
+        confectionVersionId,
+        ParsedConfectionVersionId,
+        parsedConfectionVersionId,
         grams,
         percentage,
         celsius,
@@ -399,12 +601,39 @@ declare namespace Converters {
         allergen,
         certification,
         chocolateApplication,
-        moldFormat
+        moldFormat,
+        confectionType,
+        additionalChocolatePurpose,
+        recipeCategory_2 as recipeCategory
     }
 }
 export { Converters }
 
 declare namespace Converters_2 {
+    export {
+        confectionYield,
+        confectionDecoration,
+        confectionFillings,
+        chocolateSpec,
+        additionalChocolate,
+        confectionMoldRef,
+        confectionMolds,
+        confectionProcedureRef,
+        confectionProcedures,
+        frameDimensions,
+        bonBonDimensions,
+        coatings,
+        confectionVersion,
+        baseConfection,
+        moldedBonBon,
+        barTruffle,
+        rolledTruffle,
+        confectionData,
+        confection
+    }
+}
+
+declare namespace Converters_3 {
     export {
         isEncryptedCollectionFile,
         encryptionAlgorithm,
@@ -418,7 +647,7 @@ declare namespace Converters_2 {
     }
 }
 
-declare namespace Converters_3 {
+declare namespace Converters_4 {
     export {
         ganacheCharacteristics,
         temperatureCurve,
@@ -432,7 +661,7 @@ declare namespace Converters_3 {
     }
 }
 
-declare namespace Converters_4 {
+declare namespace Converters_5 {
     export {
         journalEventType,
         journalEntry,
@@ -440,7 +669,7 @@ declare namespace Converters_4 {
     }
 }
 
-declare namespace Converters_5 {
+declare namespace Converters_6 {
     export {
         removeExtension,
         collectionSourceFile,
@@ -451,7 +680,7 @@ declare namespace Converters_5 {
     }
 }
 
-declare namespace Converters_6 {
+declare namespace Converters_7 {
     export {
         cavityDimensions,
         moldData,
@@ -460,7 +689,7 @@ declare namespace Converters_6 {
     }
 }
 
-declare namespace Converters_7 {
+declare namespace Converters_8 {
     export {
         procedureStep,
         procedureData,
@@ -469,7 +698,7 @@ declare namespace Converters_7 {
     }
 }
 
-declare namespace Converters_8 {
+declare namespace Converters_9 {
     export {
         recipeIngredient,
         ratingCategory,
@@ -512,7 +741,7 @@ function createRecipeVersionId(recipeId: RecipeId, versionSpec: RecipeVersionSpe
 
 declare namespace Crypto_2 {
     export {
-        Converters_2 as Converters,
+        Converters_3 as Converters,
         isEncryptedCollectionFile,
         NodeCryptoProvider,
         nodeCryptoProvider,
@@ -531,8 +760,8 @@ declare namespace Crypto_2 {
         IEncryptedCollectionFile,
         ICryptoProvider,
         EncryptedCollectionErrorMode,
-        SecretProvider,
-        IEncryptionConfig,
+        SecretProvider_2 as SecretProvider,
+        IEncryptionConfig_2 as IEncryptionConfig,
         ENCRYPTED_COLLECTION_FORMAT,
         DEFAULT_ALGORITHM,
         AES_256_KEY_SIZE,
@@ -667,6 +896,9 @@ export type FluidityStars = 1 | 2 | 3 | 4 | 5;
 const fluidityStars: Converter<FluidityStars>;
 
 // @public
+const frameDimensions: Converter<IFrameDimensions>;
+
+// @public
 type FullLibraryLoadSpec = boolean | Partial<Record<SubLibraryId | 'default', LibraryLoadSpec>>;
 
 // @public
@@ -677,6 +909,9 @@ const GCM_AUTH_TAG_SIZE: number;
 
 // @public
 const GCM_IV_SIZE: number;
+
+// @public
+function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
@@ -748,10 +983,29 @@ declare namespace Helpers {
 export { Helpers }
 
 // @public
+interface IAdditionalChocolate extends IChocolateSpec {
+    readonly purpose: AdditionalChocolatePurpose;
+}
+
+// @public
 interface IAlcoholIngredient extends IIngredient {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
     readonly flavorProfile?: string;
+}
+
+// @public
+interface IBarTruffle extends IConfection {
+    readonly confectionType: 'bar-truffle';
+    readonly enrobingChocolate?: IChocolateSpec;
+    readonly frameDimensions: IFrameDimensions;
+    readonly singleBonBonDimensions: IBonBonDimensions;
+}
+
+// @public
+interface IBonBonDimensions {
+    readonly height: Millimeters;
+    readonly width: Millimeters;
 }
 
 // @public
@@ -790,6 +1044,18 @@ interface IChocolateLibraryCreateParams {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly libraries?: IInstantiatedLibrarySource;
     readonly logger?: Logging.LogReporter<unknown>;
+}
+
+// @public
+interface IChocolateSpec {
+    readonly alternateIngredientIds?: ReadonlyArray<IngredientId>;
+    readonly ingredientId: IngredientId;
+}
+
+// @public
+interface ICoatings {
+    readonly ingredients: ReadonlyArray<IChocolateSpec>;
+    readonly recommendedIngredientId?: IngredientId;
 }
 
 // @public
@@ -872,6 +1138,90 @@ interface IComputedScaledRecipe {
     readonly ratings?: ReadonlyArray<IRecipeRating>;
     readonly scaledFrom: IScalingSource;
     readonly yield?: string;
+}
+
+// @public
+interface IConfection {
+    readonly baseId: BaseConfectionId;
+    readonly confectionProcedures?: IConfectionProcedures;
+    readonly confectionType: ConfectionType;
+    readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+    readonly description?: string;
+    readonly fillings?: IConfectionFillings;
+    readonly goldenVersionSpec: ConfectionVersionSpec;
+    readonly name: ConfectionName;
+    readonly tags?: ReadonlyArray<string>;
+    readonly versions: ReadonlyArray<IConfectionVersion>;
+    readonly yield: IConfectionYield;
+}
+
+// @internal
+interface IConfectionContext {
+}
+
+// @public
+interface IConfectionDecoration {
+    readonly description: string;
+    readonly preferred?: boolean;
+}
+
+// @public
+type IConfectionFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IConfectionFillings {
+    readonly ingredients?: ReadonlyArray<IngredientId>;
+    readonly recipes?: ReadonlyArray<RecipeId>;
+    readonly recommendedFillingId?: RecipeId | IngredientId;
+}
+
+// @public
+interface IConfectionMoldRef {
+    readonly moldId: MoldId;
+    readonly notes?: string;
+}
+
+// @public
+interface IConfectionMolds {
+    readonly molds: ReadonlyArray<IConfectionMoldRef>;
+    readonly recommendedMoldId?: MoldId;
+}
+
+// @public
+interface IConfectionProcedureRef {
+    readonly notes?: string;
+    readonly procedureId: ProcedureId;
+}
+
+// @public
+interface IConfectionProcedures {
+    readonly procedures: ReadonlyArray<IConfectionProcedureRef>;
+    readonly recommendedProcedureId?: ProcedureId;
+}
+
+// @public
+interface IConfectionScaleOptions {
+    readonly roundingMode?: 'round' | 'floor' | 'ceil';
+}
+
+// @public
+type IConfectionsLibraryAsyncParams = ISubLibraryAsyncParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
+
+// @public
+type IConfectionsLibraryParams = ISubLibraryParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
+
+// @public
+interface IConfectionVersion {
+    readonly createdDate: string;
+    readonly notes?: string;
+    readonly versionSpec: ConfectionVersionSpec;
+}
+
+// @public
+interface IConfectionYield {
+    readonly count: number;
+    readonly unit?: string;
+    readonly weightPerPiece?: Grams;
 }
 
 // @public
@@ -1013,6 +1363,18 @@ interface IFindOrchestrator<TEntity, TSpec> {
 }
 
 // @public
+interface IFrameDimensions {
+    readonly depth: Millimeters;
+    readonly height: Millimeters;
+    readonly width: Millimeters;
+}
+
+// @public
+interface IFrameScaleOptions extends IConfectionScaleOptions {
+    readonly overagePercent?: number;
+}
+
+// @public
 interface IGanacheAnalysis {
     readonly characteristics: IGanacheCharacteristics;
     readonly fatToWaterRatio: number;
@@ -1118,6 +1480,7 @@ interface IIngredientUsageInfo {
 //
 // @public
 interface IInstantiatedLibrarySource {
+    readonly confections?: ConfectionsLibrary;
     readonly ingredients?: IngredientsLibrary;
     readonly journals?: JournalLibrary;
     readonly molds?: MoldsLibrary;
@@ -1185,7 +1548,7 @@ interface ILibraryLoadParams {
 
 // @public
 interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extends Omit<ICollectionFilterInitParams<TCOLLECTIONID>, 'nameConverter'> {
-    readonly encryption?: IEncryptionConfig_2;
+    readonly encryption?: IEncryptionConfig;
     readonly mutable?: MutabilitySpec;
     readonly onEncryptedFile?: EncryptedFileHandling;
     // (undocumented)
@@ -1210,6 +1573,14 @@ interface IMold {
     readonly notes?: string;
     readonly productNumber: string;
     readonly tags?: ReadonlyArray<string>;
+}
+
+// @public
+interface IMoldedBonBon extends IConfection {
+    readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+    readonly confectionType: 'molded-bonbon';
+    readonly molds: IConfectionMolds;
+    readonly shellChocolate: IChocolateSpec;
 }
 
 // @public
@@ -1371,7 +1742,7 @@ type IngredientResolver_2 = (id: IngredientId) => Result<IRuntimeIngredient>;
 
 declare namespace Ingredients {
     export {
-        Converters_3 as Converters,
+        Converters_4 as Converters,
         isChocolateIngredient,
         isSugarIngredient,
         isDairyIngredient,
@@ -1458,7 +1829,7 @@ interface INumericRange {
 // @public
 interface IProcedure {
     readonly baseId: BaseProcedureId;
-    readonly category?: RecipeCategory;
+    readonly category?: RecipeCategory_2;
     readonly description?: string;
     readonly name: string;
     readonly notes?: string;
@@ -1515,7 +1886,7 @@ interface IReadOnlyValidatingLibrary<TK extends string, TV, TSpec> extends Colle
 // @public
 interface IRecipe {
     readonly baseId: BaseRecipeId;
-    readonly category: RecipeCategory;
+    readonly category: RecipeCategory_2;
     readonly derivedFrom?: IRecipeDerivation;
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
@@ -1589,7 +1960,7 @@ interface IRecipeRating {
 
 // @public
 interface IRecipesByCategoryConfig {
-    readonly category: RecipeCategory;
+    readonly category: RecipeCategory_2;
 }
 
 // @public
@@ -1704,6 +2075,13 @@ interface IResolvedSubLibrarySource {
 }
 
 // @public
+interface IRolledTruffle extends IConfection {
+    readonly coatings?: ICoatings;
+    readonly confectionType: 'rolled-truffle';
+    readonly enrobingChocolate?: IChocolateSpec;
+}
+
+// @public
 interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
     readonly alcoholByVolume?: Percentage;
     readonly category: 'alcohol';
@@ -1712,6 +2090,15 @@ interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
     //
     // (undocumented)
     readonly raw: IAlcoholIngredient;
+}
+
+// @public
+interface IRuntimeBarTruffle extends IRuntimeConfection {
+    readonly confectionType: 'bar-truffle';
+    readonly enrobingChocolate?: IChocolateSpec;
+    readonly frameDimensions: IFrameDimensions;
+    readonly raw: IBarTruffle;
+    readonly singleBonBonDimensions: IBonBonDimensions;
 }
 
 // @public
@@ -1729,6 +2116,29 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
     readonly raw: IChocolateIngredient;
     readonly temperatureCurve?: ITemperatureCurve;
     readonly viscosityMcM?: DegreesMacMichael;
+}
+
+// @public
+interface IRuntimeConfection {
+    readonly baseId: BaseConfectionId;
+    readonly confectionProcedures?: IConfectionProcedures;
+    readonly confectionType: ConfectionType;
+    readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+    readonly description?: string;
+    readonly fillings?: IConfectionFillings;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
+    readonly goldenVersion: IConfectionVersion;
+    readonly goldenVersionSpec: ConfectionVersionSpec;
+    readonly id: ConfectionId;
+    isBarTruffle(): this is IRuntimeBarTruffle;
+    isMoldedBonBon(): this is IRuntimeMoldedBonBon;
+    isRolledTruffle(): this is IRuntimeRolledTruffle;
+    readonly name: ConfectionName;
+    readonly raw: ConfectionData;
+    readonly sourceId: SourceId;
+    readonly tags?: ReadonlyArray<string>;
+    readonly versions: ReadonlyArray<IConfectionVersion>;
+    readonly yield: IConfectionYield;
 }
 
 // @public
@@ -1802,6 +2212,15 @@ interface IRuntimeIngredient {
 }
 
 // @public
+interface IRuntimeMoldedBonBon extends IRuntimeConfection {
+    readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+    readonly confectionType: 'molded-bonbon';
+    readonly molds: IConfectionMolds;
+    readonly raw: IMoldedBonBon;
+    readonly shellChocolate: IChocolateSpec;
+}
+
+// @public
 interface IRuntimeRecipe {
     readonly allIngredientIds: ReadonlySet<IngredientId>;
     readonly baseId: BaseRecipeId;
@@ -1855,6 +2274,14 @@ interface IRuntimeRecipeVersion {
 }
 
 // @public
+interface IRuntimeRolledTruffle extends IRuntimeConfection {
+    readonly coatings?: ICoatings;
+    readonly confectionType: 'rolled-truffle';
+    readonly enrobingChocolate?: IChocolateSpec;
+    readonly raw: IRolledTruffle;
+}
+
+// @public
 interface IRuntimeScaledRecipeVersion {
     readonly baseWeight: Grams;
     calculateGanache(): Result<IGanacheCalculation>;
@@ -1903,6 +2330,26 @@ interface ISaveResult {
     readonly journalId?: string;
     readonly journalRecord?: IJournalRecord;
     readonly newVersionSpec?: string;
+}
+
+// @public
+function isBarTruffle(confection: ConfectionData): confection is IBarTruffle;
+
+// @public
+interface IScaledConfection<T extends ConfectionData = ConfectionData> {
+    readonly confection: T;
+    readonly createdDate: string;
+    readonly scaledYield: IScaledConfectionYield;
+}
+
+// @public
+interface IScaledConfectionYield {
+    readonly originalCount: number;
+    readonly scaledCount: number;
+    readonly scaleFactor: number;
+    readonly totalWeight?: Grams;
+    readonly unit?: string;
+    readonly weightPerPiece?: Grams;
 }
 
 // @public
@@ -1977,7 +2424,13 @@ function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
 function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
 
 // @public
+function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon;
+
+// @public
 function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion;
+
+// @public
+function isRolledTruffle(confection: ConfectionData): confection is IRolledTruffle;
 
 // @public
 function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRecipeVersion;
@@ -1989,7 +2442,7 @@ function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredie
 //
 // @public
 interface ISubLibraryAsyncParams<TLibrary, TEntryInit> extends ISubLibraryParams<TLibrary, TEntryInit> {
-    readonly encryption?: IEncryptionConfig_2;
+    readonly encryption?: IEncryptionConfig;
 }
 
 // @public
@@ -2019,6 +2472,9 @@ interface ISugarIngredient extends IIngredient {
 }
 
 // @public
+function isValidBaseConfectionId(from: unknown): from is BaseConfectionId;
+
+// @public
 function isValidBaseIngredientId(from: unknown): from is BaseIngredientId;
 
 // @public
@@ -2032,6 +2488,18 @@ function isValidBaseRecipeId(from: unknown): from is BaseRecipeId;
 
 // @public
 function isValidCelsius(from: unknown): from is Celsius;
+
+// @public
+function isValidConfectionId(from: unknown): from is ConfectionId;
+
+// @public
+function isValidConfectionName(from: unknown): from is ConfectionName;
+
+// @public
+function isValidConfectionVersionId(from: unknown): from is ConfectionVersionId;
+
+// @public
+function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionSpec;
 
 // @public
 function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael;
@@ -2111,7 +2579,7 @@ declare namespace Journal {
         JournalLibrary,
         IJournalLibraryParams,
         IJournalImportResult,
-        Converters_4 as Converters,
+        Converters_5 as Converters,
         JournalEventType,
         allJournalEventTypes,
         IJournalEntry,
@@ -2174,7 +2642,7 @@ const journalRecord: Converter<IJournalRecord>;
 
 declare namespace LibraryData {
     export {
-        Converters_5 as Converters,
+        Converters_6 as Converters,
         resolveSubLibraryLoadSpec,
         ICollectionSourceMetadata,
         ICollectionSourceFile,
@@ -2189,8 +2657,8 @@ declare namespace LibraryData {
         IFileTreeSource,
         ILibraryFileTreeSource,
         IMergeLibrarySource,
-        SecretProvider_2 as SecretProvider,
-        IEncryptionConfig_2 as IEncryptionConfig,
+        SecretProvider,
+        IEncryptionConfig,
         createFilterFromSpec,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
@@ -2206,6 +2674,7 @@ declare namespace LibraryData {
         getJournalsDirectory,
         getMoldsDirectory,
         getProceduresDirectory,
+        getConfectionsDirectory,
         LibraryPaths,
         specToLoadParams,
         getSubLibraryPath,
@@ -2246,6 +2715,7 @@ const LibraryPaths: {
     readonly journals: "data/journals";
     readonly molds: "data/molds";
     readonly procedures: "data/procedures";
+    readonly confections: "data/confections";
 };
 
 // @public
@@ -2313,6 +2783,9 @@ const moldConverter: Converter<Mold>;
 const moldData: Converter<IMold>;
 
 // @public
+const moldedBonBon: Converter<IMoldedBonBon>;
+
+// @public
 export type MoldFormat = 'series-1000' | 'series-2000';
 
 // @public
@@ -2326,7 +2799,7 @@ const moldId: Converter<MoldId>;
 
 declare namespace Molds {
     export {
-        Converters_6 as Converters,
+        Converters_7 as Converters,
         ICavityDimensions,
         IMold,
         Mold,
@@ -2395,31 +2868,43 @@ function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPr
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-type ParsedIngredientId = Converters_9.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedConfectionId = Converters_10.ICompositeId<SourceId, BaseConfectionId>;
+
+// @public
+const parsedConfectionId: Converter<ParsedConfectionId>;
+
+// @public
+type ParsedConfectionVersionId = Converters_10.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+
+// @public
+const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
+
+// @public
+type ParsedIngredientId = Converters_10.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedMoldId = Converters_9.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_10.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
 
 // @public
-type ParsedProcedureId = Converters_9.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_10.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedRecipeId = Converters_9.ICompositeId<SourceId, BaseRecipeId>;
+type ParsedRecipeId = Converters_10.ICompositeId<SourceId, BaseRecipeId>;
 
 // @public
 const parsedRecipeId: Converter<ParsedRecipeId>;
 
 // @public
-type ParsedRecipeVersionId = Converters_9.ICompositeId<RecipeId, RecipeVersionSpec>;
+type ParsedRecipeVersionId = Converters_10.ICompositeId<RecipeId, RecipeVersionSpec>;
 
 // @public
 const parsedRecipeVersionId: Converter<ParsedRecipeVersionId>;
@@ -2444,7 +2929,7 @@ class Procedure implements IProcedure {
     // (undocumented)
     readonly baseId: BaseProcedureId;
     // (undocumented)
-    readonly category?: RecipeCategory;
+    readonly category?: RecipeCategory_2;
     static create(data: IProcedure): Result<Procedure>;
     // (undocumented)
     readonly description?: string;
@@ -2498,7 +2983,7 @@ const procedureId: Converter<ProcedureId>;
 
 declare namespace Procedures {
     export {
-        Converters_7 as Converters,
+        Converters_8 as Converters,
         IProcedureStep,
         IProcedure,
         Procedure,
@@ -2554,7 +3039,7 @@ class Recipe implements IRecipe {
     // (undocumented)
     readonly baseId: BaseRecipeId;
     // (undocumented)
-    readonly category: RecipeCategory;
+    readonly category: RecipeCategory_2;
     static create(data: IRecipe): Result<Recipe>;
     // (undocumented)
     readonly derivedFrom?: IRecipeDerivation;
@@ -2589,12 +3074,18 @@ export const RECIPE_VERSION_ID_PATTERN: RegExp;
 export const RECIPE_VERSION_SPEC_PATTERN: RegExp;
 
 // @public
-type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
+export type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const recipeCategory: Converter<RecipeCategory>;
+const recipeCategory: Converter<RecipeCategory_2>;
+
+// @public
+type RecipeCategory_2 = 'ganache' | 'caramel' | 'gianduja';
+
+// @public
+const recipeCategory_2: Converter<RecipeCategory>;
 
 // @public
 type RecipeCollection = SubLibraryCollection<BaseRecipeId, Recipe>;
@@ -2724,13 +3215,13 @@ type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
 
 declare namespace Recipes {
     export {
-        Converters_8 as Converters,
+        Converters_9 as Converters,
         isScaledRecipeVersion,
         isRecipeVersion,
         IRecipeIngredient,
         RatingCategory,
-        RecipeCategory,
-        allRecipeCategories,
+        RecipeCategory_2 as RecipeCategory,
+        allRecipeCategories_2 as allRecipeCategories,
         allRatingCategories,
         IRecipeRating,
         IRecipeUsage,
@@ -2770,7 +3261,7 @@ declare namespace Recipes {
 export { Recipes }
 
 // @public
-function recipesByCategoryConfig(category: RecipeCategory): IRecipesByCategoryConfig;
+function recipesByCategoryConfig(category: RecipeCategory_2): IRecipesByCategoryConfig;
 
 // @public
 const recipesByCategoryConfigConverter: Converter<IRecipesByCategoryConfig>;
@@ -2790,7 +3281,7 @@ class RecipesByCategoryIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRe
     //
     // (undocumented)
     protected _findInternal(config: IRecipesByCategoryConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>>;
-    getAllCategories(): ReadonlyArray<RecipeCategory>;
+    getAllCategories(): ReadonlyArray<RecipeCategory_2>;
 }
 
 // @public
@@ -2910,6 +3401,9 @@ function resolveFileTreeSourceForSubLibrary(source: ILibraryFileTreeSource, subL
 // @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;
 
+// @public
+const rolledTruffle: Converter<IRolledTruffle>;
+
 declare namespace Runtime {
     export {
         RuntimeReverseIndex,
@@ -2930,6 +3424,12 @@ declare namespace Runtime {
         RuntimeRecipe,
         RuntimeVersion,
         RuntimeScaledVersion,
+        RuntimeConfectionBase,
+        RuntimeMoldedBonBon,
+        RuntimeBarTruffle,
+        RuntimeRolledTruffle,
+        RuntimeConfection,
+        AnyRuntimeConfection,
         Indexers,
         Session,
         IInstantiatedLibrarySource,
@@ -2964,6 +3464,11 @@ declare namespace Runtime {
         IVersionContext,
         IIngredientContext,
         IRuntimeContext,
+        IRuntimeConfection,
+        IRuntimeMoldedBonBon,
+        IRuntimeBarTruffle,
+        IRuntimeRolledTruffle,
+        IConfectionContext,
         andFilters,
         orFilters,
         notFilter,
@@ -3001,6 +3506,20 @@ class RuntimeAlcoholIngredient extends RuntimeIngredientBase implements IRuntime
 }
 
 // @public
+class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruffle {
+    // @internal
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle);
+    get confectionType(): 'bar-truffle';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle): Result<RuntimeBarTruffle>;
+    get enrobingChocolate(): IChocolateSpec | undefined;
+    get frameDimensions(): IFrameDimensions;
+    get raw(): IBarTruffle;
+    get singleBonBonDimensions(): IBonBonDimensions;
+}
+
+// @public
 class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRuntimeChocolateIngredient {
     // @internal
     protected constructor(context: IIngredientContext, id: IngredientId, ingredient: IChocolateIngredient);
@@ -3019,6 +3538,53 @@ class RuntimeChocolateIngredient extends RuntimeIngredientBase implements IRunti
     get viscosityMcM(): DegreesMacMichael | undefined;
 }
 
+// @public
+abstract class RuntimeConfection {
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, id: ConfectionId, confection: ConfectionData): Result<AnyRuntimeConfection>;
+}
+
+// @public
+abstract class RuntimeConfectionBase implements IRuntimeConfection {
+    // @internal
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: ConfectionData);
+    get baseId(): BaseConfectionId;
+    // (undocumented)
+    protected readonly _baseId: BaseConfectionId;
+    // (undocumented)
+    protected readonly _confection: ConfectionData;
+    get confectionProcedures(): IConfectionProcedures | undefined;
+    abstract get confectionType(): ConfectionType;
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    //
+    // (undocumented)
+    protected readonly _context: IConfectionContext;
+    get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
+    get description(): string | undefined;
+    get fillings(): IConfectionFillings | undefined;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
+    get goldenVersion(): IConfectionVersion;
+    // (undocumented)
+    protected readonly _goldenVersion: IConfectionVersion;
+    get goldenVersionSpec(): ConfectionVersionSpec;
+    get id(): ConfectionId;
+    // (undocumented)
+    protected readonly _id: ConfectionId;
+    isBarTruffle(): this is RuntimeBarTruffle;
+    isMoldedBonBon(): this is RuntimeMoldedBonBon;
+    isRolledTruffle(): this is RuntimeRolledTruffle;
+    get name(): ConfectionName;
+    abstract get raw(): ConfectionData;
+    get sourceId(): SourceId;
+    // (undocumented)
+    protected readonly _sourceId: SourceId;
+    get tags(): ReadonlyArray<string> | undefined;
+    get versions(): ReadonlyArray<IConfectionVersion>;
+    get yield(): IConfectionYield;
+}
+
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
@@ -3031,10 +3597,12 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
+    get confections(): ConfectionsLibrary;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipeTags(): ReadonlyArray<string>;
+    getConfection(id: ConfectionId): Result<ConfectionData>;
     // @internal
     _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
@@ -3052,6 +3620,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getRecipesWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[];
     // @internal
     getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
+    hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
     get journals(): JournalLibrary;
@@ -3138,6 +3707,20 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
 }
 
 // @public
+class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
+    // @internal
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon);
+    get additionalChocolates(): ReadonlyArray<IAdditionalChocolate> | undefined;
+    get confectionType(): 'molded-bonbon';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon): Result<RuntimeMoldedBonBon>;
+    get molds(): IConfectionMolds;
+    get raw(): IMoldedBonBon;
+    get shellChocolate(): IChocolateSpec;
+}
+
+// @public
 class RuntimeRecipe implements IRuntimeRecipe {
     // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
     //
@@ -3178,6 +3761,19 @@ class RuntimeReverseIndex {
     getRecipesWithPrimaryIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId>;
     invalidate(): void;
     warmUp(): void;
+}
+
+// @public
+class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
+    // @internal
+    protected constructor(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle);
+    get coatings(): ICoatings | undefined;
+    get confectionType(): 'rolled-truffle';
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
+    static create(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle): Result<RuntimeRolledTruffle>;
+    get enrobingChocolate(): IChocolateSpec | undefined;
+    get raw(): IRolledTruffle;
 }
 
 // @public
@@ -3237,6 +3833,15 @@ class RuntimeVersion implements IRuntimeRecipeVersion {
     get yield(): string | undefined;
 }
 
+// @public
+function scaleConfection<T extends ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+
+// @public
+function scaleConfectionByFactor<T extends ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+
+// @public
+function scaleConfectionToCount<T extends ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -3246,6 +3851,9 @@ const scaledRecipeIngredient: Converter<IScaledRecipeIngredient>;
 //
 // @public
 const scaledRecipeVersion: Converter<IScaledRecipeVersion>;
+
+// @public
+function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3348,7 +3956,7 @@ type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Aggregated
 type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
-type SubLibraryId = 'ingredients' | 'recipes' | 'journals' | 'molds' | 'procedures';
+type SubLibraryId = 'ingredients' | 'recipes' | 'journals' | 'molds' | 'procedures' | 'confections';
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
@@ -3358,6 +3966,9 @@ const sugarIngredient: Converter<ISugarIngredient>;
 
 // @public
 const temperatureCurve: Converter<ITemperatureCurve>;
+
+// @public
+function toBaseConfectionId(from: unknown): Result<BaseConfectionId>;
 
 // @public
 function toBaseIngredientId(from: unknown): Result<BaseIngredientId>;
@@ -3373,6 +3984,18 @@ function toBaseRecipeId(from: unknown): Result<BaseRecipeId>;
 
 // @public
 function toCelsius(from: unknown): Result<Celsius>;
+
+// @public
+function toConfectionId(from: unknown): Result<ConfectionId>;
+
+// @public
+function toConfectionName(from: unknown): Result<ConfectionName>;
+
+// @public
+function toConfectionVersionId(from: unknown): Result<ConfectionVersionId>;
+
+// @public
+function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec>;
 
 // @public
 function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael>;
@@ -3450,6 +4073,8 @@ declare namespace Validation {
         toBaseMoldId,
         isValidBaseProcedureId,
         toBaseProcedureId,
+        isValidBaseConfectionId,
+        toBaseConfectionId,
         isValidIngredientId,
         toIngredientId,
         isValidRecipeId,
@@ -3458,12 +4083,20 @@ declare namespace Validation {
         toMoldId,
         isValidProcedureId,
         toProcedureId,
+        isValidConfectionId,
+        toConfectionId,
         isValidRecipeName,
         toRecipeName,
+        isValidConfectionName,
+        toConfectionName,
         isValidRecipeVersionSpec,
         toRecipeVersionSpec,
         isValidRecipeVersionId,
         toRecipeVersionId,
+        isValidConfectionVersionSpec,
+        toConfectionVersionSpec,
+        isValidConfectionVersionId,
+        toConfectionVersionId,
         isValidSessionId,
         toSessionId,
         isValidGrams,

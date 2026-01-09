@@ -27,12 +27,18 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BASE_ID_PATTERN,
+  BaseConfectionId,
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
   BaseRecipeId,
   Celsius,
   COMPOSITE_ID_PATTERN,
+  CONFECTION_VERSION_SPEC_PATTERN,
+  ConfectionId,
+  ConfectionName,
+  ConfectionVersionId,
+  ConfectionVersionSpec,
   DegreesMacMichael,
   Grams,
   IngredientId,
@@ -180,6 +186,31 @@ export function toBaseProcedureId(from: unknown): Result<BaseProcedureId> {
   );
 }
 
+/**
+ * Type guard for BaseConfectionId
+ * @param from - Value to check
+ * @returns True if the value is a valid BaseConfectionId
+ * @public
+ */
+export function isValidBaseConfectionId(from: unknown): from is BaseConfectionId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to BaseConfectionId
+ * @param from - Value to convert
+ * @returns Result with BaseConfectionId or error
+ * @public
+ */
+export function toBaseConfectionId(from: unknown): Result<BaseConfectionId> {
+  if (isValidBaseConfectionId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid BaseConfectionId: must be non-empty alphanumeric with dashes/underscores, no dots'
+  );
+}
+
 // ============================================================================
 // Composite ID Validators (exactly one dot)
 // ============================================================================
@@ -284,6 +315,31 @@ export function toProcedureId(from: unknown): Result<ProcedureId> {
   );
 }
 
+/**
+ * Type guard for ConfectionId
+ * @param from - Value to check
+ * @returns True if the value is a valid composite ConfectionId
+ * @public
+ */
+export function isValidConfectionId(from: unknown): from is ConfectionId {
+  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to ConfectionId
+ * @param from - Value to convert
+ * @returns Result with ConfectionId or error
+ * @public
+ */
+export function toConfectionId(from: unknown): Result<ConfectionId> {
+  if (isValidConfectionId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid ConfectionId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
+  );
+}
+
 // ============================================================================
 // Other String Validators
 // ============================================================================
@@ -309,6 +365,29 @@ export function toRecipeName(from: unknown): Result<RecipeName> {
     return Success.with(from);
   }
   return Failure.with('Invalid RecipeName: must be a non-empty string');
+}
+
+/**
+ * Type guard for ConfectionName
+ * @param from - Value to check
+ * @returns True if the value is a valid ConfectionName
+ * @public
+ */
+export function isValidConfectionName(from: unknown): from is ConfectionName {
+  return typeof from === 'string' && from.length > 0;
+}
+
+/**
+ * Converts unknown value to ConfectionName
+ * @param from - Value to convert
+ * @returns Result with ConfectionName or error
+ * @public
+ */
+export function toConfectionName(from: unknown): Result<ConfectionName> {
+  if (isValidConfectionName(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid ConfectionName: must be a non-empty string');
 }
 
 /**
@@ -365,6 +444,63 @@ export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
   }
   return Failure.with(
     'Invalid RecipeVersionId: must be in format "recipeId@versionSpec" (e.g., "user.ganache@2026-01-03-01")'
+  );
+}
+
+/**
+ * Type guard for ConfectionVersionSpec
+ * @param from - Value to check
+ * @returns True if the value is a valid ConfectionVersionSpec
+ * @public
+ */
+export function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionSpec {
+  return typeof from === 'string' && CONFECTION_VERSION_SPEC_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to ConfectionVersionSpec
+ * @param from - Value to convert
+ * @returns Result with {@link ConfectionVersionSpec | ConfectionVersionSpec} or error
+ * @public
+ */
+export function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec> {
+  if (isValidConfectionVersionSpec(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid ConfectionVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+  );
+}
+
+/**
+ * Type guard for ConfectionVersionId
+ * @param from - Value to check
+ * @returns True if the value is a valid ConfectionVersionId
+ * @public
+ */
+export function isValidConfectionVersionId(from: unknown): from is ConfectionVersionId {
+  if (typeof from !== 'string') {
+    return false;
+  }
+  const parts = from.split(VERSION_ID_SEPARATOR);
+  if (parts.length !== 2) {
+    return false;
+  }
+  return isValidConfectionId(parts[0]) && isValidConfectionVersionSpec(parts[1]);
+}
+
+/**
+ * Converts unknown value to ConfectionVersionId
+ * @param from - Value to convert
+ * @returns Result with {@link ConfectionVersionId | ConfectionVersionId} or error
+ * @public
+ */
+export function toConfectionVersionId(from: unknown): Result<ConfectionVersionId> {
+  if (isValidConfectionVersionId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid ConfectionVersionId: must be in format "confectionId@versionSpec" (e.g., "user.dark-dome-bonbon@2026-01-03-01")'
   );
 }
 

@@ -110,7 +110,7 @@ _(Optional)_ How to handle encrypted files when the required secret is not avail
 
 </td><td>
 
-SecretProvider
+[SecretProvider](./ts-chocolate.librarydata.secretprovider.md)
 
 
 </td><td>

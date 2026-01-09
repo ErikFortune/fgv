@@ -65,6 +65,17 @@ A resolved view of an alcohol ingredient with navigation capabilities. Immutable
 </td></tr>
 <tr><td>
 
+[RuntimeBarTruffle](./ts-chocolate.runtime.runtimebartruffle.md)
+
+
+</td><td>
+
+A resolved view of a bar truffle confection with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
 [RuntimeChocolateIngredient](./ts-chocolate.runtime.runtimechocolateingredient.md)
 
 
@@ -111,12 +122,34 @@ A resolved view of a fat ingredient with navigation capabilities. Immutable - do
 </td></tr>
 <tr><td>
 
+[RuntimeMoldedBonBon](./ts-chocolate.runtime.runtimemoldedbonbon.md)
+
+
+</td><td>
+
+A resolved view of a molded bonbon confection with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
 [RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)
 
 
 </td><td>
 
 A resolved view of a recipe with navigation and version access. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeRolledTruffle](./ts-chocolate.runtime.runtimerolledtruffle.md)
+
+
+</td><td>
+
+A resolved view of a rolled truffle confection with navigation capabilities. Immutable - does not allow modification of underlying data.
 
 
 </td></tr>
@@ -182,6 +215,28 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[RuntimeConfection](./ts-chocolate.runtime.runtimeconfection.md)
+
+
+</td><td>
+
+Static factory for creating runtime confections. This class cannot be instantiated - use create() to get the appropriate concrete type.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeConfectionBase](./ts-chocolate.runtime.runtimeconfectionbase.md)
+
+
+</td><td>
+
+Abstract base class for runtime confections. Provides common properties and version navigation shared by all confection types.
+
+
+</td></tr>
+<tr><td>
 
 [RuntimeIngredient](./ts-chocolate.runtime.runtimeingredient.md)
 
@@ -558,12 +613,36 @@ Runtime ingredient narrowed to alcohol type.
 </td></tr>
 <tr><td>
 
+[IRuntimeBarTruffle](./ts-chocolate.runtime.iruntimebartruffle.md)
+
+
+</td><td>
+
+Runtime confection narrowed to bar truffle type.
+
+
+</td></tr>
+<tr><td>
+
 [IRuntimeChocolateIngredient](./ts-chocolate.runtime.iruntimechocolateingredient.md)
 
 
 </td><td>
 
 Runtime ingredient narrowed to chocolate type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeConfection](./ts-chocolate.runtime.iruntimeconfection.md)
+
+
+</td><td>
+
+A resolved runtime view of a confection with navigation capabilities.
+
+This interface includes all properties from the data layer `IConfection` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Version navigation - Type narrowing methods for discriminated access - Raw access to underlying data
 
 
 </td></tr>
@@ -632,6 +711,17 @@ Note: Does not extend `IIngredient` directly because the class implementation pr
 </td></tr>
 <tr><td>
 
+[IRuntimeMoldedBonBon](./ts-chocolate.runtime.iruntimemoldedbonbon.md)
+
+
+</td><td>
+
+Runtime confection narrowed to molded bonbon type.
+
+
+</td></tr>
+<tr><td>
+
 [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
 
 
@@ -679,6 +769,17 @@ A resolved runtime view of a recipe version with resolved ingredients.
 This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
 
 Note: Does not extend `IRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeRolledTruffle](./ts-chocolate.runtime.iruntimerolledtruffle.md)
+
+
+</td><td>
+
+Runtime confection narrowed to rolled truffle type.
 
 
 </td></tr>
@@ -779,6 +880,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[AnyRuntimeConfection](./ts-chocolate.runtime.anyruntimeconfection.md)
+
+
+</td><td>
+
+Union type of all concrete runtime confection classes. Use this type when you need to work with any runtime confection.
+
+
+</td></tr>
+<tr><td>
 
 [AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)
 

@@ -39,6 +39,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[confections](./ts-chocolate.runtime.chocolatelibrary.confections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
+
+
+</td><td>
+
+The [confections library](./ts-chocolate.confections.confectionslibrary.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ingredients](./ts-chocolate.runtime.chocolatelibrary.ingredients.md)
 
 
@@ -257,6 +278,20 @@ Creates an ingredient resolver that looks up ingredients from this library
 </td></tr>
 <tr><td>
 
+[getConfection(id)](./ts-chocolate.runtime.chocolatelibrary.getconfection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [confection](./ts-chocolate.confections.confectiondata.md) by its [composite ID](./ts-chocolate.confectionid.md)
+
+
+</td></tr>
+<tr><td>
+
 [getIngredient(id)](./ts-chocolate.runtime.chocolatelibrary.getingredient.md)
 
 
@@ -336,6 +371,20 @@ Gets a [procedure](./ts-chocolate.procedures.procedure.md) by its [composite ID]
 </td><td>
 
 Gets a [recipe](./ts-chocolate.recipes.recipe.md) by its [composite ID](./ts-chocolate.recipeid.md)
+
+
+</td></tr>
+<tr><td>
+
+[hasConfection(id)](./ts-chocolate.runtime.chocolatelibrary.hasconfection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a confection exists
 
 
 </td></tr>

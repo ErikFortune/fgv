@@ -1069,4 +1069,52 @@ describe('RuntimeContext', () => {
       });
     });
   });
+
+  // ============================================================================
+  // Confection Convenience Methods
+  // ============================================================================
+
+  describe('confection convenience methods', () => {
+    test('confections getter returns confections library', () => {
+      expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
+        expect(ctx.confections).toBeDefined();
+        expect(ctx.confections.size).toBeGreaterThan(0);
+      });
+    });
+
+    test('getConfection returns confection for valid ID', () => {
+      expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
+        expect(
+          ctx.getConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
+        ).toSucceedAndSatisfy((confection) => {
+          expect(confection.name).toBe('Classic Dark Dome Bonbon');
+          expect(confection.confectionType).toBe('molded-bonbon');
+        });
+      });
+    });
+
+    test('getConfection fails for non-existent ID', () => {
+      expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
+        expect(
+          ctx.getConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
+        ).toFail();
+      });
+    });
+
+    test('hasConfection returns true for existing ID', () => {
+      expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
+        expect(
+          ctx.hasConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
+        ).toBe(true);
+      });
+    });
+
+    test('hasConfection returns false for non-existent ID', () => {
+      expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
+        expect(
+          ctx.hasConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
+        ).toBe(false);
+      });
+    });
+  });
 });

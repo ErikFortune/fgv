@@ -412,9 +412,12 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('file source loading', () => {
-    // Valid ingredient JSON data for file tree
+    // ========================================================================
+    // Minimal valid data for all sub-libraries (used to create well-formed file trees)
+    // ========================================================================
+
     /* eslint-disable @typescript-eslint/naming-convention */
-    const fileIngredientData = {
+    const minimalIngredientData = {
       items: {
         'file-chocolate': {
           baseId: 'file-chocolate',
@@ -434,15 +437,12 @@ describe('ChocolateLibrary', () => {
       }
     };
 
-    // Valid recipe JSON data for file tree
-    const fileRecipeData = {
+    const minimalRecipeData = {
       items: {
         'file-recipe': {
           baseId: 'file-recipe',
           name: 'File Source Recipe',
           category: 'ganache',
-          description: 'A recipe from file source',
-          tags: ['file'],
           goldenVersionSpec: '2026-01-01-01',
           versions: [
             {
@@ -455,15 +455,57 @@ describe('ChocolateLibrary', () => {
         }
       }
     };
+
+    const minimalMoldData = {
+      items: {
+        'file-mold': {
+          baseId: 'file-mold',
+          manufacturer: 'Test',
+          productNumber: 'T-001',
+          cavityCount: 24,
+          format: 'series-2000'
+        }
+      }
+    };
+
+    const minimalProcedureData = {
+      items: {
+        'file-procedure': {
+          baseId: 'file-procedure',
+          name: 'File Procedure',
+          steps: [{ order: 1, description: 'Do something' }]
+        }
+      }
+    };
+
+    const minimalConfectionData = {
+      items: {
+        'file-confection': {
+          baseId: 'file-confection',
+          confectionType: 'rolled-truffle',
+          name: 'File Confection',
+          goldenVersionSpec: '2026-01-01-01',
+          yield: { count: 24 },
+          versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+        }
+      }
+    };
     /* eslint-enable @typescript-eslint/naming-convention */
 
-    // Helper to create file tree directory
-    const createFileTreeSource = (ingredientData: object, recipeData: object): ILibraryFileTreeSource => {
+    /**
+     * Creates a well-formed file tree source with all required sub-library directories.
+     * Uses the minimal data sets by default, but allows overriding ingredients and recipes.
+     */
+    const createFileTreeSource = (
+      ingredientData: object = minimalIngredientData,
+      recipeData: object = minimalRecipeData
+    ): ILibraryFileTreeSource => {
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/file-source.json', contents: ingredientData },
         { path: '/data/recipes/file-source.json', contents: recipeData },
-        { path: '/data/molds/.gitkeep', contents: '' },
-        { path: '/data/procedures/.gitkeep', contents: '' }
+        { path: '/data/molds/file-source.json', contents: minimalMoldData },
+        { path: '/data/procedures/file-source.json', contents: minimalProcedureData },
+        { path: '/data/confections/file-source.json', contents: minimalConfectionData }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -471,7 +513,7 @@ describe('ChocolateLibrary', () => {
     };
 
     test('creates with single file source', () => {
-      const fileSource = createFileTreeSource(fileIngredientData, fileRecipeData);
+      const fileSource = createFileTreeSource();
 
       expect(
         ChocolateLibrary.create({
@@ -487,15 +529,8 @@ describe('ChocolateLibrary', () => {
     });
 
     test('creates with array of file sources', () => {
-      // Create two separate file sources
-      const files1: FileTree.IInMemoryFile[] = [
-        { path: '/data/ingredients/source1.json', contents: fileIngredientData },
-        { path: '/data/recipes/source1.json', contents: fileRecipeData },
-        { path: '/data/molds/.gitkeep', contents: '' },
-        { path: '/data/procedures/.gitkeep', contents: '' }
-      ];
-      const tree1 = FileTree.inMemory(files1).orThrow();
-      const root1 = tree1.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
+      // Create two well-formed file sources
+      const source1 = createFileTreeSource();
 
       /* eslint-disable @typescript-eslint/naming-convention */
       const secondIngredientData = {
@@ -517,10 +552,13 @@ describe('ChocolateLibrary', () => {
       };
       /* eslint-enable @typescript-eslint/naming-convention */
 
+      // Second source with different ingredient data
       const files2: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/source2.json', contents: secondIngredientData },
-        { path: '/data/molds/.gitkeep', contents: '' },
-        { path: '/data/procedures/.gitkeep', contents: '' }
+        { path: '/data/recipes/source2.json', contents: minimalRecipeData },
+        { path: '/data/molds/source2.json', contents: minimalMoldData },
+        { path: '/data/procedures/source2.json', contents: minimalProcedureData },
+        { path: '/data/confections/source2.json', contents: minimalConfectionData }
       ];
       const tree2 = FileTree.inMemory(files2).orThrow();
       const root2 = tree2.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -528,20 +566,17 @@ describe('ChocolateLibrary', () => {
       expect(
         ChocolateLibrary.create({
           builtin: false,
-          fileSources: [
-            { directory: root1 },
-            { directory: root2, load: { ingredients: true, recipes: false } } // No recipes in second source
-          ]
+          fileSources: [source1, { directory: root2 }]
         })
       ).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBe(2);
-        expect(lib.hasIngredient('source1.file-chocolate' as IngredientId)).toBe(true);
+        expect(lib.hasIngredient('file-source.file-chocolate' as IngredientId)).toBe(true);
         expect(lib.hasIngredient('source2.second-chocolate' as IngredientId)).toBe(true);
       });
     });
 
     test('merges file source with builtin collections', () => {
-      const fileSource = createFileTreeSource(fileIngredientData, fileRecipeData);
+      const fileSource = createFileTreeSource();
 
       expect(
         ChocolateLibrary.create({
@@ -579,8 +614,10 @@ describe('ChocolateLibrary', () => {
 
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/felchlin.json', contents: conflictingData },
-        { path: '/data/molds/.gitkeep', contents: '' },
-        { path: '/data/procedures/.gitkeep', contents: '' }
+        { path: '/data/recipes/felchlin.json', contents: minimalRecipeData },
+        { path: '/data/molds/felchlin.json', contents: minimalMoldData },
+        { path: '/data/procedures/felchlin.json', contents: minimalProcedureData },
+        { path: '/data/confections/felchlin.json', contents: minimalConfectionData }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -598,8 +635,9 @@ describe('ChocolateLibrary', () => {
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/readme.txt', contents: 'empty' },
         { path: '/data/recipes/readme.txt', contents: 'empty' },
-        { path: '/data/molds/.gitkeep', contents: '' },
-        { path: '/data/procedures/.gitkeep', contents: '' }
+        { path: '/data/molds/readme.txt', contents: 'empty' },
+        { path: '/data/procedures/readme.txt', contents: 'empty' },
+        { path: '/data/confections/readme.txt', contents: 'empty' }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -703,6 +741,54 @@ describe('ChocolateLibrary', () => {
           'test.nonexistent@2026-01-01-01' as RecipeVersionId
         );
         expect(versionJournals.length).toBe(0);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Confection Convenience Methods
+  // ============================================================================
+
+  describe('confection convenience methods', () => {
+    test('confections getter returns confections library', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(lib.confections).toBeDefined();
+        expect(lib.confections.size).toBeGreaterThan(0);
+      });
+    });
+
+    test('getConfection returns confection for valid ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(
+          lib.getConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
+        ).toSucceedAndSatisfy((confection) => {
+          expect(confection.name).toBe('Classic Dark Dome Bonbon');
+          expect(confection.confectionType).toBe('molded-bonbon');
+        });
+      });
+    });
+
+    test('getConfection fails for non-existent ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(
+          lib.getConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
+        ).toFail();
+      });
+    });
+
+    test('hasConfection returns true for existing ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(
+          lib.hasConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
+        ).toBe(true);
+      });
+    });
+
+    test('hasConfection returns false for non-existent ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(
+          lib.hasConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
+        ).toBe(false);
       });
     });
   });

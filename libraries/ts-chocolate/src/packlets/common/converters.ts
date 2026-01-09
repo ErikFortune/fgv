@@ -26,7 +26,9 @@
 import { Converter, Converters } from '@fgv/ts-utils';
 
 import {
+  AdditionalChocolatePurpose,
   Allergen,
+  BaseConfectionId,
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
@@ -36,6 +38,11 @@ import {
   Certification,
   ChocolateApplication,
   ChocolateType,
+  ConfectionId,
+  ConfectionName,
+  ConfectionType,
+  ConfectionVersionId,
+  ConfectionVersionSpec,
   DegreesMacMichael,
   FluidityStars,
   Grams,
@@ -50,6 +57,7 @@ import {
   Percentage,
   ProcedureId,
   RatingScore,
+  RecipeCategory,
   RecipeId,
   RecipeName,
   RecipeVersionId,
@@ -58,22 +66,30 @@ import {
   SourceId,
   VERSION_ID_SEPARATOR,
   WeightUnit,
+  allAdditionalChocolatePurposes,
   allAllergens,
   allCacaoVarieties,
   allCertifications,
   allChocolateApplications,
   allChocolateTypes,
+  allConfectionTypes,
   allFluidityStars,
   allIngredientCategories,
   allMoldFormats,
+  allRecipeCategories,
   allWeightUnits
 } from './model';
 import {
+  toBaseConfectionId,
   toBaseIngredientId,
   toBaseMoldId,
   toBaseProcedureId,
   toBaseRecipeId,
   toCelsius,
+  toConfectionId,
+  toConfectionName,
+  toConfectionVersionId,
+  toConfectionVersionSpec,
   toDegreesMacMichael,
   toGrams,
   toIngredientId,
@@ -128,6 +144,12 @@ export const baseMoldId: Converter<BaseMoldId> = Converters.generic(toBaseMoldId
 export const baseProcedureId: Converter<BaseProcedureId> = Converters.generic(toBaseProcedureId);
 
 /**
+ * Converter for BaseConfectionId
+ * @public
+ */
+export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(toBaseConfectionId);
+
+/**
  * Converter for IngredientId (composite)
  * @public
  */
@@ -150,6 +172,12 @@ export const moldId: Converter<MoldId> = Converters.generic(toMoldId);
  * @public
  */
 export const procedureId: Converter<ProcedureId> = Converters.generic(toProcedureId);
+
+/**
+ * Converter for ConfectionId (composite)
+ * @public
+ */
+export const confectionId: Converter<ConfectionId> = Converters.generic(toConfectionId);
 
 /**
  * Converter for JournalId
@@ -265,6 +293,57 @@ export const parsedRecipeVersionId: Converter<ParsedRecipeVersionId> = Converter
  */
 export const sessionId: Converter<SessionId> = Converters.generic(toSessionId);
 
+/**
+ * Type alias for parsed ConfectionId components
+ * @public
+ */
+export type ParsedConfectionId = Converters.ICompositeId<SourceId, BaseConfectionId>;
+
+/**
+ * Converter that parses a ConfectionId string into its component parts
+ * @public
+ */
+export const parsedConfectionId: Converter<ParsedConfectionId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  baseConfectionId
+);
+
+/**
+ * Converter for ConfectionName
+ * @public
+ */
+export const confectionName: Converter<ConfectionName> = Converters.generic(toConfectionName);
+
+/**
+ * Converter for ConfectionVersionSpec
+ * @public
+ */
+export const confectionVersionSpec: Converter<ConfectionVersionSpec> =
+  Converters.generic(toConfectionVersionSpec);
+
+/**
+ * Converter for ConfectionVersionId (composite)
+ * @public
+ */
+export const confectionVersionId: Converter<ConfectionVersionId> = Converters.generic(toConfectionVersionId);
+
+/**
+ * Type alias for parsed ConfectionVersionId components
+ * @public
+ */
+export type ParsedConfectionVersionId = Converters.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+
+/**
+ * Converter that parses a ConfectionVersionId string into its component parts
+ * @public
+ */
+export const parsedConfectionVersionId: Converter<ParsedConfectionVersionId> = Converters.compositeId(
+  confectionId,
+  VERSION_ID_SEPARATOR,
+  confectionVersionSpec
+);
+
 // ============================================================================
 // Numeric Converters
 // ============================================================================
@@ -370,3 +449,23 @@ export const chocolateApplication: Converter<ChocolateApplication> =
  * @public
  */
 export const moldFormat: Converter<MoldFormat> = Converters.enumeratedValue(allMoldFormats);
+
+/**
+ * Converter for ConfectionType
+ * @public
+ */
+export const confectionType: Converter<ConfectionType> = Converters.enumeratedValue(allConfectionTypes);
+
+/**
+ * Converter for AdditionalChocolatePurpose
+ * @public
+ */
+export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> = Converters.enumeratedValue(
+  allAdditionalChocolatePurposes
+);
+
+/**
+ * Converter for RecipeCategory
+ * @public
+ */
+export const recipeCategory: Converter<RecipeCategory> = Converters.enumeratedValue(allRecipeCategories);

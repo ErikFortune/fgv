@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[isValidBaseConfectionId(from)](./ts-chocolate.validation.isvalidbaseconfectionid.md)
+
+
+</td><td>
+
+Type guard for BaseConfectionId
+
+
+</td></tr>
+<tr><td>
+
 [isValidBaseIngredientId(from)](./ts-chocolate.validation.isvalidbaseingredientid.md)
 
 
@@ -69,6 +80,50 @@ Type guard for BaseRecipeId
 </td><td>
 
 Type guard for Celsius
+
+
+</td></tr>
+<tr><td>
+
+[isValidConfectionId(from)](./ts-chocolate.validation.isvalidconfectionid.md)
+
+
+</td><td>
+
+Type guard for ConfectionId
+
+
+</td></tr>
+<tr><td>
+
+[isValidConfectionName(from)](./ts-chocolate.validation.isvalidconfectionname.md)
+
+
+</td><td>
+
+Type guard for ConfectionName
+
+
+</td></tr>
+<tr><td>
+
+[isValidConfectionVersionId(from)](./ts-chocolate.validation.isvalidconfectionversionid.md)
+
+
+</td><td>
+
+Type guard for ConfectionVersionId
+
+
+</td></tr>
+<tr><td>
+
+[isValidConfectionVersionSpec(from)](./ts-chocolate.validation.isvalidconfectionversionspec.md)
+
+
+</td><td>
+
+Type guard for ConfectionVersionSpec
 
 
 </td></tr>
@@ -250,6 +305,17 @@ Type guard for SourceId
 </td></tr>
 <tr><td>
 
+[toBaseConfectionId(from)](./ts-chocolate.validation.tobaseconfectionid.md)
+
+
+</td><td>
+
+Converts unknown value to BaseConfectionId
+
+
+</td></tr>
+<tr><td>
+
 [toBaseIngredientId(from)](./ts-chocolate.validation.tobaseingredientid.md)
 
 
@@ -300,6 +366,50 @@ Converts unknown value to BaseRecipeId
 </td><td>
 
 Converts unknown value to Celsius
+
+
+</td></tr>
+<tr><td>
+
+[toConfectionId(from)](./ts-chocolate.validation.toconfectionid.md)
+
+
+</td><td>
+
+Converts unknown value to ConfectionId
+
+
+</td></tr>
+<tr><td>
+
+[toConfectionName(from)](./ts-chocolate.validation.toconfectionname.md)
+
+
+</td><td>
+
+Converts unknown value to ConfectionName
+
+
+</td></tr>
+<tr><td>
+
+[toConfectionVersionId(from)](./ts-chocolate.validation.toconfectionversionid.md)
+
+
+</td><td>
+
+Converts unknown value to ConfectionVersionId
+
+
+</td></tr>
+<tr><td>
+
+[toConfectionVersionSpec(from)](./ts-chocolate.validation.toconfectionversionspec.md)
+
+
+</td><td>
+
+Converts unknown value to ConfectionVersionSpec
 
 
 </td></tr>

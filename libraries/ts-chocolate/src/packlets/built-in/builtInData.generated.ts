@@ -12,7 +12,9 @@
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/procedures/common.yaml
+//   - data/published/confections/common.yaml
 
+/* eslint-disable max-lines */
 import { JsonObject } from '@fgv/ts-json-base';
 
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -609,6 +611,22 @@ export const ingredientCollections: Record<string, JsonObject> = {
         vegan: true,
         allergens: ['nuts'],
         tags: ['gianduja', 'praline', 'hazelnut']
+      },
+      'cocoa-powder': {
+        baseId: 'cocoa-powder',
+        name: 'Dutch-Process Cocoa Powder',
+        category: 'other',
+        description: 'Alkalized cocoa powder for truffle coating and finishing',
+        ganacheCharacteristics: {
+          cacaoFat: 12,
+          sugar: 0,
+          milkFat: 0,
+          water: 3,
+          solids: 85,
+          otherFats: 0
+        },
+        vegan: true,
+        tags: ['coating', 'truffle', 'cocoa', 'finishing']
       }
     }
   },
@@ -1507,6 +1525,125 @@ export const procedureCollections: Record<string, JsonObject> = {
           }
         ],
         tags: ['gianduja', 'hazelnut', 'nut-paste']
+      }
+    }
+  }
+};
+
+/**
+ * Generated confection collections from source YAML files.
+ * @public
+ */
+export const confectionCollections: Record<string, JsonObject> = {
+  common: {
+    metadata: {
+      name: 'Common Confections',
+      description: 'Seed data confections for the confections library'
+    },
+    items: {
+      'dark-dome-bonbon': {
+        baseId: 'dark-dome-bonbon',
+        confectionType: 'molded-bonbon',
+        name: 'Classic Dark Dome Bonbon',
+        description: 'Traditional molded dark chocolate bonbon with dome shape',
+        tags: ['classic', 'dark', 'molded', 'dome'],
+        goldenVersionSpec: '2026-01-01-01',
+        yield: {
+          count: 24,
+          unit: 'pieces',
+          weightPerPiece: 12
+        },
+        fillings: {
+          recipes: ['common.dark-ganache-classic'],
+          recommendedFillingId: 'common.dark-ganache-classic'
+        },
+        molds: {
+          molds: [
+            {
+              moldId: 'common.dome-25mm'
+            }
+          ],
+          recommendedMoldId: 'common.dome-25mm'
+        },
+        shellChocolate: {
+          ingredientId: 'cacao-barry.guayaquil-64',
+          alternateIngredientIds: ['common.chocolate-dark-64']
+        },
+        versions: [
+          {
+            versionSpec: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            notes: 'Basic dome bonbon with dark ganache filling'
+          }
+        ]
+      },
+      'dark-bar-truffle': {
+        baseId: 'dark-bar-truffle',
+        confectionType: 'bar-truffle',
+        name: 'Classic Dark Bar Truffle',
+        description: 'Ganache slab cut into squares and enrobed',
+        tags: ['classic', 'dark', 'bar', 'enrobed'],
+        goldenVersionSpec: '2026-01-01-01',
+        yield: {
+          count: 48,
+          unit: 'pieces',
+          weightPerPiece: 10
+        },
+        fillings: {
+          recipes: ['common.dark-ganache-classic'],
+          recommendedFillingId: 'common.dark-ganache-classic'
+        },
+        frameDimensions: {
+          width: 300,
+          height: 200,
+          depth: 8
+        },
+        singleBonBonDimensions: {
+          width: 25,
+          height: 25
+        },
+        enrobingChocolate: {
+          ingredientId: 'cacao-barry.guayaquil-64'
+        },
+        versions: [
+          {
+            versionSpec: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            notes: 'Standard 25mm square bar truffles'
+          }
+        ]
+      },
+      'dark-cocoa-truffle': {
+        baseId: 'dark-cocoa-truffle',
+        confectionType: 'rolled-truffle',
+        name: 'Classic Cocoa-Dusted Truffle',
+        description: 'Hand-rolled ganache truffle dusted with cocoa powder',
+        tags: ['classic', 'dark', 'rolled', 'cocoa'],
+        goldenVersionSpec: '2026-01-01-01',
+        yield: {
+          count: 40,
+          unit: 'pieces',
+          weightPerPiece: 15
+        },
+        fillings: {
+          recipes: ['common.dark-ganache-classic'],
+          recommendedFillingId: 'common.dark-ganache-classic'
+        },
+        coatings: {
+          ingredients: [
+            {
+              ingredientId: 'common.cocoa-powder'
+            }
+          ],
+          recommendedIngredientId: 'common.cocoa-powder'
+        },
+        versions: [
+          {
+            versionSpec: '2026-01-01-01',
+            createdDate: '2026-01-01',
+            notes: 'Traditional rolled truffle with cocoa coating'
+          }
+        ]
       }
     }
   }

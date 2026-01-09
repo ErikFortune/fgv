@@ -236,3 +236,20 @@ items:
     vegan: true
     allergens: [nuts]
     tags: [gianduja, praline, hazelnut]
+
+  # Coatings and finishing
+
+  cocoa-powder:
+    baseId: cocoa-powder
+    name: Dutch-Process Cocoa Powder
+    category: other
+    description: Alkalized cocoa powder for truffle coating and finishing
+    ganacheCharacteristics:
+      cacaoFat: 12
+      sugar: 0
+      milkFat: 0
+      water: 3
+      solids: 85
+      otherFats: 0
+    vegan: true
+    tags: [coating, truffle, cocoa, finishing]

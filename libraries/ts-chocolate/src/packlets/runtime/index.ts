@@ -65,6 +65,16 @@ export { RuntimeVersion } from './runtimeVersion';
 
 export { RuntimeScaledVersion } from './runtimeScaledVersion';
 
+// Runtime confection classes
+export {
+  RuntimeConfectionBase,
+  RuntimeMoldedBonBon,
+  RuntimeBarTruffle,
+  RuntimeRolledTruffle,
+  RuntimeConfection,
+  AnyRuntimeConfection
+} from './confections';
+
 // Query builders
 export * from './queries';
 

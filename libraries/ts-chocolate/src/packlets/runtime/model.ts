@@ -35,6 +35,7 @@ import { IReadOnlyValidatingLibrary } from './validatingLibrary';
 
 import {
   Allergen,
+  BaseConfectionId,
   BaseIngredientId,
   BaseRecipeId,
   CacaoVariety,
@@ -42,6 +43,10 @@ import {
   Certification,
   ChocolateApplication,
   ChocolateType,
+  ConfectionId,
+  ConfectionName,
+  ConfectionType,
+  ConfectionVersionSpec,
   DegreesMacMichael,
   FluidityStars,
   Grams,
@@ -75,6 +80,23 @@ import {
   IVersionScaleOptions,
   IRecipeRating as IRecipeRating
 } from '../recipes';
+import {
+  ConfectionData,
+  IAdditionalChocolate,
+  IBarTruffle,
+  IBonBonDimensions,
+  IChocolateSpec,
+  ICoatings,
+  IConfectionDecoration,
+  IConfectionFillings,
+  IConfectionMolds,
+  IConfectionProcedures,
+  IConfectionVersion,
+  IConfectionYield,
+  IFrameDimensions,
+  IMoldedBonBon,
+  IRolledTruffle
+} from '../confections';
 import { IJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
@@ -1212,4 +1234,189 @@ export interface IRuntimeContext {
    * Pre-warms the reverse indexes for efficient queries.
    */
   warmUp(): void;
+}
+
+// ============================================================================
+// Runtime Confection Interfaces
+// ============================================================================
+
+/**
+ * A resolved runtime view of a confection with navigation capabilities.
+ *
+ * This interface includes all properties from the data layer `IConfection`
+ * plus runtime-specific additions:
+ * - Composite identity (`id`, `sourceId`) for cross-source references
+ * - Version navigation
+ * - Type narrowing methods for discriminated access
+ * - Raw access to underlying data
+ *
+ * @public
+ */
+export interface IRuntimeConfection {
+  // ---- Composite Identity (runtime-specific) ----
+
+  /**
+   * The composite confection ID (e.g., "common.dark-dome-bonbon").
+   * Combines source and base ID for unique identification across sources.
+   */
+  readonly id: ConfectionId;
+
+  /**
+   * The source ID part of the composite ID.
+   */
+  readonly sourceId: SourceId;
+
+  /**
+   * The base confection ID within the source.
+   */
+  readonly baseId: BaseConfectionId;
+
+  // ---- Core Properties (from IConfection) ----
+
+  /** Confection type (discriminator) */
+  readonly confectionType: ConfectionType;
+
+  /** Human-readable name */
+  readonly name: ConfectionName;
+
+  /** Optional description */
+  readonly description?: string;
+
+  /** Optional decorations */
+  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+
+  /** Optional tags for searching/filtering */
+  readonly tags?: ReadonlyArray<string>;
+
+  /** Yield specification */
+  readonly yield: IConfectionYield;
+
+  /** Optional filling specification */
+  readonly fillings?: IConfectionFillings;
+
+  /** Optional procedures */
+  readonly confectionProcedures?: IConfectionProcedures;
+
+  /** The ID of the golden (approved default) version */
+  readonly goldenVersionSpec: ConfectionVersionSpec;
+
+  // ---- Version navigation ----
+
+  /**
+   * The golden (default) version.
+   */
+  readonly goldenVersion: IConfectionVersion;
+
+  /**
+   * All versions.
+   */
+  readonly versions: ReadonlyArray<IConfectionVersion>;
+
+  /**
+   * Gets a specific version by version specifier.
+   * @param versionSpec - The version specifier to find
+   * @returns Success with version, or Failure if not found
+   */
+  getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
+
+  // ---- Type narrowing methods ----
+
+  /**
+   * Returns true if this is a molded bonbon confection.
+   * When true, molded bonbon-specific properties are available.
+   */
+  isMoldedBonBon(): this is IRuntimeMoldedBonBon;
+
+  /**
+   * Returns true if this is a bar truffle confection.
+   * When true, bar truffle-specific properties are available.
+   */
+  isBarTruffle(): this is IRuntimeBarTruffle;
+
+  /**
+   * Returns true if this is a rolled truffle confection.
+   * When true, rolled truffle-specific properties are available.
+   */
+  isRolledTruffle(): this is IRuntimeRolledTruffle;
+
+  // ---- Raw access ----
+
+  /**
+   * Gets the underlying raw confection data.
+   */
+  readonly raw: ConfectionData;
+}
+
+/**
+ * Runtime confection narrowed to molded bonbon type.
+ * @public
+ */
+export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
+  /** Type is always 'molded-bonbon' for this confection */
+  readonly confectionType: 'molded-bonbon';
+
+  /** Required molds specification */
+  readonly molds: IConfectionMolds;
+
+  /** Required shell chocolate specification */
+  readonly shellChocolate: IChocolateSpec;
+
+  /** Optional additional chocolates (seal, decoration) */
+  readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+
+  /** Raw data typed to IMoldedBonBon */
+  readonly raw: IMoldedBonBon;
+}
+
+/**
+ * Runtime confection narrowed to bar truffle type.
+ * @public
+ */
+export interface IRuntimeBarTruffle extends IRuntimeConfection {
+  /** Type is always 'bar-truffle' for this confection */
+  readonly confectionType: 'bar-truffle';
+
+  /** Frame dimensions for ganache slab */
+  readonly frameDimensions: IFrameDimensions;
+
+  /** Single bonbon dimensions for cutting */
+  readonly singleBonBonDimensions: IBonBonDimensions;
+
+  /** Optional enrobing chocolate specification */
+  readonly enrobingChocolate?: IChocolateSpec;
+
+  /** Raw data typed to IBarTruffle */
+  readonly raw: IBarTruffle;
+}
+
+/**
+ * Runtime confection narrowed to rolled truffle type.
+ * @public
+ */
+export interface IRuntimeRolledTruffle extends IRuntimeConfection {
+  /** Type is always 'rolled-truffle' for this confection */
+  readonly confectionType: 'rolled-truffle';
+
+  /** Optional enrobing chocolate specification */
+  readonly enrobingChocolate?: IChocolateSpec;
+
+  /** Optional coatings (cocoa powder, nuts, etc.) */
+  readonly coatings?: ICoatings;
+
+  /** Raw data typed to IRolledTruffle */
+  readonly raw: IRolledTruffle;
+}
+
+// ============================================================================
+// Confection Context Interface
+// ============================================================================
+
+/**
+ * Minimal context interface for RuntimeConfection.
+ * Provides only what a confection needs for navigation.
+ * @internal
+ */
+export interface IConfectionContext {
+  // Currently empty - confections don't have navigation to other entities yet
+  // This can be extended when confection → recipe/ingredient navigation is needed
 }

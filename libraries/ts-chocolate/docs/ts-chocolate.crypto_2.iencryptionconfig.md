@@ -110,7 +110,7 @@ _(Optional)_ Behavior when decryption key is missing (default: 'fail').
 
 </td><td>
 
-[SecretProvider](./ts-chocolate.crypto_2.secretprovider.md)
+SecretProvider
 
 
 </td><td>

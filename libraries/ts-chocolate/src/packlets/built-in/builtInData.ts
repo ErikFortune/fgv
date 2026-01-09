@@ -21,12 +21,14 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import {
+  getConfectionsDirectory,
   getIngredientsDirectory,
   getMoldsDirectory,
   getProceduresDirectory,
   getRecipesDirectory
 } from '../library-data';
 import {
+  confectionCollections,
   ingredientCollections,
   moldCollections,
   procedureCollections,
@@ -54,6 +56,10 @@ const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
   ...Object.entries(procedureCollections).map(([name, data]) => ({
     path: `/data/procedures/${name}.json`,
     contents: data
+  })),
+  ...Object.entries(confectionCollections).map(([name, data]) => ({
+    path: `/data/confections/${name}.json`,
+    contents: data
   }))
 ];
 
@@ -80,7 +86,9 @@ export class BuiltInData {
    *     │   └── common.json
    *     ├── molds/
    *     │   └── common.json
-   *     └── procedures/
+   *     ├── procedures/
+   *     │   └── common.json
+   *     └── confections/
    *         └── common.json
    * ```
    * @returns `Success` with the library tree root directory, or `Failure` with an error message.
@@ -133,6 +141,14 @@ export class BuiltInData {
    */
   public static getProceduresDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
     return BuiltInData.getLibraryTree().onSuccess((tree) => getProceduresDirectory(tree));
+  }
+
+  /**
+   * Gets the confections directory from the built-in library tree.
+   * @returns `Success` with the confections directory, or `Failure` if not found.
+   */
+  public static getConfectionsDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    return BuiltInData.getLibraryTree().onSuccess((tree) => getConfectionsDirectory(tree));
   }
 
   /**

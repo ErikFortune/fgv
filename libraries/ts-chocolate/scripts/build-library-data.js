@@ -24,6 +24,7 @@ const INGREDIENTS_DIR = path.join(__dirname, '../data/published/ingredients');
 const RECIPES_DIR = path.join(__dirname, '../data/published/recipes');
 const MOLDS_DIR = path.join(__dirname, '../data/published/molds');
 const PROCEDURES_DIR = path.join(__dirname, '../data/published/procedures');
+const CONFECTIONS_DIR = path.join(__dirname, '../data/published/confections');
 const OUTPUT_FILE = path.join(__dirname, '../src/packlets/built-in/builtInData.generated.ts');
 
 /**
@@ -85,12 +86,16 @@ const molds = loadCollectionsFromDir(MOLDS_DIR);
 // Load procedures
 const procedures = loadCollectionsFromDir(PROCEDURES_DIR);
 
+// Load confections
+const confections = loadCollectionsFromDir(CONFECTIONS_DIR);
+
 // Build source file comments
 const sourceComments = [
   ...ingredients.files.map((f) => `//   - data/published/ingredients/${f}`),
   ...recipes.files.map((f) => `//   - data/published/recipes/${f}`),
   ...molds.files.map((f) => `//   - data/published/molds/${f}`),
-  ...procedures.files.map((f) => `//   - data/published/procedures/${f}`)
+  ...procedures.files.map((f) => `//   - data/published/procedures/${f}`),
+  ...confections.files.map((f) => `//   - data/published/confections/${f}`)
 ].join('\n');
 
 // Generate TypeScript with embedded JSON
@@ -100,6 +105,7 @@ const output = `// AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY
 // Source files:
 ${sourceComments}
 
+/* eslint-disable max-lines */
 import { JsonObject } from '@fgv/ts-json-base';
 
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -134,20 +140,36 @@ export const procedureCollections: Record<string, JsonObject> = ${JSON.stringify
   null,
   2
 )};
+
+/**
+ * Generated confection collections from source YAML files.
+ * @public
+ */
+export const confectionCollections: Record<string, JsonObject> = ${JSON.stringify(
+  confections.collections,
+  null,
+  2
+)};
 /* eslint-enable @typescript-eslint/naming-convention */
 `;
 
 fs.writeFileSync(OUTPUT_FILE, output);
 
 // Count file types for reporting
-const allFiles = [...ingredients.files, ...recipes.files, ...molds.files, ...procedures.files];
+const allFiles = [
+  ...ingredients.files,
+  ...recipes.files,
+  ...molds.files,
+  ...procedures.files,
+  ...confections.files
+];
 const yamlCount = allFiles.filter(isYamlFile).length;
 const jsonCount = allFiles.filter(isJsonFile).length;
 
 console.log(
   `Generated ${path.relative(process.cwd(), OUTPUT_FILE)} from ${
     ingredients.files.length
-  } ingredient files, ${recipes.files.length} recipe files, ${molds.files.length} mold files, and ${
+  } ingredient files, ${recipes.files.length} recipe files, ${molds.files.length} mold files, ${
     procedures.files.length
-  } procedure files (${yamlCount} YAML, ${jsonCount} JSON)`
+  } procedure files, and ${confections.files.length} confection files (${yamlCount} YAML, ${jsonCount} JSON)`
 );

@@ -45,6 +45,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[confectionCollections](./ts-chocolate.builtin.confectioncollections.md)
+
+
+</td><td>
+
+Generated confection collections from source YAML files.
+
+
+</td></tr>
+<tr><td>
+
 [ingredientCollections](./ts-chocolate.builtin.ingredientcollections.md)
 
 
