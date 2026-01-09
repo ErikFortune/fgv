@@ -25,9 +25,11 @@
 
 import { Conversion, Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, IngredientId, RecipeId } from '../common';
+import { Converters as CommonConverters, IOptionsWithPreferred } from '../common';
 import {
+  AnyFillingOption,
   ConfectionData,
+  FillingOptionId,
   IAdditionalChocolate,
   IBarTruffle,
   IBonBonDimensions,
@@ -35,15 +37,17 @@ import {
   ICoatings,
   IConfection,
   IConfectionDecoration,
-  IConfectionFillings,
   IConfectionMoldRef,
   IConfectionMolds,
   IConfectionProcedureRef,
   IConfectionProcedures,
   IConfectionVersion,
   IConfectionYield,
+  IFillingSlot,
   IFrameDimensions,
+  IIngredientFillingOption,
   IMoldedBonBon,
+  IRecipeFillingOption,
   IRolledTruffle
 } from './model';
 
@@ -76,23 +80,63 @@ export const confectionDecoration: Converter<IConfectionDecoration> =
 // ============================================================================
 
 /**
- * Converter for filling ID (can be recipe or ingredient)
- * Both are composite IDs with the same format, so we try recipeId first
+ * Converter for filling option ID (can be recipe or ingredient)
+ * Both are composite IDs with the same format
  * @internal
  */
-const fillingId: Converter<RecipeId | IngredientId> = Converters.oneOf<RecipeId | IngredientId>([
+const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOptionId>([
   CommonConverters.recipeId,
   CommonConverters.ingredientId
 ]);
 
 /**
- * Converter for IConfectionFillings
+ * Converter for IRecipeFillingOption
  * @public
  */
-export const confectionFillings: Converter<IConfectionFillings> = Converters.object<IConfectionFillings>({
-  recipes: Converters.arrayOf(CommonConverters.recipeId).optional(),
-  ingredients: Converters.arrayOf(CommonConverters.ingredientId).optional(),
-  recommendedFillingId: fillingId.optional()
+export const recipeFillingOption: Converter<IRecipeFillingOption> = Converters.object<IRecipeFillingOption>({
+  type: Converters.literal('recipe'),
+  id: CommonConverters.recipeId,
+  notes: Converters.string.optional()
+});
+
+/**
+ * Converter for IIngredientFillingOption
+ * @public
+ */
+export const ingredientFillingOption: Converter<IIngredientFillingOption> =
+  Converters.object<IIngredientFillingOption>({
+    type: Converters.literal('ingredient'),
+    id: CommonConverters.ingredientId,
+    notes: Converters.string.optional()
+  });
+
+/**
+ * Converter for AnyFillingOption (discriminated union)
+ * @public
+ */
+export const anyFillingOption: Converter<AnyFillingOption> = Converters.oneOf<AnyFillingOption>([
+  recipeFillingOption,
+  ingredientFillingOption
+]);
+
+/**
+ * Converter for filling options with preferred selection
+ * @public
+ */
+export const fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>> =
+  Converters.object<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>({
+    options: Converters.arrayOf(anyFillingOption),
+    preferredId: fillingOptionId.optional()
+  });
+
+/**
+ * Converter for IFillingSlot
+ * @public
+ */
+export const fillingSlot: Converter<IFillingSlot> = Converters.object<IFillingSlot>({
+  slotId: CommonConverters.slotId,
+  name: Converters.string.optional(),
+  filling: fillingOptions
 });
 
 // ============================================================================
@@ -229,7 +273,7 @@ const commonConfectionFields: Conversion.FieldConverters<Omit<IConfection, 'conf
   decorations: Converters.arrayOf(confectionDecoration).optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
   yield: confectionYield,
-  fillings: confectionFillings.optional(),
+  fillings: Converters.arrayOf(fillingSlot).optional(),
   confectionProcedures: confectionProcedures.optional(),
   versions: Converters.arrayOf(confectionVersion),
   goldenVersionSpec: CommonConverters.confectionVersionSpec

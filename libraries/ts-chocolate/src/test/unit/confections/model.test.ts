@@ -34,7 +34,8 @@ import {
   ConfectionVersionSpec,
   IngredientId,
   MoldId,
-  RecipeId
+  RecipeId,
+  SlotId
 } from '../../../packlets/common';
 import { Grams, Millimeters } from '../../../packlets/common';
 
@@ -55,10 +56,15 @@ describe('Confections model', () => {
       unit: 'pieces',
       weightPerPiece: 12 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId],
-      recommendedFillingId: 'common.dark-ganache-classic' as RecipeId
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     molds: {
       molds: [{ moldId: 'common.dome-25mm' as MoldId }],
       recommendedMoldId: 'common.dome-25mm' as MoldId
@@ -88,10 +94,15 @@ describe('Confections model', () => {
       unit: 'pieces',
       weightPerPiece: 10 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId],
-      recommendedFillingId: 'common.dark-ganache-classic' as RecipeId
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     frameDimensions: {
       width: 300 as Millimeters,
       height: 200 as Millimeters,
@@ -125,10 +136,15 @@ describe('Confections model', () => {
       unit: 'pieces',
       weightPerPiece: 15 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId],
-      recommendedFillingId: 'common.dark-ganache-classic' as RecipeId
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     coatings: {
       ingredients: [{ ingredientId: 'common.cocoa-powder' as IngredientId }],
       recommendedIngredientId: 'common.cocoa-powder' as IngredientId
@@ -313,10 +329,13 @@ describe('Confections model', () => {
       });
     });
 
-    describe('IConfectionFillings', () => {
+    describe('IFillingSlot', () => {
       test('structure is correct', () => {
-        expect(baseMoldedBonBon.fillings?.recipes).toHaveLength(1);
-        expect(baseMoldedBonBon.fillings?.recommendedFillingId).toBe('common.dark-ganache-classic');
+        expect(baseMoldedBonBon.fillings).toHaveLength(1);
+        const slot = baseMoldedBonBon.fillings?.[0];
+        expect(slot?.slotId).toBe('center');
+        expect(slot?.filling.options).toHaveLength(1);
+        expect(slot?.filling.preferredId).toBe('common.dark-ganache-classic');
       });
     });
 

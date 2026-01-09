@@ -4,12 +4,12 @@
 
 ## Runtime.Session.ConfectionEditingSession.selectFillingIngredient() method
 
-Selects a filling ingredient for the confection.
+Selects a filling ingredient for a specific slot.
 
 **Signature:**
 
 ```typescript
-selectFillingIngredient(ingredientId: IngredientId): Result<true>;
+selectFillingIngredient(slotId: SlotId, ingredientId: IngredientId): Result<true>;
 ```
 
 ## Parameters
@@ -32,6 +32,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+slotId
+
+
+</td><td>
+
+[SlotId](./ts-chocolate.slotid.md)
+
+
+</td><td>
+
+The slot ID to select the filling for
+
+
+</td></tr>
+<tr><td>
+
 ingredientId
 
 
@@ -52,5 +68,5 @@ The ingredient ID to select as the filling
 
 Result&lt;true&gt;
 
-Success, or Failure if the confection doesn't support fillings
+Success, or Failure if the slot doesn't exist
 

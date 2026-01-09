@@ -257,12 +257,12 @@ Tracks a coating selection for rolled truffles
 </td></tr>
 <tr><td>
 
-[ISessionFilling](./ts-chocolate.runtime.session.isessionfilling.md)
+[ISessionFillingSlot](./ts-chocolate.runtime.session.isessionfillingslot.md)
 
 
 </td><td>
 
-Tracks the selected filling for a confection session
+Tracks the selected filling for a single slot in a confection session
 
 
 </td></tr>

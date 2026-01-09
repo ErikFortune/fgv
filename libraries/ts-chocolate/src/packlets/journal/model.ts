@@ -31,7 +31,8 @@ import {
   MoldId,
   ProcedureId,
   RecipeId,
-  RecipeVersionId
+  RecipeVersionId,
+  SlotId
 } from '../common';
 
 // ============================================================================
@@ -165,6 +166,11 @@ export interface IConfectionJournalEntry {
   readonly eventType: ConfectionJournalEventType;
 
   // ---- filling-select event fields ----
+
+  /**
+   * The filling slot ID (for filling-select events)
+   */
+  readonly fillingSlotId?: SlotId;
 
   /**
    * The filling recipe ID selected (for filling-select events)

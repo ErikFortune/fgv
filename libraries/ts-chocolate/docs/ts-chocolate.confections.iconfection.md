@@ -152,12 +152,12 @@ _(Optional)_ Optional description
 
 </td><td>
 
-[IConfectionFillings](./ts-chocolate.confections.iconfectionfillings.md)
+ReadonlyArray&lt;[IFillingSlot](./ts-chocolate.confections.ifillingslot.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional filling specification
+_(Optional)_ Optional filling slots - each slot has independent options with a preferred selection
 
 
 </td></tr>

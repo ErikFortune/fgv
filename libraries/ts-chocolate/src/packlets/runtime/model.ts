@@ -88,11 +88,11 @@ import {
   IChocolateSpec,
   ICoatings,
   IConfectionDecoration,
-  IConfectionFillings,
   IConfectionMolds,
   IConfectionProcedures,
   IConfectionVersion,
   IConfectionYield,
+  IFillingSlot,
   IFrameDimensions,
   IMoldedBonBon,
   IRolledTruffle
@@ -1291,8 +1291,8 @@ export interface IRuntimeConfection {
   /** Yield specification */
   readonly yield: IConfectionYield;
 
-  /** Optional filling specification */
-  readonly fillings?: IConfectionFillings;
+  /** Optional filling slots */
+  readonly fillings?: ReadonlyArray<IFillingSlot>;
 
   /** Optional procedures */
   readonly confectionProcedures?: IConfectionProcedures;

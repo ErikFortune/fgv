@@ -32,6 +32,7 @@ import {
   ProcedureId,
   RecipeId,
   SessionId,
+  SlotId,
   Converters as CommonConverters
 } from '../../common';
 import {
@@ -49,7 +50,7 @@ import {
   IConfectionSessionState,
   ISessionChocolate,
   ISessionCoating,
-  ISessionFilling,
+  ISessionFillingSlot,
   ISessionMold,
   ISessionProcedure,
   ISessionYield
@@ -85,7 +86,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   private readonly _enableJournal: boolean;
   private readonly _logger: Logging.LogReporter<unknown>;
 
-  private _filling?: ISessionFilling;
+  private _fillings: Map<SlotId, ISessionFillingSlot>;
   private _mold?: ISessionMold;
   private _chocolates: Map<ChocolateRole, ISessionChocolate>;
   private _yield: ISessionYield;
@@ -106,6 +107,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     this._journalEntries = [];
     this._isDirty = false;
     this._chocolates = new Map();
+    this._fillings = new Map();
 
     // Initialize yield from confection defaults or params
     const defaultYield = this._sourceConfection.yield;
@@ -162,8 +164,8 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     return this._sourceConfection;
   }
 
-  public get filling(): ISessionFilling | undefined {
-    return this._filling;
+  public get fillings(): ReadonlyMap<SlotId, ISessionFillingSlot> {
+    return this._fillings;
   }
 
   public get mold(): ISessionMold | undefined {
@@ -203,68 +205,76 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   // ============================================================================
 
   /**
-   * Selects a filling recipe for the confection.
+   * Selects a filling recipe for a specific slot.
+   * @param slotId - The slot ID to select the filling for
    * @param recipeId - The recipe ID to select as the filling
-   * @returns Success, or Failure if the confection doesn't support fillings
+   * @returns Success, or Failure if the slot doesn't exist
    * @public
    */
-  public selectFillingRecipe(recipeId: RecipeId): Result<true> {
-    if (!this._sourceConfection.fillings) {
-      return fail('This confection does not support fillings');
+  public selectFillingRecipe(slotId: SlotId, recipeId: RecipeId): Result<true> {
+    const existingSlot = this._fillings.get(slotId);
+    if (!existingSlot) {
+      return fail(`Filling slot '${slotId}' does not exist`);
     }
 
-    const previousRecipeId = this._filling?.recipeId;
-    const previousIngredientId = this._filling?.ingredientId;
+    const previousRecipeId = existingSlot.recipeId;
+    const previousIngredientId = existingSlot.ingredientId;
 
-    this._filling = {
+    this._fillings.set(slotId, {
+      slotId,
       recipeId,
       ingredientId: undefined,
-      originalRecipeId: this._filling?.originalRecipeId,
-      originalIngredientId: this._filling?.originalIngredientId,
+      originalRecipeId: existingSlot.originalRecipeId,
+      originalIngredientId: existingSlot.originalIngredientId,
       status: 'modified'
-    };
+    });
 
     this._isDirty = true;
     this._addJournalEntry('filling-select', {
+      fillingSlotId: slotId,
       fillingRecipeId: recipeId,
       previousFillingRecipeId: previousRecipeId,
       previousFillingIngredientId: previousIngredientId
     });
 
-    this._logger.info(`Selected filling recipe: ${recipeId}`);
+    this._logger.info(`Selected filling recipe for slot '${slotId}': ${recipeId}`);
     return succeed(true);
   }
 
   /**
-   * Selects a filling ingredient for the confection.
+   * Selects a filling ingredient for a specific slot.
+   * @param slotId - The slot ID to select the filling for
    * @param ingredientId - The ingredient ID to select as the filling
-   * @returns Success, or Failure if the confection doesn't support fillings
+   * @returns Success, or Failure if the slot doesn't exist
    * @public
    */
-  public selectFillingIngredient(ingredientId: IngredientId): Result<true> {
-    if (!this._sourceConfection.fillings) {
-      return fail('This confection does not support fillings');
+  public selectFillingIngredient(slotId: SlotId, ingredientId: IngredientId): Result<true> {
+    const existingSlot = this._fillings.get(slotId);
+    if (!existingSlot) {
+      return fail(`Filling slot '${slotId}' does not exist`);
     }
 
-    const previousRecipeId = this._filling?.recipeId;
-    const previousIngredientId = this._filling?.ingredientId;
+    const previousRecipeId = existingSlot.recipeId;
+    const previousIngredientId = existingSlot.ingredientId;
 
-    this._filling = {
+    this._fillings.set(slotId, {
+      slotId,
       recipeId: undefined,
       ingredientId,
-      originalRecipeId: this._filling?.originalRecipeId,
-      originalIngredientId: this._filling?.originalIngredientId,
+      originalRecipeId: existingSlot.originalRecipeId,
+      originalIngredientId: existingSlot.originalIngredientId,
       status: 'modified'
-    };
+    });
 
     this._isDirty = true;
     this._addJournalEntry('filling-select', {
+      fillingSlotId: slotId,
       fillingIngredientId: ingredientId,
       previousFillingRecipeId: previousRecipeId,
       previousFillingIngredientId: previousIngredientId
     });
 
-    this._logger.info(`Selected filling ingredient: ${ingredientId}`);
+    this._logger.info(`Selected filling ingredient for slot '${slotId}': ${ingredientId}`);
     return succeed(true);
   }
 
@@ -545,40 +555,45 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   // ============================================================================
 
   private _initializeFilling(): void {
-    const fillings = this._sourceConfection.fillings;
-    if (!fillings) {
+    const fillingSlots = this._sourceConfection.fillings;
+    if (!fillingSlots || fillingSlots.length === 0) {
       return;
     }
 
-    // Use recommended filling if available, otherwise first available
-    const recommendedId = fillings.recommendedFillingId;
-    if (recommendedId) {
-      // Check if it's a recipe or ingredient
-      if (fillings.recipes?.includes(recommendedId as RecipeId)) {
-        this._filling = {
-          recipeId: recommendedId as RecipeId,
-          originalRecipeId: recommendedId as RecipeId,
-          status: 'original'
-        };
-      } else if (fillings.ingredients?.includes(recommendedId as IngredientId)) {
-        this._filling = {
-          ingredientId: recommendedId as IngredientId,
-          originalIngredientId: recommendedId as IngredientId,
-          status: 'original'
-        };
+    // Initialize each filling slot
+    for (const slot of fillingSlots) {
+      const { slotId, filling } = slot;
+      const { options, preferredId } = filling;
+
+      if (options.length === 0) {
+        continue;
       }
-    } else if (fillings.recipes && fillings.recipes.length > 0) {
-      this._filling = {
-        recipeId: fillings.recipes[0],
-        originalRecipeId: fillings.recipes[0],
-        status: 'original'
-      };
-    } else if (fillings.ingredients && fillings.ingredients.length > 0) {
-      this._filling = {
-        ingredientId: fillings.ingredients[0],
-        originalIngredientId: fillings.ingredients[0],
-        status: 'original'
-      };
+
+      // Find the preferred option or use the first one
+      let selectedOption = options[0];
+      if (preferredId !== undefined) {
+        const preferred = options.find((opt: { id: unknown }) => opt.id === preferredId);
+        if (preferred !== undefined) {
+          selectedOption = preferred;
+        }
+      }
+
+      // Create session filling slot based on type
+      if (selectedOption.type === 'recipe') {
+        this._fillings.set(slotId, {
+          slotId,
+          recipeId: selectedOption.id,
+          originalRecipeId: selectedOption.id,
+          status: 'original'
+        });
+      } else {
+        this._fillings.set(slotId, {
+          slotId,
+          ingredientId: selectedOption.id,
+          originalIngredientId: selectedOption.id,
+          status: 'original'
+        });
+      }
     }
   }
 

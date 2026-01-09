@@ -43,10 +43,16 @@ describe('Confections converters', () => {
       unit: 'pieces',
       weightPerPiece: 12
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic'],
-      recommendedFillingId: 'common.dark-ganache-classic'
-    },
+    fillings: [
+      {
+        slotId: 'center',
+        name: 'Ganache Center',
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+          preferredId: 'common.dark-ganache-classic'
+        }
+      }
+    ],
     molds: {
       molds: [{ moldId: 'common.dome-25mm' }],
       recommendedMoldId: 'common.dome-25mm'
@@ -476,37 +482,171 @@ describe('Confections converters', () => {
   });
 
   // ============================================================================
-  // confectionFillings converter
+  // Filling Option Converters
   // ============================================================================
 
-  describe('confectionFillings', () => {
-    test('converts fillings with recipes', () => {
+  describe('recipeFillingOption', () => {
+    test('converts valid recipe filling option', () => {
       const input = {
-        recipes: ['common.dark-ganache-classic', 'common.milk-ganache'],
-        recommendedFillingId: 'common.dark-ganache-classic'
+        type: 'recipe',
+        id: 'common.dark-ganache-classic',
+        notes: 'Rich dark chocolate ganache'
       };
-      expect(ConfectionConverters.confectionFillings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.recipes).toHaveLength(2);
-        expect(result.recommendedFillingId).toBe('common.dark-ganache-classic');
+      expect(ConfectionConverters.recipeFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('recipe');
+        expect(result.id).toBe('common.dark-ganache-classic');
+        expect(result.notes).toBe('Rich dark chocolate ganache');
       });
     });
 
-    test('converts fillings with ingredients', () => {
+    test('converts recipe filling option without notes', () => {
       const input = {
-        ingredients: ['common.cocoa-powder'],
-        recommendedFillingId: 'common.cocoa-powder'
+        type: 'recipe',
+        id: 'common.milk-ganache'
       };
-      expect(ConfectionConverters.confectionFillings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredients).toHaveLength(1);
+      expect(ConfectionConverters.recipeFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('recipe');
+        expect(result.id).toBe('common.milk-ganache');
+        expect(result.notes).toBeUndefined();
       });
     });
 
-    test('converts empty fillings', () => {
-      const input = {};
-      expect(ConfectionConverters.confectionFillings.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.recipes).toBeUndefined();
-        expect(result.ingredients).toBeUndefined();
+    test('fails for wrong type discriminator', () => {
+      const input = {
+        type: 'ingredient',
+        id: 'common.dark-ganache-classic'
+      };
+      expect(ConfectionConverters.recipeFillingOption.convert(input)).toFail();
+    });
+  });
+
+  describe('ingredientFillingOption', () => {
+    test('converts valid ingredient filling option', () => {
+      const input = {
+        type: 'ingredient',
+        id: 'common.praline-paste',
+        notes: 'Hazelnut praline'
+      };
+      expect(ConfectionConverters.ingredientFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('ingredient');
+        expect(result.id).toBe('common.praline-paste');
+        expect(result.notes).toBe('Hazelnut praline');
       });
+    });
+
+    test('fails for wrong type discriminator', () => {
+      const input = {
+        type: 'recipe',
+        id: 'common.praline-paste'
+      };
+      expect(ConfectionConverters.ingredientFillingOption.convert(input)).toFail();
+    });
+  });
+
+  describe('anyFillingOption', () => {
+    test('converts recipe filling option', () => {
+      const input = { type: 'recipe', id: 'common.dark-ganache-classic' };
+      expect(ConfectionConverters.anyFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('recipe');
+      });
+    });
+
+    test('converts ingredient filling option', () => {
+      const input = { type: 'ingredient', id: 'common.praline-paste' };
+      expect(ConfectionConverters.anyFillingOption.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.type).toBe('ingredient');
+      });
+    });
+
+    test('fails for unknown type', () => {
+      const input = { type: 'unknown', id: 'common.something' };
+      expect(ConfectionConverters.anyFillingOption.convert(input)).toFail();
+    });
+  });
+
+  describe('fillingOptions', () => {
+    test('converts filling options with preferred', () => {
+      const input = {
+        options: [
+          { type: 'recipe', id: 'common.dark-ganache-classic' },
+          { type: 'recipe', id: 'common.milk-ganache' }
+        ],
+        preferredId: 'common.dark-ganache-classic'
+      };
+      expect(ConfectionConverters.fillingOptions.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.options).toHaveLength(2);
+        expect(result.preferredId).toBe('common.dark-ganache-classic');
+      });
+    });
+
+    test('converts filling options without preferred', () => {
+      const input = {
+        options: [{ type: 'ingredient', id: 'common.praline-paste' }]
+      };
+      expect(ConfectionConverters.fillingOptions.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.options).toHaveLength(1);
+        expect(result.preferredId).toBeUndefined();
+      });
+    });
+
+    test('converts mixed recipe and ingredient options', () => {
+      const input = {
+        options: [
+          { type: 'recipe', id: 'common.dark-ganache-classic' },
+          { type: 'ingredient', id: 'common.praline-paste' }
+        ],
+        preferredId: 'common.praline-paste'
+      };
+      expect(ConfectionConverters.fillingOptions.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.options).toHaveLength(2);
+        expect(result.options[0].type).toBe('recipe');
+        expect(result.options[1].type).toBe('ingredient');
+      });
+    });
+  });
+
+  describe('fillingSlot', () => {
+    test('converts valid filling slot', () => {
+      const input = {
+        slotId: 'center',
+        name: 'Ganache Center',
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+          preferredId: 'common.dark-ganache-classic'
+        }
+      };
+      expect(ConfectionConverters.fillingSlot.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.slotId).toBe('center');
+        expect(result.name).toBe('Ganache Center');
+        expect(result.filling.options).toHaveLength(1);
+        expect(result.filling.preferredId).toBe('common.dark-ganache-classic');
+      });
+    });
+
+    test('converts filling slot without name', () => {
+      const input = {
+        slotId: 'layer1',
+        filling: {
+          options: [{ type: 'ingredient', id: 'common.praline-paste' }]
+        }
+      };
+      expect(ConfectionConverters.fillingSlot.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.slotId).toBe('layer1');
+        expect(result.name).toBeUndefined();
+      });
+    });
+
+    test('fails for missing slotId', () => {
+      const input = {
+        name: 'Some Filling',
+        filling: { options: [] }
+      };
+      expect(ConfectionConverters.fillingSlot.convert(input)).toFail();
+    });
+
+    test('fails for missing filling', () => {
+      const input = { slotId: 'center', name: 'Center' };
+      expect(ConfectionConverters.fillingSlot.convert(input)).toFail();
     });
   });
 

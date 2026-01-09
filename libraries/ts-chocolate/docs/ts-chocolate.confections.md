@@ -233,17 +233,6 @@ Decoration specification for a confection
 </td></tr>
 <tr><td>
 
-[IConfectionFillings](./ts-chocolate.confections.iconfectionfillings.md)
-
-
-</td><td>
-
-Filling specification for a confection Can reference recipes (e.g., ganache) or ingredients (e.g., praline paste)
-
-
-</td></tr>
-<tr><td>
-
 [IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)
 
 
@@ -321,6 +310,17 @@ Yield specification for a confection
 </td></tr>
 <tr><td>
 
+[IFillingSlot](./ts-chocolate.confections.ifillingslot.md)
+
+
+</td><td>
+
+A single filling slot with its own options and preferred selection. Each slot can hold recipes OR ingredients (or both).
+
+
+</td></tr>
+<tr><td>
+
 [IFrameDimensions](./ts-chocolate.confections.iframedimensions.md)
 
 
@@ -343,12 +343,34 @@ Options for frame-based scaling of molded bonbons
 </td></tr>
 <tr><td>
 
+[IIngredientFillingOption](./ts-chocolate.confections.iingredientfillingoption.md)
+
+
+</td><td>
+
+Ingredient filling option - references an ingredient (e.g., praline paste)
+
+
+</td></tr>
+<tr><td>
+
 [IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)
 
 
 </td><td>
 
 Molded bonbon confection Uses chocolate molds for shell formation
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeFillingOption](./ts-chocolate.confections.irecipefillingoption.md)
+
+
+</td><td>
+
+Recipe filling option - references a recipe (e.g., ganache)
 
 
 </td></tr>
@@ -426,6 +448,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AnyFillingOption](./ts-chocolate.confections.anyfillingoption.md)
+
+
+</td><td>
+
+Discriminated union of filling options. Satisfies IHasId<FillingOptionId> for use with IOptionsWithPreferred.
+
+
+</td></tr>
+<tr><td>
+
 [ConfectionCollection](./ts-chocolate.confections.confectioncollection.md)
 
 
@@ -487,6 +520,28 @@ Discriminated union of all confection data types. Use this when working with raw
 </td><td>
 
 Specifies a confections library to merge into a new library.
+
+
+</td></tr>
+<tr><td>
+
+[FillingOptionId](./ts-chocolate.confections.fillingoptionid.md)
+
+
+</td><td>
+
+Union type for filling option IDs. Can be either a RecipeId or IngredientId - disambiguation happens via the type discriminator.
+
+
+</td></tr>
+<tr><td>
+
+[FillingOptionType](./ts-chocolate.confections.fillingoptiontype.md)
+
+
+</td><td>
+
+Discriminator for filling option types
 
 
 </td></tr>

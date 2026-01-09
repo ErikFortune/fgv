@@ -285,12 +285,12 @@ Optional description
 
 </td><td>
 
-[IConfectionFillings](./ts-chocolate.confections.iconfectionfillings.md) \| undefined
+ReadonlyArray&lt;[IFillingSlot](./ts-chocolate.confections.ifillingslot.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Optional filling specification
+Optional filling slots
 
 
 </td></tr>

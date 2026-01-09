@@ -1552,10 +1552,15 @@ export const confectionCollections: Record<string, JsonObject> = {
           unit: 'pieces',
           weightPerPiece: 12
         },
-        fillings: {
-          recipes: ['common.dark-ganache-classic'],
-          recommendedFillingId: 'common.dark-ganache-classic'
-        },
+        fillings: [
+          {
+            slotId: 'center',
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+              preferredId: 'common.dark-ganache-classic'
+            }
+          }
+        ],
         molds: {
           molds: [
             {
@@ -1588,10 +1593,15 @@ export const confectionCollections: Record<string, JsonObject> = {
           unit: 'pieces',
           weightPerPiece: 10
         },
-        fillings: {
-          recipes: ['common.dark-ganache-classic'],
-          recommendedFillingId: 'common.dark-ganache-classic'
-        },
+        fillings: [
+          {
+            slotId: 'center',
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+              preferredId: 'common.dark-ganache-classic'
+            }
+          }
+        ],
         frameDimensions: {
           width: 300,
           height: 200,
@@ -1624,10 +1634,15 @@ export const confectionCollections: Record<string, JsonObject> = {
           unit: 'pieces',
           weightPerPiece: 15
         },
-        fillings: {
-          recipes: ['common.dark-ganache-classic'],
-          recommendedFillingId: 'common.dark-ganache-classic'
-        },
+        fillings: [
+          {
+            slotId: 'center',
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+              preferredId: 'common.dark-ganache-classic'
+            }
+          }
+        ],
         coatings: {
           ingredients: [
             {

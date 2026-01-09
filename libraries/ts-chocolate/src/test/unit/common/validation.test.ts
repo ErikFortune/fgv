@@ -38,6 +38,7 @@ import {
   RecipeVersionId,
   RecipeVersionSpec,
   SessionId,
+  SlotId,
   SourceId,
   Validation
 } from '../../../packlets/common';
@@ -76,6 +77,8 @@ const {
   toRecipeVersionId,
   toSessionId,
   toJournalId,
+  isValidSlotId,
+  toSlotId,
   toRatingScore,
   toGrams,
   toPercentage,
@@ -481,6 +484,50 @@ describe('Common validation', () => {
 
       test.each(invalidJournalIds)('fails with %s', (_desc, value) => {
         expect(toJournalId(value)).toFailWith(/Invalid JournalId/);
+      });
+    });
+  });
+
+  // ============================================================================
+  // SlotId Validation
+  // ============================================================================
+
+  describe('SlotId validation', () => {
+    const validSlotIds: [string, string][] = [
+      ['simple id', 'center'],
+      ['with dash', 'outer-layer'],
+      ['with underscore', 'layer_1'],
+      ['mixed', 'inner-layer_2'],
+      ['numbers only', '123'],
+      ['alphanumeric', 'slot1abc']
+    ];
+
+    const invalidSlotIds: [string, unknown][] = [
+      ['empty string', ''],
+      ['with dot', 'center.layer'],
+      ['with space', 'center layer'],
+      ['number', 123],
+      ['null', null],
+      ['undefined', undefined]
+    ];
+
+    describe('isValidSlotId', () => {
+      test.each(validSlotIds)('returns true for %s', (_desc, value) => {
+        expect(isValidSlotId(value)).toBe(true);
+      });
+
+      test.each(invalidSlotIds)('returns false for %s', (_desc, value) => {
+        expect(isValidSlotId(value)).toBe(false);
+      });
+    });
+
+    describe('toSlotId', () => {
+      test.each(validSlotIds)('succeeds with %s', (_desc, value) => {
+        expect(toSlotId(value)).toSucceedWith(value as SlotId);
+      });
+
+      test.each(invalidSlotIds)('fails with %s', (_desc, value) => {
+        expect(toSlotId(value)).toFailWith(/Invalid SlotId/);
       });
     });
   });

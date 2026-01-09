@@ -6,6 +6,113 @@
 
 Main exports for @<!-- -->fgv/ts-chocolate library
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[getPreferred(collection)](./ts-chocolate.getpreferred.md)
+
+
+</td><td>
+
+Gets the preferred option from a collection, if one is specified and exists.
+
+
+</td></tr>
+<tr><td>
+
+[getPreferredId(collection)](./ts-chocolate.getpreferredid.md)
+
+
+</td><td>
+
+Gets the preferred ID from a simple ID collection, if specified and valid.
+
+
+</td></tr>
+<tr><td>
+
+[getPreferredIdOrFirst(collection)](./ts-chocolate.getpreferredidorfirst.md)
+
+
+</td><td>
+
+Gets the preferred ID from a simple ID collection, falling back to the first ID.
+
+
+</td></tr>
+<tr><td>
+
+[getPreferredOrFirst(collection)](./ts-chocolate.getpreferredorfirst.md)
+
+
+</td><td>
+
+Gets the preferred option from a collection, falling back to the first option.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[IHasId](./ts-chocolate.ihasid.md)
+
+
+</td><td>
+
+Base interface that option types must extend for use with IOptionsWithPreferred. Enables generic helpers that work with any option type.
+
+
+</td></tr>
+<tr><td>
+
+[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)
+
+
+</td><td>
+
+Collection of simple IDs with a preferred selection. Use when options are just IDs without additional metadata.
+
+
+</td></tr>
+<tr><td>
+
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)
+
+
+</td><td>
+
+Collection of options (objects with IDs) with a preferred selection. Use when options are objects containing IDs plus additional metadata.
+
+
+</td></tr>
+</tbody></table>
+
 ## Namespaces
 
 <table><thead><tr><th>
@@ -843,6 +950,17 @@ Specifier for a recipe version within a recipe Format: YYYY-MM-DD-NN with option
 </td><td>
 
 Unique identifier for an editing session Format: UUID
+
+
+</td></tr>
+<tr><td>
+
+[SlotId](./ts-chocolate.slotid.md)
+
+
+</td><td>
+
+Unique identifier for a filling slot within a confection Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/ Examples: "center", "outer-layer", "layer1"
 
 
 </td></tr>

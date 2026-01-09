@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeConfectionBase.fillings property
 
-Optional filling specification
+Optional filling slots
 
 **Signature:**
 
 ```typescript
-get fillings(): IConfectionFillings | undefined;
+get fillings(): ReadonlyArray<IFillingSlot> | undefined;
 ```

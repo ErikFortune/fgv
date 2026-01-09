@@ -29,7 +29,8 @@ import {
   IngredientId,
   Millimeters,
   MoldId,
-  RecipeId
+  RecipeId,
+  SlotId
 } from '../../../packlets/common';
 import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../packlets/confections';
 import {
@@ -57,10 +58,15 @@ describe('RuntimeConfection', () => {
       unit: 'pieces',
       weightPerPiece: 12 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId],
-      recommendedFillingId: 'common.dark-ganache-classic' as RecipeId
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     decorations: [{ description: 'Gold leaf', preferred: true }, { description: 'Cocoa butter transfer' }],
     molds: {
       molds: [{ moldId: 'common.dome-25mm' as MoldId }],
@@ -226,8 +232,11 @@ describe('RuntimeConfection', () => {
     });
 
     test('exposes fillings', () => {
-      expect(runtime.fillings?.recipes).toContain('common.dark-ganache-classic');
-      expect(runtime.fillings?.recommendedFillingId).toBe('common.dark-ganache-classic');
+      expect(runtime.fillings).toHaveLength(1);
+      const slot = runtime.fillings?.[0];
+      expect(slot?.slotId).toBe('center');
+      expect(slot?.filling.options[0].id).toBe('common.dark-ganache-classic');
+      expect(slot?.filling.preferredId).toBe('common.dark-ganache-classic');
     });
 
     test('exposes version properties', () => {

@@ -191,6 +191,15 @@ export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
  */
 export type SessionId = Brand<string, 'SessionId'>;
 
+/**
+ * Unique identifier for a filling slot within a confection
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * Examples: "center", "outer-layer", "layer1"
+ * @public
+ */
+export type SlotId = Brand<string, 'SlotId'>;
+
 // ============================================================================
 // Branded Numeric Types
 // ============================================================================

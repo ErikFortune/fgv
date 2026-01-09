@@ -30,6 +30,17 @@ Converter for IAdditionalChocolate
 </td></tr>
 <tr><td>
 
+[anyFillingOption](./ts-chocolate.confections.converters.anyfillingoption.md)
+
+
+</td><td>
+
+Converter for AnyFillingOption (discriminated union)
+
+
+</td></tr>
+<tr><td>
+
 [barTruffle](./ts-chocolate.confections.converters.bartruffle.md)
 
 
@@ -118,17 +129,6 @@ Converter for IConfectionDecoration
 </td></tr>
 <tr><td>
 
-[confectionFillings](./ts-chocolate.confections.converters.confectionfillings.md)
-
-
-</td><td>
-
-Converter for IConfectionFillings
-
-
-</td></tr>
-<tr><td>
-
 [confectionMoldRef](./ts-chocolate.confections.converters.confectionmoldref.md)
 
 
@@ -195,6 +195,28 @@ Converter for IConfectionYield
 </td></tr>
 <tr><td>
 
+[fillingOptions](./ts-chocolate.confections.converters.fillingoptions.md)
+
+
+</td><td>
+
+Converter for filling options with preferred selection
+
+
+</td></tr>
+<tr><td>
+
+[fillingSlot](./ts-chocolate.confections.converters.fillingslot.md)
+
+
+</td><td>
+
+Converter for IFillingSlot
+
+
+</td></tr>
+<tr><td>
+
 [frameDimensions](./ts-chocolate.confections.converters.framedimensions.md)
 
 
@@ -206,12 +228,34 @@ Converter for IFrameDimensions
 </td></tr>
 <tr><td>
 
+[ingredientFillingOption](./ts-chocolate.confections.converters.ingredientfillingoption.md)
+
+
+</td><td>
+
+Converter for IIngredientFillingOption
+
+
+</td></tr>
+<tr><td>
+
 [moldedBonBon](./ts-chocolate.confections.converters.moldedbonbon.md)
 
 
 </td><td>
 
 Converter for IMoldedBonBon
+
+
+</td></tr>
+<tr><td>
+
+[recipeFillingOption](./ts-chocolate.confections.converters.recipefillingoption.md)
+
+
+</td><td>
+
+Converter for IRecipeFillingOption
 
 
 </td></tr>

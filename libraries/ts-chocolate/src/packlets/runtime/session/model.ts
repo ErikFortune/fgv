@@ -32,7 +32,8 @@ import {
   MoldId,
   ProcedureId,
   RecipeId,
-  SessionId
+  SessionId,
+  SlotId
 } from '../../common';
 import {
   ChocolateRole,
@@ -237,10 +238,15 @@ export interface ISaveResult {
 export type ConfectionSelectionStatus = 'original' | 'modified';
 
 /**
- * Tracks the selected filling for a confection session
+ * Tracks the selected filling for a single slot in a confection session
  * @public
  */
-export interface ISessionFilling {
+export interface ISessionFillingSlot {
+  /**
+   * The slot ID this selection applies to
+   */
+  readonly slotId: SlotId;
+
   /**
    * The currently selected filling recipe ID (mutually exclusive with ingredientId)
    */
@@ -442,9 +448,9 @@ export interface IConfectionSessionState {
   readonly sourceConfection: IRuntimeConfection;
 
   /**
-   * Current filling selection (if applicable)
+   * Current filling selections by slot ID (if applicable)
    */
-  readonly filling?: ISessionFilling;
+  readonly fillings: ReadonlyMap<SlotId, ISessionFillingSlot>;
 
   /**
    * Current mold selection (for molded bonbons)

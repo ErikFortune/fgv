@@ -63,6 +63,7 @@ import {
   RecipeVersionId,
   RecipeVersionSpec,
   SessionId,
+  SlotId,
   SourceId,
   VERSION_ID_SEPARATOR,
   WeightUnit,
@@ -105,6 +106,7 @@ import {
   toRecipeVersionId,
   toRecipeVersionSpec,
   toSessionId,
+  toSlotId,
   toSourceId
 } from './validation';
 
@@ -292,6 +294,12 @@ export const parsedRecipeVersionId: Converter<ParsedRecipeVersionId> = Converter
  * @public
  */
 export const sessionId: Converter<SessionId> = Converters.generic(toSessionId);
+
+/**
+ * Converter for {@link SlotId | SlotId}.
+ * @public
+ */
+export const slotId: Converter<SlotId> = Converters.generic(toSlotId);
 
 /**
  * Type alias for parsed ConfectionId components

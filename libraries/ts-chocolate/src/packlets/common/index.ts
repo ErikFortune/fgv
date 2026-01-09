@@ -26,6 +26,9 @@
 // Types and Enums
 export * from './model';
 
+// Options with Preferred pattern
+export * from './optionsWithPreferred';
+
 // Converters, Validation, and Helpers namespaces for organized access
 import * as Converters from './converters';
 import * as Helpers from './helpers';

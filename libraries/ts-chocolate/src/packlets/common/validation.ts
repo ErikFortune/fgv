@@ -57,6 +57,7 @@ import {
   RecipeVersionSpec,
   SESSION_ID_PATTERN,
   SessionId,
+  SlotId,
   SourceId,
   VERSION_ID_SEPARATOR
 } from './model';
@@ -721,4 +722,31 @@ export function toJournalId(from: unknown): Result<JournalId> {
   return Failure.with(
     `${from}: Invalid JournalId: must be in format YYYY-MM-DD-HHMMSS-xxxxxxxx (e.g., "2026-01-15-143025-a1b2c3d4")`
   );
+}
+
+// ============================================================================
+// Slot ID Validators
+// ============================================================================
+
+/**
+ * Type guard for SlotId
+ * @param from - Value to check
+ * @returns True if the value is a valid SlotId
+ * @public
+ */
+export function isValidSlotId(from: unknown): from is SlotId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to SlotId
+ * @param from - Value to convert
+ * @returns Result with SlotId or error
+ * @public
+ */
+export function toSlotId(from: unknown): Result<SlotId> {
+  if (isValidSlotId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid SlotId: must be non-empty alphanumeric with dashes/underscores, no dots');
 }

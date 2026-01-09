@@ -492,6 +492,17 @@ Converter for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[slotId](./ts-chocolate.converters.slotid.md)
+
+
+</td><td>
+
+Converter for [SlotId](./ts-chocolate.slotid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [sourceId](./ts-chocolate.converters.sourceid.md)
 
 

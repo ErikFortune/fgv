@@ -142,6 +142,27 @@ _(Optional)_ The filling recipe ID selected (for filling-select events)
 </td></tr>
 <tr><td>
 
+[fillingSlotId?](./ts-chocolate.journal.iconfectionjournalentry.fillingslotid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[SlotId](./ts-chocolate.slotid.md)
+
+
+</td><td>
+
+_(Optional)_ The filling slot ID (for filling-select events)
+
+
+</td></tr>
+<tr><td>
+
 [ingredientId?](./ts-chocolate.journal.iconfectionjournalentry.ingredientid.md)
 
 

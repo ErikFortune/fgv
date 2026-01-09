@@ -30,7 +30,8 @@ import {
   Millimeters,
   MoldId,
   ProcedureId,
-  RecipeId
+  RecipeId,
+  SlotId
 } from '../../../../packlets/common';
 import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../../packlets/confections';
 import {
@@ -67,11 +68,20 @@ describe('ConfectionEditingSession', () => {
       unit: 'pieces',
       weightPerPiece: 12 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId, 'common.milk-ganache' as RecipeId],
-      ingredients: ['common.caramel' as IngredientId],
-      recommendedFillingId: 'common.dark-ganache-classic' as RecipeId
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        name: 'Ganache Center',
+        filling: {
+          options: [
+            { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
+            { type: 'recipe', id: 'common.milk-ganache' as RecipeId },
+            { type: 'ingredient', id: 'common.caramel' as IngredientId }
+          ],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     decorations: [{ description: 'Gold leaf', preferred: true }],
     molds: {
       molds: [{ moldId: 'common.dome-25mm' as MoldId }, { moldId: 'common.square-20mm' as MoldId }],
@@ -114,9 +124,15 @@ describe('ConfectionEditingSession', () => {
       unit: 'pieces',
       weightPerPiece: 10 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId]
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     frameDimensions: {
       width: 300 as Millimeters,
       height: 200 as Millimeters,
@@ -148,9 +164,15 @@ describe('ConfectionEditingSession', () => {
       unit: 'pieces',
       weightPerPiece: 15 as Grams
     },
-    fillings: {
-      recipes: ['common.dark-ganache-classic' as RecipeId]
-    },
+    fillings: [
+      {
+        slotId: 'center' as SlotId,
+        filling: {
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+          preferredId: 'common.dark-ganache-classic' as RecipeId
+        }
+      }
+    ],
     enrobingChocolate: {
       ingredientId: 'common.chocolate-dark-64' as IngredientId
     },
@@ -278,13 +300,14 @@ describe('ConfectionEditingSession', () => {
   // ============================================================================
 
   describe('initial state', () => {
-    test('initializes filling from recommended for molded bonbon', () => {
+    test('initializes filling from preferred for molded bonbon', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.filling).toBeDefined();
-      expect(session.filling?.recipeId).toBe('common.dark-ganache-classic');
-      expect(session.filling?.status).toBe('original');
+      const centerFilling = session.fillings.get('center' as SlotId);
+      expect(centerFilling).toBeDefined();
+      expect(centerFilling?.recipeId).toBe('common.dark-ganache-classic');
+      expect(centerFilling?.status).toBe('original');
     });
 
     test('initializes mold from recommended for molded bonbon', () => {
@@ -343,99 +366,128 @@ describe('ConfectionEditingSession', () => {
       expect(session.mold).toBeUndefined();
     });
 
-    test('initializes filling from recommended ingredient (no recipes)', () => {
-      // Create a bonbon where the recommendedFillingId is an ingredient and there are no recipes
-      // This ensures the fillings.recipes?.includes branch short-circuits
-      const ingredientOnlyRecommendedData: IMoldedBonBon = {
+    test('initializes filling from preferred ingredient option', () => {
+      // Create a bonbon where the preferred filling is an ingredient
+      const ingredientPreferredData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: {
-          // No recipes property - fillings.recipes is undefined
-          ingredients: ['common.caramel' as IngredientId, 'common.praline' as IngredientId],
-          recommendedFillingId: 'common.caramel' as IngredientId
-        }
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: {
+              options: [
+                { type: 'ingredient', id: 'common.caramel' as IngredientId },
+                { type: 'ingredient', id: 'common.praline' as IngredientId }
+              ],
+              preferredId: 'common.caramel' as IngredientId
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.bonbon-ingr-rec-no-recipes' as ConfectionId,
-        ingredientOnlyRecommendedData
+        'test.bonbon-ingr-preferred' as ConfectionId,
+        ingredientPreferredData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.filling).toBeDefined();
-      expect(session.filling?.ingredientId).toBe('common.caramel');
-      expect(session.filling?.recipeId).toBeUndefined();
-      expect(session.filling?.status).toBe('original');
+      const centerFilling = session.fillings.get('center' as SlotId);
+      expect(centerFilling).toBeDefined();
+      expect(centerFilling?.ingredientId).toBe('common.caramel');
+      expect(centerFilling?.recipeId).toBeUndefined();
+      expect(centerFilling?.status).toBe('original');
     });
 
-    test('initializes filling from recommended ingredient (with recipes present)', () => {
-      // Create a bonbon where the recommendedFillingId is an ingredient that's NOT in recipes
-      // but recipes exist - this covers the case where includes returns false
-      const ingredientRecommendedData: IMoldedBonBon = {
+    test('initializes filling from first option when no preferred', () => {
+      // Create a bonbon with options but no preferredId
+      const noPreferredData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: {
-          recipes: ['common.dark-ganache-classic' as RecipeId],
-          ingredients: ['common.caramel' as IngredientId, 'common.praline' as IngredientId],
-          recommendedFillingId: 'common.caramel' as IngredientId
-        }
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: {
+              options: [
+                { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
+                { type: 'ingredient', id: 'common.caramel' as IngredientId }
+              ]
+              // No preferredId
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.bonbon-ingr-rec' as ConfectionId,
-        ingredientRecommendedData
+        'test.bonbon-no-preferred' as ConfectionId,
+        noPreferredData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.filling).toBeDefined();
-      expect(session.filling?.ingredientId).toBe('common.caramel');
-      expect(session.filling?.recipeId).toBeUndefined();
-      expect(session.filling?.status).toBe('original');
+      const centerFilling = session.fillings.get('center' as SlotId);
+      expect(centerFilling).toBeDefined();
+      expect(centerFilling?.recipeId).toBe('common.dark-ganache-classic');
+      expect(centerFilling?.status).toBe('original');
     });
 
-    test('handles recommended filling not in recipes or ingredients', () => {
-      // Create a bonbon where recommendedFillingId exists, recipes exist but don't contain it,
-      // and ingredients is undefined. This covers the short-circuit branch of fillings.ingredients?.includes()
-      const orphanRecommendedData: IMoldedBonBon = {
+    test('skips filling slots with empty options array', () => {
+      // Create a bonbon with empty options array
+      const emptyOptionsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: {
-          recipes: ['common.dark-ganache-classic' as RecipeId],
-          // No ingredients array - undefined
-          recommendedFillingId: 'common.unknown-filling' as RecipeId // Not in recipes
-        }
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: {
+              options: []
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.bonbon-orphan-rec' as ConfectionId,
-        orphanRecommendedData
+        'test.bonbon-empty-options' as ConfectionId,
+        emptyOptionsData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      // Filling should be undefined since recommended isn't in recipes and ingredients is undefined
-      expect(session.filling).toBeUndefined();
+      // Slots with empty options are skipped during initialization
+      expect(session.fillings.size).toBe(0);
     });
 
-    test('initializes filling from first ingredient when no recipes', () => {
-      // Create a bonbon with only ingredients (no recipes, no recommended)
-      const ingredientsOnlyData: IMoldedBonBon = {
+    test('initializes multiple filling slots', () => {
+      // Create a bonbon with multiple filling slots
+      const multiSlotData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: {
-          ingredients: ['common.caramel' as IngredientId, 'common.praline' as IngredientId]
-        }
+        fillings: [
+          {
+            slotId: 'outer-layer' as SlotId,
+            name: 'Outer Ganache',
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+              preferredId: 'common.dark-ganache-classic' as RecipeId
+            }
+          },
+          {
+            slotId: 'center' as SlotId,
+            name: 'Center Insert',
+            filling: {
+              options: [{ type: 'ingredient', id: 'common.praline' as IngredientId }],
+              preferredId: 'common.praline' as IngredientId
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.bonbon-ingr-only' as ConfectionId,
-        ingredientsOnlyData
+        'test.bonbon-multi-slot' as ConfectionId,
+        multiSlotData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.filling).toBeDefined();
-      expect(session.filling?.ingredientId).toBe('common.caramel');
-      expect(session.filling?.recipeId).toBeUndefined();
-      expect(session.filling?.status).toBe('original');
+      expect(session.fillings.size).toBe(2);
+      expect(session.fillings.get('outer-layer' as SlotId)?.recipeId).toBe('common.dark-ganache-classic');
+      expect(session.fillings.get('center' as SlotId)?.ingredientId).toBe('common.praline');
     });
 
     test('does not have coating for rolled truffle without coatings', () => {
@@ -461,14 +513,15 @@ describe('ConfectionEditingSession', () => {
   // ============================================================================
 
   describe('selectFillingRecipe', () => {
-    test('selects a filling recipe', () => {
+    test('selects a filling recipe for a slot', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.selectFillingRecipe('common.milk-ganache' as RecipeId)).toSucceed();
-      expect(session.filling?.recipeId).toBe('common.milk-ganache');
-      expect(session.filling?.ingredientId).toBeUndefined();
-      expect(session.filling?.status).toBe('modified');
+      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId)).toSucceed();
+      const centerFilling = session.fillings.get('center' as SlotId);
+      expect(centerFilling?.recipeId).toBe('common.milk-ganache');
+      expect(centerFilling?.ingredientId).toBeUndefined();
+      expect(centerFilling?.status).toBe('modified');
       expect(session.isDirty).toBe(true);
     });
 
@@ -482,18 +535,28 @@ describe('ConfectionEditingSession', () => {
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
-      expect(session.selectFillingRecipe('common.milk-ganache' as RecipeId)).toFailWith(
-        /does not support fillings/
+      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId)).toFailWith(
+        /does not exist/
       );
+    });
+
+    test('fails for non-existent slot', () => {
+      const confection = createMoldedBonBon();
+      const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
+
+      expect(
+        session.selectFillingRecipe('non-existent-slot' as SlotId, 'common.milk-ganache' as RecipeId)
+      ).toFailWith(/does not exist/);
     });
 
     test('adds journal entry when journaling is enabled', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      session.selectFillingRecipe('common.milk-ganache' as RecipeId);
+      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId);
       expect(session.journalEntries.length).toBe(1);
       expect(session.journalEntries[0].eventType).toBe('filling-select');
+      expect(session.journalEntries[0].fillingSlotId).toBe('center');
     });
 
     test('does not add journal entry when journaling is disabled', () => {
@@ -503,44 +566,48 @@ describe('ConfectionEditingSession', () => {
         enableJournal: false
       }).orThrow();
 
-      session.selectFillingRecipe('common.milk-ganache' as RecipeId);
+      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId);
       expect(session.journalEntries.length).toBe(0);
     });
 
-    test('selects recipe when no initial filling is set', () => {
-      // Create a bonbon with empty fillings (no recipes, no ingredients, no recommended)
-      // This results in _filling being undefined but fillings being supported
-      const emptyFillingsData: IMoldedBonBon = {
+    test('fails for slot with empty options since slot is not initialized', () => {
+      // Create a bonbon with an empty options array in filling slot
+      const emptyOptionsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: {}
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: { options: [] }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.bonbon-empty-fillings2' as ConfectionId,
-        emptyFillingsData
+        'test.bonbon-empty-options2' as ConfectionId,
+        emptyOptionsData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      // Initial filling should be undefined
-      expect(session.filling).toBeUndefined();
-
-      // Should be able to select a recipe
-      expect(session.selectFillingRecipe('common.dark-ganache-classic' as RecipeId)).toSucceed();
-      expect(session.filling?.recipeId).toBe('common.dark-ganache-classic');
-      expect(session.filling?.status).toBe('modified');
+      // Slots with empty options are not initialized, so selection fails
+      expect(
+        session.selectFillingRecipe('center' as SlotId, 'common.dark-ganache-classic' as RecipeId)
+      ).toFailWith(/does not exist/);
     });
   });
 
   describe('selectFillingIngredient', () => {
-    test('selects a filling ingredient', () => {
+    test('selects a filling ingredient for a slot', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.selectFillingIngredient('common.caramel' as IngredientId)).toSucceed();
-      expect(session.filling?.ingredientId).toBe('common.caramel');
-      expect(session.filling?.recipeId).toBeUndefined();
-      expect(session.filling?.status).toBe('modified');
+      expect(
+        session.selectFillingIngredient('center' as SlotId, 'common.caramel' as IngredientId)
+      ).toSucceed();
+      const centerFilling = session.fillings.get('center' as SlotId);
+      expect(centerFilling?.ingredientId).toBe('common.caramel');
+      expect(centerFilling?.recipeId).toBeUndefined();
+      expect(centerFilling?.status).toBe('modified');
       expect(session.isDirty).toBe(true);
     });
 
@@ -548,38 +615,48 @@ describe('ConfectionEditingSession', () => {
       const noFillingsData = { ...moldedBonBonData, fillings: undefined };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.test-bonbon-no-fillings' as ConfectionId,
+        'test.test-bonbon-no-fillings2' as ConfectionId,
         noFillingsData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
-      expect(session.selectFillingIngredient('common.caramel' as IngredientId)).toFailWith(
-        /does not support fillings/
-      );
+      expect(
+        session.selectFillingIngredient('center' as SlotId, 'common.caramel' as IngredientId)
+      ).toFailWith(/does not exist/);
     });
 
-    test('selects ingredient when no initial filling is set', () => {
-      // Create a bonbon with empty fillings (no recipes, no ingredients, no recommended)
-      // This results in _filling being undefined but fillings being supported
-      const emptyFillingsData: IMoldedBonBon = {
+    test('fails for non-existent slot', () => {
+      const confection = createMoldedBonBon();
+      const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
+
+      expect(
+        session.selectFillingIngredient('non-existent-slot' as SlotId, 'common.caramel' as IngredientId)
+      ).toFailWith(/does not exist/);
+    });
+
+    test('fails for slot with empty options since slot is not initialized', () => {
+      // Create a bonbon with empty options in filling slot
+      const emptyOptionsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: {}
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: { options: [] }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
-        'test.bonbon-empty-fillings' as ConfectionId,
-        emptyFillingsData
+        'test.bonbon-empty-options3' as ConfectionId,
+        emptyOptionsData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      // Initial filling should be undefined
-      expect(session.filling).toBeUndefined();
-
-      // Should be able to select an ingredient
-      expect(session.selectFillingIngredient('common.caramel' as IngredientId)).toSucceed();
-      expect(session.filling?.ingredientId).toBe('common.caramel');
-      expect(session.filling?.status).toBe('modified');
+      // Slots with empty options are not initialized, so selection fails
+      expect(
+        session.selectFillingIngredient('center' as SlotId, 'common.caramel' as IngredientId)
+      ).toFailWith(/does not exist/);
     });
   });
 

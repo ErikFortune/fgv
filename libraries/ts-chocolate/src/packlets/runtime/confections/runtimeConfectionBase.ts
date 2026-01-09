@@ -37,10 +37,10 @@ import {
 import {
   ConfectionData,
   IConfectionDecoration,
-  IConfectionFillings,
   IConfectionProcedures,
   IConfectionVersion,
   IConfectionYield,
+  IFillingSlot,
   isMoldedBonBon,
   isBarTruffle,
   isRolledTruffle
@@ -165,9 +165,9 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   }
 
   /**
-   * Optional filling specification
+   * Optional filling slots
    */
-  public get fillings(): IConfectionFillings | undefined {
+  public get fillings(): ReadonlyArray<IFillingSlot> | undefined {
     return this._confection.fillings;
   }
 

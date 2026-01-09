@@ -294,6 +294,17 @@ Type guard for [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
 </td></tr>
 <tr><td>
 
+[isValidSlotId(from)](./ts-chocolate.validation.isvalidslotid.md)
+
+
+</td><td>
+
+Type guard for SlotId
+
+
+</td></tr>
+<tr><td>
+
 [isValidSourceId(from)](./ts-chocolate.validation.isvalidsourceid.md)
 
 
@@ -575,6 +586,17 @@ Converts unknown value to RecipeVersionSpec
 </td><td>
 
 Converts unknown value to [SessionId](./ts-chocolate.sessionid.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[toSlotId(from)](./ts-chocolate.validation.toslotid.md)
+
+
+</td><td>
+
+Converts unknown value to SlotId
 
 
 </td></tr>

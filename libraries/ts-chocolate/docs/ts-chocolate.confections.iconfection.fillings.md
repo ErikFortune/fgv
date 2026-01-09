@@ -4,10 +4,10 @@
 
 ## Confections.IConfection.fillings property
 
-Optional filling specification
+Optional filling slots - each slot has independent options with a preferred selection
 
 **Signature:**
 
 ```typescript
-readonly fillings?: IConfectionFillings;
+readonly fillings?: ReadonlyArray<IFillingSlot>;
 ```

@@ -106,6 +106,12 @@ export const allWeightUnits: WeightUnit[];
 function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
+type AnyFillingOption = IRecipeFillingOption | IIngredientFillingOption;
+
+// @public
+const anyFillingOption: Converter<AnyFillingOption>;
+
+// @public
 type AnyJournalRecord = IRecipeJournalRecord | IConfectionJournalRecord;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -478,7 +484,7 @@ class ConfectionEditingSession implements IConfectionSessionState {
     get coating(): ISessionCoating | undefined;
     static create(params: IConfectionEditingSessionParams): Result<ConfectionEditingSession>;
     // (undocumented)
-    get filling(): ISessionFilling | undefined;
+    get fillings(): ReadonlyMap<SlotId, ISessionFillingSlot>;
     // (undocumented)
     get isDirty(): boolean;
     // (undocumented)
@@ -492,8 +498,8 @@ class ConfectionEditingSession implements IConfectionSessionState {
     save(options?: IConfectionSaveOptions): Result<IConfectionSaveResult>;
     selectChocolate(role: ChocolateRole, ingredientId: IngredientId): Result<true>;
     selectCoating(ingredientId: IngredientId): Result<true>;
-    selectFillingIngredient(ingredientId: IngredientId): Result<true>;
-    selectFillingRecipe(recipeId: RecipeId): Result<true>;
+    selectFillingIngredient(slotId: SlotId, ingredientId: IngredientId): Result<true>;
+    selectFillingRecipe(slotId: SlotId, recipeId: RecipeId): Result<true>;
     selectMold(moldId: MoldId): Result<true>;
     selectProcedure(procedureId: ProcedureId): Result<true>;
     // (undocumented)
@@ -506,9 +512,6 @@ class ConfectionEditingSession implements IConfectionSessionState {
     // (undocumented)
     get yield(): ISessionYield;
 }
-
-// @public
-const confectionFillings: Converter<IConfectionFillings>;
 
 // @public
 export type ConfectionId = Brand<string, 'ConfectionId'>;
@@ -560,7 +563,12 @@ declare namespace Confections {
         isRolledTruffle,
         IConfectionYield,
         IConfectionDecoration,
-        IConfectionFillings,
+        FillingOptionType,
+        FillingOptionId,
+        IRecipeFillingOption,
+        IIngredientFillingOption,
+        AnyFillingOption,
+        IFillingSlot,
         IChocolateSpec,
         IAdditionalChocolate,
         IConfectionMoldRef,
@@ -665,6 +673,7 @@ declare namespace Converters {
         ParsedRecipeVersionId,
         parsedRecipeVersionId,
         sessionId,
+        slotId,
         ParsedConfectionId,
         parsedConfectionId,
         confectionName,
@@ -699,7 +708,11 @@ declare namespace Converters_2 {
     export {
         confectionYield,
         confectionDecoration,
-        confectionFillings,
+        recipeFillingOption,
+        ingredientFillingOption,
+        anyFillingOption,
+        fillingOptions,
+        fillingSlot,
         chocolateSpec,
         additionalChocolate,
         confectionMoldRef,
@@ -941,6 +954,18 @@ function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPr
 const fatIngredient: Converter<IFatIngredient>;
 
 // @public
+type FillingOptionId = RecipeId | IngredientId;
+
+// @public
+const fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>;
+
+// @public
+type FillingOptionType = 'recipe' | 'ingredient';
+
+// @public
+const fillingSlot: Converter<IFillingSlot>;
+
+// @public
 type FilterPattern = string | RegExp;
 
 // @public
@@ -996,6 +1021,18 @@ function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFil
 
 // @public
 function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+export function getPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
+
+// @public
+export function getPreferredId<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
+
+// @public
+export function getPreferredIdOrFirst<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
+
+// @public
+export function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
 
 // @public
 function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -1216,7 +1253,7 @@ interface IConfection {
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
-    readonly fillings?: IConfectionFillings;
+    readonly fillings?: ReadonlyArray<IFillingSlot>;
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly name: ConfectionName;
     readonly tags?: ReadonlyArray<string>;
@@ -1247,19 +1284,13 @@ interface IConfectionEditingSessionParams {
 type IConfectionFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
-interface IConfectionFillings {
-    readonly ingredients?: ReadonlyArray<IngredientId>;
-    readonly recipes?: ReadonlyArray<RecipeId>;
-    readonly recommendedFillingId?: RecipeId | IngredientId;
-}
-
-// @public
 interface IConfectionJournalEntry {
     readonly chocolateRole?: ChocolateRole;
     readonly coatingIngredientId?: IngredientId;
     readonly eventType: ConfectionJournalEventType;
     readonly fillingIngredientId?: IngredientId;
     readonly fillingRecipeId?: RecipeId;
+    readonly fillingSlotId?: SlotId;
     readonly ingredientId?: IngredientId;
     readonly moldId?: MoldId;
     readonly newWeightPerPiece?: Grams;
@@ -1341,7 +1372,7 @@ interface IConfectionScaleOptions {
 interface IConfectionSessionState {
     readonly chocolates: ReadonlyMap<ChocolateRole, ISessionChocolate>;
     readonly coating?: ISessionCoating;
-    readonly filling?: ISessionFilling;
+    readonly fillings: ReadonlyMap<SlotId, ISessionFillingSlot>;
     readonly isDirty: boolean;
     readonly isJournalingEnabled: boolean;
     readonly journalEntries: ReadonlyArray<IConfectionJournalEntry>;
@@ -1482,6 +1513,13 @@ interface IFileTreeSource<TCollectionId extends string = string> {
 }
 
 // @public
+interface IFillingSlot {
+    readonly filling: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
+    readonly name?: string;
+    readonly slotId: SlotId;
+}
+
+// @public
 interface IFilterDirectoryParams {
     // (undocumented)
     readonly prefix?: string;
@@ -1555,6 +1593,18 @@ interface IGanacheValidation {
 }
 
 // @public
+export interface IHasId<TId extends string> {
+    // (undocumented)
+    readonly id: TId;
+}
+
+// @public
+export interface IIdsWithPreferred<TId extends string> {
+    readonly ids: ReadonlyArray<TId>;
+    readonly preferredId?: TId;
+}
+
+// @public
 interface IIndexer<TEntity, TId, TConfig> {
     find(config: TConfig): Result<ReadonlyArray<TEntity | TId>> | undefined;
     invalidate(): void;
@@ -1585,6 +1635,13 @@ interface IIngredientContext {
 
 // @public
 type IIngredientFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IIngredientFillingOption {
+    readonly id: IngredientId;
+    readonly notes?: string;
+    readonly type: 'ingredient';
+}
 
 // @public
 interface IIngredientQuerySpec {
@@ -1807,6 +1864,9 @@ const ingredientCollections: Record<string, JsonObject>;
 type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
 
 // @public
+const ingredientFillingOption: Converter<IIngredientFillingOption>;
+
+// @public
 type IngredientFilter = FilterPredicate<AnyRuntimeIngredient>;
 
 // @public
@@ -1963,6 +2023,12 @@ interface INumericRange {
 }
 
 // @public
+export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
+    readonly options: ReadonlyArray<TOption>;
+    readonly preferredId?: TId;
+}
+
+// @public
 interface IProcedure {
     readonly baseId: BaseProcedureId;
     readonly category?: RecipeCategory_2;
@@ -2042,6 +2108,13 @@ interface IRecipeDerivation {
 
 // @public
 type IRecipeFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+interface IRecipeFillingOption {
+    readonly id: RecipeId;
+    readonly notes?: string;
+    readonly type: 'recipe';
+}
 
 // @public
 interface IRecipeIngredient {
@@ -2274,7 +2347,7 @@ interface IRuntimeConfection {
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
-    readonly fillings?: IConfectionFillings;
+    readonly fillings?: ReadonlyArray<IFillingSlot>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
     readonly goldenVersion: IConfectionVersion;
     readonly goldenVersionSpec: ConfectionVersionSpec;
@@ -2563,11 +2636,12 @@ interface ISessionCoating {
 }
 
 // @public
-interface ISessionFilling {
+interface ISessionFillingSlot {
     readonly ingredientId?: IngredientId;
     readonly originalIngredientId?: IngredientId;
     readonly originalRecipeId?: RecipeId;
     readonly recipeId?: RecipeId;
+    readonly slotId: SlotId;
     readonly status: ConfectionSelectionStatus;
 }
 
@@ -2747,6 +2821,9 @@ function isValidRecipeVersionSpec(from: unknown): from is RecipeVersionSpec;
 
 // @public
 function isValidSessionId(from: unknown): from is SessionId;
+
+// @public
+function isValidSlotId(from: unknown): from is SlotId;
 
 // @public
 function isValidSourceId(from: unknown): from is SourceId;
@@ -3375,6 +3452,9 @@ class RecipeEditingSession implements ISessionState {
 }
 
 // @public
+const recipeFillingOption: Converter<IRecipeFillingOption>;
+
+// @public
 type RecipeFilter = FilterPredicate<RuntimeRecipe>;
 
 // @public
@@ -3825,7 +3905,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     protected readonly _context: IConfectionContext;
     get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
     get description(): string | undefined;
-    get fillings(): IConfectionFillings | undefined;
+    get fillings(): ReadonlyArray<IFillingSlot> | undefined;
     getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
     get goldenVersion(): IConfectionVersion;
     // (undocumented)
@@ -4171,7 +4251,7 @@ declare namespace Session {
         ISaveOptions,
         ISaveResult,
         ConfectionSelectionStatus,
-        ISessionFilling,
+        ISessionFillingSlot,
         ISessionMold,
         ISessionChocolate,
         ISessionYield,
@@ -4195,6 +4275,12 @@ const sessionId: Converter<SessionId>;
 
 // @public
 type SessionIngredientStatus = 'original' | 'modified' | 'added' | 'removed' | 'substituted';
+
+// @public
+export type SlotId = Brand<string, 'SlotId'>;
+
+// @public
+const slotId: Converter<SlotId>;
 
 // @public
 export type SourceId = Brand<string, 'SourceId'>;
@@ -4321,6 +4407,9 @@ function toRecipeVersionSpec(from: unknown): Result<RecipeVersionSpec>;
 function toSessionId(from: unknown): Result<SessionId>;
 
 // @public
+function toSlotId(from: unknown): Result<SlotId>;
+
+// @public
 function toSourceId(from: unknown): Result<SourceId>;
 
 // @public
@@ -4392,7 +4481,9 @@ declare namespace Validation {
         isValidMillimeters,
         toMillimeters,
         isValidJournalId,
-        toJournalId
+        toJournalId,
+        isValidSlotId,
+        toSlotId
     }
 }
 export { Validation }

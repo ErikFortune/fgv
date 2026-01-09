@@ -34,7 +34,9 @@ import {
   MoldId,
   ProcedureId,
   RecipeId,
-  AdditionalChocolatePurpose
+  SlotId,
+  AdditionalChocolatePurpose,
+  IOptionsWithPreferred
 } from '../common';
 
 // ============================================================================
@@ -70,17 +72,63 @@ export interface IConfectionDecoration {
 // ============================================================================
 
 /**
- * Filling specification for a confection
- * Can reference recipes (e.g., ganache) or ingredients (e.g., praline paste)
+ * Discriminator for filling option types
  * @public
  */
-export interface IConfectionFillings {
-  /** Recipe IDs for fillings (e.g., ganache recipes) */
-  readonly recipes?: ReadonlyArray<RecipeId>;
-  /** Ingredient IDs for fillings (e.g., praline paste) */
-  readonly ingredients?: ReadonlyArray<IngredientId>;
-  /** Recommended filling ID (can be recipe or ingredient) */
-  readonly recommendedFillingId?: RecipeId | IngredientId;
+export type FillingOptionType = 'recipe' | 'ingredient';
+
+/**
+ * Union type for filling option IDs.
+ * Can be either a RecipeId or IngredientId - disambiguation happens via the type discriminator.
+ * @public
+ */
+export type FillingOptionId = RecipeId | IngredientId;
+
+/**
+ * Recipe filling option - references a recipe (e.g., ganache)
+ * @public
+ */
+export interface IRecipeFillingOption {
+  /** Discriminator for recipe filling */
+  readonly type: 'recipe';
+  /** The recipe ID */
+  readonly id: RecipeId;
+  /** Optional notes specific to this filling option */
+  readonly notes?: string;
+}
+
+/**
+ * Ingredient filling option - references an ingredient (e.g., praline paste)
+ * @public
+ */
+export interface IIngredientFillingOption {
+  /** Discriminator for ingredient filling */
+  readonly type: 'ingredient';
+  /** The ingredient ID */
+  readonly id: IngredientId;
+  /** Optional notes specific to this filling option */
+  readonly notes?: string;
+}
+
+/**
+ * Discriminated union of filling options.
+ * Satisfies IHasId<FillingOptionId> for use with IOptionsWithPreferred.
+ * @public
+ */
+export type AnyFillingOption = IRecipeFillingOption | IIngredientFillingOption;
+
+/**
+ * A single filling slot with its own options and preferred selection.
+ * Each slot can hold recipes OR ingredients (or both).
+ * @public
+ */
+export interface IFillingSlot {
+  /** Unique identifier for this slot within the confection (e.g., "layer1", "center") */
+  readonly slotId: SlotId;
+  /** Human-readable name for display (e.g., "Inner Layer", "Ganache Center") */
+  readonly name?: string;
+  /** Available filling options with preferred selection */
+  readonly filling: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>;
 }
 
 // ============================================================================
@@ -243,8 +291,8 @@ export interface IConfection {
   readonly tags?: ReadonlyArray<string>;
   /** Yield specification */
   readonly yield: IConfectionYield;
-  /** Optional filling specification */
-  readonly fillings?: IConfectionFillings;
+  /** Optional filling slots - each slot has independent options with a preferred selection */
+  readonly fillings?: ReadonlyArray<IFillingSlot>;
   /** Optional procedures */
   readonly confectionProcedures?: IConfectionProcedures;
   /** Version history */

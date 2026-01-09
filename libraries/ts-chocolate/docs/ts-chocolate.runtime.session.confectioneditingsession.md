@@ -80,7 +80,7 @@ ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.journal.chocolaterole.md)<!-- -->,
 </td></tr>
 <tr><td>
 
-[filling](./ts-chocolate.runtime.session.confectioneditingsession.filling.md)
+[fillings](./ts-chocolate.runtime.session.confectioneditingsession.fillings.md)
 
 
 </td><td>
@@ -90,7 +90,7 @@ ReadonlyMap&lt;[ChocolateRole](./ts-chocolate.journal.chocolaterole.md)<!-- -->,
 
 </td><td>
 
-[ISessionFilling](./ts-chocolate.runtime.session.isessionfilling.md) \| undefined
+ReadonlyMap&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->, [ISessionFillingSlot](./ts-chocolate.runtime.session.isessionfillingslot.md)<!-- -->&gt;
 
 
 </td><td>
@@ -343,7 +343,7 @@ Selects a coating ingredient for rolled truffles.
 </td></tr>
 <tr><td>
 
-[selectFillingIngredient(ingredientId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingingredient.md)
+[selectFillingIngredient(slotId, ingredientId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingingredient.md)
 
 
 </td><td>
@@ -351,13 +351,13 @@ Selects a coating ingredient for rolled truffles.
 
 </td><td>
 
-Selects a filling ingredient for the confection.
+Selects a filling ingredient for a specific slot.
 
 
 </td></tr>
 <tr><td>
 
-[selectFillingRecipe(recipeId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingrecipe.md)
+[selectFillingRecipe(slotId, recipeId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingrecipe.md)
 
 
 </td><td>
@@ -365,7 +365,7 @@ Selects a filling ingredient for the confection.
 
 </td><td>
 
-Selects a filling recipe for the confection.
+Selects a filling recipe for a specific slot.
 
 
 </td></tr>
