@@ -119,12 +119,14 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         yield: '50 bonbons',
         ingredients: [
           {
-            ingredientId: 'test.dark-chocolate' as IngredientId,
+            ingredient: {
+              ids: ['test.dark-chocolate' as IngredientId, 'test.alt-chocolate' as IngredientId],
+              preferredId: 'test.dark-chocolate' as IngredientId
+            },
             amount: 200 as Grams,
-            notes: 'Use couverture',
-            alternateIngredientIds: ['test.alt-chocolate' as IngredientId]
+            notes: 'Use couverture'
           },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams,
         ratings: [{ category: 'texture', score: 4 as RatingScore, notes: 'Good texture' }]
@@ -134,9 +136,9 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         createdDate: '2026-02-01',
         notes: 'Revised with butter',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 180 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams },
-          { ingredientId: 'test.butter' as IngredientId, amount: 20 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams },
+          { ingredient: { ids: ['test.butter' as IngredientId] }, amount: 20 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -152,7 +154,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
-        ingredients: [{ ingredientId: 'test.dark-chocolate' as IngredientId, amount: 100 as Grams }],
+        ingredients: [{ ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 100 as Grams }],
         baseWeight: 100 as Grams
       }
     ]
@@ -299,20 +301,51 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
     });
 
     describe('ingredient queries', () => {
-      test('allIngredientIds returns unique IDs across versions', () => {
+      test('getIngredientIds returns only preferred IDs by default', () => {
         const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
-        const ids = recipe.allIngredientIds;
-        expect(ids.size).toBe(3); // dark-chocolate, cream, butter
+        const ids = recipe.getIngredientIds();
+        // Preferred only: dark-chocolate (preferred), cream, butter
+        // Excludes alt-chocolate which is an alternate
+        expect(ids.size).toBe(3);
+        expect(ids.has('test.dark-chocolate' as IngredientId)).toBe(true);
+        expect(ids.has('test.cream' as IngredientId)).toBe(true);
+        expect(ids.has('test.butter' as IngredientId)).toBe(true);
+        expect(ids.has('test.alt-chocolate' as IngredientId)).toBe(false);
       });
 
-      test('usesIngredient returns true for used ingredient', () => {
+      test('getIngredientIds with includeAlternates returns all IDs', () => {
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
+        const ids = recipe.getIngredientIds({ includeAlternates: true });
+        // All: dark-chocolate, alt-chocolate (alternate), cream, butter
+        expect(ids.size).toBe(4);
+        expect(ids.has('test.dark-chocolate' as IngredientId)).toBe(true);
+        expect(ids.has('test.alt-chocolate' as IngredientId)).toBe(true);
+        expect(ids.has('test.cream' as IngredientId)).toBe(true);
+        expect(ids.has('test.butter' as IngredientId)).toBe(true);
+      });
+
+      test('usesIngredient returns true for preferred ingredient by default', () => {
         const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         expect(recipe.usesIngredient('test.dark-chocolate' as IngredientId)).toBe(true);
       });
 
+      test('usesIngredient returns false for alternate ingredient by default', () => {
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
+        // alt-chocolate is an alternate, not preferred - default should not find it
+        expect(recipe.usesIngredient('test.alt-chocolate' as IngredientId)).toBe(false);
+      });
+
+      test('usesIngredient with includeAlternates returns true for alternate ingredient', () => {
+        const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
+        // alt-chocolate is an alternate for dark-chocolate in the ids array
+        expect(recipe.usesIngredient('test.alt-chocolate' as IngredientId, { includeAlternates: true })).toBe(
+          true
+        );
+      });
+
       test('usesIngredient returns false for unused ingredient', () => {
         const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
-        expect(recipe.usesIngredient('test.alt-chocolate' as IngredientId)).toBe(false);
+        expect(recipe.usesIngredient('test.nonexistent' as IngredientId)).toBe(false);
       });
     });
 
@@ -396,7 +429,7 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
       test('resolved ingredient includes raw reference', () => {
         const recipe = ctx.recipes.get('test.dark-ganache' as RecipeId).orThrow();
         const ingredients = [...recipe.goldenVersion.getIngredients().orThrow()];
-        expect(ingredients[0].raw.ingredientId).toBe('test.dark-chocolate');
+        expect(ingredients[0].raw.ingredient.ids[0]).toBe('test.dark-chocolate');
       });
 
       test('getIngredients with empty array returns nothing', () => {

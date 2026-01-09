@@ -77,7 +77,7 @@ describe('ChocolateLibrary', () => {
   const testRecipeVersion: IRecipeVersion = {
     versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
     createdDate: '2026-01-01',
-    ingredients: [{ ingredientId: 'test.testChoco' as IngredientId, amount: 100 as Grams }],
+    ingredients: [{ ingredient: { ids: ['test.testChoco' as IngredientId] }, amount: 100 as Grams }],
     baseWeight: 100 as Grams
   };
 
@@ -448,7 +448,7 @@ describe('ChocolateLibrary', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'file-source.file-chocolate', amount: 100 }],
+              ingredients: [{ ingredient: { ids: ['file-source.file-chocolate'] }, amount: 100 }],
               baseWeight: 100
             }
           ]

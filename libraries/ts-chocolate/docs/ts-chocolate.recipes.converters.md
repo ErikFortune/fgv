@@ -101,7 +101,7 @@ Converter for [IRecipeDerivation](./ts-chocolate.recipes.irecipederivation.md)
 
 </td><td>
 
-Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->.
+Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
 
 
 </td></tr>
@@ -178,7 +178,7 @@ Converter for [IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->
 
 </td><td>
 
-Converter for [IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)<!-- -->.
+Converter for [IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
 
 
 </td></tr>

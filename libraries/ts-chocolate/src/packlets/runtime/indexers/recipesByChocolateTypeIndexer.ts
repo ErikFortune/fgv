@@ -24,7 +24,7 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { ChocolateType, Converters as ChocolateConverters, RecipeId } from '../../common';
+import { ChocolateType, Converters as ChocolateConverters, Helpers, RecipeId } from '../../common';
 import { isChocolateIngredient } from '../../ingredients';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeRecipe } from '../model';
@@ -100,7 +100,10 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
       }
 
       for (const ri of goldenVersion.ingredients) {
-        const ingredientResult = ingredients.get(ri.ingredientId);
+        const ingredientId = Helpers.getPreferredIdOrFirst(ri.ingredient);
+        /* c8 ignore next - defensive: recipe ingredients always have at least one ID */
+        if (ingredientId === undefined) continue;
+        const ingredientResult = ingredients.get(ingredientId);
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
           if (isChocolateIngredient(ingredient)) {

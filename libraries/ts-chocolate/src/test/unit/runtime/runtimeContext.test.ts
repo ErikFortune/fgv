@@ -128,11 +128,13 @@ describe('RuntimeContext', () => {
         notes: 'Original version',
         ingredients: [
           {
-            ingredientId: 'test.dark-chocolate' as IngredientId,
-            amount: 200 as Grams,
-            alternateIngredientIds: ['test.alt-chocolate' as IngredientId]
+            ingredient: {
+              ids: ['test.dark-chocolate' as IngredientId, 'test.alt-chocolate' as IngredientId],
+              preferredId: 'test.dark-chocolate' as IngredientId
+            },
+            amount: 200 as Grams
           },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       },
@@ -141,8 +143,8 @@ describe('RuntimeContext', () => {
         createdDate: '2026-02-01',
         notes: 'Revised version',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 180 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 120 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 120 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -160,8 +162,8 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.milk-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 150 as Grams }
+          { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 150 as Grams }
         ],
         baseWeight: 350 as Grams
       }
@@ -222,8 +224,8 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -242,8 +244,8 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -302,8 +304,8 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -322,8 +324,8 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }

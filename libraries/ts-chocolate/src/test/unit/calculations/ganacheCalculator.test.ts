@@ -183,8 +183,8 @@ describe('Ganache Calculator', () => {
   describe('calculateFromRecipeIngredients', () => {
     test('resolves and calculates ingredients', () => {
       const recipeIngredients: IRecipeIngredient[] = [
-        { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
-        { ingredientId: 'test.cream' as IngredientId, amount: 50 as Grams }
+        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Grams },
+        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Grams }
       ];
 
       expect(calculateFromRecipeIngredients(recipeIngredients, testResolver)).toSucceedAndSatisfy(
@@ -196,7 +196,7 @@ describe('Ganache Calculator', () => {
 
     test('fails when ingredient not found', () => {
       const recipeIngredients: IRecipeIngredient[] = [
-        { ingredientId: 'test.nonexistent' as IngredientId, amount: 100 as Grams }
+        { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Grams }
       ];
 
       expect(calculateFromRecipeIngredients(recipeIngredients, testResolver)).toFailWith(
@@ -214,8 +214,8 @@ describe('Ganache Calculator', () => {
       versionSpec: '2026-01-01-01' as RecipeVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
-        { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
-        { ingredientId: 'test.cream' as IngredientId, amount: 50 as Grams }
+        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Grams },
+        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Grams }
       ],
       baseWeight: 150 as Grams
     };
@@ -416,8 +416,8 @@ describe('Ganache Calculator', () => {
       versionSpec: '2026-01-01-01' as RecipeVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
-        { ingredientId: 'test.chocolate' as IngredientId, amount: 100 as Grams },
-        { ingredientId: 'test.cream' as IngredientId, amount: 50 as Grams }
+        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Grams },
+        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Grams }
       ],
       baseWeight: 150 as Grams
     };

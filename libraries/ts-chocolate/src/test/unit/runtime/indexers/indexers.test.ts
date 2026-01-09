@@ -136,11 +136,13 @@ describe('Indexers', () => {
         createdDate: '2026-01-01',
         ingredients: [
           {
-            ingredientId: 'test.dark-chocolate' as IngredientId,
-            amount: 200 as Grams,
-            alternateIngredientIds: ['test.alt-chocolate' as IngredientId]
+            ingredient: {
+              ids: ['test.dark-chocolate' as IngredientId, 'test.alt-chocolate' as IngredientId],
+              preferredId: 'test.dark-chocolate' as IngredientId
+            },
+            amount: 200 as Grams
           },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -158,8 +160,8 @@ describe('Indexers', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.milk-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 150 as Grams }
+          { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 150 as Grams }
         ],
         baseWeight: 350 as Grams
       }
@@ -176,7 +178,7 @@ describe('Indexers', () => {
       {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
-        ingredients: [{ ingredientId: 'test.cream' as IngredientId, amount: 200 as Grams }],
+        ingredients: [{ ingredient: { ids: ['test.cream' as IngredientId] }, amount: 200 as Grams }],
         baseWeight: 200 as Grams
       }
     ]

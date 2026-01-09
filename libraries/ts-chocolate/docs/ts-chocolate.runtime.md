@@ -481,6 +481,17 @@ Interface for an orchestrator that provides find functionality.
 </td></tr>
 <tr><td>
 
+[IIngredientQueryOptions](./ts-chocolate.runtime.iingredientqueryoptions.md)
+
+
+</td><td>
+
+Options for ingredient queries on recipes.
+
+
+</td></tr>
+<tr><td>
+
 [IIngredientResolutionResult](./ts-chocolate.runtime.iingredientresolutionresult.md)
 
 

@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams } from '../common';
+import { Grams, Helpers } from '../common';
 import { IComputedScaledRecipe, IRecipeRating } from '../recipes';
 import {
   IGanacheCalculation,
@@ -330,19 +330,26 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
     const errors: string[] = [];
 
     for (const ri of this._scaled.ingredients) {
-      // Resolve primary ingredient
-      const ingredientResult = this._context.ingredients.get(ri.ingredientId);
-      /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
-      if (ingredientResult.isFailure()) {
-        errors.push(`Failed to resolve ingredient ${ri.ingredientId}: ${ingredientResult.message}`);
+      // Get primary ingredient ID (preferred or first)
+      const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
+      /* c8 ignore next 4 - defensive coding: empty ids array would indicate data corruption */
+      if (primaryId === undefined) {
+        errors.push(`Scaled ingredient has no ingredient ids`);
         continue;
       }
 
-      // Resolve alternates (skip missing ones, don't fail)
+      // Resolve primary ingredient
+      const ingredientResult = this._context.ingredients.get(primaryId);
+      /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
+      if (ingredientResult.isFailure()) {
+        errors.push(`Failed to resolve ingredient ${primaryId}: ${ingredientResult.message}`);
+        continue;
+      }
+
+      // Resolve alternates (all ids except primary, skip missing ones)
       const alternates: AnyRuntimeIngredient[] = [];
-      /* c8 ignore next 8 - alternateIngredientIds not preserved by scaler */
-      if (ri.alternateIngredientIds) {
-        for (const altId of ri.alternateIngredientIds) {
+      for (const altId of ri.ingredient.ids) {
+        if (altId !== primaryId) {
           const altResult = this._context.ingredients.get(altId);
           if (altResult.isSuccess()) {
             alternates.push(altResult.value);

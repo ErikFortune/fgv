@@ -119,8 +119,8 @@ describe('EditingSession', () => {
         createdDate: '2026-01-01',
         notes: 'Original recipe',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -663,9 +663,9 @@ describe('EditingSession', () => {
 
       const ingredients = session.toRecipeIngredients();
       expect(ingredients.length).toBe(2);
-      expect(ingredients.find((i) => i.ingredientId === 'test.dark-chocolate')).toBeDefined();
-      expect(ingredients.find((i) => i.ingredientId === 'test.butter')).toBeDefined();
-      expect(ingredients.find((i) => i.ingredientId === 'test.cream')).toBeUndefined();
+      expect(ingredients.find((i) => i.ingredient.ids[0] === 'test.dark-chocolate')).toBeDefined();
+      expect(ingredients.find((i) => i.ingredient.ids[0] === 'test.butter')).toBeDefined();
+      expect(ingredients.find((i) => i.ingredient.ids[0] === 'test.cream')).toBeUndefined();
     });
 
     test('excludes zero-amount ingredients', () => {
@@ -676,7 +676,7 @@ describe('EditingSession', () => {
 
       const ingredients = session.toRecipeIngredients();
       expect(ingredients.length).toBe(1);
-      expect(ingredients[0].ingredientId).toBe('test.dark-chocolate');
+      expect(ingredients[0].ingredient.ids[0]).toBe('test.dark-chocolate');
     });
   });
 

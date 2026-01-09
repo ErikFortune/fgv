@@ -4,7 +4,7 @@
 
 ## Recipes.IRecipeIngredient interface
 
-Reference to an ingredient used in a recipe Uses composite IngredientId to support cross-source references
+Reference to an ingredient used in a recipe. Uses IIdsWithPreferred pattern - `ids` contains all valid ingredient options, `preferredId` indicates the default/recommended one.
 
 **Signature:**
 
@@ -37,27 +37,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[alternateIngredientIds?](./ts-chocolate.recipes.irecipeingredient.alternateingredientids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->\[\]
-
-
-</td><td>
-
-_(Optional)_ Optional alternate ingredient IDs that can be used in place of the primary ingredient
-
-
-</td></tr>
-<tr><td>
-
 [amount](./ts-chocolate.recipes.irecipeingredient.amount.md)
 
 
@@ -79,7 +58,7 @@ Amount of this ingredient in grams
 </td></tr>
 <tr><td>
 
-[ingredientId](./ts-chocolate.recipes.irecipeingredient.ingredientid.md)
+[ingredient](./ts-chocolate.recipes.irecipeingredient.ingredient.md)
 
 
 </td><td>
@@ -89,12 +68,12 @@ Amount of this ingredient in grams
 
 </td><td>
 
-[IngredientId](./ts-chocolate.ingredientid.md)
+[IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md)<!-- -->&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
 
 
 </td><td>
 
-Composite ingredient ID (e.g., "felchlin.maracaibo-65")
+Available ingredient options with preferred selection. The preferredId (or first id if not specified) is the primary ingredient.
 
 
 </td></tr>

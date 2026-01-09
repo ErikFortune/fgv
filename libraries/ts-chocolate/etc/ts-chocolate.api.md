@@ -1629,6 +1629,11 @@ interface IIngredientFillingOption {
 }
 
 // @public
+interface IIngredientQueryOptions {
+    readonly includeAlternates?: boolean;
+}
+
+// @public
 interface IIngredientQuerySpec {
     // (undocumented)
     readonly byTag?: IIngredientsByTagConfig;
@@ -2103,9 +2108,8 @@ interface IRecipeFillingOption {
 
 // @public
 interface IRecipeIngredient {
-    readonly alternateIngredientIds?: IngredientId[];
     readonly amount: Grams;
-    readonly ingredientId: IngredientId;
+    readonly ingredient: IIdsWithPreferred<IngredientId>;
     readonly notes?: string;
 }
 
@@ -2417,9 +2421,9 @@ interface IRuntimeMoldedBonBon extends IRuntimeConfection {
 
 // @public
 interface IRuntimeRecipe {
-    readonly allIngredientIds: ReadonlySet<IngredientId>;
     readonly baseId: BaseRecipeId;
     readonly description?: string;
+    getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
     getVersion(versionSpec: RecipeVersionSpec): Result<IRuntimeRecipeVersion>;
     readonly goldenVersion: IRuntimeRecipeVersion;
     readonly goldenVersionSpec: RecipeVersionSpec;
@@ -2431,7 +2435,7 @@ interface IRuntimeRecipe {
     readonly raw: IRecipe;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
-    usesIngredient(ingredientId: IngredientId): boolean;
+    usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
     readonly versionCount: number;
     readonly versions: ReadonlyArray<IRuntimeRecipeVersion>;
 }
@@ -3774,6 +3778,7 @@ declare namespace Runtime {
         ComparisonOperator,
         INumericRange,
         IIterationOptions,
+        IIngredientQueryOptions,
         IIngredientUsageInfo,
         IScaledVersionContext,
         IVersionContext,
@@ -4041,10 +4046,10 @@ class RuntimeRecipe implements IRuntimeRecipe {
     //
     // @internal
     constructor(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe);
-    get allIngredientIds(): ReadonlySet<IngredientId>;
     get baseId(): BaseRecipeId;
     static create(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe): Result<RuntimeRecipe>;
     get description(): string | undefined;
+    getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
     getVersion(versionSpec: RecipeVersionSpec): Result<RuntimeVersion>;
     get goldenVersion(): RuntimeVersion;
     get goldenVersionSpec(): RecipeVersionSpec;
@@ -4057,7 +4062,7 @@ class RuntimeRecipe implements IRuntimeRecipe {
     get rawAsRecipe(): Recipe | undefined;
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string>;
-    usesIngredient(ingredientId: IngredientId): boolean;
+    usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
     get versionCount(): number;
     get versions(): ReadonlyArray<RuntimeVersion>;
 }

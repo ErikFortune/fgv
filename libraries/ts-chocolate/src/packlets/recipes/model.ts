@@ -26,6 +26,7 @@
 import {
   BaseRecipeId,
   Grams,
+  IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
   IRefWithNotes,
@@ -38,20 +39,17 @@ import {
 } from '../common';
 
 /**
- * Reference to an ingredient used in a recipe
- * Uses composite IngredientId to support cross-source references
+ * Reference to an ingredient used in a recipe.
+ * Uses IIdsWithPreferred pattern - `ids` contains all valid ingredient options,
+ * `preferredId` indicates the default/recommended one.
  * @public
  */
 export interface IRecipeIngredient {
   /**
-   * Composite ingredient ID (e.g., "felchlin.maracaibo-65")
+   * Available ingredient options with preferred selection.
+   * The preferredId (or first id if not specified) is the primary ingredient.
    */
-  readonly ingredientId: IngredientId;
-
-  /**
-   * Optional alternate ingredient IDs that can be used in place of the primary ingredient
-   */
-  readonly alternateIngredientIds?: IngredientId[];
+  readonly ingredient: IIdsWithPreferred<IngredientId>;
 
   /**
    * Amount of this ingredient in grams

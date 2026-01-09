@@ -40,18 +40,18 @@ describe('Recipe Converters', () => {
   describe('recipeIngredient', () => {
     test('converts valid recipe ingredient', () => {
       const input = {
-        ingredientId: 'source.ingredient',
+        ingredient: { ids: ['source.ingredient'] },
         amount: 100
       };
       expect(recipeIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredientId).toBe('source.ingredient');
+        expect(result.ingredient.ids[0]).toBe('source.ingredient');
         expect(result.amount).toBe(100);
       });
     });
 
     test('converts recipe ingredient with notes', () => {
       const input = {
-        ingredientId: 'source.ingredient',
+        ingredient: { ids: ['source.ingredient'] },
         amount: 50,
         notes: 'Melted first'
       };
@@ -62,7 +62,7 @@ describe('Recipe Converters', () => {
 
     test('fails for invalid ingredient ID', () => {
       const input = {
-        ingredientId: 'invalid',
+        ingredient: { ids: ['invalid'] },
         amount: 100
       };
       expect(recipeIngredient.convert(input)).toFail();
@@ -70,7 +70,7 @@ describe('Recipe Converters', () => {
 
     test('fails for negative amount', () => {
       const input = {
-        ingredientId: 'source.ingredient',
+        ingredient: { ids: ['source.ingredient'] },
         amount: -10
       };
       expect(recipeIngredient.convert(input)).toFail();
@@ -87,8 +87,8 @@ describe('Recipe Converters', () => {
         versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'source.chocolate', amount: 100 },
-          { ingredientId: 'source.cream', amount: 50 }
+          { ingredient: { ids: ['source.chocolate'] }, amount: 100 },
+          { ingredient: { ids: ['source.cream'] }, amount: 50 }
         ],
         baseWeight: 150
       };
@@ -104,7 +104,7 @@ describe('Recipe Converters', () => {
       const input = {
         versionSpec: '2026-01-01-01',
         createdDate: '2026-01-01',
-        ingredients: [{ ingredientId: 'source.chocolate', amount: 100 }],
+        ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
         baseWeight: 100,
         yield: '20 bonbons',
         notes: 'First version'
@@ -124,7 +124,7 @@ describe('Recipe Converters', () => {
     const validVersion = {
       versionSpec: '2026-01-01-01',
       createdDate: '2026-01-01',
-      ingredients: [{ ingredientId: 'source.chocolate', amount: 100 }],
+      ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
       baseWeight: 100
     };
 
@@ -373,13 +373,13 @@ describe('Recipe Converters', () => {
   describe('scaledRecipeIngredient', () => {
     test('converts valid scaled recipe ingredient', () => {
       const input = {
-        ingredientId: 'source.chocolate',
+        ingredient: { ids: ['source.chocolate'] },
         amount: 200,
         originalAmount: 100,
         scaleFactor: 2
       };
       expect(scaledRecipeIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.ingredientId).toBe('source.chocolate');
+        expect(result.ingredient.ids[0]).toBe('source.chocolate');
         expect(result.amount).toBe(200);
         expect(result.originalAmount).toBe(100);
         expect(result.scaleFactor).toBe(2);
@@ -388,7 +388,7 @@ describe('Recipe Converters', () => {
 
     test('converts with optional notes', () => {
       const input = {
-        ingredientId: 'source.chocolate',
+        ingredient: { ids: ['source.chocolate'] },
         amount: 200,
         originalAmount: 100,
         scaleFactor: 2,
@@ -513,14 +513,14 @@ describe('Recipe Converters', () => {
     const version1 = {
       versionSpec: '2026-01-01-01',
       createdDate: '2026-01-01',
-      ingredients: [{ ingredientId: 'source.chocolate', amount: 100 }],
+      ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 100 }],
       baseWeight: 100
     };
 
     const version2 = {
       versionSpec: '2026-01-02-01',
       createdDate: '2026-01-02',
-      ingredients: [{ ingredientId: 'source.chocolate', amount: 150 }],
+      ingredients: [{ ingredient: { ids: ['source.chocolate'] }, amount: 150 }],
       baseWeight: 150
     };
 

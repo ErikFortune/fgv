@@ -203,7 +203,7 @@ Reference to a source recipe+version from which a recipe was derived. Used to tr
 
 </td><td>
 
-Reference to an ingredient used in a recipe Uses composite IngredientId to support cross-source references
+Reference to an ingredient used in a recipe. Uses IIdsWithPreferred pattern - `ids` contains all valid ingredient options, `preferredId` indicates the default/recommended one.
 
 
 </td></tr>

@@ -4,7 +4,7 @@
 
 ## Recipes.Converters.recipeIngredient variable
 
-Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->.
+Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
 
 **Signature:**
 

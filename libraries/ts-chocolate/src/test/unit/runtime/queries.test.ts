@@ -188,8 +188,8 @@ describe('Query Filters and Builders', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       },
@@ -197,8 +197,8 @@ describe('Query Filters and Builders', () => {
         versionSpec: '2026-02-01-01' as RecipeVersionSpec,
         createdDate: '2026-02-01',
         ingredients: [
-          { ingredientId: 'test.dark-chocolate' as IngredientId, amount: 180 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 120 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 120 as Grams }
         ],
         baseWeight: 300 as Grams
       }
@@ -216,8 +216,8 @@ describe('Query Filters and Builders', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.milk-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 150 as Grams }
+          { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 150 as Grams }
         ],
         baseWeight: 350 as Grams
       }
@@ -235,8 +235,8 @@ describe('Query Filters and Builders', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredientId: 'test.white-chocolate' as IngredientId, amount: 200 as Grams },
-          { ingredientId: 'test.cream' as IngredientId, amount: 100 as Grams }
+          { ingredient: { ids: ['test.white-chocolate' as IngredientId] }, amount: 200 as Grams },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
         ],
         baseWeight: 300 as Grams
       }

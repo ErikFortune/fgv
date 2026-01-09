@@ -56,8 +56,8 @@ describe('RecipesLibrary', () => {
     versionSpec: '2026-01-01-01' as RecipeVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
-      { ingredientId: 'felchlin.maracaibo-65' as IngredientId, amount: 100 as Grams },
-      { ingredientId: 'common.heavy-cream-35' as IngredientId, amount: 50 as Grams }
+      { ingredient: { ids: ['felchlin.maracaibo-65' as IngredientId] }, amount: 100 as Grams },
+      { ingredient: { ids: ['common.heavy-cream-35' as IngredientId] }, amount: 50 as Grams }
     ],
     baseWeight: 150 as Grams,
     yield: '10 bonbons'
@@ -342,7 +342,7 @@ describe('RecipesLibrary', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
+              ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 100 }],
               baseWeight: 100
             }
           ]
@@ -361,7 +361,7 @@ describe('RecipesLibrary', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
+              ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 200 }],
               baseWeight: 200
             }
           ]
@@ -529,7 +529,7 @@ describe('RecipesLibrary', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 100 }],
+              ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 100 }],
               baseWeight: 100
             }
           ]
@@ -548,7 +548,7 @@ describe('RecipesLibrary', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'test-source.test-chocolate', amount: 200 }],
+              ingredients: [{ ingredient: { ids: ['test-source.test-chocolate'] }, amount: 200 }],
               baseWeight: 200
             }
           ]
@@ -965,8 +965,8 @@ describe('Recipe scaling', () => {
     versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
-      { ingredientId: 'source.choco' as IngredientId, amount: 100 as Grams },
-      { ingredientId: 'source.cream' as IngredientId, amount: 50 as Grams }
+      { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Grams },
+      { ingredient: { ids: ['source.cream' as IngredientId] }, amount: 50 as Grams }
     ],
     baseWeight: 150 as Grams
   };
@@ -1208,7 +1208,7 @@ describe('Recipe scaling', () => {
                   {
                     versionSpec: '2026-01-01-01',
                     createdDate: '2026-01-01',
-                    ingredients: [{ ingredientId: 'common.butter-82', amount: 100 }],
+                    ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 100 }],
                     baseWeight: 100
                   }
                 ],
@@ -1249,7 +1249,7 @@ describe('Recipe scaling', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'common.butter-82', amount: 50 }],
+              ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
               baseWeight: 50
             }
           ],
@@ -1308,7 +1308,7 @@ describe('Recipe scaling', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'common.butter-82', amount: 50 }],
+              ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 50 }],
               baseWeight: 50
             }
           ],
@@ -1361,7 +1361,7 @@ describe('Recipe scaling', () => {
               {
                 versionSpec: '2026-01-01-01',
                 createdDate: '2026-01-01',
-                ingredients: [{ ingredientId: 'common.butter-82', amount: 25 }],
+                ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 25 }],
                 baseWeight: 25
               }
             ],
@@ -1380,7 +1380,7 @@ describe('Recipe scaling', () => {
             {
               versionSpec: '2026-01-01-01',
               createdDate: '2026-01-01',
-              ingredients: [{ ingredientId: 'common.butter-82', amount: 75 }],
+              ingredients: [{ ingredient: { ids: ['common.butter-82'] }, amount: 75 }],
               baseWeight: 75
             }
           ],

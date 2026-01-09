@@ -464,7 +464,7 @@ export class RecipeEditingSession implements ISessionState {
       }
 
       ingredients.push({
-        ingredientId: session.ingredientId,
+        ingredient: { ids: [session.ingredientId] },
         amount: session.amount,
         notes: session.notes
       });

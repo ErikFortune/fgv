@@ -41,27 +41,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[allIngredientIds](./ts-chocolate.runtime.iruntimerecipe.allingredientids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlySet&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
-
-
-</td><td>
-
-Gets all unique ingredient IDs used across all versions (primary only).
-
-
-</td></tr>
-<tr><td>
-
 [baseId](./ts-chocolate.runtime.iruntimerecipe.baseid.md)
 
 
@@ -371,6 +350,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[getIngredientIds(options)](./ts-chocolate.runtime.iruntimerecipe.getingredientids.md)
+
+
+</td><td>
+
+Gets unique ingredient IDs used across all versions. By default, returns only preferred ingredients (primary choice for each ingredient slot). Pass `{ includeAlternates: true }` to include all ingredient options.
+
+
+</td></tr>
+<tr><td>
+
 [getVersion(versionSpec)](./ts-chocolate.runtime.iruntimerecipe.getversion.md)
 
 
@@ -382,12 +372,12 @@ Gets a specific version by [version specifier](./ts-chocolate.recipeversionspec.
 </td></tr>
 <tr><td>
 
-[usesIngredient(ingredientId)](./ts-chocolate.runtime.iruntimerecipe.usesingredient.md)
+[usesIngredient(ingredientId, options)](./ts-chocolate.runtime.iruntimerecipe.usesingredient.md)
 
 
 </td><td>
 
-Checks if any version uses a specific ingredient (as primary).
+Checks if any version uses a specific ingredient. By default, only checks preferred ingredients. Pass `{ includeAlternates: true }` to also check alternate ingredients.
 
 
 </td></tr>

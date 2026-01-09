@@ -48,11 +48,11 @@ import { Recipe } from './recipe';
 
 /**
  * Converter for {@link Recipes.IRecipeIngredient | IRecipeIngredient}.
+ * Uses IIdsWithPreferred pattern for ingredient selection with validation.
  * @public
  */
 export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<IRecipeIngredient>({
-  ingredientId: CommonConverters.ingredientId,
-  alternateIngredientIds: Converters.arrayOf(CommonConverters.ingredientId).optional(),
+  ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'recipeIngredient'),
   amount: CommonConverters.grams,
   notes: Converters.string.optional()
 });
@@ -177,12 +177,12 @@ export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unkno
 
 /**
  * Converter for {@link Recipes.IScaledRecipeIngredient | IScaledRecipeIngredient}.
+ * Uses IIdsWithPreferred pattern for ingredient selection with validation.
  * @public
  */
 export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
   Converters.object<IScaledRecipeIngredient>({
-    ingredientId: CommonConverters.ingredientId,
-    alternateIngredientIds: Converters.arrayOf(CommonConverters.ingredientId).optional(),
+    ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'scaledRecipeIngredient'),
     amount: CommonConverters.grams,
     notes: Converters.string.optional(),
     originalAmount: CommonConverters.grams,

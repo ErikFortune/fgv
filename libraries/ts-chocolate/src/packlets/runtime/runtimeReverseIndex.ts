@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { ChocolateType, IngredientId, RecipeId } from '../common';
+import { ChocolateType, Helpers, IngredientId, RecipeId } from '../common';
 import { isChocolateIngredient } from '../ingredients';
 import { ChocolateLibrary } from './chocolateLibrary';
 import { IIngredientUsageInfo } from './model';
@@ -223,14 +223,9 @@ export class RuntimeReverseIndex {
       // Index ingredients from all versions
       for (const version of recipe.versions) {
         for (const ri of version.ingredients) {
-          // Primary ingredient
-          this._addToIndex(this._ingredientToRecipes, ri.ingredientId, recipeId as RecipeId);
-
-          // Alternate ingredients
-          if (ri.alternateIngredientIds) {
-            for (const altId of ri.alternateIngredientIds) {
-              this._addToIndex(this._ingredientToRecipes, altId, recipeId as RecipeId);
-            }
+          // Index all ingredient IDs (primary and alternates)
+          for (const id of ri.ingredient.ids) {
+            this._addToIndex(this._ingredientToRecipes, id, recipeId as RecipeId);
           }
         }
       }
@@ -250,20 +245,15 @@ export class RuntimeReverseIndex {
       // Index ingredients from all versions
       for (const version of recipe.versions) {
         for (const ri of version.ingredients) {
-          // Primary ingredient
-          this._addUsageInfo(this._ingredientUsage, ri.ingredientId, {
-            recipeId: recipeId as RecipeId,
-            isPrimary: true
-          });
+          // Get the primary ingredient ID (preferred or first)
+          const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
 
-          // Alternate ingredients
-          if (ri.alternateIngredientIds) {
-            for (const altId of ri.alternateIngredientIds) {
-              this._addUsageInfo(this._ingredientUsage, altId, {
-                recipeId: recipeId as RecipeId,
-                isPrimary: false
-              });
-            }
+          // Index all ingredient IDs with primary/alternate status
+          for (const id of ri.ingredient.ids) {
+            this._addUsageInfo(this._ingredientUsage, id, {
+              recipeId: recipeId as RecipeId,
+              isPrimary: id === primaryId
+            });
           }
         }
       }
@@ -320,7 +310,10 @@ export class RuntimeReverseIndex {
       if (!goldenVersion) continue;
 
       for (const ri of goldenVersion.ingredients) {
-        const ingredientResult = ingredients.get(ri.ingredientId);
+        const ingredientId = Helpers.getPreferredIdOrFirst(ri.ingredient);
+        /* c8 ignore next - defensive: recipe ingredients always have at least one ID */
+        if (ingredientId === undefined) continue;
+        const ingredientResult = ingredients.get(ingredientId);
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
           if (isChocolateIngredient(ingredient)) {

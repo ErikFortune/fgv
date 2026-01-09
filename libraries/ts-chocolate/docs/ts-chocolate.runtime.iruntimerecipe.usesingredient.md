@@ -4,12 +4,12 @@
 
 ## Runtime.IRuntimeRecipe.usesIngredient() method
 
-Checks if any version uses a specific ingredient (as primary).
+Checks if any version uses a specific ingredient. By default, only checks preferred ingredients. Pass `{ includeAlternates: true }` to also check alternate ingredients.
 
 **Signature:**
 
 ```typescript
-usesIngredient(ingredientId: IngredientId): boolean;
+usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
 ```
 
 ## Parameters
@@ -43,6 +43,22 @@ ingredientId
 </td><td>
 
 The ingredient ID to check
+
+
+</td></tr>
+<tr><td>
+
+options
+
+
+</td><td>
+
+[IIngredientQueryOptions](./ts-chocolate.runtime.iingredientqueryoptions.md)
+
+
+</td><td>
+
+_(Optional)_ Query options
 
 
 </td></tr>

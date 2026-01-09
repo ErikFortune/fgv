@@ -25,7 +25,7 @@
 
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, Percentage, RecipeVersionSpec } from '../common';
+import { Grams, Helpers, IngredientId, Percentage, RecipeVersionSpec } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
 import { IRecipe, IRecipeIngredient, Recipe } from '../recipes';
 
@@ -259,15 +259,20 @@ export function calculateFromRecipeIngredients(
   recipeIngredients: ReadonlyArray<IRecipeIngredient>,
   resolver: IngredientResolver
 ): Result<IGanacheAnalysis> {
-  // Resolve all ingredients
-  const resolutionResults = recipeIngredients.map((ri) =>
-    resolver(ri.ingredientId).onSuccess((ingredient) =>
+  // Resolve all ingredients using the preferred ingredient ID
+  const resolutionResults = recipeIngredients.map((ri) => {
+    const ingredientId = Helpers.getPreferredIdOrFirst(ri.ingredient);
+    /* c8 ignore next 3 - defensive: converter validates ids array is non-empty */
+    if (ingredientId === undefined) {
+      return Failure.with<IResolvedIngredient>('Recipe ingredient has no ingredient ids');
+    }
+    return resolver(ingredientId).onSuccess((ingredient) =>
       Success.with<IResolvedIngredient>({
         ingredient,
         amount: ri.amount
       })
-    )
-  );
+    );
+  });
 
   return mapResults(resolutionResults).onSuccess((resolvedIngredients) =>
     Success.with(calculateFromIngredients(resolvedIngredients))

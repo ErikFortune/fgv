@@ -24,7 +24,7 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { Converters as ChocolateConverters, IngredientId, RecipeId } from '../../common';
+import { Converters as ChocolateConverters, Helpers, IngredientId, RecipeId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
@@ -141,20 +141,15 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
       // Index ingredients from all versions
       for (const version of recipe.versions) {
         for (const ri of version.ingredients) {
-          // Primary ingredient
-          this._addUsageInfo(ri.ingredientId, {
-            recipeId: recipeId as RecipeId,
-            isPrimary: true
-          });
+          // Get primary ingredient ID (preferred or first)
+          const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
 
-          // Alternate ingredients
-          if (ri.alternateIngredientIds) {
-            for (const altId of ri.alternateIngredientIds) {
-              this._addUsageInfo(altId, {
-                recipeId: recipeId as RecipeId,
-                isPrimary: false
-              });
-            }
+          // Index all ingredient IDs
+          for (const id of ri.ingredient.ids) {
+            this._addUsageInfo(id, {
+              recipeId: recipeId as RecipeId,
+              isPrimary: id === primaryId
+            });
           }
         }
       }

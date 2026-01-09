@@ -1069,16 +1069,22 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'cacao-barry.guayaquil-64',
-                alternateIngredientIds: ['common.chocolate-dark-64', 'felchlin.arriba-72'],
+                ingredient: {
+                  ids: ['cacao-barry.guayaquil-64', 'common.chocolate-dark-64', 'felchlin.arriba-72'],
+                  preferredId: 'cacao-barry.guayaquil-64'
+                },
                 amount: 400
               },
               {
-                ingredientId: 'common.heavy-cream-35',
+                ingredient: {
+                  ids: ['common.heavy-cream-35']
+                },
                 amount: 200
               },
               {
-                ingredientId: 'common.butter-82',
+                ingredient: {
+                  ids: ['common.butter-82']
+                },
                 amount: 20,
                 notes: 'Added at 35°C for shine'
               }
@@ -1104,15 +1110,21 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'guittard.soleil-dor-38',
+                ingredient: {
+                  ids: ['guittard.soleil-dor-38']
+                },
                 amount: 350
               },
               {
-                ingredientId: 'common.heavy-cream-35',
+                ingredient: {
+                  ids: ['common.heavy-cream-35']
+                },
                 amount: 200
               },
               {
-                ingredientId: 'common.butter-82',
+                ingredient: {
+                  ids: ['common.butter-82']
+                },
                 amount: 20,
                 notes: 'Added at 35°C for shine'
               }
@@ -1138,15 +1150,21 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'cacao-barry.zephyr-white-34',
+                ingredient: {
+                  ids: ['cacao-barry.zephyr-white-34']
+                },
                 amount: 500
               },
               {
-                ingredientId: 'common.heavy-cream-35',
+                ingredient: {
+                  ids: ['common.heavy-cream-35']
+                },
                 amount: 200
               },
               {
-                ingredientId: 'common.butter-82',
+                ingredient: {
+                  ids: ['common.butter-82']
+                },
                 amount: 15,
                 notes: 'Added at 32°C for shine'
               }
@@ -1172,11 +1190,15 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'cacao-barry.guayaquil-64',
+                ingredient: {
+                  ids: ['cacao-barry.guayaquil-64']
+                },
                 amount: 400
               },
               {
-                ingredientId: 'common.coconut-cream',
+                ingredient: {
+                  ids: ['common.coconut-cream']
+                },
                 amount: 200,
                 notes: 'Use full-fat, refrigerate and use solid portion'
               }
@@ -1202,16 +1224,22 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'cacao-barry.guayaquil-64',
+                ingredient: {
+                  ids: ['cacao-barry.guayaquil-64']
+                },
                 amount: 400
               },
               {
-                ingredientId: 'common.coconut-oil',
+                ingredient: {
+                  ids: ['common.coconut-oil']
+                },
                 amount: 150,
                 notes: 'Melted, at 35°C'
               },
               {
-                ingredientId: 'common.glucose-de43',
+                ingredient: {
+                  ids: ['common.glucose-de43']
+                },
                 amount: 30,
                 notes: 'For texture and shelf life'
               }
@@ -1237,15 +1265,21 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'cacao-barry.zephyr-caramel-35',
+                ingredient: {
+                  ids: ['cacao-barry.zephyr-caramel-35']
+                },
                 amount: 450
               },
               {
-                ingredientId: 'common.heavy-cream-35',
+                ingredient: {
+                  ids: ['common.heavy-cream-35']
+                },
                 amount: 180
               },
               {
-                ingredientId: 'common.butter-82',
+                ingredient: {
+                  ids: ['common.butter-82']
+                },
                 amount: 20,
                 notes: 'Salted butter works beautifully here'
               }
@@ -1270,16 +1304,22 @@ export const recipeCollections: Record<string, JsonObject> = {
             createdDate: '2026-01-01',
             ingredients: [
               {
-                ingredientId: 'felchlin.sao-palme-43',
+                ingredient: {
+                  ids: ['felchlin.sao-palme-43']
+                },
                 amount: 300
               },
               {
-                ingredientId: 'common.hazelnut-paste',
+                ingredient: {
+                  ids: ['common.hazelnut-paste']
+                },
                 amount: 200,
                 notes: '100% roasted hazelnuts, finely ground'
               },
               {
-                ingredientId: 'common.butter-82',
+                ingredient: {
+                  ids: ['common.butter-82']
+                },
                 amount: 50,
                 notes: 'For smoothness'
               }

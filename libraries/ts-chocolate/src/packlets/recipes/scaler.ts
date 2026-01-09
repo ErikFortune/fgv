@@ -92,7 +92,7 @@ function scaleIngredient(
   const finalAmount = Math.max(roundedAmount, minimumAmount) as Grams;
 
   return {
-    ingredientId: ingredient.ingredientId,
+    ingredient: ingredient.ingredient,
     amount: finalAmount,
     notes: ingredient.notes,
     originalAmount: ingredient.amount,

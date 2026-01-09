@@ -42,27 +42,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[allIngredientIds](./ts-chocolate.runtime.runtimerecipe.allingredientids.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlySet&lt;[IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
-
-
-</td><td>
-
-Gets all unique ingredient IDs used across all versions (primary only).
-
-
-</td></tr>
-<tr><td>
-
 [baseId](./ts-chocolate.runtime.runtimerecipe.baseid.md)
 
 
@@ -414,6 +393,20 @@ Factory method for creating a RuntimeRecipe.
 </td></tr>
 <tr><td>
 
+[getIngredientIds(options)](./ts-chocolate.runtime.runtimerecipe.getingredientids.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets unique ingredient IDs used across all versions. By default, returns only preferred ingredients (primary choice for each ingredient slot). Pass `{ includeAlternates: true }` to include all ingredient options.
+
+
+</td></tr>
+<tr><td>
+
 [getVersion(versionSpec)](./ts-chocolate.runtime.runtimerecipe.getversion.md)
 
 
@@ -428,7 +421,7 @@ Gets a specific version by ID.
 </td></tr>
 <tr><td>
 
-[usesIngredient(ingredientId)](./ts-chocolate.runtime.runtimerecipe.usesingredient.md)
+[usesIngredient(ingredientId, options)](./ts-chocolate.runtime.runtimerecipe.usesingredient.md)
 
 
 </td><td>
@@ -436,7 +429,7 @@ Gets a specific version by ID.
 
 </td><td>
 
-Checks if any version uses a specific ingredient (as primary).
+Checks if any version uses a specific ingredient. By default, only checks preferred ingredients. Pass `{ includeAlternates: true }` to also check alternate ingredients.
 
 
 </td></tr>

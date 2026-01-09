@@ -27,6 +27,7 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BaseRecipeId,
+  Helpers,
   ID_SEPARATOR,
   IngredientId,
   RecipeId,
@@ -36,6 +37,7 @@ import {
 } from '../common';
 import { IRecipe, Recipe } from '../recipes';
 import {
+  IIngredientQueryOptions,
   IResolvedRecipeProcedure,
   IResolvedRecipeProcedures,
   IRuntimeRecipe,
@@ -69,6 +71,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   private _goldenVersion: RuntimeVersion | undefined;
   private _versions: ReadonlyArray<RuntimeVersion> | undefined;
   private _latestVersion: RuntimeVersion | undefined;
+  private _preferredIngredientIds: Set<IngredientId> | undefined;
   private _allIngredientIds: Set<IngredientId> | undefined;
   private _procedures: IResolvedRecipeProcedures | undefined | null; // null = no procedures
   private _molds: IRuntimeRecipeMolds | undefined | null; // null = no molds
@@ -240,14 +243,49 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   // ============================================================================
 
   /**
-   * Gets all unique ingredient IDs used across all versions (primary only).
+   * Gets unique ingredient IDs used across all versions.
+   * By default, returns only preferred ingredients (primary choice for each ingredient slot).
+   * Pass `{ includeAlternates: true }` to include all ingredient options.
+   * @param options - Query options
+   * @returns Set of ingredient IDs
    */
-  public get allIngredientIds(): ReadonlySet<IngredientId> {
+  public getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId> {
+    if (options?.includeAlternates) {
+      return this._getAllIngredientIds();
+    }
+    return this._getPreferredIngredientIds();
+  }
+
+  /**
+   * Gets all unique ingredient IDs (preferred only) - cached.
+   */
+  private _getPreferredIngredientIds(): ReadonlySet<IngredientId> {
+    if (this._preferredIngredientIds === undefined) {
+      this._preferredIngredientIds = new Set<IngredientId>();
+      for (const version of this._recipe.versions) {
+        for (const ri of version.ingredients) {
+          const preferredId = Helpers.getPreferredIdOrFirst(ri.ingredient);
+          /* c8 ignore next 3 - defensive: converter validates ids array is non-empty */
+          if (preferredId !== undefined) {
+            this._preferredIngredientIds.add(preferredId);
+          }
+        }
+      }
+    }
+    return this._preferredIngredientIds;
+  }
+
+  /**
+   * Gets all unique ingredient IDs (including alternates) - cached.
+   */
+  private _getAllIngredientIds(): ReadonlySet<IngredientId> {
     if (this._allIngredientIds === undefined) {
       this._allIngredientIds = new Set<IngredientId>();
       for (const version of this._recipe.versions) {
         for (const ri of version.ingredients) {
-          this._allIngredientIds.add(ri.ingredientId);
+          for (const id of ri.ingredient.ids) {
+            this._allIngredientIds.add(id);
+          }
         }
       }
     }
@@ -255,12 +293,15 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   }
 
   /**
-   * Checks if any version uses a specific ingredient (as primary).
+   * Checks if any version uses a specific ingredient.
+   * By default, only checks preferred ingredients.
+   * Pass `{ includeAlternates: true }` to also check alternate ingredients.
    * @param ingredientId - The ingredient ID to check
+   * @param options - Query options
    * @returns True if the ingredient is used in any version
    */
-  public usesIngredient(ingredientId: IngredientId): boolean {
-    return this.allIngredientIds.has(ingredientId);
+  public usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean {
+    return this.getIngredientIds(options).has(ingredientId);
   }
 
   // ============================================================================

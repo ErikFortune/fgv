@@ -275,7 +275,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
    * @returns True if the ingredient is used in this version
    */
   public usesIngredient(ingredientId: IngredientId): boolean {
-    return this._version.ingredients.some((ri) => ri.ingredientId === ingredientId);
+    return this._version.ingredients.some((ri) => ri.ingredient.ids.includes(ingredientId));
   }
 
   // ============================================================================
@@ -350,18 +350,26 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
     const errors: string[] = [];
 
     for (const ri of this._version.ingredients) {
-      // Resolve primary ingredient
-      const ingredientResult = this._context.ingredients.get(ri.ingredientId);
-      /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
-      if (ingredientResult.isFailure()) {
-        errors.push(`Failed to resolve ingredient ${ri.ingredientId}: ${ingredientResult.message}`);
+      // Get primary ingredient ID (preferred or first)
+      const primaryId = Helpers.getPreferredIdOrFirst(ri.ingredient);
+      /* c8 ignore next 4 - defensive coding: empty ids array would indicate data corruption */
+      if (primaryId === undefined) {
+        errors.push(`Recipe ingredient has no ingredient ids`);
         continue;
       }
 
-      // Resolve alternates (skip missing ones with warning, don't fail)
+      // Resolve primary ingredient
+      const ingredientResult = this._context.ingredients.get(primaryId);
+      /* c8 ignore next 4 - defensive coding: missing ingredients would indicate data corruption */
+      if (ingredientResult.isFailure()) {
+        errors.push(`Failed to resolve ingredient ${primaryId}: ${ingredientResult.message}`);
+        continue;
+      }
+
+      // Resolve alternates (all ids except primary, skip missing ones)
       const alternates: AnyRuntimeIngredient[] = [];
-      if (ri.alternateIngredientIds) {
-        for (const altId of ri.alternateIngredientIds) {
+      for (const altId of ri.ingredient.ids) {
+        if (altId !== primaryId) {
           const altResult = this._context.ingredients.get(altId);
           if (altResult.isSuccess()) {
             alternates.push(altResult.value);

@@ -835,16 +835,23 @@ export interface IRuntimeRecipe {
   // ---- Ingredient queries ----
 
   /**
-   * Gets all unique ingredient IDs used across all versions (primary only).
+   * Gets unique ingredient IDs used across all versions.
+   * By default, returns only preferred ingredients (primary choice for each ingredient slot).
+   * Pass `{ includeAlternates: true }` to include all ingredient options.
+   * @param options - Query options
+   * @returns Set of ingredient IDs
    */
-  readonly allIngredientIds: ReadonlySet<IngredientId>;
+  getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
 
   /**
-   * Checks if any version uses a specific ingredient (as primary).
+   * Checks if any version uses a specific ingredient.
+   * By default, only checks preferred ingredients.
+   * Pass `{ includeAlternates: true }` to also check alternate ingredients.
    * @param ingredientId - The ingredient ID to check
+   * @param options - Query options
    * @returns True if the ingredient is used in any version
    */
-  usesIngredient(ingredientId: IngredientId): boolean;
+  usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
 
   // ---- Procedures (resolved) ----
 
@@ -1050,6 +1057,22 @@ export interface IIterationOptions {
    * Number of items to skip
    */
   readonly offset?: number;
+}
+
+// ============================================================================
+// Ingredient Query Options
+// ============================================================================
+
+/**
+ * Options for ingredient queries on recipes.
+ * @public
+ */
+export interface IIngredientQueryOptions {
+  /**
+   * If true, include alternate ingredients in addition to preferred.
+   * Default is false (only preferred ingredients).
+   */
+  readonly includeAlternates?: boolean;
 }
 
 // ============================================================================
