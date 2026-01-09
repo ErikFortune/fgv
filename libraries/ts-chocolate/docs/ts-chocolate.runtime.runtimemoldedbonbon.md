@@ -96,12 +96,12 @@ Confection type is always 'molded-bonbon' for this type
 
 </td><td>
 
-[IConfectionMolds](./ts-chocolate.confections.iconfectionmolds.md)
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
 
-Molds specification
+Molds with preferred selection
 
 
 </td></tr>

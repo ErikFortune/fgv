@@ -74,6 +74,50 @@ Gets the source ID from a composite IngredientId
 </td></tr>
 <tr><td>
 
+[getPreferred(collection)](./ts-chocolate.helpers.getpreferred.md)
+
+
+</td><td>
+
+Gets the preferred option from a collection, if one is specified and exists.
+
+
+</td></tr>
+<tr><td>
+
+[getPreferredId(collection)](./ts-chocolate.helpers.getpreferredid.md)
+
+
+</td><td>
+
+Gets the preferred ID from a simple ID collection, if specified and valid.
+
+
+</td></tr>
+<tr><td>
+
+[getPreferredIdOrFirst(collection)](./ts-chocolate.helpers.getpreferredidorfirst.md)
+
+
+</td><td>
+
+Gets the preferred ID from a simple ID collection, falling back to the first ID.
+
+
+</td></tr>
+<tr><td>
+
+[getPreferredOrFirst(collection)](./ts-chocolate.helpers.getpreferredorfirst.md)
+
+
+</td><td>
+
+Gets the preferred option from a collection, falling back to the first option.
+
+
+</td></tr>
+<tr><td>
+
 [getRecipeBaseId(id)](./ts-chocolate.helpers.getrecipebaseid.md)
 
 

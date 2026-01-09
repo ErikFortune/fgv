@@ -145,7 +145,7 @@ Converter for IConfectionMoldRef
 
 </td><td>
 
-Converter for IConfectionMolds
+Converter for confection molds with preferred selection. Validates that preferredId (if specified) exists in options.
 
 
 </td></tr>
@@ -167,7 +167,7 @@ Converter for IConfectionProcedureRef
 
 </td><td>
 
-Converter for IConfectionProcedures
+Converter for confection procedures with preferred selection. Validates that preferredId (if specified) exists in options.
 
 
 </td></tr>
@@ -200,7 +200,7 @@ Converter for IConfectionYield
 
 </td><td>
 
-Converter for filling options with preferred selection
+Converter for filling options with preferred selection. Validates that preferredId (if specified) exists in options.
 
 
 </td></tr>

@@ -37,7 +37,7 @@ import {
 import {
   ConfectionData,
   IConfectionDecoration,
-  IConfectionProcedures,
+  IConfectionProcedureRef,
   IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
@@ -45,6 +45,7 @@ import {
   isBarTruffle,
   isRolledTruffle
 } from '../../confections';
+import { IOptionsWithPreferred, ProcedureId } from '../../common';
 import { IConfectionContext, IRuntimeConfection } from '../model';
 
 // Forward declarations to avoid circular imports
@@ -172,9 +173,9 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   }
 
   /**
-   * Optional procedures
+   * Optional procedures with preferred selection
    */
-  public get confectionProcedures(): IConfectionProcedures | undefined {
+  public get confectionProcedures(): IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId> | undefined {
     return this._confection.confectionProcedures;
   }
 

@@ -286,13 +286,13 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   private _resolveProcedures(): IResolvedRecipeProcedures | null {
     const rawProcedures = this._recipe.recipeProcedures;
-    if (!rawProcedures || rawProcedures.procedures.length === 0) {
+    if (!rawProcedures || rawProcedures.options.length === 0) {
       return null;
     }
 
     const resolvedProcedures: IResolvedRecipeProcedure[] = [];
-    for (const ref of rawProcedures.procedures) {
-      const procedureResult = this._context.getProcedure(ref.procedureId);
+    for (const ref of rawProcedures.options) {
+      const procedureResult = this._context.getProcedure(ref.id);
       if (procedureResult.isSuccess()) {
         resolvedProcedures.push({
           procedure: procedureResult.value,
@@ -303,10 +303,10 @@ export class RuntimeRecipe implements IRuntimeRecipe {
       // Skip procedures that fail to resolve (e.g., missing from library)
     }
 
-    // Resolve recommended procedure if specified
+    // Resolve preferred procedure if specified
     let recommendedProcedure = undefined;
-    if (rawProcedures.recommendedProcedureId) {
-      const recommendedResult = this._context.getProcedure(rawProcedures.recommendedProcedureId);
+    if (rawProcedures.preferredId) {
+      const recommendedResult = this._context.getProcedure(rawProcedures.preferredId);
       if (recommendedResult.isSuccess()) {
         recommendedProcedure = recommendedResult.value;
       }
@@ -346,13 +346,13 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   private _loadMolds(): IRuntimeRecipeMolds | null {
     const rawMolds = this._recipe.recipeMolds;
-    if (!rawMolds || rawMolds.molds.length === 0) {
+    if (!rawMolds || rawMolds.options.length === 0) {
       return null;
     }
 
     const runtimeMolds: IRuntimeRecipeMold[] = [];
-    for (const ref of rawMolds.molds) {
-      const moldResult = this._context.getMold(ref.moldId);
+    for (const ref of rawMolds.options) {
+      const moldResult = this._context.getMold(ref.id);
       if (moldResult.isSuccess()) {
         runtimeMolds.push({
           mold: moldResult.value,
@@ -363,10 +363,10 @@ export class RuntimeRecipe implements IRuntimeRecipe {
       // Skip molds that fail to load (e.g., missing from library)
     }
 
-    // Load recommended mold if specified
+    // Load preferred mold if specified
     let recommendedMold = undefined;
-    if (rawMolds.recommendedMoldId) {
-      const recommendedResult = this._context.getMold(rawMolds.recommendedMoldId);
+    if (rawMolds.preferredId) {
+      const recommendedResult = this._context.getMold(rawMolds.preferredId);
       if (recommendedResult.isSuccess()) {
         recommendedMold = recommendedResult.value;
       }

@@ -4,10 +4,10 @@
 
 ## Confections.Converters.confectionProcedures variable
 
-Converter for IConfectionProcedures
+Converter for confection procedures with preferred selection. Validates that preferredId (if specified) exists in options.
 
 **Signature:**
 
 ```typescript
-confectionProcedures: Converter<IConfectionProcedures>
+confectionProcedures: Converter<IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>>
 ```

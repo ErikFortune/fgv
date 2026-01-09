@@ -6,65 +6,6 @@
 
 Main exports for @<!-- -->fgv/ts-chocolate library
 
-## Functions
-
-<table><thead><tr><th>
-
-Function
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[getPreferred(collection)](./ts-chocolate.getpreferred.md)
-
-
-</td><td>
-
-Gets the preferred option from a collection, if one is specified and exists.
-
-
-</td></tr>
-<tr><td>
-
-[getPreferredId(collection)](./ts-chocolate.getpreferredid.md)
-
-
-</td><td>
-
-Gets the preferred ID from a simple ID collection, if specified and valid.
-
-
-</td></tr>
-<tr><td>
-
-[getPreferredIdOrFirst(collection)](./ts-chocolate.getpreferredidorfirst.md)
-
-
-</td><td>
-
-Gets the preferred ID from a simple ID collection, falling back to the first ID.
-
-
-</td></tr>
-<tr><td>
-
-[getPreferredOrFirst(collection)](./ts-chocolate.getpreferredorfirst.md)
-
-
-</td><td>
-
-Gets the preferred option from a collection, falling back to the first option.
-
-
-</td></tr>
-</tbody></table>
-
 ## Interfaces
 
 <table><thead><tr><th>
@@ -108,6 +49,17 @@ Collection of simple IDs with a preferred selection. Use when options are just I
 </td><td>
 
 Collection of options (objects with IDs) with a preferred selection. Use when options are objects containing IDs plus additional metadata.
+
+
+</td></tr>
+<tr><td>
+
+[IRefWithNotes](./ts-chocolate.irefwithnotes.md)
+
+
+</td><td>
+
+Generic reference type with an ID and optional notes. Use as base for mold refs, procedure refs, etc. Satisfies IHasId for use with IOptionsWithPreferred.
 
 
 </td></tr>

@@ -541,7 +541,7 @@ const confectionJournalRecord: Converter<IConfectionJournalRecord>;
 const confectionMoldRef: Converter<IConfectionMoldRef>;
 
 // @public
-const confectionMolds: Converter<IConfectionMolds>;
+const confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef, MoldId>>;
 
 // @public
 export type ConfectionName = Brand<string, 'ConfectionName'>;
@@ -553,7 +553,7 @@ const confectionName: Converter<ConfectionName>;
 const confectionProcedureRef: Converter<IConfectionProcedureRef>;
 
 // @public
-const confectionProcedures: Converter<IConfectionProcedures>;
+const confectionProcedures: Converter<IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>>;
 
 declare namespace Confections {
     export {
@@ -572,9 +572,7 @@ declare namespace Confections {
         IChocolateSpec,
         IAdditionalChocolate,
         IConfectionMoldRef,
-        IConfectionMolds,
         IConfectionProcedureRef,
-        IConfectionProcedures,
         IFrameDimensions,
         IBonBonDimensions,
         ICoatings,
@@ -647,6 +645,9 @@ function containsIgnoreCase<T>(text: string, getter: (item: T) => string | undef
 
 declare namespace Converters {
     export {
+        optionsWithPreferred,
+        idsWithPreferred,
+        refWithNotes,
         sourceId,
         baseIngredientId,
         baseRecipeId,
@@ -1023,16 +1024,16 @@ function getJournalsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFil
 function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-export function getPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
+function getPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
 
 // @public
-export function getPreferredId<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
+function getPreferredId<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
 
 // @public
-export function getPreferredIdOrFirst<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
+function getPreferredIdOrFirst<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined;
 
 // @public
-export function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
+function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>): TOption | undefined;
 
 // @public
 function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
@@ -1083,7 +1084,11 @@ declare namespace Helpers {
         createRecipeVersionId,
         parseRecipeVersionId,
         getRecipeVersionRecipeId,
-        getRecipeVersionSpec
+        getRecipeVersionSpec,
+        getPreferred,
+        getPreferredOrFirst,
+        getPreferredId,
+        getPreferredIdOrFirst
     }
 }
 export { Helpers }
@@ -1249,7 +1254,7 @@ interface IComputedScaledRecipe {
 // @public
 interface IConfection {
     readonly baseId: BaseConfectionId;
-    readonly confectionProcedures?: IConfectionProcedures;
+    readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
@@ -1323,28 +1328,10 @@ interface IConfectionJournalRecord {
 }
 
 // @public
-interface IConfectionMoldRef {
-    readonly moldId: MoldId;
-    readonly notes?: string;
-}
+type IConfectionMoldRef = IRefWithNotes<MoldId>;
 
 // @public
-interface IConfectionMolds {
-    readonly molds: ReadonlyArray<IConfectionMoldRef>;
-    readonly recommendedMoldId?: MoldId;
-}
-
-// @public
-interface IConfectionProcedureRef {
-    readonly notes?: string;
-    readonly procedureId: ProcedureId;
-}
-
-// @public
-interface IConfectionProcedures {
-    readonly procedures: ReadonlyArray<IConfectionProcedureRef>;
-    readonly recommendedProcedureId?: ProcedureId;
-}
+type IConfectionProcedureRef = IRefWithNotes<ProcedureId>;
 
 // @public
 interface IConfectionSaveOptions {
@@ -1429,6 +1416,9 @@ interface IDairyIngredient extends IIngredient {
     readonly fatContent?: Percentage;
     readonly waterContent?: Percentage;
 }
+
+// @public
+function idsWithPreferred<TId extends string>(idConverter: Converter<TId>, context?: string): Converter<IIdsWithPreferred<TId>>;
 
 // @public
 interface IEditingSessionParams {
@@ -1772,7 +1762,7 @@ interface IMold {
 interface IMoldedBonBon extends IConfection {
     readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
-    readonly molds: IConfectionMolds;
+    readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     readonly shellChocolate: IChocolateSpec;
 }
 
@@ -2093,8 +2083,8 @@ interface IRecipe {
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly name: RecipeName;
-    readonly recipeMolds?: IRecipeMolds;
-    readonly recipeProcedures?: IRecipeProcedures;
+    readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
+    readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
     readonly tags?: ReadonlyArray<string>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
@@ -2138,28 +2128,10 @@ interface IRecipeJournalRecord {
 }
 
 // @public
-interface IRecipeMoldRef {
-    readonly moldId: MoldId;
-    readonly notes?: string;
-}
+type IRecipeMoldRef = IRefWithNotes<MoldId>;
 
 // @public
-interface IRecipeMolds {
-    readonly molds: ReadonlyArray<IRecipeMoldRef>;
-    readonly recommendedMoldId?: MoldId;
-}
-
-// @public
-interface IRecipeProcedureRef {
-    readonly notes?: string;
-    readonly procedureId: ProcedureId;
-}
-
-// @public
-interface IRecipeProcedures {
-    readonly procedures: ReadonlyArray<IRecipeProcedureRef>;
-    readonly recommendedProcedureId?: ProcedureId;
-}
+type IRecipeProcedureRef = IRefWithNotes<ProcedureId>;
 
 // @public
 interface IRecipeQuerySpec {
@@ -2231,6 +2203,12 @@ interface IRecipeVersion {
     readonly ratings?: ReadonlyArray<IRecipeRating>;
     readonly versionSpec: RecipeVersionSpec;
     readonly yield?: string;
+}
+
+// @public
+export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
+    readonly id: TId;
+    readonly notes?: string;
 }
 
 // @public
@@ -2343,7 +2321,7 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
 // @public
 interface IRuntimeConfection {
     readonly baseId: BaseConfectionId;
-    readonly confectionProcedures?: IConfectionProcedures;
+    readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
@@ -2437,7 +2415,7 @@ interface IRuntimeIngredient {
 interface IRuntimeMoldedBonBon extends IRuntimeConfection {
     readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
-    readonly molds: IConfectionMolds;
+    readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     readonly raw: IMoldedBonBon;
     readonly shellChocolate: IChocolateSpec;
 }
@@ -3164,6 +3142,9 @@ function notFilter<T>(filter: FilterPredicate<T>): FilterPredicate<T>;
 function oneOf<T, V>(allowed: V[], getter: (item: T) => V | undefined): FilterPredicate<T>;
 
 // @public
+function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(optionConverter: Converter<TOption>, idConverter: Converter<TId>, context?: string): Converter<IOptionsWithPreferred<TOption, TId>>;
+
+// @public
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
@@ -3352,9 +3333,9 @@ class Recipe implements IRecipe {
     // (undocumented)
     readonly name: RecipeName;
     // (undocumented)
-    readonly recipeMolds?: IRecipeMolds;
+    readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
     // (undocumented)
-    readonly recipeProcedures?: IRecipeProcedures;
+    readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
     // (undocumented)
     readonly tags?: ReadonlyArray<string>;
     // (undocumented)
@@ -3493,10 +3474,8 @@ const recipeJournalRecord: Converter<IRecipeJournalRecord>;
 // @public
 const recipeMoldRef: Converter<IRecipeMoldRef>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
-const recipeMolds: Converter<IRecipeMolds>;
+const recipeMolds: Converter<IOptionsWithPreferred<IRecipeMoldRef, MoldId>>;
 
 // @public
 export type RecipeName = Brand<string, 'RecipeName'>;
@@ -3509,10 +3488,8 @@ const recipeName: Converter<RecipeName>;
 // @public
 const recipeProcedureRef: Converter<IRecipeProcedureRef>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
 // @public
-const recipeProcedures: Converter<IRecipeProcedures>;
+const recipeProcedures: Converter<IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>>;
 
 // @public
 class RecipeQuery {
@@ -3570,9 +3547,7 @@ declare namespace Recipes {
         IRecipeVersion,
         IRecipeDerivation,
         IRecipeProcedureRef,
-        IRecipeProcedures,
         IRecipeMoldRef,
-        IRecipeMolds,
         IRecipe,
         IScaledRecipeIngredient,
         IScalingRef,
@@ -3721,6 +3696,9 @@ export type RecipeVersionSpec = Brand<string, 'RecipeVersionSpec'>;
 
 // @public
 const recipeVersionSpec: Converter<RecipeVersionSpec>;
+
+// @public
+function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>>;
 
 // @public
 function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
@@ -3896,7 +3874,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     protected readonly _baseId: BaseConfectionId;
     // (undocumented)
     protected readonly _confection: ConfectionData;
-    get confectionProcedures(): IConfectionProcedures | undefined;
+    get confectionProcedures(): IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId> | undefined;
     abstract get confectionType(): ConfectionType;
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -4057,7 +4035,7 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon): Result<RuntimeMoldedBonBon>;
-    get molds(): IConfectionMolds;
+    get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     get raw(): IMoldedBonBon;
     get shellChocolate(): IChocolateSpec;
 }
@@ -4422,6 +4400,12 @@ const uint8ArrayFromBase64: Converter<Uint8Array>;
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
 
 // @public
+function validateIdsWithPreferred<TId extends string>(collection: IIdsWithPreferred<TId>, context?: string): Result<IIdsWithPreferred<TId>>;
+
+// @public
+function validateOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>, context?: string): Result<IOptionsWithPreferred<TOption, TId>>;
+
+// @public
 class ValidatingLibrary<TK extends string, TV, TSpec, TOrchEntity = TV> extends ValidatingResultMap<TK, TV> implements IReadOnlyValidatingLibrary<TK, TV, TSpec> {
     constructor(params: IValidatingLibraryParams<TK, TV, TSpec, TOrchEntity>);
     find(spec: TSpec, options?: IFindOptions): Result<ReadonlyArray<TV>>;
@@ -4483,7 +4467,9 @@ declare namespace Validation {
         isValidJournalId,
         toJournalId,
         isValidSlotId,
-        toSlotId
+        toSlotId,
+        validateOptionsWithPreferred,
+        validateIdsWithPreferred
     }
 }
 export { Validation }

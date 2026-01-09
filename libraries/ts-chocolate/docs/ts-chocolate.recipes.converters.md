@@ -123,7 +123,7 @@ Converter for [IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)
 
 </td><td>
 
-Converter for [IRecipeMolds](./ts-chocolate.recipes.irecipemolds.md)
+Converter for recipe molds with preferred selection. Validates that preferredId (if specified) exists in options.
 
 
 </td></tr>
@@ -145,7 +145,7 @@ Converter for [IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.m
 
 </td><td>
 
-Converter for [IRecipeProcedures](./ts-chocolate.recipes.irecipeprocedures.md)
+Converter for recipe procedures with preferred selection. Validates that preferredId (if specified) exists in options.
 
 
 </td></tr>

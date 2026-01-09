@@ -25,8 +25,8 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { ConfectionId } from '../../common';
-import { IAdditionalChocolate, IChocolateSpec, IConfectionMolds, IMoldedBonBon } from '../../confections';
+import { ConfectionId, IOptionsWithPreferred, MoldId } from '../../common';
+import { IAdditionalChocolate, IChocolateSpec, IConfectionMoldRef, IMoldedBonBon } from '../../confections';
 import { IConfectionContext, IRuntimeMoldedBonBon } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 
@@ -83,9 +83,9 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   // ============================================================================
 
   /**
-   * Molds specification
+   * Molds with preferred selection
    */
-  public get molds(): IConfectionMolds {
+  public get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId> {
     return this._moldedBonBon.molds;
   }
 

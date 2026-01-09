@@ -66,8 +66,8 @@ describe('Confections model', () => {
       }
     ],
     molds: {
-      molds: [{ moldId: 'common.dome-25mm' as MoldId }],
-      recommendedMoldId: 'common.dome-25mm' as MoldId
+      options: [{ id: 'common.dome-25mm' as MoldId }],
+      preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
       ingredientId: 'cacao-barry.guayaquil-64' as IngredientId,
@@ -264,9 +264,9 @@ describe('Confections model', () => {
       });
 
       test('molds structure is correct', () => {
-        expect(baseMoldedBonBon.molds.molds).toHaveLength(1);
-        expect(baseMoldedBonBon.molds.molds[0].moldId).toBe('common.dome-25mm');
-        expect(baseMoldedBonBon.molds.recommendedMoldId).toBe('common.dome-25mm');
+        expect(baseMoldedBonBon.molds.options).toHaveLength(1);
+        expect(baseMoldedBonBon.molds.options[0].id).toBe('common.dome-25mm');
+        expect(baseMoldedBonBon.molds.preferredId).toBe('common.dome-25mm');
       });
 
       test('shellChocolate structure is correct', () => {

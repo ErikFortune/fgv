@@ -90,12 +90,12 @@ Type is always 'molded-bonbon' for this confection
 
 </td><td>
 
-[IConfectionMolds](./ts-chocolate.confections.iconfectionmolds.md)
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
 
-Required molds specification
+Required molds with preferred selection
 
 
 </td></tr>

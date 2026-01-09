@@ -2,80 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Confections](./ts-chocolate.confections.md) &gt; [IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)
 
-## Confections.IConfectionMoldRef interface
+## Confections.IConfectionMoldRef type
 
-Reference to a mold used for a confection
+Reference to a mold used for a confection. Satisfies IHasId for use with IOptionsWithPreferred.
 
 **Signature:**
 
 ```typescript
-export interface IConfectionMoldRef 
+export type IConfectionMoldRef = IRefWithNotes<MoldId>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[moldId](./ts-chocolate.confections.iconfectionmoldref.moldid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[MoldId](./ts-chocolate.moldid.md)
-
-
-</td><td>
-
-Composite mold ID
-
-
-</td></tr>
-<tr><td>
-
-[notes?](./ts-chocolate.confections.iconfectionmoldref.notes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional notes specific to using this mold
-
-
-</td></tr>
-</tbody></table>
+**References:** [IRefWithNotes](./ts-chocolate.irefwithnotes.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)
 

@@ -88,8 +88,8 @@ import {
   IChocolateSpec,
   ICoatings,
   IConfectionDecoration,
-  IConfectionMolds,
-  IConfectionProcedures,
+  IConfectionMoldRef,
+  IConfectionProcedureRef,
   IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
@@ -97,6 +97,7 @@ import {
   IMoldedBonBon,
   IRolledTruffle
 } from '../confections';
+import { IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
@@ -1294,8 +1295,8 @@ export interface IRuntimeConfection {
   /** Optional filling slots */
   readonly fillings?: ReadonlyArray<IFillingSlot>;
 
-  /** Optional procedures */
-  readonly confectionProcedures?: IConfectionProcedures;
+  /** Optional procedures with preferred selection */
+  readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
 
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;
@@ -1355,8 +1356,8 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   /** Type is always 'molded-bonbon' for this confection */
   readonly confectionType: 'molded-bonbon';
 
-  /** Required molds specification */
-  readonly molds: IConfectionMolds;
+  /** Required molds with preferred selection */
+  readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
 
   /** Required shell chocolate specification */
   readonly shellChocolate: IChocolateSpec;

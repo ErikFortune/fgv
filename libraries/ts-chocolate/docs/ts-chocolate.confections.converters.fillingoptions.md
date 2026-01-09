@@ -4,7 +4,7 @@
 
 ## Confections.Converters.fillingOptions variable
 
-Converter for filling options with preferred selection
+Converter for filling options with preferred selection. Validates that preferredId (if specified) exists in options.
 
 **Signature:**
 

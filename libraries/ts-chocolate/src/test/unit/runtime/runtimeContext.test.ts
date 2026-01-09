@@ -50,7 +50,7 @@ import {
 } from '../../../packlets/ingredients';
 import { IMold, Mold, MoldsLibrary } from '../../../packlets/molds';
 import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
-import { IRecipe, IRecipeMolds, IRecipeProcedures, RecipesLibrary } from '../../../packlets/recipes';
+import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeContext', () => {
@@ -201,13 +201,13 @@ describe('RuntimeContext', () => {
     tags: ['ganache', 'hot-process']
   };
 
-  // Recipe with procedures
-  const recipeWithProcedures: IRecipeProcedures = {
-    procedures: [
-      { procedureId: 'test.ganache-cold-method' as ProcedureId, notes: 'Preferred method for this recipe' },
-      { procedureId: 'test.ganache-hot-method' as ProcedureId }
+  // Recipe with procedures - using new IOptionsWithPreferred pattern
+  const recipeWithProcedures: IRecipe['recipeProcedures'] = {
+    options: [
+      { id: 'test.ganache-cold-method' as ProcedureId, notes: 'Preferred method for this recipe' },
+      { id: 'test.ganache-hot-method' as ProcedureId }
     ],
-    recommendedProcedureId: 'test.ganache-cold-method' as ProcedureId
+    preferredId: 'test.ganache-cold-method' as ProcedureId
   };
 
   const darkGanacheWithProceduresRecipe: IRecipe = {
@@ -249,7 +249,7 @@ describe('RuntimeContext', () => {
       }
     ],
     recipeProcedures: {
-      procedures: [{ procedureId: 'test.nonexistent-procedure' as ProcedureId }]
+      options: [{ id: 'test.nonexistent-procedure' as ProcedureId }]
     }
   };
 
@@ -281,13 +281,13 @@ describe('RuntimeContext', () => {
     tags: ['bar', 'classic']
   };
 
-  // Recipe with molds
-  const recipeWithMolds: IRecipeMolds = {
-    molds: [
-      { moldId: 'test.cw-2227' as MoldId, notes: 'Ideal for this recipe' },
-      { moldId: 'test.cw-1000' as MoldId }
+  // Recipe with molds - using new IOptionsWithPreferred pattern
+  const recipeWithMolds: IRecipe['recipeMolds'] = {
+    options: [
+      { id: 'test.cw-2227' as MoldId, notes: 'Ideal for this recipe' },
+      { id: 'test.cw-1000' as MoldId }
     ],
-    recommendedMoldId: 'test.cw-2227' as MoldId
+    preferredId: 'test.cw-2227' as MoldId
   };
 
   const darkGanacheWithMoldsRecipe: IRecipe = {
@@ -329,7 +329,7 @@ describe('RuntimeContext', () => {
       }
     ],
     recipeMolds: {
-      molds: [{ moldId: 'test.nonexistent-mold' as MoldId }]
+      options: [{ id: 'test.nonexistent-mold' as MoldId }]
     }
   };
 
@@ -894,7 +894,7 @@ describe('RuntimeContext', () => {
           const coldResolved = recipe.procedures!.procedures[0];
           expect(coldResolved.procedure.name).toBe('Ganache (Cold Method)');
           expect(coldResolved.notes).toBe('Preferred method for this recipe');
-          expect(coldResolved.raw.procedureId).toBe('test.ganache-cold-method');
+          expect(coldResolved.raw.id).toBe('test.ganache-cold-method');
 
           // Check second procedure (hot method)
           const hotResolved = recipe.procedures!.procedures[1];
@@ -1022,7 +1022,7 @@ describe('RuntimeContext', () => {
         const pralineResolved = recipe.molds!.molds[0];
         expect(pralineResolved.mold.productNumber).toBe('CW 2227');
         expect(pralineResolved.notes).toBe('Ideal for this recipe');
-        expect(pralineResolved.raw.moldId).toBe('test.cw-2227');
+        expect(pralineResolved.raw.id).toBe('test.cw-2227');
 
         // Check second mold (bar)
         const barResolved = recipe.molds!.molds[1];

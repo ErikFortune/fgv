@@ -4,6 +4,54 @@
 
 ## Converters namespace
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[idsWithPreferred(idConverter, context)](./ts-chocolate.converters.idswithpreferred.md)
+
+
+</td><td>
+
+Creates a converter for [IIdsWithPreferred](./ts-chocolate.iidswithpreferred.md) collections. Validates that preferredId (if specified) exists in the ids array.
+
+
+</td></tr>
+<tr><td>
+
+[optionsWithPreferred(optionConverter, idConverter, context)](./ts-chocolate.converters.optionswithpreferred.md)
+
+
+</td><td>
+
+Creates a converter for [IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md) collections. Validates that preferredId (if specified) exists in the options array.
+
+
+</td></tr>
+<tr><td>
+
+[refWithNotes(idConverter)](./ts-chocolate.converters.refwithnotes.md)
+
+
+</td><td>
+
+Creates a converter for [IRefWithNotes](./ts-chocolate.irefwithnotes.md) objects. A simple reference with an ID and optional notes.
+
+
+</td></tr>
+</tbody></table>
+
 ## Variables
 
 <table><thead><tr><th>

@@ -603,8 +603,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     }
 
     const molds = this._sourceConfection.molds;
-    const recommendedMoldId = molds.recommendedMoldId;
-    const moldId = recommendedMoldId ?? molds.molds[0]?.moldId;
+    const moldId = molds.preferredId ?? molds.options[0]?.id;
 
     if (moldId) {
       this._mold = {
@@ -667,8 +666,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return;
     }
 
-    const recommendedProcedureId = procedures.recommendedProcedureId;
-    const procedureId = recommendedProcedureId ?? procedures.procedures[0]?.procedureId;
+    const procedureId = procedures.preferredId ?? procedures.options[0]?.id;
 
     if (procedureId) {
       this._procedure = {

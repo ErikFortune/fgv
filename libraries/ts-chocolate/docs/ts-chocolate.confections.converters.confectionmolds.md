@@ -4,10 +4,10 @@
 
 ## Confections.Converters.confectionMolds variable
 
-Converter for IConfectionMolds
+Converter for confection molds with preferred selection. Validates that preferredId (if specified) exists in options.
 
 **Signature:**
 
 ```typescript
-confectionMolds: Converter<IConfectionMolds>
+confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef, MoldId>>
 ```

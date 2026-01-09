@@ -611,5 +611,27 @@ Converts unknown value to SourceId
 
 
 </td></tr>
+<tr><td>
+
+[validateIdsWithPreferred(collection, context)](./ts-chocolate.validation.validateidswithpreferred.md)
+
+
+</td><td>
+
+Validates that preferredId (if specified) exists in the ids array.
+
+
+</td></tr>
+<tr><td>
+
+[validateOptionsWithPreferred(collection, context)](./ts-chocolate.validation.validateoptionswithpreferred.md)
+
+
+</td><td>
+
+Validates that preferredId (if specified) exists in the options array.
+
+
+</td></tr>
 </tbody></table>
 

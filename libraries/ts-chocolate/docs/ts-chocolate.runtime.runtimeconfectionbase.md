@@ -199,12 +199,12 @@ The base confection ID within the source
 
 </td><td>
 
-[IConfectionProcedures](./ts-chocolate.confections.iconfectionprocedures.md) \| undefined
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Optional procedures
+Optional procedures with preferred selection
 
 
 </td></tr>

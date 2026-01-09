@@ -41,7 +41,10 @@ import {
   ConfectionVersionSpec,
   DegreesMacMichael,
   Grams,
+  IHasId,
+  IIdsWithPreferred,
   IngredientId,
+  IOptionsWithPreferred,
   JOURNAL_ID_PATTERN,
   JournalId,
   Millimeters,
@@ -749,4 +752,56 @@ export function toSlotId(from: unknown): Result<SlotId> {
     return Success.with(from);
   }
   return Failure.with('Invalid SlotId: must be non-empty alphanumeric with dashes/underscores, no dots');
+}
+
+// ============================================================================
+// Options with Preferred Validators
+// ============================================================================
+
+/**
+ * Validates that preferredId (if specified) exists in the options array.
+ *
+ * @typeParam TOption - The option object type
+ * @typeParam TId - The ID type
+ * @param collection - The options collection to validate
+ * @param context - Optional context string for error messages
+ * @returns Success with the collection if valid, Failure if preferredId is not found in options
+ * @public
+ */
+export function validateOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(
+  collection: IOptionsWithPreferred<TOption, TId>,
+  context?: string
+): Result<IOptionsWithPreferred<TOption, TId>> {
+  if (collection.preferredId === undefined) {
+    return Success.with(collection);
+  }
+  const found = collection.options.some((opt) => opt.id === collection.preferredId);
+  if (found) {
+    return Success.with(collection);
+  }
+  const prefix = context ? `${context}: ` : '';
+  return Failure.with(`${prefix}preferredId '${collection.preferredId}' not found in options`);
+}
+
+/**
+ * Validates that preferredId (if specified) exists in the ids array.
+ *
+ * @typeParam TId - The ID type
+ * @param collection - The IDs collection to validate
+ * @param context - Optional context string for error messages
+ * @returns Success with the collection if valid, Failure if preferredId is not found in ids
+ * @public
+ */
+export function validateIdsWithPreferred<TId extends string>(
+  collection: IIdsWithPreferred<TId>,
+  context?: string
+): Result<IIdsWithPreferred<TId>> {
+  if (collection.preferredId === undefined) {
+    return Success.with(collection);
+  }
+  if (collection.ids.includes(collection.preferredId)) {
+    return Success.with(collection);
+  }
+  const prefix = context ? `${context}: ` : '';
+  return Failure.with(`${prefix}preferredId '${collection.preferredId}' not found in ids`);
 }

@@ -14,6 +14,7 @@
 //   - data/published/procedures/common.yaml
 //   - data/published/confections/common.yaml
 
+/* eslint-disable max-lines */
 import { JsonObject } from '@fgv/ts-json-base';
 
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -1556,18 +1557,23 @@ export const confectionCollections: Record<string, JsonObject> = {
           {
             slotId: 'center',
             filling: {
-              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+              options: [
+                {
+                  type: 'recipe',
+                  id: 'common.dark-ganache-classic'
+                }
+              ],
               preferredId: 'common.dark-ganache-classic'
             }
           }
         ],
         molds: {
-          molds: [
+          options: [
             {
-              moldId: 'common.dome-25mm'
+              id: 'common.dome-25mm'
             }
           ],
-          recommendedMoldId: 'common.dome-25mm'
+          preferredId: 'common.dome-25mm'
         },
         shellChocolate: {
           ingredientId: 'cacao-barry.guayaquil-64',
@@ -1597,7 +1603,12 @@ export const confectionCollections: Record<string, JsonObject> = {
           {
             slotId: 'center',
             filling: {
-              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+              options: [
+                {
+                  type: 'recipe',
+                  id: 'common.dark-ganache-classic'
+                }
+              ],
               preferredId: 'common.dark-ganache-classic'
             }
           }
@@ -1638,7 +1649,12 @@ export const confectionCollections: Record<string, JsonObject> = {
           {
             slotId: 'center',
             filling: {
-              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' }],
+              options: [
+                {
+                  type: 'recipe',
+                  id: 'common.dark-ganache-classic'
+                }
+              ],
               preferredId: 'common.dark-ganache-classic'
             }
           }

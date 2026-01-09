@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeConfection.confectionProcedures property
 
-Optional procedures
+Optional procedures with preferred selection
 
 **Signature:**
 
 ```typescript
-readonly confectionProcedures?: IConfectionProcedures;
+readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
 ```

@@ -30,13 +30,14 @@ import {
   ConfectionVersionSpec,
   Grams,
   IngredientId,
+  IOptionsWithPreferred,
+  IRefWithNotes,
   Millimeters,
   MoldId,
   ProcedureId,
   RecipeId,
   SlotId,
-  AdditionalChocolatePurpose,
-  IOptionsWithPreferred
+  AdditionalChocolatePurpose
 } from '../common';
 
 // ============================================================================
@@ -161,52 +162,22 @@ export interface IAdditionalChocolate extends IChocolateSpec {
 // ============================================================================
 
 /**
- * Reference to a mold used for a confection
+ * Reference to a mold used for a confection.
+ * Satisfies IHasId for use with IOptionsWithPreferred.
  * @public
  */
-export interface IConfectionMoldRef {
-  /** Composite mold ID */
-  readonly moldId: MoldId;
-  /** Optional notes specific to using this mold */
-  readonly notes?: string;
-}
-
-/**
- * Collection of molds associated with a confection
- * @public
- */
-export interface IConfectionMolds {
-  /** Available molds for this confection */
-  readonly molds: ReadonlyArray<IConfectionMoldRef>;
-  /** ID of the recommended/default mold */
-  readonly recommendedMoldId?: MoldId;
-}
+export type IConfectionMoldRef = IRefWithNotes<MoldId>;
 
 // ============================================================================
 // Procedure Types (similar to recipes)
 // ============================================================================
 
 /**
- * Reference to a procedure that can be used with a confection
+ * Reference to a procedure that can be used with a confection.
+ * Satisfies IHasId for use with IOptionsWithPreferred.
  * @public
  */
-export interface IConfectionProcedureRef {
-  /** Composite procedure ID */
-  readonly procedureId: ProcedureId;
-  /** Optional notes specific to using this procedure */
-  readonly notes?: string;
-}
-
-/**
- * Collection of procedures associated with a confection
- * @public
- */
-export interface IConfectionProcedures {
-  /** Available procedures for this confection */
-  readonly procedures: ReadonlyArray<IConfectionProcedureRef>;
-  /** ID of the recommended/default procedure */
-  readonly recommendedProcedureId?: ProcedureId;
-}
+export type IConfectionProcedureRef = IRefWithNotes<ProcedureId>;
 
 // ============================================================================
 // Dimension Types (for bar truffles)
@@ -293,8 +264,8 @@ export interface IConfection {
   readonly yield: IConfectionYield;
   /** Optional filling slots - each slot has independent options with a preferred selection */
   readonly fillings?: ReadonlyArray<IFillingSlot>;
-  /** Optional procedures */
-  readonly confectionProcedures?: IConfectionProcedures;
+  /** Optional procedures with preferred selection */
+  readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
   /** Version history */
   readonly versions: ReadonlyArray<IConfectionVersion>;
   /** The ID of the golden (approved default) version */
@@ -313,8 +284,8 @@ export interface IConfection {
 export interface IMoldedBonBon extends IConfection {
   /** Type discriminator */
   readonly confectionType: 'molded-bonbon';
-  /** Required molds specification */
-  readonly molds: IConfectionMolds;
+  /** Required molds with preferred selection */
+  readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
   /** Required shell chocolate specification */
   readonly shellChocolate: IChocolateSpec;
   /** Optional additional chocolates (seal, decoration) */

@@ -4,10 +4,10 @@
 
 ## Recipes.Converters.recipeProcedures variable
 
-Converter for [IRecipeProcedures](./ts-chocolate.recipes.irecipeprocedures.md)
+Converter for recipe procedures with preferred selection. Validates that preferredId (if specified) exists in options.
 
 **Signature:**
 
 ```typescript
-recipeProcedures: Converter<IRecipeProcedures>
+recipeProcedures: Converter<IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>>
 ```

@@ -29,7 +29,10 @@ import {
   BaseIngredientId,
   BaseRecipeId,
   ID_SEPARATOR,
+  IHasId,
+  IIdsWithPreferred,
   IngredientId,
+  IOptionsWithPreferred,
   RecipeId,
   RecipeVersionId,
   RecipeVersionSpec,
@@ -174,4 +177,70 @@ export function getRecipeVersionRecipeId(id: RecipeVersionId): RecipeId {
  */
 export function getRecipeVersionSpec(id: RecipeVersionId): RecipeVersionSpec {
   return parsedRecipeVersionId.convert(id).orThrow().itemId;
+}
+
+// ============================================================================
+// Options with Preferred Helpers
+// ============================================================================
+
+/**
+ * Gets the preferred option from a collection, if one is specified and exists.
+ *
+ * @typeParam TOption - The option object type
+ * @typeParam TId - The ID type
+ * @param collection - The options collection
+ * @returns The preferred option, or undefined if not specified or not found
+ * @public
+ */
+export function getPreferred<TOption extends IHasId<TId>, TId extends string>(
+  collection: IOptionsWithPreferred<TOption, TId>
+): TOption | undefined {
+  if (collection.preferredId === undefined) {
+    return undefined;
+  }
+  return collection.options.find((opt) => opt.id === collection.preferredId);
+}
+
+/**
+ * Gets the preferred option from a collection, falling back to the first option.
+ *
+ * @typeParam TOption - The option object type
+ * @typeParam TId - The ID type
+ * @param collection - The options collection
+ * @returns The preferred option, or the first option, or undefined if empty
+ * @public
+ */
+export function getPreferredOrFirst<TOption extends IHasId<TId>, TId extends string>(
+  collection: IOptionsWithPreferred<TOption, TId>
+): TOption | undefined {
+  return getPreferred(collection) ?? collection.options[0];
+}
+
+/**
+ * Gets the preferred ID from a simple ID collection, if specified and valid.
+ *
+ * @typeParam TId - The ID type
+ * @param collection - The IDs collection
+ * @returns The preferred ID if it exists in the collection, otherwise undefined
+ * @public
+ */
+export function getPreferredId<TId extends string>(collection: IIdsWithPreferred<TId>): TId | undefined {
+  if (collection.preferredId === undefined) {
+    return undefined;
+  }
+  return collection.ids.includes(collection.preferredId) ? collection.preferredId : undefined;
+}
+
+/**
+ * Gets the preferred ID from a simple ID collection, falling back to the first ID.
+ *
+ * @typeParam TId - The ID type
+ * @param collection - The IDs collection
+ * @returns The preferred ID, or the first ID, or undefined if empty
+ * @public
+ */
+export function getPreferredIdOrFirst<TId extends string>(
+  collection: IIdsWithPreferred<TId>
+): TId | undefined {
+  return getPreferredId(collection) ?? collection.ids[0];
 }

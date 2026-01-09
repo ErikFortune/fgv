@@ -571,3 +571,61 @@ export const CONFECTION_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}
  */
 export const CONFECTION_VERSION_ID_PATTERN: RegExp =
   /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+
+// ============================================================================
+// Options with Preferred Interfaces
+// ============================================================================
+
+/**
+ * Base interface that option types must extend for use with IOptionsWithPreferred.
+ * Enables generic helpers that work with any option type.
+ * @typeParam TId - The type of the identifier
+ * @public
+ */
+export interface IHasId<TId extends string> {
+  readonly id: TId;
+}
+
+/**
+ * Collection of options (objects with IDs) with a preferred selection.
+ * Use when options are objects containing IDs plus additional metadata.
+ *
+ * @typeParam TOption - The option object type (must have an `id` property)
+ * @typeParam TId - The ID type for the preferred selection
+ * @public
+ */
+export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string> {
+  /** Available options */
+  readonly options: ReadonlyArray<TOption>;
+  /** ID of the preferred/recommended option */
+  readonly preferredId?: TId;
+}
+
+/**
+ * Collection of simple IDs with a preferred selection.
+ * Use when options are just IDs without additional metadata.
+ *
+ * @typeParam TId - The ID type
+ * @public
+ */
+export interface IIdsWithPreferred<TId extends string> {
+  /** Available option IDs */
+  readonly ids: ReadonlyArray<TId>;
+  /** The preferred/recommended ID */
+  readonly preferredId?: TId;
+}
+
+/**
+ * Generic reference type with an ID and optional notes.
+ * Use as base for mold refs, procedure refs, etc.
+ * Satisfies IHasId for use with IOptionsWithPreferred.
+ *
+ * @typeParam TId - The ID type
+ * @public
+ */
+export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
+  /** The referenced entity's ID */
+  readonly id: TId;
+  /** Optional notes specific to this reference */
+  readonly notes?: string;
+}

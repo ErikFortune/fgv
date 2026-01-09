@@ -2,80 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Recipes](./ts-chocolate.recipes.md) &gt; [IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)
 
-## Recipes.IRecipeProcedureRef interface
+## Recipes.IRecipeProcedureRef type
 
-Reference to a procedure that can be used with a recipe. Contains the procedure ID and a placeholder for future templating instructions.
+Reference to a procedure that can be used with a recipe. Contains the procedure ID and optional notes.
 
 **Signature:**
 
 ```typescript
-export interface IRecipeProcedureRef 
+export type IRecipeProcedureRef = IRefWithNotes<ProcedureId>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[notes?](./ts-chocolate.recipes.irecipeprocedureref.notes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional notes specific to using this procedure with the recipe
-
-
-</td></tr>
-<tr><td>
-
-[procedureId](./ts-chocolate.recipes.irecipeprocedureref.procedureid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ProcedureId](./ts-chocolate.procedureid.md)
-
-
-</td><td>
-
-Composite procedure ID (e.g., "common.ganache-cold-method")
-
-
-</td></tr>
-</tbody></table>
+**References:** [IRefWithNotes](./ts-chocolate.irefwithnotes.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)
 

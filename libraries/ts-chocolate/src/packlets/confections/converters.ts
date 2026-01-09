@@ -25,7 +25,7 @@
 
 import { Conversion, Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, IOptionsWithPreferred } from '../common';
+import { Converters as CommonConverters, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import {
   AnyFillingOption,
   ConfectionData,
@@ -38,9 +38,7 @@ import {
   IConfection,
   IConfectionDecoration,
   IConfectionMoldRef,
-  IConfectionMolds,
   IConfectionProcedureRef,
-  IConfectionProcedures,
   IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
@@ -120,14 +118,12 @@ export const anyFillingOption: Converter<AnyFillingOption> = Converters.oneOf<An
 ]);
 
 /**
- * Converter for filling options with preferred selection
+ * Converter for filling options with preferred selection.
+ * Validates that preferredId (if specified) exists in options.
  * @public
  */
 export const fillingOptions: Converter<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>> =
-  Converters.object<IOptionsWithPreferred<AnyFillingOption, FillingOptionId>>({
-    options: Converters.arrayOf(anyFillingOption),
-    preferredId: fillingOptionId.optional()
-  });
+  CommonConverters.optionsWithPreferred(anyFillingOption, fillingOptionId, 'fillingOptions');
 
 /**
  * Converter for IFillingSlot
@@ -170,19 +166,17 @@ export const additionalChocolate: Converter<IAdditionalChocolate> = Converters.o
  * Converter for IConfectionMoldRef
  * @public
  */
-export const confectionMoldRef: Converter<IConfectionMoldRef> = Converters.object<IConfectionMoldRef>({
-  moldId: CommonConverters.moldId,
-  notes: Converters.string.optional()
-});
+export const confectionMoldRef: Converter<IConfectionMoldRef> = CommonConverters.refWithNotes(
+  CommonConverters.moldId
+);
 
 /**
- * Converter for IConfectionMolds
+ * Converter for confection molds with preferred selection.
+ * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const confectionMolds: Converter<IConfectionMolds> = Converters.object<IConfectionMolds>({
-  molds: Converters.arrayOf(confectionMoldRef),
-  recommendedMoldId: CommonConverters.moldId.optional()
-});
+export const confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef, MoldId>> =
+  CommonConverters.optionsWithPreferred(confectionMoldRef, CommonConverters.moldId, 'confectionMolds');
 
 // ============================================================================
 // Procedure Converters
@@ -192,21 +186,21 @@ export const confectionMolds: Converter<IConfectionMolds> = Converters.object<IC
  * Converter for IConfectionProcedureRef
  * @public
  */
-export const confectionProcedureRef: Converter<IConfectionProcedureRef> =
-  Converters.object<IConfectionProcedureRef>({
-    procedureId: CommonConverters.procedureId,
-    notes: Converters.string.optional()
-  });
+export const confectionProcedureRef: Converter<IConfectionProcedureRef> = CommonConverters.refWithNotes(
+  CommonConverters.procedureId
+);
 
 /**
- * Converter for IConfectionProcedures
+ * Converter for confection procedures with preferred selection.
+ * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const confectionProcedures: Converter<IConfectionProcedures> =
-  Converters.object<IConfectionProcedures>({
-    procedures: Converters.arrayOf(confectionProcedureRef),
-    recommendedProcedureId: CommonConverters.procedureId.optional()
-  });
+export const confectionProcedures: Converter<IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>> =
+  CommonConverters.optionsWithPreferred(
+    confectionProcedureRef,
+    CommonConverters.procedureId,
+    'confectionProcedures'
+  );
 
 // ============================================================================
 // Dimension Converters

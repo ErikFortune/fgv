@@ -4,10 +4,10 @@
 
 ## Recipes.IRecipe.recipeProcedures property
 
-Optional procedures associated with this recipe. Contains available procedures and the recommended default.
+Optional procedures associated with this recipe. Contains available procedures and the preferred default.
 
 **Signature:**
 
 ```typescript
-readonly recipeProcedures?: IRecipeProcedures;
+readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
 ```

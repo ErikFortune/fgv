@@ -69,8 +69,8 @@ describe('RuntimeConfection', () => {
     ],
     decorations: [{ description: 'Gold leaf', preferred: true }, { description: 'Cocoa butter transfer' }],
     molds: {
-      molds: [{ moldId: 'common.dome-25mm' as MoldId }],
-      recommendedMoldId: 'common.dome-25mm' as MoldId
+      options: [{ id: 'common.dome-25mm' as MoldId }],
+      preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
       ingredientId: 'common.chocolate-dark-64' as IngredientId,
@@ -257,8 +257,8 @@ describe('RuntimeConfection', () => {
     });
 
     test('exposes molded bonbon-specific properties', () => {
-      expect(runtime.molds.molds).toHaveLength(1);
-      expect(runtime.molds.recommendedMoldId).toBe('common.dome-25mm');
+      expect(runtime.molds.options).toHaveLength(1);
+      expect(runtime.molds.preferredId).toBe('common.dome-25mm');
       expect(runtime.shellChocolate.ingredientId).toBe('common.chocolate-dark-64');
       expect(runtime.shellChocolate.alternateIngredientIds).toContain('common.chocolate-dark-70');
       expect(runtime.additionalChocolates).toHaveLength(1);
@@ -381,7 +381,7 @@ describe('RuntimeConfection', () => {
       goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
       yield: { count: 12 },
       molds: {
-        molds: [{ moldId: 'common.dome-25mm' as MoldId }]
+        options: [{ id: 'common.dome-25mm' as MoldId }]
       },
       shellChocolate: {
         ingredientId: 'common.chocolate-dark-64' as IngredientId

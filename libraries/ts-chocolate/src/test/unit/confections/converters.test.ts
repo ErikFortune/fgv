@@ -54,8 +54,8 @@ describe('Confections converters', () => {
       }
     ],
     molds: {
-      molds: [{ moldId: 'common.dome-25mm' }],
-      recommendedMoldId: 'common.dome-25mm'
+      options: [{ id: 'common.dome-25mm' }],
+      preferredId: 'common.dome-25mm'
     },
     shellChocolate: {
       ingredientId: 'cacao-barry.guayaquil-64',
@@ -227,33 +227,43 @@ describe('Confections converters', () => {
   // ============================================================================
 
   describe('confectionMolds', () => {
-    test('converts valid molds with recommended', () => {
+    test('converts valid molds with preferredId', () => {
       const input = {
-        molds: [{ moldId: 'common.dome-25mm', notes: 'Primary mold' }],
-        recommendedMoldId: 'common.dome-25mm'
+        options: [{ id: 'common.dome-25mm', notes: 'Primary mold' }],
+        preferredId: 'common.dome-25mm'
       };
       expect(ConfectionConverters.confectionMolds.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.molds).toHaveLength(1);
-        expect(result.molds[0].moldId).toBe('common.dome-25mm');
-        expect(result.molds[0].notes).toBe('Primary mold');
-        expect(result.recommendedMoldId).toBe('common.dome-25mm');
+        expect(result.options).toHaveLength(1);
+        expect(result.options[0].id).toBe('common.dome-25mm');
+        expect(result.options[0].notes).toBe('Primary mold');
+        expect(result.preferredId).toBe('common.dome-25mm');
       });
     });
 
-    test('converts valid molds without recommended', () => {
+    test('converts valid molds without preferredId', () => {
       const input = {
-        molds: [{ moldId: 'common.dome-25mm' }]
+        options: [{ id: 'common.dome-25mm' }]
       };
       expect(ConfectionConverters.confectionMolds.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.molds).toHaveLength(1);
-        expect(result.recommendedMoldId).toBeUndefined();
+        expect(result.options).toHaveLength(1);
+        expect(result.preferredId).toBeUndefined();
       });
     });
 
-    test('fails for empty molds array', () => {
-      const input = { molds: [] };
+    test('fails for empty options array', () => {
+      const input = { options: [] };
       // Empty array is valid - no molds required
       expect(ConfectionConverters.confectionMolds.convert(input)).toSucceed();
+    });
+
+    test('fails when preferredId is not in options', () => {
+      const input = {
+        options: [{ id: 'common.dome-25mm' }],
+        preferredId: 'common.nonexistent-mold'
+      };
+      expect(ConfectionConverters.confectionMolds.convert(input)).toFailWith(
+        /confectionMolds: preferredId 'common.nonexistent-mold' not found in options/
+      );
     });
   });
 
@@ -648,6 +658,22 @@ describe('Confections converters', () => {
       const input = { slotId: 'center', name: 'Center' };
       expect(ConfectionConverters.fillingSlot.convert(input)).toFail();
     });
+
+    test('fails when preferredId is not in options', () => {
+      const input = {
+        slotId: 'center',
+        filling: {
+          options: [
+            { type: 'recipe', id: 'common.dark-ganache-classic' },
+            { type: 'recipe', id: 'common.milk-ganache' }
+          ],
+          preferredId: 'common.nonexistent-recipe'
+        }
+      };
+      expect(ConfectionConverters.fillingSlot.convert(input)).toFailWith(
+        /fillingOptions: preferredId 'common.nonexistent-recipe' not found in options/
+      );
+    });
   });
 
   // ============================================================================
@@ -716,19 +742,26 @@ describe('Confections converters', () => {
   // ============================================================================
 
   describe('confectionProcedures', () => {
-    test('converts valid procedures', () => {
+    test('converts valid procedures with preferredId', () => {
       const input = {
-        procedures: [
-          { procedureId: 'common.temper-dark', notes: 'For shells' },
-          { procedureId: 'common.fill-molds' }
-        ],
-        recommendedProcedureId: 'common.temper-dark'
+        options: [{ id: 'common.temper-dark', notes: 'For shells' }, { id: 'common.fill-molds' }],
+        preferredId: 'common.temper-dark'
       };
       expect(ConfectionConverters.confectionProcedures.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.procedures).toHaveLength(2);
-        expect(result.procedures[0].notes).toBe('For shells');
-        expect(result.recommendedProcedureId).toBe('common.temper-dark');
+        expect(result.options).toHaveLength(2);
+        expect(result.options[0].notes).toBe('For shells');
+        expect(result.preferredId).toBe('common.temper-dark');
       });
+    });
+
+    test('fails when preferredId is not in options', () => {
+      const input = {
+        options: [{ id: 'common.temper-dark' }],
+        preferredId: 'common.nonexistent-procedure'
+      };
+      expect(ConfectionConverters.confectionProcedures.convert(input)).toFailWith(
+        /confectionProcedures: preferredId 'common.nonexistent-procedure' not found in options/
+      );
     });
   });
 });

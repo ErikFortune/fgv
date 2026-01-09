@@ -4,10 +4,10 @@
 
 ## Recipes.IRecipe.recipeMolds property
 
-Optional molds associated with this recipe. Contains available molds and the recommended default.
+Optional molds associated with this recipe. Contains available molds and the preferred default.
 
 **Signature:**
 
 ```typescript
-readonly recipeMolds?: IRecipeMolds;
+readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
 ```

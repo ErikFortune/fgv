@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly recipeMolds?: IRecipeMolds;
+readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
 ```

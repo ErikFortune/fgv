@@ -41,7 +41,7 @@ describe('ConfectionsLibrary', () => {
     goldenVersionSpec: '2026-01-01-01',
     yield: { count: 24 },
     molds: {
-      molds: [{ moldId: 'common.dome-25mm' }]
+      options: [{ id: 'common.dome-25mm' }]
     },
     shellChocolate: {
       ingredientId: 'common.chocolate-dark-64'
@@ -245,7 +245,7 @@ describe('ConfectionsLibrary', () => {
         if (isMoldedBonBon(confection)) {
           expect(confection.molds).toBeDefined();
           expect(confection.shellChocolate).toBeDefined();
-          expect(confection.molds.molds[0].moldId).toBe('common.dome-25mm');
+          expect(confection.molds.options[0].id).toBe('common.dome-25mm');
         } else {
           fail('Expected molded bonbon');
         }

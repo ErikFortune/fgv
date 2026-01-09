@@ -70,12 +70,12 @@ The base confection ID within the source.
 
 </td><td>
 
-[IConfectionProcedures](./ts-chocolate.confections.iconfectionprocedures.md)
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional procedures
+_(Optional)_ Optional procedures with preferred selection
 
 
 </td></tr>

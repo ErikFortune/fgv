@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters } from '@fgv/ts-utils';
+import { Converter, Converters, Result } from '@fgv/ts-utils';
 
 import {
   AdditionalChocolatePurpose,
@@ -47,8 +47,12 @@ import {
   FluidityStars,
   Grams,
   ID_SEPARATOR,
+  IHasId,
+  IIdsWithPreferred,
   IngredientCategory,
   IngredientId,
+  IOptionsWithPreferred,
+  IRefWithNotes,
   JournalId,
   Millimeters,
   Minutes,
@@ -80,6 +84,7 @@ import {
   allRecipeCategories,
   allWeightUnits
 } from './model';
+import { validateIdsWithPreferred, validateOptionsWithPreferred } from './validation';
 import {
   toBaseConfectionId,
   toBaseIngredientId,
@@ -477,3 +482,80 @@ export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> =
  * @public
  */
 export const recipeCategory: Converter<RecipeCategory> = Converters.enumeratedValue(allRecipeCategories);
+
+// ============================================================================
+// Options with Preferred Converters
+// ============================================================================
+
+/**
+ * Creates a converter for {@link IOptionsWithPreferred} collections.
+ * Validates that preferredId (if specified) exists in the options array.
+ *
+ * @typeParam TOption - The option object type (must have an `id` property)
+ * @typeParam TId - The ID type for the preferred selection
+ * @param optionConverter - Converter for individual option objects
+ * @param idConverter - Converter for the ID type (used for preferredId)
+ * @param context - Optional context string for error messages
+ * @returns A converter that produces validated IOptionsWithPreferred collections
+ * @public
+ */
+export function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(
+  optionConverter: Converter<TOption>,
+  idConverter: Converter<TId>,
+  context?: string
+): Converter<IOptionsWithPreferred<TOption, TId>> {
+  return Converters.generic<IOptionsWithPreferred<TOption, TId>>(
+    (from: unknown): Result<IOptionsWithPreferred<TOption, TId>> => {
+      const baseConverter = Converters.object<IOptionsWithPreferred<TOption, TId>>({
+        options: Converters.arrayOf(optionConverter),
+        preferredId: idConverter.optional()
+      });
+
+      return baseConverter.convert(from).onSuccess((collection) => {
+        return validateOptionsWithPreferred(collection, context);
+      });
+    }
+  );
+}
+
+/**
+ * Creates a converter for {@link IIdsWithPreferred} collections.
+ * Validates that preferredId (if specified) exists in the ids array.
+ *
+ * @typeParam TId - The ID type
+ * @param idConverter - Converter for individual IDs
+ * @param context - Optional context string for error messages
+ * @returns A converter that produces validated IIdsWithPreferred collections
+ * @public
+ */
+export function idsWithPreferred<TId extends string>(
+  idConverter: Converter<TId>,
+  context?: string
+): Converter<IIdsWithPreferred<TId>> {
+  return Converters.generic<IIdsWithPreferred<TId>>((from: unknown): Result<IIdsWithPreferred<TId>> => {
+    const baseConverter = Converters.object<IIdsWithPreferred<TId>>({
+      ids: Converters.arrayOf(idConverter),
+      preferredId: idConverter.optional()
+    });
+
+    return baseConverter.convert(from).onSuccess((collection) => {
+      return validateIdsWithPreferred(collection, context);
+    });
+  });
+}
+
+/**
+ * Creates a converter for {@link IRefWithNotes} objects.
+ * A simple reference with an ID and optional notes.
+ *
+ * @typeParam TId - The ID type
+ * @param idConverter - Converter for the ID type
+ * @returns A converter that produces IRefWithNotes objects
+ * @public
+ */
+export function refWithNotes<TId extends string>(idConverter: Converter<TId>): Converter<IRefWithNotes<TId>> {
+  return Converters.object<IRefWithNotes<TId>>({
+    id: idConverter,
+    notes: Converters.string.optional()
+  });
+}

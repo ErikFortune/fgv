@@ -4,10 +4,10 @@
 
 ## Confections.IMoldedBonBon.molds property
 
-Required molds specification
+Required molds with preferred selection
 
 **Signature:**
 
 ```typescript
-readonly molds: IConfectionMolds;
+readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
 ```

@@ -4,10 +4,10 @@
 
 ## Recipes.Converters.recipeMolds variable
 
-Converter for [IRecipeMolds](./ts-chocolate.recipes.irecipemolds.md)
+Converter for recipe molds with preferred selection. Validates that preferredId (if specified) exists in options.
 
 **Signature:**
 
 ```typescript
-recipeMolds: Converter<IRecipeMolds>
+recipeMolds: Converter<IOptionsWithPreferred<IRecipeMoldRef, MoldId>>
 ```

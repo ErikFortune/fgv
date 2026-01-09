@@ -84,8 +84,8 @@ describe('ConfectionEditingSession', () => {
     ],
     decorations: [{ description: 'Gold leaf', preferred: true }],
     molds: {
-      molds: [{ moldId: 'common.dome-25mm' as MoldId }, { moldId: 'common.square-20mm' as MoldId }],
-      recommendedMoldId: 'common.dome-25mm' as MoldId
+      options: [{ id: 'common.dome-25mm' as MoldId }, { id: 'common.square-20mm' as MoldId }],
+      preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
       ingredientId: 'common.chocolate-dark-64' as IngredientId,
@@ -98,11 +98,11 @@ describe('ConfectionEditingSession', () => {
       }
     ],
     confectionProcedures: {
-      procedures: [
-        { procedureId: 'common.molded-bonbon-standard' as ProcedureId },
-        { procedureId: 'common.molded-bonbon-double-shell' as ProcedureId }
+      options: [
+        { id: 'common.molded-bonbon-standard' as ProcedureId },
+        { id: 'common.molded-bonbon-double-shell' as ProcedureId }
       ],
-      recommendedProcedureId: 'common.molded-bonbon-standard' as ProcedureId
+      preferredId: 'common.molded-bonbon-standard' as ProcedureId
     },
     versions: [
       {
@@ -696,7 +696,7 @@ describe('ConfectionEditingSession', () => {
       const emptyMoldsData: IMoldedBonBon = {
         ...moldedBonBonData,
         molds: {
-          molds: [] // Empty array means no initial mold
+          options: [] // Empty array means no initial mold
         }
       };
       const confection = RuntimeMoldedBonBon.create(
@@ -717,20 +717,20 @@ describe('ConfectionEditingSession', () => {
       expect(session.mold?.status).toBe('modified');
     });
 
-    test('initializes mold from first in array when no recommended', () => {
-      // Create a bonbon with molds but no recommendedMoldId
-      // This covers the recommendedMoldId ?? molds.molds[0]?.moldId branch
-      const noRecommendedMoldData: IMoldedBonBon = {
+    test('initializes mold from first in array when no preferred', () => {
+      // Create a bonbon with molds but no preferredId
+      // This covers the preferredId ?? molds.options[0]?.id branch
+      const noPreferredMoldData: IMoldedBonBon = {
         ...moldedBonBonData,
         molds: {
-          molds: [{ moldId: 'common.square-20mm' as MoldId }]
-          // No recommendedMoldId
+          options: [{ id: 'common.square-20mm' as MoldId }]
+          // No preferredId
         }
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
         'test.bonbon-no-rec-mold' as ConfectionId,
-        noRecommendedMoldData
+        noPreferredMoldData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
@@ -897,7 +897,7 @@ describe('ConfectionEditingSession', () => {
       const emptyProceduresData: IMoldedBonBon = {
         ...moldedBonBonData,
         confectionProcedures: {
-          procedures: [] // Empty array means no initial procedure
+          options: [] // Empty array means no initial procedure
         }
       };
       const confection = RuntimeMoldedBonBon.create(
@@ -918,20 +918,20 @@ describe('ConfectionEditingSession', () => {
       expect(session.procedure?.status).toBe('modified');
     });
 
-    test('initializes procedure from first in array when no recommended', () => {
-      // Create a bonbon with procedures but no recommendedProcedureId
-      // This covers the recommendedProcedureId ?? procedures.procedures[0]?.procedureId branch
-      const noRecommendedProcData: IMoldedBonBon = {
+    test('initializes procedure from first in array when no preferred', () => {
+      // Create a bonbon with procedures but no preferredId
+      // This covers the preferredId ?? procedures.options[0]?.id branch
+      const noPreferredProcData: IMoldedBonBon = {
         ...moldedBonBonData,
         confectionProcedures: {
-          procedures: [{ procedureId: 'common.molded-bonbon-double-shell' as ProcedureId }]
-          // No recommendedProcedureId
+          options: [{ id: 'common.molded-bonbon-double-shell' as ProcedureId }]
+          // No preferredId
         }
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
         'test.bonbon-no-rec-proc' as ConfectionId,
-        noRecommendedProcData
+        noPreferredProcData
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();

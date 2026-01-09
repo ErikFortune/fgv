@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeMoldedBonBon.molds property
 
-Molds specification
+Molds with preferred selection
 
 **Signature:**
 
 ```typescript
-get molds(): IConfectionMolds;
+get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
 ```

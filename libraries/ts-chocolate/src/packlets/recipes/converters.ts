@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Failure, Result } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters } from '../common';
+import { Converters as CommonConverters, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import {
   allRatingCategories,
   allRecipeCategories,
@@ -34,9 +34,7 @@ import {
   IRecipeDerivation,
   IRecipeIngredient,
   IRecipeMoldRef,
-  IRecipeMolds,
   IRecipeProcedureRef,
-  IRecipeProcedures,
   IRecipeVersion,
   IScaledRecipeIngredient,
   IScaledRecipeVersion,
@@ -95,37 +93,33 @@ export const recipeDerivation: Converter<IRecipeDerivation> = Converters.object<
  * Converter for {@link Recipes.IRecipeProcedureRef | IRecipeProcedureRef}
  * @public
  */
-export const recipeProcedureRef: Converter<IRecipeProcedureRef> = Converters.object<IRecipeProcedureRef>({
-  procedureId: CommonConverters.procedureId,
-  notes: Converters.string.optional()
-});
+export const recipeProcedureRef: Converter<IRecipeProcedureRef> = CommonConverters.refWithNotes(
+  CommonConverters.procedureId
+);
 
 /**
- * Converter for {@link Recipes.IRecipeProcedures | IRecipeProcedures}
+ * Converter for recipe procedures with preferred selection.
+ * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const recipeProcedures: Converter<IRecipeProcedures> = Converters.object<IRecipeProcedures>({
-  procedures: Converters.arrayOf(recipeProcedureRef),
-  recommendedProcedureId: CommonConverters.procedureId.optional()
-});
+export const recipeProcedures: Converter<IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>> =
+  CommonConverters.optionsWithPreferred(recipeProcedureRef, CommonConverters.procedureId, 'recipeProcedures');
 
 /**
  * Converter for {@link Recipes.IRecipeMoldRef | IRecipeMoldRef}
  * @public
  */
-export const recipeMoldRef: Converter<IRecipeMoldRef> = Converters.object<IRecipeMoldRef>({
-  moldId: CommonConverters.moldId,
-  notes: Converters.string.optional()
-});
+export const recipeMoldRef: Converter<IRecipeMoldRef> = CommonConverters.refWithNotes(
+  CommonConverters.moldId
+);
 
 /**
- * Converter for {@link Recipes.IRecipeMolds | IRecipeMolds}
+ * Converter for recipe molds with preferred selection.
+ * Validates that preferredId (if specified) exists in options.
  * @public
  */
-export const recipeMolds: Converter<IRecipeMolds> = Converters.object<IRecipeMolds>({
-  molds: Converters.arrayOf(recipeMoldRef),
-  recommendedMoldId: CommonConverters.moldId.optional()
-});
+export const recipeMolds: Converter<IOptionsWithPreferred<IRecipeMoldRef, MoldId>> =
+  CommonConverters.optionsWithPreferred(recipeMoldRef, CommonConverters.moldId, 'recipeMolds');
 
 /**
  * Converter for {@link Recipes.IRecipeVersion | IRecipeVersion}.

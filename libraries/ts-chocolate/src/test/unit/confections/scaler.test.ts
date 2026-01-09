@@ -55,8 +55,8 @@ describe('Confection Scaler', () => {
       weightPerPiece: 12 as Grams
     },
     molds: {
-      molds: [{ moldId: 'common.dome-25mm' as MoldId }],
-      recommendedMoldId: 'common.dome-25mm' as MoldId
+      options: [{ id: 'common.dome-25mm' as MoldId }],
+      preferredId: 'common.dome-25mm' as MoldId
     },
     shellChocolate: {
       ingredientId: 'common.chocolate-dark-64' as IngredientId

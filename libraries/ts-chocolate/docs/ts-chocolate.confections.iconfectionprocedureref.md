@@ -2,80 +2,14 @@
 
 [Home](./index.md) &gt; [@fgv/ts-chocolate](./ts-chocolate.md) &gt; [Confections](./ts-chocolate.confections.md) &gt; [IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)
 
-## Confections.IConfectionProcedureRef interface
+## Confections.IConfectionProcedureRef type
 
-Reference to a procedure that can be used with a confection
+Reference to a procedure that can be used with a confection. Satisfies IHasId for use with IOptionsWithPreferred.
 
 **Signature:**
 
 ```typescript
-export interface IConfectionProcedureRef 
+export type IConfectionProcedureRef = IRefWithNotes<ProcedureId>;
 ```
-
-## Properties
-
-<table><thead><tr><th>
-
-Property
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Type
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[notes?](./ts-chocolate.confections.iconfectionprocedureref.notes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-_(Optional)_ Optional notes specific to using this procedure
-
-
-</td></tr>
-<tr><td>
-
-[procedureId](./ts-chocolate.confections.iconfectionprocedureref.procedureid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ProcedureId](./ts-chocolate.procedureid.md)
-
-
-</td><td>
-
-Composite procedure ID
-
-
-</td></tr>
-</tbody></table>
+**References:** [IRefWithNotes](./ts-chocolate.irefwithnotes.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)
 

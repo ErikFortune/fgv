@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly recipeProcedures?: IRecipeProcedures;
+readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
 ```

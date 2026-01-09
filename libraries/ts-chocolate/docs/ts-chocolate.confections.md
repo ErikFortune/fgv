@@ -233,50 +233,6 @@ Decoration specification for a confection
 </td></tr>
 <tr><td>
 
-[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)
-
-
-</td><td>
-
-Reference to a mold used for a confection
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionMolds](./ts-chocolate.confections.iconfectionmolds.md)
-
-
-</td><td>
-
-Collection of molds associated with a confection
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)
-
-
-</td><td>
-
-Reference to a procedure that can be used with a confection
-
-
-</td></tr>
-<tr><td>
-
-[IConfectionProcedures](./ts-chocolate.confections.iconfectionprocedures.md)
-
-
-</td><td>
-
-Collection of procedures associated with a confection
-
-
-</td></tr>
-<tr><td>
-
 [IConfectionScaleOptions](./ts-chocolate.confections.iconfectionscaleoptions.md)
 
 
@@ -553,6 +509,28 @@ Discriminator for filling option types
 </td><td>
 
 File tree source for confection data.
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)
+
+
+</td><td>
+
+Reference to a mold used for a confection. Satisfies IHasId for use with IOptionsWithPreferred.
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)
+
+
+</td><td>
+
+Reference to a procedure that can be used with a confection. Satisfies IHasId for use with IOptionsWithPreferred.
 
 
 </td></tr>
