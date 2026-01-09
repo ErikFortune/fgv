@@ -4,9 +4,9 @@
 
 ## Journal.JournalLibrary class
 
-A library for managing cooking [journal records](./ts-chocolate.journal.ijournalrecord.md)<!-- -->.
+A library for managing cooking [journal records](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->.
 
-Provides: - Storage for journal records indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by recipe ID (all journals for a recipe) - Lookup by version ID (all journals for a specific version) - Add/retrieve journal records
+Provides: - Storage for journal records indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by recipe ID (all journals for a recipe) - Lookup by recipe version ID (all journals for a specific recipe version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal records
 
 **Signature:**
 
@@ -88,7 +88,21 @@ Description
 
 </td><td>
 
-Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.journal.anyjournalrecord.md) to the library. Accepts both recipe and confection journal records.
+
+
+</td></tr>
+<tr><td>
+
+[addRecipeJournal(journal)](./ts-chocolate.journal.journallibrary.addrecipejournal.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a recipe journal record to the library.
 
 
 </td></tr>
@@ -160,7 +174,35 @@ Gets all journal records in the library
 
 </td><td>
 
-Gets a [journal record](./ts-chocolate.journal.ijournalrecord.md) by its ID
+Gets a [journal record](./ts-chocolate.journal.anyjournalrecord.md) by its ID
+
+
+</td></tr>
+<tr><td>
+
+[getJournalsForConfection(confectionId)](./ts-chocolate.journal.journallibrary.getjournalsforconfection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all [confection journal records](./ts-chocolate.journal.iconfectionjournalrecord.md) for a confection (across all versions)
+
+
+</td></tr>
+<tr><td>
+
+[getJournalsForConfectionVersion(versionId)](./ts-chocolate.journal.journallibrary.getjournalsforconfectionversion.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all [confection journal records](./ts-chocolate.journal.iconfectionjournalrecord.md) for a specific confection version
 
 
 </td></tr>
@@ -174,13 +216,13 @@ Gets a [journal record](./ts-chocolate.journal.ijournalrecord.md) by its ID
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recipe (across all versions)
+Gets all [recipe journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a recipe (across all versions)
 
 
 </td></tr>
 <tr><td>
 
-[getJournalsForVersion(versionId)](./ts-chocolate.journal.journallibrary.getjournalsforversion.md)
+[getJournalsForRecipeVersion(versionId)](./ts-chocolate.journal.journallibrary.getjournalsforrecipeversion.md)
 
 
 </td><td>
@@ -188,7 +230,7 @@ Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recip
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a specific recipe version
+Gets all [recipe journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a specific recipe version
 
 
 </td></tr>
@@ -216,7 +258,7 @@ Checks if a journal with the given ID exists in the library.
 
 </td><td>
 
-Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped.
+Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts both recipe and confection journal records.
 
 
 </td></tr>
@@ -230,7 +272,7 @@ Imports journal records from an array. Validates each journal and adds it to the
 
 </td><td>
 
-Removes a [journal record](./ts-chocolate.journal.ijournalrecord.md) from the library
+Removes a [journal record](./ts-chocolate.journal.anyjournalrecord.md) from the library
 
 
 </td></tr>

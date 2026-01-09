@@ -4,12 +4,12 @@
 
 ## Runtime.ChocolateLibrary.addJournal() method
 
-Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.journal.irecipejournalrecord.md) to the library
 
 **Signature:**
 
 ```typescript
-addJournal(journal: IJournalRecord): Result<JournalId>;
+addJournal(journal: IRecipeJournalRecord): Result<JournalId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ journal
 
 </td><td>
 
-[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)
+[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)
 
 
 </td><td>

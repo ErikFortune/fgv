@@ -9,5 +9,5 @@ The full journal record if one was created. Callers can use this to persist the 
 **Signature:**
 
 ```typescript
-readonly journalRecord?: IJournalRecord;
+readonly journalRecord?: IRecipeJournalRecord;
 ```

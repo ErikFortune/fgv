@@ -20,8 +20,20 @@
 
 import '@fgv/ts-utils-jest';
 
-import { JournalLibrary, IJournalRecord } from '../../../packlets/journal';
-import { Grams, JournalId, RecipeVersionId } from '../../../packlets/common';
+import {
+  JournalLibrary,
+  IRecipeJournalRecord,
+  IConfectionJournalRecord,
+  isRecipeJournalRecord,
+  isConfectionJournalRecord
+} from '../../../packlets/journal';
+import {
+  ConfectionId,
+  ConfectionVersionId,
+  Grams,
+  JournalId,
+  RecipeVersionId
+} from '../../../packlets/common';
 
 describe('JournalLibrary', () => {
   // ============================================================================
@@ -34,7 +46,8 @@ describe('JournalLibrary', () => {
     date: string,
     targetWeight: number = 300,
     scaleFactor: number = 2
-  ): IJournalRecord => ({
+  ): IRecipeJournalRecord => ({
+    journalType: 'recipe',
     journalId: id as JournalId,
     recipeVersionId: versionId as RecipeVersionId,
     date,
@@ -46,6 +59,42 @@ describe('JournalLibrary', () => {
   const journal2 = makeJournal('2026-01-15-100000-00000002', 'source.recipe-a@2026-01-01-01', '2026-01-16');
   const journal3 = makeJournal('2026-01-15-100000-00000003', 'source.recipe-a@2026-01-02-01', '2026-01-17');
   const journal4 = makeJournal('journal-004', 'source.recipe-b@2026-01-01-01', '2026-01-18');
+
+  // Helper to create confection journal records
+  const makeConfectionJournal = (
+    id: string,
+    versionId: string,
+    date: string,
+    yieldCount: number = 24
+  ): IConfectionJournalRecord => ({
+    journalType: 'confection',
+    journalId: id as JournalId,
+    confectionVersionId: versionId as ConfectionVersionId,
+    date,
+    yieldCount
+  });
+
+  // Use valid JournalId format: YYYY-MM-DD-HHMMSS-xxxxxxxx
+  const confectionJournal1 = makeConfectionJournal(
+    '2026-01-20-100000-c0000001',
+    'source.bonbon-a@2026-01-01-01',
+    '2026-01-20'
+  );
+  const confectionJournal2 = makeConfectionJournal(
+    '2026-01-21-100000-c0000002',
+    'source.bonbon-a@2026-01-01-01',
+    '2026-01-21'
+  );
+  const confectionJournal3 = makeConfectionJournal(
+    '2026-01-22-100000-c0000003',
+    'source.bonbon-a@2026-01-02-01',
+    '2026-01-22'
+  );
+  const confectionJournal4 = makeConfectionJournal(
+    '2026-01-23-100000-c0000004',
+    'source.bonbon-b@2026-01-01-01',
+    '2026-01-23'
+  );
 
   // ============================================================================
   // Factory Method Tests
@@ -82,7 +131,10 @@ describe('JournalLibrary', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       expect(lib.getJournal('2026-01-15-100000-00000001' as JournalId)).toSucceedAndSatisfy((result) => {
         expect(result.journalId).toBe('2026-01-15-100000-00000001');
-        expect(result.recipeVersionId).toBe('source.recipe-a@2026-01-01-01');
+        expect(isRecipeJournalRecord(result)).toBe(true);
+        if (isRecipeJournalRecord(result)) {
+          expect(result.recipeVersionId).toBe('source.recipe-a@2026-01-01-01');
+        }
       });
     });
 
@@ -128,13 +180,13 @@ describe('JournalLibrary', () => {
   // getJournalsForVersion Tests
   // ============================================================================
 
-  describe('getJournalsForVersion', () => {
+  describe('getJournalsForRecipeVersion', () => {
     test('returns journals for specific version', () => {
       const lib = JournalLibrary.create({
         journals: [journal1, journal2, journal3, journal4]
       }).orThrow();
 
-      const result = lib.getJournalsForVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
+      const result = lib.getJournalsForRecipeVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
       expect(result).toHaveLength(2);
       expect(result.map((j) => j.journalId)).toEqual(
         expect.arrayContaining(['2026-01-15-100000-00000001', '2026-01-15-100000-00000002'])
@@ -143,7 +195,7 @@ describe('JournalLibrary', () => {
 
     test('returns empty array when no journals for version', () => {
       const lib = JournalLibrary.create({ journals: [journal1] }).orThrow();
-      const result = lib.getJournalsForVersion('source.recipe-a@2026-12-31-99' as RecipeVersionId);
+      const result = lib.getJournalsForRecipeVersion('source.recipe-a@2026-12-31-99' as RecipeVersionId);
       expect(result).toHaveLength(0);
     });
   });
@@ -196,7 +248,7 @@ describe('JournalLibrary', () => {
       lib.addJournal(journal1).orThrow();
       lib.addJournal(journal2).orThrow();
 
-      const result = lib.getJournalsForVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
+      const result = lib.getJournalsForRecipeVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
       expect(result).toHaveLength(2);
     });
 
@@ -253,7 +305,7 @@ describe('JournalLibrary', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       lib.removeJournal('2026-01-15-100000-00000001' as JournalId).orThrow();
 
-      const result = lib.getJournalsForVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
+      const result = lib.getJournalsForRecipeVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
       expect(result).toHaveLength(1);
       expect(result[0].journalId).toBe('2026-01-15-100000-00000002');
     });
@@ -274,7 +326,7 @@ describe('JournalLibrary', () => {
       lib.removeJournal('journal-004' as JournalId).orThrow();
 
       // Verify no journals for that version
-      const result = lib.getJournalsForVersion('source.recipe-b@2026-01-01-01' as RecipeVersionId);
+      const result = lib.getJournalsForRecipeVersion('source.recipe-b@2026-01-01-01' as RecipeVersionId);
       expect(result).toHaveLength(0);
     });
 
@@ -374,7 +426,7 @@ describe('JournalLibrary', () => {
     test('clears version index', () => {
       const lib = JournalLibrary.create({ journals: [journal1, journal2] }).orThrow();
       lib.clear();
-      const result = lib.getJournalsForVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
+      const result = lib.getJournalsForRecipeVersion('source.recipe-a@2026-01-01-01' as RecipeVersionId);
       expect(result).toHaveLength(0);
     });
 
@@ -392,7 +444,8 @@ describe('JournalLibrary', () => {
 
   describe('edge cases', () => {
     test('handles journal with notes and entries', () => {
-      const journalWithDetails: IJournalRecord = {
+      const journalWithDetails: IRecipeJournalRecord = {
+        journalType: 'recipe',
         journalId: '2026-01-15-100000-0000000a' as JournalId,
         recipeVersionId: 'source.recipe@2026-01-01-01' as RecipeVersionId,
         date: '2026-01-20',
@@ -442,6 +495,274 @@ describe('JournalLibrary', () => {
       expect(
         lib.getJournalsForRecipe('other.recipe-c' as import('../../../packlets/common').RecipeId)
       ).toHaveLength(1);
+    });
+  });
+
+  // ============================================================================
+  // Confection Journal Tests
+  // ============================================================================
+
+  describe('confection journals', () => {
+    describe('create with confection journals', () => {
+      test('creates library with initial confection journals', () => {
+        expect(
+          JournalLibrary.create({ journals: [confectionJournal1, confectionJournal2] })
+        ).toSucceedAndSatisfy((lib) => {
+          expect(lib.size).toBe(2);
+          expect(lib.getAllJournals()).toHaveLength(2);
+        });
+      });
+
+      test('creates library with mixed journal types', () => {
+        expect(JournalLibrary.create({ journals: [journal1, confectionJournal1] })).toSucceedAndSatisfy(
+          (lib) => {
+            expect(lib.size).toBe(2);
+          }
+        );
+      });
+    });
+
+    describe('getJournal with confection journals', () => {
+      test('returns confection journal when found', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal1] }).orThrow();
+        expect(lib.getJournal('2026-01-20-100000-c0000001' as JournalId)).toSucceedAndSatisfy((result) => {
+          expect(result.journalId).toBe('2026-01-20-100000-c0000001');
+          expect(isConfectionJournalRecord(result)).toBe(true);
+          if (isConfectionJournalRecord(result)) {
+            expect(result.confectionVersionId).toBe('source.bonbon-a@2026-01-01-01');
+          }
+        });
+      });
+    });
+
+    describe('getJournalsForConfection', () => {
+      test('returns all journals for a confection', () => {
+        const lib = JournalLibrary.create({
+          journals: [confectionJournal1, confectionJournal2, confectionJournal3, confectionJournal4]
+        }).orThrow();
+
+        const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
+        expect(result).toHaveLength(3);
+        expect(result.map((j) => j.journalId)).toEqual(
+          expect.arrayContaining([
+            '2026-01-20-100000-c0000001',
+            '2026-01-21-100000-c0000002',
+            '2026-01-22-100000-c0000003'
+          ])
+        );
+      });
+
+      test('returns empty array when no journals for confection', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal1] }).orThrow();
+        const result = lib.getJournalsForConfection('source.non-existent' as ConfectionId);
+        expect(result).toHaveLength(0);
+      });
+
+      test('does not return recipe journals for confection lookup', () => {
+        const lib = JournalLibrary.create({ journals: [journal1, confectionJournal1] }).orThrow();
+        const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
+        expect(result).toHaveLength(1);
+        expect(result[0].journalId).toBe('2026-01-20-100000-c0000001');
+      });
+    });
+
+    describe('getJournalsForConfectionVersion', () => {
+      test('returns journals for specific confection version', () => {
+        const lib = JournalLibrary.create({
+          journals: [confectionJournal1, confectionJournal2, confectionJournal3, confectionJournal4]
+        }).orThrow();
+
+        const result = lib.getJournalsForConfectionVersion(
+          'source.bonbon-a@2026-01-01-01' as ConfectionVersionId
+        );
+        expect(result).toHaveLength(2);
+        expect(result.map((j) => j.journalId)).toEqual(
+          expect.arrayContaining(['2026-01-20-100000-c0000001', '2026-01-21-100000-c0000002'])
+        );
+      });
+
+      test('returns empty array when no journals for version', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal1] }).orThrow();
+        const result = lib.getJournalsForConfectionVersion(
+          'source.bonbon-a@2026-12-31-99' as ConfectionVersionId
+        );
+        expect(result).toHaveLength(0);
+      });
+    });
+
+    describe('addJournal with confection journals', () => {
+      test('adds valid confection journal', () => {
+        const lib = JournalLibrary.create().orThrow();
+        expect(lib.addJournal(confectionJournal1)).toSucceedWith('2026-01-20-100000-c0000001' as JournalId);
+        expect(lib.size).toBe(1);
+        expect(lib.getJournal('2026-01-20-100000-c0000001' as JournalId)).toSucceed();
+      });
+
+      test('indexes confection journal by confection ID', () => {
+        const lib = JournalLibrary.create().orThrow();
+        lib.addJournal(confectionJournal1).orThrow();
+        lib.addJournal(confectionJournal3).orThrow();
+
+        const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
+        expect(result).toHaveLength(2);
+      });
+
+      test('indexes confection journal by version ID', () => {
+        const lib = JournalLibrary.create().orThrow();
+        lib.addJournal(confectionJournal1).orThrow();
+        lib.addJournal(confectionJournal2).orThrow();
+
+        const result = lib.getJournalsForConfectionVersion(
+          'source.bonbon-a@2026-01-01-01' as ConfectionVersionId
+        );
+        expect(result).toHaveLength(2);
+      });
+
+      test('fails when confection journal already exists', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal1] }).orThrow();
+        expect(lib.addJournal(confectionJournal1)).toFailWith(/already exists/);
+      });
+    });
+
+    describe('removeJournal with confection journals', () => {
+      test('removes existing confection journal', () => {
+        const lib = JournalLibrary.create({
+          journals: [confectionJournal1, confectionJournal2]
+        }).orThrow();
+        expect(lib.removeJournal('2026-01-20-100000-c0000001' as JournalId)).toSucceedAndSatisfy(
+          (removed) => {
+            expect(removed.journalId).toBe('2026-01-20-100000-c0000001');
+          }
+        );
+        expect(lib.size).toBe(1);
+        expect(lib.getJournal('2026-01-20-100000-c0000001' as JournalId)).toFail();
+      });
+
+      test('removes confection journal from confection index', () => {
+        const lib = JournalLibrary.create({
+          journals: [confectionJournal1, confectionJournal2]
+        }).orThrow();
+        lib.removeJournal('2026-01-20-100000-c0000001' as JournalId).orThrow();
+
+        const result = lib.getJournalsForConfection('source.bonbon-a' as ConfectionId);
+        expect(result).toHaveLength(1);
+        expect(result[0].journalId).toBe('2026-01-21-100000-c0000002');
+      });
+
+      test('removes confection journal from version index', () => {
+        const lib = JournalLibrary.create({
+          journals: [confectionJournal1, confectionJournal2]
+        }).orThrow();
+        lib.removeJournal('2026-01-20-100000-c0000001' as JournalId).orThrow();
+
+        const result = lib.getJournalsForConfectionVersion(
+          'source.bonbon-a@2026-01-01-01' as ConfectionVersionId
+        );
+        expect(result).toHaveLength(1);
+        expect(result[0].journalId).toBe('2026-01-21-100000-c0000002');
+      });
+
+      test('cleans up empty confection index entry', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal4] }).orThrow();
+        lib.removeJournal('2026-01-23-100000-c0000004' as JournalId).orThrow();
+
+        const result = lib.getJournalsForConfection('source.bonbon-b' as ConfectionId);
+        expect(result).toHaveLength(0);
+      });
+
+      test('cleans up empty confection version index entry', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal4] }).orThrow();
+        lib.removeJournal('2026-01-23-100000-c0000004' as JournalId).orThrow();
+
+        const result = lib.getJournalsForConfectionVersion(
+          'source.bonbon-b@2026-01-01-01' as ConfectionVersionId
+        );
+        expect(result).toHaveLength(0);
+      });
+    });
+
+    describe('importJournals with confection journals', () => {
+      test('imports confection journals', () => {
+        const lib = JournalLibrary.create().orThrow();
+        expect(lib.importJournals([confectionJournal1, confectionJournal2])).toSucceedAndSatisfy((result) => {
+          expect(result.imported).toBe(2);
+          expect(result.skipped).toBe(0);
+        });
+        expect(lib.size).toBe(2);
+      });
+
+      test('imports mixed journal types', () => {
+        const lib = JournalLibrary.create().orThrow();
+        expect(lib.importJournals([journal1, confectionJournal1])).toSucceedAndSatisfy((result) => {
+          expect(result.imported).toBe(2);
+        });
+        expect(lib.size).toBe(2);
+      });
+
+      test('skips existing confection journals', () => {
+        const lib = JournalLibrary.create({ journals: [confectionJournal1] }).orThrow();
+        expect(lib.importJournals([confectionJournal1, confectionJournal2])).toSucceedAndSatisfy((result) => {
+          expect(result.imported).toBe(1);
+          expect(result.skipped).toBe(1);
+          expect(result.skippedIds).toContain(confectionJournal1.journalId);
+        });
+      });
+    });
+
+    describe('clear with confection journals', () => {
+      test('clears confection indices', () => {
+        const lib = JournalLibrary.create({
+          journals: [confectionJournal1, confectionJournal2]
+        }).orThrow();
+        lib.clear();
+        expect(lib.getJournalsForConfection('source.bonbon-a' as ConfectionId)).toHaveLength(0);
+        expect(
+          lib.getJournalsForConfectionVersion('source.bonbon-a@2026-01-01-01' as ConfectionVersionId)
+        ).toHaveLength(0);
+      });
+    });
+
+    describe('confection journal with additional fields', () => {
+      test('handles confection journal with all optional fields', () => {
+        const fullJournal: IConfectionJournalRecord = {
+          journalType: 'confection',
+          journalId: '2026-01-25-100000-cf000001' as JournalId,
+          confectionVersionId: 'source.bonbon-a@2026-01-01-01' as ConfectionVersionId,
+          date: '2026-01-25',
+          yieldCount: 48,
+          weightPerPiece: 15 as Grams,
+          linkedRecipeJournalId: '2026-01-25-090000-00000001' as JournalId,
+          notes: 'Test notes for confection',
+          entries: [
+            {
+              timestamp: '2026-01-25T10:00:00Z',
+              eventType: 'filling-select',
+              fillingRecipeId: 'test.recipe' as import('../../../packlets/common').RecipeId
+            }
+          ]
+        };
+
+        const lib = JournalLibrary.create().orThrow();
+        expect(lib.addJournal(fullJournal)).toSucceed();
+        expect(lib.getJournal('2026-01-25-100000-cf000001' as JournalId)).toSucceedAndSatisfy((result) => {
+          expect(isConfectionJournalRecord(result)).toBe(true);
+          if (isConfectionJournalRecord(result)) {
+            expect(result.yieldCount).toBe(48);
+            expect(result.weightPerPiece).toBe(15);
+            expect(result.linkedRecipeJournalId).toBe('2026-01-25-090000-00000001');
+            expect(result.notes).toBe('Test notes for confection');
+            expect(result.entries).toHaveLength(1);
+          }
+        });
+      });
+    });
+
+    describe('deprecated addRecipeJournal', () => {
+      test('addRecipeJournal adds recipe journal via addJournal', () => {
+        const lib = JournalLibrary.create().orThrow();
+        expect(lib.addRecipeJournal(journal1)).toSucceedWith('2026-01-15-100000-00000001' as JournalId);
+        expect(lib.size).toBe(1);
+      });
     });
   });
 });

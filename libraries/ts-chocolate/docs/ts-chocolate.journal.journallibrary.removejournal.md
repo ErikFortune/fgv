@@ -4,12 +4,12 @@
 
 ## Journal.JournalLibrary.removeJournal() method
 
-Removes a [journal record](./ts-chocolate.journal.ijournalrecord.md) from the library
+Removes a [journal record](./ts-chocolate.journal.anyjournalrecord.md) from the library
 
 **Signature:**
 
 ```typescript
-removeJournal(journalId: JournalId): Result<IJournalRecord>;
+removeJournal(journalId: JournalId): Result<AnyJournalRecord>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The ID of the journal to remove
 
 **Returns:**
 
-Result&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+Result&lt;[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->&gt;
 
 `Success` with the removed journal, or `Failure` if not found
 

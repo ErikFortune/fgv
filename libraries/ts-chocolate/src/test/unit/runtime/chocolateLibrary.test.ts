@@ -39,7 +39,7 @@ import {
   SourceId
 } from '../../../packlets/common';
 
-import { IJournalRecord, JournalLibrary } from '../../../packlets/journal';
+import { IRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
 
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
 
@@ -659,7 +659,8 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('journals', () => {
-    const testJournal: IJournalRecord = {
+    const testJournal: IRecipeJournalRecord = {
+      journalType: 'recipe',
       journalId: '2026-01-01-120000-abcd1234' as JournalId,
       recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
       date: '2026-01-01',
@@ -667,7 +668,8 @@ describe('ChocolateLibrary', () => {
       scaleFactor: 2.0
     };
 
-    const testJournal2: IJournalRecord = {
+    const testJournal2: IRecipeJournalRecord = {
+      journalType: 'recipe',
       journalId: '2026-01-02-120000-efgh5678' as JournalId,
       recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
       date: '2026-01-02',

@@ -4,10 +4,10 @@
 
 ## Journal.IJournalLibraryParams.journals property
 
-Initial journal records to populate the library with
+Initial journal records to populate the library with. Accepts both recipe and confection journal records.
 
 **Signature:**
 
 ```typescript
-readonly journals?: ReadonlyArray<IJournalRecord>;
+readonly journals?: ReadonlyArray<AnyJournalRecord>;
 ```

@@ -9,7 +9,7 @@ Gets all journal records for a recipe (across all versions).
 **Signature:**
 
 ```typescript
-getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The recipe ID to search for
 
 **Returns:**
 
-ReadonlyArray&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)<!-- -->&gt;
 
 Array of journal records (empty if none found)
 

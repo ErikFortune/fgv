@@ -4,7 +4,7 @@
 
 ## Journal.JournalLibrary.importJournals() method
 
-Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped.
+Imports journal records from an array. Validates each journal and adds it to the library. Journals that already exist are skipped. Accepts both recipe and confection journal records.
 
 **Signature:**
 

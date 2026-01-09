@@ -9,11 +9,11 @@ Gets all journal records in the library
 **Signature:**
 
 ```typescript
-getAllJournals(): ReadonlyArray<IJournalRecord>;
+getAllJournals(): ReadonlyArray<AnyJournalRecord>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->&gt;
 
 Array of all journal records
 

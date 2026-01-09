@@ -4,10 +4,10 @@
 
 ## AdditionalChocolatePurpose type
 
-Purpose for additional chocolates in molded bonbons
+Purpose for additional chocolates in molded bonbons. These values align with [ChocolateRole](./ts-chocolate.journal.chocolaterole.md) for type safety when converting between confection data and journal entries.
 
 **Signature:**
 
 ```typescript
-export type AdditionalChocolatePurpose = 'seal' | 'deco';
+export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 ```

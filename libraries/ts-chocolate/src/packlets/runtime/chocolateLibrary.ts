@@ -39,7 +39,7 @@ import {
 import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IRecipe, RecipesLibrary } from '../recipes';
-import { IJournalRecord, JournalLibrary } from '../journal';
+import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { Mold, MoldsLibrary } from '../molds';
 import { Procedure, ProceduresLibrary } from '../procedures';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
@@ -459,32 +459,32 @@ export class ChocolateLibrary {
   // ============================================================================
 
   /**
-   * Gets all {@link Journal.IJournalRecord | journal records} for a recipe (across all versions)
+   * Gets all {@link Journal.IRecipeJournalRecord | journal records} for a recipe (across all versions)
    * @param recipeId - The {@link RecipeId | recipe ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
    */
-  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord> {
+  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord> {
     return this._journals.getJournalsForRecipe(recipeId);
   }
 
   /**
-   * Gets all {@link Journal.IJournalRecord | journal records} for a specific recipe version
+   * Gets all {@link Journal.IRecipeJournalRecord | journal records} for a specific recipe version
    * @param versionId - The {@link RecipeVersionId | recipe version ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
    */
-  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord> {
-    return this._journals.getJournalsForVersion(versionId);
+  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord> {
+    return this._journals.getJournalsForRecipeVersion(versionId);
   }
 
   /**
-   * Adds a {@link Journal.IJournalRecord | journal record} to the library
+   * Adds a {@link Journal.IRecipeJournalRecord | journal record} to the library
    * @param journal - The journal record to add
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
    * @public
    */
-  public addJournal(journal: IJournalRecord): Result<JournalId> {
+  public addJournal(journal: IRecipeJournalRecord): Result<JournalId> {
     return this._journals.addJournal(journal).report(this.logger);
   }
 }

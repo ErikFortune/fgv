@@ -214,7 +214,7 @@ Description
 
 </td><td>
 
-Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.journal.irecipejournalrecord.md) to the library
 
 
 </td></tr>
@@ -314,7 +314,7 @@ Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recipe (across all versions)
+Gets all [journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a recipe (across all versions)
 
 
 </td></tr>
@@ -328,7 +328,7 @@ Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recip
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a specific recipe version
+Gets all [journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a specific recipe version
 
 
 </td></tr>

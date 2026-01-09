@@ -40,7 +40,7 @@ import {
   RecipeVersionSpec,
   SourceId
 } from '../../../packlets/common';
-import { IJournalRecord, JournalLibrary } from '../../../packlets/journal';
+import { IRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
 
 import {
   IGanacheCharacteristics,
@@ -721,7 +721,8 @@ describe('RuntimeContext', () => {
   // ============================================================================
 
   describe('journals', () => {
-    const testJournalRecord: IJournalRecord = {
+    const testJournalRecord: IRecipeJournalRecord = {
+      journalType: 'recipe',
       journalId: '2026-03-15-100000-00000001' as JournalId,
       recipeVersionId: 'test.dark-ganache@2026-01-01-01' as RecipeVersionId,
       date: '2026-03-15',
@@ -736,7 +737,8 @@ describe('RuntimeContext', () => {
       ]
     };
 
-    const testJournalRecord2: IJournalRecord = {
+    const testJournalRecord2: IRecipeJournalRecord = {
+      journalType: 'recipe',
       journalId: '2026-03-16-100000-00000002' as JournalId,
       recipeVersionId: 'test.dark-ganache@2026-02-01-01' as RecipeVersionId,
       date: '2026-03-16',
@@ -744,7 +746,8 @@ describe('RuntimeContext', () => {
       scaleFactor: 2.0
     };
 
-    const testJournalRecord3: IJournalRecord = {
+    const testJournalRecord3: IRecipeJournalRecord = {
+      journalType: 'recipe',
       journalId: '2026-03-17-100000-00000003' as JournalId,
       recipeVersionId: 'test.milk-ganache@2026-01-01-01' as RecipeVersionId,
       date: '2026-03-17',

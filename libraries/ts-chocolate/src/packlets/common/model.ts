@@ -463,16 +463,18 @@ export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
 export const allConfectionTypes: ConfectionType[] = ['molded-bonbon', 'bar-truffle', 'rolled-truffle'];
 
 /**
- * Purpose for additional chocolates in molded bonbons
+ * Purpose for additional chocolates in molded bonbons.
+ * These values align with {@link Journal.ChocolateRole | ChocolateRole} for type safety
+ * when converting between confection data and journal entries.
  * @public
  */
-export type AdditionalChocolatePurpose = 'seal' | 'deco';
+export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 
 /**
  * All possible additional chocolate purposes
  * @public
  */
-export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[] = ['seal', 'deco'];
+export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[] = ['seal', 'decoration'];
 
 /**
  * Recipe category for classification

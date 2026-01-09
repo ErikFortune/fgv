@@ -9,11 +9,11 @@ Exports all journal records as an array. The returned array can be serialized to
 **Signature:**
 
 ```typescript
-exportJournals(): ReadonlyArray<IJournalRecord>;
+exportJournals(): ReadonlyArray<AnyJournalRecord>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->&gt;
 
 Array of all journal records
 

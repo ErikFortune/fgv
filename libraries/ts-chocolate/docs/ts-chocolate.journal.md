@@ -24,9 +24,46 @@ Description
 
 </td><td>
 
-A library for managing cooking [journal records](./ts-chocolate.journal.ijournalrecord.md)<!-- -->.
+A library for managing cooking [journal records](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->.
 
-Provides: - Storage for journal records indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by recipe ID (all journals for a recipe) - Lookup by version ID (all journals for a specific version) - Add/retrieve journal records
+Provides: - Storage for journal records indexed by [JournalId](./ts-chocolate.journalid.md) - Lookup by recipe ID (all journals for a recipe) - Lookup by recipe version ID (all journals for a specific recipe version) - Lookup by confection ID (all journals for a confection) - Lookup by confection version ID (all journals for a specific confection version) - Add/retrieve journal records
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[isConfectionJournalRecord(record)](./ts-chocolate.journal.isconfectionjournalrecord.md)
+
+
+</td><td>
+
+Type guard for IConfectionJournalRecord
+
+
+</td></tr>
+<tr><td>
+
+[isRecipeJournalRecord(record)](./ts-chocolate.journal.isrecipejournalrecord.md)
+
+
+</td><td>
+
+Type guard for IRecipeJournalRecord
 
 
 </td></tr>
@@ -46,6 +83,28 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IConfectionJournalEntry](./ts-chocolate.journal.iconfectionjournalentry.md)
+
+
+</td><td>
+
+A single event entry within a confection editing journal. Records what selections and modifications were made during a confection editing session.
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjournalrecord.md)
+
+
+</td><td>
+
+A complete journal record for a confection production session. Tracks what confection version was used, what selections were made, and what modifications occurred during the session.
+
+
+</td></tr>
+<tr><td>
 
 [IJournalEntry](./ts-chocolate.journal.ijournalentry.md)
 
@@ -80,12 +139,12 @@ Parameters for creating a [JournalLibrary](./ts-chocolate.journal.journallibrary
 </td></tr>
 <tr><td>
 
-[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)
+[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)
 
 
 </td><td>
 
-A complete journal record for a cooking session. Tracks what recipe version was used, how it was scaled, and what modifications were made during the session.
+A complete journal record for a recipe cooking session. Tracks what recipe version was used, how it was scaled, and what modifications were made during the session.
 
 
 </td></tr>
@@ -130,12 +189,45 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[allChocolateRoles](./ts-chocolate.journal.allchocolateroles.md)
+
+
+</td><td>
+
+All possible chocolate roles
+
+
+</td></tr>
+<tr><td>
+
+[allConfectionJournalEventTypes](./ts-chocolate.journal.allconfectionjournaleventtypes.md)
+
+
+</td><td>
+
+All possible confection journal event types
+
+
+</td></tr>
+<tr><td>
+
 [allJournalEventTypes](./ts-chocolate.journal.alljournaleventtypes.md)
 
 
 </td><td>
 
-All possible journal event types
+All possible recipe journal event types
+
+
+</td></tr>
+<tr><td>
+
+[allJournalTypes](./ts-chocolate.journal.alljournaltypes.md)
+
+
+</td><td>
+
+All possible journal types
 
 
 </td></tr>
@@ -156,12 +248,56 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)
+
+
+</td><td>
+
+Discriminated union of all journal record types. Use type guards to narrow to specific types.
+
+
+</td></tr>
+<tr><td>
+
+[ChocolateRole](./ts-chocolate.journal.chocolaterole.md)
+
+
+</td><td>
+
+Role of a chocolate selection in a confection
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionJournalEventType](./ts-chocolate.journal.confectionjournaleventtype.md)
+
+
+</td><td>
+
+Types of events that can be recorded in a confection editing journal
+
+
+</td></tr>
+<tr><td>
+
 [JournalEventType](./ts-chocolate.journal.journaleventtype.md)
 
 
 </td><td>
 
 Types of events that can be recorded in a cooking journal
+
+
+</td></tr>
+<tr><td>
+
+[JournalType](./ts-chocolate.journal.journaltype.md)
+
+
+</td><td>
+
+Discriminator for journal record types
 
 
 </td></tr>

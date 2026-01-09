@@ -68,7 +68,7 @@ _(Optional)_ The journal ID if a journal record was created
 
 </td><td>
 
-[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)
+[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)
 
 
 </td><td>

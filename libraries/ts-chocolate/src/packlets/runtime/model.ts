@@ -97,7 +97,7 @@ import {
   IMoldedBonBon,
   IRolledTruffle
 } from '../confections';
-import { IJournalRecord, JournalLibrary } from '../journal';
+import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
 import { Mold } from '../molds';
@@ -1182,14 +1182,14 @@ export interface IRuntimeContext {
    * @param recipeId - The recipe ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+  getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
 
   /**
    * Gets all journal records for a specific recipe version.
    * @param versionId - The recipe version ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+  getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
 
   // ---- Reverse Lookups ----
 

@@ -37,7 +37,7 @@ import {
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { IComputedScaledRecipe } from '../recipes';
-import { IJournalRecord, JournalLibrary } from '../journal';
+import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { Mold } from '../molds';
 import { Procedure } from '../procedures';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
@@ -190,7 +190,7 @@ export class RuntimeContext
    * @param recipeId - The recipe ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord> {
+  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord> {
     return this._library.getJournalsForRecipe(recipeId);
   }
 
@@ -199,7 +199,7 @@ export class RuntimeContext
    * @param versionId - The recipe version ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord> {
+  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord> {
     return this._library.getJournalsForVersion(versionId);
   }
 

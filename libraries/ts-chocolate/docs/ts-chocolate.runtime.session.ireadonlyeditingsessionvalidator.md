@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[EditingSession](./ts-chocolate.runtime.session.editingsession.md)
+[RecipeEditingSession](./ts-chocolate.runtime.session.recipeeditingsession.md)
 
 
 </td><td>

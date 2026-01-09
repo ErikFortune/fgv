@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Initial journal records to populate the library with
+_(Optional)_ Initial journal records to populate the library with. Accepts both recipe and confection journal records.
 
 
 </td></tr>

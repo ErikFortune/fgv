@@ -19,16 +19,16 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[EditingSession](./ts-chocolate.runtime.session.editingsession.md)
+[ConfectionEditingSession](./ts-chocolate.runtime.session.confectioneditingsession.md)
 
 
 </td><td>
 
-A mutable editing session for modifying recipe versions.
+A mutable editing session for modifying confection selections.
 
-Tracks: - Source version and scale factor - Mutable working ingredient state - Journal entries recording what happened
+Tracks: - Source confection and version - Filling selection (recipe or ingredient) - Mold selection (for molded bonbons) - Chocolate selections by role (shell, enrobing, seal, decoration) - Yield modifications (count, weight per piece) - Procedure selection - Coating selection (for rolled truffles) - Journal entries recording what happened
 
-Can produce: - Journal records documenting the session - New recipe versions incorporating modifications
+Can produce: - Journal records documenting the session - New confection versions incorporating modifications
 
 
 </td></tr>
@@ -42,6 +42,80 @@ Can produce: - Journal records documenting the session - New recipe versions inc
 A wrapper for EditingSession that validates and converts weakly-typed inputs to strongly-typed branded types before delegating to the underlying session.
 
 This allows consumers to use plain strings and numbers instead of IngredientId and Grams branded types while still benefiting from runtime validation.
+
+
+</td></tr>
+<tr><td>
+
+[RecipeEditingSession](./ts-chocolate.runtime.session.recipeeditingsession.md)
+
+
+</td><td>
+
+A mutable editing session for modifying recipe versions.
+
+Tracks: - Source version and scale factor - Mutable working ingredient state - Journal entries recording what happened
+
+Can produce: - Journal records documenting the session - New recipe versions incorporating modifications
+
+
+</td></tr>
+</tbody></table>
+
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[generateJournalId()](./ts-chocolate.runtime.session.generatejournalid.md)
+
+
+</td><td>
+
+Generates a JournalId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
+
+
+</td></tr>
+<tr><td>
+
+[generateSessionId()](./ts-chocolate.runtime.session.generatesessionid.md)
+
+
+</td><td>
+
+Generates a SessionId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
+
+
+</td></tr>
+<tr><td>
+
+[getCurrentDateString()](./ts-chocolate.runtime.session.getcurrentdatestring.md)
+
+
+</td><td>
+
+Gets the current date as an ISO 8601 date string (YYYY-MM-DD)
+
+
+</td></tr>
+<tr><td>
+
+[getCurrentTimestamp()](./ts-chocolate.runtime.session.getcurrenttimestamp.md)
+
+
+</td><td>
+
+Gets the current timestamp as an ISO 8601 timestamp string
 
 
 </td></tr>
@@ -61,6 +135,50 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[IConfectionEditingSessionParams](./ts-chocolate.runtime.session.iconfectioneditingsessionparams.md)
+
+
+</td><td>
+
+Parameters for creating a confection editing session
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionSaveOptions](./ts-chocolate.runtime.session.iconfectionsaveoptions.md)
+
+
+</td><td>
+
+Options for saving a confection editing session
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionSaveResult](./ts-chocolate.runtime.session.iconfectionsaveresult.md)
+
+
+</td><td>
+
+Result of saving a confection editing session
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionSessionState](./ts-chocolate.runtime.session.iconfectionsessionstate.md)
+
+
+</td><td>
+
+Read-only view of confection session state
+
+
+</td></tr>
+<tr><td>
 
 [IEditingSessionParams](./ts-chocolate.runtime.session.ieditingsessionparams.md)
 
@@ -117,6 +235,39 @@ Result of saving an editing session
 </td></tr>
 <tr><td>
 
+[ISessionChocolate](./ts-chocolate.runtime.session.isessionchocolate.md)
+
+
+</td><td>
+
+Tracks a chocolate selection by role for a confection session
+
+
+</td></tr>
+<tr><td>
+
+[ISessionCoating](./ts-chocolate.runtime.session.isessioncoating.md)
+
+
+</td><td>
+
+Tracks a coating selection for rolled truffles
+
+
+</td></tr>
+<tr><td>
+
+[ISessionFilling](./ts-chocolate.runtime.session.isessionfilling.md)
+
+
+</td><td>
+
+Tracks the selected filling for a confection session
+
+
+</td></tr>
+<tr><td>
+
 [ISessionIngredient](./ts-chocolate.runtime.session.isessioningredient.md)
 
 
@@ -128,12 +279,45 @@ Represents an ingredient in an editing session with tracking of changes
 </td></tr>
 <tr><td>
 
+[ISessionMold](./ts-chocolate.runtime.session.isessionmold.md)
+
+
+</td><td>
+
+Tracks the selected mold for a confection session
+
+
+</td></tr>
+<tr><td>
+
+[ISessionProcedure](./ts-chocolate.runtime.session.isessionprocedure.md)
+
+
+</td><td>
+
+Tracks the selected procedure for a confection session
+
+
+</td></tr>
+<tr><td>
+
 [ISessionState](./ts-chocolate.runtime.session.isessionstate.md)
 
 
 </td><td>
 
 Read-only view of session state
+
+
+</td></tr>
+<tr><td>
+
+[ISessionYield](./ts-chocolate.runtime.session.isessionyield.md)
+
+
+</td><td>
+
+Tracks yield modifications for a confection session
 
 
 </td></tr>
@@ -153,6 +337,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ConfectionSelectionStatus](./ts-chocolate.runtime.session.confectionselectionstatus.md)
+
+
+</td><td>
+
+Status of a confection session selection
+
+
+</td></tr>
+<tr><td>
 
 [SessionIngredientStatus](./ts-chocolate.runtime.session.sessioningredientstatus.md)
 

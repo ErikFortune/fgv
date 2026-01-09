@@ -19,6 +19,61 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[anyJournalRecord](./ts-chocolate.journal.converters.anyjournalrecord.md)
+
+
+</td><td>
+
+Converter for [AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->. Uses the `journalType` discriminator to select the appropriate converter.
+
+
+</td></tr>
+<tr><td>
+
+[chocolateRole](./ts-chocolate.journal.converters.chocolaterole.md)
+
+
+</td><td>
+
+Converter for [ChocolateRole](./ts-chocolate.journal.chocolaterole.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[confectionJournalEntry](./ts-chocolate.journal.converters.confectionjournalentry.md)
+
+
+</td><td>
+
+Converter for [IConfectionJournalEntry](./ts-chocolate.journal.iconfectionjournalentry.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[confectionJournalEventType](./ts-chocolate.journal.converters.confectionjournaleventtype.md)
+
+
+</td><td>
+
+Converter for [ConfectionJournalEventType](./ts-chocolate.journal.confectionjournaleventtype.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[confectionJournalRecord](./ts-chocolate.journal.converters.confectionjournalrecord.md)
+
+
+</td><td>
+
+Converter for [IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjournalrecord.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [journalEntry](./ts-chocolate.journal.converters.journalentry.md)
 
 
@@ -41,12 +96,23 @@ Converter for [JournalEventType](./ts-chocolate.journal.journaleventtype.md)<!--
 </td></tr>
 <tr><td>
 
-[journalRecord](./ts-chocolate.journal.converters.journalrecord.md)
+[journalType](./ts-chocolate.journal.converters.journaltype.md)
 
 
 </td><td>
 
-Converter for [IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->.
+Converter for [JournalType](./ts-chocolate.journal.journaltype.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[recipeJournalRecord](./ts-chocolate.journal.converters.recipejournalrecord.md)
+
+
+</td><td>
+
+Converter for [IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)<!-- -->.
 
 
 </td></tr>

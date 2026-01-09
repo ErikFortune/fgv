@@ -25,8 +25,8 @@
 
 import { captureResult, Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, JournalId, SessionId, Converters as CommonConverters } from '../../common';
-import { IJournalEntry, IJournalRecord, JournalEventType } from '../../journal';
+import { Grams, IngredientId, SessionId } from '../../common';
+import { IJournalEntry, IRecipeJournalRecord, JournalEventType } from '../../journal';
 import { IRecipeIngredient, IRecipeVersion } from '../../recipes';
 import { IRuntimeRecipeVersion } from '../model';
 import {
@@ -38,42 +38,7 @@ import {
   SessionIngredientStatus
 } from './model';
 import { EditingSessionValidator, IEditingSessionValidator } from './editingSessionValidator';
-
-// ============================================================================
-// ID Generators
-// ============================================================================
-
-/**
- * Generates a SessionId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
- * @returns Result with a valid SessionId
- */
-function generateSessionId(): Result<SessionId> {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
-  return CommonConverters.sessionId.convert(`${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`);
-}
-
-/**
- * Generates a JournalId in the format YYYY-MM-DD-HHMMSS-xxxxxxxx
- * @returns Result with a valid JournalId
- */
-function generateJournalId(): Result<JournalId> {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  const random = Math.random().toString(16).substring(2, 10).padStart(8, '0');
-  return CommonConverters.journalId.convert(`${year}-${month}-${day}-${hours}${minutes}${seconds}-${random}`);
-}
+import { generateJournalId, generateSessionId } from './sessionUtils';
 
 // ============================================================================
 // EditingSession Class
@@ -93,7 +58,7 @@ function generateJournalId(): Result<JournalId> {
  *
  * @public
  */
-export class EditingSession implements ISessionState {
+export class RecipeEditingSession implements ISessionState {
   private readonly _sessionId: SessionId;
   private readonly _sourceVersion: IRuntimeRecipeVersion;
   private readonly _enableJournal: boolean;
@@ -136,13 +101,13 @@ export class EditingSession implements ISessionState {
   // ============================================================================
 
   /**
-   * Creates a new EditingSession
+   * Creates a new RecipeEditingSession
    * @param params - Session parameters
    * @returns Success with new session, or Failure with error message
    * @public
    */
-  public static create(params: IEditingSessionParams): Result<EditingSession> {
-    return captureResult(() => new EditingSession(params));
+  public static create(params: IEditingSessionParams): Result<RecipeEditingSession> {
+    return captureResult(() => new RecipeEditingSession(params));
   }
 
   // ============================================================================
@@ -462,11 +427,12 @@ export class EditingSession implements ISessionState {
    * @returns Success with journal record, or Failure
    * @public
    */
-  public toJournalRecord(notes?: string): Result<IJournalRecord> {
+  public toJournalRecord(notes?: string): Result<IRecipeJournalRecord> {
     const date = new Date().toISOString().split('T')[0];
 
     return generateJournalId().onSuccess((journalId) =>
       Success.with({
+        journalType: 'recipe',
         journalId,
         recipeVersionId: this._sourceVersion.versionId,
         date,
@@ -547,7 +513,7 @@ export class EditingSession implements ISessionState {
         return journalResult as unknown as Result<ISaveResult>;
       }
       (result as { journalId: string }).journalId = journalResult.value.journalId;
-      (result as { journalRecord: IJournalRecord }).journalRecord = journalResult.value;
+      (result as { journalRecord: IRecipeJournalRecord }).journalRecord = journalResult.value;
     }
 
     if (options.createNewVersion) {

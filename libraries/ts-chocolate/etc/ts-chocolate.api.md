@@ -19,8 +19,10 @@ import { Validator } from '@fgv/ts-utils';
 // @public
 const additionalChocolate: Converter<IAdditionalChocolate>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
 // @public
-export type AdditionalChocolatePurpose = 'seal' | 'deco';
+export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 
 // @public
 const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose>;
@@ -53,7 +55,13 @@ export const allCertifications: Certification[];
 export const allChocolateApplications: ChocolateApplication[];
 
 // @public
+const allChocolateRoles: ChocolateRole[];
+
+// @public
 export const allChocolateTypes: ChocolateType[];
+
+// @public
+const allConfectionJournalEventTypes: ConfectionJournalEventType[];
 
 // @public
 export const allConfectionTypes: ConfectionType[];
@@ -72,6 +80,9 @@ export const allIngredientCategories: IngredientCategory[];
 
 // @public
 const allJournalEventTypes: JournalEventType[];
+
+// @public
+const allJournalTypes: JournalType[];
 
 // @public
 export const allMoldFormats: MoldFormat[];
@@ -93,6 +104,14 @@ export const allWeightUnits: WeightUnit[];
 
 // @public
 function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
+
+// @public
+type AnyJournalRecord = IRecipeJournalRecord | IConfectionJournalRecord;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const anyJournalRecord: Converter<AnyJournalRecord>;
 
 // @public
 type AnyRecipeVersion = IRecipeVersion | IScaledRecipeVersion;
@@ -296,7 +315,7 @@ const chocolateIngredient: Converter<IChocolateIngredient>;
 // @public
 class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    addJournal(journal: IJournalRecord): Result<JournalId>;
+    addJournal(journal: IRecipeJournalRecord): Result<JournalId>;
     calculateGanache(id: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     calculateGanacheForRecipe(recipe: IRecipe, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -310,9 +329,9 @@ class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getIngredient(id: IngredientId): Result<Ingredient>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getMold(id: MoldId): Result<Mold>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -336,6 +355,14 @@ class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get recipes(): RecipesLibrary;
 }
+
+// @public
+type ChocolateRole = 'shell' | 'enrobing' | 'seal' | 'decoration';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const chocolateRole: Converter<ChocolateRole>;
 
 // @public
 const chocolateSpec: Converter<IChocolateSpec>;
@@ -443,6 +470,44 @@ const confectionData: Converter<ConfectionData>;
 const confectionDecoration: Converter<IConfectionDecoration>;
 
 // @public
+class ConfectionEditingSession implements IConfectionSessionState {
+    addNote(text: string): void;
+    // (undocumented)
+    get chocolates(): ReadonlyMap<ChocolateRole, ISessionChocolate>;
+    // (undocumented)
+    get coating(): ISessionCoating | undefined;
+    static create(params: IConfectionEditingSessionParams): Result<ConfectionEditingSession>;
+    // (undocumented)
+    get filling(): ISessionFilling | undefined;
+    // (undocumented)
+    get isDirty(): boolean;
+    // (undocumented)
+    get isJournalingEnabled(): boolean;
+    // (undocumented)
+    get journalEntries(): ReadonlyArray<IConfectionJournalEntry>;
+    // (undocumented)
+    get mold(): ISessionMold | undefined;
+    // (undocumented)
+    get procedure(): ISessionProcedure | undefined;
+    save(options?: IConfectionSaveOptions): Result<IConfectionSaveResult>;
+    selectChocolate(role: ChocolateRole, ingredientId: IngredientId): Result<true>;
+    selectCoating(ingredientId: IngredientId): Result<true>;
+    selectFillingIngredient(ingredientId: IngredientId): Result<true>;
+    selectFillingRecipe(recipeId: RecipeId): Result<true>;
+    selectMold(moldId: MoldId): Result<true>;
+    selectProcedure(procedureId: ProcedureId): Result<true>;
+    // (undocumented)
+    get sessionId(): SessionId;
+    setWeightPerPiece(weight: Grams): Result<true>;
+    setYieldCount(count: number): Result<true>;
+    // (undocumented)
+    get sourceConfection(): IRuntimeConfection;
+    toJournalRecord(notes?: string): Result<IConfectionJournalRecord>;
+    // (undocumented)
+    get yield(): ISessionYield;
+}
+
+// @public
 const confectionFillings: Converter<IConfectionFillings>;
 
 // @public
@@ -450,6 +515,24 @@ export type ConfectionId = Brand<string, 'ConfectionId'>;
 
 // @public
 const confectionId: Converter<ConfectionId>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const confectionJournalEntry: Converter<IConfectionJournalEntry>;
+
+// @public
+type ConfectionJournalEventType = 'filling-select' | 'mold-select' | 'chocolate-select' | 'yield-modify' | 'procedure-select' | 'coating-select' | 'note';
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const confectionJournalEventType: Converter<ConfectionJournalEventType>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const confectionJournalRecord: Converter<IConfectionJournalRecord>;
 
 // @public
 const confectionMoldRef: Converter<IConfectionMoldRef>;
@@ -514,6 +597,9 @@ declare namespace Confections {
     }
 }
 export { Confections }
+
+// @public
+type ConfectionSelectionStatus = 'original' | 'modified';
 
 // @public
 class ConfectionsLibrary extends SubLibraryBase<ConfectionId, BaseConfectionId, ConfectionData> {
@@ -665,7 +751,13 @@ declare namespace Converters_5 {
     export {
         journalEventType,
         journalEntry,
-        journalRecord
+        journalType,
+        recipeJournalRecord,
+        confectionJournalEventType,
+        chocolateRole,
+        confectionJournalEntry,
+        confectionJournalRecord,
+        anyJournalRecord
     }
 }
 
@@ -787,49 +879,14 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 const degreesMacMichael: Converter<DegreesMacMichael>;
 
 // @public
-class EditingSession implements ISessionState {
-    addIngredient(id: IngredientId, amount: Grams): Result<void>;
-    addIngredientAmount(id: IngredientId, additional: Grams): Result<void>;
-    addNote(text: string): void;
-    static create(params: IEditingSessionParams): Result<EditingSession>;
-    getIngredient(id: IngredientId): Result<ISessionIngredient>;
-    // (undocumented)
-    get ingredients(): ReadonlyMap<IngredientId, ISessionIngredient>;
-    // (undocumented)
-    get isDirty(): boolean;
-    // (undocumented)
-    get isJournalingEnabled(): boolean;
-    // (undocumented)
-    get journalEntries(): ReadonlyArray<IJournalEntry>;
-    removeIngredient(id: IngredientId): Result<void>;
-    save(options: ISaveOptions): Result<ISaveResult>;
-    // (undocumented)
-    get scaleFactor(): number;
-    // (undocumented)
-    get sessionId(): SessionId;
-    setIngredientAmount(id: IngredientId, amount: Grams): Result<void>;
-    setScaleFactor(factor: number): Result<void>;
-    setTargetWeight(weight: Grams): Result<void>;
-    // (undocumented)
-    get sourceVersion(): IRuntimeRecipeVersion;
-    substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Grams): Result<void>;
-    // (undocumented)
-    get targetWeight(): Grams;
-    toJournalRecord(notes?: string): Result<IJournalRecord>;
-    toRecipeIngredients(): IRecipeIngredient[];
-    toRecipeVersion(versionSpec: string): Result<IRecipeVersion>;
-    get validating(): IEditingSessionValidator;
-}
-
-// @public
 class EditingSessionValidator implements IEditingSessionValidator {
-    constructor(session: EditingSession);
+    constructor(session: RecipeEditingSession);
     addIngredient(id: string, amount: number): Result<void>;
     addIngredientAmount(id: string, additional: number): Result<void>;
     getIngredient(id: string): Result<ISessionIngredient>;
     hasIngredient(id: string): boolean;
     removeIngredient(id: string): Result<void>;
-    get session(): EditingSession;
+    get session(): RecipeEditingSession;
     setIngredientAmount(id: string, amount: number): Result<void>;
     setTargetWeight(weight: number): Result<void>;
     substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
@@ -911,7 +968,19 @@ const GCM_AUTH_TAG_SIZE: number;
 const GCM_IV_SIZE: number;
 
 // @public
+function generateJournalId(): Result<JournalId>;
+
+// @public
+function generateSessionId(): Result<SessionId>;
+
+// @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
+
+// @public
+function getCurrentDateString(): string;
+
+// @public
+function getCurrentTimestamp(): string;
 
 // @public
 function getIngredientBaseId(id: IngredientId): BaseIngredientId;
@@ -1166,6 +1235,15 @@ interface IConfectionDecoration {
 }
 
 // @public
+interface IConfectionEditingSessionParams {
+    readonly enableJournal?: boolean;
+    readonly logger?: Logging.LogReporter<unknown>;
+    readonly sourceConfection: IRuntimeConfection;
+    readonly weightPerPiece?: Grams;
+    readonly yieldCount?: number;
+}
+
+// @public
 type IConfectionFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
@@ -1173,6 +1251,44 @@ interface IConfectionFillings {
     readonly ingredients?: ReadonlyArray<IngredientId>;
     readonly recipes?: ReadonlyArray<RecipeId>;
     readonly recommendedFillingId?: RecipeId | IngredientId;
+}
+
+// @public
+interface IConfectionJournalEntry {
+    readonly chocolateRole?: ChocolateRole;
+    readonly coatingIngredientId?: IngredientId;
+    readonly eventType: ConfectionJournalEventType;
+    readonly fillingIngredientId?: IngredientId;
+    readonly fillingRecipeId?: RecipeId;
+    readonly ingredientId?: IngredientId;
+    readonly moldId?: MoldId;
+    readonly newWeightPerPiece?: Grams;
+    readonly newYieldCount?: number;
+    readonly previousCoatingIngredientId?: IngredientId;
+    readonly previousFillingIngredientId?: IngredientId;
+    readonly previousFillingRecipeId?: RecipeId;
+    readonly previousIngredientId?: IngredientId;
+    readonly previousMoldId?: MoldId;
+    readonly previousProcedureId?: ProcedureId;
+    readonly previousWeightPerPiece?: Grams;
+    readonly previousYieldCount?: number;
+    readonly procedureId?: ProcedureId;
+    readonly text?: string;
+    readonly timestamp: string;
+}
+
+// @public
+interface IConfectionJournalRecord {
+    readonly confectionVersionId: ConfectionVersionId;
+    readonly date: string;
+    readonly entries?: ReadonlyArray<IConfectionJournalEntry>;
+    readonly journalId: JournalId;
+    readonly journalType: 'confection';
+    readonly linkedRecipeJournalId?: JournalId;
+    readonly modifiedVersionId?: ConfectionVersionId;
+    readonly notes?: string;
+    readonly weightPerPiece?: Grams;
+    readonly yieldCount: number;
 }
 
 // @public
@@ -1200,8 +1316,40 @@ interface IConfectionProcedures {
 }
 
 // @public
+interface IConfectionSaveOptions {
+    readonly createJournalRecord?: boolean;
+    readonly createNewVersion?: boolean;
+    readonly journalNotes?: string;
+    readonly saveLinkedRecipeSessions?: boolean;
+    readonly versionLabel?: ConfectionVersionSpec;
+}
+
+// @public
+interface IConfectionSaveResult {
+    readonly journalId?: string;
+    readonly journalRecord?: IConfectionJournalRecord;
+    readonly linkedRecipeJournalIds?: ReadonlyArray<string>;
+    readonly newVersionSpec?: ConfectionVersionSpec;
+}
+
+// @public
 interface IConfectionScaleOptions {
     readonly roundingMode?: 'round' | 'floor' | 'ceil';
+}
+
+// @public
+interface IConfectionSessionState {
+    readonly chocolates: ReadonlyMap<ChocolateRole, ISessionChocolate>;
+    readonly coating?: ISessionCoating;
+    readonly filling?: ISessionFilling;
+    readonly isDirty: boolean;
+    readonly isJournalingEnabled: boolean;
+    readonly journalEntries: ReadonlyArray<IConfectionJournalEntry>;
+    readonly mold?: ISessionMold;
+    readonly procedure?: ISessionProcedure;
+    readonly sessionId: SessionId;
+    readonly sourceConfection: IRuntimeConfection;
+    readonly yield: ISessionYield;
 }
 
 // @public
@@ -1516,20 +1664,8 @@ interface IJournalImportResult {
 //
 // @public
 interface IJournalLibraryParams {
-    readonly journals?: ReadonlyArray<IJournalRecord>;
+    readonly journals?: ReadonlyArray<AnyJournalRecord>;
     readonly logger?: Logging.LogReporter<unknown>;
-}
-
-// @public
-interface IJournalRecord {
-    readonly date: string;
-    readonly entries?: ReadonlyArray<IJournalEntry>;
-    readonly journalId: JournalId;
-    readonly modifiedVersionId?: RecipeVersionId;
-    readonly notes?: string;
-    readonly recipeVersionId: RecipeVersionId;
-    readonly scaleFactor: number;
-    readonly targetWeight: Grams;
 }
 
 // @public
@@ -1875,7 +2011,7 @@ interface IQueryResult<T> {
 interface IReadOnlyEditingSessionValidator {
     getIngredient(id: string): Result<ISessionIngredient>;
     hasIngredient(id: string): boolean;
-    readonly session: EditingSession;
+    readonly session: RecipeEditingSession;
 }
 
 // @public
@@ -1913,6 +2049,19 @@ interface IRecipeIngredient {
     readonly amount: Grams;
     readonly ingredientId: IngredientId;
     readonly notes?: string;
+}
+
+// @public
+interface IRecipeJournalRecord {
+    readonly date: string;
+    readonly entries?: ReadonlyArray<IJournalEntry>;
+    readonly journalId: JournalId;
+    readonly journalType: 'recipe';
+    readonly modifiedVersionId?: RecipeVersionId;
+    readonly notes?: string;
+    readonly recipeVersionId: RecipeVersionId;
+    readonly scaleFactor: number;
+    readonly targetWeight: Grams;
 }
 
 // @public
@@ -2149,8 +2298,8 @@ interface IRuntimeContext {
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipeTags(): ReadonlyArray<string>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
-    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
     readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
     readonly journals: JournalLibrary;
     readonly library: ChocolateLibrary;
@@ -2328,7 +2477,7 @@ interface ISaveOptions {
 // @public
 interface ISaveResult {
     readonly journalId?: string;
-    readonly journalRecord?: IJournalRecord;
+    readonly journalRecord?: IRecipeJournalRecord;
     readonly newVersionSpec?: string;
 }
 
@@ -2390,10 +2539,37 @@ interface IScalingSource {
 function isChocolateIngredient(ingredient: Ingredient): ingredient is IChocolateIngredient;
 
 // @public
+function isConfectionJournalRecord(record: AnyJournalRecord): record is IConfectionJournalRecord;
+
+// @public
 function isDairyIngredient(ingredient: Ingredient): ingredient is IDairyIngredient;
 
 // @public
 function isEncryptedCollectionFile(json: unknown): boolean;
+
+// @public
+interface ISessionChocolate {
+    readonly ingredientId: IngredientId;
+    readonly originalIngredientId: IngredientId;
+    readonly role: ChocolateRole;
+    readonly status: ConfectionSelectionStatus;
+}
+
+// @public
+interface ISessionCoating {
+    readonly ingredientId: IngredientId;
+    readonly originalIngredientId?: IngredientId;
+    readonly status: ConfectionSelectionStatus;
+}
+
+// @public
+interface ISessionFilling {
+    readonly ingredientId?: IngredientId;
+    readonly originalIngredientId?: IngredientId;
+    readonly originalRecipeId?: RecipeId;
+    readonly recipeId?: RecipeId;
+    readonly status: ConfectionSelectionStatus;
+}
 
 // @public
 interface ISessionIngredient {
@@ -2403,6 +2579,20 @@ interface ISessionIngredient {
     readonly originalAmount: Grams;
     readonly status: SessionIngredientStatus;
     readonly substitutedFor?: IngredientId;
+}
+
+// @public
+interface ISessionMold {
+    readonly moldId: MoldId;
+    readonly originalMoldId: MoldId;
+    readonly status: ConfectionSelectionStatus;
+}
+
+// @public
+interface ISessionProcedure {
+    readonly originalProcedureId?: ProcedureId;
+    readonly procedureId: ProcedureId;
+    readonly status: ConfectionSelectionStatus;
 }
 
 // @public
@@ -2418,6 +2608,15 @@ interface ISessionState {
 }
 
 // @public
+interface ISessionYield {
+    readonly count: number;
+    readonly originalCount: number;
+    readonly originalWeightPerPiece?: Grams;
+    readonly status: ConfectionSelectionStatus;
+    readonly weightPerPiece?: Grams;
+}
+
+// @public
 function isFatIngredient(ingredient: Ingredient): ingredient is IFatIngredient;
 
 // @public
@@ -2425,6 +2624,9 @@ function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TL
 
 // @public
 function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon;
+
+// @public
+function isRecipeJournalRecord(record: AnyJournalRecord): record is IRecipeJournalRecord;
 
 // @public
 function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion;
@@ -2580,10 +2782,21 @@ declare namespace Journal {
         IJournalLibraryParams,
         IJournalImportResult,
         Converters_5 as Converters,
+        isRecipeJournalRecord,
+        isConfectionJournalRecord,
         JournalEventType,
         allJournalEventTypes,
+        ConfectionJournalEventType,
+        allConfectionJournalEventTypes,
+        ChocolateRole,
+        allChocolateRoles,
         IJournalEntry,
-        IJournalRecord
+        IConfectionJournalEntry,
+        JournalType,
+        allJournalTypes,
+        IRecipeJournalRecord,
+        IConfectionJournalRecord,
+        AnyJournalRecord
     }
 }
 export { Journal }
@@ -2615,30 +2828,39 @@ const journalId: Converter<JournalId>;
 // @public
 class JournalLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    addJournal(journal: IJournalRecord): Result<JournalId>;
+    addJournal(journal: AnyJournalRecord): Result<JournalId>;
+    // @deprecated
+    addRecipeJournal(journal: IRecipeJournalRecord): Result<JournalId>;
     clear(): void;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     static create(params?: IJournalLibraryParams): Result<JournalLibrary>;
-    exportJournals(): ReadonlyArray<IJournalRecord>;
-    getAllJournals(): ReadonlyArray<IJournalRecord>;
+    exportJournals(): ReadonlyArray<AnyJournalRecord>;
+    getAllJournals(): ReadonlyArray<AnyJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournal(journalId: JournalId): Result<IJournalRecord>;
+    getJournal(journalId: JournalId): Result<AnyJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+    getJournalsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    getJournalsForConfectionVersion(versionId: ConfectionVersionId): ReadonlyArray<IConfectionJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getJournalsForRecipeVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
     hasJournal(journalId: JournalId): boolean;
     importJournals(journals: ReadonlyArray<unknown>): Result<IJournalImportResult>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    removeJournal(journalId: JournalId): Result<IJournalRecord>;
+    removeJournal(journalId: JournalId): Result<AnyJournalRecord>;
     get size(): number;
 }
+
+// @public
+type JournalType = 'recipe' | 'confection';
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const journalRecord: Converter<IJournalRecord>;
+const journalType: Converter<JournalType>;
 
 declare namespace LibraryData {
     export {
@@ -3118,6 +3340,41 @@ const recipeData: Converter<IRecipe>;
 const recipeDerivation: Converter<IRecipeDerivation>;
 
 // @public
+class RecipeEditingSession implements ISessionState {
+    addIngredient(id: IngredientId, amount: Grams): Result<void>;
+    addIngredientAmount(id: IngredientId, additional: Grams): Result<void>;
+    addNote(text: string): void;
+    static create(params: IEditingSessionParams): Result<RecipeEditingSession>;
+    getIngredient(id: IngredientId): Result<ISessionIngredient>;
+    // (undocumented)
+    get ingredients(): ReadonlyMap<IngredientId, ISessionIngredient>;
+    // (undocumented)
+    get isDirty(): boolean;
+    // (undocumented)
+    get isJournalingEnabled(): boolean;
+    // (undocumented)
+    get journalEntries(): ReadonlyArray<IJournalEntry>;
+    removeIngredient(id: IngredientId): Result<void>;
+    save(options: ISaveOptions): Result<ISaveResult>;
+    // (undocumented)
+    get scaleFactor(): number;
+    // (undocumented)
+    get sessionId(): SessionId;
+    setIngredientAmount(id: IngredientId, amount: Grams): Result<void>;
+    setScaleFactor(factor: number): Result<void>;
+    setTargetWeight(weight: Grams): Result<void>;
+    // (undocumented)
+    get sourceVersion(): IRuntimeRecipeVersion;
+    substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Grams): Result<void>;
+    // (undocumented)
+    get targetWeight(): Grams;
+    toJournalRecord(notes?: string): Result<IRecipeJournalRecord>;
+    toRecipeIngredients(): IRecipeIngredient[];
+    toRecipeVersion(versionSpec: string): Result<IRecipeVersion>;
+    get validating(): IEditingSessionValidator;
+}
+
+// @public
 type RecipeFilter = FilterPredicate<RuntimeRecipe>;
 
 // @public
@@ -3145,6 +3402,11 @@ const recipeIngredient: Converter<IRecipeIngredient>;
 
 // @public
 type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const recipeJournalRecord: Converter<IRecipeJournalRecord>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3606,8 +3868,8 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     // @internal
     _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient>;
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
-    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
-    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord>;
+    getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
+    getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
     getMold(id: string): Result<Mold>;
     getProcedure(id: string): Result<Procedure>;
     // @internal
@@ -3893,16 +4155,32 @@ type SecretProvider_2 = (secretName: string) => Promise<Result<Uint8Array>>;
 
 declare namespace Session {
     export {
-        EditingSession,
+        RecipeEditingSession,
+        ConfectionEditingSession,
         EditingSessionValidator,
         IEditingSessionValidator,
         IReadOnlyEditingSessionValidator,
+        generateJournalId,
+        generateSessionId,
+        getCurrentDateString,
+        getCurrentTimestamp,
         SessionIngredientStatus,
         ISessionIngredient,
         IEditingSessionParams,
         ISessionState,
         ISaveOptions,
-        ISaveResult
+        ISaveResult,
+        ConfectionSelectionStatus,
+        ISessionFilling,
+        ISessionMold,
+        ISessionChocolate,
+        ISessionYield,
+        ISessionProcedure,
+        ISessionCoating,
+        IConfectionEditingSessionParams,
+        IConfectionSessionState,
+        IConfectionSaveOptions,
+        IConfectionSaveResult
     }
 }
 
@@ -4130,6 +4408,6 @@ const weightUnit: Converter<WeightUnit>;
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/journal/journalLibrary.ts:82:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/journal/journalLibrary.ts:98:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

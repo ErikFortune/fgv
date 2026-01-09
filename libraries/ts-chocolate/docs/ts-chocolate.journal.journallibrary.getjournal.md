@@ -4,12 +4,12 @@
 
 ## Journal.JournalLibrary.getJournal() method
 
-Gets a [journal record](./ts-chocolate.journal.ijournalrecord.md) by its ID
+Gets a [journal record](./ts-chocolate.journal.anyjournalrecord.md) by its ID
 
 **Signature:**
 
 ```typescript
-getJournal(journalId: JournalId): Result<IJournalRecord>;
+getJournal(journalId: JournalId): Result<AnyJournalRecord>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The journal ID to look up
 
 **Returns:**
 
-Result&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+Result&lt;[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)<!-- -->&gt;
 
 `Success` with the journal record, or `Failure` if not found
 

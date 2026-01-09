@@ -19,9 +19,16 @@
 // SOFTWARE.
 
 export * from './model';
-export { EditingSession } from './editingSession';
+export { RecipeEditingSession } from './editingSession';
+export { ConfectionEditingSession } from './confectionEditingSession';
 export {
   EditingSessionValidator,
   IEditingSessionValidator,
   IReadOnlyEditingSessionValidator
 } from './editingSessionValidator';
+export {
+  generateJournalId,
+  generateSessionId,
+  getCurrentDateString,
+  getCurrentTimestamp
+} from './sessionUtils';

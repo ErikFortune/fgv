@@ -25,9 +25,23 @@
 
 import { Logging } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, SessionId } from '../../common';
-import { IJournalEntry, IJournalRecord } from '../../journal';
-import { IRuntimeRecipeVersion } from '../model';
+import {
+  ConfectionVersionSpec,
+  Grams,
+  IngredientId,
+  MoldId,
+  ProcedureId,
+  RecipeId,
+  SessionId
+} from '../../common';
+import {
+  ChocolateRole,
+  IConfectionJournalEntry,
+  IConfectionJournalRecord,
+  IJournalEntry,
+  IRecipeJournalRecord
+} from '../../journal';
+import { IRuntimeConfection, IRuntimeRecipeVersion } from '../model';
 
 // ============================================================================
 // Session Ingredient State
@@ -204,10 +218,332 @@ export interface ISaveResult {
    * The full journal record if one was created.
    * Callers can use this to persist the journal via `context.journals.addJournal(record)`.
    */
-  readonly journalRecord?: IJournalRecord;
+  readonly journalRecord?: IRecipeJournalRecord;
 
   /**
    * The new version spec if one was created
    */
   readonly newVersionSpec?: string;
+}
+
+// ============================================================================
+// Confection Session State Types
+// ============================================================================
+
+/**
+ * Status of a confection session selection
+ * @public
+ */
+export type ConfectionSelectionStatus = 'original' | 'modified';
+
+/**
+ * Tracks the selected filling for a confection session
+ * @public
+ */
+export interface ISessionFilling {
+  /**
+   * The currently selected filling recipe ID (mutually exclusive with ingredientId)
+   */
+  readonly recipeId?: RecipeId;
+
+  /**
+   * The currently selected filling ingredient ID (mutually exclusive with recipeId)
+   */
+  readonly ingredientId?: IngredientId;
+
+  /**
+   * The original filling recipe ID when the session started
+   */
+  readonly originalRecipeId?: RecipeId;
+
+  /**
+   * The original filling ingredient ID when the session started
+   */
+  readonly originalIngredientId?: IngredientId;
+
+  /**
+   * Current status of the filling selection
+   */
+  readonly status: ConfectionSelectionStatus;
+}
+
+/**
+ * Tracks the selected mold for a confection session
+ * @public
+ */
+export interface ISessionMold {
+  /**
+   * The currently selected mold ID
+   */
+  readonly moldId: MoldId;
+
+  /**
+   * The original mold ID when the session started
+   */
+  readonly originalMoldId: MoldId;
+
+  /**
+   * Current status of the mold selection
+   */
+  readonly status: ConfectionSelectionStatus;
+}
+
+/**
+ * Tracks a chocolate selection by role for a confection session
+ * @public
+ */
+export interface ISessionChocolate {
+  /**
+   * The role of this chocolate in the confection
+   */
+  readonly role: ChocolateRole;
+
+  /**
+   * The currently selected chocolate ingredient ID
+   */
+  readonly ingredientId: IngredientId;
+
+  /**
+   * The original chocolate ingredient ID when the session started
+   */
+  readonly originalIngredientId: IngredientId;
+
+  /**
+   * Current status of this chocolate selection
+   */
+  readonly status: ConfectionSelectionStatus;
+}
+
+/**
+ * Tracks yield modifications for a confection session
+ * @public
+ */
+export interface ISessionYield {
+  /**
+   * Current yield count
+   */
+  readonly count: number;
+
+  /**
+   * Original yield count when the session started
+   */
+  readonly originalCount: number;
+
+  /**
+   * Current weight per piece (optional)
+   */
+  readonly weightPerPiece?: Grams;
+
+  /**
+   * Original weight per piece when the session started
+   */
+  readonly originalWeightPerPiece?: Grams;
+
+  /**
+   * Current status of yield modifications
+   */
+  readonly status: ConfectionSelectionStatus;
+}
+
+/**
+ * Tracks the selected procedure for a confection session
+ * @public
+ */
+export interface ISessionProcedure {
+  /**
+   * The currently selected procedure ID
+   */
+  readonly procedureId: ProcedureId;
+
+  /**
+   * The original procedure ID when the session started
+   */
+  readonly originalProcedureId?: ProcedureId;
+
+  /**
+   * Current status of the procedure selection
+   */
+  readonly status: ConfectionSelectionStatus;
+}
+
+/**
+ * Tracks a coating selection for rolled truffles
+ * @public
+ */
+export interface ISessionCoating {
+  /**
+   * The currently selected coating ingredient ID
+   */
+  readonly ingredientId: IngredientId;
+
+  /**
+   * The original coating ingredient ID when the session started
+   */
+  readonly originalIngredientId?: IngredientId;
+
+  /**
+   * Current status of the coating selection
+   */
+  readonly status: ConfectionSelectionStatus;
+}
+
+// ============================================================================
+// Confection Session Parameters
+// ============================================================================
+
+/**
+ * Parameters for creating a confection editing session
+ * @public
+ */
+export interface IConfectionEditingSessionParams {
+  /**
+   * The source confection to edit from
+   */
+  readonly sourceConfection: IRuntimeConfection;
+
+  /**
+   * Initial yield count (defaults to confection's default yield)
+   */
+  readonly yieldCount?: number;
+
+  /**
+   * Initial weight per piece (defaults to confection's default)
+   */
+  readonly weightPerPiece?: Grams;
+
+  /**
+   * Whether to track detailed journal entries (default: true)
+   */
+  readonly enableJournal?: boolean;
+
+  /**
+   * Optional logger for reporting operations
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
+}
+
+// ============================================================================
+// Confection Session State
+// ============================================================================
+
+/**
+ * Read-only view of confection session state
+ * @public
+ */
+export interface IConfectionSessionState {
+  /**
+   * Unique session identifier
+   */
+  readonly sessionId: SessionId;
+
+  /**
+   * Source confection being edited
+   */
+  readonly sourceConfection: IRuntimeConfection;
+
+  /**
+   * Current filling selection (if applicable)
+   */
+  readonly filling?: ISessionFilling;
+
+  /**
+   * Current mold selection (for molded bonbons)
+   */
+  readonly mold?: ISessionMold;
+
+  /**
+   * Current chocolate selections by role
+   */
+  readonly chocolates: ReadonlyMap<ChocolateRole, ISessionChocolate>;
+
+  /**
+   * Current yield state
+   */
+  readonly yield: ISessionYield;
+
+  /**
+   * Current procedure selection (if applicable)
+   */
+  readonly procedure?: ISessionProcedure;
+
+  /**
+   * Current coating selection (for rolled truffles)
+   */
+  readonly coating?: ISessionCoating;
+
+  /**
+   * Journal entries recording what happened in this session
+   */
+  readonly journalEntries: ReadonlyArray<IConfectionJournalEntry>;
+
+  /**
+   * Whether the session has unsaved modifications
+   */
+  readonly isDirty: boolean;
+
+  /**
+   * Whether journaling is enabled
+   */
+  readonly isJournalingEnabled: boolean;
+}
+
+// ============================================================================
+// Confection Save Options and Results
+// ============================================================================
+
+/**
+ * Options for saving a confection editing session
+ * @public
+ */
+export interface IConfectionSaveOptions {
+  /**
+   * Whether to create a journal record
+   */
+  readonly createJournalRecord?: boolean;
+
+  /**
+   * Whether to create a new confection version from modifications
+   */
+  readonly createNewVersion?: boolean;
+
+  /**
+   * Version label for the new version (required if createNewVersion is true)
+   */
+  readonly versionLabel?: ConfectionVersionSpec;
+
+  /**
+   * Optional notes for the journal record
+   */
+  readonly journalNotes?: string;
+
+  /**
+   * Whether to save linked recipe sessions (default: true)
+   */
+  readonly saveLinkedRecipeSessions?: boolean;
+}
+
+/**
+ * Result of saving a confection editing session
+ * @public
+ */
+export interface IConfectionSaveResult {
+  /**
+   * The journal ID if a journal record was created
+   */
+  readonly journalId?: string;
+
+  /**
+   * The full journal record if one was created
+   */
+  readonly journalRecord?: IConfectionJournalRecord;
+
+  /**
+   * The new version spec if one was created
+   */
+  readonly newVersionSpec?: ConfectionVersionSpec;
+
+  /**
+   * Journal IDs of linked recipe sessions that were saved
+   */
+  readonly linkedRecipeJournalIds?: ReadonlyArray<string>;
 }

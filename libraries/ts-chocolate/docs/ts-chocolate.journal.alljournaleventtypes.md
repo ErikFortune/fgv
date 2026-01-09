@@ -4,7 +4,7 @@
 
 ## Journal.allJournalEventTypes variable
 
-All possible journal event types
+All possible recipe journal event types
 
 **Signature:**
 

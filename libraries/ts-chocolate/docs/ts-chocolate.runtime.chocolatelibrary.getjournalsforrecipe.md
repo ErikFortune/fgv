@@ -4,12 +4,12 @@
 
 ## Runtime.ChocolateLibrary.getJournalsForRecipe() method
 
-Gets all [journal records](./ts-chocolate.journal.ijournalrecord.md) for a recipe (across all versions)
+Gets all [journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a recipe (across all versions)
 
 **Signature:**
 
 ```typescript
-getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord>;
+getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The [recipe ID](./ts-chocolate.recipeid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)<!-- -->&gt;
 
 Array of journal records (empty if none found)
 

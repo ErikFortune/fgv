@@ -4,12 +4,12 @@
 
 ## Journal.JournalLibrary.addJournal() method
 
-Adds a [journal record](./ts-chocolate.journal.ijournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.journal.anyjournalrecord.md) to the library. Accepts both recipe and confection journal records.
 
 **Signature:**
 
 ```typescript
-addJournal(journal: IJournalRecord): Result<JournalId>;
+addJournal(journal: AnyJournalRecord): Result<JournalId>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ journal
 
 </td><td>
 
-[IJournalRecord](./ts-chocolate.journal.ijournalrecord.md)
+[AnyJournalRecord](./ts-chocolate.journal.anyjournalrecord.md)
 
 
 </td><td>

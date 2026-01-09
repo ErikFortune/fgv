@@ -526,13 +526,13 @@ describe('Confections converters', () => {
       });
     });
 
-    test('converts valid additional chocolate for deco', () => {
+    test('converts valid additional chocolate for decoration', () => {
       const input = {
         ingredientId: 'common.chocolate-white',
-        purpose: 'deco'
+        purpose: 'decoration'
       };
       expect(ConfectionConverters.additionalChocolate.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.purpose).toBe('deco');
+        expect(result.purpose).toBe('decoration');
       });
     });
 

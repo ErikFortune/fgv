@@ -26,7 +26,7 @@
 import { Result } from '@fgv/ts-utils';
 
 import { Grams, IngredientId, Converters as CommonConverters } from '../../common';
-import { EditingSession } from './editingSession';
+import { RecipeEditingSession } from './editingSession';
 import { ISessionIngredient } from './model';
 
 // ============================================================================
@@ -42,7 +42,7 @@ export interface IReadOnlyEditingSessionValidator {
   /**
    * The underlying editing session
    */
-  readonly session: EditingSession;
+  readonly session: RecipeEditingSession;
 
   /**
    * Gets an ingredient by ID using a weakly-typed string
@@ -147,20 +147,20 @@ export interface IEditingSessionValidator extends IReadOnlyEditingSessionValidat
  * @public
  */
 export class EditingSessionValidator implements IEditingSessionValidator {
-  private readonly _session: EditingSession;
+  private readonly _session: RecipeEditingSession;
 
   /**
    * Creates a new EditingSessionValidator
    * @param session - The EditingSession to wrap
    */
-  public constructor(session: EditingSession) {
+  public constructor(session: RecipeEditingSession) {
     this._session = session;
   }
 
   /**
    * The underlying editing session
    */
-  public get session(): EditingSession {
+  public get session(): RecipeEditingSession {
     return this._session;
   }
 

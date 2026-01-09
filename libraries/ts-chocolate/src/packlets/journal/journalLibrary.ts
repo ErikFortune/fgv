@@ -25,9 +25,22 @@
 
 import { captureResult, Failure, Logging, mapResults, Result, Success } from '@fgv/ts-utils';
 
-import { JournalId, RecipeId, RecipeVersionId, Converters as CommonConverters } from '../common';
-import { IJournalRecord } from './model';
-import { journalRecord as journalRecordConverter } from './converters';
+import {
+  ConfectionId,
+  ConfectionVersionId,
+  JournalId,
+  RecipeId,
+  RecipeVersionId,
+  Converters as CommonConverters
+} from '../common';
+import {
+  AnyJournalRecord,
+  IConfectionJournalRecord,
+  IRecipeJournalRecord,
+  isConfectionJournalRecord,
+  isRecipeJournalRecord
+} from './model';
+import { anyJournalRecord as anyJournalRecordConverter } from './converters';
 
 /**
  * Result of importing journals into the library
@@ -54,9 +67,10 @@ export interface IJournalImportResult {
  */
 export interface IJournalLibraryParams {
   /**
-   * Initial journal records to populate the library with
+   * Initial journal records to populate the library with.
+   * Accepts both recipe and confection journal records.
    */
-  readonly journals?: ReadonlyArray<IJournalRecord>;
+  readonly journals?: ReadonlyArray<AnyJournalRecord>;
 
   /**
    * Optional logger for reporting operations
@@ -65,21 +79,23 @@ export interface IJournalLibraryParams {
 }
 
 /**
- * A library for managing cooking {@link Journal.IJournalRecord | journal records}.
+ * A library for managing cooking {@link Journal.AnyJournalRecord | journal records}.
  *
  * Provides:
  * - Storage for journal records indexed by {@link JournalId | JournalId}
  * - Lookup by recipe ID (all journals for a recipe)
- * - Lookup by version ID (all journals for a specific version)
+ * - Lookup by recipe version ID (all journals for a specific recipe version)
+ * - Lookup by confection ID (all journals for a confection)
+ * - Lookup by confection version ID (all journals for a specific confection version)
  * - Add/retrieve journal records
  *
  * @public
  */
 export class JournalLibrary {
   /**
-   * Map of {@link Journal.IJournalRecord | journal records} by {@link JournalId | JournalId}
+   * Map of {@link Journal.AnyJournalRecord | journal records} by {@link JournalId | JournalId}
    */
-  private readonly _journals: Map<JournalId, IJournalRecord>;
+  private readonly _journals: Map<JournalId, AnyJournalRecord>;
 
   /**
    * Index from {@link RecipeId | recipe ID} to {@link JournalId | journal IDs}
@@ -89,7 +105,17 @@ export class JournalLibrary {
   /**
    * Index from {@link RecipeVersionId | recipe version ID} to {@link JournalId | journal IDs}
    */
-  private readonly _byVersionId: Map<RecipeVersionId, Set<JournalId>>;
+  private readonly _byRecipeVersionId: Map<RecipeVersionId, Set<JournalId>>;
+
+  /**
+   * Index from {@link ConfectionId | confection ID} to {@link JournalId | journal IDs}
+   */
+  private readonly _byConfectionId: Map<ConfectionId, Set<JournalId>>;
+
+  /**
+   * Index from {@link ConfectionVersionId | confection version ID} to {@link JournalId | journal IDs}
+   */
+  private readonly _byConfectionVersionId: Map<ConfectionVersionId, Set<JournalId>>;
 
   /**
    * Logger for reporting operations
@@ -99,7 +125,9 @@ export class JournalLibrary {
   private constructor(params?: IJournalLibraryParams) {
     this._journals = new Map();
     this._byRecipeId = new Map();
-    this._byVersionId = new Map();
+    this._byRecipeVersionId = new Map();
+    this._byConfectionId = new Map();
+    this._byConfectionVersionId = new Map();
     this._logger = params?.logger ?? Logging.LogReporter.createDefault().orThrow();
 
     // Add initial journals if provided
@@ -121,12 +149,12 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets a {@link Journal.IJournalRecord | journal record} by its ID
+   * Gets a {@link Journal.AnyJournalRecord | journal record} by its ID
    * @param journalId - The journal ID to look up
    * @returns `Success` with the journal record, or `Failure` if not found
    * @public
    */
-  public getJournal(journalId: JournalId): Result<IJournalRecord> {
+  public getJournal(journalId: JournalId): Result<AnyJournalRecord> {
     const journal = this._journals.get(journalId);
     if (journal === undefined) {
       return Failure.with(`Journal not found: ${journalId}`);
@@ -135,35 +163,69 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IJournalRecord | journal records} for a recipe (across all versions)
+   * Gets all {@link Journal.IRecipeJournalRecord | recipe journal records} for a recipe (across all versions)
    * @param recipeId - The {@link RecipeId | recipe ID} to search for
-   * @returns Array of journal records (empty if none found)
+   * @returns Array of recipe journal records (empty if none found)
    * @public
    */
-  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IJournalRecord> {
+  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord> {
     const journalIds = this._byRecipeId.get(recipeId);
     if (!journalIds) {
       return [];
     }
     return Array.from(journalIds)
       .map((id) => this._journals.get(id))
-      .filter((j): j is IJournalRecord => j !== undefined);
+      .filter((j): j is IRecipeJournalRecord => j !== undefined && isRecipeJournalRecord(j));
   }
 
   /**
-   * Gets all {@link Journal.IJournalRecord | journal records} for a specific recipe version
+   * Gets all {@link Journal.IRecipeJournalRecord | recipe journal records} for a specific recipe version
    * @param versionId - The {@link RecipeVersionId | recipe version ID} to search for
-   * @returns Array of journal records (empty if none found)
+   * @returns Array of recipe journal records (empty if none found)
    * @public
    */
-  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IJournalRecord> {
-    const journalIds = this._byVersionId.get(versionId);
+  public getJournalsForRecipeVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord> {
+    const journalIds = this._byRecipeVersionId.get(versionId);
     if (!journalIds) {
       return [];
     }
     return Array.from(journalIds)
       .map((id) => this._journals.get(id))
-      .filter((j): j is IJournalRecord => j !== undefined);
+      .filter((j): j is IRecipeJournalRecord => j !== undefined && isRecipeJournalRecord(j));
+  }
+
+  /**
+   * Gets all {@link Journal.IConfectionJournalRecord | confection journal records} for a confection (across all versions)
+   * @param confectionId - The {@link ConfectionId | confection ID} to search for
+   * @returns Array of confection journal records (empty if none found)
+   * @public
+   */
+  public getJournalsForConfection(confectionId: ConfectionId): ReadonlyArray<IConfectionJournalRecord> {
+    const journalIds = this._byConfectionId.get(confectionId);
+    if (!journalIds) {
+      return [];
+    }
+    return Array.from(journalIds)
+      .map((id) => this._journals.get(id))
+      .filter((j): j is IConfectionJournalRecord => j !== undefined && isConfectionJournalRecord(j));
+  }
+
+  /**
+   * Gets all {@link Journal.IConfectionJournalRecord | confection journal records} for a specific confection version
+   * @param versionId - The {@link ConfectionVersionId | confection version ID} to search for
+   * @returns Array of confection journal records (empty if none found)
+   * @public
+   */
+  public getJournalsForConfectionVersion(
+    versionId: ConfectionVersionId
+  ): ReadonlyArray<IConfectionJournalRecord> {
+    const journalIds = this._byConfectionVersionId.get(versionId);
+    if (!journalIds) {
+      return [];
+    }
+    return Array.from(journalIds)
+      .map((id) => this._journals.get(id))
+      .filter((j): j is IConfectionJournalRecord => j !== undefined && isConfectionJournalRecord(j));
   }
 
   /**
@@ -171,7 +233,7 @@ export class JournalLibrary {
    * @returns Array of all journal records
    * @public
    */
-  public getAllJournals(): ReadonlyArray<IJournalRecord> {
+  public getAllJournals(): ReadonlyArray<AnyJournalRecord> {
     return Array.from(this._journals.values());
   }
 
@@ -184,14 +246,15 @@ export class JournalLibrary {
   }
 
   /**
-   * Adds a {@link Journal.IJournalRecord | journal record} to the library
+   * Adds a {@link Journal.AnyJournalRecord | journal record} to the library.
+   * Accepts both recipe and confection journal records.
    * @param journal - The journal record to add (validated)
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
    * @public
    */
-  public addJournal(journal: IJournalRecord): Result<JournalId> {
+  public addJournal(journal: AnyJournalRecord): Result<JournalId> {
     // Validate the journal using the converter - report validation errors (unexpected)
-    return journalRecordConverter
+    return anyJournalRecordConverter
       .convert(journal)
       .onSuccess((validated) => {
         if (this._journals.has(validated.journalId)) {
@@ -204,12 +267,23 @@ export class JournalLibrary {
   }
 
   /**
-   * Removes a {@link Journal.IJournalRecord | journal record} from the library
+   * Adds a recipe journal record to the library.
+   * @param journal - The recipe journal record to add (validated)
+   * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
+   * @deprecated Use addJournal instead which accepts both recipe and confection journals
+   * @public
+   */
+  public addRecipeJournal(journal: IRecipeJournalRecord): Result<JournalId> {
+    return this.addJournal(journal);
+  }
+
+  /**
+   * Removes a {@link Journal.AnyJournalRecord | journal record} from the library
    * @param journalId - The ID of the journal to remove
    * @returns `Success` with the removed journal, or `Failure` if not found
    * @public
    */
-  public removeJournal(journalId: JournalId): Result<IJournalRecord> {
+  public removeJournal(journalId: JournalId): Result<AnyJournalRecord> {
     const journal = this._journals.get(journalId);
     if (journal === undefined) {
       return Failure.with(`Journal not found: ${journalId}`);
@@ -218,23 +292,11 @@ export class JournalLibrary {
     // Remove from main storage
     this._journals.delete(journalId);
 
-    // Remove from recipe index
-    const recipeId = this._extractRecipeId(journal.recipeVersionId);
-    const recipeJournals = this._byRecipeId.get(recipeId);
-    if (recipeJournals) {
-      recipeJournals.delete(journalId);
-      if (recipeJournals.size === 0) {
-        this._byRecipeId.delete(recipeId);
-      }
-    }
-
-    // Remove from version index
-    const versionJournals = this._byVersionId.get(journal.recipeVersionId);
-    if (versionJournals) {
-      versionJournals.delete(journalId);
-      if (versionJournals.size === 0) {
-        this._byVersionId.delete(journal.recipeVersionId);
-      }
+    // Remove from type-specific indices
+    if (isRecipeJournalRecord(journal)) {
+      this._removeRecipeJournalFromIndices(journal);
+    } else if (isConfectionJournalRecord(journal)) {
+      this._removeConfectionJournalFromIndices(journal);
     }
 
     return Success.with(journal);
@@ -247,10 +309,22 @@ export class JournalLibrary {
   /**
    * Internal method to add a journal without validation (used during construction)
    */
-  private _addJournalInternal(journal: IJournalRecord): void {
+  private _addJournalInternal(journal: AnyJournalRecord): void {
     // Add to main storage
     this._journals.set(journal.journalId, journal);
 
+    // Add to type-specific indices
+    if (isRecipeJournalRecord(journal)) {
+      this._addRecipeJournalToIndices(journal);
+    } else if (isConfectionJournalRecord(journal)) {
+      this._addConfectionJournalToIndices(journal);
+    }
+  }
+
+  /**
+   * Adds a recipe journal to the recipe-specific indices
+   */
+  private _addRecipeJournalToIndices(journal: IRecipeJournalRecord): void {
     // Extract recipe ID from version ID for the recipe index
     const recipeId = this._extractRecipeId(journal.recipeVersionId);
 
@@ -263,12 +337,86 @@ export class JournalLibrary {
     recipeJournals.add(journal.journalId);
 
     // Add to version index
-    let versionJournals = this._byVersionId.get(journal.recipeVersionId);
+    let versionJournals = this._byRecipeVersionId.get(journal.recipeVersionId);
     if (!versionJournals) {
       versionJournals = new Set();
-      this._byVersionId.set(journal.recipeVersionId, versionJournals);
+      this._byRecipeVersionId.set(journal.recipeVersionId, versionJournals);
     }
     versionJournals.add(journal.journalId);
+  }
+
+  /**
+   * Adds a confection journal to the confection-specific indices
+   */
+  private _addConfectionJournalToIndices(journal: IConfectionJournalRecord): void {
+    // Extract confection ID from version ID for the confection index
+    const confectionId = this._extractConfectionId(journal.confectionVersionId);
+
+    // Add to confection index
+    let confectionJournals = this._byConfectionId.get(confectionId);
+    if (!confectionJournals) {
+      confectionJournals = new Set();
+      this._byConfectionId.set(confectionId, confectionJournals);
+    }
+    confectionJournals.add(journal.journalId);
+
+    // Add to version index
+    let versionJournals = this._byConfectionVersionId.get(journal.confectionVersionId);
+    if (!versionJournals) {
+      versionJournals = new Set();
+      this._byConfectionVersionId.set(journal.confectionVersionId, versionJournals);
+    }
+    versionJournals.add(journal.journalId);
+  }
+
+  /**
+   * Removes a recipe journal from the recipe-specific indices
+   */
+  private _removeRecipeJournalFromIndices(journal: IRecipeJournalRecord): void {
+    const recipeId = this._extractRecipeId(journal.recipeVersionId);
+
+    // Remove from recipe index
+    const recipeJournals = this._byRecipeId.get(recipeId);
+    if (recipeJournals) {
+      recipeJournals.delete(journal.journalId);
+      if (recipeJournals.size === 0) {
+        this._byRecipeId.delete(recipeId);
+      }
+    }
+
+    // Remove from version index
+    const versionJournals = this._byRecipeVersionId.get(journal.recipeVersionId);
+    if (versionJournals) {
+      versionJournals.delete(journal.journalId);
+      if (versionJournals.size === 0) {
+        this._byRecipeVersionId.delete(journal.recipeVersionId);
+      }
+    }
+  }
+
+  /**
+   * Removes a confection journal from the confection-specific indices
+   */
+  private _removeConfectionJournalFromIndices(journal: IConfectionJournalRecord): void {
+    const confectionId = this._extractConfectionId(journal.confectionVersionId);
+
+    // Remove from confection index
+    const confectionJournals = this._byConfectionId.get(confectionId);
+    if (confectionJournals) {
+      confectionJournals.delete(journal.journalId);
+      if (confectionJournals.size === 0) {
+        this._byConfectionId.delete(confectionId);
+      }
+    }
+
+    // Remove from version index
+    const versionJournals = this._byConfectionVersionId.get(journal.confectionVersionId);
+    if (versionJournals) {
+      versionJournals.delete(journal.journalId);
+      if (versionJournals.size === 0) {
+        this._byConfectionVersionId.delete(journal.confectionVersionId);
+      }
+    }
   }
 
   /**
@@ -279,6 +427,14 @@ export class JournalLibrary {
     return CommonConverters.parsedRecipeVersionId.convert(versionId).orThrow().collectionId;
   }
 
+  /**
+   * Extracts the ConfectionId from a ConfectionVersionId
+   * ConfectionVersionId format: "confectionId\@versionSpec"
+   */
+  private _extractConfectionId(versionId: ConfectionVersionId): ConfectionId {
+    return CommonConverters.parsedConfectionVersionId.convert(versionId).orThrow().collectionId;
+  }
+
   // ============================================================================
   // Import/Export Methods
   // ============================================================================
@@ -287,14 +443,15 @@ export class JournalLibrary {
    * Imports journal records from an array.
    * Validates each journal and adds it to the library.
    * Journals that already exist are skipped.
+   * Accepts both recipe and confection journal records.
    *
    * @param journals - Array of journal records to import
    * @returns `Success` with import results, or `Failure` if validation fails
    * @public
    */
   public importJournals(journals: ReadonlyArray<unknown>): Result<IJournalImportResult> {
-    // First validate all journals - report validation errors (unexpected)
-    return mapResults(journals.map((j) => journalRecordConverter.convert(j)))
+    // First validate all journals using the discriminated union converter
+    return mapResults(journals.map((j) => anyJournalRecordConverter.convert(j)))
       .report(this._logger)
       .onSuccess((validated) => {
         let imported = 0;
@@ -325,7 +482,7 @@ export class JournalLibrary {
    * @returns Array of all journal records
    * @public
    */
-  public exportJournals(): ReadonlyArray<IJournalRecord> {
+  public exportJournals(): ReadonlyArray<AnyJournalRecord> {
     return this.getAllJournals();
   }
 
@@ -347,6 +504,8 @@ export class JournalLibrary {
   public clear(): void {
     this._journals.clear();
     this._byRecipeId.clear();
-    this._byVersionId.clear();
+    this._byRecipeVersionId.clear();
+    this._byConfectionId.clear();
+    this._byConfectionVersionId.clear();
   }
 }
