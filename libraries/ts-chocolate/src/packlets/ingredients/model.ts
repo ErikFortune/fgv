@@ -24,21 +24,22 @@
  */
 
 import {
+  Allergen,
   BaseIngredientId,
+  CacaoVariety,
   Celsius,
+  Certification,
+  ChocolateApplication,
   ChocolateType,
   DegreesMacMichael,
+  FluidityStars,
+  ICategorizedUrl,
   IMeasurementUnitOption,
   IngredientCategory,
   IngredientPhase,
   IOptionsWithPreferred,
   MeasurementUnit,
-  Percentage,
-  FluidityStars,
-  Allergen,
-  Certification,
-  CacaoVariety,
-  ChocolateApplication
+  Percentage
 } from '../common';
 
 // ============================================================================
@@ -120,6 +121,8 @@ export interface IIngredient {
   readonly phase?: IngredientPhase;
   /** Preferred and acceptable measurement units for this ingredient */
   readonly measurementUnits?: IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
+  /** Optional categorized URLs for external resources (manufacturer, product page, etc.) */
+  readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }
 
 // ============================================================================

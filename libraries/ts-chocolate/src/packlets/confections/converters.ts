@@ -271,7 +271,8 @@ const commonConfectionFields: Conversion.FieldConverters<Omit<IConfection, 'conf
   fillings: Converters.arrayOf(fillingSlot).optional(),
   confectionProcedures: confectionProcedures.optional(),
   versions: Converters.arrayOf(confectionVersion),
-  goldenVersionSpec: CommonConverters.confectionVersionSpec
+  goldenVersionSpec: CommonConverters.confectionVersionSpec,
+  urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 };
 
 /**

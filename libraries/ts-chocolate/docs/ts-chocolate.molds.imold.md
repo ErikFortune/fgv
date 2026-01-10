@@ -245,5 +245,26 @@ _(Optional)_ Optional tags for categorization and search
 
 
 </td></tr>
+<tr><td>
+
+[urls?](./ts-chocolate.molds.imold.urls.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional categorized URLs for external resources (manufacturer page, purchase link, etc.)
+
+
+</td></tr>
 </tbody></table>
 

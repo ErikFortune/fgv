@@ -316,6 +316,17 @@ Type guard for SourceId
 </td></tr>
 <tr><td>
 
+[isValidUrlCategory(from)](./ts-chocolate.validation.isvalidurlcategory.md)
+
+
+</td><td>
+
+Type guard for UrlCategory
+
+
+</td></tr>
+<tr><td>
+
 [toBaseConfectionId(from)](./ts-chocolate.validation.tobaseconfectionid.md)
 
 
@@ -608,6 +619,17 @@ Converts unknown value to SlotId
 </td><td>
 
 Converts unknown value to SourceId
+
+
+</td></tr>
+<tr><td>
+
+[toUrlCategory(from)](./ts-chocolate.validation.tourlcategory.md)
+
+
+</td><td>
+
+Converts unknown value to UrlCategory
 
 
 </td></tr>

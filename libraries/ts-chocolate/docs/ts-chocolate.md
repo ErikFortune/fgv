@@ -21,6 +21,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)
+
+
+</td><td>
+
+A categorized URL for linking to external resources. Used on ingredients, recipes, molds, and confections.
+
+
+</td></tr>
+<tr><td>
+
 [IHasId](./ts-chocolate.ihasid.md)
 
 
@@ -1023,6 +1034,17 @@ Spoon level indicator for dry measurements. This is a display hint only and does
 </td><td>
 
 Spoon measurement units that share the same scaling system
+
+
+</td></tr>
+<tr><td>
+
+[UrlCategory](./ts-chocolate.urlcategory.md)
+
+
+</td><td>
+
+Category for a URL associated with an entity. Uses the standard base ID pattern (alphanumeric, dashes, underscores). Examples: 'manufacturer', 'product-page', 'documentation', 'video', 'purchase'
 
 
 </td></tr>

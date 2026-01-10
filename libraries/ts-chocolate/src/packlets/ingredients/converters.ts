@@ -91,7 +91,8 @@ const commonIngredientFields: Conversion.FieldConverters<Omit<IIngredient, 'cate
     IngredientConverters.measurementUnitOption,
     IngredientConverters.measurementUnit,
     'measurementUnits'
-  ).optional()
+  ).optional(),
+  urls: Converters.arrayOf(IngredientConverters.categorizedUrl).optional()
 };
 
 /**

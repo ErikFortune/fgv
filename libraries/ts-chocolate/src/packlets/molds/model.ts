@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseMoldId, Measurement, Millimeters, MoldFormat } from '../common';
+import { BaseMoldId, ICategorizedUrl, Measurement, Millimeters, MoldFormat } from '../common';
 
 /**
  * Dimensions of a mold cavity in millimeters
@@ -100,4 +100,9 @@ export interface IMold {
    * Optional notes about the mold
    */
   readonly notes?: string;
+
+  /**
+   * Optional categorized URLs for external resources (manufacturer page, purchase link, etc.)
+   */
+  readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }

@@ -310,6 +310,9 @@ export { Calculations }
 // @public
 function canScaleByFrames(confection: ConfectionData): confection is IMoldedBonBon;
 
+// @public
+const categorizedUrl: Converter<ICategorizedUrl>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -730,7 +733,9 @@ declare namespace Converters {
         measurementUnit,
         spoonLevel,
         ingredientPhase,
-        measurementUnitOption
+        measurementUnitOption,
+        urlCategory,
+        categorizedUrl
     }
 }
 export { Converters }
@@ -1152,6 +1157,12 @@ interface IBonBonDimensions {
 }
 
 // @public
+export interface ICategorizedUrl {
+    readonly category: UrlCategory;
+    readonly url: string;
+}
+
+// @public
 interface ICategoryFilter {
     readonly category: IngredientCategory | RegExp;
 }
@@ -1297,6 +1308,7 @@ interface IConfection {
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly name: ConfectionName;
     readonly tags?: ReadonlyArray<string>;
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
     readonly versions: ReadonlyArray<IConfectionVersion>;
     readonly yield: IConfectionYield;
 }
@@ -1661,6 +1673,7 @@ interface IIngredient {
     readonly phase?: IngredientPhase;
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
     readonly vegan?: boolean;
 }
 
@@ -1828,6 +1841,7 @@ interface IMold {
     readonly notes?: string;
     readonly productNumber: string;
     readonly tags?: ReadonlyArray<string>;
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }
 
 // @public
@@ -2185,6 +2199,7 @@ interface IRecipe {
     readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
     readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
     readonly tags?: ReadonlyArray<string>;
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
 }
 
@@ -2930,6 +2945,9 @@ function isValidSlotId(from: unknown): from is SlotId;
 
 // @public
 function isValidSourceId(from: unknown): from is SourceId;
+
+// @public
+function isValidUrlCategory(from: unknown): from is UrlCategory;
 
 // Warning: (ae-forgotten-export) The symbol "WeightExcludedUnit" needs to be exported by the entry point index.d.ts
 //
@@ -4631,6 +4649,9 @@ function toSlotId(from: unknown): Result<SlotId>;
 function toSourceId(from: unknown): Result<SourceId>;
 
 // @public
+function toUrlCategory(from: unknown): Result<UrlCategory>;
+
+// @public
 function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvider: ICryptoProvider): Promise<Result<JsonObject>>;
 
 // @public
@@ -4643,6 +4664,12 @@ class UnitScalerRegistry {
     scale(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
     supportsScaling(unit: MeasurementUnit): boolean;
 }
+
+// @public
+export type UrlCategory = Brand<string, 'UrlCategory'>;
+
+// @public
+const urlCategory: Converter<UrlCategory>;
 
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
@@ -4674,6 +4701,8 @@ declare namespace Validation {
         toBaseProcedureId,
         isValidBaseConfectionId,
         toBaseConfectionId,
+        isValidUrlCategory,
+        toUrlCategory,
         isValidIngredientId,
         toIngredientId,
         isValidRecipeId,

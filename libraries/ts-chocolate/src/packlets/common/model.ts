@@ -566,6 +566,30 @@ export type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
 export const allRecipeCategories: RecipeCategory[] = ['ganache', 'caramel', 'gianduja'];
 
 // ============================================================================
+// URLs
+// ============================================================================
+
+/**
+ * Category for a URL associated with an entity.
+ * Uses the standard base ID pattern (alphanumeric, dashes, underscores).
+ * Examples: 'manufacturer', 'product-page', 'documentation', 'video', 'purchase'
+ * @public
+ */
+export type UrlCategory = Brand<string, 'UrlCategory'>;
+
+/**
+ * A categorized URL for linking to external resources.
+ * Used on ingredients, recipes, molds, and confections.
+ * @public
+ */
+export interface ICategorizedUrl {
+  /** Category of the URL (e.g., 'manufacturer', 'product-page', 'video') */
+  readonly category: UrlCategory;
+  /** The URL string */
+  readonly url: string;
+}
+
+// ============================================================================
 // Constants
 // ============================================================================
 

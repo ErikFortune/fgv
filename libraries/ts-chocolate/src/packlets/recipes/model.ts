@@ -25,6 +25,7 @@
 
 import {
   BaseRecipeId,
+  ICategorizedUrl,
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
@@ -328,6 +329,11 @@ export interface IRecipe {
    * Contains available molds and the preferred default.
    */
   readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
+
+  /**
+   * Optional categorized URLs for external resources (tutorials, videos, etc.)
+   */
+  readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }
 
 /**

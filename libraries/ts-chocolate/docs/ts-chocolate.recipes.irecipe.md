@@ -226,6 +226,27 @@ _(Optional)_ Optional tags for categorization and search
 </td></tr>
 <tr><td>
 
+[urls?](./ts-chocolate.recipes.irecipe.urls.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional categorized URLs for external resources (tutorials, videos, etc.)
+
+
+</td></tr>
+<tr><td>
+
 [versions](./ts-chocolate.recipes.irecipe.versions.md)
 
 

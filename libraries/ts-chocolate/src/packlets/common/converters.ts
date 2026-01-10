@@ -60,6 +60,7 @@ import {
   ConfectionVersionSpec,
   DegreesMacMichael,
   FluidityStars,
+  ICategorizedUrl,
   ID_SEPARATOR,
   IHasId,
   IIdsWithPreferred,
@@ -88,6 +89,7 @@ import {
   SlotId,
   SourceId,
   SpoonLevel,
+  UrlCategory,
   VERSION_ID_SEPARATOR,
   WeightUnit
 } from './model';
@@ -119,7 +121,8 @@ import {
   toRecipeVersionSpec,
   toSessionId,
   toSlotId,
-  toSourceId
+  toSourceId,
+  toUrlCategory
 } from './validation';
 
 // ============================================================================
@@ -593,3 +596,22 @@ export function refWithNotes<TId extends string>(idConverter: Converter<TId>): C
     notes: Converters.string.optional()
   });
 }
+
+// ============================================================================
+// URL Converters
+// ============================================================================
+
+/**
+ * Converter for UrlCategory
+ * @public
+ */
+export const urlCategory: Converter<UrlCategory> = Converters.generic(toUrlCategory);
+
+/**
+ * Converter for ICategorizedUrl
+ * @public
+ */
+export const categorizedUrl: Converter<ICategorizedUrl> = Converters.object<ICategorizedUrl>({
+  category: urlCategory,
+  url: Converters.string
+});

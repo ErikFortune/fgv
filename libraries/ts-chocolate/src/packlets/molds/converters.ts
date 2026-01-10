@@ -53,7 +53,8 @@ export const moldData: Converter<IMold> = Converters.object<IMold>({
   cavityDimensions: cavityDimensions.optional(),
   format: CommonConverters.moldFormat,
   tags: Converters.arrayOf(Converters.string).optional(),
-  notes: Converters.string.optional()
+  notes: Converters.string.optional(),
+  urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 });
 
 /**

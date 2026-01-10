@@ -62,6 +62,7 @@ import {
   SessionId,
   SlotId,
   SourceId,
+  UrlCategory,
   VERSION_ID_SEPARATOR
 } from './model';
 
@@ -213,6 +214,29 @@ export function toBaseConfectionId(from: unknown): Result<BaseConfectionId> {
   return Failure.with(
     'Invalid BaseConfectionId: must be non-empty alphanumeric with dashes/underscores, no dots'
   );
+}
+
+/**
+ * Type guard for UrlCategory
+ * @param from - Value to check
+ * @returns True if the value is a valid UrlCategory
+ * @public
+ */
+export function isValidUrlCategory(from: unknown): from is UrlCategory {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to UrlCategory
+ * @param from - Value to convert
+ * @returns Result with UrlCategory or error
+ * @public
+ */
+export function toUrlCategory(from: unknown): Result<UrlCategory> {
+  if (isValidUrlCategory(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid UrlCategory: must be non-empty alphanumeric with dashes/underscores, no dots');
 }
 
 // ============================================================================

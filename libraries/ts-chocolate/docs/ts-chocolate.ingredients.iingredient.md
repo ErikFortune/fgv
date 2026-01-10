@@ -310,6 +310,27 @@ _(Optional)_ Optional list of trace allergens possibly present (e.g. due to cont
 </td></tr>
 <tr><td>
 
+[urls?](./ts-chocolate.ingredients.iingredient.urls.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional categorized URLs for external resources (manufacturer, product page, etc.)
+
+
+</td></tr>
+<tr><td>
+
 [vegan?](./ts-chocolate.ingredients.iingredient.vegan.md)
 
 

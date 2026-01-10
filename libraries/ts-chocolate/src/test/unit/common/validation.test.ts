@@ -40,6 +40,7 @@ import {
   SessionId,
   SlotId,
   SourceId,
+  UrlCategory,
   Validation
 } from '../../../packlets/common';
 
@@ -89,7 +90,9 @@ const {
   toConfectionName,
   toConfectionVersionSpec,
   isValidConfectionVersionId,
-  toConfectionVersionId
+  toConfectionVersionId,
+  isValidUrlCategory,
+  toUrlCategory
 } = Validation;
 
 const {
@@ -856,6 +859,56 @@ describe('Common validation', () => {
 
       test('fails with invalid format', () => {
         expect(toConfectionVersionId('invalid')).toFailWith(/Invalid ConfectionVersionId/);
+      });
+    });
+  });
+
+  describe('URL Category validators', () => {
+    describe('isValidUrlCategory', () => {
+      test('returns true for valid categories', () => {
+        expect(isValidUrlCategory('manufacturer')).toBe(true);
+        expect(isValidUrlCategory('product-page')).toBe(true);
+        expect(isValidUrlCategory('video_tutorial')).toBe(true);
+        expect(isValidUrlCategory('documentation123')).toBe(true);
+      });
+
+      test('returns false for non-string', () => {
+        expect(isValidUrlCategory(123)).toBe(false);
+        expect(isValidUrlCategory(null)).toBe(false);
+        expect(isValidUrlCategory(undefined)).toBe(false);
+      });
+
+      test('returns false for empty string', () => {
+        expect(isValidUrlCategory('')).toBe(false);
+      });
+
+      test('returns false for strings with dots', () => {
+        expect(isValidUrlCategory('bad.category')).toBe(false);
+      });
+
+      test('returns false for strings with invalid characters', () => {
+        expect(isValidUrlCategory('bad category')).toBe(false);
+        expect(isValidUrlCategory('bad@category')).toBe(false);
+      });
+    });
+
+    describe('toUrlCategory', () => {
+      test('succeeds with valid category', () => {
+        expect(toUrlCategory('manufacturer')).toSucceedWith('manufacturer' as UrlCategory);
+        expect(toUrlCategory('product-page')).toSucceedWith('product-page' as UrlCategory);
+        expect(toUrlCategory('video_tutorial')).toSucceedWith('video_tutorial' as UrlCategory);
+      });
+
+      test('fails with empty string', () => {
+        expect(toUrlCategory('')).toFailWith(/Invalid UrlCategory/);
+      });
+
+      test('fails with dots', () => {
+        expect(toUrlCategory('bad.category')).toFailWith(/Invalid UrlCategory/);
+      });
+
+      test('fails with non-string', () => {
+        expect(toUrlCategory(123)).toFailWith(/Invalid UrlCategory/);
       });
     });
   });

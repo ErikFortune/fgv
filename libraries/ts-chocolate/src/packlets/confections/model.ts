@@ -29,11 +29,12 @@ import {
   ConfectionName,
   ConfectionType,
   ConfectionVersionSpec,
-  Measurement,
+  ICategorizedUrl,
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
   IRefWithNotes,
+  Measurement,
   Millimeters,
   MoldId,
   ProcedureId,
@@ -267,6 +268,8 @@ export interface IConfection {
   readonly versions: ReadonlyArray<IConfectionVersion>;
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;
+  /** Optional categorized URLs for external resources (tutorials, videos, etc.) */
+  readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }
 
 // ============================================================================

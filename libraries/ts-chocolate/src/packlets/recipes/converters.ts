@@ -161,7 +161,8 @@ export const recipeData: Converter<IRecipe> = Converters.object<IRecipe>({
   goldenVersionSpec: CommonConverters.recipeVersionSpec,
   derivedFrom: recipeDerivation.optional(),
   recipeProcedures: recipeProcedures.optional(),
-  recipeMolds: recipeMolds.optional()
+  recipeMolds: recipeMolds.optional(),
+  urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 });
 
 /**

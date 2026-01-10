@@ -144,6 +144,17 @@ Converter for BaseRecipeId
 </td></tr>
 <tr><td>
 
+[categorizedUrl](./ts-chocolate.converters.categorizedurl.md)
+
+
+</td><td>
+
+Converter for ICategorizedUrl
+
+
+</td></tr>
+<tr><td>
+
 [celsius](./ts-chocolate.converters.celsius.md)
 
 
@@ -601,6 +612,17 @@ Converter for SourceId
 </td><td>
 
 Converter for SpoonLevel
+
+
+</td></tr>
+<tr><td>
+
+[urlCategory](./ts-chocolate.converters.urlcategory.md)
+
+
+</td><td>
+
+Converter for UrlCategory
 
 
 </td></tr>
