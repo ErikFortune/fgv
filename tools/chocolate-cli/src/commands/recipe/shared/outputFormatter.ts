@@ -19,9 +19,37 @@
 // SOFTWARE.
 
 import * as yaml from 'yaml';
-import { Grams, RecipeId, RecipeName, Recipes, RecipeVersionSpec, SourceId } from '@fgv/ts-chocolate';
+import {
+  ICategorizedUrl,
+  IOptionsWithPreferred,
+  IRefWithNotes,
+  Measurement,
+  MoldId,
+  ProcedureId,
+  Procedures,
+  RecipeId,
+  RecipeName,
+  Recipes,
+  RecipeVersionSpec,
+  SourceId
+} from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
+
+/**
+ * Context for rendering procedures (prepared for future templating support)
+ */
+export interface IRecipeRenderContext {
+  /**
+   * The library for ingredient/recipe lookups (for future templating)
+   */
+  library?: Recipes.RecipesLibrary;
+
+  /**
+   * Procedure library for resolving procedure references
+   */
+  procedureLibrary?: Procedures.ProceduresLibrary;
+}
 
 /**
  * Summary information for a recipe in list output
@@ -54,9 +82,83 @@ function padRight(str: string, length: number): string {
 /**
  * Calculates the percentage of an ingredient amount
  */
-function calculatePercentage(amount: Grams, baseWeight: Grams): string {
+function calculatePercentage(amount: Measurement, baseWeight: Measurement): string {
   const pct = (amount / baseWeight) * 100;
   return formatNumber(pct, 1);
+}
+
+/**
+ * Gets the display ID for a recipe ingredient.
+ * Uses preferredId if available, otherwise the first ID in the list.
+ */
+function getIngredientDisplayId(ingredient: Recipes.IRecipeIngredient): string {
+  return ingredient.ingredient.preferredId ?? ingredient.ingredient.ids[0];
+}
+
+/**
+ * Gets the preferred ID from an IOptionsWithPreferred structure.
+ * Returns preferredId if set, otherwise the first option's ID.
+ */
+function getPreferredId<TOption extends { id: TId }, TId extends string>(
+  options: IOptionsWithPreferred<TOption, TId>
+): TId | undefined {
+  if (options.preferredId) {
+    return options.preferredId;
+  }
+  return options.options.length > 0 ? options.options[0].id : undefined;
+}
+
+/**
+ * Formats procedure references for human output
+ */
+function formatProcedureRefs(
+  procedures: IOptionsWithPreferred<IRefWithNotes<ProcedureId>, ProcedureId>,
+  lines: string[],
+  _context?: IRecipeRenderContext
+): void {
+  const preferredId = getPreferredId(procedures);
+
+  lines.push('');
+  lines.push('Procedures:');
+
+  for (const ref of procedures.options) {
+    const isPreferred = ref.id === preferredId;
+    const preferredMarker = isPreferred ? ' (preferred)' : '';
+    const notes = ref.notes ? ` - ${ref.notes}` : '';
+    lines.push(`  ${ref.id}${preferredMarker}${notes}`);
+  }
+
+  // TODO: When context.procedureLibrary is available, resolve and display
+  // the full procedure with rendered steps
+}
+
+/**
+ * Formats mold references for human output
+ */
+function formatMoldRefs(molds: IOptionsWithPreferred<IRefWithNotes<MoldId>, MoldId>, lines: string[]): void {
+  const preferredId = getPreferredId(molds);
+
+  lines.push('');
+  lines.push('Molds:');
+
+  for (const ref of molds.options) {
+    const isPreferred = ref.id === preferredId;
+    const preferredMarker = isPreferred ? ' (preferred)' : '';
+    const notes = ref.notes ? ` - ${ref.notes}` : '';
+    lines.push(`  ${ref.id}${preferredMarker}${notes}`);
+  }
+}
+
+/**
+ * Formats categorized URLs for human output
+ */
+function formatUrls(urls: ReadonlyArray<ICategorizedUrl>, lines: string[]): void {
+  lines.push('');
+  lines.push('URLs:');
+
+  for (const url of urls) {
+    lines.push(`  [${url.category}] ${url.url}`);
+  }
 }
 
 // ============================================================================
@@ -174,7 +276,8 @@ export function formatRecipeList(recipes: IRecipeListItem[], format: OutputForma
 function formatRecipeHuman(
   recipe: Recipes.IRecipe,
   recipeId: RecipeId,
-  versionSpec?: RecipeVersionSpec
+  versionSpec?: RecipeVersionSpec,
+  context?: IRecipeRenderContext
 ): string {
   const lines: string[] = [];
 
@@ -219,13 +322,14 @@ function formatRecipeHuman(
   lines.push('Ingredients:');
 
   // Find max ingredient ID length for alignment
-  const maxIdLen = Math.max(...version.ingredients.map((i) => i.ingredientId.length));
+  const maxIdLen = Math.max(...version.ingredients.map((i) => getIngredientDisplayId(i).length));
 
   for (const ingredient of version.ingredients) {
+    const displayId = getIngredientDisplayId(ingredient);
     const pct = calculatePercentage(ingredient.amount, version.baseWeight);
     const notes = ingredient.notes ? `  (${ingredient.notes})` : '';
     lines.push(
-      `  ${padRight(ingredient.ingredientId, maxIdLen)}  ${padRight(
+      `  ${padRight(displayId, maxIdLen)}  ${padRight(
         formatNumber(ingredient.amount) + 'g',
         10
       )}  (${pct}%)${notes}`
@@ -240,6 +344,21 @@ function formatRecipeHuman(
       const notes = rating.notes ? ` - ${rating.notes}` : '';
       lines.push(`  ${padRight(rating.category, 12)}: ${rating.score}/5${notes}`);
     }
+  }
+
+  // Show procedures if present
+  if (recipe.recipeProcedures && recipe.recipeProcedures.options.length > 0) {
+    formatProcedureRefs(recipe.recipeProcedures, lines, context);
+  }
+
+  // Show molds if present
+  if (recipe.recipeMolds && recipe.recipeMolds.options.length > 0) {
+    formatMoldRefs(recipe.recipeMolds, lines);
+  }
+
+  // Show URLs if present
+  if (recipe.urls && recipe.urls.length > 0) {
+    formatUrls(recipe.urls, lines);
   }
 
   // Show other versions
@@ -263,9 +382,10 @@ function formatRecipeHuman(
 function formatRecipeTable(
   recipe: Recipes.IRecipe,
   recipeId: RecipeId,
-  versionSpec?: RecipeVersionSpec
+  versionSpec?: RecipeVersionSpec,
+  context?: IRecipeRenderContext
 ): string {
-  return formatRecipeHuman(recipe, recipeId, versionSpec);
+  return formatRecipeHuman(recipe, recipeId, versionSpec, context);
 }
 
 /**
@@ -275,7 +395,8 @@ export function formatRecipe(
   recipe: Recipes.IRecipe,
   recipeId: RecipeId,
   format: OutputFormat,
-  versionSpec?: RecipeVersionSpec
+  versionSpec?: RecipeVersionSpec,
+  context?: IRecipeRenderContext
 ): string {
   switch (format) {
     case 'json':
@@ -283,10 +404,10 @@ export function formatRecipe(
     case 'yaml':
       return yaml.stringify(recipe);
     case 'table':
-      return formatRecipeTable(recipe, recipeId, versionSpec);
+      return formatRecipeTable(recipe, recipeId, versionSpec, context);
     case 'human':
     default:
-      return formatRecipeHuman(recipe, recipeId, versionSpec);
+      return formatRecipeHuman(recipe, recipeId, versionSpec, context);
   }
 }
 
@@ -318,16 +439,17 @@ function formatScaledRecipeHuman(scaled: Recipes.IComputedScaledRecipe): string 
   lines.push('Ingredients:');
 
   // Find max ingredient ID length for alignment
-  const maxIdLen = Math.max(...scaled.ingredients.map((i) => i.ingredientId.length));
+  const maxIdLen = Math.max(...scaled.ingredients.map((i) => getIngredientDisplayId(i).length));
 
   for (const ingredient of scaled.ingredients) {
+    const displayId = getIngredientDisplayId(ingredient);
     const pct = calculatePercentage(ingredient.amount, scaled.baseWeight);
     const originalStr = `(was ${formatNumber(ingredient.originalAmount)}g)`;
     lines.push(
-      `  ${padRight(ingredient.ingredientId, maxIdLen)}  ${padRight(
-        formatNumber(ingredient.amount) + 'g',
-        10
-      )}  ${padRight(originalStr, 16)}  (${pct}%)`
+      `  ${padRight(displayId, maxIdLen)}  ${padRight(formatNumber(ingredient.amount) + 'g', 10)}  ${padRight(
+        originalStr,
+        16
+      )}  (${pct}%)`
     );
   }
 

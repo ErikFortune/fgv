@@ -20,7 +20,7 @@
 
 import { Command } from 'commander';
 import { fail, Result, succeed } from '@fgv/ts-utils';
-import { Converters, Grams, RecipeId, RecipeVersionSpec } from '@fgv/ts-chocolate';
+import { Converters, Measurement, RecipeId, RecipeVersionSpec } from '@fgv/ts-chocolate';
 import { Recipes } from '@fgv/ts-chocolate';
 
 import {
@@ -158,7 +158,7 @@ export function createShowSubcommand(): Command {
           if (target.type === 'factor') {
             scaledResult = Recipes.scaleRecipeByFactor(recipe, recipeId, target.value, scaleOptions);
           } else {
-            scaledResult = Recipes.scaleRecipe(recipe, recipeId, target.value as Grams, scaleOptions);
+            scaledResult = Recipes.scaleRecipe(recipe, recipeId, target.value as Measurement, scaleOptions);
           }
 
           if (scaledResult.isFailure()) {
