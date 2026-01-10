@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { Result } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import { BaseIngredientId, IngredientId, Percentage, SourceId } from '../../../packlets/common';
@@ -1204,7 +1205,7 @@ describe('IngredientsLibrary.createAsync', () => {
     });
   });
 
-  test('fails on encrypted files when no encryption config provided', async () => {
+  test('captures encrypted files when no encryption config provided', async () => {
     const secretIngredientData = {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       'secret-ingredient': {
@@ -1250,6 +1251,434 @@ describe('IngredientsLibrary.createAsync', () => {
       fileSources: fileSource
     });
 
-    expect(result).toFailWith(/encrypted.*no encryption config/i);
+    // Without encryption config, encrypted files are captured (not decrypted)
+    expect(result).toSucceedAndSatisfy((lib) => {
+      // No decrypted collections since no encryption config
+      expect(lib.collections.size).toBe(0);
+      // But the protected collection should be captured
+      expect(lib.protectedCollections).toHaveLength(1);
+      expect(lib.protectedCollections[0].collectionId).toBe('secret');
+      expect(lib.protectedCollections[0].secretName).toBe(TEST_SECRET_NAME);
+    });
+  });
+});
+
+// ============================================================================
+// Protected Collection Tests
+// ============================================================================
+
+describe('IngredientsLibrary protected collections', () => {
+  const TEST_SECRET_NAME = 'test-secret';
+  let testKey: Uint8Array;
+
+  beforeAll(async () => {
+    testKey = (await nodeCryptoProvider.generateKey()).orThrow();
+  });
+
+  async function createLibraryWithProtectedCollections(): Promise<IngredientsLibrary> {
+    const secretIngredientData = {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      'secret-ingredient': {
+        baseId: 'secret-ingredient',
+        name: 'Secret Ingredient',
+        category: 'sugar',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 100,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        }
+      }
+    };
+
+    const encryptedFile = (
+      await createEncryptedCollectionFile({
+        content: secretIngredientData,
+        secretName: TEST_SECRET_NAME,
+        key: testKey,
+        cryptoProvider: nodeCryptoProvider
+      })
+    ).orThrow();
+
+    const files: FileTree.IInMemoryFile[] = [
+      {
+        path: '/data/ingredients/secret.json',
+        contents: encryptedFile as unknown as JsonObject
+      }
+    ];
+
+    const tree = FileTree.inMemory(files).orThrow();
+    const rootDir = tree.getItem('/').orThrow();
+    const fileSource: IIngredientFileTreeSource = {
+      directory: rootDir as FileTree.IFileTreeDirectoryItem,
+      mutable: true
+    };
+
+    // Create without encryption config to capture protected collections
+    return (
+      await IngredientsLibrary.createAsync({
+        builtin: false,
+        fileSources: fileSource
+      })
+    ).orThrow();
+  }
+
+  describe('protectedCollections getter', () => {
+    test('returns empty array when no protected collections exist', async () => {
+      const lib = (await IngredientsLibrary.createAsync({ builtin: false })).orThrow();
+      expect(lib.protectedCollections).toHaveLength(0);
+    });
+
+    test('returns captured protected collections', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      expect(lib.protectedCollections).toHaveLength(1);
+      expect(lib.protectedCollections[0].collectionId).toBe('secret');
+      expect(lib.protectedCollections[0].secretName).toBe(TEST_SECRET_NAME);
+      expect(lib.protectedCollections[0].isMutable).toBe(true);
+    });
+  });
+
+  describe('loadProtectedCollectionAsync', () => {
+    test('loads all protected collections when no filter specified', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      expect(lib.protectedCollections).toHaveLength(1);
+      expect(lib.collections.size).toBe(0);
+
+      const result = await lib.loadProtectedCollectionAsync({
+        secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+        cryptoProvider: nodeCryptoProvider
+      });
+
+      expect(result).toSucceedAndSatisfy((loadedIds) => {
+        expect(loadedIds).toHaveLength(1);
+        expect(loadedIds[0]).toBe('secret');
+      });
+
+      // Collection should be decrypted and loaded
+      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+      expect(lib.get('secret.secret-ingredient' as IngredientId)).toSucceedAndSatisfy((ingredient) => {
+        expect(ingredient.name).toBe('Secret Ingredient');
+      });
+
+      // Protected collection should be removed
+      expect(lib.protectedCollections).toHaveLength(0);
+    });
+
+    test('returns empty array when no protected collections and no filter', async () => {
+      const lib = (await IngredientsLibrary.createAsync({ builtin: false })).orThrow();
+      const result = await lib.loadProtectedCollectionAsync({
+        secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+        cryptoProvider: nodeCryptoProvider
+      });
+
+      expect(result).toSucceedWith([]);
+    });
+
+    test('fails when filter matches nothing', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync(
+        {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        },
+        ['non-existent']
+      );
+
+      expect(result).toFailWith(/no protected collections match/i);
+    });
+
+    test('filters by collection ID string', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync(
+        {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        },
+        ['secret']
+      );
+
+      expect(result).toSucceedWith(['secret' as SourceId]);
+      expect(lib.collections.has('secret' as SourceId)).toBe(true);
+    });
+
+    test('filters by secret name string', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync(
+        {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        },
+        [TEST_SECRET_NAME]
+      );
+
+      expect(result).toSucceedWith(['secret' as SourceId]);
+    });
+
+    test('filters by regex pattern on collection ID', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync(
+        {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        },
+        [/^sec/]
+      );
+
+      expect(result).toSucceedWith(['secret' as SourceId]);
+    });
+
+    test('filters by regex pattern on secret name', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync(
+        {
+          secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+          cryptoProvider: nodeCryptoProvider
+        },
+        [/test-secret/]
+      );
+
+      expect(result).toSucceedWith(['secret' as SourceId]);
+    });
+
+    test('fails when no key available for secret', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync({
+        secrets: [{ name: 'wrong-secret', key: testKey }],
+        cryptoProvider: nodeCryptoProvider
+      });
+
+      expect(result).toFailWith(/no key available/i);
+    });
+
+    test('uses secretProvider when secret not in static list', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const result = await lib.loadProtectedCollectionAsync({
+        cryptoProvider: nodeCryptoProvider,
+        secretProvider: async (name) => {
+          if (name === TEST_SECRET_NAME) {
+            return {
+              isSuccess: () => true,
+              isFailure: () => false,
+              value: testKey
+            } as unknown as Result<Uint8Array>;
+          }
+          return {
+            isSuccess: () => false,
+            isFailure: () => true,
+            message: `Unknown secret: ${name}`
+          } as unknown as Result<Uint8Array>;
+        }
+      });
+
+      expect(result).toSucceedWith(['secret' as SourceId]);
+    });
+
+    test('fails when decryption fails with wrong key', async () => {
+      const lib = await createLibraryWithProtectedCollections();
+      const wrongKey = (await nodeCryptoProvider.generateKey()).orThrow();
+      const result = await lib.loadProtectedCollectionAsync({
+        secrets: [{ name: TEST_SECRET_NAME, key: wrongKey }],
+        cryptoProvider: nodeCryptoProvider
+      });
+
+      expect(result).toFailWith(/decryption failed/i);
+    });
+
+    test('fails when collection already exists', async () => {
+      // Create library with protected collection
+      const secretIngredientData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret-ingredient': {
+          baseId: 'secret-ingredient',
+          name: 'Secret Ingredient',
+          category: 'sugar',
+          ganacheCharacteristics: {
+            cacaoFat: 0,
+            sugar: 100,
+            milkFat: 0,
+            water: 0,
+            solids: 0,
+            otherFats: 0
+          }
+        }
+      };
+
+      const encryptedFile = (
+        await createEncryptedCollectionFile({
+          content: secretIngredientData,
+          secretName: TEST_SECRET_NAME,
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      // Create a regular collection with the same ID as will be decrypted
+      const regularFile = {
+        path: '/data/ingredients/secret.json',
+        contents: {
+          items: {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'regular-ingredient': {
+              baseId: 'regular-ingredient',
+              name: 'Regular Ingredient',
+              category: 'sugar',
+              ganacheCharacteristics: {
+                cacaoFat: 0,
+                sugar: 100,
+                milkFat: 0,
+                water: 0,
+                solids: 0,
+                otherFats: 0
+              }
+            }
+          }
+        } as unknown as JsonObject
+      };
+
+      const encryptedFileEntry = {
+        path: '/data/ingredients/protected.json',
+        contents: encryptedFile as unknown as JsonObject
+      };
+
+      const files: FileTree.IInMemoryFile[] = [regularFile, encryptedFileEntry];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const rootDir = tree.getItem('/').orThrow();
+      const fileSource: IIngredientFileTreeSource = {
+        directory: rootDir as FileTree.IFileTreeDirectoryItem,
+        mutable: true
+      };
+
+      // Create with encryption to decrypt the regular file but capture protected
+      const lib = (
+        await IngredientsLibrary.createAsync({
+          builtin: false,
+          fileSources: fileSource
+        })
+      ).orThrow();
+
+      // Verify we have a protected collection
+      expect(lib.protectedCollections).toHaveLength(1);
+      expect(lib.protectedCollections[0].collectionId).toBe('protected');
+
+      // Manually add a collection with the same ID as the protected one
+      lib.addCollectionEntry({
+        id: 'protected' as SourceId,
+        isMutable: true,
+        items: {}
+      });
+
+      // Try to load the protected collection - should fail due to collision
+      const result = await lib.loadProtectedCollectionAsync({
+        secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+        cryptoProvider: nodeCryptoProvider
+      });
+
+      expect(result).toFailWith(/already exists/i);
+    });
+
+    test('warns but continues when some protected collections fail to load', async () => {
+      // Create library with two protected collections using different keys
+      const secret1Data = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret1-ingredient': {
+          baseId: 'secret1-ingredient',
+          name: 'Secret 1',
+          category: 'sugar',
+          ganacheCharacteristics: {
+            cacaoFat: 0,
+            sugar: 100,
+            milkFat: 0,
+            water: 0,
+            solids: 0,
+            otherFats: 0
+          }
+        }
+      };
+
+      const secret2Data = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'secret2-ingredient': {
+          baseId: 'secret2-ingredient',
+          name: 'Secret 2',
+          category: 'sugar',
+          ganacheCharacteristics: {
+            cacaoFat: 0,
+            sugar: 100,
+            milkFat: 0,
+            water: 0,
+            solids: 0,
+            otherFats: 0
+          }
+        }
+      };
+
+      const key2 = (await nodeCryptoProvider.generateKey()).orThrow();
+
+      const encryptedFile1 = (
+        await createEncryptedCollectionFile({
+          content: secret1Data,
+          secretName: TEST_SECRET_NAME,
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const encryptedFile2 = (
+        await createEncryptedCollectionFile({
+          content: secret2Data,
+          secretName: 'other-secret',
+          key: key2,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        {
+          path: '/data/ingredients/secret1.json',
+          contents: encryptedFile1 as unknown as JsonObject
+        },
+        {
+          path: '/data/ingredients/secret2.json',
+          contents: encryptedFile2 as unknown as JsonObject
+        }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const rootDir = tree.getItem('/').orThrow();
+      const fileSource: IIngredientFileTreeSource = {
+        directory: rootDir as FileTree.IFileTreeDirectoryItem,
+        mutable: true
+      };
+
+      const lib = (
+        await IngredientsLibrary.createAsync({
+          builtin: false,
+          fileSources: fileSource
+        })
+      ).orThrow();
+
+      // Both collections should be protected
+      expect(lib.protectedCollections).toHaveLength(2);
+
+      // Only provide key for the first secret - second will fail but first should succeed
+      const result = await lib.loadProtectedCollectionAsync({
+        secrets: [{ name: TEST_SECRET_NAME, key: testKey }],
+        cryptoProvider: nodeCryptoProvider
+      });
+
+      // Should succeed with partial load - one collection loaded, one failed
+      expect(result).toSucceedAndSatisfy((loadedIds) => {
+        expect(loadedIds).toHaveLength(1);
+        expect(loadedIds).toContain('secret1');
+      });
+
+      // Verify one collection was loaded and one remains protected
+      expect(lib.collections.has('secret1' as SourceId)).toBe(true);
+      expect(lib.protectedCollections).toHaveLength(1);
+      expect(lib.protectedCollections[0].collectionId).toBe('secret2');
+    });
   });
 });

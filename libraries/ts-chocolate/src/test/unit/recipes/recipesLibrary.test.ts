@@ -1180,10 +1180,14 @@ describe('Recipe scaling', () => {
       });
     });
 
-    test('fails when built-ins include encrypted files with no encryption config', async () => {
-      // Without any encryption config, encountering encrypted built-ins should fail
+    test('captures encrypted built-ins when no encryption config provided', async () => {
+      // Without any encryption config, encrypted built-ins are captured (not decrypted)
+      // The library should succeed with the non-encrypted collections
       const result = await RecipesLibrary.createAsync();
-      expect(result).toFailWith(/encrypted.*no encryption config/i);
+      expect(result).toSucceedAndSatisfy((lib) => {
+        // Should have the common built-in collection (fgv is captured as protected)
+        expect(lib.collections.has('common' as SourceId)).toBe(true);
+      });
     });
 
     test('creates library without built-ins when builtin: false', async () => {
@@ -1297,7 +1301,7 @@ describe('Recipe scaling', () => {
       });
     });
 
-    test('fails on encrypted files when no encryption config provided', async () => {
+    test('captures encrypted files when no encryption config provided', async () => {
       const secretRecipeData = {
         // eslint-disable-next-line @typescript-eslint/naming-convention
         'secret-recipe': {
@@ -1339,14 +1343,17 @@ describe('Recipe scaling', () => {
         mutable: false
       };
 
-      // Without encryption config, encrypted files should fail (default behavior)
+      // Without encryption config, encrypted files are captured (not decrypted)
       const result = await RecipesLibrary.createAsync({
         builtin: false,
         fileSources: fileSource
       });
 
-      // Should fail because no encryption config was provided
-      expect(result).toFailWith(/encrypted.*no encryption config/i);
+      // Should succeed with the encrypted file captured as a protected collection
+      expect(result).toSucceedAndSatisfy((lib) => {
+        // No decrypted collections since no encryption config
+        expect(lib.collections.size).toBe(0);
+      });
     });
 
     test('handles mixed encrypted and plain files', async () => {

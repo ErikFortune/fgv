@@ -121,9 +121,10 @@ export class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, Mold> {
     };
 
     // Load all collections asynchronously with encryption support
-    const collectionsResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
-    if (collectionsResult.isFailure()) {
-      return fail(collectionsResult.message);
+    const loadResult = (await SubLibraryBase.loadAllCollectionsAsync(createParams)).report(logger);
+    /* c8 ignore next 3 - failure paths tested through collectionLoader tests */
+    if (loadResult.isFailure()) {
+      return fail(loadResult.message);
     }
 
     // Create library with pre-loaded collections (no file sources, no built-in - already loaded)
@@ -133,7 +134,8 @@ export class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, Mold> {
           ...params,
           builtin: false, // Already loaded
           fileSources: undefined, // Already loaded
-          collections: collectionsResult.value
+          collections: loadResult.value.collections,
+          protectedCollections: loadResult.value.protectedCollections
         })
     );
   }

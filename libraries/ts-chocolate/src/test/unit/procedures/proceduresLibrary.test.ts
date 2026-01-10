@@ -340,7 +340,7 @@ describe('ProceduresLibrary.createAsync', () => {
     });
   });
 
-  test('fails on encrypted files when no encryption config provided', async () => {
+  test('captures encrypted files when no encryption config provided', async () => {
     const secretProcedureData = {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       'secret-procedure': {
@@ -378,6 +378,10 @@ describe('ProceduresLibrary.createAsync', () => {
       fileSources: fileSource
     });
 
-    expect(result).toFailWith(/encrypted.*no encryption config/i);
+    // Without encryption config, encrypted files are captured (not decrypted)
+    expect(result).toSucceedAndSatisfy((lib) => {
+      // No decrypted collections since no encryption config
+      expect(lib.collections.size).toBe(0);
+    });
   });
 });

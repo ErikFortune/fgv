@@ -13,7 +13,7 @@ Encryption configuration is read from `params.libraryParams.encryption`<!-- -->.
 **Signature:**
 
 ```typescript
-protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<SubLibraryEntryInit<TBaseId, TItem>[]>>;
+protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
 ```
 
 ## Parameters
@@ -54,7 +54,7 @@ The creation parameters (encryption config comes from libraryParams.encryption).
 
 **Returns:**
 
-Promise&lt;Result&lt;[SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->&lt;TBaseId, TItem&gt;\[\]&gt;&gt;
+Promise&lt;Result&lt;[ISubLibraryAsyncLoadResult](./ts-chocolate.librarydata.isublibraryasyncloadresult.md)<!-- -->&lt;TBaseId, TItem&gt;&gt;&gt;
 
-Promise resolving to Success with all collections or Failure with error.
+Promise resolving to Success with collections and protected collections, or Failure with error.
 

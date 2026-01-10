@@ -6,14 +6,14 @@
 
 Loads collections from a `FileTree` using optional filtering parameters.
 
-Encrypted collections are handled according to `onEncryptedFile`<!-- -->: - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip (default)
+Encrypted collections are handled according to `onEncryptedFile`<!-- -->: - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip - `'capture'`<!-- -->: Capture encrypted files for later decryption (default)
 
-Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) to decrypt encrypted files.
+Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) to decrypt encrypted files during loading.
 
 **Signature:**
 
 ```typescript
-loadFromFileTree(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>;
+loadFromFileTree(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>;
 ```
 
 ## Parameters
@@ -70,7 +70,7 @@ _(Optional)_ optional [parameters](./ts-chocolate.librarydata.iloadcollectionfro
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[ICollection](./ts-chocolate.librarydata.icollection.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID&gt;&gt;&gt;
+Result&lt;[ICollectionLoadResult](./ts-chocolate.librarydata.icollectionloadresult.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID&gt;&gt;
 
-Success with loaded collections, or Failure with error.
+Success with load result containing collections and captured protected collections, or Failure with error.
 

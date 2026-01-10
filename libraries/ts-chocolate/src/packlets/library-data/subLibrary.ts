@@ -31,6 +31,7 @@ import {
   Failure,
   Logging,
   mapResults,
+  MessageAggregator,
   recordFromEntries,
   Result,
   succeed,
@@ -41,9 +42,17 @@ import { FileTree } from '@fgv/ts-json-base';
 
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
+import { decryptCollectionFile } from '../crypto';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
-import { IEncryptionConfig, IFileTreeSource, IMergeLibrarySource, LibraryLoadSpec } from './model';
+import {
+  IEncryptionConfig,
+  IFileTreeSource,
+  IMergeLibrarySource,
+  IProtectedCollectionInternal,
+  IProtectedCollectionInfo,
+  LibraryLoadSpec
+} from './model';
 import {
   checkForCollisionIds,
   ICollectionSet,
@@ -206,6 +215,17 @@ export interface ISubLibraryParams<TLibrary, TEntryInit> {
    * Optional logger for reporting loading progress and issues.
    */
   readonly logger?: Logging.LogReporter<unknown>;
+
+  /**
+   * Protected collections that were captured during loading.
+   *
+   * These are encrypted collections that could not be decrypted (e.g., due to missing keys).
+   * They can be decrypted later using `loadProtectedCollectionAsync`.
+   *
+   * This field is typically populated by `loadAllCollectionsAsync` and passed to
+   * the constructor by derived class `createAsync()` methods.
+   */
+  readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
 }
 
 /**
@@ -226,6 +246,38 @@ export interface ISubLibraryAsyncParams<TLibrary, TEntryInit>
    * Only used by `createAsync()` - this field is ignored by synchronous `create()`.
    */
   readonly encryption?: IEncryptionConfig;
+}
+
+/**
+ * Result from async collection loading operations.
+ *
+ * Contains both successfully loaded collections and protected collections
+ * that were captured but could not be decrypted (e.g., due to missing keys).
+ *
+ * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
+ * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
+ * @public
+ */
+export interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
+  /**
+   * Successfully loaded collections ready to be added to the library.
+   */
+  readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
+
+  /**
+   * Protected collections that were captured but not decrypted.
+   * These can be decrypted later using `loadProtectedCollectionAsync`.
+   */
+  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+}
+
+/**
+ * Internal result type for file tree source loading.
+ * @internal
+ */
+interface IFileTreeSourceLoadResult<TBaseId extends string, TItem> {
+  readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
+  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
 }
 
 // ============================================================================
@@ -321,6 +373,12 @@ export abstract class SubLibraryBase<
   private readonly _logger: Logging.LogReporter<unknown>;
 
   /**
+   * Protected collections that were captured but not decrypted during loading.
+   * These can be decrypted later using loadProtectedCollectionAsync.
+   */
+  private readonly _protectedCollections: Map<SourceId, IProtectedCollectionInternal<SourceId>>;
+
+  /**
    * Creates a new SubLibraryBase instance with full loading support.
    *
    * This constructor handles all collection loading:
@@ -348,7 +406,8 @@ export abstract class SubLibraryBase<
       params.itemIdConverter,
       params.itemConverter,
       params.directoryNavigator,
-      params.builtInTreeProvider
+      params.builtInTreeProvider,
+      logger
     ).orThrow();
 
     // Load file source collections
@@ -357,7 +416,9 @@ export abstract class SubLibraryBase<
         source,
         params.itemIdConverter,
         params.itemConverter,
-        params.directoryNavigator
+        params.directoryNavigator,
+        undefined, // onEncryptedFile - use default
+        logger
       )
         .onSuccess((collections) =>
           Success.with<ICollectionSet<SourceId>>({
@@ -405,6 +466,14 @@ export abstract class SubLibraryBase<
     this._loaderItemConverter = params.itemConverter;
     this._directoryNavigator = params.directoryNavigator;
     this._logger = logger;
+
+    // Initialize protected collections from params if provided
+    this._protectedCollections = new Map();
+    if (libraryParams?.protectedCollections) {
+      for (const pc of libraryParams.protectedCollections) {
+        this._protectedCollections.set(pc.ref.collectionId, pc);
+      }
+    }
   }
 
   // ============================================================================
@@ -419,6 +488,7 @@ export abstract class SubLibraryBase<
    * @param itemConverter - Converter for items.
    * @param directoryNavigator - Function to navigate to the data directory.
    * @param builtInTreeProvider - Function to get the built-in library tree.
+   * @param logger - Optional logger for reporting loading progress and issues.
    * @returns Success with collections or Failure with error.
    */
   private static _loadBuiltInCollections<TBaseId extends string, TItem>(
@@ -426,7 +496,8 @@ export abstract class SubLibraryBase<
     itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
     itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
-    builtInTreeProvider: SubLibraryBuiltInTreeProvider
+    builtInTreeProvider: SubLibraryBuiltInTreeProvider,
+    logger?: Logging.LogReporter<unknown>
   ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
     if (spec === false) {
       return Success.with([]);
@@ -444,7 +515,8 @@ export abstract class SubLibraryBase<
         itemIdConverter,
         itemConverter,
         directoryNavigator,
-        'skip'
+        'skip',
+        logger
       );
     });
   }
@@ -457,6 +529,7 @@ export abstract class SubLibraryBase<
    * @param itemConverter - Converter for items.
    * @param directoryNavigator - Function to navigate to the data directory.
    * @param onEncryptedFile - How to handle encrypted files ('skip' for built-ins, 'warn' for external).
+   * @param logger - Optional logger for reporting loading progress and issues.
    * @returns Success with collections or Failure with error.
    */
   private static _loadFromFileTreeSource<TBaseId extends string, TItem>(
@@ -464,7 +537,8 @@ export abstract class SubLibraryBase<
     itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
     itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
-    onEncryptedFile?: EncryptedFileHandling
+    onEncryptedFile?: EncryptedFileHandling,
+    logger?: Logging.LogReporter<unknown>
   ): Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>> {
     const mutable = source.mutable ?? false;
     const loadParams = specToLoadParams(source.load ?? true, mutable);
@@ -472,16 +546,21 @@ export abstract class SubLibraryBase<
       return Success.with([]);
     }
 
-    /* c8 ignore next 6 - defensive fallback: loadParams.mutable always set by specToLoadParams */
+    /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
     const loader = new CollectionLoader({
       itemConverter,
       collectionIdConverter: CommonConverters.sourceId,
       itemIdConverter,
-      mutable: loadParams.mutable ?? mutable
+      mutable: loadParams.mutable ?? mutable,
+      logger
     });
 
     return directoryNavigator(source.directory).onSuccess((dataDir) => {
-      return loader.loadFromFileTree(dataDir, { ...loadParams, onEncryptedFile });
+      return loader.loadFromFileTree(dataDir, { ...loadParams, onEncryptedFile }).onSuccess((result) => {
+        // Extract just the collections - protected collections from sync loading are not captured
+        // Use loadFromFileTreeAsync if you need to capture protected collections
+        return succeed(result.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>);
+      });
     });
   }
 
@@ -546,6 +625,7 @@ export abstract class SubLibraryBase<
    * @param directoryNavigator - Function to navigate to the data directory.
    * @param builtInTreeProvider - Function to get the built-in library tree.
    * @param encryption - Optional encryption configuration for decrypting files.
+   * @param logger - Optional logger for reporting loading progress and issues.
    * @returns Promise resolving to Success with collections or Failure with error.
    */
   private static async _loadBuiltInCollectionsAsync<TBaseId extends string, TItem>(
@@ -554,10 +634,11 @@ export abstract class SubLibraryBase<
     itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
     builtInTreeProvider: SubLibraryBuiltInTreeProvider,
-    encryption?: IEncryptionConfig
-  ): Promise<Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>>> {
+    encryption?: IEncryptionConfig,
+    logger?: Logging.LogReporter<unknown>
+  ): Promise<Result<IFileTreeSourceLoadResult<TBaseId, TItem>>> {
     if (spec === false) {
-      return Success.with([]);
+      return Success.with({ collections: [], protectedCollections: [] });
     }
 
     const libraryRootResult = builtInTreeProvider();
@@ -577,7 +658,9 @@ export abstract class SubLibraryBase<
       itemIdConverter,
       itemConverter,
       directoryNavigator,
-      encryption
+      encryption,
+      logger,
+      true // isBuiltIn
     );
   }
 
@@ -589,29 +672,34 @@ export abstract class SubLibraryBase<
    * @param itemConverter - Converter for items.
    * @param directoryNavigator - Function to navigate to the data directory.
    * @param encryption - Optional encryption configuration for decrypting files.
-   * @returns Promise resolving to Success with collections or Failure with error.
+   * @param logger - Optional logger for reporting loading progress and issues.
+   * @param isBuiltIn - Whether this source is built-in library data (for protected collection refs).
+   * @returns Promise resolving to Success with collections and protected collections, or Failure with error.
    */
   private static async _loadFromFileTreeSourceAsync<TBaseId extends string, TItem>(
     source: SubLibraryFileTreeSource,
     itemIdConverter: Converter<TBaseId> | Validator<TBaseId>,
     itemConverter: Converter<TItem> | Validator<TItem>,
     directoryNavigator: SubLibraryDirectoryNavigator,
-    encryption?: IEncryptionConfig
-  ): Promise<Result<ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>>> {
+    encryption?: IEncryptionConfig,
+    logger?: Logging.LogReporter<unknown>,
+    isBuiltIn?: boolean
+  ): Promise<Result<IFileTreeSourceLoadResult<TBaseId, TItem>>> {
     /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
     const mutable = source.mutable ?? false;
     const loadParams = specToLoadParams(source.load ?? true, mutable);
     /* c8 ignore next 3 - defensive: only undefined when spec is explicitly false, handled by caller */
     if (loadParams === undefined) {
-      return Success.with([]);
+      return Success.with({ collections: [], protectedCollections: [] });
     }
 
-    /* c8 ignore next 6 - defensive fallback: loadParams.mutable always set by specToLoadParams */
+    /* c8 ignore next 7 - defensive fallback: loadParams.mutable always set by specToLoadParams */
     const loader = new CollectionLoader({
       itemConverter,
       collectionIdConverter: CommonConverters.sourceId,
       itemIdConverter,
-      mutable: loadParams.mutable ?? mutable
+      mutable: loadParams.mutable ?? mutable,
+      logger
     });
 
     const dataDirResult = directoryNavigator(source.directory);
@@ -620,10 +708,20 @@ export abstract class SubLibraryBase<
       return fail(dataDirResult.message);
     }
 
-    return loader.loadFromFileTreeAsync(dataDirResult.value, {
-      ...loadParams,
-      encryption
-    });
+    return loader
+      .loadFromFileTreeAsync(dataDirResult.value, {
+        ...loadParams,
+        encryption,
+        isBuiltIn
+      })
+      .then((result) =>
+        result.onSuccess((loadResult) => {
+          return succeed({
+            collections: loadResult.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>,
+            protectedCollections: loadResult.protectedCollections
+          });
+        })
+      );
   }
 
   /**
@@ -635,7 +733,7 @@ export abstract class SubLibraryBase<
    * Encryption configuration is read from `params.libraryParams.encryption`.
    *
    * @param params - The creation parameters (encryption config comes from libraryParams.encryption).
-   * @returns Promise resolving to Success with all collections or Failure with error.
+   * @returns Promise resolving to Success with collections and protected collections, or Failure with error.
    */
   protected static async loadAllCollectionsAsync<
     TLibrary extends SubLibraryBase<string, TBaseId, TItem>,
@@ -643,7 +741,7 @@ export abstract class SubLibraryBase<
     TItem
   >(
     params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>
-  ): Promise<Result<SubLibraryEntryInit<TBaseId, TItem>[]>> {
+  ): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>> {
     const libraryParams = params.libraryParams as
       | ISubLibraryAsyncParams<TLibrary, SubLibraryEntryInit<TBaseId, TItem>>
       | undefined;
@@ -652,6 +750,10 @@ export abstract class SubLibraryBase<
     /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
     const additionalCollections = libraryParams?.collections ?? [];
     const encryption = libraryParams?.encryption;
+    const logger = params.logger;
+
+    // Aggregate protected collections from all sources
+    const allProtectedCollections: IProtectedCollectionInternal<SourceId>[] = [];
 
     // Load built-in collections async
     const builtInResult = await SubLibraryBase._loadBuiltInCollectionsAsync(
@@ -660,29 +762,39 @@ export abstract class SubLibraryBase<
       params.itemConverter,
       params.directoryNavigator,
       params.builtInTreeProvider,
-      encryption
+      encryption,
+      logger
     );
+    /* c8 ignore next 3 - builtIn failures are tested through builtInData tests */
     if (builtInResult.isFailure()) {
       return fail(builtInResult.message);
     }
+    allProtectedCollections.push(...builtInResult.value.protectedCollections);
 
     // Load file sources async
-    const fileSourceResults: Result<ICollectionSet<SourceId>>[] = [];
+    interface IFileSourceLoadResult {
+      readonly source: string;
+      readonly collections: ReadonlyArray<SubLibraryEntryInit<string, unknown>>;
+    }
+    const fileSourceResults: Result<IFileSourceLoadResult>[] = [];
     for (let i = 0; i < fileSources.length; i++) {
       const result = await SubLibraryBase._loadFromFileTreeSourceAsync(
         fileSources[i],
         params.itemIdConverter,
         params.itemConverter,
         params.directoryNavigator,
-        encryption
+        encryption,
+        logger
       );
+      /* c8 ignore next 3 - file source failures are tested through collectionLoader tests */
       if (result.isFailure()) {
         return fail(result.message);
       }
+      allProtectedCollections.push(...result.value.protectedCollections);
       fileSourceResults.push(
         succeed({
           source: `fileSource[${i}]`,
-          collections: result.value as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
+          collections: result.value.collections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
         })
       );
     }
@@ -705,7 +817,7 @@ export abstract class SubLibraryBase<
     const allSets: ReadonlyArray<ICollectionSet<SourceId>> = [
       {
         source: 'builtin',
-        collections: builtInResult.value as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
+        collections: builtInResult.value.collections as ReadonlyArray<SubLibraryEntryInit<string, unknown>>
       },
       ...fileSourceData.value,
       {
@@ -719,16 +831,19 @@ export abstract class SubLibraryBase<
       return fail(collisionCheck.message);
     }
 
-    // Merge all
+    // Merge all collections
     const fileCollections = fileSourceData.value.flatMap(
       (d) => d.collections as ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>
     );
-    return succeed([
-      ...builtInResult.value,
-      ...fileCollections,
-      ...mergedCollections,
-      ...additionalCollections
-    ]);
+    return succeed({
+      collections: [
+        ...builtInResult.value.collections,
+        ...fileCollections,
+        ...mergedCollections,
+        ...additionalCollections
+      ],
+      protectedCollections: allProtectedCollections
+    });
   }
 
   // ============================================================================
@@ -767,5 +882,184 @@ export abstract class SubLibraryBase<
       this._logger.info(`Loaded ${collections.length} collections from file source`);
       return Success.with(collections.length);
     });
+  }
+
+  // ============================================================================
+  // Protected Collection Methods
+  // ============================================================================
+
+  /**
+   * Gets the list of protected collections that were captured but not decrypted.
+   *
+   * These are encrypted collections that were encountered during loading but couldn't
+   * be decrypted (e.g., due to missing encryption keys). They can be decrypted later
+   * using {@link LibraryData.SubLibraryBase.loadProtectedCollectionAsync | loadProtectedCollectionAsync}.
+   *
+   * @returns Read-only array of protected collection references with metadata.
+   * @public
+   */
+  public get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<SourceId>> {
+    return Array.from(this._protectedCollections.values()).map((internal) => internal.ref);
+  }
+
+  /**
+   * Decrypts and loads one or more protected collections.
+   *
+   * @param encryption - The encryption configuration with keys and crypto provider.
+   * @param filter - Optional filter to select which protected collections to load.
+   *   - If omitted or `undefined`: Load all protected collections that can be decrypted with provided keys.
+   *   - If an array of patterns: Only load collections whose collectionId or secretName matches any pattern.
+   *     Patterns can be strings (exact match) or RegExp objects.
+   * @returns Promise resolving to Success with array of loaded collection IDs, or Failure with error.
+   * @public
+   */
+  public async loadProtectedCollectionAsync(
+    encryption: IEncryptionConfig,
+    filter?: ReadonlyArray<string | RegExp>
+  ): Promise<Result<ReadonlyArray<SourceId>>> {
+    const loadedIds: SourceId[] = [];
+    const errors = new MessageAggregator();
+
+    // Determine which protected collections to attempt to load
+    const toLoad: IProtectedCollectionInternal<SourceId>[] = [];
+    for (const internal of this._protectedCollections.values()) {
+      if (this._matchesFilter(internal, filter)) {
+        toLoad.push(internal);
+      }
+    }
+
+    if (toLoad.length === 0) {
+      if (filter !== undefined && filter.length > 0) {
+        return fail('No protected collections match the specified filter');
+      }
+      return succeed([]);
+    }
+
+    // Try to load each matching protected collection
+    for (const internal of toLoad) {
+      const result = await this._decryptAndLoadProtectedCollection(internal, encryption);
+      if (result.isSuccess()) {
+        loadedIds.push(internal.ref.collectionId);
+        this._protectedCollections.delete(internal.ref.collectionId);
+      } else {
+        errors.addMessage(`${internal.ref.collectionId}: ${result.message}`);
+      }
+    }
+
+    if (errors.hasMessages) {
+      if (loadedIds.length === 0) {
+        return fail(`Failed to load any protected collections: ${errors}`);
+      }
+      this._logger.warn(`Some protected collections failed to load: ${errors}`);
+    } else {
+      this._logger.info(`Loaded ${loadedIds.length} protected collection(s): ${loadedIds.join(', ')}`);
+    }
+    return succeed(loadedIds);
+  }
+
+  /**
+   * Checks if a protected collection matches the filter.
+   */
+  private _matchesFilter(
+    internal: IProtectedCollectionInternal<SourceId>,
+    filter: ReadonlyArray<string | RegExp> | undefined
+  ): boolean {
+    if (filter === undefined || filter.length === 0) {
+      return true;
+    }
+
+    for (const pattern of filter) {
+      if (typeof pattern === 'string') {
+        if (internal.ref.collectionId === pattern || internal.ref.secretName === pattern) {
+          return true;
+        }
+      } else {
+        if (pattern.test(internal.ref.collectionId) || pattern.test(internal.ref.secretName)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Decrypts a protected collection and adds it to the library.
+   */
+  private async _decryptAndLoadProtectedCollection(
+    internal: IProtectedCollectionInternal<SourceId>,
+    encryption: IEncryptionConfig
+  ): Promise<Result<true>> {
+    // Try to get the key for this secret
+    const keyResult = await this._getKeyForSecret(internal.ref.secretName, encryption);
+    if (keyResult.isFailure()) {
+      return fail(keyResult.message);
+    }
+
+    // Decrypt the collection
+    const decryptResult = await decryptCollectionFile(
+      internal.encryptedFile,
+      keyResult.value,
+      encryption.cryptoProvider
+    );
+    if (decryptResult.isFailure()) {
+      return fail(`Decryption failed: ${decryptResult.message}`);
+    }
+
+    const errors = new MessageAggregator();
+    const decryptedItems = decryptResult.value;
+
+    // Convert items using the loader's item converter
+    // Both Converter and Validator have a convert() method, so we can use it directly
+    const convertedItems: Record<string, TItem> = {};
+    for (const [itemId, itemData] of Object.entries(decryptedItems)) {
+      this._loaderItemIdConverter
+        .convert(itemId)
+        .withErrorFormat((msg) => `${itemId}: invalid item id`)
+        .onSuccess((id) => {
+          return this._loaderItemConverter.convert(itemData).onSuccess((item) => {
+            convertedItems[id] = item;
+            return Success.with(true);
+          });
+        })
+        .aggregateError(errors);
+    }
+
+    // Check for collision with existing collection
+    if (this.collections.has(internal.ref.collectionId)) {
+      return fail(`Collection "${internal.ref.collectionId}" already exists in this library`);
+    }
+
+    // Add the collection
+    this.addCollectionEntry({
+      id: internal.ref.collectionId,
+      isMutable: internal.ref.isMutable,
+      items: convertedItems
+    });
+
+    return succeed(true);
+  }
+
+  /**
+   * Gets the encryption key for a given secret name.
+   */
+  private async _getKeyForSecret(
+    secretName: string,
+    encryption: IEncryptionConfig
+  ): Promise<Result<Uint8Array>> {
+    // Check static secrets first
+    if (encryption.secrets) {
+      const secret = encryption.secrets.find((s) => s.name === secretName);
+      if (secret) {
+        return succeed(secret.key);
+      }
+    }
+
+    // Try the secret provider
+    if (encryption.secretProvider) {
+      return encryption.secretProvider(secretName);
+    }
+
+    return fail(`No key available for secret "${secretName}"`);
   }
 }

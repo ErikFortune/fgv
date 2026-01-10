@@ -20,7 +20,12 @@
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { Result } from '@fgv/ts-utils';
-import { EncryptedCollectionErrorMode, ICryptoProvider, INamedSecret } from '../crypto';
+import {
+  EncryptedCollectionErrorMode,
+  ICryptoProvider,
+  IEncryptedCollectionFile,
+  INamedSecret
+} from '../crypto';
 
 // ============================================================================
 // Collection Source Metadata Types
@@ -365,4 +370,94 @@ export interface IEncryptionConfig {
    * - `'warn'`: Log a warning and skip the file.
    */
   readonly onDecryptionError?: EncryptedCollectionErrorMode;
+}
+
+// ============================================================================
+// Protected Collection Types
+// ============================================================================
+
+/**
+ * Public reference to a protected (encrypted) collection that was captured
+ * during loading but not decrypted due to missing keys.
+ *
+ * Contains only metadata that was stored unencrypted in the collection file.
+ * The actual encrypted data is stored internally for later decryption.
+ *
+ * @typeParam TCollectionId - The type of collection identifiers (defaults to string)
+ * @public
+ */
+export interface IProtectedCollectionInfo<TCollectionId extends string = string> {
+  /**
+   * The collection identifier (derived from filename).
+   */
+  readonly collectionId: TCollectionId;
+
+  /**
+   * The name of the secret required to decrypt this collection.
+   */
+  readonly secretName: string;
+
+  /**
+   * Optional human-readable description from unencrypted metadata.
+   */
+  readonly description?: string;
+
+  /**
+   * Optional item count from unencrypted metadata.
+   */
+  readonly itemCount?: number;
+
+  /**
+   * Whether this collection would be mutable once loaded.
+   */
+  readonly isMutable: boolean;
+
+  /**
+   * Whether this collection is from the built-in library data.
+   * Built-in collections are always immutable.
+   */
+  readonly isBuiltIn: boolean;
+}
+
+/**
+ * Internal storage for protected collections, including the encrypted file data.
+ * Not exported - used only within SubLibraryBase.
+ *
+ * @typeParam TCollectionId - The type of collection identifiers (defaults to string)
+ * @internal
+ */
+export interface IProtectedCollectionInternal<TCollectionId extends string = string> {
+  /**
+   * Public reference metadata for this protected collection.
+   */
+  readonly ref: IProtectedCollectionInfo<TCollectionId>;
+
+  /**
+   * The complete encrypted collection file data for later decryption.
+   */
+  readonly encryptedFile: IEncryptedCollectionFile;
+}
+
+/**
+ * Result type for collection loading operations that may capture protected collections.
+ *
+ * @typeParam T - The item type
+ * @typeParam TCollectionId - The collection ID type
+ * @typeParam TItemId - The item ID type
+ * @public
+ */
+export interface ICollectionLoadResult<
+  T = JsonObject,
+  TCollectionId extends string = string,
+  TItemId extends string = string
+> {
+  /**
+   * Successfully loaded collections.
+   */
+  readonly collections: ReadonlyArray<ICollection<T, TCollectionId, TItemId>>;
+
+  /**
+   * Protected collections that were captured but not decrypted.
+   */
+  readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<TCollectionId>>;
 }

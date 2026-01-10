@@ -115,6 +115,27 @@ Converter&lt;TITEMID&gt; \| Validator&lt;TITEMID&gt;
 </td></tr>
 <tr><td>
 
+[logger?](./ts-chocolate.librarydata.icollectionloaderinitparams.logger.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Logging.LogReporter&lt;unknown&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional logger for reporting loading progress and issues.
+
+
+</td></tr>
+<tr><td>
+
 [mutable?](./ts-chocolate.librarydata.icollectionloaderinitparams.mutable.md)
 
 

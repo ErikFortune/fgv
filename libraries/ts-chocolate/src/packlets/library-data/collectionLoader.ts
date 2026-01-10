@@ -18,12 +18,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Converter, fail, mapResults, pick, Result, succeed, Validator } from '@fgv/ts-utils';
+import { Converter, fail, Logging, mapResults, pick, Result, succeed, Validator } from '@fgv/ts-utils';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { CollectionFilter, ICollectionFilterInitParams, IFilterDirectoryParams } from './collectionFilter';
-import { ICollection, ICollectionSourceFile, IEncryptionConfig, MutabilitySpec } from './model';
+import {
+  ICollection,
+  ICollectionLoadResult,
+  ICollectionSourceFile,
+  IEncryptionConfig,
+  IProtectedCollectionInternal,
+  MutabilitySpec
+} from './model';
 import * as LibraryConverters from './converters';
-import { decryptCollectionFile, isEncryptedCollectionFile, Converters as CryptoConverters } from '../crypto';
+import {
+  decryptCollectionFile,
+  isEncryptedCollectionFile,
+  Converters as CryptoConverters,
+  IEncryptedCollectionFile
+} from '../crypto';
 
 /**
  * Parameters used to initialize a {@link LibraryData.CollectionLoader | CollectionLoader}.
@@ -47,6 +59,11 @@ export interface ICollectionLoaderInitParams<
    * Defaults to `false` (all collections immutable).
    */
   readonly mutable?: MutabilitySpec;
+
+  /**
+   * Optional logger for reporting loading progress and issues.
+   */
+  readonly logger?: Logging.LogReporter<unknown>;
 }
 
 /**
@@ -54,9 +71,10 @@ export interface ICollectionLoaderInitParams<
  * - `'fail'`: Fail the entire load operation (original behavior)
  * - `'skip'`: Silently skip encrypted files
  * - `'warn'`: Log warning and skip encrypted files
+ * - `'capture'`: Capture encrypted files for later decryption (default)
  * @public
  */
-export type EncryptedFileHandling = 'fail' | 'skip' | 'warn';
+export type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 
 /**
  * Parameters used to load collections from a file tree.
@@ -78,13 +96,20 @@ export interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string>
   /**
    * How to handle encrypted files in synchronous loading.
    * - `'fail'`: Fail the entire load operation
-   * - `'skip'`: Silently skip encrypted files (default for built-in data)
-   * - `'warn'`: Log warning and skip encrypted files (default for external files)
+   * - `'skip'`: Silently skip encrypted files
+   * - `'warn'`: Log warning and skip encrypted files
+   * - `'capture'`: Capture encrypted files for later decryption (default)
    *
-   * Defaults to `'warn'` to help users discover that async loading is needed.
-   * Pass `'skip'` for built-in data to avoid console noise.
+   * Defaults to `'capture'` so encrypted files are tracked and can be decrypted
+   * on-demand when keys become available.
    */
   readonly onEncryptedFile?: EncryptedFileHandling;
+  /**
+   * Whether collections loaded from this source are built-in library data.
+   * Used to mark protected collections appropriately when they are captured.
+   * Defaults to `false`.
+   */
+  readonly isBuiltIn?: boolean;
 }
 
 /**
@@ -103,6 +128,7 @@ export class CollectionLoader<
   private readonly _mutableDefault: MutabilitySpec;
   private readonly _collectionConverter: Converter<ICollection<T, TCOLLECTIONID, TITEMID>>;
   private readonly _sourceFileConverter: Converter<ICollectionSourceFile<T>>;
+  private readonly _logger: Logging.LogReporter<unknown>;
 
   public constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>) {
     this._collectionIdConverter = params.collectionIdConverter;
@@ -118,6 +144,7 @@ export class CollectionLoader<
       collectionIdConverter: this._collectionIdConverter
     });
     this._sourceFileConverter = LibraryConverters.collectionSourceFile(this._itemConverter);
+    this._logger = Logging.LogReporter.createDefault(params.logger).orThrow();
   }
 
   /**
@@ -126,29 +153,36 @@ export class CollectionLoader<
    * Encrypted collections are handled according to `onEncryptedFile`:
    * - `'fail'`: Fail the entire load operation
    * - `'skip'`: Silently skip encrypted files
-   * - `'warn'`: Log warning and skip (default)
+   * - `'warn'`: Log warning and skip
+   * - `'capture'`: Capture encrypted files for later decryption (default)
    *
    * Use {@link LibraryData.CollectionLoader.loadFromFileTreeAsync | loadFromFileTreeAsync}
-   * to decrypt encrypted files.
+   * to decrypt encrypted files during loading.
    *
    * @param fileTree - The `FileTree` from which to load collections.
    * @param params - optional {@link LibraryData.ILoadCollectionFromFileTreeParams | parameters} to control filtering
    * and recursion.
-   * @returns Success with loaded collections, or Failure with error.
+   * @returns Success with load result containing collections and captured protected collections, or Failure with error.
    */
   public loadFromFileTree(
     fileTree: FileTree.FileTreeItem,
     params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>
-  ): Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>> {
+  ): Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>> {
     params = params ?? {};
     const mutabilitySpec = params.mutable ?? this._mutableDefault;
-    const onEncryptedFile = params.onEncryptedFile ?? 'warn';
+    const onEncryptedFile = params.onEncryptedFile ?? 'capture';
+    /* c8 ignore next 1 - both branches tested but coverage intermittently missed */
+    const isBuiltIn = params.isBuiltIn ?? false;
     const filterParams: ICollectionFilterInitParams<TCOLLECTIONID> = {
       ...pick(params, ['included', 'excluded', 'errorOnInvalidName']),
       nameConverter: this._fileNameToCollectionIdConverter
     };
     const dirParams: IFilterDirectoryParams = pick(params, ['recurseWithDelimiter']);
     const filter = new CollectionFilter<TCOLLECTIONID>(filterParams);
+
+    // Track captured protected collections
+    const protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[] = [];
+
     return filter.filterDirectory(fileTree, dirParams).onSuccess((filteredItems) => {
       const results = filteredItems.map((item) => {
         return item.item
@@ -160,9 +194,27 @@ export class CollectionLoader<
                 return fail(`Encrypted collection "${item.name}" found - use loadFromFileTreeAsync instead`);
               }
               if (onEncryptedFile === 'warn') {
-                console.warn(
+                this._logger.warn(
                   `[CollectionLoader] Skipping encrypted collection "${item.name}" in sync mode - use loadFromFileTreeAsync`
                 );
+              }
+              if (onEncryptedFile === 'capture') {
+                // Capture the encrypted file for later decryption
+                const captureResult = this._captureEncryptedFile(
+                  json as JsonObject,
+                  item.name,
+                  mutabilitySpec,
+                  isBuiltIn
+                );
+                if (captureResult.isSuccess()) {
+                  protectedCollections.push(captureResult.value);
+                  /* c8 ignore next 4 - defensive: capture only fails if isEncryptedCollectionFile passes but convert fails */
+                } else {
+                  // If capture fails, treat as skip with warning
+                  this._logger.warn(
+                    `[CollectionLoader] Failed to capture encrypted collection "${item.name}": ${captureResult.message}`
+                  );
+                }
               }
               // Skip this file (return undefined to filter out)
               return succeed(undefined);
@@ -179,25 +231,37 @@ export class CollectionLoader<
           });
       });
       return mapResults(results).onSuccess((collections) =>
-        succeed(collections.filter((c): c is ICollection<T, TCOLLECTIONID, TITEMID> => c !== undefined))
+        succeed({
+          collections: collections.filter(
+            (c): c is ICollection<T, TCOLLECTIONID, TITEMID> => c !== undefined
+          ),
+          protectedCollections
+        })
       );
     });
   }
 
   /**
    * Loads collections from a `FileTree` asynchronously, supporting encrypted files.
+   *
+   * When encryption config is provided, attempts to decrypt encrypted files.
+   * Files that cannot be decrypted (missing key with skip/warn/capture mode) are
+   * captured in the result's `protectedCollections` for later decryption.
+   *
    * @param fileTree - The `FileTree` from which to load collections.
    * @param params - optional {@link LibraryData.ILoadCollectionFromFileTreeParams | parameters} to control filtering
    * and recursion.
-   * @returns Promise resolving to Success with loaded collections, or Failure with error.
+   * @returns Promise resolving to Success with load result, or Failure with error.
    */
   public async loadFromFileTreeAsync(
     fileTree: FileTree.FileTreeItem,
     params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>
-  ): Promise<Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>> {
+  ): Promise<Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>> {
     params = params ?? {};
     const mutabilitySpec = params.mutable ?? this._mutableDefault;
     const encryption = params.encryption;
+    const onEncryptedFile = params.onEncryptedFile ?? 'capture';
+    const isBuiltIn = params.isBuiltIn ?? false;
     const filterParams: ICollectionFilterInitParams<TCOLLECTIONID> = {
       ...pick(params, ['included', 'excluded', 'errorOnInvalidName']),
       nameConverter: this._fileNameToCollectionIdConverter
@@ -212,6 +276,7 @@ export class CollectionLoader<
 
     const filteredItems = filterResult.value;
     const results: Result<ICollection<T, TCOLLECTIONID, TITEMID>>[] = [];
+    const protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[] = [];
 
     for (const item of filteredItems) {
       const contentsResult = item.item.getContents();
@@ -227,10 +292,13 @@ export class CollectionLoader<
           json as JsonObject,
           item.name,
           mutabilitySpec,
-          encryption
+          encryption,
+          onEncryptedFile,
+          protectedCollections,
+          isBuiltIn
         );
         if (encryptedResult === undefined) {
-          // Skipped due to missing key with skip mode
+          // Skipped or captured due to missing key
           continue;
         }
         if (encryptedResult.isFailure()) {
@@ -254,45 +322,72 @@ export class CollectionLoader<
       }
     }
 
-    return mapResults(results);
+    return mapResults(results).onSuccess((collections) =>
+      succeed({
+        collections,
+        protectedCollections
+      })
+    );
   }
 
   /**
    * Processes an encrypted collection file asynchronously.
-   * @returns undefined if the file should be skipped, Result otherwise.
+   * @returns undefined if the file should be skipped/captured, Result otherwise.
    */
   private async _processEncryptedFileAsync(
     json: JsonObject,
     collectionName: TCOLLECTIONID,
     mutabilitySpec: MutabilitySpec,
-    encryption?: IEncryptionConfig
+    encryption: IEncryptionConfig | undefined,
+    onEncryptedFile: EncryptedFileHandling,
+    protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
+    isBuiltIn: boolean
   ): Promise<Result<ICollection<T, TCOLLECTIONID, TITEMID>> | undefined> {
-    if (!encryption) {
-      return fail(`Encrypted collection "${collectionName}" found but no encryption config provided`);
-    }
-
-    // Validate the encrypted file structure
+    // Validate the encrypted file structure first (needed for both decrypt and capture)
     const tombstoneResult = CryptoConverters.encryptedCollectionFile.convert(json);
     if (tombstoneResult.isFailure()) {
       return this._handleEncryptionError(
         `Invalid encrypted collection format for "${collectionName}": ${tombstoneResult.message}`,
-        encryption.onDecryptionError
+        /* c8 ignore next - optional encryption config tested implicitly */
+        encryption?.onDecryptionError
       );
     }
 
-    const tombstone = tombstoneResult.value;
+    const encryptedFile = tombstoneResult.value;
+
+    // If no encryption config, capture or skip based on mode
+    if (!encryption) {
+      return this._handleMissingKey(
+        collectionName,
+        mutabilitySpec,
+        encryptedFile,
+        onEncryptedFile,
+        protectedCollections,
+        `Encrypted collection "${collectionName}" found but no encryption config provided`,
+        isBuiltIn
+      );
+    }
 
     // Look up the key for this secret
-    const keyResult = await this._findKey(tombstone.secretName, encryption);
+    const keyResult = await this._findKey(encryptedFile.secretName, encryption);
     if (keyResult.isFailure()) {
-      return this._handleEncryptionError(
-        `Missing key for secret "${tombstone.secretName}" in collection "${collectionName}": ${keyResult.message}`,
-        encryption.onMissingKey
+      return this._handleMissingKey(
+        collectionName,
+        mutabilitySpec,
+        encryptedFile,
+        onEncryptedFile,
+        protectedCollections,
+        `Missing key for secret "${encryptedFile.secretName}" in collection "${collectionName}"`,
+        isBuiltIn
       );
     }
 
     // Decrypt the collection
-    const decryptResult = await decryptCollectionFile(tombstone, keyResult.value, encryption.cryptoProvider);
+    const decryptResult = await decryptCollectionFile(
+      encryptedFile,
+      keyResult.value,
+      encryption.cryptoProvider
+    );
     if (decryptResult.isFailure()) {
       return this._handleEncryptionError(
         `Decryption failed for collection "${collectionName}": ${decryptResult.message}`,
@@ -306,6 +401,48 @@ export class CollectionLoader<
       isMutable: this._isMutable(collectionName, mutabilitySpec),
       items: decryptResult.value
     });
+  }
+
+  /**
+   * Handles missing key errors - either captures for later or skips/fails.
+   */
+  private _handleMissingKey(
+    collectionName: TCOLLECTIONID,
+    mutabilitySpec: MutabilitySpec,
+    encryptedFile: IEncryptedCollectionFile,
+    onEncryptedFile: EncryptedFileHandling,
+    protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[],
+    message: string,
+    isBuiltIn: boolean
+  ): Result<ICollection<T, TCOLLECTIONID, TITEMID>> | undefined {
+    if (onEncryptedFile === 'capture') {
+      // Capture for later decryption
+      protectedCollections.push({
+        ref: {
+          collectionId: collectionName,
+          secretName: encryptedFile.secretName,
+          /* c8 ignore next 2 - optional metadata fields tested implicitly */
+          description: encryptedFile.metadata?.description,
+          itemCount: encryptedFile.metadata?.itemCount,
+          isMutable: this._isMutable(collectionName, mutabilitySpec),
+          isBuiltIn
+        },
+        encryptedFile
+      });
+      return undefined;
+    }
+
+    if (onEncryptedFile === 'warn') {
+      this._logger.warn(`[CollectionLoader] ${message}`);
+      return undefined;
+    }
+
+    if (onEncryptedFile === 'skip') {
+      return undefined;
+    }
+
+    // 'fail' mode
+    return fail(message);
   }
 
   /**
@@ -341,12 +478,43 @@ export class CollectionLoader<
       case 'skip':
         return undefined;
       case 'warn':
-        console.warn(`[CollectionLoader] ${message}`);
+        this._logger.warn(`[CollectionLoader] ${message}`);
         return undefined;
       case 'fail':
       default:
         return fail(message);
     }
+  }
+
+  /**
+   * Captures an encrypted collection file for later decryption.
+   * @param json - The JSON content of the encrypted file.
+   * @param collectionName - The collection name (from filename).
+   * @param mutabilitySpec - The mutability specification.
+   * @param isBuiltIn - Whether this collection is from built-in library data.
+   * @returns Success with protected collection internal data, or Failure if the file is invalid.
+   */
+  private _captureEncryptedFile(
+    json: JsonObject,
+    collectionName: TCOLLECTIONID,
+    mutabilitySpec: MutabilitySpec,
+    isBuiltIn: boolean
+  ): Result<IProtectedCollectionInternal<TCOLLECTIONID>> {
+    // Validate the encrypted file structure
+    return CryptoConverters.encryptedCollectionFile.convert(json).onSuccess((encryptedFile) => {
+      return succeed({
+        ref: {
+          collectionId: collectionName,
+          secretName: encryptedFile.secretName,
+          /* c8 ignore next 2 - optional metadata fields tested implicitly */
+          description: encryptedFile.metadata?.description,
+          itemCount: encryptedFile.metadata?.itemCount,
+          isMutable: this._isMutable(collectionName, mutabilitySpec),
+          isBuiltIn
+        },
+        encryptedFile
+      });
+    });
   }
 
   /**

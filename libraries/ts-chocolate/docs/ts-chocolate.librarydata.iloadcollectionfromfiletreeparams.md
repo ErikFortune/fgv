@@ -59,6 +59,27 @@ _(Optional)_ Optional encryption configuration for decrypting encrypted collecti
 </td></tr>
 <tr><td>
 
+[isBuiltIn?](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.isbuiltin.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Whether collections loaded from this source are built-in library data. Used to mark protected collections appropriately when they are captured. Defaults to `false`<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [mutable?](./ts-chocolate.librarydata.iloadcollectionfromfiletreeparams.mutable.md)
 
 
@@ -95,9 +116,9 @@ _(Optional)_ Overrides the default mutability specification for this load operat
 
 </td><td>
 
-_(Optional)_ How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files (default for built-in data) - `'warn'`<!-- -->: Log warning and skip encrypted files (default for external files)
+_(Optional)_ How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files - `'capture'`<!-- -->: Capture encrypted files for later decryption (default)
 
-Defaults to `'warn'` to help users discover that async loading is needed. Pass `'skip'` for built-in data to avoid console noise.
+Defaults to `'capture'` so encrypted files are tracked and can be decrypted on-demand when keys become available.
 
 
 </td></tr>

@@ -4,9 +4,9 @@
 
 ## LibraryData.ILoadCollectionFromFileTreeParams.onEncryptedFile property
 
-How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files (default for built-in data) - `'warn'`<!-- -->: Log warning and skip encrypted files (default for external files)
+How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files - `'capture'`<!-- -->: Capture encrypted files for later decryption (default)
 
-Defaults to `'warn'` to help users discover that async loading is needed. Pass `'skip'` for built-in data to avoid console noise.
+Defaults to `'capture'` so encrypted files are tracked and can be decrypted on-demand when keys become available.
 
 **Signature:**
 

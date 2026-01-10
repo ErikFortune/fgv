@@ -55,6 +55,54 @@ This constructor handles all collection loading: - Built-in collections (from Bu
 </td></tr>
 </tbody></table>
 
+## Properties
+
+<table><thead><tr><th>
+
+Property
+
+
+</th><th>
+
+Modifiers
+
+
+</th><th>
+
+Type
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[protectedCollections](./ts-chocolate.librarydata.sublibrarybase.protectedcollections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IProtectedCollectionInfo](./ts-chocolate.librarydata.iprotectedcollectioninfo.md)<!-- -->&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;&gt;
+
+
+</td><td>
+
+Gets the list of protected collections that were captured but not decrypted.
+
+These are encrypted collections that were encountered during loading but couldn't be decrypted (e.g., due to missing encryption keys). They can be decrypted later using [loadProtectedCollectionAsync](./ts-chocolate.librarydata.sublibrarybase.loadprotectedcollectionasync.md)<!-- -->.
+
+
+</td></tr>
+</tbody></table>
+
 ## Methods
 
 <table><thead><tr><th>
@@ -106,6 +154,20 @@ Encryption configuration is read from `params.libraryParams.encryption`<!-- -->.
 </td><td>
 
 Loads collections from a file tree source and adds them to this library.
+
+
+</td></tr>
+<tr><td>
+
+[loadProtectedCollectionAsync(encryption, filter)](./ts-chocolate.librarydata.sublibrarybase.loadprotectedcollectionasync.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Decrypts and loads one or more protected collections.
 
 
 </td></tr>

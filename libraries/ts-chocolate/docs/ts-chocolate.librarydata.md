@@ -347,6 +347,17 @@ Parameters used to initialize a [CollectionLoader](./ts-chocolate.librarydata.co
 </td></tr>
 <tr><td>
 
+[ICollectionLoadResult](./ts-chocolate.librarydata.icollectionloadresult.md)
+
+
+</td><td>
+
+Result type for collection loading operations that may capture protected collections.
+
+
+</td></tr>
+<tr><td>
+
 [ICollectionSet](./ts-chocolate.librarydata.icollectionset.md)
 
 
@@ -485,12 +496,38 @@ Normalized result from a merge source.
 </td></tr>
 <tr><td>
 
+[IProtectedCollectionInfo](./ts-chocolate.librarydata.iprotectedcollectioninfo.md)
+
+
+</td><td>
+
+Public reference to a protected (encrypted) collection that was captured during loading but not decrypted due to missing keys.
+
+Contains only metadata that was stored unencrypted in the collection file. The actual encrypted data is stored internally for later decryption.
+
+
+</td></tr>
+<tr><td>
+
 [IResolvedSubLibrarySource](./ts-chocolate.librarydata.iresolvedsublibrarysource.md)
 
 
 </td><td>
 
 Result of resolving a file tree source for a specific sub-library.
+
+
+</td></tr>
+<tr><td>
+
+[ISubLibraryAsyncLoadResult](./ts-chocolate.librarydata.isublibraryasyncloadresult.md)
+
+
+</td><td>
+
+Result from async collection loading operations.
+
+Contains both successfully loaded collections and protected collections that were captured but could not be decrypted (e.g., due to missing keys).
 
 
 </td></tr>
@@ -614,7 +651,7 @@ Description
 
 </td><td>
 
-How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation (original behavior) - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files
+How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation (original behavior) - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files - `'capture'`<!-- -->: Capture encrypted files for later decryption (default)
 
 
 </td></tr>

@@ -20,7 +20,7 @@
 
 import '@fgv/ts-utils-jest';
 
-import { Converters, fail, Failure, succeed, Success } from '@fgv/ts-utils';
+import { Converters, fail, Failure, Logging, succeed, Success } from '@fgv/ts-utils';
 import { FileTree, JsonObject, JsonValue } from '@fgv/ts-json-base';
 
 import { CollectionLoader } from '../../../packlets/library-data';
@@ -29,6 +29,41 @@ import {
   ENCRYPTED_COLLECTION_FORMAT,
   nodeCryptoProvider
 } from '../../../packlets/crypto';
+
+/**
+ * Creates a mock logger that captures log messages for testing.
+ */
+function createMockLogger(): {
+  reporter: Logging.LogReporter<unknown>;
+  messages: { level: string; message: string }[];
+} {
+  const messages: { level: string; message: string }[] = [];
+  const logger: Logging.ILogger = {
+    logLevel: 'all',
+    log: (_level, message) => {
+      messages.push({ level: 'log', message: String(message) });
+      return succeed(String(message));
+    },
+    detail: (message) => {
+      messages.push({ level: 'detail', message: String(message) });
+      return succeed(String(message));
+    },
+    info: (message) => {
+      messages.push({ level: 'info', message: String(message) });
+      return succeed(String(message));
+    },
+    warn: (message) => {
+      messages.push({ level: 'warn', message: String(message) });
+      return succeed(String(message));
+    },
+    error: (message) => {
+      messages.push({ level: 'error', message: String(message) });
+      return succeed(String(message));
+    }
+  };
+  const reporter = new Logging.LogReporter<unknown>({ logger });
+  return { reporter, messages };
+}
 
 // Branded string types for testing
 type TestCollectionId = string & { readonly __testCollectionId: unique symbol };
@@ -151,11 +186,11 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(1);
-            expect(collections[0].id).toBe('test-collection');
-            expect(collections[0].isMutable).toBe(false); // default
-            expect(Object.keys(collections[0].items)).toHaveLength(2);
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].id).toBe('test-collection');
+            expect(result.collections[0].isMutable).toBe(false); // default
+            expect(Object.keys(result.collections[0].items)).toHaveLength(2);
           });
         });
       });
@@ -182,9 +217,9 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(2);
-            const ids = collections.map((c) => c.id).sort();
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(2);
+            const ids = result.collections.map((c) => c.id).sort();
             expect(ids).toEqual(['first', 'second']);
           });
         });
@@ -205,9 +240,9 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(mutableLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(1);
-            expect(collections[0].isMutable).toBe(true);
+          expect(mutableLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].isMutable).toBe(true);
           });
         });
       });
@@ -227,9 +262,9 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(immutableLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(1);
-            expect(collections[0].isMutable).toBe(false);
+          expect(immutableLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].isMutable).toBe(false);
           });
         });
       });
@@ -246,15 +281,13 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(loader.loadFromFileTree(dir, { mutable: ['mutable'] })).toSucceedAndSatisfy(
-            (collections) => {
-              expect(collections).toHaveLength(2);
-              const mutableCollection = collections.find((c) => c.id === 'mutable');
-              const immutableCollection = collections.find((c) => c.id === 'immutable');
-              expect(mutableCollection?.isMutable).toBe(true);
-              expect(immutableCollection?.isMutable).toBe(false);
-            }
-          );
+          expect(loader.loadFromFileTree(dir, { mutable: ['mutable'] })).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(2);
+            const mutableCollection = result.collections.find((c) => c.id === 'mutable');
+            const immutableCollection = result.collections.find((c) => c.id === 'immutable');
+            expect(mutableCollection?.isMutable).toBe(true);
+            expect(immutableCollection?.isMutable).toBe(false);
+          });
         });
       });
     });
@@ -271,10 +304,10 @@ describe('CollectionLoader', () => {
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
           expect(loader.loadFromFileTree(dir, { mutable: { immutable: ['immutable'] } })).toSucceedAndSatisfy(
-            (collections) => {
-              expect(collections).toHaveLength(2);
-              const mutableCollection = collections.find((c) => c.id === 'mutable');
-              const immutableCollection = collections.find((c) => c.id === 'immutable');
+            (result) => {
+              expect(result.collections).toHaveLength(2);
+              const mutableCollection = result.collections.find((c) => c.id === 'mutable');
+              const immutableCollection = result.collections.find((c) => c.id === 'immutable');
               expect(mutableCollection?.isMutable).toBe(true);
               expect(immutableCollection?.isMutable).toBe(false);
             }
@@ -299,12 +332,10 @@ describe('CollectionLoader', () => {
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
           // Override with false to make all immutable
-          expect(mutableLoader.loadFromFileTree(dir, { mutable: false })).toSucceedAndSatisfy(
-            (collections) => {
-              expect(collections).toHaveLength(1);
-              expect(collections[0].isMutable).toBe(false);
-            }
-          );
+          expect(mutableLoader.loadFromFileTree(dir, { mutable: false })).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].isMutable).toBe(false);
+          });
         });
       });
     });
@@ -321,9 +352,9 @@ describe('CollectionLoader', () => {
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
           expect(loader.loadFromFileTree(dir, { recurseWithDelimiter: '/' })).toSucceedAndSatisfy(
-            (collections) => {
-              expect(collections).toHaveLength(2);
-              const ids = collections.map((c) => c.id).sort();
+            (result) => {
+              expect(result.collections).toHaveLength(2);
+              const ids = result.collections.map((c) => c.id).sort();
               expect(ids).toEqual(['root', 'subdir/nested']);
             }
           );
@@ -338,8 +369,8 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(0);
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(0);
           });
         });
       });
@@ -407,9 +438,9 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(strictLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(1);
-            expect(collections[0].id).toBe('valid');
+          expect(strictLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].id).toBe('valid');
           });
         });
       });
@@ -431,11 +462,14 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/data')).toSucceedAndSatisfy((dir) => {
-          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(1);
-            expect(collections[0].id).toBe('my-collection');
-            expect(collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Complex Item', value: 42 });
-            expect(collections[0].items['item-2' as TestItemId]).toEqual({
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].id).toBe('my-collection');
+            expect(result.collections[0].items['item-1' as TestItemId]).toEqual({
+              name: 'Complex Item',
+              value: 42
+            });
+            expect(result.collections[0].items['item-2' as TestItemId]).toEqual({
               name: 'Another Item',
               value: 100
             });
@@ -470,10 +504,10 @@ describe('CollectionLoader', () => {
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          expect(yamlLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
+          expect(yamlLoader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
             // Only .yaml file should be loaded, .json should be filtered out
-            expect(collections).toHaveLength(1);
-            expect(collections[0].id).toBe('test');
+            expect(result.collections).toHaveLength(1);
+            expect(result.collections[0].id).toBe('test');
           });
         });
       });
@@ -526,20 +560,29 @@ describe('CollectionLoader', () => {
         { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
       ];
 
-      // Use jest.spyOn to capture the warning
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      // Create a mock logger to capture warnings
+      const { reporter, messages } = createMockLogger();
+      const loaderWithLogger = new CollectionLoader({
+        itemConverter: testItemConverter,
+        collectionIdConverter: testCollectionIdConverter,
+        itemIdConverter: testItemIdConverter,
+        logger: reporter
+      });
 
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
-          // Default behavior should warn and skip, returning empty array
-          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((collections) => {
-            expect(collections).toHaveLength(0);
-          });
+          // Using 'warn' mode should warn and skip, returning empty collections but capturing protected
+          expect(loaderWithLogger.loadFromFileTree(dir, { onEncryptedFile: 'warn' })).toSucceedAndSatisfy(
+            (result) => {
+              expect(result.collections).toHaveLength(0);
+            }
+          );
         });
       });
 
-      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Skipping encrypted collection'));
-      warnSpy.mockRestore();
+      const warnMessages = messages.filter((m) => m.level === 'warn');
+      expect(warnMessages.length).toBeGreaterThan(0);
+      expect(warnMessages.some((m) => m.message.includes('Skipping encrypted collection'))).toBe(true);
     });
 
     test('silently skips encrypted collection file with onEncryptedFile: skip', async () => {
@@ -567,16 +610,49 @@ describe('CollectionLoader', () => {
       expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
           // Skip mode should silently skip, returning empty array
-          expect(loader.loadFromFileTree(dir, { onEncryptedFile: 'skip' })).toSucceedAndSatisfy(
-            (collections) => {
-              expect(collections).toHaveLength(0);
-            }
-          );
+          expect(loader.loadFromFileTree(dir, { onEncryptedFile: 'skip' })).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(0);
+          });
         });
       });
 
       expect(warnSpy).not.toHaveBeenCalled();
       warnSpy.mockRestore();
+    });
+
+    test('captures encrypted collection file with onEncryptedFile: capture (default)', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret Item', value: 42 }
+      };
+      const key = (await nodeCryptoProvider.generateKey()).orThrow();
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'test-secret',
+          key,
+          cryptoProvider: nodeCryptoProvider,
+          metadata: { description: 'Test encrypted', itemCount: 1 }
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      expect(FileTree.inMemory(files)).toSucceedAndSatisfy((tree) => {
+        expect(tree.getItem('/collections')).toSucceedAndSatisfy((dir) => {
+          // Default (capture) mode should capture protected collections
+          expect(loader.loadFromFileTree(dir)).toSucceedAndSatisfy((result) => {
+            expect(result.collections).toHaveLength(0);
+            expect(result.protectedCollections).toHaveLength(1);
+            expect(result.protectedCollections[0].ref.collectionId).toBe('encrypted');
+            expect(result.protectedCollections[0].ref.secretName).toBe('test-secret');
+            expect(result.protectedCollections[0].ref.description).toBe('Test encrypted');
+            expect(result.protectedCollections[0].ref.itemCount).toBe(1);
+          });
+        });
+      });
     });
   });
 
@@ -615,10 +691,10 @@ describe('CollectionLoader', () => {
       const dir = tree.getItem('/collections').orThrow();
       const result = await loader.loadFromFileTreeAsync(dir);
 
-      expect(result).toSucceedAndSatisfy((collections) => {
-        expect(collections).toHaveLength(1);
-        expect(collections[0].id).toBe('test-collection');
-        expect(Object.keys(collections[0].items)).toHaveLength(2);
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.collections).toHaveLength(1);
+        expect(r.collections[0].id).toBe('test-collection');
+        expect(Object.keys(r.collections[0].items)).toHaveLength(2);
       });
     });
 
@@ -652,11 +728,14 @@ describe('CollectionLoader', () => {
         }
       });
 
-      expect(result).toSucceedAndSatisfy((collections) => {
-        expect(collections).toHaveLength(1);
-        expect(collections[0].id).toBe('encrypted');
-        expect(collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Secret Item', value: 42 });
-        expect(collections[0].items['item-2' as TestItemId]).toEqual({ name: 'Another Secret', value: 100 });
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.collections).toHaveLength(1);
+        expect(r.collections[0].id).toBe('encrypted');
+        expect(r.collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Secret Item', value: 42 });
+        expect(r.collections[0].items['item-2' as TestItemId]).toEqual({
+          name: 'Another Secret',
+          value: 100
+        });
       });
     });
 
@@ -696,10 +775,10 @@ describe('CollectionLoader', () => {
         }
       });
 
-      expect(result).toSucceedAndSatisfy((collections) => {
-        expect(collections).toHaveLength(2);
-        const plain = collections.find((c) => c.id === 'plain');
-        const enc = collections.find((c) => c.id === 'encrypted');
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.collections).toHaveLength(2);
+        const plain = r.collections.find((c) => c.id === 'plain');
+        const enc = r.collections.find((c) => c.id === 'encrypted');
         expect(plain?.items['plain-item' as TestItemId]).toEqual({ name: 'Plain', value: 1 });
         expect(enc?.items['secret-item' as TestItemId]).toEqual({ name: 'Secret', value: 2 });
       });
@@ -726,7 +805,38 @@ describe('CollectionLoader', () => {
 
       const tree = FileTree.inMemory(files).orThrow();
       const dir = tree.getItem('/collections').orThrow();
+      // With default 'capture' mode, missing encryption config captures the file
       const result = await loader.loadFromFileTreeAsync(dir);
+
+      expect(result).toSucceedAndSatisfy((r) => {
+        expect(r.collections).toHaveLength(0);
+        expect(r.protectedCollections).toHaveLength(1);
+        expect(r.protectedCollections[0].ref.secretName).toBe('my-secret');
+      });
+    });
+
+    test('fails when encrypted file found with onEncryptedFile: fail and no encryption config', async () => {
+      const collectionData = {
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        'item-1': { name: 'Secret', value: 42 }
+      };
+
+      const encrypted = (
+        await createEncryptedCollectionFile({
+          content: collectionData,
+          secretName: 'my-secret',
+          key: testKey,
+          cryptoProvider: nodeCryptoProvider
+        })
+      ).orThrow();
+
+      const files: FileTree.IInMemoryFile[] = [
+        { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+      ];
+
+      const tree = FileTree.inMemory(files).orThrow();
+      const dir = tree.getItem('/collections').orThrow();
+      const result = await loader.loadFromFileTreeAsync(dir, { onEncryptedFile: 'fail' });
 
       expect(result).toFailWith(/no encryption config provided/i);
     });
@@ -736,7 +846,7 @@ describe('CollectionLoader', () => {
     // ============================================================================
 
     describe('onMissingKey error modes', () => {
-      test('fails by default when secret is not found', async () => {
+      test('captures by default when secret is not found', async () => {
         const collectionData = {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           'item-1': { name: 'Secret', value: 42 }
@@ -758,6 +868,43 @@ describe('CollectionLoader', () => {
         const tree = FileTree.inMemory(files).orThrow();
         const dir = tree.getItem('/collections').orThrow();
         const result = await loader.loadFromFileTreeAsync(dir, {
+          encryption: {
+            secrets: [{ name: 'different-secret', key: testKey }],
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        // Default mode is 'capture', so missing key should capture
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(0);
+          expect(r.protectedCollections).toHaveLength(1);
+          expect(r.protectedCollections[0].ref.secretName).toBe('unknown-secret');
+        });
+      });
+
+      test('fails when secret is not found with onEncryptedFile: fail', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'unknown-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          onEncryptedFile: 'fail',
           encryption: {
             secrets: [{ name: 'different-secret', key: testKey }],
             cryptoProvider: nodeCryptoProvider
@@ -797,6 +944,7 @@ describe('CollectionLoader', () => {
         const tree = FileTree.inMemory(files).orThrow();
         const dir = tree.getItem('/collections').orThrow();
         const result = await loader.loadFromFileTreeAsync(dir, {
+          onEncryptedFile: 'skip',
           encryption: {
             secrets: [], // No secrets provided
             cryptoProvider: nodeCryptoProvider,
@@ -804,10 +952,10 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
+        expect(result).toSucceedAndSatisfy((r) => {
           // Only plain collection should be loaded, encrypted should be skipped
-          expect(collections).toHaveLength(1);
-          expect(collections[0].id).toBe('plain');
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].id).toBe('plain');
         });
       });
 
@@ -841,10 +989,17 @@ describe('CollectionLoader', () => {
         const tree = FileTree.inMemory(files).orThrow();
         const dir = tree.getItem('/collections').orThrow();
 
-        // Spy on console.warn
-        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        // Create a mock logger to capture warnings
+        const { reporter, messages } = createMockLogger();
+        const loaderWithLogger = new CollectionLoader({
+          itemConverter: testItemConverter,
+          collectionIdConverter: testCollectionIdConverter,
+          itemIdConverter: testItemIdConverter,
+          logger: reporter
+        });
 
-        const result = await loader.loadFromFileTreeAsync(dir, {
+        const result = await loaderWithLogger.loadFromFileTreeAsync(dir, {
+          onEncryptedFile: 'warn',
           encryption: {
             secrets: [],
             cryptoProvider: nodeCryptoProvider,
@@ -852,13 +1007,14 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
-          expect(collections).toHaveLength(1);
-          expect(collections[0].id).toBe('plain');
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].id).toBe('plain');
         });
 
-        expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/missing key.*unknown-secret/i));
-        warnSpy.mockRestore();
+        const warnMessages = messages.filter((m) => m.level === 'warn');
+        expect(warnMessages.length).toBeGreaterThan(0);
+        expect(warnMessages.some((m) => /missing key.*unknown-secret/i.test(m.message))).toBe(true);
       });
     });
 
@@ -939,9 +1095,9 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
-          expect(collections).toHaveLength(1);
-          expect(collections[0].id).toBe('plain');
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].id).toBe('plain');
         });
       });
 
@@ -977,9 +1133,16 @@ describe('CollectionLoader', () => {
         const tree = FileTree.inMemory(files).orThrow();
         const dir = tree.getItem('/collections').orThrow();
 
-        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        // Create a mock logger to capture warnings
+        const { reporter, messages } = createMockLogger();
+        const loaderWithLogger = new CollectionLoader({
+          itemConverter: testItemConverter,
+          collectionIdConverter: testCollectionIdConverter,
+          itemIdConverter: testItemIdConverter,
+          logger: reporter
+        });
 
-        const result = await loader.loadFromFileTreeAsync(dir, {
+        const result = await loaderWithLogger.loadFromFileTreeAsync(dir, {
           encryption: {
             secrets: [{ name: 'my-secret', key: wrongKey }],
             cryptoProvider: nodeCryptoProvider,
@@ -987,13 +1150,14 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
-          expect(collections).toHaveLength(1);
-          expect(collections[0].id).toBe('plain');
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].id).toBe('plain');
         });
 
-        expect(warnSpy).toHaveBeenCalledWith(expect.stringMatching(/decryption failed/i));
-        warnSpy.mockRestore();
+        const warnMessages = messages.filter((m) => m.level === 'warn');
+        expect(warnMessages.length).toBeGreaterThan(0);
+        expect(warnMessages.some((m) => /decryption failed/i.test(m.message))).toBe(true);
       });
 
       test('handles invalid encrypted file format with onDecryptionError', async () => {
@@ -1018,9 +1182,9 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
+        expect(result).toSucceedAndSatisfy((r) => {
           // Malformed file should be skipped
-          expect(collections).toHaveLength(0);
+          expect(r.collections).toHaveLength(0);
         });
       });
     });
@@ -1061,9 +1225,9 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
-          expect(collections).toHaveLength(1);
-          expect(collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Secret', value: 42 });
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].items['item-1' as TestItemId]).toEqual({ name: 'Secret', value: 42 });
         });
 
         expect(secretProvider).toHaveBeenCalledWith('dynamic-secret');
@@ -1105,7 +1269,42 @@ describe('CollectionLoader', () => {
         expect(secretProvider).not.toHaveBeenCalled();
       });
 
-      test('handles secretProvider failure', async () => {
+      test('handles secretProvider failure with fail mode', async () => {
+        const collectionData = {
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          'item-1': { name: 'Secret', value: 42 }
+        };
+
+        const encrypted = (
+          await createEncryptedCollectionFile({
+            content: collectionData,
+            secretName: 'unknown-secret',
+            key: testKey,
+            cryptoProvider: nodeCryptoProvider
+          })
+        ).orThrow();
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/encrypted.json', contents: encrypted as unknown as JsonObject }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+
+        const secretProvider = jest.fn().mockResolvedValue(fail('Secret not found in vault'));
+
+        const result = await loader.loadFromFileTreeAsync(dir, {
+          onEncryptedFile: 'fail',
+          encryption: {
+            secretProvider,
+            cryptoProvider: nodeCryptoProvider
+          }
+        });
+
+        expect(result).toFailWith(/missing key.*unknown-secret/i);
+      });
+
+      test('captures when secretProvider fails with default capture mode', async () => {
         const collectionData = {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           'item-1': { name: 'Secret', value: 42 }
@@ -1136,7 +1335,11 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toFailWith(/missing key.*unknown-secret/i);
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(0);
+          expect(r.protectedCollections).toHaveLength(1);
+          expect(r.protectedCollections[0].ref.secretName).toBe('unknown-secret');
+        });
       });
     });
 
@@ -1174,9 +1377,9 @@ describe('CollectionLoader', () => {
           }
         });
 
-        expect(result).toSucceedAndSatisfy((collections) => {
-          expect(collections).toHaveLength(1);
-          expect(collections[0].isMutable).toBe(true);
+        expect(result).toSucceedAndSatisfy((r) => {
+          expect(r.collections).toHaveLength(1);
+          expect(r.collections[0].isMutable).toBe(true);
         });
       });
     });

@@ -76,9 +76,9 @@ Description
 
 Loads collections from a `FileTree` using optional filtering parameters.
 
-Encrypted collections are handled according to `onEncryptedFile`<!-- -->: - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip (default)
+Encrypted collections are handled according to `onEncryptedFile`<!-- -->: - `'fail'`<!-- -->: Fail the entire load operation - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip - `'capture'`<!-- -->: Capture encrypted files for later decryption (default)
 
-Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) to decrypt encrypted files.
+Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfromfiletreeasync.md) to decrypt encrypted files during loading.
 
 
 </td></tr>
@@ -93,6 +93,8 @@ Use [loadFromFileTreeAsync](./ts-chocolate.librarydata.collectionloader.loadfrom
 </td><td>
 
 Loads collections from a `FileTree` asynchronously, supporting encrypted files.
+
+When encryption config is provided, attempts to decrypt encrypted files. Files that cannot be decrypted (missing key with skip/warn/capture mode) are captured in the result's `protectedCollections` for later decryption.
 
 
 </td></tr>

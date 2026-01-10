@@ -6,10 +6,12 @@
 
 Loads collections from a `FileTree` asynchronously, supporting encrypted files.
 
+When encryption config is provided, attempts to decrypt encrypted files. Files that cannot be decrypted (missing key with skip/warn/capture mode) are captured in the result's `protectedCollections` for later decryption.
+
 **Signature:**
 
 ```typescript
-loadFromFileTreeAsync(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>>;
+loadFromFileTreeAsync(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>>;
 ```
 
 ## Parameters
@@ -66,7 +68,7 @@ _(Optional)_ optional [parameters](./ts-chocolate.librarydata.iloadcollectionfro
 
 **Returns:**
 
-Promise&lt;Result&lt;ReadonlyArray&lt;[ICollection](./ts-chocolate.librarydata.icollection.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID&gt;&gt;&gt;&gt;
+Promise&lt;Result&lt;[ICollectionLoadResult](./ts-chocolate.librarydata.icollectionloadresult.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID&gt;&gt;&gt;
 
-Promise resolving to Success with loaded collections, or Failure with error.
+Promise resolving to Success with load result, or Failure with error.
 

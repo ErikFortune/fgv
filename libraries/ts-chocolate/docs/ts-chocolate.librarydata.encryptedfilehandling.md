@@ -4,10 +4,10 @@
 
 ## LibraryData.EncryptedFileHandling type
 
-How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation (original behavior) - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files
+How to handle encrypted files in synchronous loading. - `'fail'`<!-- -->: Fail the entire load operation (original behavior) - `'skip'`<!-- -->: Silently skip encrypted files - `'warn'`<!-- -->: Log warning and skip encrypted files - `'capture'`<!-- -->: Capture encrypted files for later decryption (default)
 
 **Signature:**
 
 ```typescript
-export type EncryptedFileHandling = 'fail' | 'skip' | 'warn';
+export type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 ```

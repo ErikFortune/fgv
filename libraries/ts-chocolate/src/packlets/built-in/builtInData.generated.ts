@@ -14,7 +14,6 @@
 //   - data/published/procedures/common.yaml
 //   - data/published/confections/common.yaml
 
-/* eslint-disable max-lines */
 import { JsonObject } from '@fgv/ts-json-base';
 
 /* eslint-disable @typescript-eslint/naming-convention */

@@ -423,9 +423,9 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
     constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>);
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    loadFromFileTree(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>;
+    loadFromFileTree(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    loadFromFileTreeAsync(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ReadonlyArray<ICollection<T, TCOLLECTIONID, TITEMID>>>>;
+    loadFromFileTreeAsync(fileTree: FileTree.FileTreeItem, params?: ILoadCollectionFromFileTreeParams<TCOLLECTIONID>): Promise<Result<ICollectionLoadResult<T, TCOLLECTIONID, TITEMID>>>;
 }
 
 // @public
@@ -929,7 +929,7 @@ const encryptedCollectionFormat: Converter<EncryptedCollectionFormat>;
 const encryptedCollectionMetadata: Converter<IEncryptedCollectionMetadata>;
 
 // @public
-type EncryptedFileHandling = 'fail' | 'skip' | 'warn';
+type EncryptedFileHandling = 'fail' | 'skip' | 'warn' | 'capture';
 
 // @public
 type EncryptionAlgorithm = 'AES-256-GCM';
@@ -1209,7 +1209,16 @@ interface ICollectionLoaderInitParams<T, TCOLLECTIONID extends string = string, 
     readonly itemConverter: Converter<T> | Validator<T>;
     // (undocumented)
     readonly itemIdConverter: Converter<TITEMID> | Validator<TITEMID>;
+    readonly logger?: Logging.LogReporter<unknown>;
     readonly mutable?: MutabilitySpec;
+}
+
+// @public
+interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = string, TItemId extends string = string> {
+    readonly collections: ReadonlyArray<ICollection<T, TCollectionId, TItemId>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
+    readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<TCollectionId>>;
 }
 
 // @public
@@ -1732,6 +1741,7 @@ interface ILibraryLoadParams {
 // @public
 interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extends Omit<ICollectionFilterInitParams<TCOLLECTIONID>, 'nameConverter'> {
     readonly encryption?: IEncryptionConfig;
+    readonly isBuiltIn?: boolean;
     readonly mutable?: MutabilitySpec;
     readonly onEncryptedFile?: EncryptedFileHandling;
     // (undocumented)
@@ -2054,6 +2064,22 @@ interface IProcedureStep {
     readonly order: number;
     readonly temperature?: Celsius;
     readonly waitTime?: Minutes;
+}
+
+// @public
+interface IProtectedCollectionInfo<TCollectionId extends string = string> {
+    readonly collectionId: TCollectionId;
+    readonly description?: string;
+    readonly isBuiltIn: boolean;
+    readonly isMutable: boolean;
+    readonly itemCount?: number;
+    readonly secretName: string;
+}
+
+// @internal
+interface IProtectedCollectionInternal<TCollectionId extends string = string> {
+    readonly encryptedFile: IEncryptedCollectionFile;
+    readonly ref: IProtectedCollectionInfo<TCollectionId>;
 }
 
 // @public
@@ -2691,6 +2717,14 @@ function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRec
 // @public
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
 
+// @public
+interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
+    readonly collections: ReadonlyArray<SubLibraryEntryInit<TBaseId, TItem>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
+    readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2715,6 +2749,9 @@ interface ISubLibraryParams<TLibrary, TEntryInit> {
     readonly fileSources?: SubLibraryFileTreeSource | ReadonlyArray<SubLibraryFileTreeSource>;
     readonly logger?: Logging.LogReporter<unknown>;
     readonly mergeLibraries?: SubLibraryMergeSource<TLibrary> | ReadonlyArray<SubLibraryMergeSource<TLibrary>>;
+    // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
+    readonly protectedCollections?: ReadonlyArray<IProtectedCollectionInternal<SourceId>>;
 }
 
 // @public
@@ -2935,6 +2972,9 @@ declare namespace LibraryData {
         IMergeLibrarySource,
         SecretProvider,
         IEncryptionConfig,
+        IProtectedCollectionInfo,
+        IProtectedCollectionInternal,
+        ICollectionLoadResult,
         createFilterFromSpec,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
@@ -2975,6 +3015,7 @@ declare namespace LibraryData {
         SubLibraryBuiltInTreeProvider,
         ISubLibraryParams,
         ISubLibraryAsyncParams,
+        ISubLibraryAsyncLoadResult,
         ISubLibraryCreateParams,
         SubLibraryBase
     }
@@ -4272,8 +4313,11 @@ function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TC
 // @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
-    protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<SubLibraryEntryInit<TBaseId, TItem>[]>>;
+    protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
+    loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<SourceId>>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<SourceId>>;
 }
 
 // @public

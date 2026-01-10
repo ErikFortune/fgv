@@ -146,5 +146,30 @@ Can be: - A single library (merges all collections) - An `IMergeLibrarySource` o
 
 
 </td></tr>
+<tr><td>
+
+[protectedCollections?](./ts-chocolate.librarydata.isublibraryparams.protectedcollections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;IProtectedCollectionInternal&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->&gt;&gt;
+
+
+</td><td>
+
+_(Optional)_ Protected collections that were captured during loading.
+
+These are encrypted collections that could not be decrypted (e.g., due to missing keys). They can be decrypted later using `loadProtectedCollectionAsync`<!-- -->.
+
+This field is typically populated by `loadAllCollectionsAsync` and passed to the constructor by derived class `createAsync()` methods.
+
+
+</td></tr>
 </tbody></table>
 
