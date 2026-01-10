@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
 
-Amount of this ingredient in grams
+Amount of this ingredient in the specified unit. When unit is not specified, this is in grams.
 
 
 </td></tr>
@@ -95,6 +95,69 @@ string
 </td><td>
 
 _(Optional)_ Optional notes for this specific ingredient usage
+
+
+</td></tr>
+<tr><td>
+
+[spoonLevel?](./ts-chocolate.recipes.irecipeingredient.spoonlevel.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[SpoonLevel](./ts-chocolate.spoonlevel.md)
+
+
+</td><td>
+
+_(Optional)_ For tsp/Tbsp measurements: whether the spoon is level or heaping. This is a display hint only and does not affect scaling calculations.
+
+
+</td></tr>
+<tr><td>
+
+[toTaste?](./ts-chocolate.recipes.irecipeingredient.totaste.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+boolean
+
+
+</td><td>
+
+_(Optional)_ Indicates this ingredient is "to taste" - the amount is a suggestion. Display format: "1/4 tsp salt, to taste"
+
+
+</td></tr>
+<tr><td>
+
+[unit?](./ts-chocolate.recipes.irecipeingredient.unit.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[MeasurementUnit](./ts-chocolate.measurementunit.md)
+
+
+</td><td>
+
+_(Optional)_ Measurement unit for the amount. Defaults to 'g' (grams) when not specified.
 
 
 </td></tr>

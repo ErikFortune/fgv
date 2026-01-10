@@ -53,7 +53,10 @@ import { Recipe } from './recipe';
  */
 export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<IRecipeIngredient>({
   ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'recipeIngredient'),
-  amount: CommonConverters.grams,
+  amount: CommonConverters.measurement,
+  unit: CommonConverters.measurementUnit.optional(),
+  spoonLevel: CommonConverters.spoonLevel.optional(),
+  toTaste: Converters.boolean.optional(),
   notes: Converters.string.optional()
 });
 
@@ -129,7 +132,7 @@ export const recipeVersion: Converter<IRecipeVersion> = Converters.object<IRecip
   versionSpec: CommonConverters.recipeVersionSpec,
   createdDate: Converters.string, // ISO 8601 date string
   ingredients: Converters.arrayOf(recipeIngredient),
-  baseWeight: CommonConverters.grams,
+  baseWeight: CommonConverters.measurement,
   yield: Converters.string.optional(),
   notes: Converters.string.optional(),
   ratings: Converters.arrayOf(recipeRating).optional()
@@ -183,9 +186,12 @@ export const recipe: Converter<Recipe> = Converters.generic<Recipe>((from: unkno
 export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
   Converters.object<IScaledRecipeIngredient>({
     ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'scaledRecipeIngredient'),
-    amount: CommonConverters.grams,
+    amount: CommonConverters.measurement,
+    unit: CommonConverters.measurementUnit.optional(),
+    spoonLevel: CommonConverters.spoonLevel.optional(),
+    toTaste: Converters.boolean.optional(),
     notes: Converters.string.optional(),
-    originalAmount: CommonConverters.grams,
+    originalAmount: CommonConverters.measurement,
     scaleFactor: Converters.number
   });
 
@@ -196,7 +202,7 @@ export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
 export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>({
   sourceVersionId: CommonConverters.recipeVersionId,
   scaleFactor: Converters.number,
-  targetWeight: CommonConverters.grams,
+  targetWeight: CommonConverters.measurement,
   createdDate: Converters.string
 });
 
@@ -206,8 +212,8 @@ export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>
  */
 export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.object<IIngredientSnapshot>({
   ingredientId: CommonConverters.ingredientId,
-  originalAmount: CommonConverters.grams,
-  scaledAmount: CommonConverters.grams,
+  originalAmount: CommonConverters.measurement,
+  scaledAmount: CommonConverters.measurement,
   notes: Converters.string.optional()
 });
 
@@ -228,7 +234,7 @@ export const scaledRecipeVersion: Converter<IScaledRecipeVersion> = Converters.o
 export const scalingSource: Converter<IScalingSource> = Converters.object<IScalingSource>({
   sourceVersionId: CommonConverters.recipeVersionId,
   scaleFactor: Converters.number,
-  targetWeight: CommonConverters.grams
+  targetWeight: CommonConverters.measurement
 });
 
 /**

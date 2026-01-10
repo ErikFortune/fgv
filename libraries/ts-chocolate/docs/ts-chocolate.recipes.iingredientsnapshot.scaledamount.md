@@ -9,5 +9,5 @@ Scaled amount after applying scale factor
 **Signature:**
 
 ```typescript
-readonly scaledAmount: Grams;
+readonly scaledAmount: Measurement;
 ```

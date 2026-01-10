@@ -33,7 +33,7 @@ import {
   BaseConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
-  Grams,
+  Measurement,
   IngredientId,
   Millimeters,
   MoldId
@@ -52,7 +52,7 @@ describe('Confection Scaler', () => {
     yield: {
       count: 24,
       unit: 'pieces',
-      weightPerPiece: 12 as Grams
+      weightPerPiece: 12 as Measurement
     },
     molds: {
       options: [{ id: 'common.dome-25mm' as MoldId }],
@@ -73,7 +73,7 @@ describe('Confection Scaler', () => {
     yield: {
       count: 48,
       unit: 'pieces',
-      weightPerPiece: 10 as Grams
+      weightPerPiece: 10 as Measurement
     },
     frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 8 as Millimeters },
     singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },

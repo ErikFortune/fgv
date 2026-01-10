@@ -25,17 +25,19 @@
 
 import {
   BaseRecipeId,
-  Grams,
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
   IRefWithNotes,
+  Measurement,
+  MeasurementUnit,
   MoldId,
   ProcedureId,
   RatingScore,
   RecipeName,
   RecipeVersionId,
-  RecipeVersionSpec
+  RecipeVersionSpec,
+  SpoonLevel
 } from '../common';
 
 /**
@@ -52,9 +54,28 @@ export interface IRecipeIngredient {
   readonly ingredient: IIdsWithPreferred<IngredientId>;
 
   /**
-   * Amount of this ingredient in grams
+   * Amount of this ingredient in the specified unit.
+   * When unit is not specified, this is in grams.
    */
-  readonly amount: Grams;
+  readonly amount: Measurement;
+
+  /**
+   * Measurement unit for the amount.
+   * Defaults to 'g' (grams) when not specified.
+   */
+  readonly unit?: MeasurementUnit;
+
+  /**
+   * For tsp/Tbsp measurements: whether the spoon is level or heaping.
+   * This is a display hint only and does not affect scaling calculations.
+   */
+  readonly spoonLevel?: SpoonLevel;
+
+  /**
+   * Indicates this ingredient is "to taste" - the amount is a suggestion.
+   * Display format: "1/4 tsp salt, to taste"
+   */
+  readonly toTaste?: boolean;
 
   /**
    * Optional notes for this specific ingredient usage
@@ -132,7 +153,7 @@ export interface IRecipeUsage {
   /**
    * Scaled weight used for this production run
    */
-  readonly scaledWeight: Grams;
+  readonly scaledWeight: Measurement;
 
   /**
    * Optional scale factor for reference
@@ -174,7 +195,7 @@ export interface IRecipeVersion {
   /**
    * Base weight of the recipe (sum of all ingredient amounts)
    */
-  readonly baseWeight: Grams;
+  readonly baseWeight: Measurement;
 
   /**
    * Optional yield description (e.g., "50 bonbons")
@@ -297,7 +318,7 @@ export interface IScaledRecipeIngredient extends IRecipeIngredient {
   /**
    * Original amount before scaling
    */
-  readonly originalAmount: Grams;
+  readonly originalAmount: Measurement;
 
   /**
    * Scaling factor applied
@@ -324,7 +345,7 @@ export interface IScalingRef {
   /**
    * Target weight requested
    */
-  readonly targetWeight: Grams;
+  readonly targetWeight: Measurement;
 
   /**
    * Date the scaling was created (ISO 8601 format)
@@ -346,12 +367,12 @@ export interface IIngredientSnapshot {
   /**
    * Original amount before scaling
    */
-  readonly originalAmount: Grams;
+  readonly originalAmount: Measurement;
 
   /**
    * Scaled amount after applying scale factor
    */
-  readonly scaledAmount: Grams;
+  readonly scaledAmount: Measurement;
 
   /**
    * Optional notes for this ingredient
@@ -402,7 +423,7 @@ export interface IScalingSource {
   /**
    * Resulting target weight
    */
-  readonly targetWeight: Grams;
+  readonly targetWeight: Measurement;
 }
 
 /**
@@ -430,7 +451,7 @@ export interface IComputedScaledRecipe {
   /**
    * Base weight of the scaled recipe (same as targetWeight)
    */
-  readonly baseWeight: Grams;
+  readonly baseWeight: Measurement;
 
   /**
    * Optional yield description (from source version)

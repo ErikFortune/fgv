@@ -9,5 +9,5 @@ Target weight for this production run
 **Signature:**
 
 ```typescript
-readonly targetWeight: Grams;
+readonly targetWeight: Measurement;
 ```

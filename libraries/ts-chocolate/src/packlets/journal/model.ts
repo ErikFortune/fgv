@@ -25,7 +25,7 @@
 
 import {
   ConfectionVersionId,
-  Grams,
+  Measurement,
   IngredientId,
   JournalId,
   MoldId,
@@ -131,12 +131,12 @@ export interface IJournalEntry {
   /**
    * Original amount before the change (for modify events)
    */
-  readonly originalAmount?: Grams;
+  readonly originalAmount?: Measurement;
 
   /**
    * New amount after the change (for add/modify events)
    */
-  readonly newAmount?: Grams;
+  readonly newAmount?: Measurement;
 
   /**
    * Substitute ingredient ID (for substitute events)
@@ -236,12 +236,12 @@ export interface IConfectionJournalEntry {
   /**
    * The new weight per piece in grams (for yield-modify events)
    */
-  readonly newWeightPerPiece?: Grams;
+  readonly newWeightPerPiece?: Measurement;
 
   /**
    * The previous weight per piece in grams (for yield-modify events)
    */
-  readonly previousWeightPerPiece?: Grams;
+  readonly previousWeightPerPiece?: Measurement;
 
   // ---- procedure-select event fields ----
 
@@ -325,7 +325,7 @@ export interface IRecipeJournalRecord {
   /**
    * Target weight for this production run
    */
-  readonly targetWeight: Grams;
+  readonly targetWeight: Measurement;
 
   /**
    * Scale factor applied (computed from version baseWeight and targetWeight)
@@ -385,7 +385,7 @@ export interface IConfectionJournalRecord {
   /**
    * Weight per piece for this production run (optional)
    */
-  readonly weightPerPiece?: Grams;
+  readonly weightPerPiece?: Measurement;
 
   /**
    * Optional notes about this production session

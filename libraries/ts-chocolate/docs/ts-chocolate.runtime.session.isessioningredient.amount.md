@@ -9,5 +9,5 @@ Current amount (can be modified during session)
 **Signature:**
 
 ```typescript
-amount: Grams;
+amount: Measurement;
 ```

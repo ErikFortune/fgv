@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly amount: Grams;
+readonly amount: Measurement;
 ```

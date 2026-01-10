@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseRecipeId,
-  Grams,
+  Measurement,
   IngredientId,
   Percentage,
   RecipeId,
@@ -119,10 +119,10 @@ describe('EditingSession', () => {
         createdDate: '2026-01-01',
         notes: 'Original recipe',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ]
   };
@@ -208,7 +208,7 @@ describe('EditingSession', () => {
       expect(
         Session.RecipeEditingSession.create({
           sourceVersion: version,
-          targetWeight: 450 as Grams
+          targetWeight: 450 as Measurement
         })
       ).toSucceedAndSatisfy((session) => {
         expect(session.targetWeight).toBe(450);
@@ -290,7 +290,7 @@ describe('EditingSession', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       // Add a new ingredient
-      session.addIngredient('test.butter' as IngredientId, 30 as Grams).orThrow();
+      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
 
       // Scale the recipe
       session.setScaleFactor(2.0).orThrow();
@@ -313,7 +313,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.setTargetWeight(600 as Grams)).toSucceed();
+      expect(session.setTargetWeight(600 as Measurement)).toSucceed();
       expect(session.scaleFactor).toBe(2.0);
       expect(session.targetWeight).toBe(600);
     });
@@ -322,8 +322,8 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.setTargetWeight(0 as Grams)).toFailWith(/positive/);
-      expect(session.setTargetWeight(-100 as Grams)).toFailWith(/positive/);
+      expect(session.setTargetWeight(0 as Measurement)).toFailWith(/positive/);
+      expect(session.setTargetWeight(-100 as Measurement)).toFailWith(/positive/);
     });
   });
 
@@ -354,7 +354,9 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Grams)).toSucceed();
+      expect(
+        session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement)
+      ).toSucceed();
       expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
         expect(ing.amount).toBe(250);
         expect(ing.status).toBe('modified');
@@ -366,8 +368,8 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Grams).orThrow();
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 200 as Grams).orThrow();
+      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 200 as Measurement).orThrow();
 
       expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
         expect(ing.status).toBe('original');
@@ -378,7 +380,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Grams).orThrow();
+      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
 
       const modifyEntries = session.journalEntries.filter((e) => e.eventType === 'ingredient-modify');
       expect(modifyEntries.length).toBe(1);
@@ -391,7 +393,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.setIngredientAmount('test.non-existent' as IngredientId, 100 as Grams)).toFailWith(
+      expect(session.setIngredientAmount('test.non-existent' as IngredientId, 100 as Measurement)).toFailWith(
         /not found/
       );
     });
@@ -400,9 +402,9 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.setIngredientAmount('test.dark-chocolate' as IngredientId, -10 as Grams)).toFailWith(
-        /negative/
-      );
+      expect(
+        session.setIngredientAmount('test.dark-chocolate' as IngredientId, -10 as Measurement)
+      ).toFailWith(/negative/);
     });
 
     test('maintains added status when modifying added ingredient amount', () => {
@@ -410,10 +412,10 @@ describe('EditingSession', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       // Add a new ingredient
-      session.addIngredient('test.butter' as IngredientId, 30 as Grams).orThrow();
+      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
 
       // Modify its amount
-      session.setIngredientAmount('test.butter' as IngredientId, 50 as Grams).orThrow();
+      session.setIngredientAmount('test.butter' as IngredientId, 50 as Measurement).orThrow();
 
       // Status should still be 'added', not 'modified'
       expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
@@ -428,7 +430,9 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.addIngredientAmount('test.dark-chocolate' as IngredientId, 50 as Grams)).toSucceed();
+      expect(
+        session.addIngredientAmount('test.dark-chocolate' as IngredientId, 50 as Measurement)
+      ).toSucceed();
       expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
         expect(ing.amount).toBe(250);
       });
@@ -438,7 +442,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.addIngredientAmount('test.non-existent' as IngredientId, 50 as Grams)).toFailWith(
+      expect(session.addIngredientAmount('test.non-existent' as IngredientId, 50 as Measurement)).toFailWith(
         /not found/
       );
     });
@@ -449,7 +453,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.addIngredient('test.butter' as IngredientId, 30 as Grams)).toSucceed();
+      expect(session.addIngredient('test.butter' as IngredientId, 30 as Measurement)).toSucceed();
       expect(session.ingredients.size).toBe(3);
       expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
         expect(ing.amount).toBe(30);
@@ -462,7 +466,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      session.addIngredient('test.butter' as IngredientId, 30 as Grams).orThrow();
+      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
 
       const addEntries = session.journalEntries.filter((e) => e.eventType === 'ingredient-add');
       expect(addEntries.length).toBe(1);
@@ -474,7 +478,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.addIngredient('test.dark-chocolate' as IngredientId, 100 as Grams)).toFailWith(
+      expect(session.addIngredient('test.dark-chocolate' as IngredientId, 100 as Measurement)).toFailWith(
         /already exists/
       );
     });
@@ -483,7 +487,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      expect(session.addIngredient('test.butter' as IngredientId, -10 as Grams)).toFailWith(/negative/);
+      expect(session.addIngredient('test.butter' as IngredientId, -10 as Measurement)).toFailWith(/negative/);
     });
   });
 
@@ -503,7 +507,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      session.addIngredient('test.butter' as IngredientId, 30 as Grams).orThrow();
+      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
       expect(session.removeIngredient('test.butter' as IngredientId)).toSucceed();
       expect(session.ingredients.has('test.butter' as IngredientId)).toBe(false);
     });
@@ -555,7 +559,11 @@ describe('EditingSession', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
-        session.substituteIngredient('test.cream' as IngredientId, 'test.butter' as IngredientId, 80 as Grams)
+        session.substituteIngredient(
+          'test.cream' as IngredientId,
+          'test.butter' as IngredientId,
+          80 as Measurement
+        )
       ).toSucceed();
 
       expect(session.getIngredient('test.butter' as IngredientId)).toSucceedAndSatisfy((ing) => {
@@ -659,7 +667,7 @@ describe('EditingSession', () => {
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.removeIngredient('test.cream' as IngredientId).orThrow();
-      session.addIngredient('test.butter' as IngredientId, 30 as Grams).orThrow();
+      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
 
       const ingredients = session.toRecipeIngredients();
       expect(ingredients.length).toBe(2);
@@ -672,7 +680,7 @@ describe('EditingSession', () => {
       const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
-      session.setIngredientAmount('test.cream' as IngredientId, 0 as Grams).orThrow();
+      session.setIngredientAmount('test.cream' as IngredientId, 0 as Measurement).orThrow();
 
       const ingredients = session.toRecipeIngredients();
       expect(ingredients.length).toBe(1);
@@ -777,8 +785,8 @@ describe('EditingSession', () => {
       }).orThrow();
 
       session.setScaleFactor(2).orThrow();
-      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Grams).orThrow();
-      session.addIngredient('test.butter' as IngredientId, 30 as Grams).orThrow();
+      session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
+      session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
       session.removeIngredient('test.cream' as IngredientId).orThrow();
 
       expect(session.journalEntries.length).toBe(0);

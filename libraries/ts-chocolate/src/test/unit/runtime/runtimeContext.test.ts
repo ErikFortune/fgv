@@ -26,7 +26,7 @@ import {
   BaseProcedureId,
   BaseRecipeId,
   Celsius,
-  Grams,
+  Measurement,
   IngredientId,
   JournalId,
   Millimeters,
@@ -132,21 +132,21 @@ describe('RuntimeContext', () => {
               ids: ['test.dark-chocolate' as IngredientId, 'test.alt-chocolate' as IngredientId],
               preferredId: 'test.dark-chocolate' as IngredientId
             },
-            amount: 200 as Grams
+            amount: 200 as Measurement
           },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       },
       {
         versionSpec: '2026-02-01-01' as RecipeVersionSpec,
         createdDate: '2026-02-01',
         notes: 'Revised version',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 120 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 120 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ]
   };
@@ -162,10 +162,10 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 150 as Grams }
+          { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 150 as Measurement }
         ],
-        baseWeight: 350 as Grams
+        baseWeight: 350 as Measurement
       }
     ]
   };
@@ -224,10 +224,10 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ],
     recipeProcedures: recipeWithProcedures
@@ -244,10 +244,10 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ],
     recipeProcedures: {
@@ -262,7 +262,7 @@ describe('RuntimeContext', () => {
     productNumber: 'CW 2227',
     description: 'Hex Swirl',
     cavityCount: 32,
-    cavityWeight: 10 as Grams,
+    cavityWeight: 10 as Measurement,
     cavityDimensions: {
       width: 30 as Millimeters,
       length: 30 as Millimeters,
@@ -278,7 +278,7 @@ describe('RuntimeContext', () => {
     productNumber: 'CW 1000',
     description: 'Classic Bar',
     cavityCount: 4,
-    cavityWeight: 50 as Grams,
+    cavityWeight: 50 as Measurement,
     format: 'series-1000',
     tags: ['bar', 'classic']
   };
@@ -304,10 +304,10 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ],
     recipeMolds: recipeWithMolds
@@ -324,10 +324,10 @@ describe('RuntimeContext', () => {
         versionSpec: '2026-01-01-01' as RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ],
     recipeMolds: {
@@ -728,7 +728,7 @@ describe('RuntimeContext', () => {
       journalId: '2026-03-15-100000-00000001' as JournalId,
       recipeVersionId: 'test.dark-ganache@2026-01-01-01' as RecipeVersionId,
       date: '2026-03-15',
-      targetWeight: 450 as Grams,
+      targetWeight: 450 as Measurement,
       scaleFactor: 1.5,
       entries: [
         {
@@ -744,7 +744,7 @@ describe('RuntimeContext', () => {
       journalId: '2026-03-16-100000-00000002' as JournalId,
       recipeVersionId: 'test.dark-ganache@2026-02-01-01' as RecipeVersionId,
       date: '2026-03-16',
-      targetWeight: 600 as Grams,
+      targetWeight: 600 as Measurement,
       scaleFactor: 2.0
     };
 
@@ -753,7 +753,7 @@ describe('RuntimeContext', () => {
       journalId: '2026-03-17-100000-00000003' as JournalId,
       recipeVersionId: 'test.milk-ganache@2026-01-01-01' as RecipeVersionId,
       date: '2026-03-17',
-      targetWeight: 350 as Grams,
+      targetWeight: 350 as Measurement,
       scaleFactor: 1.0
     };
 

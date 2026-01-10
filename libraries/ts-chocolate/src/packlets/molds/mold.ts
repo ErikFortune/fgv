@@ -25,7 +25,7 @@
 
 import { Result, Success } from '@fgv/ts-utils';
 
-import { BaseMoldId, Grams, MoldFormat } from '../common';
+import { BaseMoldId, Measurement, MoldFormat } from '../common';
 import { ICavityDimensions, IMold } from './model';
 
 // ============================================================================
@@ -42,7 +42,7 @@ export class Mold implements IMold {
   public readonly productNumber: string;
   public readonly description?: string;
   public readonly cavityCount: number;
-  public readonly cavityWeight?: Grams;
+  public readonly cavityWeight?: Measurement;
   public readonly cavityDimensions?: ICavityDimensions;
   public readonly format: MoldFormat;
   public readonly tags?: ReadonlyArray<string>;
@@ -74,11 +74,11 @@ export class Mold implements IMold {
    * Gets the total capacity of the mold (all cavities) in grams
    * @returns Total capacity if cavityWeight is defined, undefined otherwise
    */
-  public get totalCapacity(): Grams | undefined {
+  public get totalCapacity(): Measurement | undefined {
     if (this.cavityWeight === undefined) {
       return undefined;
     }
-    return (this.cavityWeight * this.cavityCount) as Grams;
+    return (this.cavityWeight * this.cavityCount) as Measurement;
   }
 
   /**

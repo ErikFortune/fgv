@@ -49,7 +49,7 @@ import {
   ConfectionVersionSpec,
   DegreesMacMichael,
   FluidityStars,
-  Grams,
+  Measurement,
   IngredientCategory,
   IngredientId,
   Percentage,
@@ -423,7 +423,7 @@ export interface IRuntimeRecipeVersion {
   /**
    * Base weight of the recipe (sum of all ingredient amounts).
    */
-  readonly baseWeight: Grams;
+  readonly baseWeight: Measurement;
 
   /**
    * Optional yield description (e.g., "50 bonbons").
@@ -496,7 +496,7 @@ export interface IRuntimeRecipeVersion {
    * @param options - Optional scaling options (precision, minimum amount)
    * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
    */
-  scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+  scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
 
   /**
    * Scales this version by a multiplicative factor.
@@ -543,7 +543,7 @@ export interface IRuntimeScalingSource {
   /**
    * The target weight requested.
    */
-  readonly targetWeight: Grams;
+  readonly targetWeight: Measurement;
 }
 
 /**
@@ -572,7 +572,7 @@ export interface IRuntimeScaledRecipeVersion {
    * The target weight that was requested.
    * Convenience accessor for scaledFrom.targetWeight.
    */
-  readonly targetWeight: Grams;
+  readonly targetWeight: Measurement;
 
   // ---- Version Properties (from IScaledRecipeVersion) ----
 
@@ -584,7 +584,7 @@ export interface IRuntimeScaledRecipeVersion {
   /**
    * Base weight of the scaled recipe (same as targetWeight).
    */
-  readonly baseWeight: Grams;
+  readonly baseWeight: Measurement;
 
   /**
    * Optional yield description (may be scaled from original).
@@ -638,7 +638,7 @@ export interface IRuntimeScaledRecipeVersion {
   /**
    * Gets the total weight difference from the original.
    */
-  readonly weightDifference: Grams;
+  readonly weightDifference: Measurement;
 
   // ---- Operations ----
 
@@ -895,7 +895,7 @@ export interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredien
   /**
    * Amount in grams
    */
-  readonly amount: Grams;
+  readonly amount: Measurement;
 
   /**
    * Optional notes for this specific ingredient usage
@@ -926,12 +926,12 @@ export interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredien
   /**
    * Scaled amount in grams (after applying scale factor)
    */
-  readonly amount: Grams;
+  readonly amount: Measurement;
 
   /**
    * Original amount before scaling
    */
-  readonly originalAmount: Grams;
+  readonly originalAmount: Measurement;
 
   /**
    * The scale factor that was applied

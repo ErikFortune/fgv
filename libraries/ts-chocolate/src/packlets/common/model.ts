@@ -205,10 +205,11 @@ export type SlotId = Brand<string, 'SlotId'>;
 // ============================================================================
 
 /**
- * Weight in grams (native internal unit)
+ * Measurement amount (non-negative number in the specified unit).
+ * Used for recipe ingredient amounts in any unit (g, mL, tsp, Tbsp, pinch).
  * @public
  */
-export type Grams = Brand<number, 'Grams'>;
+export type Measurement = Brand<number, 'Measurement'>;
 
 /**
  * Percentage value (0-100)
@@ -378,6 +379,48 @@ export type WeightUnit = 'g' | 'oz' | 'lb' | 'kg';
  * @public
  */
 export const allWeightUnits: WeightUnit[] = ['g', 'oz', 'lb', 'kg'];
+
+/**
+ * Measurement unit types for recipe ingredients.
+ * - 'g': Grams (default)
+ * - 'mL': Milliliters
+ * - 'tsp': Teaspoons
+ * - 'Tbsp': Tablespoons
+ * - 'pinch': A small imprecise amount
+ * @public
+ */
+export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch';
+
+/**
+ * All possible measurement units
+ * @public
+ */
+export const allMeasurementUnits: MeasurementUnit[] = ['g', 'mL', 'tsp', 'Tbsp', 'pinch'];
+
+/**
+ * Spoon measurement units that share the same scaling system
+ * @public
+ */
+export type SpoonUnit = 'tsp' | 'Tbsp';
+
+/**
+ * All spoon measurement units
+ * @public
+ */
+export const allSpoonUnits: SpoonUnit[] = ['tsp', 'Tbsp'];
+
+/**
+ * Spoon level indicator for dry measurements.
+ * This is a display hint only and does not affect scaling calculations.
+ * @public
+ */
+export type SpoonLevel = 'level' | 'heaping';
+
+/**
+ * All spoon level indicators
+ * @public
+ */
+export const allSpoonLevels: SpoonLevel[] = ['level', 'heaping'];
 
 /**
  * Common allergens that may be present in ingredients

@@ -9,5 +9,5 @@ Initial target weight (if specified, scaleFactor is calculated from baseWeight)
 **Signature:**
 
 ```typescript
-readonly targetWeight?: Grams;
+readonly targetWeight?: Measurement;
 ```

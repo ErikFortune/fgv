@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
@@ -106,7 +106,7 @@ _(Optional)_ Optional notes for this ingredient
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

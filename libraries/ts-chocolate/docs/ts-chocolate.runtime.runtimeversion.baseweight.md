@@ -9,5 +9,5 @@ Base weight of the recipe (sum of all ingredient amounts)
 **Signature:**
 
 ```typescript
-get baseWeight(): Grams;
+get baseWeight(): Measurement;
 ```

@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseRecipeId,
-  Grams,
+  Measurement,
   IngredientId,
   Percentage,
   RecipeId,
@@ -105,10 +105,10 @@ describe('EditingSessionValidator', () => {
         createdDate: '2026-01-01',
         notes: 'Original recipe',
         ingredients: [
-          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Grams },
-          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Grams }
+          { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
+          { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 100 as Measurement }
         ],
-        baseWeight: 300 as Grams
+        baseWeight: 300 as Measurement
       }
     ]
   };

@@ -9,5 +9,5 @@ Initial weight per piece (defaults to confection's default)
 **Signature:**
 
 ```typescript
-readonly weightPerPiece?: Grams;
+readonly weightPerPiece?: Measurement;
 ```

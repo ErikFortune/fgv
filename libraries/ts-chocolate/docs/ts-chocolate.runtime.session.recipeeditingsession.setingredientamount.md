@@ -9,7 +9,7 @@ Sets the amount of an ingredient
 **Signature:**
 
 ```typescript
-setIngredientAmount(id: IngredientId, amount: Grams): Result<void>;
+setIngredientAmount(id: IngredientId, amount: Measurement): Result<void>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ amount
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

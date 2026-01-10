@@ -9,7 +9,7 @@ Adds additional amount to an ingredient
 **Signature:**
 
 ```typescript
-addIngredientAmount(id: IngredientId, additional: Grams): Result<void>;
+addIngredientAmount(id: IngredientId, additional: Measurement): Result<void>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ additional
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

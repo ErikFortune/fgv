@@ -56,8 +56,8 @@ export const journalEntry: Converter<IJournalEntry> = Converters.object<IJournal
   timestamp: Converters.string, // ISO 8601 timestamp
   eventType: journalEventType,
   ingredientId: CommonConverters.ingredientId.optional(),
-  originalAmount: CommonConverters.grams.optional(),
-  newAmount: CommonConverters.grams.optional(),
+  originalAmount: CommonConverters.measurement.optional(),
+  newAmount: CommonConverters.measurement.optional(),
   substituteIngredientId: CommonConverters.ingredientId.optional(),
   text: Converters.string.optional()
 });
@@ -77,7 +77,7 @@ export const recipeJournalRecord: Converter<IRecipeJournalRecord> = Converters.o
   journalId: CommonConverters.journalId,
   recipeVersionId: CommonConverters.recipeVersionId,
   date: Converters.string, // ISO 8601 date string
-  targetWeight: CommonConverters.grams,
+  targetWeight: CommonConverters.measurement,
   scaleFactor: Converters.number,
   notes: Converters.string.optional(),
   modifiedVersionId: CommonConverters.recipeVersionId.optional(),
@@ -121,8 +121,8 @@ export const confectionJournalEntry: Converter<IConfectionJournalEntry> =
     // yield-modify fields
     newYieldCount: Converters.number.optional(),
     previousYieldCount: Converters.number.optional(),
-    newWeightPerPiece: CommonConverters.grams.optional(),
-    previousWeightPerPiece: CommonConverters.grams.optional(),
+    newWeightPerPiece: CommonConverters.measurement.optional(),
+    previousWeightPerPiece: CommonConverters.measurement.optional(),
     // procedure-select fields
     procedureId: CommonConverters.procedureId.optional(),
     previousProcedureId: CommonConverters.procedureId.optional(),
@@ -144,7 +144,7 @@ export const confectionJournalRecord: Converter<IConfectionJournalRecord> =
     confectionVersionId: CommonConverters.confectionVersionId,
     date: Converters.string, // ISO 8601 date string
     yieldCount: Converters.number,
-    weightPerPiece: CommonConverters.grams.optional(),
+    weightPerPiece: CommonConverters.measurement.optional(),
     notes: Converters.string.optional(),
     modifiedVersionId: CommonConverters.confectionVersionId.optional(),
     linkedRecipeJournalId: CommonConverters.journalId.optional(),

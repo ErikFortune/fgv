@@ -276,17 +276,6 @@ Converter for FluidityStars
 </td></tr>
 <tr><td>
 
-[grams](./ts-chocolate.converters.grams.md)
-
-
-</td><td>
-
-Converter for Grams
-
-
-</td></tr>
-<tr><td>
-
 [ingredientCategory](./ts-chocolate.converters.ingredientcategory.md)
 
 
@@ -315,6 +304,28 @@ Converter for IngredientId (composite)
 </td><td>
 
 Converter for JournalId
+
+
+</td></tr>
+<tr><td>
+
+[measurement](./ts-chocolate.converters.measurement.md)
+
+
+</td><td>
+
+Converter for Measurement (non-negative number for ingredient amounts)
+
+
+</td></tr>
+<tr><td>
+
+[measurementUnit](./ts-chocolate.converters.measurementunit.md)
+
+
+</td><td>
+
+Converter for MeasurementUnit
 
 
 </td></tr>
@@ -557,6 +568,17 @@ Converter for [SlotId](./ts-chocolate.slotid.md)<!-- -->.
 </td><td>
 
 Converter for SourceId
+
+
+</td></tr>
+<tr><td>
+
+[spoonLevel](./ts-chocolate.converters.spoonlevel.md)
+
+
+</td><td>
+
+Converter for SpoonLevel
 
 
 </td></tr>

@@ -215,7 +215,7 @@ _(Optional)_ The mold ID selected (for mold-select events)
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
@@ -383,7 +383,7 @@ _(Optional)_ The previous procedure ID (for procedure-select events)
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

@@ -9,5 +9,5 @@ Weight per piece for this production run (optional)
 **Signature:**
 
 ```typescript
-readonly weightPerPiece?: Grams;
+readonly weightPerPiece?: Measurement;
 ```

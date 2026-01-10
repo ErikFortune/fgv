@@ -25,7 +25,7 @@ import {
   ConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
-  Grams,
+  Measurement,
   IngredientId,
   Millimeters,
   MoldId,
@@ -66,7 +66,7 @@ describe('ConfectionEditingSession', () => {
     yield: {
       count: 24,
       unit: 'pieces',
-      weightPerPiece: 12 as Grams
+      weightPerPiece: 12 as Measurement
     },
     fillings: [
       {
@@ -125,7 +125,7 @@ describe('ConfectionEditingSession', () => {
     yield: {
       count: 48,
       unit: 'pieces',
-      weightPerPiece: 10 as Grams
+      weightPerPiece: 10 as Measurement
     },
     fillings: [
       {
@@ -166,7 +166,7 @@ describe('ConfectionEditingSession', () => {
     yield: {
       count: 40,
       unit: 'pieces',
-      weightPerPiece: 15 as Grams
+      weightPerPiece: 15 as Measurement
     },
     fillings: [
       {
@@ -275,7 +275,7 @@ describe('ConfectionEditingSession', () => {
       expect(
         ConfectionEditingSession.create({
           sourceConfection: confection,
-          weightPerPiece: 20 as Grams
+          weightPerPiece: 20 as Measurement
         })
       ).toSucceedAndSatisfy((session) => {
         expect(session.yield.weightPerPiece).toBe(20);
@@ -832,7 +832,7 @@ describe('ConfectionEditingSession', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.setWeightPerPiece(20 as Grams)).toSucceed();
+      expect(session.setWeightPerPiece(20 as Measurement)).toSucceed();
       expect(session.yield.weightPerPiece).toBe(20);
       expect(session.yield.status).toBe('modified');
       expect(session.isDirty).toBe(true);
@@ -842,15 +842,15 @@ describe('ConfectionEditingSession', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.setWeightPerPiece(0 as Grams)).toFailWith(/must be positive/);
-      expect(session.setWeightPerPiece(-1 as Grams)).toFailWith(/must be positive/);
+      expect(session.setWeightPerPiece(0 as Measurement)).toFailWith(/must be positive/);
+      expect(session.setWeightPerPiece(-1 as Measurement)).toFailWith(/must be positive/);
     });
 
     test('adds journal entry', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      session.setWeightPerPiece(20 as Grams);
+      session.setWeightPerPiece(20 as Measurement);
       expect(session.journalEntries.length).toBe(1);
       expect(session.journalEntries[0].eventType).toBe('yield-modify');
     });

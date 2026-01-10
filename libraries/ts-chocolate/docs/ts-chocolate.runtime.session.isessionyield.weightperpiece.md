@@ -9,5 +9,5 @@ Current weight per piece (optional)
 **Signature:**
 
 ```typescript
-readonly weightPerPiece?: Grams;
+readonly weightPerPiece?: Measurement;
 ```

@@ -25,7 +25,7 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, Converters as CommonConverters } from '../../common';
+import { Measurement, IngredientId, Converters as CommonConverters } from '../../common';
 import { RecipeEditingSession } from './editingSession';
 import { ISessionIngredient } from './model';
 
@@ -196,7 +196,7 @@ export class EditingSessionValidator implements IEditingSessionValidator {
    */
   public setIngredientAmount(id: string, amount: number): Result<void> {
     return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
-      return CommonConverters.grams.convert(amount).onSuccess((validAmount: Grams) => {
+      return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {
         return this._session.setIngredientAmount(validId, validAmount);
       });
     });
@@ -210,7 +210,7 @@ export class EditingSessionValidator implements IEditingSessionValidator {
    */
   public addIngredientAmount(id: string, additional: number): Result<void> {
     return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
-      return CommonConverters.grams.convert(additional).onSuccess((validAmount: Grams) => {
+      return CommonConverters.measurement.convert(additional).onSuccess((validAmount: Measurement) => {
         return this._session.addIngredientAmount(validId, validAmount);
       });
     });
@@ -224,7 +224,7 @@ export class EditingSessionValidator implements IEditingSessionValidator {
    */
   public addIngredient(id: string, amount: number): Result<void> {
     return CommonConverters.ingredientId.convert(id).onSuccess((validId: IngredientId) => {
-      return CommonConverters.grams.convert(amount).onSuccess((validAmount: Grams) => {
+      return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {
         return this._session.addIngredient(validId, validAmount);
       });
     });
@@ -256,7 +256,7 @@ export class EditingSessionValidator implements IEditingSessionValidator {
           if (amount === undefined) {
             return this._session.substituteIngredient(validOriginalId, validSubstituteId);
           }
-          return CommonConverters.grams.convert(amount).onSuccess((validAmount: Grams) => {
+          return CommonConverters.measurement.convert(amount).onSuccess((validAmount: Measurement) => {
             return this._session.substituteIngredient(validOriginalId, validSubstituteId, validAmount);
           });
         });
@@ -269,7 +269,7 @@ export class EditingSessionValidator implements IEditingSessionValidator {
    * @returns Success or Failure
    */
   public setTargetWeight(weight: number): Result<void> {
-    return CommonConverters.grams.convert(weight).onSuccess((validWeight: Grams) => {
+    return CommonConverters.measurement.convert(weight).onSuccess((validWeight: Measurement) => {
       return this._session.setTargetWeight(validWeight);
     });
   }

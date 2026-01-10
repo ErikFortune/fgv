@@ -28,6 +28,20 @@ import { Converter, Converters, Result } from '@fgv/ts-utils';
 import {
   AdditionalChocolatePurpose,
   Allergen,
+  allAdditionalChocolatePurposes,
+  allAllergens,
+  allCacaoVarieties,
+  allCertifications,
+  allChocolateApplications,
+  allChocolateTypes,
+  allConfectionTypes,
+  allFluidityStars,
+  allIngredientCategories,
+  allMeasurementUnits,
+  allMoldFormats,
+  allRecipeCategories,
+  allSpoonLevels,
+  allWeightUnits,
   BaseConfectionId,
   BaseIngredientId,
   BaseMoldId,
@@ -45,7 +59,6 @@ import {
   ConfectionVersionSpec,
   DegreesMacMichael,
   FluidityStars,
-  Grams,
   ID_SEPARATOR,
   IHasId,
   IIdsWithPreferred,
@@ -54,6 +67,8 @@ import {
   IOptionsWithPreferred,
   IRefWithNotes,
   JournalId,
+  Measurement,
+  MeasurementUnit,
   Millimeters,
   Minutes,
   MoldFormat,
@@ -69,20 +84,9 @@ import {
   SessionId,
   SlotId,
   SourceId,
+  SpoonLevel,
   VERSION_ID_SEPARATOR,
-  WeightUnit,
-  allAdditionalChocolatePurposes,
-  allAllergens,
-  allCacaoVarieties,
-  allCertifications,
-  allChocolateApplications,
-  allChocolateTypes,
-  allConfectionTypes,
-  allFluidityStars,
-  allIngredientCategories,
-  allMoldFormats,
-  allRecipeCategories,
-  allWeightUnits
+  WeightUnit
 } from './model';
 import { validateIdsWithPreferred, validateOptionsWithPreferred } from './validation';
 import {
@@ -97,9 +101,9 @@ import {
   toConfectionVersionId,
   toConfectionVersionSpec,
   toDegreesMacMichael,
-  toGrams,
   toIngredientId,
   toJournalId,
+  toMeasurement,
   toMillimeters,
   toMinutes,
   toMoldId,
@@ -362,10 +366,10 @@ export const parsedConfectionVersionId: Converter<ParsedConfectionVersionId> = C
 // ============================================================================
 
 /**
- * Converter for Grams
+ * Converter for Measurement (non-negative number for ingredient amounts)
  * @public
  */
-export const grams: Converter<Grams> = Converters.generic(toGrams);
+export const measurement: Converter<Measurement> = Converters.generic(toMeasurement);
 
 /**
  * Converter for Percentage
@@ -482,6 +486,18 @@ export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> =
  * @public
  */
 export const recipeCategory: Converter<RecipeCategory> = Converters.enumeratedValue(allRecipeCategories);
+
+/**
+ * Converter for MeasurementUnit
+ * @public
+ */
+export const measurementUnit: Converter<MeasurementUnit> = Converters.enumeratedValue(allMeasurementUnits);
+
+/**
+ * Converter for SpoonLevel
+ * @public
+ */
+export const spoonLevel: Converter<SpoonLevel> = Converters.enumeratedValue(allSpoonLevels);
 
 // ============================================================================
 // Options with Preferred Converters

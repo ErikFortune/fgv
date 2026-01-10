@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseMoldId, Grams, Millimeters, MoldFormat } from '../common';
+import { BaseMoldId, Measurement, Millimeters, MoldFormat } from '../common';
 
 /**
  * Dimensions of a mold cavity in millimeters
@@ -79,7 +79,7 @@ export interface IMold {
   /**
    * Weight capacity per cavity in grams
    */
-  readonly cavityWeight?: Grams;
+  readonly cavityWeight?: Measurement;
 
   /**
    * Physical dimensions of each cavity

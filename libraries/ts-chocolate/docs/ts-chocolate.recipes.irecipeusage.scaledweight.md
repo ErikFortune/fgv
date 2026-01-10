@@ -9,5 +9,5 @@ Scaled weight used for this production run
 **Signature:**
 
 ```typescript
-readonly scaledWeight: Grams;
+readonly scaledWeight: Measurement;
 ```

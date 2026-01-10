@@ -9,5 +9,5 @@ Minimum amount to show in scaled recipe (default: 0.1) Amounts below this thresh
 **Signature:**
 
 ```typescript
-readonly minimumAmount?: Grams;
+readonly minimumAmount?: Measurement;
 ```

@@ -9,5 +9,5 @@ Target weight requested
 **Signature:**
 
 ```typescript
-readonly targetWeight: Grams;
+readonly targetWeight: Measurement;
 ```

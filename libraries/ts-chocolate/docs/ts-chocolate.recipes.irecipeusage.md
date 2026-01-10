@@ -110,7 +110,7 @@ _(Optional)_ Optional notes about this usage
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

@@ -9,5 +9,5 @@ Gets the total weight difference from the original.
 **Signature:**
 
 ```typescript
-get weightDifference(): Grams;
+get weightDifference(): Measurement;
 ```

@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-get targetWeight(): Grams;
+get targetWeight(): Measurement;
 ```

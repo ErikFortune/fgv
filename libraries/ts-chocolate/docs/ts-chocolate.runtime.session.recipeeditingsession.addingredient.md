@@ -9,7 +9,7 @@ Adds a new ingredient to the session
 **Signature:**
 
 ```typescript
-addIngredient(id: IngredientId, amount: Grams): Result<void>;
+addIngredient(id: IngredientId, amount: Measurement): Result<void>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ amount
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

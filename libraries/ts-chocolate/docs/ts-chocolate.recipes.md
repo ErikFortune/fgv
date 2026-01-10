@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[LinearScaler](./ts-chocolate.recipes.linearscaler.md)
+
+
+</td><td>
+
+Generic linear scaler for units like grams and milliliters. Used as the default fallback for unknown units.
+
+
+</td></tr>
+<tr><td>
+
+[PinchScaler](./ts-chocolate.recipes.pinchscaler.md)
+
+
+</td><td>
+
+Scaler for pinch measurements - always returns the original amount. Pinch is an imprecise measurement that doesn't scale linearly.
+
+
+</td></tr>
+<tr><td>
+
 [Recipe](./ts-chocolate.recipes.recipe.md)
 
 
@@ -38,6 +60,28 @@ Recipe class with helper methods for version management
 Multi-source recipe library with type-safe access
 
 Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.classic-ganache") - Multi-source management (built-in, user, app-local, etc.) - Mutable vs immutable collection distinction - Weakly-typed validating access for external data
+
+
+</td></tr>
+<tr><td>
+
+[SpoonScaler](./ts-chocolate.recipes.spoonscaler.md)
+
+
+</td><td>
+
+Scaler for spoon measurements (tsp/Tbsp) with fractional support. Handles conversion between tsp and Tbsp (1 Tbsp = 3 tsp).
+
+
+</td></tr>
+<tr><td>
+
+[UnitScalerRegistry](./ts-chocolate.recipes.unitscalerregistry.md)
+
+
+</td><td>
+
+Registry of unit scalers. Maps measurement units to their appropriate scalers. Falls back to a default linear scaler for unknown units.
 
 
 </td></tr>
@@ -102,6 +146,17 @@ Recalculates base weight for recipe version and returns updated version
 </td></tr>
 <tr><td>
 
+[scaleAmount(amount, unit, factor)](./ts-chocolate.recipes.scaleamount.md)
+
+
+</td><td>
+
+Scale an ingredient amount using the appropriate scaler for the unit
+
+
+</td></tr>
+<tr><td>
+
 [scaleRecipe(recipe, recipeId, targetWeight, options)](./ts-chocolate.recipes.scalerecipe.md)
 
 
@@ -137,6 +192,17 @@ This is the core scaling function that operates directly on a version. Use this 
 
 
 </td></tr>
+<tr><td>
+
+[supportsScaling(unit)](./ts-chocolate.recipes.supportsscaling.md)
+
+
+</td><td>
+
+Check if a unit supports scaling
+
+
+</td></tr>
 </tbody></table>
 
 ## Interfaces
@@ -165,12 +231,34 @@ A computed scaled recipe with full ingredient data. This is the output format fr
 </td></tr>
 <tr><td>
 
+[IFraction](./ts-chocolate.recipes.ifraction.md)
+
+
+</td><td>
+
+Represents a fraction for display purposes
+
+
+</td></tr>
+<tr><td>
+
 [IIngredientSnapshot](./ts-chocolate.recipes.iingredientsnapshot.md)
 
 
 </td><td>
 
 Optional ingredient snapshot for archival purposes. Used when the source recipe might become unavailable.
+
+
+</td></tr>
+<tr><td>
+
+[ILinearScalerOptions](./ts-chocolate.recipes.ilinearscaleroptions.md)
+
+
+</td><td>
+
+Options for linear scaling
 
 
 </td></tr>
@@ -253,6 +341,17 @@ Complete details for a single version of a recipe
 </td></tr>
 <tr><td>
 
+[IScaledAmount](./ts-chocolate.recipes.iscaledamount.md)
+
+
+</td><td>
+
+Result of scaling an amount in a specific unit. Contains both the raw scaled value and display-friendly representation.
+
+
+</td></tr>
+<tr><td>
+
 [IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)
 
 
@@ -292,6 +391,28 @@ Lightweight scaling reference - the default storage format for scaled recipes. S
 </td><td>
 
 Information about the source of a scaled recipe. Used at runtime for computed scaled versions.
+
+
+</td></tr>
+<tr><td>
+
+[ISpoonScalerOptions](./ts-chocolate.recipes.ispoonscaleroptions.md)
+
+
+</td><td>
+
+Options for spoon scaling
+
+
+</td></tr>
+<tr><td>
+
+[IUnitScaler](./ts-chocolate.recipes.iunitscaler.md)
+
+
+</td><td>
+
+Interface for unit-specific scalers
 
 
 </td></tr>
@@ -364,6 +485,28 @@ All possible rating categories
 </td><td>
 
 All possible recipe categories
+
+
+</td></tr>
+<tr><td>
+
+[defaultScalerRegistry](./ts-chocolate.recipes.defaultscalerregistry.md)
+
+
+</td><td>
+
+Default scaler registry instance
+
+
+</td></tr>
+<tr><td>
+
+[STANDARD\_FRACTIONS](./ts-chocolate.recipes.standard_fractions.md)
+
+
+</td><td>
+
+Standard fractions supported for tsp/Tbsp display. Ordered by decimal value for efficient searching.
 
 
 </td></tr>

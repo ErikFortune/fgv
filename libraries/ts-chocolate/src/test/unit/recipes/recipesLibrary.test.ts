@@ -23,7 +23,7 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import {
   BaseRecipeId,
-  Grams,
+  Measurement,
   IngredientId,
   RecipeId,
   RecipeName,
@@ -56,10 +56,10 @@ describe('RecipesLibrary', () => {
     versionSpec: '2026-01-01-01' as RecipeVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
-      { ingredient: { ids: ['felchlin.maracaibo-65' as IngredientId] }, amount: 100 as Grams },
-      { ingredient: { ids: ['common.heavy-cream-35' as IngredientId] }, amount: 50 as Grams }
+      { ingredient: { ids: ['felchlin.maracaibo-65' as IngredientId] }, amount: 100 as Measurement },
+      { ingredient: { ids: ['common.heavy-cream-35' as IngredientId] }, amount: 50 as Measurement }
     ],
-    baseWeight: 150 as Grams,
+    baseWeight: 150 as Measurement,
     yield: '10 bonbons'
   };
 
@@ -965,10 +965,10 @@ describe('Recipe scaling', () => {
     versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
-      { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Grams },
-      { ingredient: { ids: ['source.cream' as IngredientId] }, amount: 50 as Grams }
+      { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Measurement },
+      { ingredient: { ids: ['source.cream' as IngredientId] }, amount: 50 as Measurement }
     ],
-    baseWeight: 150 as Grams
+    baseWeight: 150 as Measurement
   };
 
   const testRecipe: IRecipe = {
@@ -983,7 +983,7 @@ describe('Recipe scaling', () => {
 
   describe('scaleRecipe', () => {
     test('scales ingredients proportionally', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Measurement)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.scaledFrom.scaleFactor).toBe(2);
         expect(scaled.scaledFrom.targetWeight).toBe(300);
         expect(scaled.baseWeight).toBe(300);
@@ -993,13 +993,13 @@ describe('Recipe scaling', () => {
     });
 
     test('preserves original amounts', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Measurement)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.ingredients[0].originalAmount).toBe(100);
       });
     });
 
     test('includes scaling source information', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Measurement)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.scaledFrom.sourceVersionId).toBe('source.test@2026-01-01-01');
         expect(scaled.scaledFrom.scaleFactor).toBe(2);
         expect(scaled.scaledFrom.targetWeight).toBe(300);
@@ -1007,7 +1007,7 @@ describe('Recipe scaling', () => {
     });
 
     test('includes createdDate', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(testRecipe, testRecipeId, 300 as Measurement)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.createdDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       });
     });
@@ -1022,30 +1022,30 @@ describe('Recipe scaling', () => {
         ...testRecipe,
         versions: [versionWithNotes]
       };
-      expect(scaleRecipe(recipeWithNotes, testRecipeId, 300 as Grams)).toSucceedAndSatisfy((scaled) => {
+      expect(scaleRecipe(recipeWithNotes, testRecipeId, 300 as Measurement)).toSucceedAndSatisfy((scaled) => {
         expect(scaled.notes).toBe('Test notes');
         expect(scaled.yield).toBe('20 bonbons');
       });
     });
 
     test('fails with zero target weight', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, 0 as Grams)).toFailWith(/greater than zero/);
+      expect(scaleRecipe(testRecipe, testRecipeId, 0 as Measurement)).toFailWith(/greater than zero/);
     });
 
     test('fails with negative target weight', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, -100 as Grams)).toFailWith(/greater than zero/);
+      expect(scaleRecipe(testRecipe, testRecipeId, -100 as Measurement)).toFailWith(/greater than zero/);
     });
 
     test('fails with invalid version ID', () => {
       expect(
-        scaleRecipe(testRecipe, testRecipeId, 300 as Grams, {
+        scaleRecipe(testRecipe, testRecipeId, 300 as Measurement, {
           versionSpec: '2026-12-31-99' as unknown as import('../../../packlets/common').RecipeVersionSpec
         })
       ).toFailWith(/not found/);
     });
 
     test('respects precision option', () => {
-      expect(scaleRecipe(testRecipe, testRecipeId, 333 as Grams, { precision: 0 })).toSucceedAndSatisfy(
+      expect(scaleRecipe(testRecipe, testRecipeId, 333 as Measurement, { precision: 0 })).toSucceedAndSatisfy(
         (scaled) => {
           expect(Number.isInteger(scaled.ingredients[0].amount)).toBe(true);
         }
@@ -1055,7 +1055,7 @@ describe('Recipe scaling', () => {
     test('respects minimumAmount option', () => {
       // Scale to very small amount that would be below minimum
       expect(
-        scaleRecipe(testRecipe, testRecipeId, 15 as Grams, { minimumAmount: 5 as Grams })
+        scaleRecipe(testRecipe, testRecipeId, 15 as Measurement, { minimumAmount: 5 as Measurement })
       ).toSucceedAndSatisfy((scaled) => {
         // Scaled amount would be 10 * 0.1 = 1, but minimum is 5
         expect(scaled.ingredients[0].amount).toBeGreaterThanOrEqual(5);
@@ -1104,7 +1104,7 @@ describe('Recipe scaling', () => {
         scalingRef: {
           sourceVersionId: 'source.test@2026-01-01-01' as import('../../../packlets/common').RecipeVersionId,
           scaleFactor: 2,
-          targetWeight: 300 as Grams,
+          targetWeight: 300 as Measurement,
           createdDate: '2026-01-15'
         }
       };
@@ -1119,7 +1119,7 @@ describe('Recipe scaling', () => {
         versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [],
-        baseWeight: 0 as Grams
+        baseWeight: 0 as Measurement
       };
       const zeroWeightRecipe: IRecipe = {
         baseId: 'zero' as BaseRecipeId,
@@ -1129,7 +1129,7 @@ describe('Recipe scaling', () => {
         goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
       };
       const zeroRecipeId = 'source.zero' as import('../../../packlets/common').RecipeId;
-      expect(scaleRecipe(zeroWeightRecipe, zeroRecipeId, 100 as Grams)).toFailWith(
+      expect(scaleRecipe(zeroWeightRecipe, zeroRecipeId, 100 as Measurement)).toFailWith(
         /base weight must be greater than zero/
       );
     });
@@ -1145,7 +1145,7 @@ describe('Recipe scaling', () => {
     test('updates baseWeight from ingredients', () => {
       const version: IRecipeVersion = {
         ...testVersion,
-        baseWeight: 999 as Grams // Wrong value
+        baseWeight: 999 as Measurement // Wrong value
       };
       const recalced = recalculateRecipeVersion(version);
       expect(recalced.baseWeight).toBe(150);

@@ -9,7 +9,7 @@ Sets the target weight and calculates the scale factor
 **Signature:**
 
 ```typescript
-setTargetWeight(weight: Grams): Result<void>;
+setTargetWeight(weight: Measurement): Result<void>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ weight
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

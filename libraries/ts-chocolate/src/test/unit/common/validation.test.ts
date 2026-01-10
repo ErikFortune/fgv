@@ -28,7 +28,7 @@ import {
   ConfectionName,
   ConfectionVersionId,
   ConfectionVersionSpec,
-  Grams,
+  Measurement,
   Helpers,
   IngredientId,
   JournalId,
@@ -59,7 +59,7 @@ const {
   isValidSessionId,
   isValidJournalId,
   isValidRatingScore,
-  isValidGrams,
+  isValidMeasurement,
   isValidPercentage,
   isValidCelsius,
   isValidDegreesMacMichael,
@@ -80,7 +80,7 @@ const {
   isValidSlotId,
   toSlotId,
   toRatingScore,
-  toGrams,
+  toMeasurement,
   toPercentage,
   toCelsius,
   toDegreesMacMichael,
@@ -217,7 +217,7 @@ describe('Common validation', () => {
   // ============================================================================
 
   describe('Numeric type guards', () => {
-    describe('isValidGrams', () => {
+    describe('isValidMeasurement', () => {
       test.each([
         ['positive integer', 100, true],
         ['zero', 0, true],
@@ -227,8 +227,8 @@ describe('Common validation', () => {
         ['infinity', Infinity, false],
         ['NaN', NaN, false],
         ['string', '100', false]
-      ])('%s: isValidGrams(%p) returns %p', (_desc, input, expected) => {
-        expect(isValidGrams(input)).toBe(expected);
+      ])('%s: isValidMeasurement(%p) returns %p', (_desc, input, expected) => {
+        expect(isValidMeasurement(input)).toBe(expected);
       });
     });
 
@@ -537,17 +537,17 @@ describe('Common validation', () => {
   // ============================================================================
 
   describe('Numeric converters', () => {
-    describe('toGrams', () => {
+    describe('toMeasurement', () => {
       test.each([
-        ['valid grams', 100, 100],
+        ['valid measurement', 100, 100],
         ['zero', 0, 0],
         ['decimal', 50.5, 50.5]
       ])('succeeds with %s', (_desc, input, expected) => {
-        expect(toGrams(input)).toSucceedWith(expected as Grams);
+        expect(toMeasurement(input)).toSucceedWith(expected as Measurement);
       });
 
       test('fails with negative value', () => {
-        expect(toGrams(-1)).toFailWith(/Invalid Grams/);
+        expect(toMeasurement(-1)).toFailWith(/Invalid Measurement/);
       });
     });
 

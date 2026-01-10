@@ -89,7 +89,7 @@ _(Optional)_ Unit description (default: 'pieces')
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

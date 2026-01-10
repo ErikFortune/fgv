@@ -89,7 +89,7 @@ _(Optional)_ The ingredient involved in this event (for ingredient-related event
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
@@ -110,7 +110,7 @@ _(Optional)_ New amount after the change (for add/modify events)
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

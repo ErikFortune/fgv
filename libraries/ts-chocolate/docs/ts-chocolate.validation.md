@@ -140,17 +140,6 @@ Type guard for DegreesMacMichael
 </td></tr>
 <tr><td>
 
-[isValidGrams(from)](./ts-chocolate.validation.isvalidgrams.md)
-
-
-</td><td>
-
-Type guard for Grams
-
-
-</td></tr>
-<tr><td>
-
 [isValidIngredientId(from)](./ts-chocolate.validation.isvalidingredientid.md)
 
 
@@ -168,6 +157,17 @@ Type guard for IngredientId
 </td><td>
 
 Type guard for JournalId
+
+
+</td></tr>
+<tr><td>
+
+[isValidMeasurement(from)](./ts-chocolate.validation.isvalidmeasurement.md)
+
+
+</td><td>
+
+Type guard for Measurement
 
 
 </td></tr>
@@ -437,17 +437,6 @@ Converts unknown value to DegreesMacMichael
 </td></tr>
 <tr><td>
 
-[toGrams(from)](./ts-chocolate.validation.tograms.md)
-
-
-</td><td>
-
-Converts unknown value to Grams
-
-
-</td></tr>
-<tr><td>
-
 [toIngredientId(from)](./ts-chocolate.validation.toingredientid.md)
 
 
@@ -465,6 +454,17 @@ Converts unknown value to IngredientId
 </td><td>
 
 Converts unknown value to JournalId
+
+
+</td></tr>
+<tr><td>
+
+[toMeasurement(from)](./ts-chocolate.validation.tomeasurement.md)
+
+
+</td><td>
+
+Converts unknown value to Measurement
 
 
 </td></tr>

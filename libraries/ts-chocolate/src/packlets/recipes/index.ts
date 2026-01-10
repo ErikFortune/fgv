@@ -23,6 +23,7 @@ export * from './recipe';
 export * from './recipesCollection';
 export * from './recipesLibrary';
 export * from './scaler';
+export * from './unitScaler';
 
 import * as Converters from './converters';
 

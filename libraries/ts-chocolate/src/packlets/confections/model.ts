@@ -29,7 +29,7 @@ import {
   ConfectionName,
   ConfectionType,
   ConfectionVersionSpec,
-  Grams,
+  Measurement,
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
@@ -55,7 +55,7 @@ export interface IConfectionYield {
   /** Unit description (default: 'pieces') */
   readonly unit?: string;
   /** Weight per piece in grams */
-  readonly weightPerPiece?: Grams;
+  readonly weightPerPiece?: Measurement;
 }
 
 /**

@@ -25,7 +25,7 @@
 
 import { captureResult, Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, IngredientId, SessionId } from '../../common';
+import { Measurement, IngredientId, SessionId } from '../../common';
 import { IJournalEntry, IRecipeJournalRecord, JournalEventType } from '../../journal';
 import { IRecipeIngredient, IRecipeVersion } from '../../recipes';
 import { IRuntimeRecipeVersion } from '../model';
@@ -66,7 +66,7 @@ export class RecipeEditingSession implements ISessionState {
   private readonly _logger: Logging.LogReporter<unknown>;
 
   private _scaleFactor: number;
-  private _targetWeight: Grams;
+  private _targetWeight: Measurement;
   private readonly _ingredients: Map<IngredientId, ISessionIngredient>;
   private readonly _journalEntries: IJournalEntry[];
   private _isDirty: boolean;
@@ -84,7 +84,7 @@ export class RecipeEditingSession implements ISessionState {
       this._scaleFactor = params.targetWeight / params.sourceVersion.baseWeight;
     } else {
       this._scaleFactor = params.scaleFactor ?? 1.0;
-      this._targetWeight = (params.sourceVersion.baseWeight * this._scaleFactor) as Grams;
+      this._targetWeight = (params.sourceVersion.baseWeight * this._scaleFactor) as Measurement;
     }
 
     // Initialize ingredients from source version
@@ -126,7 +126,7 @@ export class RecipeEditingSession implements ISessionState {
     return this._scaleFactor;
   }
 
-  public get targetWeight(): Grams {
+  public get targetWeight(): Measurement {
     return this._targetWeight;
   }
 
@@ -172,12 +172,12 @@ export class RecipeEditingSession implements ISessionState {
 
     const oldFactor = this._scaleFactor;
     this._scaleFactor = factor;
-    this._targetWeight = (this._sourceVersion.baseWeight * factor) as Grams;
+    this._targetWeight = (this._sourceVersion.baseWeight * factor) as Measurement;
 
     // Recalculate all scaled amounts
     for (const [id, ingredient] of this._ingredients) {
       if (ingredient.status === 'original' || ingredient.status === 'modified') {
-        const newAmount = (ingredient.originalAmount * factor) as Grams;
+        const newAmount = (ingredient.originalAmount * factor) as Measurement;
         this._ingredients.set(id, { ...ingredient, amount: newAmount });
       }
     }
@@ -198,7 +198,7 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Success or Failure
    * @public
    */
-  public setTargetWeight(weight: Grams): Result<void> {
+  public setTargetWeight(weight: Measurement): Result<void> {
     if (weight <= 0) {
       return Failure.with('Target weight must be positive');
     }
@@ -232,7 +232,7 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Success or Failure
    * @public
    */
-  public setIngredientAmount(id: IngredientId, amount: Grams): Result<void> {
+  public setIngredientAmount(id: IngredientId, amount: Measurement): Result<void> {
     const ingredient = this._ingredients.get(id);
     if (!ingredient) {
       return Failure.with(`Ingredient not found: ${id}`);
@@ -275,13 +275,13 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Success or Failure
    * @public
    */
-  public addIngredientAmount(id: IngredientId, additional: Grams): Result<void> {
+  public addIngredientAmount(id: IngredientId, additional: Measurement): Result<void> {
     const ingredient = this._ingredients.get(id);
     if (!ingredient) {
       return Failure.with(`Ingredient not found: ${id}`);
     }
 
-    const newAmount = (ingredient.amount + additional) as Grams;
+    const newAmount = (ingredient.amount + additional) as Measurement;
     return this.setIngredientAmount(id, newAmount);
   }
 
@@ -292,7 +292,7 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Success or Failure
    * @public
    */
-  public addIngredient(id: IngredientId, amount: Grams): Result<void> {
+  public addIngredient(id: IngredientId, amount: Measurement): Result<void> {
     if (this._ingredients.has(id)) {
       return Failure.with(`Ingredient already exists: ${id}`);
     }
@@ -304,7 +304,7 @@ export class RecipeEditingSession implements ISessionState {
     this._ingredients.set(id, {
       ingredientId: id,
       amount,
-      originalAmount: 0 as Grams,
+      originalAmount: 0 as Measurement,
       status: 'added'
     });
 
@@ -338,7 +338,7 @@ export class RecipeEditingSession implements ISessionState {
       // Mark as removed but keep for tracking
       this._ingredients.set(id, {
         ...ingredient,
-        amount: 0 as Grams,
+        amount: 0 as Measurement,
         status: 'removed'
       });
     }
@@ -365,7 +365,7 @@ export class RecipeEditingSession implements ISessionState {
   public substituteIngredient(
     originalId: IngredientId,
     substituteId: IngredientId,
-    amount?: Grams
+    amount?: Measurement
   ): Result<void> {
     const original = this._ingredients.get(originalId);
     if (!original) {
@@ -381,7 +381,7 @@ export class RecipeEditingSession implements ISessionState {
     // Mark original as removed
     this._ingredients.set(originalId, {
       ...original,
-      amount: 0 as Grams,
+      amount: 0 as Measurement,
       status: 'removed'
     });
 
@@ -389,7 +389,7 @@ export class RecipeEditingSession implements ISessionState {
     this._ingredients.set(substituteId, {
       ingredientId: substituteId,
       amount: newAmount,
-      originalAmount: 0 as Grams,
+      originalAmount: 0 as Measurement,
       status: 'substituted',
       substitutedFor: originalId
     });
@@ -487,7 +487,7 @@ export class RecipeEditingSession implements ISessionState {
     }
 
     // Calculate base weight from ingredients
-    const baseWeight = ingredients.reduce((sum, i) => sum + i.amount, 0) as Grams;
+    const baseWeight = ingredients.reduce((sum, i) => sum + i.amount, 0) as Measurement;
 
     return Success.with({
       versionSpec: versionSpec as import('../../common').RecipeVersionSpec,
@@ -557,7 +557,7 @@ export class RecipeEditingSession implements ISessionState {
     }
 
     for (const resolved of ingredientsResult.value) {
-      const scaledAmount = (resolved.amount * this._scaleFactor) as Grams;
+      const scaledAmount = (resolved.amount * this._scaleFactor) as Measurement;
       this._ingredients.set(resolved.ingredient.id, {
         ingredientId: resolved.ingredient.id,
         amount: scaledAmount,

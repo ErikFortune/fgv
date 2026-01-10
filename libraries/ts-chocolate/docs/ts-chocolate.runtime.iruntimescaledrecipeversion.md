@@ -51,7 +51,7 @@ Description
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
@@ -177,7 +177,7 @@ Information about the source version and scaling parameters. Provides direct acc
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
@@ -198,7 +198,7 @@ The target weight that was requested. Convenience accessor for scaledFrom.target
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

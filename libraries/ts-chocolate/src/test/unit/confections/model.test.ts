@@ -37,7 +37,7 @@ import {
   RecipeId,
   SlotId
 } from '../../../packlets/common';
-import { Grams, Millimeters } from '../../../packlets/common';
+import { Measurement, Millimeters } from '../../../packlets/common';
 
 describe('Confections model', () => {
   // ============================================================================
@@ -54,7 +54,7 @@ describe('Confections model', () => {
     yield: {
       count: 24,
       unit: 'pieces',
-      weightPerPiece: 12 as Grams
+      weightPerPiece: 12 as Measurement
     },
     fillings: [
       {
@@ -92,7 +92,7 @@ describe('Confections model', () => {
     yield: {
       count: 48,
       unit: 'pieces',
-      weightPerPiece: 10 as Grams
+      weightPerPiece: 10 as Measurement
     },
     fillings: [
       {
@@ -135,7 +135,7 @@ describe('Confections model', () => {
     yield: {
       count: 40,
       unit: 'pieces',
-      weightPerPiece: 15 as Grams
+      weightPerPiece: 15 as Measurement
     },
     fillings: [
       {

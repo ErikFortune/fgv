@@ -24,7 +24,7 @@ import { Failure, Success } from '@fgv/ts-utils';
 import {
   BaseIngredientId,
   BaseRecipeId,
-  Grams,
+  Measurement,
   IngredientId,
   Percentage,
   RecipeName,
@@ -97,8 +97,8 @@ describe('Ganache Calculator', () => {
   describe('calculateFromIngredients', () => {
     test('calculates blended characteristics', () => {
       const resolved: IResolvedIngredient[] = [
-        { ingredient: darkChocolate, amount: 100 as Grams },
-        { ingredient: cream, amount: 50 as Grams }
+        { ingredient: darkChocolate, amount: 100 as Measurement },
+        { ingredient: cream, amount: 50 as Measurement }
       ];
 
       const analysis = calculateFromIngredients(resolved);
@@ -117,8 +117,8 @@ describe('Ganache Calculator', () => {
 
     test('calculates total fat correctly', () => {
       const resolved: IResolvedIngredient[] = [
-        { ingredient: darkChocolate, amount: 100 as Grams },
-        { ingredient: cream, amount: 50 as Grams }
+        { ingredient: darkChocolate, amount: 100 as Measurement },
+        { ingredient: cream, amount: 50 as Measurement }
       ];
 
       const analysis = calculateFromIngredients(resolved);
@@ -133,8 +133,8 @@ describe('Ganache Calculator', () => {
 
     test('calculates ratios correctly', () => {
       const resolved: IResolvedIngredient[] = [
-        { ingredient: darkChocolate, amount: 100 as Grams },
-        { ingredient: cream, amount: 50 as Grams }
+        { ingredient: darkChocolate, amount: 100 as Measurement },
+        { ingredient: cream, amount: 50 as Measurement }
       ];
 
       const analysis = calculateFromIngredients(resolved);
@@ -168,7 +168,7 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const resolved: IResolvedIngredient[] = [{ ingredient: noWaterIngredient, amount: 100 as Grams }];
+      const resolved: IResolvedIngredient[] = [{ ingredient: noWaterIngredient, amount: 100 as Measurement }];
 
       const analysis = calculateFromIngredients(resolved);
       expect(analysis.fatToWaterRatio).toBe(Infinity);
@@ -183,8 +183,8 @@ describe('Ganache Calculator', () => {
   describe('calculateFromRecipeIngredients', () => {
     test('resolves and calculates ingredients', () => {
       const recipeIngredients: IRecipeIngredient[] = [
-        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Grams },
-        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Grams }
+        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
+        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ];
 
       expect(calculateFromRecipeIngredients(recipeIngredients, testResolver)).toSucceedAndSatisfy(
@@ -196,7 +196,7 @@ describe('Ganache Calculator', () => {
 
     test('fails when ingredient not found', () => {
       const recipeIngredients: IRecipeIngredient[] = [
-        { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Grams }
+        { ingredient: { ids: ['test.nonexistent' as IngredientId] }, amount: 100 as Measurement }
       ];
 
       expect(calculateFromRecipeIngredients(recipeIngredients, testResolver)).toFailWith(
@@ -214,10 +214,10 @@ describe('Ganache Calculator', () => {
       versionSpec: '2026-01-01-01' as RecipeVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
-        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Grams },
-        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Grams }
+        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
+        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ],
-      baseWeight: 150 as Grams
+      baseWeight: 150 as Measurement
     };
 
     const testRecipe: IRecipe = {
@@ -279,8 +279,8 @@ describe('Ganache Calculator', () => {
   describe('validateGanache', () => {
     test('validates balanced ganache as valid', () => {
       const analysis = calculateFromIngredients([
-        { ingredient: darkChocolate, amount: 100 as Grams },
-        { ingredient: cream, amount: 50 as Grams }
+        { ingredient: darkChocolate, amount: 100 as Measurement },
+        { ingredient: cream, amount: 50 as Measurement }
       ]);
 
       const validation = validateGanache(analysis);
@@ -289,7 +289,7 @@ describe('Ganache Calculator', () => {
 
     test('warns on low fat', () => {
       // Cream only - low fat
-      const analysis = calculateFromIngredients([{ ingredient: cream, amount: 100 as Grams }]);
+      const analysis = calculateFromIngredients([{ ingredient: cream, amount: 100 as Measurement }]);
 
       const validation = validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('Low fat'))).toBe(true);
@@ -311,7 +311,9 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: highFatIngredient, amount: 100 as Grams }]);
+      const analysis = calculateFromIngredients([
+        { ingredient: highFatIngredient, amount: 100 as Measurement }
+      ]);
 
       const validation = validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('High fat'))).toBe(true);
@@ -333,7 +335,9 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: highWaterIngredient, amount: 100 as Grams }]);
+      const analysis = calculateFromIngredients([
+        { ingredient: highWaterIngredient, amount: 100 as Measurement }
+      ]);
 
       const validation = validateGanache(analysis);
       expect(validation.isValid).toBe(false);
@@ -356,7 +360,9 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: lowWaterIngredient, amount: 100 as Grams }]);
+      const analysis = calculateFromIngredients([
+        { ingredient: lowWaterIngredient, amount: 100 as Measurement }
+      ]);
 
       const validation = validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('Low water'))).toBe(true);
@@ -378,7 +384,7 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: unbalanced, amount: 100 as Grams }]);
+      const analysis = calculateFromIngredients([{ ingredient: unbalanced, amount: 100 as Measurement }]);
 
       const validation = validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('fat-to-water'))).toBe(true);
@@ -400,7 +406,7 @@ describe('Ganache Calculator', () => {
         }
       };
 
-      const analysis = calculateFromIngredients([{ ingredient: lowSugar, amount: 100 as Grams }]);
+      const analysis = calculateFromIngredients([{ ingredient: lowSugar, amount: 100 as Measurement }]);
 
       const validation = validateGanache(analysis);
       expect(validation.warnings.some((w) => w.includes('sugar-to-water'))).toBe(true);
@@ -416,10 +422,10 @@ describe('Ganache Calculator', () => {
       versionSpec: '2026-01-01-01' as RecipeVersionSpec,
       createdDate: '2026-01-01',
       ingredients: [
-        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Grams },
-        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Grams }
+        { ingredient: { ids: ['test.chocolate' as IngredientId] }, amount: 100 as Measurement },
+        { ingredient: { ids: ['test.cream' as IngredientId] }, amount: 50 as Measurement }
       ],
-      baseWeight: 150 as Grams
+      baseWeight: 150 as Measurement
     };
 
     const testRecipe: IRecipe = {

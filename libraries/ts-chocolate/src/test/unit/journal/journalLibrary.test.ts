@@ -30,7 +30,7 @@ import {
 import {
   ConfectionId,
   ConfectionVersionId,
-  Grams,
+  Measurement,
   JournalId,
   RecipeVersionId
 } from '../../../packlets/common';
@@ -51,7 +51,7 @@ describe('JournalLibrary', () => {
     journalId: id as JournalId,
     recipeVersionId: versionId as RecipeVersionId,
     date,
-    targetWeight: targetWeight as Grams,
+    targetWeight: targetWeight as Measurement,
     scaleFactor
   });
 
@@ -449,7 +449,7 @@ describe('JournalLibrary', () => {
         journalId: '2026-01-15-100000-0000000a' as JournalId,
         recipeVersionId: 'source.recipe@2026-01-01-01' as RecipeVersionId,
         date: '2026-01-20',
-        targetWeight: 500 as Grams,
+        targetWeight: 500 as Measurement,
         scaleFactor: 2.5,
         notes: 'Test notes',
         modifiedVersionId: 'source.recipe@2026-01-20-01' as RecipeVersionId,
@@ -730,7 +730,7 @@ describe('JournalLibrary', () => {
           confectionVersionId: 'source.bonbon-a@2026-01-01-01' as ConfectionVersionId,
           date: '2026-01-25',
           yieldCount: 48,
-          weightPerPiece: 15 as Grams,
+          weightPerPiece: 15 as Measurement,
           linkedRecipeJournalId: '2026-01-25-090000-00000001' as JournalId,
           notes: 'Test notes for confection',
           entries: [

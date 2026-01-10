@@ -9,5 +9,5 @@ Original amount before scaling
 **Signature:**
 
 ```typescript
-readonly originalAmount: Grams;
+readonly originalAmount: Measurement;
 ```

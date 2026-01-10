@@ -26,7 +26,7 @@ import {
   BaseMoldId,
   BaseProcedureId,
   BaseRecipeId,
-  Grams,
+  Measurement,
   IngredientId,
   JournalId,
   Millimeters,
@@ -77,8 +77,8 @@ describe('ChocolateLibrary', () => {
   const testRecipeVersion: IRecipeVersion = {
     versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
     createdDate: '2026-01-01',
-    ingredients: [{ ingredient: { ids: ['test.testChoco' as IngredientId] }, amount: 100 as Grams }],
-    baseWeight: 100 as Grams
+    ingredients: [{ ingredient: { ids: ['test.testChoco' as IngredientId] }, amount: 100 as Measurement }],
+    baseWeight: 100 as Measurement
   };
 
   const testRecipe: IRecipe = {
@@ -259,7 +259,7 @@ describe('ChocolateLibrary', () => {
       productNumber: 'TM-001',
       description: 'Test Mold',
       cavityCount: 24,
-      cavityWeight: 10 as Grams,
+      cavityWeight: 10 as Measurement,
       cavityDimensions: {
         width: 30 as Millimeters,
         length: 30 as Millimeters,
@@ -664,7 +664,7 @@ describe('ChocolateLibrary', () => {
       journalId: '2026-01-01-120000-abcd1234' as JournalId,
       recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
       date: '2026-01-01',
-      targetWeight: 200 as Grams,
+      targetWeight: 200 as Measurement,
       scaleFactor: 2.0
     };
 
@@ -673,7 +673,7 @@ describe('ChocolateLibrary', () => {
       journalId: '2026-01-02-120000-efgh5678' as JournalId,
       recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
       date: '2026-01-02',
-      targetWeight: 300 as Grams,
+      targetWeight: 300 as Measurement,
       scaleFactor: 3.0
     };
 

@@ -9,7 +9,7 @@ Scales this version to a target weight.
 **Signature:**
 
 ```typescript
-scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ targetWeight
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

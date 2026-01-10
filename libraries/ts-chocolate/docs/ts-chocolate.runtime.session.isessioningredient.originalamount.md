@@ -9,5 +9,5 @@ Original amount from the source version (0 for added ingredients)
 **Signature:**
 
 ```typescript
-readonly originalAmount: Grams;
+readonly originalAmount: Measurement;
 ```

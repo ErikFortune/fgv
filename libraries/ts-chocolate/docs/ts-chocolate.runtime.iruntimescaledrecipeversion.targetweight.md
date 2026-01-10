@@ -9,5 +9,5 @@ The target weight that was requested. Convenience accessor for scaledFrom.target
 **Signature:**
 
 ```typescript
-readonly targetWeight: Grams;
+readonly targetWeight: Measurement;
 ```

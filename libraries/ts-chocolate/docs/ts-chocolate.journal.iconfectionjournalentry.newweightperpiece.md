@@ -9,5 +9,5 @@ The new weight per piece in grams (for yield-modify events)
 **Signature:**
 
 ```typescript
-readonly newWeightPerPiece?: Grams;
+readonly newWeightPerPiece?: Measurement;
 ```

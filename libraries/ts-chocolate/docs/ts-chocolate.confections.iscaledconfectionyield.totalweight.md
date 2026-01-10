@@ -9,5 +9,5 @@ Total estimated weight (if weightPerPiece is available)
 **Signature:**
 
 ```typescript
-readonly totalWeight?: Grams;
+readonly totalWeight?: Measurement;
 ```

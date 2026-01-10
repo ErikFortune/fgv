@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly cavityWeight?: Grams;
+readonly cavityWeight?: Measurement;
 ```

@@ -9,5 +9,5 @@ Base weight of the scaled recipe (same as targetWeight)
 **Signature:**
 
 ```typescript
-readonly baseWeight: Grams;
+readonly baseWeight: Measurement;
 ```

@@ -107,7 +107,7 @@ _(Optional)_
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>
@@ -269,7 +269,7 @@ _(Optional)_
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md) \| undefined
+[Measurement](./ts-chocolate.measurement.md) \| undefined
 
 
 </td><td>

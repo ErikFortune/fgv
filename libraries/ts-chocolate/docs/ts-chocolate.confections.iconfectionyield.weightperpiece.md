@@ -9,5 +9,5 @@ Weight per piece in grams
 **Signature:**
 
 ```typescript
-readonly weightPerPiece?: Grams;
+readonly weightPerPiece?: Measurement;
 ```

@@ -9,5 +9,5 @@ The previous weight per piece in grams (for yield-modify events)
 **Signature:**
 
 ```typescript
-readonly previousWeightPerPiece?: Grams;
+readonly previousWeightPerPiece?: Measurement;
 ```

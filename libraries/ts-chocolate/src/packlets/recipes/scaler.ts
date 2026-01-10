@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, Helpers, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
+import { Helpers, Measurement, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
 import {
   IComputedScaledRecipe,
   IRecipe,
@@ -34,6 +34,8 @@ import {
   IScaledRecipeIngredient,
   IScalingSource
 } from './model';
+// TODO: Integrate unit-aware scaling with scaleAmount from unitScaler
+// import { IScaledAmount, scaleAmount } from './unitScaler';
 
 // ============================================================================
 // Scaling Options
@@ -53,7 +55,7 @@ export interface IVersionScaleOptions {
    * Minimum amount to show in scaled recipe (default: 0.1)
    * Amounts below this threshold will be rounded up to it
    */
-  readonly minimumAmount?: Grams;
+  readonly minimumAmount?: Measurement;
 }
 
 /**
@@ -85,11 +87,11 @@ function scaleIngredient(
   options: IVersionScaleOptions
 ): IScaledRecipeIngredient {
   const precision = options.precision ?? 1;
-  const minimumAmount = (options.minimumAmount ?? 0.1) as Grams;
+  const minimumAmount = (options.minimumAmount ?? 0.1) as Measurement;
 
   const rawScaledAmount = ingredient.amount * scaleFactor;
   const roundedAmount = Math.round(rawScaledAmount * Math.pow(10, precision)) / Math.pow(10, precision);
-  const finalAmount = Math.max(roundedAmount, minimumAmount) as Grams;
+  const finalAmount = Math.max(roundedAmount, minimumAmount) as Measurement;
 
   return {
     ingredient: ingredient.ingredient,
@@ -116,7 +118,7 @@ function scaleIngredient(
 export function scaleVersion(
   version: IRecipeVersion,
   sourceVersionId: RecipeVersionId,
-  targetWeight: Grams,
+  targetWeight: Measurement,
   options: IVersionScaleOptions = {}
 ): Result<IComputedScaledRecipe> {
   // Validate inputs
@@ -170,7 +172,7 @@ export function scaleVersion(
 export function scaleRecipe(
   recipe: IRecipe,
   recipeId: RecipeId,
-  targetWeight: Grams,
+  targetWeight: Measurement,
   options: IRecipeScaleOptions = {}
 ): Result<IComputedScaledRecipe> {
   // Get the version to scale (default to golden version)
@@ -211,7 +213,7 @@ export function scaleRecipeByFactor(
     return Failure.with(`Version ${versionSpec} not found in recipe ${recipe.baseId}`);
   }
 
-  const targetWeight = (version.baseWeight * factor) as Grams;
+  const targetWeight = (version.baseWeight * factor) as Measurement;
 
   return scaleRecipe(recipe, recipeId, targetWeight, options);
 }
@@ -223,9 +225,9 @@ export function scaleRecipeByFactor(
  * @returns Total weight in grams
  * @public
  */
-export function calculateBaseWeight(version: IRecipeVersion): Grams {
+export function calculateBaseWeight(version: IRecipeVersion): Measurement {
   const total = version.ingredients.reduce((sum: number, ingredient) => sum + ingredient.amount, 0);
-  return total as Grams;
+  return total as Measurement;
 }
 
 /**

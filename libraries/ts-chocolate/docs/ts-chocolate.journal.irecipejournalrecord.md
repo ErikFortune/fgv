@@ -215,7 +215,7 @@ Scale factor applied (computed from version baseWeight and targetWeight)
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

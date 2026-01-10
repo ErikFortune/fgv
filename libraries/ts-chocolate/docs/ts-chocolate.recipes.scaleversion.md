@@ -11,7 +11,7 @@ This is the core scaling function that operates directly on a version. Use this 
 **Signature:**
 
 ```typescript
-export declare function scaleVersion(version: IRecipeVersion, sourceVersionId: RecipeVersionId, targetWeight: Grams, options?: IVersionScaleOptions): Result<IComputedScaledRecipe>;
+export declare function scaleVersion(version: IRecipeVersion, sourceVersionId: RecipeVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<IComputedScaledRecipe>;
 ```
 
 ## Parameters
@@ -71,7 +71,7 @@ targetWeight
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

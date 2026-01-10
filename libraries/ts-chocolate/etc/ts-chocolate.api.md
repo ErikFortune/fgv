@@ -85,6 +85,9 @@ const allJournalEventTypes: JournalEventType[];
 const allJournalTypes: JournalType[];
 
 // @public
+export const allMeasurementUnits: MeasurementUnit[];
+
+// @public
 export const allMoldFormats: MoldFormat[];
 
 // @public
@@ -95,6 +98,12 @@ export const allRecipeCategories: RecipeCategory[];
 
 // @public
 const allRecipeCategories_2: RecipeCategory_2[];
+
+// @public
+export const allSpoonLevels: SpoonLevel[];
+
+// @public
+export const allSpoonUnits: SpoonUnit[];
 
 // @public
 const allSubLibraryIds: ReadonlyArray<SubLibraryId>;
@@ -256,7 +265,7 @@ export type BuiltInSource = 'built-in';
 export type CacaoVariety = 'Blend' | 'Criollo' | 'Forastero' | 'Nacional' | 'Trinitario';
 
 // @public
-function calculateBaseWeight(version: IRecipeVersion): Grams;
+function calculateBaseWeight(version: IRecipeVersion): Measurement;
 
 // @public
 function calculateForRecipe(recipe: IRecipe, resolver: IngredientResolver, versionSpec?: RecipeVersionSpec): Result<IGanacheAnalysis>;
@@ -504,7 +513,7 @@ class ConfectionEditingSession implements IConfectionSessionState {
     selectProcedure(procedureId: ProcedureId): Result<true>;
     // (undocumented)
     get sessionId(): SessionId;
-    setWeightPerPiece(weight: Grams): Result<true>;
+    setWeightPerPiece(weight: Measurement): Result<true>;
     setYieldCount(count: number): Result<true>;
     // (undocumented)
     get sourceConfection(): IRuntimeConfection;
@@ -682,7 +691,7 @@ declare namespace Converters {
         confectionVersionId,
         ParsedConfectionVersionId,
         parsedConfectionVersionId,
-        grams,
+        measurement,
         percentage,
         celsius,
         degreesMacMichael,
@@ -700,7 +709,9 @@ declare namespace Converters {
         moldFormat,
         confectionType,
         additionalChocolatePurpose,
-        recipeCategory_2 as recipeCategory
+        recipeCategory_2 as recipeCategory,
+        measurementUnit,
+        spoonLevel
     }
 }
 export { Converters }
@@ -887,6 +898,9 @@ function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Ar
 const DEFAULT_ALGORITHM: EncryptionAlgorithm;
 
 // @public
+const defaultScalerRegistry: UnitScalerRegistry;
+
+// @public
 export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 
 // @public
@@ -1055,12 +1069,6 @@ function getRecipeVersionSpec(id: RecipeVersionId): RecipeVersionSpec;
 
 // @public
 function getSubLibraryPath(subLibraryId: SubLibraryId): string;
-
-// @public
-export type Grams = Brand<number, 'Grams'>;
-
-// @public
-const grams: Converter<Grams>;
 
 // @public
 function hasAllTags<T>(tags: string[], getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
@@ -1246,7 +1254,7 @@ interface ICollectionSourceMetadata {
 
 // @public
 interface IComputedScaledRecipe {
-    readonly baseWeight: Grams;
+    readonly baseWeight: Measurement;
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IScaledRecipeIngredient>;
     readonly notes?: string;
@@ -1285,7 +1293,7 @@ interface IConfectionEditingSessionParams {
     readonly enableJournal?: boolean;
     readonly logger?: Logging.LogReporter<unknown>;
     readonly sourceConfection: IRuntimeConfection;
-    readonly weightPerPiece?: Grams;
+    readonly weightPerPiece?: Measurement;
     readonly yieldCount?: number;
 }
 
@@ -1302,7 +1310,7 @@ interface IConfectionJournalEntry {
     readonly fillingSlotId?: SlotId;
     readonly ingredientId?: IngredientId;
     readonly moldId?: MoldId;
-    readonly newWeightPerPiece?: Grams;
+    readonly newWeightPerPiece?: Measurement;
     readonly newYieldCount?: number;
     readonly previousCoatingIngredientId?: IngredientId;
     readonly previousFillingIngredientId?: IngredientId;
@@ -1310,7 +1318,7 @@ interface IConfectionJournalEntry {
     readonly previousIngredientId?: IngredientId;
     readonly previousMoldId?: MoldId;
     readonly previousProcedureId?: ProcedureId;
-    readonly previousWeightPerPiece?: Grams;
+    readonly previousWeightPerPiece?: Measurement;
     readonly previousYieldCount?: number;
     readonly procedureId?: ProcedureId;
     readonly text?: string;
@@ -1327,7 +1335,7 @@ interface IConfectionJournalRecord {
     readonly linkedRecipeJournalId?: JournalId;
     readonly modifiedVersionId?: ConfectionVersionId;
     readonly notes?: string;
-    readonly weightPerPiece?: Grams;
+    readonly weightPerPiece?: Measurement;
     readonly yieldCount: number;
 }
 
@@ -1391,7 +1399,7 @@ interface IConfectionVersion {
 interface IConfectionYield {
     readonly count: number;
     readonly unit?: string;
-    readonly weightPerPiece?: Grams;
+    readonly weightPerPiece?: Measurement;
 }
 
 // @public
@@ -1430,7 +1438,7 @@ interface IEditingSessionParams {
     readonly logger?: Logging.LogReporter<unknown>;
     readonly scaleFactor?: number;
     readonly sourceVersion: IRuntimeRecipeVersion;
-    readonly targetWeight?: Grams;
+    readonly targetWeight?: Measurement;
 }
 
 // @public
@@ -1543,6 +1551,16 @@ interface IFindOrchestrator<TEntity, TSpec> {
 }
 
 // @public
+interface IFraction {
+    // (undocumented)
+    readonly decimal: number;
+    // (undocumented)
+    readonly denominator: number;
+    // (undocumented)
+    readonly numerator: number;
+}
+
+// @public
 interface IFrameDimensions {
     readonly depth: Millimeters;
     readonly height: Millimeters;
@@ -1560,7 +1578,7 @@ interface IGanacheAnalysis {
     readonly fatToWaterRatio: number;
     readonly sugarToWaterRatio: number;
     readonly totalFat: Percentage;
-    readonly totalWeight: Grams;
+    readonly totalWeight: Measurement;
 }
 
 // @public
@@ -1670,8 +1688,8 @@ type IIngredientsLibraryParams = ISubLibraryParams<IngredientsLibrary, Ingredien
 interface IIngredientSnapshot {
     readonly ingredientId: IngredientId;
     readonly notes?: string;
-    readonly originalAmount: Grams;
-    readonly scaledAmount: Grams;
+    readonly originalAmount: Measurement;
+    readonly scaledAmount: Measurement;
 }
 
 // @public
@@ -1702,8 +1720,8 @@ interface IIterationOptions {
 interface IJournalEntry {
     readonly eventType: JournalEventType;
     readonly ingredientId?: IngredientId;
-    readonly newAmount?: Grams;
-    readonly originalAmount?: Grams;
+    readonly newAmount?: Measurement;
+    readonly originalAmount?: Measurement;
     readonly substituteIngredientId?: IngredientId;
     readonly text?: string;
     readonly timestamp: string;
@@ -1739,6 +1757,13 @@ interface ILibraryLoadParams {
 }
 
 // @public
+interface ILinearScalerOptions {
+    readonly decimalPlaces?: number;
+    readonly displaySuffix?: string;
+    readonly unit: MeasurementUnit;
+}
+
+// @public
 interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extends Omit<ICollectionFilterInitParams<TCOLLECTIONID>, 'nameConverter'> {
     readonly encryption?: IEncryptionConfig;
     readonly isBuiltIn?: boolean;
@@ -1759,7 +1784,7 @@ interface IMold {
     readonly baseId: BaseMoldId;
     readonly cavityCount: number;
     readonly cavityDimensions?: ICavityDimensions;
-    readonly cavityWeight?: Grams;
+    readonly cavityWeight?: Measurement;
     readonly description?: string;
     readonly format: MoldFormat;
     readonly manufacturer: string;
@@ -2134,9 +2159,12 @@ interface IRecipeFillingOption {
 
 // @public
 interface IRecipeIngredient {
-    readonly amount: Grams;
+    readonly amount: Measurement;
     readonly ingredient: IIdsWithPreferred<IngredientId>;
     readonly notes?: string;
+    readonly spoonLevel?: SpoonLevel;
+    readonly toTaste?: boolean;
+    readonly unit?: MeasurementUnit;
 }
 
 // @public
@@ -2149,7 +2177,7 @@ interface IRecipeJournalRecord {
     readonly notes?: string;
     readonly recipeVersionId: RecipeVersionId;
     readonly scaleFactor: number;
-    readonly targetWeight: Grams;
+    readonly targetWeight: Measurement;
 }
 
 // @public
@@ -2214,14 +2242,14 @@ interface IRecipeUsage {
     readonly date: string;
     readonly modifiedVersionSpec?: RecipeVersionSpec;
     readonly notes?: string;
-    readonly scaledWeight: Grams;
+    readonly scaledWeight: Measurement;
     readonly scaleFactor?: number;
     readonly versionSpec: RecipeVersionSpec;
 }
 
 // @public
 interface IRecipeVersion {
-    readonly baseWeight: Grams;
+    readonly baseWeight: Measurement;
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IRecipeIngredient>;
     readonly notes?: string;
@@ -2254,7 +2282,7 @@ interface IRenderedProcedureStep extends IProcedureStep {
 // @public
 interface IResolvedIngredient {
     // (undocumented)
-    readonly amount: Grams;
+    readonly amount: Measurement;
     // (undocumented)
     readonly ingredient: Ingredient;
 }
@@ -2262,7 +2290,7 @@ interface IResolvedIngredient {
 // @public
 interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly alternates: ReadonlyArray<TIngredient>;
-    readonly amount: Grams;
+    readonly amount: Measurement;
     readonly ingredient: TIngredient;
     readonly notes?: string;
     readonly raw: IRecipeIngredient;
@@ -2284,10 +2312,10 @@ interface IResolvedRecipeProcedures {
 // @public
 interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly alternates: ReadonlyArray<TIngredient>;
-    readonly amount: Grams;
+    readonly amount: Measurement;
     readonly ingredient: TIngredient;
     readonly notes?: string;
-    readonly originalAmount: Grams;
+    readonly originalAmount: Measurement;
     readonly raw: IScaledRecipeIngredient;
     readonly scaleFactor: number;
 }
@@ -2481,7 +2509,7 @@ interface IRuntimeRecipeMolds {
 
 // @public
 interface IRuntimeRecipeVersion {
-    readonly baseWeight: Grams;
+    readonly baseWeight: Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
     readonly createdDate: string;
     getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedRecipeIngredient<IRuntimeIngredient>>>;
@@ -2490,7 +2518,7 @@ interface IRuntimeRecipeVersion {
     readonly raw: IRecipeVersion;
     readonly recipe: IRuntimeRecipe;
     readonly recipeId: RecipeId;
-    scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
     scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
     usesIngredient(ingredientId: IngredientId): boolean;
     readonly versionId: RecipeVersionId;
@@ -2508,7 +2536,7 @@ interface IRuntimeRolledTruffle extends IRuntimeConfection {
 
 // @public
 interface IRuntimeScaledRecipeVersion {
-    readonly baseWeight: Grams;
+    readonly baseWeight: Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
     readonly createdDate: string;
     getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedScaledIngredient<IRuntimeIngredient>>>;
@@ -2516,8 +2544,8 @@ interface IRuntimeScaledRecipeVersion {
     readonly ratings: ReadonlyArray<IRecipeRating>;
     readonly raw: IComputedScaledRecipe;
     readonly scaledFrom: IRuntimeScalingSource;
-    readonly targetWeight: Grams;
-    readonly weightDifference: Grams;
+    readonly targetWeight: Measurement;
+    readonly weightDifference: Measurement;
     readonly yield?: string;
 }
 
@@ -2525,7 +2553,7 @@ interface IRuntimeScaledRecipeVersion {
 interface IRuntimeScalingSource {
     readonly scaleFactor: number;
     readonly sourceVersion: IRuntimeRecipeVersion;
-    readonly targetWeight: Grams;
+    readonly targetWeight: Measurement;
 }
 
 // @public
@@ -2561,6 +2589,14 @@ interface ISaveResult {
 function isBarTruffle(confection: ConfectionData): confection is IBarTruffle;
 
 // @public
+interface IScaledAmount {
+    readonly displayValue: string;
+    readonly scalable: boolean;
+    readonly unit: MeasurementUnit;
+    readonly value: Measurement;
+}
+
+// @public
 interface IScaledConfection<T extends ConfectionData = ConfectionData> {
     readonly confection: T;
     readonly createdDate: string;
@@ -2572,14 +2608,14 @@ interface IScaledConfectionYield {
     readonly originalCount: number;
     readonly scaledCount: number;
     readonly scaleFactor: number;
-    readonly totalWeight?: Grams;
+    readonly totalWeight?: Measurement;
     readonly unit?: string;
-    readonly weightPerPiece?: Grams;
+    readonly weightPerPiece?: Measurement;
 }
 
 // @public
 interface IScaledRecipeIngredient extends IRecipeIngredient {
-    readonly originalAmount: Grams;
+    readonly originalAmount: Measurement;
     readonly scaleFactor: number;
 }
 
@@ -2601,14 +2637,14 @@ interface IScalingRef {
     readonly createdDate: string;
     readonly scaleFactor: number;
     readonly sourceVersionId: RecipeVersionId;
-    readonly targetWeight: Grams;
+    readonly targetWeight: Measurement;
 }
 
 // @public
 interface IScalingSource {
     readonly scaleFactor: number;
     readonly sourceVersionId: RecipeVersionId;
-    readonly targetWeight: Grams;
+    readonly targetWeight: Measurement;
 }
 
 // @public
@@ -2650,10 +2686,10 @@ interface ISessionFillingSlot {
 
 // @public
 interface ISessionIngredient {
-    amount: Grams;
+    amount: Measurement;
     readonly ingredientId: IngredientId;
     notes?: string;
-    readonly originalAmount: Grams;
+    readonly originalAmount: Measurement;
     readonly status: SessionIngredientStatus;
     readonly substitutedFor?: IngredientId;
 }
@@ -2681,16 +2717,16 @@ interface ISessionState {
     readonly scaleFactor: number;
     readonly sessionId: SessionId;
     readonly sourceVersion: IRuntimeRecipeVersion;
-    readonly targetWeight: Grams;
+    readonly targetWeight: Measurement;
 }
 
 // @public
 interface ISessionYield {
     readonly count: number;
     readonly originalCount: number;
-    readonly originalWeightPerPiece?: Grams;
+    readonly originalWeightPerPiece?: Measurement;
     readonly status: ConfectionSelectionStatus;
-    readonly weightPerPiece?: Grams;
+    readonly weightPerPiece?: Measurement;
 }
 
 // @public
@@ -2701,6 +2737,12 @@ function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TL
 
 // @public
 function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon;
+
+// @public
+interface ISpoonScalerOptions {
+    readonly maxTeaspoons?: number;
+    readonly preferTablespoons?: boolean;
+}
 
 // @public
 function isRecipeJournalRecord(record: AnyJournalRecord): record is IRecipeJournalRecord;
@@ -2795,13 +2837,13 @@ function isValidConfectionVersionSpec(from: unknown): from is ConfectionVersionS
 function isValidDegreesMacMichael(from: unknown): from is DegreesMacMichael;
 
 // @public
-function isValidGrams(from: unknown): from is Grams;
-
-// @public
 function isValidIngredientId(from: unknown): from is IngredientId;
 
 // @public
 function isValidJournalId(from: unknown): from is JournalId;
+
+// @public
+function isValidMeasurement(from: unknown): from is Measurement;
 
 // @public
 function isValidMillimeters(from: unknown): from is Millimeters;
@@ -2850,6 +2892,12 @@ interface ITemperatureCurve {
 }
 
 // @public
+interface IUnitScaler {
+    scale(amount: Measurement, factor: number): Result<IScaledAmount>;
+    readonly supportsScaling: boolean;
+}
+
+// @public
 interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = TV> extends Collections.IValidatingResultMapConstructorParams<TK, TV> {
     orchestrator: IFindOrchestrator<TOrchEntity, TSpec>;
 }
@@ -2863,7 +2911,7 @@ interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngre
 
 // @public
 interface IVersionScaleOptions {
-    readonly minimumAmount?: Grams;
+    readonly minimumAmount?: Measurement;
     readonly precision?: number;
 }
 
@@ -3036,6 +3084,27 @@ const LibraryPaths: {
 };
 
 // @public
+class LinearScaler implements IUnitScaler {
+    constructor(options: ILinearScalerOptions);
+    // (undocumented)
+    scale(amount: Measurement, factor: number): Result<IScaledAmount>;
+    // (undocumented)
+    readonly supportsScaling: boolean;
+}
+
+// @public
+export type Measurement = Brand<number, 'Measurement'>;
+
+// @public
+const measurement: Converter<Measurement>;
+
+// @public
+export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch';
+
+// @public
+const measurementUnit: Converter<MeasurementUnit>;
+
+// @public
 export type Millimeters = Brand<number, 'Millimeters'>;
 
 // @public
@@ -3056,7 +3125,7 @@ class Mold implements IMold {
     // (undocumented)
     readonly cavityDimensions?: ICavityDimensions;
     // (undocumented)
-    readonly cavityWeight?: Grams;
+    readonly cavityWeight?: Measurement;
     static create(data: IMold): Result<Mold>;
     // (undocumented)
     readonly description?: string;
@@ -3071,7 +3140,7 @@ class Mold implements IMold {
     readonly productNumber: string;
     // (undocumented)
     readonly tags?: ReadonlyArray<string>;
-    get totalCapacity(): Grams | undefined;
+    get totalCapacity(): Measurement | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -3243,6 +3312,14 @@ export type Percentage = Brand<number, 'Percentage'>;
 
 // @public
 const percentage: Converter<Percentage>;
+
+// @public
+class PinchScaler implements IUnitScaler {
+    // (undocumented)
+    scale(amount: Measurement, _factor: number): Result<IScaledAmount>;
+    // (undocumented)
+    readonly supportsScaling: boolean;
+}
 
 // @public
 class Procedure implements IProcedure {
@@ -3439,8 +3516,8 @@ const recipeDerivation: Converter<IRecipeDerivation>;
 
 // @public
 class RecipeEditingSession implements ISessionState {
-    addIngredient(id: IngredientId, amount: Grams): Result<void>;
-    addIngredientAmount(id: IngredientId, additional: Grams): Result<void>;
+    addIngredient(id: IngredientId, amount: Measurement): Result<void>;
+    addIngredientAmount(id: IngredientId, additional: Measurement): Result<void>;
     addNote(text: string): void;
     static create(params: IEditingSessionParams): Result<RecipeEditingSession>;
     getIngredient(id: IngredientId): Result<ISessionIngredient>;
@@ -3458,14 +3535,14 @@ class RecipeEditingSession implements ISessionState {
     get scaleFactor(): number;
     // (undocumented)
     get sessionId(): SessionId;
-    setIngredientAmount(id: IngredientId, amount: Grams): Result<void>;
+    setIngredientAmount(id: IngredientId, amount: Measurement): Result<void>;
     setScaleFactor(factor: number): Result<void>;
-    setTargetWeight(weight: Grams): Result<void>;
+    setTargetWeight(weight: Measurement): Result<void>;
     // (undocumented)
     get sourceVersion(): IRuntimeRecipeVersion;
-    substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Grams): Result<void>;
+    substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Measurement): Result<void>;
     // (undocumented)
-    get targetWeight(): Grams;
+    get targetWeight(): Measurement;
     toJournalRecord(notes?: string): Result<IRecipeJournalRecord>;
     toRecipeIngredients(): IRecipeIngredient[];
     toRecipeVersion(versionSpec: string): Result<IRecipeVersion>;
@@ -3612,7 +3689,20 @@ declare namespace Recipes {
         calculateBaseWeight,
         recalculateRecipeVersion,
         IVersionScaleOptions,
-        IRecipeScaleOptions
+        IRecipeScaleOptions,
+        supportsScaling,
+        scaleAmount,
+        IFraction,
+        STANDARD_FRACTIONS,
+        IScaledAmount,
+        IUnitScaler,
+        ILinearScalerOptions,
+        LinearScaler,
+        PinchScaler,
+        ISpoonScalerOptions,
+        SpoonScaler,
+        UnitScalerRegistry,
+        defaultScalerRegistry
     }
 }
 export { Recipes }
@@ -4143,7 +4233,7 @@ class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
     //
     // @internal
     constructor(context: ScaledVersionContext, scaled: IComputedScaledRecipe);
-    get baseWeight(): Grams;
+    get baseWeight(): Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
     static create(context: ScaledVersionContext, scaled: IComputedScaledRecipe): Result<RuntimeScaledVersion>;
     get createdDate(): string;
@@ -4152,8 +4242,8 @@ class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
     get ratings(): ReadonlyArray<IRecipeRating>;
     get raw(): IComputedScaledRecipe;
     get scaledFrom(): IRuntimeScalingSource;
-    get targetWeight(): Grams;
-    get weightDifference(): Grams;
+    get targetWeight(): Measurement;
+    get weightDifference(): Measurement;
     get yield(): string | undefined;
 }
 
@@ -4176,7 +4266,7 @@ class RuntimeVersion implements IRuntimeRecipeVersion {
     //
     // @internal
     constructor(context: VersionContext, recipeId: RecipeId, version: IRecipeVersion);
-    get baseWeight(): Grams;
+    get baseWeight(): Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
     static create(context: VersionContext, recipeId: RecipeId, version: IRecipeVersion): Result<RuntimeVersion>;
     get createdDate(): string;
@@ -4186,13 +4276,16 @@ class RuntimeVersion implements IRuntimeRecipeVersion {
     get raw(): IRecipeVersion;
     get recipe(): IRuntimeRecipe;
     get recipeId(): RecipeId;
-    scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+    scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
     scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
     usesIngredient(ingredientId: IngredientId): boolean;
     get versionId(): RecipeVersionId;
     get versionSpec(): RecipeVersionSpec;
     get yield(): string | undefined;
 }
+
+// @public
+function scaleAmount(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
 
 // @public
 function scaleConfection<T extends ConfectionData>(confection: T, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
@@ -4221,7 +4314,7 @@ function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
+function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Measurement, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4234,7 +4327,7 @@ function scaleRecipeByFactor(recipe: IRecipe, recipeId: RecipeId, factor: number
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-function scaleVersion(version: IRecipeVersion, sourceVersionId: RecipeVersionId, targetWeight: Grams, options?: IVersionScaleOptions): Result<IComputedScaledRecipe>;
+function scaleVersion(version: IRecipeVersion, sourceVersionId: RecipeVersionId, targetWeight: Measurement, options?: IVersionScaleOptions): Result<IComputedScaledRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -4311,6 +4404,27 @@ const sourceId: Converter<SourceId>;
 function specToLoadParams<TCollectionId extends string>(spec: LibraryLoadSpec<TCollectionId>, mutable?: MutabilitySpec): ILoadCollectionFromFileTreeParams<TCollectionId> | undefined;
 
 // @public
+export type SpoonLevel = 'level' | 'heaping';
+
+// @public
+const spoonLevel: Converter<SpoonLevel>;
+
+// @public
+class SpoonScaler implements IUnitScaler {
+    constructor(sourceUnit: SpoonUnit, options?: ISpoonScalerOptions);
+    // (undocumented)
+    scale(amount: Measurement, factor: number): Result<IScaledAmount>;
+    // (undocumented)
+    readonly supportsScaling: boolean;
+}
+
+// @public
+export type SpoonUnit = 'tsp' | 'Tbsp';
+
+// @public
+const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
+
+// @public
 abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
@@ -4351,6 +4465,9 @@ type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, 
 const sugarIngredient: Converter<ISugarIngredient>;
 
 // @public
+function supportsScaling(unit: MeasurementUnit): boolean;
+
+// @public
 const temperatureCurve: Converter<ITemperatureCurve>;
 
 // @public
@@ -4387,13 +4504,13 @@ function toConfectionVersionSpec(from: unknown): Result<ConfectionVersionSpec>;
 function toDegreesMacMichael(from: unknown): Result<DegreesMacMichael>;
 
 // @public
-function toGrams(from: unknown): Result<Grams>;
-
-// @public
 function toIngredientId(from: unknown): Result<IngredientId>;
 
 // @public
 function toJournalId(from: unknown): Result<JournalId>;
+
+// @public
+function toMeasurement(from: unknown): Result<Measurement>;
 
 // @public
 function toMillimeters(from: unknown): Result<Millimeters>;
@@ -4439,6 +4556,14 @@ function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvi
 
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
+
+// @public
+class UnitScalerRegistry {
+    constructor();
+    getScaler(unit: MeasurementUnit): IUnitScaler;
+    scale(amount: Measurement, unit: MeasurementUnit, factor: number): Result<IScaledAmount>;
+    supportsScaling(unit: MeasurementUnit): boolean;
+}
 
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
@@ -4494,8 +4619,8 @@ declare namespace Validation {
         toConfectionVersionId,
         isValidSessionId,
         toSessionId,
-        isValidGrams,
-        toGrams,
+        isValidMeasurement,
+        toMeasurement,
         isValidPercentage,
         toPercentage,
         isValidCelsius,

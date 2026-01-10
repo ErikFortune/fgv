@@ -9,5 +9,5 @@ Total weight of the recipe
 **Signature:**
 
 ```typescript
-readonly totalWeight: Grams;
+readonly totalWeight: Measurement;
 ```

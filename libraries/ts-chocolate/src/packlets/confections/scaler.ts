@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams } from '../common';
+import { Measurement } from '../common';
 import { ConfectionData, IConfectionYield, IMoldedBonBon, isMoldedBonBon } from './model';
 
 // ============================================================================
@@ -46,9 +46,9 @@ export interface IScaledConfectionYield {
   /** Unit description (preserved from original) */
   readonly unit?: string;
   /** Weight per piece in grams (preserved from original) */
-  readonly weightPerPiece?: Grams;
+  readonly weightPerPiece?: Measurement;
   /** Total estimated weight (if weightPerPiece is available) */
-  readonly totalWeight?: Grams;
+  readonly totalWeight?: Measurement;
 }
 
 /**
@@ -138,7 +138,7 @@ function createScaledYield(
   if (originalYield.weightPerPiece !== undefined) {
     return {
       ...result,
-      totalWeight: (scaledCount * originalYield.weightPerPiece) as Grams
+      totalWeight: (scaledCount * originalYield.weightPerPiece) as Measurement
     };
   }
 

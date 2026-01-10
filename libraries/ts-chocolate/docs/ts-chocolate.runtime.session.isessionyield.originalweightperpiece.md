@@ -9,5 +9,5 @@ Original weight per piece when the session started
 **Signature:**
 
 ```typescript
-readonly originalWeightPerPiece?: Grams;
+readonly originalWeightPerPiece?: Measurement;
 ```

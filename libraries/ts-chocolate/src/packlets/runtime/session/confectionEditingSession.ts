@@ -26,7 +26,7 @@
 import { captureResult, fail, Logging, MessageAggregator, Result, succeed, Success } from '@fgv/ts-utils';
 
 import {
-  Grams,
+  Measurement,
   Helpers,
   IngredientId,
   MoldId,
@@ -384,7 +384,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
    * @returns Success, or Failure if weight is invalid
    * @public
    */
-  public setWeightPerPiece(weight: Grams): Result<true> {
+  public setWeightPerPiece(weight: Measurement): Result<true> {
     if (weight <= 0) {
       return fail('Weight per piece must be positive');
     }
@@ -715,7 +715,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   // Private Helper Methods
   // ============================================================================
 
-  private _computeYieldStatus(count: number, weightPerPiece?: Grams): ConfectionSelectionStatus {
+  private _computeYieldStatus(count: number, weightPerPiece?: Measurement): ConfectionSelectionStatus {
     const countChanged = count !== this._yield.originalCount;
     const weightChanged = weightPerPiece !== this._yield.originalWeightPerPiece;
     return countChanged || weightChanged ? 'modified' : 'original';

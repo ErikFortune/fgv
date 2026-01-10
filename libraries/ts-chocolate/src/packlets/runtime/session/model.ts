@@ -27,7 +27,7 @@ import { Logging } from '@fgv/ts-utils';
 
 import {
   ConfectionVersionSpec,
-  Grams,
+  Measurement,
   IngredientId,
   MoldId,
   ProcedureId,
@@ -67,12 +67,12 @@ export interface ISessionIngredient {
   /**
    * Current amount (can be modified during session)
    */
-  amount: Grams;
+  amount: Measurement;
 
   /**
    * Original amount from the source version (0 for added ingredients)
    */
-  readonly originalAmount: Grams;
+  readonly originalAmount: Measurement;
 
   /**
    * Current status of this ingredient
@@ -112,7 +112,7 @@ export interface IEditingSessionParams {
   /**
    * Initial target weight (if specified, scaleFactor is calculated from baseWeight)
    */
-  readonly targetWeight?: Grams;
+  readonly targetWeight?: Measurement;
 
   /**
    * Whether to track detailed journal entries (default: true)
@@ -152,7 +152,7 @@ export interface ISessionState {
   /**
    * Current target weight
    */
-  readonly targetWeight: Grams;
+  readonly targetWeight: Measurement;
 
   /**
    * Current ingredient states
@@ -338,12 +338,12 @@ export interface ISessionYield {
   /**
    * Current weight per piece (optional)
    */
-  readonly weightPerPiece?: Grams;
+  readonly weightPerPiece?: Measurement;
 
   /**
    * Original weight per piece when the session started
    */
-  readonly originalWeightPerPiece?: Grams;
+  readonly originalWeightPerPiece?: Measurement;
 
   /**
    * Current status of yield modifications
@@ -415,7 +415,7 @@ export interface IConfectionEditingSessionParams {
   /**
    * Initial weight per piece (defaults to confection's default)
    */
-  readonly weightPerPiece?: Grams;
+  readonly weightPerPiece?: Measurement;
 
   /**
    * Whether to track detailed journal entries (default: true)

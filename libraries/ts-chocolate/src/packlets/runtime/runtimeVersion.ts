@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, Helpers, IngredientId, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
+import { Measurement, Helpers, IngredientId, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
 import { IRecipeVersion, IRecipeRating, scaleVersion, IVersionScaleOptions } from '../recipes';
 import {
   IGanacheCalculation,
@@ -185,7 +185,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   /**
    * Base weight of the recipe (sum of all ingredient amounts)
    */
-  public get baseWeight(): Grams {
+  public get baseWeight(): Measurement {
     return this._version.baseWeight;
   }
 
@@ -288,7 +288,10 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
    * @param options - Optional scaling options (precision, minimum amount)
    * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
    */
-  public scale(targetWeight: Grams, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion> {
+  public scale(
+    targetWeight: Measurement,
+    options?: IVersionScaleOptions
+  ): Result<IRuntimeScaledRecipeVersion> {
     return scaleVersion(this._version, this.versionId, targetWeight, options).onSuccess((scaled) =>
       RuntimeScaledVersion.create(this._context, scaled)
     );
@@ -304,7 +307,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
     if (factor <= 0) {
       return Failure.with('Scale factor must be greater than zero');
     }
-    const targetWeight = (this.baseWeight * factor) as Grams;
+    const targetWeight = (this.baseWeight * factor) as Measurement;
     return this.scale(targetWeight, options);
   }
 

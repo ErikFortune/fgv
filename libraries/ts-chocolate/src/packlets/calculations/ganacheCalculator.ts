@@ -25,7 +25,7 @@
 
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
-import { Grams, Helpers, IngredientId, Percentage, RecipeVersionSpec } from '../common';
+import { Measurement, Helpers, IngredientId, Percentage, RecipeVersionSpec } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
 import { IRecipe, IRecipeIngredient, Recipe } from '../recipes';
 
@@ -61,7 +61,7 @@ export interface IGanacheAnalysis {
   /**
    * Total weight of the recipe
    */
-  readonly totalWeight: Grams;
+  readonly totalWeight: Measurement;
 }
 
 /**
@@ -111,7 +111,7 @@ export interface IGanacheCalculation {
  */
 export interface IResolvedIngredient {
   readonly ingredient: Ingredient;
-  readonly amount: Grams;
+  readonly amount: Measurement;
 }
 
 /**
@@ -163,7 +163,7 @@ interface IMutableCharacteristicsAccumulator {
 function addWeightedCharacteristics(
   accumulator: IMutableCharacteristicsAccumulator,
   ingredient: Ingredient,
-  weight: Grams
+  weight: Measurement
 ): void {
   const chars = ingredient.ganacheCharacteristics;
   accumulator.cacaoFat += chars.cacaoFat * weight;
@@ -183,7 +183,7 @@ function addWeightedCharacteristics(
  */
 function normalizeCharacteristics(
   accumulator: IMutableCharacteristicsAccumulator,
-  totalWeight: Grams
+  totalWeight: Measurement
 ): IGanacheCharacteristics {
   if (totalWeight <= 0) {
     return createEmptyCharacteristics();
@@ -220,7 +220,7 @@ export function calculateFromIngredients(
   };
 
   // Calculate total weight
-  const totalWeight = resolvedIngredients.reduce((sum, ri) => sum + ri.amount, 0) as Grams;
+  const totalWeight = resolvedIngredients.reduce((sum, ri) => sum + ri.amount, 0) as Measurement;
 
   // Accumulate weighted characteristics
   for (const resolved of resolvedIngredients) {

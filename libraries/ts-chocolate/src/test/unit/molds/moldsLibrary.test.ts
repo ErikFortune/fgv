@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
-import { BaseMoldId, Grams, Millimeters, MoldId, SourceId } from '../../../packlets/common';
+import { BaseMoldId, Measurement, Millimeters, MoldId, SourceId } from '../../../packlets/common';
 
 import { MoldsLibrary, IMold, IMoldFileTreeSource, Mold } from '../../../packlets/molds';
 
@@ -38,7 +38,7 @@ describe('MoldsLibrary', () => {
     productNumber: 'TM-001',
     description: 'Test Mold',
     cavityCount: 24,
-    cavityWeight: 10 as Grams,
+    cavityWeight: 10 as Measurement,
     cavityDimensions: {
       width: 30 as Millimeters,
       length: 30 as Millimeters,

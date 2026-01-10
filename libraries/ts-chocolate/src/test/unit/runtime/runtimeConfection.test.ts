@@ -25,7 +25,7 @@ import {
   ConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
-  Grams,
+  Measurement,
   IngredientId,
   Millimeters,
   MoldId,
@@ -56,7 +56,7 @@ describe('RuntimeConfection', () => {
     yield: {
       count: 24,
       unit: 'pieces',
-      weightPerPiece: 12 as Grams
+      weightPerPiece: 12 as Measurement
     },
     fillings: [
       {
@@ -108,7 +108,7 @@ describe('RuntimeConfection', () => {
     yield: {
       count: 48,
       unit: 'pieces',
-      weightPerPiece: 10 as Grams
+      weightPerPiece: 10 as Measurement
     },
     frameDimensions: {
       width: 300 as Millimeters,

@@ -9,7 +9,7 @@ Substitutes one ingredient for another
 **Signature:**
 
 ```typescript
-substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Grams): Result<void>;
+substituteIngredient(originalId: IngredientId, substituteId: IngredientId, amount?: Measurement): Result<void>;
 ```
 
 ## Parameters
@@ -69,7 +69,7 @@ amount
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

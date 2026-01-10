@@ -60,7 +60,7 @@ import {
 export const confectionYield: Converter<IConfectionYield> = Converters.object<IConfectionYield>({
   count: Converters.number,
   unit: Converters.string.optional(),
-  weightPerPiece: CommonConverters.grams.optional()
+  weightPerPiece: CommonConverters.measurement.optional()
 });
 
 /**

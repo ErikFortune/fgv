@@ -9,7 +9,7 @@ Sets the weight per piece.
 **Signature:**
 
 ```typescript
-setWeightPerPiece(weight: Grams): Result<true>;
+setWeightPerPiece(weight: Measurement): Result<true>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ weight
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

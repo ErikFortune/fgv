@@ -68,7 +68,7 @@ Resolved alternate ingredients that can substitute for the primary
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

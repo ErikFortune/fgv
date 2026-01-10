@@ -331,6 +331,17 @@ All possible ingredient categories
 </td></tr>
 <tr><td>
 
+[allMeasurementUnits](./ts-chocolate.allmeasurementunits.md)
+
+
+</td><td>
+
+All possible measurement units
+
+
+</td></tr>
+<tr><td>
+
 [allMoldFormats](./ts-chocolate.allmoldformats.md)
 
 
@@ -348,6 +359,28 @@ All possible mold formats
 </td><td>
 
 All possible recipe categories
+
+
+</td></tr>
+<tr><td>
+
+[allSpoonLevels](./ts-chocolate.allspoonlevels.md)
+
+
+</td><td>
+
+All spoon level indicators
+
+
+</td></tr>
+<tr><td>
+
+[allSpoonUnits](./ts-chocolate.allspoonunits.md)
+
+
+</td><td>
+
+All spoon measurement units
 
 
 </td></tr>
@@ -709,17 +742,6 @@ Fluidity in Callebaut star ratings (1-5) Lower stars = more fluid, higher stars 
 </td></tr>
 <tr><td>
 
-[Grams](./ts-chocolate.grams.md)
-
-
-</td><td>
-
-Weight in grams (native internal unit)
-
-
-</td></tr>
-<tr><td>
-
 [IndexerId](./ts-chocolate.indexerid.md)
 
 
@@ -759,6 +781,28 @@ Globally unique ingredient identifier (composite) Format: "sourceId.baseIngredie
 </td><td>
 
 Unique identifier for a cooking journal record Format: UUID or "recipeId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
+
+
+</td></tr>
+<tr><td>
+
+[Measurement](./ts-chocolate.measurement.md)
+
+
+</td><td>
+
+Measurement amount (non-negative number in the specified unit). Used for recipe ingredient amounts in any unit (g, mL, tsp, Tbsp, pinch).
+
+
+</td></tr>
+<tr><td>
+
+[MeasurementUnit](./ts-chocolate.measurementunit.md)
+
+
+</td><td>
+
+Measurement unit types for recipe ingredients. - 'g': Grams (default) - 'mL': Milliliters - 'tsp': Teaspoons - 'Tbsp': Tablespoons - 'pinch': A small imprecise amount
 
 
 </td></tr>
@@ -924,6 +968,28 @@ Unique identifier for a filling slot within a confection Character restrictions:
 </td><td>
 
 Unique identifier for a source (collection of ingredients/recipes) Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[SpoonLevel](./ts-chocolate.spoonlevel.md)
+
+
+</td><td>
+
+Spoon level indicator for dry measurements. This is a display hint only and does not affect scaling calculations.
+
+
+</td></tr>
+<tr><td>
+
+[SpoonUnit](./ts-chocolate.spoonunit.md)
+
+
+</td><td>
+
+Spoon measurement units that share the same scaling system
 
 
 </td></tr>

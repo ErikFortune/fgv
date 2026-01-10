@@ -11,7 +11,7 @@ This function looks up a version by spec and delegates to [scaleVersion](./ts-ch
 **Signature:**
 
 ```typescript
-export declare function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Grams, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
+export declare function scaleRecipe(recipe: IRecipe, recipeId: RecipeId, targetWeight: Measurement, options?: IRecipeScaleOptions): Result<IComputedScaledRecipe>;
 ```
 
 ## Parameters
@@ -71,7 +71,7 @@ targetWeight
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

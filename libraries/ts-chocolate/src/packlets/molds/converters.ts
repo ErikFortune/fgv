@@ -49,7 +49,7 @@ export const moldData: Converter<IMold> = Converters.object<IMold>({
   productNumber: Converters.string,
   description: Converters.string.optional(),
   cavityCount: Converters.number,
-  cavityWeight: CommonConverters.grams.optional(),
+  cavityWeight: CommonConverters.measurement.optional(),
   cavityDimensions: cavityDimensions.optional(),
   format: CommonConverters.moldFormat,
   tags: Converters.arrayOf(Converters.string).optional(),

@@ -9,5 +9,5 @@ Gets the total capacity of the mold (all cavities) in grams
 **Signature:**
 
 ```typescript
-get totalCapacity(): Grams | undefined;
+get totalCapacity(): Measurement | undefined;
 ```

@@ -24,7 +24,7 @@ import '@fgv/ts-utils-jest';
 import { Mold } from '../../../packlets/molds/mold';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IMold, ICavityDimensions } from '../../../packlets/molds/model';
-import { BaseMoldId, Grams, Millimeters, MoldFormat } from '../../../packlets/common';
+import { BaseMoldId, Measurement, Millimeters, MoldFormat } from '../../../packlets/common';
 
 describe('Mold', () => {
   // ============================================================================
@@ -43,7 +43,7 @@ describe('Mold', () => {
     productNumber: 'CW 2227',
     description: 'Hex Swirl',
     cavityCount: 32,
-    cavityWeight: 10 as Grams,
+    cavityWeight: 10 as Measurement,
     cavityDimensions: validCavityDimensions,
     format: 'series-2000' as MoldFormat,
     tags: ['hex-swirl', 'praline']
@@ -123,7 +123,7 @@ describe('Mold', () => {
       const moldData: IMold = {
         ...minimalMoldData,
         cavityCount: 10,
-        cavityWeight: 15 as Grams
+        cavityWeight: 15 as Measurement
       };
       expect(Mold.create(moldData)).toSucceedAndSatisfy((mold) => {
         expect(mold.totalCapacity).toBe(150);

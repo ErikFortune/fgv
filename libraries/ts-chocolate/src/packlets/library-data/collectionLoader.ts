@@ -208,7 +208,7 @@ export class CollectionLoader<
                 );
                 if (captureResult.isSuccess()) {
                   protectedCollections.push(captureResult.value);
-                  /* c8 ignore next 4 - defensive: capture only fails if isEncryptedCollectionFile passes but convert fails */
+                  /* c8 ignore next 6 - defensive: capture only fails if isEncryptedCollectionFile passes but convert fails */
                 } else {
                   // If capture fails, treat as skip with warning
                   this._logger.warn(

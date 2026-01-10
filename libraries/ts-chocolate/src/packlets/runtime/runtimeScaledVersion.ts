@@ -25,7 +25,7 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Grams, Helpers } from '../common';
+import { Measurement, Helpers } from '../common';
 import { IComputedScaledRecipe, IRecipeRating } from '../recipes';
 import {
   IGanacheCalculation,
@@ -151,7 +151,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * The target weight that was requested
    */
-  public get targetWeight(): Grams {
+  public get targetWeight(): Measurement {
     return this._scaled.scaledFrom.targetWeight;
   }
 
@@ -187,7 +187,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * Base weight of the scaled recipe (same as targetWeight)
    */
-  public get baseWeight(): Grams {
+  public get baseWeight(): Measurement {
     return this._scaled.baseWeight;
   }
 
@@ -301,13 +301,13 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * Gets the total weight difference from the original.
    */
-  public get weightDifference(): Grams {
+  public get weightDifference(): Measurement {
     // Calculate original total weight
     let originalTotal = 0;
     for (const ri of this._scaled.ingredients) {
       originalTotal += ri.originalAmount;
     }
-    return (this.baseWeight - originalTotal) as Grams;
+    return (this.baseWeight - originalTotal) as Measurement;
   }
 
   // ============================================================================

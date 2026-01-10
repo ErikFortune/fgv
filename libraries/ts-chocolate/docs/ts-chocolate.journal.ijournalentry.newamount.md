@@ -9,5 +9,5 @@ New amount after the change (for add/modify events)
 **Signature:**
 
 ```typescript
-readonly newAmount?: Grams;
+readonly newAmount?: Measurement;
 ```

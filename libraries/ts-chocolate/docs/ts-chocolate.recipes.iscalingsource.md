@@ -89,7 +89,7 @@ Source recipe version ID (format: "sourceId.recipeId<!-- -->@<!-- -->versionSpec
 
 </td><td>
 
-[Grams](./ts-chocolate.grams.md)
+[Measurement](./ts-chocolate.measurement.md)
 
 
 </td><td>

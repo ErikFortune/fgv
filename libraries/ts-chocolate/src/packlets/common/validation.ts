@@ -40,13 +40,13 @@ import {
   ConfectionVersionId,
   ConfectionVersionSpec,
   DegreesMacMichael,
-  Grams,
   IHasId,
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
   JOURNAL_ID_PATTERN,
   JournalId,
+  Measurement,
   Millimeters,
   Minutes,
   MoldId,
@@ -538,26 +538,26 @@ export function toSessionId(from: unknown): Result<SessionId> {
 // ============================================================================
 
 /**
- * Type guard for Grams
+ * Type guard for Measurement
  * @param from - Value to check
- * @returns True if the value is a valid Grams value
+ * @returns True if the value is a valid Measurement value
  * @public
  */
-export function isValidGrams(from: unknown): from is Grams {
+export function isValidMeasurement(from: unknown): from is Measurement {
   return typeof from === 'number' && Number.isFinite(from) && from >= 0;
 }
 
 /**
- * Converts unknown value to Grams
+ * Converts unknown value to Measurement
  * @param from - Value to convert
- * @returns Result with Grams or error
+ * @returns Result with Measurement or error
  * @public
  */
-export function toGrams(from: unknown): Result<Grams> {
-  if (isValidGrams(from)) {
+export function toMeasurement(from: unknown): Result<Measurement> {
+  if (isValidMeasurement(from)) {
     return Success.with(from);
   }
-  return Failure.with('Invalid Grams: must be a non-negative finite number');
+  return Failure.with('Invalid Measurement: must be a non-negative finite number');
 }
 
 /**
