@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@fgv/ts-chocolate": "workspace:*",
+    "@fgv/ts-chocolate-ui": "workspace:*",
     "@fgv/ts-utils": "workspace:*",
     "react": "~19.2.3",
     "react-dom": "~19.2.3",

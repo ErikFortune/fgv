@@ -1,0 +1,19 @@
+{
+  "extends": "@rushstack/heft-web-rig/profiles/library/config/jest.config.json",
+  "coveragePathIgnorePatterns": ["index.js", "index.browser.js", "public.js", "internal.js"],
+  "coverageThreshold": {
+    "global": {
+      "branches": 100,
+      "functions": 100,
+      "lines": 100,
+      "statements": 100
+    }
+  },
+  "collectCoverage": true,
+  "coverageReporters": ["text", "lcov", "html"],
+  "setupFilesAfterEnv": ["<rootDir>/config/jest.setup.js"],
+  "testEnvironment": "jsdom",
+  "testEnvironmentOptions": {
+    "url": "http://localhost"
+  }
+}

@@ -1,42 +1,113 @@
-// Copyright (c) 2024 Erik Fortune
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
+/*
+ * MIT License
+ * Copyright (c) 2025 Erik Fortune
+ */
 
-import React from 'react';
-import { BeakerIcon } from '@heroicons/react/24/outline';
+import React, { useState, useMemo } from 'react';
+import { ObservabilityProvider } from '@fgv/ts-chocolate-ui';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { SettingsProvider } from './contexts/SettingsContext';
+import { ChocolateProvider } from './contexts/ChocolateContext';
+import { AppShell } from './components/layout';
+import type { ToolId } from './types/navigation';
 
+// Tool components
+import { IngredientsTool, IngredientsToolSidebar, type IIngredientFilters } from './tools/ingredients';
+import { BrowseView } from './tools/ingredients/views/BrowseView';
+import { DetailView } from './tools/ingredients/views/DetailView';
+import { RecipesTool } from './tools/recipes/RecipesTool';
+import { MoldsTool } from './tools/molds/MoldsTool';
+import { ConfectionsTool } from './tools/confections/ConfectionsTool';
+import { SettingsTool } from './tools/settings/SettingsTool';
+import type { IngredientId } from '@fgv/ts-chocolate';
+
+/**
+ * Main application component with tool routing
+ */
+function AppContent(): React.ReactElement {
+  const [activeTool, setActiveTool] = useState<ToolId>('ingredients');
+
+  // Ingredient filters state (lifted here for sidebar sync)
+  const [ingredientFilters, setIngredientFilters] = useState<IIngredientFilters>({
+    search: '',
+    categories: [],
+    collections: [],
+    tags: []
+  });
+
+  // Render the active tool's sidebar
+  const sidebar = useMemo(() => {
+    switch (activeTool) {
+      case 'ingredients':
+        return <IngredientsToolSidebar filters={ingredientFilters} onFiltersChange={setIngredientFilters} />;
+      default:
+        return null;
+    }
+  }, [activeTool, ingredientFilters]);
+
+  // Render the active tool content
+  const content = useMemo(() => {
+    switch (activeTool) {
+      case 'ingredients':
+        return <IngredientsToolContent filters={ingredientFilters} />;
+      case 'recipes':
+        return <RecipesTool />;
+      case 'molds':
+        return <MoldsTool />;
+      case 'confections':
+        return <ConfectionsTool />;
+      case 'settings':
+        return <SettingsTool />;
+      default:
+        return null;
+    }
+  }, [activeTool, ingredientFilters]);
+
+  return (
+    <AppShell activeTool={activeTool} onToolChange={setActiveTool} sidebar={sidebar}>
+      {content}
+    </AppShell>
+  );
+}
+
+/**
+ * Ingredients tool content with filter state
+ */
+function IngredientsToolContent({ filters }: { filters: IIngredientFilters }): React.ReactElement {
+  const [selectedId, setSelectedId] = useState<IngredientId | null>(null);
+  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+
+  const handleSelect = (id: string): void => {
+    setSelectedId(id as IngredientId);
+    setViewMode('detail');
+  };
+
+  const handleBack = (): void => {
+    setViewMode('browse');
+    setSelectedId(null);
+  };
+
+  if (viewMode === 'detail' && selectedId) {
+    return <DetailView ingredientId={selectedId} onBack={handleBack} />;
+  }
+
+  return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
+}
+
+/**
+ * Root application with providers
+ */
 function App(): React.ReactElement {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-          <BeakerIcon className="mx-auto h-16 w-16 text-amber-600" />
-          <h1 className="mt-4 text-4xl font-bold text-gray-900">Chocolate Recipe Calculator</h1>
-          <p className="mt-2 text-lg text-gray-600">Stage 1: Package Setup Complete</p>
-          <div className="mt-8 p-6 bg-white rounded-lg shadow">
-            <p className="text-gray-700">
-              Ready for Stage 2: Core abstractions and functionality will be added next.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+    <ThemeProvider>
+      <SettingsProvider>
+        <ObservabilityProvider>
+          <ChocolateProvider>
+            <AppContent />
+          </ChocolateProvider>
+        </ObservabilityProvider>
+      </SettingsProvider>
+    </ThemeProvider>
   );
 }
 

@@ -14,9 +14,15 @@ module.exports = (env, argv) => {
       filename: 'bundle.js',
       clean: true
     },
+    optimization: {
+      // Disable module concatenation to avoid issues with ts-chocolate crypto module
+      concatenateModules: false
+    },
     resolve: {
       extensions: ['.ts', '.tsx', '.js', '.jsx'],
       symlinks: true,
+      // Ensure webpack looks for modules in this app's node_modules first
+      modules: [path.resolve(__dirname, 'node_modules'), 'node_modules'],
       fallback: {
         // Essential polyfills for ts-sudoku-ui library compatibility
         crypto: false, // Use native Web Crypto API instead

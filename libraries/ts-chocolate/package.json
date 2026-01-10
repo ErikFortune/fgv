@@ -7,10 +7,15 @@
   "types": "dist/ts-chocolate.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/ts-chocolate.d.ts",
-      "import": "./dist/index.js",
-      "require": "./lib/index.js",
-      "default": "./lib/index.js"
+      "node": {
+        "import": "./dist/index.js",
+        "require": "./lib/index.js"
+      },
+      "default": {
+        "import": "./dist/index.browser.js",
+        "require": "./lib/index.browser.js"
+      },
+      "types": "./dist/ts-chocolate.d.ts"
     }
   },
   "scripts": {
