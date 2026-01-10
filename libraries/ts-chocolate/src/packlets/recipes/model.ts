@@ -40,6 +40,33 @@ import {
   SpoonLevel
 } from '../common';
 
+// ============================================================================
+// Ingredient Modifiers
+// ============================================================================
+
+/**
+ * Modifiers that qualify how an ingredient is measured or added.
+ * Groups measurement hints and qualifiers to avoid interface pollution.
+ * @public
+ */
+export interface IIngredientModifiers {
+  /**
+   * For tsp/Tbsp measurements: whether the spoon is level, heaping, or scant.
+   * This is a display hint only and does not affect scaling calculations.
+   */
+  readonly spoonLevel?: SpoonLevel;
+
+  /**
+   * Indicates this ingredient is "to taste" - the amount is a suggestion.
+   * Display format: "1/4 tsp salt, to taste"
+   */
+  readonly toTaste?: boolean;
+}
+
+// ============================================================================
+// Recipe Ingredient
+// ============================================================================
+
 /**
  * Reference to an ingredient used in a recipe.
  * Uses IIdsWithPreferred pattern - `ids` contains all valid ingredient options,
@@ -66,16 +93,10 @@ export interface IRecipeIngredient {
   readonly unit?: MeasurementUnit;
 
   /**
-   * For tsp/Tbsp measurements: whether the spoon is level or heaping.
-   * This is a display hint only and does not affect scaling calculations.
+   * Optional modifiers that qualify how the ingredient is measured or added.
+   * Includes spoonLevel, toTaste, and future measurement qualifiers.
    */
-  readonly spoonLevel?: SpoonLevel;
-
-  /**
-   * Indicates this ingredient is "to taste" - the amount is a suggestion.
-   * Display format: "1/4 tsp salt, to taste"
-   */
-  readonly toTaste?: boolean;
+  readonly modifiers?: IIngredientModifiers;
 
   /**
    * Optional notes for this specific ingredient usage

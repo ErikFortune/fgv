@@ -79,6 +79,27 @@ Available ingredient options with preferred selection. The preferredId (or first
 </td></tr>
 <tr><td>
 
+[modifiers?](./ts-chocolate.recipes.irecipeingredient.modifiers.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IIngredientModifiers](./ts-chocolate.recipes.iingredientmodifiers.md)
+
+
+</td><td>
+
+_(Optional)_ Optional modifiers that qualify how the ingredient is measured or added. Includes spoonLevel, toTaste, and future measurement qualifiers.
+
+
+</td></tr>
+<tr><td>
+
 [notes?](./ts-chocolate.recipes.irecipeingredient.notes.md)
 
 
@@ -95,48 +116,6 @@ string
 </td><td>
 
 _(Optional)_ Optional notes for this specific ingredient usage
-
-
-</td></tr>
-<tr><td>
-
-[spoonLevel?](./ts-chocolate.recipes.irecipeingredient.spoonlevel.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[SpoonLevel](./ts-chocolate.spoonlevel.md)
-
-
-</td><td>
-
-_(Optional)_ For tsp/Tbsp measurements: whether the spoon is level or heaping. This is a display hint only and does not affect scaling calculations.
-
-
-</td></tr>
-<tr><td>
-
-[toTaste?](./ts-chocolate.recipes.irecipeingredient.totaste.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-boolean
-
-
-</td><td>
-
-_(Optional)_ Indicates this ingredient is "to taste" - the amount is a suggestion. Display format: "1/4 tsp salt, to taste"
 
 
 </td></tr>

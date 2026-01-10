@@ -135,8 +135,7 @@ function scaleIngredient(
       ingredient: ingredient.ingredient,
       amount: finalValue,
       unit: ingredient.unit,
-      spoonLevel: ingredient.spoonLevel,
-      toTaste: ingredient.toTaste,
+      modifiers: ingredient.modifiers,
       notes: ingredient.notes,
       originalAmount: ingredient.amount,
       scaleFactor

@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[ingredientModifiers](./ts-chocolate.recipes.converters.ingredientmodifiers.md)
+
+
+</td><td>
+
+Converter for [IIngredientModifiers](./ts-chocolate.recipes.iingredientmodifiers.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ingredientSnapshot](./ts-chocolate.recipes.converters.ingredientsnapshot.md)
 
 

@@ -836,6 +836,7 @@ declare namespace Converters_8 {
 
 declare namespace Converters_9 {
     export {
+        ingredientModifiers,
         recipeIngredient,
         ratingCategory,
         recipeCategory,
@@ -1681,6 +1682,12 @@ interface IIngredientFillingOption {
 }
 
 // @public
+interface IIngredientModifiers {
+    readonly spoonLevel?: SpoonLevel;
+    readonly toTaste?: boolean;
+}
+
+// @public
 interface IIngredientQueryOptions {
     readonly includeAlternates?: boolean;
 }
@@ -1942,6 +1949,11 @@ class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngr
     warmUp(): void;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const ingredientModifiers: Converter<IIngredientModifiers>;
+
 // @public
 export type IngredientPhase = 'solid' | 'liquid';
 
@@ -2197,9 +2209,8 @@ interface IRecipeFillingOption {
 interface IRecipeIngredient {
     readonly amount: Measurement;
     readonly ingredient: IIdsWithPreferred<IngredientId>;
+    readonly modifiers?: IIngredientModifiers;
     readonly notes?: string;
-    readonly spoonLevel?: SpoonLevel;
-    readonly toTaste?: boolean;
     readonly unit?: MeasurementUnit;
 }
 
@@ -3712,6 +3723,7 @@ declare namespace Recipes {
         Converters_9 as Converters,
         isScaledRecipeVersion,
         isRecipeVersion,
+        IIngredientModifiers,
         IRecipeIngredient,
         RatingCategory,
         RecipeCategory_2 as RecipeCategory,

@@ -29,6 +29,7 @@ import { Converters as CommonConverters, IOptionsWithPreferred, MoldId, Procedur
 import {
   allRatingCategories,
   allRecipeCategories,
+  IIngredientModifiers,
   IIngredientSnapshot,
   IRecipe,
   IRecipeDerivation,
@@ -47,6 +48,15 @@ import {
 import { Recipe } from './recipe';
 
 /**
+ * Converter for {@link Recipes.IIngredientModifiers | IIngredientModifiers}.
+ * @public
+ */
+export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.object<IIngredientModifiers>({
+  spoonLevel: CommonConverters.spoonLevel.optional(),
+  toTaste: Converters.boolean.optional()
+});
+
+/**
  * Converter for {@link Recipes.IRecipeIngredient | IRecipeIngredient}.
  * Uses IIdsWithPreferred pattern for ingredient selection with validation.
  * @public
@@ -55,8 +65,7 @@ export const recipeIngredient: Converter<IRecipeIngredient> = Converters.object<
   ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'recipeIngredient'),
   amount: CommonConverters.measurement,
   unit: CommonConverters.measurementUnit.optional(),
-  spoonLevel: CommonConverters.spoonLevel.optional(),
-  toTaste: Converters.boolean.optional(),
+  modifiers: ingredientModifiers.optional(),
   notes: Converters.string.optional()
 });
 
@@ -188,8 +197,7 @@ export const scaledRecipeIngredient: Converter<IScaledRecipeIngredient> =
     ingredient: CommonConverters.idsWithPreferred(CommonConverters.ingredientId, 'scaledRecipeIngredient'),
     amount: CommonConverters.measurement,
     unit: CommonConverters.measurementUnit.optional(),
-    spoonLevel: CommonConverters.spoonLevel.optional(),
-    toTaste: Converters.boolean.optional(),
+    modifiers: ingredientModifiers.optional(),
     notes: Converters.string.optional(),
     originalAmount: CommonConverters.measurement,
     scaleFactor: Converters.number

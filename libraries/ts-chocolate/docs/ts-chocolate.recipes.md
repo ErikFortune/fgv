@@ -301,6 +301,17 @@ Represents a fraction for display purposes
 </td></tr>
 <tr><td>
 
+[IIngredientModifiers](./ts-chocolate.recipes.iingredientmodifiers.md)
+
+
+</td><td>
+
+Modifiers that qualify how an ingredient is measured or added. Groups measurement hints and qualifiers to avoid interface pollution.
+
+
+</td></tr>
+<tr><td>
+
 [IIngredientSnapshot](./ts-chocolate.recipes.iingredientsnapshot.md)
 
 
