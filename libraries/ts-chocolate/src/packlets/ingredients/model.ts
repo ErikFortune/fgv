@@ -28,7 +28,11 @@ import {
   Celsius,
   ChocolateType,
   DegreesMacMichael,
+  IMeasurementUnitOption,
   IngredientCategory,
+  IngredientPhase,
+  IOptionsWithPreferred,
+  MeasurementUnit,
   Percentage,
   FluidityStars,
   Allergen,
@@ -110,6 +114,12 @@ export interface IIngredient {
   readonly vegan?: boolean;
   /** Optional tags for searching/filtering */
   readonly tags?: ReadonlyArray<string>;
+  /** Density in g/mL for volume-to-weight conversion (default: 1.0) */
+  readonly density?: number;
+  /** Physical phase - display hint for UI (e.g., "pour" vs "add") */
+  readonly phase?: IngredientPhase;
+  /** Preferred and acceptable measurement units for this ingredient */
+  readonly measurementUnits?: IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
 }
 
 // ============================================================================

@@ -121,6 +121,27 @@ _(Optional)_ Optional list of certifications the ingredient has
 </td></tr>
 <tr><td>
 
+[density?](./ts-chocolate.ingredients.iingredient.density.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+_(Optional)_ Density in g/mL for volume-to-weight conversion (default: 1.0)
+
+
+</td></tr>
+<tr><td>
+
 [description?](./ts-chocolate.ingredients.iingredient.description.md)
 
 
@@ -184,6 +205,27 @@ _(Optional)_ Optional manufacturer
 </td></tr>
 <tr><td>
 
+[measurementUnits?](./ts-chocolate.ingredients.iingredient.measurementunits.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)<!-- -->, [MeasurementUnit](./ts-chocolate.measurementunit.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Preferred and acceptable measurement units for this ingredient
+
+
+</td></tr>
+<tr><td>
+
 [name](./ts-chocolate.ingredients.iingredient.name.md)
 
 
@@ -200,6 +242,27 @@ string
 </td><td>
 
 Display name
+
+
+</td></tr>
+<tr><td>
+
+[phase?](./ts-chocolate.ingredients.iingredient.phase.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IngredientPhase](./ts-chocolate.ingredientphase.md)
+
+
+</td><td>
+
+_(Optional)_ Physical phase - display hint for UI (e.g., "pour" vs "add")
 
 
 </td></tr>

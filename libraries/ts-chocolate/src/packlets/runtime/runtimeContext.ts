@@ -36,7 +36,7 @@ import {
   Validation
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../confections';
-import { IComputedScaledRecipe } from '../recipes';
+import { IComputedScaledRecipe, IWeightCalculationContext } from '../recipes';
 import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { Mold } from '../molds';
 import { Procedure } from '../procedures';
@@ -493,5 +493,24 @@ export class RuntimeContext
   public invalidateIndexers(): void {
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();
+  }
+
+  /**
+   * Creates a weight calculation context for unit-aware weight calculations.
+   * The context resolves ingredient IDs to their density values.
+   * @returns A weight calculation context bound to this runtime's library
+   * @public
+   */
+  public createWeightContext(): IWeightCalculationContext {
+    return {
+      getIngredientDensity: (id: IngredientId): number => {
+        const result = this._library.getIngredient(id);
+        if (result.isSuccess()) {
+          return result.value.density ?? 1.0;
+        }
+        // Default to 1.0 g/mL if ingredient not found
+        return 1.0;
+      }
+    };
   }
 }

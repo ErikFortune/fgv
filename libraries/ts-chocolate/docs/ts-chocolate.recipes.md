@@ -113,6 +113,54 @@ Calculates the base weight from recipe version (sum of ingredient amounts)
 </td></tr>
 <tr><td>
 
+[calculateIngredientWeight(ingredient, context)](./ts-chocolate.recipes.calculateingredientweight.md)
+
+
+</td><td>
+
+Calculate the weight contribution for a single ingredient.
+
+Weight rules: - 'g': Added directly (amount in grams) - 'mL': Converted to grams via density (amount \* density) - 'tsp', 'Tbsp', 'pinch': Excluded (returns 0)
+
+
+</td></tr>
+<tr><td>
+
+[calculateTotalWeight(ingredients, context)](./ts-chocolate.recipes.calculatetotalweight.md)
+
+
+</td><td>
+
+Calculate the total weight from all ingredients with unit conversion.
+
+This function handles mixed-unit recipes by: - Adding grams directly - Converting milliliters to grams via ingredient density - Excluding tsp, Tbsp, and pinch measurements
+
+
+</td></tr>
+<tr><td>
+
+[calculateWeightContributions(ingredients, context)](./ts-chocolate.recipes.calculateweightcontributions.md)
+
+
+</td><td>
+
+Calculate weight contributions for all ingredients. Returns detailed breakdown of how each ingredient contributes to total weight.
+
+
+</td></tr>
+<tr><td>
+
+[contributesToWeight(unit)](./ts-chocolate.recipes.contributestoweight.md)
+
+
+</td><td>
+
+Check if a unit contributes to weight calculations.
+
+
+</td></tr>
+<tr><td>
+
 [isRecipeVersion(version)](./ts-chocolate.recipes.isrecipeversion.md)
 
 
@@ -130,6 +178,17 @@ Type guard to check if a version is a regular (unscaled) recipe version
 </td><td>
 
 Type guard to check if a version is a scaled recipe version
+
+
+</td></tr>
+<tr><td>
+
+[isWeightExcluded(unit)](./ts-chocolate.recipes.isweightexcluded.md)
+
+
+</td><td>
+
+Check if a unit is excluded from weight calculations.
 
 
 </td></tr>
@@ -427,6 +486,28 @@ Options for version scaling (precision and minimum amount only)
 
 
 </td></tr>
+<tr><td>
+
+[IWeightCalculationContext](./ts-chocolate.recipes.iweightcalculationcontext.md)
+
+
+</td><td>
+
+Context for weight calculations that provides ingredient density lookup. Implementations should resolve ingredient IDs to their density values.
+
+
+</td></tr>
+<tr><td>
+
+[IWeightContribution](./ts-chocolate.recipes.iweightcontribution.md)
+
+
+</td><td>
+
+Result of calculating weight contribution for a single ingredient.
+
+
+</td></tr>
 </tbody></table>
 
 ## Namespaces
@@ -496,6 +577,17 @@ All possible recipe categories
 </td><td>
 
 Default scaler registry instance
+
+
+</td></tr>
+<tr><td>
+
+[defaultWeightContext](./ts-chocolate.recipes.defaultweightcontext.md)
+
+
+</td><td>
+
+Default weight calculation context that returns 1.0 density for all ingredients. Use this when ingredient density data is not available.
 
 
 </td></tr>

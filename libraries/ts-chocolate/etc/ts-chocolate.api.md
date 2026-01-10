@@ -79,6 +79,9 @@ export const allFluidityStars: FluidityStars[];
 export const allIngredientCategories: IngredientCategory[];
 
 // @public
+export const allIngredientPhases: IngredientPhase[];
+
+// @public
 const allJournalEventTypes: JournalEventType[];
 
 // @public
@@ -278,6 +281,15 @@ function calculateFromRecipeIngredients(recipeIngredients: ReadonlyArray<IRecipe
 
 // @public
 function calculateGanache(recipe: IRecipe, resolver: IngredientResolver, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation>;
+
+// @public
+function calculateIngredientWeight(ingredient: IRecipeIngredient, context?: IWeightCalculationContext): IWeightContribution;
+
+// @public
+function calculateTotalWeight(ingredients: ReadonlyArray<IRecipeIngredient>, context?: IWeightCalculationContext): Measurement;
+
+// @public
+function calculateWeightContributions(ingredients: ReadonlyArray<IRecipeIngredient>, context?: IWeightCalculationContext): IWeightContribution[];
 
 declare namespace Calculations {
     export {
@@ -652,6 +664,11 @@ const confectionYield: Converter<IConfectionYield>;
 // @public
 function containsIgnoreCase<T>(text: string, getter: (item: T) => string | undefined): FilterPredicate<T>;
 
+// Warning: (ae-forgotten-export) The symbol "WeightContributingUnit" needs to be exported by the entry point index.d.ts
+//
+// @public
+function contributesToWeight(unit: MeasurementUnit): unit is WeightContributingUnit;
+
 declare namespace Converters {
     export {
         optionsWithPreferred,
@@ -711,7 +728,9 @@ declare namespace Converters {
         additionalChocolatePurpose,
         recipeCategory_2 as recipeCategory,
         measurementUnit,
-        spoonLevel
+        spoonLevel,
+        ingredientPhase,
+        measurementUnitOption
     }
 }
 export { Converters }
@@ -899,6 +918,9 @@ const DEFAULT_ALGORITHM: EncryptionAlgorithm;
 
 // @public
 const defaultScalerRegistry: UnitScalerRegistry;
+
+// @public
+const defaultWeightContext: IWeightCalculationContext;
 
 // @public
 export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
@@ -1629,10 +1651,13 @@ interface IIngredient {
     readonly baseId: BaseIngredientId;
     readonly category: IngredientCategory;
     readonly certifications?: ReadonlyArray<Certification>;
+    readonly density?: number;
     readonly description?: string;
     readonly ganacheCharacteristics: IGanacheCharacteristics;
     readonly manufacturer?: string;
+    readonly measurementUnits?: IOptionsWithPreferred<IMeasurementUnitOption, MeasurementUnit>;
     readonly name: string;
+    readonly phase?: IngredientPhase;
     readonly tags?: ReadonlyArray<string>;
     readonly traceAllergens?: ReadonlyArray<Allergen>;
     readonly vegan?: boolean;
@@ -1774,6 +1799,11 @@ interface ILoadCollectionFromFileTreeParams<TCOLLECTIONID extends string> extend
 }
 
 // @public
+export interface IMeasurementUnitOption {
+    readonly id: MeasurementUnit;
+}
+
+// @public
 interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
     readonly filter?: LibraryLoadSpec<TCollectionId>;
     readonly library: TLibrary;
@@ -1911,6 +1941,12 @@ class IngredientIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeIngr
     invalidate(): void;
     warmUp(): void;
 }
+
+// @public
+export type IngredientPhase = 'solid' | 'liquid';
+
+// @public
+const ingredientPhase: Converter<IngredientPhase>;
 
 // @public
 class IngredientQuery {
@@ -2884,6 +2920,11 @@ function isValidSlotId(from: unknown): from is SlotId;
 // @public
 function isValidSourceId(from: unknown): from is SourceId;
 
+// Warning: (ae-forgotten-export) The symbol "WeightExcludedUnit" needs to be exported by the entry point index.d.ts
+//
+// @public
+function isWeightExcluded(unit: MeasurementUnit): unit is WeightExcludedUnit;
+
 // @public
 interface ITemperatureCurve {
     readonly cool: Celsius;
@@ -2913,6 +2954,20 @@ interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngre
 interface IVersionScaleOptions {
     readonly minimumAmount?: Measurement;
     readonly precision?: number;
+}
+
+// @public
+interface IWeightCalculationContext {
+    getIngredientDensity(id: IngredientId): number;
+}
+
+// @public
+interface IWeightContribution {
+    readonly amount: Measurement;
+    readonly contributesToWeight: boolean;
+    readonly ingredientId: IngredientId;
+    readonly unit: MeasurementUnit;
+    readonly weightGrams: Measurement;
 }
 
 declare namespace Journal {
@@ -3099,10 +3154,13 @@ export type Measurement = Brand<number, 'Measurement'>;
 const measurement: Converter<Measurement>;
 
 // @public
-export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch';
+export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods';
 
 // @public
 const measurementUnit: Converter<MeasurementUnit>;
+
+// @public
+const measurementUnitOption: Converter<IMeasurementUnitOption>;
 
 // @public
 export type Millimeters = Brand<number, 'Millimeters'>;
@@ -3702,7 +3760,15 @@ declare namespace Recipes {
         ISpoonScalerOptions,
         SpoonScaler,
         UnitScalerRegistry,
-        defaultScalerRegistry
+        defaultScalerRegistry,
+        contributesToWeight,
+        isWeightExcluded,
+        calculateIngredientWeight,
+        calculateTotalWeight,
+        calculateWeightContributions,
+        IWeightCalculationContext,
+        IWeightContribution,
+        defaultWeightContext
     }
 }
 export { Recipes }
@@ -4050,6 +4116,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     clearCache(): void;
     get confections(): ConfectionsLibrary;
     static create(params?: IRuntimeContextCreateParams): Result<RuntimeContext>;
+    createWeightContext(): IWeightCalculationContext;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getAllRecipeTags(): ReadonlyArray<string>;

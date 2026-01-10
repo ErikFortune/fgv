@@ -387,15 +387,17 @@ export const allWeightUnits: WeightUnit[] = ['g', 'oz', 'lb', 'kg'];
  * - 'tsp': Teaspoons
  * - 'Tbsp': Tablespoons
  * - 'pinch': A small imprecise amount
+ * - 'seeds': Individual seeds (e.g., vanilla seeds)
+ * - 'pods': Whole pods (e.g., vanilla pods)
  * @public
  */
-export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch';
+export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods';
 
 /**
  * All possible measurement units
  * @public
  */
-export const allMeasurementUnits: MeasurementUnit[] = ['g', 'mL', 'tsp', 'Tbsp', 'pinch'];
+export const allMeasurementUnits: MeasurementUnit[] = ['g', 'mL', 'tsp', 'Tbsp', 'pinch', 'seeds', 'pods'];
 
 /**
  * Spoon measurement units that share the same scaling system
@@ -421,6 +423,29 @@ export type SpoonLevel = 'level' | 'heaping';
  * @public
  */
 export const allSpoonLevels: SpoonLevel[] = ['level', 'heaping'];
+
+/**
+ * Physical phase of an ingredient - display hint for UI.
+ * Used to determine action verbs (e.g., "pour" vs "add").
+ * @public
+ */
+export type IngredientPhase = 'solid' | 'liquid';
+
+/**
+ * All ingredient phases
+ * @public
+ */
+export const allIngredientPhases: IngredientPhase[] = ['solid', 'liquid'];
+
+/**
+ * Option wrapper for measurement units (for use with IOptionsWithPreferred).
+ * Wraps a MeasurementUnit to satisfy IHasId requirement.
+ * @public
+ */
+export interface IMeasurementUnitOption {
+  /** The measurement unit */
+  readonly id: MeasurementUnit;
+}
 
 /**
  * Common allergens that may be present in ingredients

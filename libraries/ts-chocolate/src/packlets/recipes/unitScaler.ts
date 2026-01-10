@@ -334,6 +334,11 @@ export class UnitScalerRegistry {
     this._scalers.set('tsp', new SpoonScaler('tsp'));
     this._scalers.set('Tbsp', new SpoonScaler('Tbsp'));
     this._scalers.set('pinch', new PinchScaler());
+    this._scalers.set(
+      'seeds',
+      new LinearScaler({ unit: 'seeds', decimalPlaces: 0, displaySuffix: ' seeds' })
+    );
+    this._scalers.set('pods', new LinearScaler({ unit: 'pods', decimalPlaces: 0, displaySuffix: ' pods' }));
   }
 
   /**

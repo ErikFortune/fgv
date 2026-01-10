@@ -618,10 +618,11 @@ describe('Query Filters and Builders', () => {
 
     describe('dietary filters', () => {
       test('vegan() filters to vegan only', () => {
-        // Note: vegan field is not preserved through converters, so no ingredients match
         const query = new IngredientQuery(ctx);
         const results = query.vegan().execute();
-        expect(results.length).toBe(0);
+        // dark chocolate has vegan: true in test data
+        expect(results.length).toBe(1);
+        expect(results[0].baseId).toBe('dark-chocolate');
       });
 
       test('withoutAllergen() excludes allergen', () => {

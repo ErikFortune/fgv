@@ -301,8 +301,8 @@ describe('RuntimeIngredient', () => {
 
     test('provides vegan status', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      // Note: vegan is optional and may be undefined if not preserved through converter
-      expect(ingredient.vegan).toBeUndefined();
+      // vegan: true is set in the test fixture
+      expect(ingredient.vegan).toBe(true);
     });
   });
 

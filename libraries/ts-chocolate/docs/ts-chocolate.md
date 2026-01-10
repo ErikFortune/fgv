@@ -43,6 +43,17 @@ Collection of simple IDs with a preferred selection. Use when options are just I
 </td></tr>
 <tr><td>
 
+[IMeasurementUnitOption](./ts-chocolate.imeasurementunitoption.md)
+
+
+</td><td>
+
+Option wrapper for measurement units (for use with IOptionsWithPreferred). Wraps a MeasurementUnit to satisfy IHasId requirement.
+
+
+</td></tr>
+<tr><td>
+
 [IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)
 
 
@@ -326,6 +337,17 @@ All possible fluidity star ratings
 </td><td>
 
 All possible ingredient categories
+
+
+</td></tr>
+<tr><td>
+
+[allIngredientPhases](./ts-chocolate.allingredientphases.md)
+
+
+</td><td>
+
+All ingredient phases
 
 
 </td></tr>
@@ -775,6 +797,17 @@ Globally unique ingredient identifier (composite) Format: "sourceId.baseIngredie
 </td></tr>
 <tr><td>
 
+[IngredientPhase](./ts-chocolate.ingredientphase.md)
+
+
+</td><td>
+
+Physical phase of an ingredient - display hint for UI. Used to determine action verbs (e.g., "pour" vs "add").
+
+
+</td></tr>
+<tr><td>
+
 [JournalId](./ts-chocolate.journalid.md)
 
 
@@ -802,7 +835,7 @@ Measurement amount (non-negative number in the specified unit). Used for recipe 
 
 </td><td>
 
-Measurement unit types for recipe ingredients. - 'g': Grams (default) - 'mL': Milliliters - 'tsp': Teaspoons - 'Tbsp': Tablespoons - 'pinch': A small imprecise amount
+Measurement unit types for recipe ingredients. - 'g': Grams (default) - 'mL': Milliliters - 'tsp': Teaspoons - 'Tbsp': Tablespoons - 'pinch': A small imprecise amount - 'seeds': Individual seeds (e.g., vanilla seeds) - 'pods': Whole pods (e.g., vanilla pods)
 
 
 </td></tr>

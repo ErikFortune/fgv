@@ -24,6 +24,7 @@ export * from './recipesCollection';
 export * from './recipesLibrary';
 export * from './scaler';
 export * from './unitScaler';
+export * from './weightCalculator';
 
 import * as Converters from './converters';
 

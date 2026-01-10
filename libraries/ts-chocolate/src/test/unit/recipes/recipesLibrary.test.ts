@@ -1061,6 +1061,28 @@ describe('Recipe scaling', () => {
         expect(scaled.ingredients[0].amount).toBeGreaterThanOrEqual(5);
       });
     });
+
+    test('scales ingredients with explicit unit', () => {
+      const versionWithUnits: IRecipeVersion = {
+        versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
+        createdDate: '2026-01-01',
+        ingredients: [
+          { ingredient: { ids: ['source.choco' as IngredientId] }, amount: 100 as Measurement, unit: 'g' },
+          { ingredient: { ids: ['source.cream' as IngredientId] }, amount: 50 as Measurement, unit: 'mL' }
+        ],
+        baseWeight: 150 as Measurement
+      };
+      const recipeWithUnits: IRecipe = {
+        ...testRecipe,
+        versions: [versionWithUnits]
+      };
+      expect(scaleRecipe(recipeWithUnits, testRecipeId, 300 as Measurement)).toSucceedAndSatisfy((scaled) => {
+        expect(scaled.ingredients[0].unit).toBe('g');
+        expect(scaled.ingredients[1].unit).toBe('mL');
+        expect(scaled.ingredients[0].amount).toBe(200);
+        expect(scaled.ingredients[1].amount).toBe(100);
+      });
+    });
   });
 
   describe('scaleRecipeByFactor', () => {

@@ -378,6 +378,26 @@ describe('UnitScaler', () => {
         expect(scaler.supportsScaling).toBe(false);
       });
 
+      test('returns LinearScaler for seeds', () => {
+        const scaler = registry.getScaler('seeds');
+        expect(scaler.supportsScaling).toBe(true);
+        expect(scaler.scale(5 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
+          expect(result.unit).toBe('seeds');
+          expect(result.value).toBe(5);
+          expect(result.displayValue).toBe('5 seeds');
+        });
+      });
+
+      test('returns LinearScaler for pods', () => {
+        const scaler = registry.getScaler('pods');
+        expect(scaler.supportsScaling).toBe(true);
+        expect(scaler.scale(2 as Measurement, 1.0)).toSucceedAndSatisfy((result) => {
+          expect(result.unit).toBe('pods');
+          expect(result.value).toBe(2);
+          expect(result.displayValue).toBe('2 pods');
+        });
+      });
+
       test('returns default LinearScaler for unknown unit', () => {
         // Test defensive fallback for unknown units (requires type coercion)
         const scaler = registry.getScaler('oz' as unknown as 'g');
@@ -410,6 +430,14 @@ describe('UnitScaler', () => {
 
       test('returns false for pinch', () => {
         expect(registry.supportsScaling('pinch')).toBe(false);
+      });
+
+      test('returns true for seeds', () => {
+        expect(registry.supportsScaling('seeds')).toBe(true);
+      });
+
+      test('returns true for pods', () => {
+        expect(registry.supportsScaling('pods')).toBe(true);
       });
     });
 

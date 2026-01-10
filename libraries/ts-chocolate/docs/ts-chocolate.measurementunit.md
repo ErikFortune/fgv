@@ -4,10 +4,10 @@
 
 ## MeasurementUnit type
 
-Measurement unit types for recipe ingredients. - 'g': Grams (default) - 'mL': Milliliters - 'tsp': Teaspoons - 'Tbsp': Tablespoons - 'pinch': A small imprecise amount
+Measurement unit types for recipe ingredients. - 'g': Grams (default) - 'mL': Milliliters - 'tsp': Teaspoons - 'Tbsp': Tablespoons - 'pinch': A small imprecise amount - 'seeds': Individual seeds (e.g., vanilla seeds) - 'pods': Whole pods (e.g., vanilla pods)
 
 **Signature:**
 
 ```typescript
-export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch';
+export type MeasurementUnit = 'g' | 'mL' | 'tsp' | 'Tbsp' | 'pinch' | 'seeds' | 'pods';
 ```

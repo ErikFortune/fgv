@@ -37,6 +37,7 @@ import {
   allConfectionTypes,
   allFluidityStars,
   allIngredientCategories,
+  allIngredientPhases,
   allMeasurementUnits,
   allMoldFormats,
   allRecipeCategories,
@@ -62,8 +63,10 @@ import {
   ID_SEPARATOR,
   IHasId,
   IIdsWithPreferred,
+  IMeasurementUnitOption,
   IngredientCategory,
   IngredientId,
+  IngredientPhase,
   IOptionsWithPreferred,
   IRefWithNotes,
   JournalId,
@@ -498,6 +501,21 @@ export const measurementUnit: Converter<MeasurementUnit> = Converters.enumerated
  * @public
  */
 export const spoonLevel: Converter<SpoonLevel> = Converters.enumeratedValue(allSpoonLevels);
+
+/**
+ * Converter for IngredientPhase
+ * @public
+ */
+export const ingredientPhase: Converter<IngredientPhase> = Converters.enumeratedValue(allIngredientPhases);
+
+/**
+ * Converter for IMeasurementUnitOption
+ * @public
+ */
+export const measurementUnitOption: Converter<IMeasurementUnitOption> =
+  Converters.object<IMeasurementUnitOption>({
+    id: measurementUnit
+  });
 
 // ============================================================================
 // Options with Preferred Converters

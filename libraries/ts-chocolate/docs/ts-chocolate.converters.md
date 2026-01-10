@@ -298,6 +298,17 @@ Converter for IngredientId (composite)
 </td></tr>
 <tr><td>
 
+[ingredientPhase](./ts-chocolate.converters.ingredientphase.md)
+
+
+</td><td>
+
+Converter for IngredientPhase
+
+
+</td></tr>
+<tr><td>
+
 [journalId](./ts-chocolate.converters.journalid.md)
 
 
@@ -326,6 +337,17 @@ Converter for Measurement (non-negative number for ingredient amounts)
 </td><td>
 
 Converter for MeasurementUnit
+
+
+</td></tr>
+<tr><td>
+
+[measurementUnitOption](./ts-chocolate.converters.measurementunitoption.md)
+
+
+</td><td>
+
+Converter for IMeasurementUnitOption
 
 
 </td></tr>

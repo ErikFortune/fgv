@@ -1122,4 +1122,67 @@ describe('RuntimeContext', () => {
       });
     });
   });
+
+  // ============================================================================
+  // Weight Context Tests
+  // ============================================================================
+
+  describe('createWeightContext', () => {
+    test('returns context that returns 1.0 for ingredients without density', () => {
+      const ctx = RuntimeContext.fromLibrary(library).orThrow();
+      const weightCtx = ctx.createWeightContext();
+
+      // cream has no density specified, should return 1.0
+      const density = weightCtx.getIngredientDensity('test.cream' as IngredientId);
+      expect(density).toBe(1.0);
+    });
+
+    test('returns context that returns 1.0 for unknown ingredients', () => {
+      const ctx = RuntimeContext.fromLibrary(library).orThrow();
+      const weightCtx = ctx.createWeightContext();
+
+      // Non-existent ingredient should return 1.0
+      const density = weightCtx.getIngredientDensity('test.unknown' as IngredientId);
+      expect(density).toBe(1.0);
+    });
+
+    test('returns context that returns ingredient density when specified', () => {
+      // Create ingredient with density
+      const creamWithDensity: IIngredient = {
+        baseId: 'cream-with-density' as BaseIngredientId,
+        name: 'Heavy Cream with Density',
+        category: 'dairy',
+        ganacheCharacteristics: creamChars,
+        density: 1.032 // g/mL for heavy cream
+      };
+
+      const ingredientsWithDensity = IngredientsLibrary.create({
+        builtin: false,
+        collections: [
+          {
+            id: 'test' as SourceId,
+            isMutable: false,
+            items: {
+              /* eslint-disable @typescript-eslint/naming-convention */
+              'cream-with-density': creamWithDensity
+              /* eslint-enable @typescript-eslint/naming-convention */
+            }
+          }
+        ]
+      }).orThrow();
+
+      const libraryWithDensity = ChocolateLibrary.create({
+        builtin: false,
+        libraries: {
+          ingredients: ingredientsWithDensity
+        }
+      }).orThrow();
+
+      const ctx = RuntimeContext.fromLibrary(libraryWithDensity).orThrow();
+      const weightCtx = ctx.createWeightContext();
+
+      const density = weightCtx.getIngredientDensity('test.cream-with-density' as IngredientId);
+      expect(density).toBe(1.032);
+    });
+  });
 });

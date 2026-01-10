@@ -25,7 +25,14 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Helpers, Measurement, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
+import {
+  Helpers,
+  Measurement,
+  MeasurementUnit,
+  RecipeId,
+  RecipeVersionId,
+  RecipeVersionSpec
+} from '../common';
 import {
   IComputedScaledRecipe,
   IRecipe,
@@ -34,8 +41,7 @@ import {
   IScaledRecipeIngredient,
   IScalingSource
 } from './model';
-// TODO: Integrate unit-aware scaling with scaleAmount from unitScaler
-// import { IScaledAmount, scaleAmount } from './unitScaler';
+import { IScaledAmount, scaleAmount } from './unitScaler';
 
 // ============================================================================
 // Scaling Options
@@ -74,31 +80,71 @@ export interface IRecipeScaleOptions extends IVersionScaleOptions {
 // ============================================================================
 
 /**
+ * Result of scaling a single ingredient, including unit-aware display.
+ * @internal
+ */
+interface IScaleIngredientResult {
+  readonly scaled: IScaledRecipeIngredient;
+  readonly scaledAmount: IScaledAmount;
+}
+
+/**
  * Scales a single {@link Recipes.IRecipeIngredient | recipe ingredient}.
+ * Uses unit-aware scaling for proper display formatting.
  * @param ingredient - The {@link Recipes.IRecipeIngredient | ingredient} to scale
  * @param scaleFactor - The scaling factor to apply
  * @param options - {@link Recipes.IVersionScaleOptions | Scaling options}
- * @returns Scaled ingredient with both original and scaled amounts
+ * @returns Scaled ingredient with both original and scaled amounts, plus display info
  * @internal
  */
 function scaleIngredient(
   ingredient: IRecipeIngredient,
   scaleFactor: number,
   options: IVersionScaleOptions
-): IScaledRecipeIngredient {
-  const precision = options.precision ?? 1;
+): IScaleIngredientResult {
+  const unit: MeasurementUnit = ingredient.unit ?? 'g';
   const minimumAmount = (options.minimumAmount ?? 0.1) as Measurement;
 
-  const rawScaledAmount = ingredient.amount * scaleFactor;
-  const roundedAmount = Math.round(rawScaledAmount * Math.pow(10, precision)) / Math.pow(10, precision);
-  const finalAmount = Math.max(roundedAmount, minimumAmount) as Measurement;
+  // Use unit-aware scaling for proper display formatting
+  const scaleResult = scaleAmount(ingredient.amount, unit, scaleFactor);
+
+  // Get the scaled amount - use unit scaler result if successful, otherwise fall back
+  let scaledAmount: IScaledAmount;
+  /* c8 ignore next 15 - defensive else branch: scaleAmount only fails for invalid units which can't occur with typed MeasurementUnit */
+  if (scaleResult.isSuccess()) {
+    scaledAmount = scaleResult.value;
+  } else {
+    // Fallback for edge cases (e.g., negative scale factor - shouldn't happen)
+    const rawScaledAmount = ingredient.amount * scaleFactor;
+    const precision = options.precision ?? 1;
+    const roundedAmount = Math.round(rawScaledAmount * Math.pow(10, precision)) / Math.pow(10, precision);
+    const finalAmount = Math.max(roundedAmount, minimumAmount) as Measurement;
+    scaledAmount = {
+      value: finalAmount,
+      unit,
+      displayValue: `${finalAmount}${unit === 'g' ? 'g' : ' ' + unit}`,
+      scalable: unit !== 'pinch'
+    };
+  }
+
+  // Ensure minimum amount is respected
+  const finalValue = Math.max(scaledAmount.value, minimumAmount) as Measurement;
 
   return {
-    ingredient: ingredient.ingredient,
-    amount: finalAmount,
-    notes: ingredient.notes,
-    originalAmount: ingredient.amount,
-    scaleFactor
+    scaled: {
+      ingredient: ingredient.ingredient,
+      amount: finalValue,
+      unit: ingredient.unit,
+      spoonLevel: ingredient.spoonLevel,
+      toTaste: ingredient.toTaste,
+      notes: ingredient.notes,
+      originalAmount: ingredient.amount,
+      scaleFactor
+    },
+    scaledAmount: {
+      ...scaledAmount,
+      value: finalValue
+    }
   };
 }
 
@@ -133,9 +179,9 @@ export function scaleVersion(
   // Calculate scale factor
   const scaleFactor = targetWeight / version.baseWeight;
 
-  // Scale all ingredients
-  const scaledIngredients = version.ingredients.map((ingredient) =>
-    scaleIngredient(ingredient, scaleFactor, options)
+  // Scale all ingredients (extract just the scaled ingredient, not the display info)
+  const scaledIngredients = version.ingredients.map(
+    (ingredient) => scaleIngredient(ingredient, scaleFactor, options).scaled
   );
 
   // Build scaling source metadata

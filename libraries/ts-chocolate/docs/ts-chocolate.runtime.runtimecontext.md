@@ -257,6 +257,20 @@ Creates a RuntimeContext with a new or default ChocolateLibrary. This is the pri
 </td></tr>
 <tr><td>
 
+[createWeightContext()](./ts-chocolate.runtime.runtimecontext.createweightcontext.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Creates a weight calculation context for unit-aware weight calculations. The context resolves ingredient IDs to their density values.
+
+
+</td></tr>
+<tr><td>
+
 [fromLibrary(library, preWarm)](./ts-chocolate.runtime.runtimecontext.fromlibrary.md)
 
 

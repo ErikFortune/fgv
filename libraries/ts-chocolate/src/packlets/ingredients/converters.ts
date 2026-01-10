@@ -83,7 +83,15 @@ const commonIngredientFields: Conversion.FieldConverters<Omit<IIngredient, 'cate
   allergens: Converters.arrayOf(IngredientConverters.allergen).optional(),
   traceAllergens: Converters.arrayOf(IngredientConverters.allergen).optional(),
   certifications: Converters.arrayOf(IngredientConverters.certification).optional(),
-  tags: Converters.arrayOf(Converters.string).optional()
+  vegan: Converters.boolean.optional(),
+  tags: Converters.arrayOf(Converters.string).optional(),
+  density: Converters.number.optional(),
+  phase: IngredientConverters.ingredientPhase.optional(),
+  measurementUnits: IngredientConverters.optionsWithPreferred(
+    IngredientConverters.measurementUnitOption,
+    IngredientConverters.measurementUnit,
+    'measurementUnits'
+  ).optional()
 };
 
 /**
