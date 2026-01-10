@@ -1,5 +1,5 @@
 {
-  "name": "chocolate-web",
+  "name": "@fgv/chocolate-lab-web",
   "version": "0.1.0",
   "description": "Chocolate recipe web application",
   "private": true,

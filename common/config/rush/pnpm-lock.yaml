@@ -8,7 +8,7 @@ importers:
 
   .: {}
 
-  ../../apps/chocolate-web:
+  ../../apps/chocolate-lab-web:
     dependencies:
       '@fgv/ts-chocolate':
         specifier: workspace:*

@@ -539,8 +539,8 @@
       "tags": ["tools", "cli"]
     },
     {
-      "packageName": "chocolate-web",
-      "projectFolder": "apps/chocolate-web",
+      "packageName": "@fgv/chocolate-lab-web",
+      "projectFolder": "apps/chocolate-lab-web",
       "shouldPublish": false,
       "tags": ["apps", "chocolate", "react", "ui"]
     }
