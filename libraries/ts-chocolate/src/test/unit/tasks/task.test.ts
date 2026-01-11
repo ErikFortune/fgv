@@ -347,5 +347,161 @@ describe('Task', () => {
       expect(recreated.notes).toBe(original.notes);
       expect(recreated.tags).toEqual(original.tags);
     });
+
+    test('includes defaults in toData when present', () => {
+      const taskWithDefaults: ITaskData = {
+        baseId: 'with-defaults' as BaseTaskId,
+        name: 'With Defaults',
+        template: 'Melt {{ingredient}} to {{temp}}',
+        defaults: { ingredient: 'chocolate', temp: '40C' }
+      };
+
+      const task = Task.create(taskWithDefaults).orThrow();
+      const data = task.toData();
+
+      expect(data.defaults).toEqual({ ingredient: 'chocolate', temp: '40C' });
+    });
+  });
+
+  // ============================================================================
+  // Defaults Tests
+  // ============================================================================
+
+  describe('defaults', () => {
+    const taskDataWithDefaults: ITaskData = {
+      baseId: 'melt-with-defaults' as BaseTaskId,
+      name: 'Melt With Defaults',
+      template: 'Melt {{ingredient}} to {{temp}}',
+      defaults: { ingredient: 'chocolate', temp: '40C' }
+    };
+
+    const taskDataWithPartialDefaults: ITaskData = {
+      baseId: 'melt-partial-defaults' as BaseTaskId,
+      name: 'Melt Partial Defaults',
+      template: 'Melt {{ingredient}} to {{temp}}',
+      defaults: { temp: '45C' }
+    };
+
+    describe('create', () => {
+      test('creates Task with defaults', () => {
+        expect(Task.create(taskDataWithDefaults)).toSucceedAndSatisfy((task) => {
+          expect(task.defaults).toEqual({ ingredient: 'chocolate', temp: '40C' });
+          expect(task.requiredVariables).toEqual(['ingredient', 'temp']);
+        });
+      });
+
+      test('creates Task without defaults', () => {
+        expect(Task.create(minimalTaskData)).toSucceedAndSatisfy((task) => {
+          expect(task.defaults).toBeUndefined();
+        });
+      });
+    });
+
+    describe('validateParams with defaults', () => {
+      test('validates params when defaults provide all missing values', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.validateParams({})).toSucceedAndSatisfy((result) => {
+          expect(result.isValid).toBe(true);
+          expect(result.missingVariables).toEqual([]);
+        });
+      });
+
+      test('validates params when defaults provide some values', () => {
+        const task = Task.create(taskDataWithPartialDefaults).orThrow();
+
+        // Missing ingredient, but temp has default
+        expect(task.validateParams({})).toSucceedAndSatisfy((result) => {
+          expect(result.isValid).toBe(false);
+          expect(result.missingVariables).toContain('ingredient');
+          expect(result.missingVariables).not.toContain('temp');
+        });
+      });
+
+      test('allows overriding defaults with params', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.validateParams({ ingredient: 'white chocolate' })).toSucceedAndSatisfy((result) => {
+          expect(result.isValid).toBe(true);
+        });
+      });
+
+      test('validates params when all required values provided explicitly', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.validateParams({ ingredient: 'dark chocolate', temp: '50C' })).toSucceedAndSatisfy(
+          (result) => {
+            expect(result.isValid).toBe(true);
+          }
+        );
+      });
+    });
+
+    describe('render with defaults', () => {
+      test('renders with only defaults (no params)', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.render({})).toSucceedWith('Melt chocolate to 40C');
+      });
+
+      test('renders with defaults and partial params override', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.render({ ingredient: 'white chocolate' })).toSucceedWith('Melt white chocolate to 40C');
+      });
+
+      test('renders with all params overriding defaults', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.render({ ingredient: 'dark chocolate', temp: '50C' })).toSucceedWith(
+          'Melt dark chocolate to 50C'
+        );
+      });
+
+      test('renders with partial defaults and required params', () => {
+        const task = Task.create(taskDataWithPartialDefaults).orThrow();
+
+        expect(task.render({ ingredient: 'milk chocolate' })).toSucceedWith('Melt milk chocolate to 45C');
+      });
+    });
+
+    describe('validateAndRender with defaults', () => {
+      test('validates and renders with only defaults', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.validateAndRender({})).toSucceedWith('Melt chocolate to 40C');
+      });
+
+      test('validates and renders with partial override', () => {
+        const task = Task.create(taskDataWithDefaults).orThrow();
+
+        expect(task.validateAndRender({ temp: '55C' })).toSucceedWith('Melt chocolate to 55C');
+      });
+
+      test('fails validation when required param missing and no default', () => {
+        const task = Task.create(taskDataWithPartialDefaults).orThrow();
+
+        expect(task.validateAndRender({})).toFail();
+      });
+
+      test('succeeds when required param provided with partial defaults', () => {
+        const task = Task.create(taskDataWithPartialDefaults).orThrow();
+
+        expect(task.validateAndRender({ ingredient: 'dark chocolate' })).toSucceedWith(
+          'Melt dark chocolate to 45C'
+        );
+      });
+    });
+
+    describe('round-trip with defaults', () => {
+      test('round-trips task with defaults correctly', () => {
+        const original = Task.create(taskDataWithDefaults).orThrow();
+        const data = original.toData();
+        const recreated = Task.create(data).orThrow();
+
+        expect(recreated.defaults).toEqual(original.defaults);
+        expect(recreated.render({})).toSucceedWith('Melt chocolate to 40C');
+      });
+    });
   });
 });

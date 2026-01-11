@@ -12,7 +12,10 @@ items:
   melt-chocolate:
     baseId: melt-chocolate
     name: Melt Chocolate
-    template: 'Melt {{ingredient}} to {{temp}}C'
+    template: 'Melt {{ingredient}} to {{temp}}'
+    defaults:
+      ingredient: chocolate
+      temp: 40C
     defaultActiveTime: 5
     tags: [chocolate, melting, heating]
 

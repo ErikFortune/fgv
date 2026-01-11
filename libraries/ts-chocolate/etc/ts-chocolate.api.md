@@ -3298,6 +3298,7 @@ interface ITaskData {
     readonly baseId: BaseTaskId;
     readonly defaultActiveTime?: Minutes;
     readonly defaultHoldTime?: Minutes;
+    readonly defaults?: Readonly<Record<string, unknown>>;
     readonly defaultTemperature?: Celsius;
     readonly defaultWaitTime?: Minutes;
     readonly name: string;
@@ -4792,6 +4793,7 @@ class Task implements ITask {
     static create(data: ITaskData): Result<Task>;
     readonly defaultActiveTime?: Minutes;
     readonly defaultHoldTime?: Minutes;
+    readonly defaults?: Readonly<Record<string, unknown>>;
     readonly defaultTemperature?: Celsius;
     readonly defaultWaitTime?: Minutes;
     getTemplateVariables(): readonly string[];

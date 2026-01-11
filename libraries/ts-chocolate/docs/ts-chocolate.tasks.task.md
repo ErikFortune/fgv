@@ -101,6 +101,27 @@ _(Optional)_ Optional default hold time
 </td></tr>
 <tr><td>
 
+[defaults?](./ts-chocolate.tasks.task.defaults.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Readonly&lt;Record&lt;string, unknown&gt;&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional default values for template placeholders
+
+
+</td></tr>
+<tr><td>
+
 [defaultTemperature?](./ts-chocolate.tasks.task.defaulttemperature.md)
 
 
@@ -306,7 +327,7 @@ Gets the variable names extracted from the template.
 
 </td><td>
 
-Renders the task template with the given params.
+Renders the task template with the given params (merged with defaults).
 
 
 </td></tr>
@@ -334,7 +355,7 @@ Converts the Task back to its persisted data representation. Note: requiredVaria
 
 </td><td>
 
-Validates params and renders the template if validation passes.
+Validates params (merged with defaults) and renders the template if validation passes.
 
 
 </td></tr>
@@ -348,7 +369,7 @@ Validates params and renders the template if validation passes.
 
 </td><td>
 
-Validates that params satisfy required variables.
+Validates that params (combined with defaults) satisfy required variables.
 
 
 </td></tr>

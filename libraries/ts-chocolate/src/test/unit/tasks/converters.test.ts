@@ -119,6 +119,54 @@ describe('TaskConverters', () => {
       expect(taskData.convert(null)).toFail();
       expect(taskData.convert(123)).toFail();
     });
+
+    test('converts task data with defaults', () => {
+      const data = {
+        baseId: 'melt-chocolate',
+        name: 'Melt Chocolate',
+        template: 'Melt {{ingredient}} to {{temp}}',
+        defaults: { ingredient: 'chocolate', temp: '40C' }
+      };
+
+      expect(taskData.convert(data)).toSucceedAndSatisfy((result) => {
+        expect(result.baseId).toBe('melt-chocolate');
+        expect(result.defaults).toEqual({ ingredient: 'chocolate', temp: '40C' });
+      });
+    });
+
+    test('converts task data without defaults', () => {
+      const data = {
+        baseId: 'simple-task',
+        name: 'Simple Task',
+        template: 'Do something'
+      };
+
+      expect(taskData.convert(data)).toSucceedAndSatisfy((result) => {
+        expect(result.defaults).toBeUndefined();
+      });
+    });
+
+    test('fails for defaults that is not an object', () => {
+      const data = {
+        baseId: 'bad-task',
+        name: 'Bad Task',
+        template: 'Do something',
+        defaults: 'not-an-object'
+      };
+
+      expect(taskData.convert(data)).toFailWith(/params must be an object/i);
+    });
+
+    test('fails for defaults that is an array', () => {
+      const data = {
+        baseId: 'bad-task',
+        name: 'Bad Task',
+        template: 'Do something',
+        defaults: ['not', 'an', 'object']
+      };
+
+      expect(taskData.convert(data)).toFailWith(/params must be an object/i);
+    });
   });
 
   // ============================================================================
@@ -440,6 +488,22 @@ describe('TaskConverters', () => {
         template: 'Unclosed {{bracket'
       };
       expect(task.convert(data)).toFail();
+    });
+
+    test('converts task with defaults', () => {
+      const data = {
+        baseId: 'task-with-defaults',
+        name: 'Task With Defaults',
+        template: 'Melt {{ingredient}} to {{temp}}',
+        defaults: { ingredient: 'chocolate', temp: '40C' }
+      };
+
+      expect(task.convert(data)).toSucceedAndSatisfy((result) => {
+        expect(result.baseId).toBe('task-with-defaults');
+        expect(result.defaults).toEqual({ ingredient: 'chocolate', temp: '40C' });
+        // Validation with defaults
+        expect(result.validateAndRender({})).toSucceedWith('Melt chocolate to 40C');
+      });
     });
   });
 });

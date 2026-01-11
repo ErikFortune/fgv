@@ -85,6 +85,11 @@ export class Task implements ITask {
    */
   public readonly tags?: ReadonlyArray<string>;
 
+  /**
+   * Optional default values for template placeholders
+   */
+  public readonly defaults?: Readonly<Record<string, unknown>>;
+
   private readonly _parsedTemplate: MustacheModule.MustacheTemplate;
 
   private constructor(data: ITaskData, parsedTemplate: MustacheModule.MustacheTemplate) {
@@ -99,6 +104,7 @@ export class Task implements ITask {
     this.defaultTemperature = data.defaultTemperature;
     this.notes = data.notes;
     this.tags = data.tags;
+    this.defaults = data.defaults;
     this._parsedTemplate = parsedTemplate;
   }
 
@@ -125,13 +131,27 @@ export class Task implements ITask {
   }
 
   /**
-   * Validates that params satisfy required variables.
+   * Merges defaults with provided params. Params override defaults.
+   * @param params - The parameter values provided by the caller
+   * @returns Merged context with defaults filled in
+   * @internal
+   */
+  private _mergeContext(params: Record<string, unknown>): Record<string, unknown> {
+    if (!this.defaults) {
+      return params;
+    }
+    return { ...this.defaults, ...params };
+  }
+
+  /**
+   * Validates that params (combined with defaults) satisfy required variables.
    * @param params - The parameter values to validate
    * @returns Validation result with details about present/missing variables
    * @public
    */
   public validateParams(params: Record<string, unknown>): Result<ITaskRefValidation> {
-    return this._parsedTemplate.validateContext(params).onSuccess((validation) => {
+    const mergedParams = this._mergeContext(params);
+    return this._parsedTemplate.validateContext(mergedParams).onSuccess((validation) => {
       // Find extra variables (params provided but not in template)
       const templateVars = new Set(this._parsedTemplate.extractVariableNames());
       const extraVariables: string[] = [];
@@ -162,23 +182,23 @@ export class Task implements ITask {
   }
 
   /**
-   * Renders the task template with the given params.
+   * Renders the task template with the given params (merged with defaults).
    * @param params - The parameter values for template rendering
    * @returns Success with rendered string, or Failure if rendering fails
    * @public
    */
   public render(params: Record<string, unknown>): Result<string> {
-    return this._parsedTemplate.render(params);
+    return this._parsedTemplate.render(this._mergeContext(params));
   }
 
   /**
-   * Validates params and renders the template if validation passes.
+   * Validates params (merged with defaults) and renders the template if validation passes.
    * @param params - The parameter values to validate and render with
    * @returns Success with rendered string, or Failure with validation or render errors
    * @public
    */
   public validateAndRender(params: Record<string, unknown>): Result<string> {
-    return this._parsedTemplate.validateAndRender(params);
+    return this._parsedTemplate.validateAndRender(this._mergeContext(params));
   }
 
   /**
@@ -197,7 +217,8 @@ export class Task implements ITask {
       defaultHoldTime: this.defaultHoldTime,
       defaultTemperature: this.defaultTemperature,
       notes: this.notes,
-      tags: this.tags
+      tags: this.tags,
+      defaults: this.defaults
     };
   }
 }

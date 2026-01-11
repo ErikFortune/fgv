@@ -4,7 +4,7 @@
 
 ## Tasks.Task.validateParams() method
 
-Validates that params satisfy required variables.
+Validates that params (combined with defaults) satisfy required variables.
 
 **Signature:**
 

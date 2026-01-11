@@ -4,7 +4,7 @@
 
 ## Tasks.Task.validateAndRender() method
 
-Validates params and renders the template if validation passes.
+Validates params (merged with defaults) and renders the template if validation passes.
 
 **Signature:**
 

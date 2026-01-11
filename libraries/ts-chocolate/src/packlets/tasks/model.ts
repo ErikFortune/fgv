@@ -81,6 +81,12 @@ export interface ITaskData {
    * Optional tags for categorization and search
    */
   readonly tags?: ReadonlyArray<string>;
+
+  /**
+   * Optional default values for template placeholders.
+   * Placeholders with defaults become optional when rendering.
+   */
+  readonly defaults?: Readonly<Record<string, unknown>>;
 }
 
 /**

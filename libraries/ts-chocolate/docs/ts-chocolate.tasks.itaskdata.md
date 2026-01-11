@@ -100,6 +100,27 @@ _(Optional)_ Optional default hold time (can be overridden by step)
 </td></tr>
 <tr><td>
 
+[defaults?](./ts-chocolate.tasks.itaskdata.defaults.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+Readonly&lt;Record&lt;string, unknown&gt;&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional default values for template placeholders. Placeholders with defaults become optional when rendering.
+
+
+</td></tr>
+<tr><td>
+
 [defaultTemperature?](./ts-chocolate.tasks.itaskdata.defaulttemperature.md)
 
 

@@ -4,7 +4,7 @@
 
 ## Tasks.Task.render() method
 
-Renders the task template with the given params.
+Renders the task template with the given params (merged with defaults).
 
 **Signature:**
 
