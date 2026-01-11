@@ -15,7 +15,7 @@ import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outl
 export function SettingsTool(): React.ReactElement {
   const { mode, setMode, resolvedTheme } = useTheme();
   const { settings, updateSetting } = useSettings();
-  const { collections, ingredientCount, recipeCount, moldCount, confectionCount } = useChocolate();
+  const { ingredientCount, recipeCount, moldCount, confectionCount } = useChocolate();
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -76,43 +76,6 @@ export function SettingsTool(): React.ReactElement {
               className="w-4 h-4 text-chocolate-600 rounded focus:ring-chocolate-500"
             />
           </label>
-        </div>
-      </section>
-
-      {/* Collections */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Collections</h2>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          {collections.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">No collections loaded</p>
-          ) : (
-            <ul className="space-y-2">
-              {collections.map((collection) => (
-                <li
-                  key={collection.id}
-                  className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0"
-                >
-                  <div>
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      {collection.name}
-                    </span>
-                    {collection.isProtected && (
-                      <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">(encrypted)</span>
-                    )}
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded ${
-                      collection.isLoaded
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-                    }`}
-                  >
-                    {collection.isLoaded ? 'Loaded' : 'Not loaded'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </section>
 

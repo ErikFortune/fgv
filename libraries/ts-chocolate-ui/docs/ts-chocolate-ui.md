@@ -135,6 +135,28 @@ Displays a horizontal stacked percentage bar with colored segments
 </td></tr>
 <tr><td>
 
+[RecipeCard({ recipe, showCollection, className, onClick, isSelected })](./ts-chocolate-ui.recipecard.md)
+
+
+</td><td>
+
+Displays a recipe as a summary card for browse views
+
+
+</td></tr>
+<tr><td>
+
+[RecipeCategoryBadge({ category, size, className })](./ts-chocolate-ui.recipecategorybadge.md)
+
+
+</td><td>
+
+Badge displaying a recipe category with appropriate styling
+
+
+</td></tr>
+<tr><td>
+
 [TagBadge({ tag, className, size, onClick, onRemove, isActive })](./ts-chocolate-ui.tagbadge.md)
 
 
@@ -310,6 +332,28 @@ Props for the PercentageBar component
 </td><td>
 
 A segment in the percentage bar
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeCardProps](./ts-chocolate-ui.irecipecardprops.md)
+
+
+</td><td>
+
+Props for the RecipeCard component
+
+
+</td></tr>
+<tr><td>
+
+[IRecipeCategoryBadgeProps](./ts-chocolate-ui.irecipecategorybadgeprops.md)
+
+
+</td><td>
+
+Props for the RecipeCategoryBadge component
 
 
 </td></tr>

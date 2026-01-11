@@ -5,7 +5,8 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { SearchInput } from '../../components/common';
+import { LockClosedIcon } from '@heroicons/react/24/outline';
+import { SearchInput, UnlockCollectionModal } from '../../components/common';
 import { useChocolate } from '../../contexts/ChocolateContext';
 import { TagBadge, CollectionBadge } from '@fgv/ts-chocolate-ui';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
@@ -49,12 +50,29 @@ export function IngredientsToolSidebar({
   onFiltersChange
 }: IIngredientsToolSidebarProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
 
   // Get all unique tags from ingredients
   const allTags = useMemo(() => {
     if (!runtime) return [];
     return runtime.getAllIngredientTags();
   }, [runtime]);
+
+  // Filter collections to only show those with ingredients
+  const ingredientCollections = useMemo(() => {
+    return collections.filter((c) => c.subLibraries.includes('ingredients'));
+  }, [collections]);
+
+  // Handle clicking on a locked collection
+  const handleCollectionClick = (collectionId: string, isLocked: boolean): void => {
+    if (isLocked) {
+      setCollectionToUnlock(collectionId);
+      setUnlockModalOpen(true);
+    } else {
+      toggleCollection(collectionId);
+    }
+  };
 
   // Handle category toggle
   const toggleCategory = (category: IngredientCategory): void => {
@@ -139,18 +157,33 @@ export function IngredientsToolSidebar({
           Collections
         </label>
         <div className="flex flex-wrap gap-2">
-          {collections.map((collection) => (
-            <button
-              key={collection.id}
-              type="button"
-              onClick={() => toggleCollection(collection.id)}
-              className={`transition-opacity ${
-                filters.collections.includes(collection.id) ? 'opacity-100' : 'opacity-60 hover:opacity-100'
-              }`}
-            >
-              <CollectionBadge name={collection.name} isProtected={collection.isProtected} size="sm" />
-            </button>
-          ))}
+          {ingredientCollections.map((collection) => {
+            const isLocked = collection.isProtected && !collection.isUnlocked;
+            return (
+              <button
+                key={collection.id}
+                type="button"
+                onClick={() => handleCollectionClick(collection.id, isLocked)}
+                className={`transition-opacity ${
+                  isLocked
+                    ? 'opacity-50 hover:opacity-75'
+                    : filters.collections.includes(collection.id)
+                    ? 'opacity-100'
+                    : 'opacity-60 hover:opacity-100'
+                }`}
+                title={isLocked ? `Click to unlock ${collection.name}` : collection.name}
+              >
+                {isLocked ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-md bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                    <LockClosedIcon className="w-3 h-3" />
+                    {collection.name}
+                  </span>
+                ) : (
+                  <CollectionBadge name={collection.name} isProtected={collection.isProtected} size="sm" />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -186,6 +219,18 @@ export function IngredientsToolSidebar({
         >
           Clear all filters
         </button>
+      )}
+
+      {/* Unlock Modal */}
+      {collectionToUnlock && (
+        <UnlockCollectionModal
+          isOpen={unlockModalOpen}
+          onClose={() => {
+            setUnlockModalOpen(false);
+            setCollectionToUnlock(null);
+          }}
+          collectionId={collectionToUnlock}
+        />
       )}
     </div>
   );

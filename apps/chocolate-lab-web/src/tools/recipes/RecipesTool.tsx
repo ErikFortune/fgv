@@ -4,19 +4,40 @@
  */
 
 import * as React from 'react';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useState } from 'react';
+import type { RecipeId } from '@fgv/ts-chocolate';
+import { BrowseView } from './views/BrowseView';
+import { DetailView } from './views/DetailView';
+import type { IRecipeFilters } from './RecipesToolSidebar';
 
 /**
- * Placeholder recipes tool
+ * Props for the RecipesTool component
  */
-export function RecipesTool(): React.ReactElement {
-  const { recipeCount } = useChocolate();
+export interface IRecipesToolProps {
+  /** Current filters (passed from App) */
+  filters: IRecipeFilters;
+}
 
-  return (
-    <div className="flex flex-col items-center justify-center h-64 text-center">
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Recipes</h2>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">{recipeCount} recipes loaded</p>
-      <p className="text-sm text-gray-400 dark:text-gray-500">Recipe browsing and editing coming soon</p>
-    </div>
-  );
+/**
+ * Recipes tool with browse and detail views
+ */
+export function RecipesTool({ filters }: IRecipesToolProps): React.ReactElement {
+  const [selectedId, setSelectedId] = useState<RecipeId | null>(null);
+  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+
+  const handleSelect = (id: string): void => {
+    setSelectedId(id as RecipeId);
+    setViewMode('detail');
+  };
+
+  const handleBack = (): void => {
+    setViewMode('browse');
+    setSelectedId(null);
+  };
+
+  if (viewMode === 'detail' && selectedId) {
+    return <DetailView recipeId={selectedId} onBack={handleBack} />;
+  }
+
+  return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
 }

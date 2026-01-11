@@ -199,7 +199,7 @@ _(Optional)_ Optional molds associated with this recipe. Contains available mold
 
 </td><td>
 
-_(Optional)_ Optional procedures associated with this recipe. Contains available procedures and the preferred default.
+_(Optional)_ Optional procedures associated with this recipe. Contains applicable procedures and the preferred default.
 
 
 </td></tr>

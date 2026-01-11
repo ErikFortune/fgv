@@ -774,6 +774,8 @@ declare namespace Converters_3 {
         encryptionAlgorithm,
         encryptedCollectionFormat,
         encryptedCollectionErrorMode,
+        keyDerivationFunction,
+        keyDerivationParams,
         base64String,
         encryptedCollectionMetadata,
         encryptedCollectionFile,
@@ -899,6 +901,8 @@ declare namespace Crypto_2 {
         INamedSecret,
         IEncryptionResult,
         IEncryptedCollectionMetadata,
+        KeyDerivationFunction,
+        IKeyDerivationParams,
         IEncryptedCollectionFile,
         ICryptoProvider,
         EncryptedCollectionErrorMode,
@@ -985,7 +989,7 @@ class EncryptionHelper {
     get cryptoProvider(): ICryptoProvider;
     decrypt(tombstone: IEncryptedCollectionFile, key: Uint8Array): Promise<Result<JsonObject>>;
     deriveKey(password: string, salt: Uint8Array, iterations: number): Promise<Result<Uint8Array>>;
-    encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata): Promise<Result<IEncryptedCollectionFile>>;
+    encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata, keyDerivation?: IKeyDerivationParams): Promise<Result<IEncryptedCollectionFile>>;
     generateKey(): Promise<Result<Uint8Array>>;
     isEncrypted(json: unknown): boolean;
 }
@@ -1442,6 +1446,7 @@ interface ICreateEncryptedFileParams {
     readonly content: JsonValue;
     readonly cryptoProvider: ICryptoProvider;
     readonly key: Uint8Array;
+    readonly keyDerivation?: IKeyDerivationParams;
     readonly metadata?: IEncryptedCollectionMetadata;
     readonly secretName: string;
 }
@@ -1494,6 +1499,7 @@ interface IEncryptedCollectionFile {
     readonly encryptedData: string;
     readonly format: EncryptedCollectionFormat;
     readonly iv: string;
+    readonly keyDerivation?: IKeyDerivationParams;
     readonly metadata?: IEncryptedCollectionMetadata;
     readonly secretName: string;
 }
@@ -1785,6 +1791,13 @@ interface IJournalImportResult {
 interface IJournalLibraryParams {
     readonly journals?: ReadonlyArray<AnyJournalRecord>;
     readonly logger?: Logging.LogReporter<unknown>;
+}
+
+// @public
+interface IKeyDerivationParams {
+    readonly iterations: number;
+    readonly kdf: KeyDerivationFunction;
+    readonly salt: string;
 }
 
 // @public
@@ -2160,6 +2173,7 @@ interface IProtectedCollectionInfo<TCollectionId extends string = string> {
     readonly isBuiltIn: boolean;
     readonly isMutable: boolean;
     readonly itemCount?: number;
+    readonly keyDerivation?: IKeyDerivationParams;
     readonly secretName: string;
 }
 
@@ -3084,6 +3098,15 @@ type JournalType = 'recipe' | 'confection';
 //
 // @public
 const journalType: Converter<JournalType>;
+
+// @public
+type KeyDerivationFunction = 'pbkdf2';
+
+// @public
+const keyDerivationFunction: Converter<KeyDerivationFunction>;
+
+// @public
+const keyDerivationParams: Converter<IKeyDerivationParams>;
 
 declare namespace LibraryData {
     export {

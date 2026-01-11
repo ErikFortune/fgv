@@ -25,7 +25,8 @@ import {
   ENCRYPTED_COLLECTION_FORMAT,
   ICryptoProvider,
   IEncryptedCollectionFile,
-  IEncryptedCollectionMetadata
+  IEncryptedCollectionMetadata,
+  IKeyDerivationParams
 } from './model';
 import * as Convert from './converters';
 
@@ -102,6 +103,13 @@ export interface ICreateEncryptedFileParams {
   readonly metadata?: IEncryptedCollectionMetadata;
 
   /**
+   * Optional key derivation parameters.
+   * If provided, stores the salt and iterations used to derive the key from a password.
+   * This allows decryption using only a password (the salt/iterations are read from the file).
+   */
+  readonly keyDerivation?: IKeyDerivationParams;
+
+  /**
    * Crypto provider to use for encryption.
    */
   readonly cryptoProvider: ICryptoProvider;
@@ -116,7 +124,7 @@ export interface ICreateEncryptedFileParams {
 export async function createEncryptedCollectionFile(
   params: ICreateEncryptedFileParams
 ): Promise<Result<IEncryptedCollectionFile>> {
-  const { content, secretName, key, metadata, cryptoProvider } = params;
+  const { content, secretName, key, metadata, keyDerivation, cryptoProvider } = params;
 
   // Serialize content to JSON string
   const jsonResult = captureResult(() => JSON.stringify(content));
@@ -140,7 +148,8 @@ export async function createEncryptedCollectionFile(
     iv: toBase64(iv),
     authTag: toBase64(authTag),
     encryptedData: toBase64(encryptedData),
-    ...(metadata ? { metadata } : {})
+    ...(metadata ? { metadata } : {}),
+    ...(keyDerivation ? { keyDerivation } : {})
   };
 
   return succeed(tombstone);
@@ -231,19 +240,22 @@ export class EncryptionHelper {
    * @param secretName - Name of the secret used for encryption
    * @param key - Encryption key (32 bytes)
    * @param metadata - Optional metadata to include unencrypted
+   * @param keyDerivation - Optional key derivation parameters (for password-based encryption)
    * @returns Success with encrypted file structure, or Failure with error
    */
   public async encrypt(
     content: JsonValue,
     secretName: string,
     key: Uint8Array,
-    metadata?: IEncryptedCollectionMetadata
+    metadata?: IEncryptedCollectionMetadata,
+    keyDerivation?: IKeyDerivationParams
   ): Promise<Result<IEncryptedCollectionFile>> {
     return createEncryptedCollectionFile({
       content,
       secretName,
       key,
       metadata,
+      keyDerivation,
       cryptoProvider: this._cryptoProvider
     });
   }

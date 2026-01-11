@@ -27,7 +27,9 @@ import {
   EncryptionAlgorithm,
   IEncryptedCollectionFile,
   IEncryptedCollectionMetadata,
-  INamedSecret
+  IKeyDerivationParams,
+  INamedSecret,
+  KeyDerivationFunction
 } from './model';
 
 // ============================================================================
@@ -55,6 +57,23 @@ export const encryptedCollectionFormat: Converter<EncryptedCollectionFormat> = C
  */
 export const encryptedCollectionErrorMode: Converter<EncryptedCollectionErrorMode> =
   Converters.enumeratedValue<EncryptedCollectionErrorMode>(['fail', 'skip', 'warn']);
+
+/**
+ * Converter for key derivation function type.
+ * @public
+ */
+export const keyDerivationFunction: Converter<KeyDerivationFunction> =
+  Converters.enumeratedValue<KeyDerivationFunction>(['pbkdf2']);
+
+/**
+ * Converter for key derivation parameters.
+ * @public
+ */
+export const keyDerivationParams: Converter<IKeyDerivationParams> = Converters.object<IKeyDerivationParams>({
+  kdf: keyDerivationFunction,
+  salt: Converters.string,
+  iterations: Converters.number
+});
 
 /**
  * Converter for base64-encoded strings (validates format).
@@ -107,10 +126,11 @@ export const encryptedCollectionFile: Converter<IEncryptedCollectionFile> =
       iv: base64String,
       authTag: base64String,
       encryptedData: base64String,
-      metadata: encryptedCollectionMetadata
+      metadata: encryptedCollectionMetadata,
+      keyDerivation: keyDerivationParams
     },
     {
-      optionalFields: ['metadata']
+      optionalFields: ['metadata', 'keyDerivation']
     }
   );
 

@@ -111,6 +111,28 @@ Converter for encryption algorithm values.
 </td></tr>
 <tr><td>
 
+[keyDerivationFunction](./ts-chocolate.crypto_2.converters.keyderivationfunction.md)
+
+
+</td><td>
+
+Converter for key derivation function type.
+
+
+</td></tr>
+<tr><td>
+
+[keyDerivationParams](./ts-chocolate.crypto_2.converters.keyderivationparams.md)
+
+
+</td><td>
+
+Converter for key derivation parameters.
+
+
+</td></tr>
+<tr><td>
+
 [namedSecret](./ts-chocolate.crypto_2.converters.namedsecret.md)
 
 

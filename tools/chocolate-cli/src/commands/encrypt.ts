@@ -33,6 +33,8 @@ interface IEncryptCommandOptions {
   key: string;
   output?: string;
   metadata?: boolean;
+  salt?: string;
+  iterations?: string;
 }
 
 /**
@@ -77,7 +79,8 @@ async function encryptFile(
   outputPath: string,
   secretName: string,
   key: Uint8Array,
-  includeMetadata: boolean
+  includeMetadata: boolean,
+  keyDerivation?: Crypto.IKeyDerivationParams
 ): Promise<Result<void>> {
   // Read and parse input file
   const jsonResult = readJsonFile(inputPath);
@@ -101,6 +104,7 @@ async function encryptFile(
     secretName,
     key,
     metadata,
+    keyDerivation,
     cryptoProvider: Crypto.nodeCryptoProvider
   });
 
@@ -125,6 +129,11 @@ export function createEncryptCommand(): Command {
     .requiredOption('-k, --key <base64>', 'Base64-encoded 32-byte encryption key')
     .option('-o, --output <file>', 'Output file (defaults to input file, overwriting it)')
     .option('-m, --metadata', 'Include unencrypted metadata in the tombstone', false)
+    .option('--salt <base64>', 'Salt used for key derivation (stores in file for password-based decryption)')
+    .option(
+      '--iterations <n>',
+      'Iterations used for key derivation (stores in file for password-based decryption)'
+    )
     .action(async (input: string, options: IEncryptCommandOptions) => {
       const outputPath = options.output ?? input;
 
@@ -135,13 +144,30 @@ export function createEncryptCommand(): Command {
         process.exit(1);
       }
 
+      // Build key derivation params if salt is provided
+      let keyDerivation: Crypto.IKeyDerivationParams | undefined;
+      if (options.salt) {
+        const iterations = options.iterations ? parseInt(options.iterations, 10) : 100000;
+        if (isNaN(iterations) || iterations <= 0) {
+          console.error('Error: iterations must be a positive number');
+          process.exit(1);
+        }
+        keyDerivation = {
+          kdf: 'pbkdf2',
+          salt: options.salt,
+          iterations
+        };
+        console.error(`Storing key derivation params: salt=${options.salt}, iterations=${iterations}`);
+      }
+
       // Encrypt the file
       const result = await encryptFile(
         input,
         outputPath,
         options.secretName,
         keyResult.value,
-        options.metadata ?? false
+        options.metadata ?? false,
+        keyDerivation
       );
 
       if (result.isFailure()) {

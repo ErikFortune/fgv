@@ -96,6 +96,34 @@ export interface IEncryptedCollectionMetadata {
 }
 
 /**
+ * Supported key derivation functions.
+ * @public
+ */
+export type KeyDerivationFunction = 'pbkdf2';
+
+/**
+ * Key derivation parameters stored in encrypted files.
+ * Allows decryption with password without needing to know the original salt/iterations.
+ * @public
+ */
+export interface IKeyDerivationParams {
+  /**
+   * Key derivation function used.
+   */
+  readonly kdf: KeyDerivationFunction;
+
+  /**
+   * Base64-encoded salt used for key derivation.
+   */
+  readonly salt: string;
+
+  /**
+   * Number of iterations used for key derivation.
+   */
+  readonly iterations: number;
+}
+
+/**
  * Encrypted collection tombstone file format.
  * This is the JSON structure stored in encrypted collection files.
  * @public
@@ -135,6 +163,13 @@ export interface IEncryptedCollectionFile {
    * Optional unencrypted metadata for display/filtering.
    */
   readonly metadata?: IEncryptedCollectionMetadata;
+
+  /**
+   * Optional key derivation parameters.
+   * If present, allows decryption using a password with these parameters.
+   * If absent, a pre-derived key must be provided.
+   */
+  readonly keyDerivation?: IKeyDerivationParams;
 }
 
 // ============================================================================

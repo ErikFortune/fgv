@@ -39,9 +39,23 @@ interface IPublishDataCommandOptions {
 }
 
 /**
- * Secrets file format: mapping from secret name to base64-encoded key
+ * Single secret entry in the secrets file.
+ * Can be:
+ * - A string (base64-encoded key only, for backwards compatibility)
+ * - An object with key and optional keyDerivation params
  */
-type SecretsFile = Record<string, string>;
+interface ISecretEntry {
+  /** Base64-encoded 32-byte key */
+  key: string;
+  /** Optional key derivation parameters (for password-based decryption) */
+  keyDerivation?: Crypto.IKeyDerivationParams;
+}
+
+/**
+ * Secrets file format: mapping from secret name to key/params
+ * Supports both old format (string values) and new format (object values)
+ */
+type SecretsFile = Record<string, string | ISecretEntry>;
 
 /**
  * Supported source file extensions
@@ -178,6 +192,19 @@ function getItemsFromSourceData(sourceData: JsonValue): JsonValue {
 }
 
 /**
+ * Extracts key and keyDerivation from a secret entry (handles both formats)
+ */
+function extractSecretEntry(entry: string | ISecretEntry): {
+  keyBase64: string;
+  keyDerivation?: Crypto.IKeyDerivationParams;
+} {
+  if (typeof entry === 'string') {
+    return { keyBase64: entry };
+  }
+  return { keyBase64: entry.key, keyDerivation: entry.keyDerivation };
+}
+
+/**
  * Resolves the secret name and key to use for a given file.
  * Priority:
  * 1. metadata.secretName from source file (if present and --secrets-file provided)
@@ -192,7 +219,7 @@ function resolveSecret(
   options: IPublishDataCommandOptions,
   secrets?: SecretsFile,
   metadataSecretName?: string
-): Result<{ secretName: string; key: Uint8Array }> {
+): Result<{ secretName: string; key: Uint8Array; keyDerivation?: Crypto.IKeyDerivationParams }> {
   // If metadata specifies a secret name, use it (requires secrets file)
   if (metadataSecretName) {
     if (!options.secretsFile || !secrets) {
@@ -200,11 +227,14 @@ function resolveSecret(
         `File specifies secretName "${metadataSecretName}" in metadata but no --secrets-file provided`
       );
     }
-    const keyBase64 = secrets[metadataSecretName];
-    if (!keyBase64) {
+    const entry = secrets[metadataSecretName];
+    if (!entry) {
       return fail(`No key found for secret "${metadataSecretName}" (from file metadata) in secrets file`);
     }
-    return decodeKey(keyBase64).onSuccess((key) => succeed({ secretName: metadataSecretName, key }));
+    const { keyBase64, keyDerivation } = extractSecretEntry(entry);
+    return decodeKey(keyBase64).onSuccess((key) =>
+      succeed({ secretName: metadataSecretName, key, keyDerivation })
+    );
   }
 
   // Secrets file mode: use directory name as secret name
@@ -213,12 +243,13 @@ function resolveSecret(
     const topDir = relativePath.split(path.sep)[0];
     const secretName = topDir || path.basename(sourceDir);
 
-    const keyBase64 = secrets[secretName];
-    if (!keyBase64) {
+    const entry = secrets[secretName];
+    if (!entry) {
       return fail(`No key found for secret "${secretName}" in secrets file`);
     }
 
-    return decodeKey(keyBase64).onSuccess((key) => succeed({ secretName, key }));
+    const { keyBase64, keyDerivation } = extractSecretEntry(entry);
+    return decodeKey(keyBase64).onSuccess((key) => succeed({ secretName, key, keyDerivation }));
   }
 
   // Single secret mode
@@ -333,7 +364,7 @@ export function createPublishDataCommand(): Command {
           errorCount++;
           continue;
         }
-        const { secretName, key } = secretResult.value;
+        const { secretName, key, keyDerivation } = secretResult.value;
 
         // Extract items to encrypt (only items, not metadata wrapper)
         const contentToEncrypt = getItemsFromSourceData(dataResult.value);
@@ -343,6 +374,7 @@ export function createPublishDataCommand(): Command {
           content: contentToEncrypt,
           secretName,
           key,
+          keyDerivation,
           cryptoProvider: Crypto.nodeCryptoProvider
         });
 

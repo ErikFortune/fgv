@@ -4,7 +4,7 @@
 
 ## Recipes.IRecipe.recipeProcedures property
 
-Optional procedures associated with this recipe. Contains available procedures and the preferred default.
+Optional procedures associated with this recipe. Contains applicable procedures and the preferred default.
 
 **Signature:**
 

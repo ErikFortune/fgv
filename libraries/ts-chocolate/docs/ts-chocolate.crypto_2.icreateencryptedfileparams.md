@@ -100,6 +100,27 @@ The encryption key (32 bytes for AES-256).
 </td></tr>
 <tr><td>
 
+[keyDerivation?](./ts-chocolate.crypto_2.icreateencryptedfileparams.keyderivation.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IKeyDerivationParams](./ts-chocolate.crypto_2.ikeyderivationparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional key derivation parameters. If provided, stores the salt and iterations used to derive the key from a password. This allows decryption using only a password (the salt/iterations are read from the file).
+
+
+</td></tr>
+<tr><td>
+
 [metadata?](./ts-chocolate.crypto_2.icreateencryptedfileparams.metadata.md)
 
 

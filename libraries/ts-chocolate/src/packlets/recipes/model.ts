@@ -320,7 +320,7 @@ export interface IRecipe {
 
   /**
    * Optional procedures associated with this recipe.
-   * Contains available procedures and the preferred default.
+   * Contains applicable procedures and the preferred default.
    */
   readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
 

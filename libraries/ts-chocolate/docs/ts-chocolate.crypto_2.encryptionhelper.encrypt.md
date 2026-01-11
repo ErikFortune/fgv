@@ -9,7 +9,7 @@ Creates an encrypted collection file from JSON content.
 **Signature:**
 
 ```typescript
-encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata): Promise<Result<IEncryptedCollectionFile>>;
+encrypt(content: JsonValue, secretName: string, key: Uint8Array, metadata?: IEncryptedCollectionMetadata, keyDerivation?: IKeyDerivationParams): Promise<Result<IEncryptedCollectionFile>>;
 ```
 
 ## Parameters
@@ -91,6 +91,22 @@ metadata
 </td><td>
 
 _(Optional)_ Optional metadata to include unencrypted
+
+
+</td></tr>
+<tr><td>
+
+keyDerivation
+
+
+</td><td>
+
+[IKeyDerivationParams](./ts-chocolate.crypto_2.ikeyderivationparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional key derivation parameters (for password-based encryption)
 
 
 </td></tr>

@@ -144,6 +144,27 @@ _(Optional)_ Optional item count from unencrypted metadata.
 </td></tr>
 <tr><td>
 
+[keyDerivation?](./ts-chocolate.librarydata.iprotectedcollectioninfo.keyderivation.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IKeyDerivationParams](./ts-chocolate.crypto_2.ikeyderivationparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional key derivation parameters from the encrypted file. If present, allows password-based decryption using these parameters.
+
+
+</td></tr>
+<tr><td>
+
 [secretName](./ts-chocolate.librarydata.iprotectedcollectioninfo.secretname.md)
 
 

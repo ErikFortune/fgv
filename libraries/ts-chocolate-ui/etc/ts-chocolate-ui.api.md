@@ -13,6 +13,8 @@ import type { MessageLogLevel } from '@fgv/ts-utils';
 import * as React_2 from 'react';
 import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
+import type { Recipes } from '@fgv/ts-chocolate';
+import type { Runtime } from '@fgv/ts-chocolate';
 import type { Success } from '@fgv/ts-utils';
 
 // @public
@@ -133,6 +135,22 @@ export interface IPercentageSegment {
 }
 
 // @public
+export interface IRecipeCardProps {
+    className?: string;
+    isSelected?: boolean;
+    onClick?: () => void;
+    recipe: Runtime.RuntimeRecipe;
+    showCollection?: boolean;
+}
+
+// @public
+export interface IRecipeCategoryBadgeProps {
+    category: Recipes.RecipeCategory;
+    className?: string;
+    size?: 'sm' | 'md' | 'lg';
+}
+
+// @public
 export interface ITagBadgeProps {
     className?: string;
     isActive?: boolean;
@@ -187,6 +205,12 @@ export function ObservabilityProvider({ children, maxMessages, userLogLevel, dia
 
 // @public
 export function PercentageBar({ segments, className, height, showLabels, showLegend }: IPercentageBarProps): React_2.ReactElement;
+
+// @public
+export function RecipeCard({ recipe, showCollection, className, onClick, isSelected }: IRecipeCardProps): React_2.ReactElement;
+
+// @public
+export function RecipeCategoryBadge({ category, size, className }: IRecipeCategoryBadgeProps): React_2.ReactElement;
 
 // @public
 export function TagBadge({ tag, className, size, onClick, onRemove, isActive }: ITagBadgeProps): React_2.ReactElement;

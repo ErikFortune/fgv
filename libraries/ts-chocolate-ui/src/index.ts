@@ -37,5 +37,8 @@ export * from './packlets/ingredients';
 // Layout components
 export * from './packlets/layout';
 
+// Recipe components
+export * from './packlets/recipes';
+
 // Observability (logging and messaging)
 export * from './packlets/observability';

@@ -21,7 +21,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
-import { captureResult, Result, fail } from '@fgv/ts-utils';
+import { captureResult, Result } from '@fgv/ts-utils';
 import { JsonObject } from '@fgv/ts-json-base';
 import { Crypto } from '@fgv/ts-chocolate';
 
@@ -29,7 +29,8 @@ import { Crypto } from '@fgv/ts-chocolate';
  * Command-line options for the decrypt command
  */
 interface IDecryptCommandOptions {
-  key: string;
+  key?: string;
+  password?: string;
   output?: string;
 }
 
@@ -68,31 +69,19 @@ function decodeKey(base64Key: string): Result<Uint8Array> {
 }
 
 /**
- * Decrypts an encrypted collection file and writes the plain JSON.
+ * Derives a key from password using params from the encrypted file.
  */
-async function decryptFile(inputPath: string, outputPath: string, key: Uint8Array): Promise<Result<void>> {
-  // Read and parse input file
-  const jsonResult = readJsonFile(inputPath);
-  if (jsonResult.isFailure()) {
-    return fail(jsonResult.message);
+async function deriveKeyFromPassword(
+  password: string,
+  keyDerivation: Crypto.IKeyDerivationParams
+): Promise<Result<Uint8Array>> {
+  const saltResult = captureResult(() => Buffer.from(keyDerivation.salt, 'base64'));
+  if (saltResult.isFailure()) {
+    return fail(`Invalid salt in encrypted file: ${saltResult.message}`);
   }
 
-  const json = jsonResult.value;
-
-  // Verify it's an encrypted collection file
-  if (!Crypto.isEncryptedCollectionFile(json)) {
-    return fail(`File "${inputPath}" is not an encrypted collection file`);
-  }
-
-  // Decrypt the content
-  const decryptResult = await Crypto.tryDecryptCollectionFile(json, key, Crypto.nodeCryptoProvider);
-
-  if (decryptResult.isFailure()) {
-    return fail(`Decryption failed: ${decryptResult.message}`);
-  }
-
-  // Write the decrypted JSON
-  return writeJsonFile(outputPath, decryptResult.value);
+  const salt = new Uint8Array(saltResult.value);
+  return Crypto.nodeCryptoProvider.deriveKey(password, salt, keyDerivation.iterations);
 }
 
 /**
@@ -104,23 +93,86 @@ export function createDecryptCommand(): Command {
   cmd
     .description('Decrypt an encrypted collection tombstone to plain JSON')
     .argument('<input>', 'Encrypted collection file to decrypt')
-    .requiredOption('-k, --key <base64>', 'Base64-encoded 32-byte decryption key')
+    .option('-k, --key <base64>', 'Base64-encoded 32-byte decryption key')
+    .option('-p, --password <password>', 'Password to derive key (uses salt/iterations from file)')
     .option('-o, --output <file>', 'Output file (defaults to input file, overwriting it)')
     .action(async (input: string, options: IDecryptCommandOptions) => {
       const outputPath = options.output ?? input;
 
-      // Decode the key
-      const keyResult = decodeKey(options.key);
-      if (keyResult.isFailure()) {
-        console.error(`Error: ${keyResult.message}`);
+      // Validate that either key or password is provided
+      if (!options.key && !options.password) {
+        console.error('Error: Either --key or --password must be provided');
+        process.exit(1);
+      }
+      if (options.key && options.password) {
+        console.error('Error: Cannot specify both --key and --password');
         process.exit(1);
       }
 
-      // Decrypt the file
-      const result = await decryptFile(input, outputPath, keyResult.value);
+      // Read and parse input file first to get keyDerivation params if using password
+      const jsonResult = readJsonFile(input);
+      if (jsonResult.isFailure()) {
+        console.error(`Error: ${jsonResult.message}`);
+        process.exit(1);
+      }
 
-      if (result.isFailure()) {
-        console.error(`Error: ${result.message}`);
+      const json = jsonResult.value;
+
+      // Verify it's an encrypted collection file
+      if (!Crypto.isEncryptedCollectionFile(json)) {
+        console.error(`Error: File "${input}" is not an encrypted collection file`);
+        process.exit(1);
+      }
+
+      // Parse as encrypted collection file to get keyDerivation
+      const tombstoneResult = Crypto.Converters.encryptedCollectionFile.convert(json);
+      if (tombstoneResult.isFailure()) {
+        console.error(`Error: Invalid encrypted file format: ${tombstoneResult.message}`);
+        process.exit(1);
+      }
+      const tombstone = tombstoneResult.value;
+
+      let key: Uint8Array;
+
+      if (options.password) {
+        // Password mode - derive key from password using file's keyDerivation params
+        if (!tombstone.keyDerivation) {
+          console.error('Error: Encrypted file does not contain key derivation parameters');
+          console.error('Hint: This file was encrypted with a raw key. Use --key instead of --password');
+          process.exit(1);
+        }
+
+        console.error(
+          `Deriving key using ${tombstone.keyDerivation.kdf} with ${tombstone.keyDerivation.iterations} iterations...`
+        );
+        const keyResult = await deriveKeyFromPassword(options.password, tombstone.keyDerivation);
+        if (keyResult.isFailure()) {
+          console.error(`Error: ${keyResult.message}`);
+          process.exit(1);
+        }
+        key = keyResult.value;
+      } else {
+        // Key mode - use provided key directly
+        const keyResult = decodeKey(options.key!);
+        if (keyResult.isFailure()) {
+          console.error(`Error: ${keyResult.message}`);
+          process.exit(1);
+        }
+        key = keyResult.value;
+      }
+
+      // Decrypt the content
+      const decryptResult = await Crypto.decryptCollectionFile(tombstone, key, Crypto.nodeCryptoProvider);
+
+      if (decryptResult.isFailure()) {
+        console.error(`Error: Decryption failed: ${decryptResult.message}`);
+        process.exit(1);
+      }
+
+      // Write the decrypted JSON
+      const writeResult = writeJsonFile(outputPath, decryptResult.value);
+      if (writeResult.isFailure()) {
+        console.error(`Error: ${writeResult.message}`);
         process.exit(1);
       }
 

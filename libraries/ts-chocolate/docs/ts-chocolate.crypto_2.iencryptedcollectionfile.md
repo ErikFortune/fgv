@@ -142,6 +142,27 @@ Base64-encoded initialization vector.
 </td></tr>
 <tr><td>
 
+[keyDerivation?](./ts-chocolate.crypto_2.iencryptedcollectionfile.keyderivation.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IKeyDerivationParams](./ts-chocolate.crypto_2.ikeyderivationparams.md)
+
+
+</td><td>
+
+_(Optional)_ Optional key derivation parameters. If present, allows decryption using a password with these parameters. If absent, a pre-derived key must be provided.
+
+
+</td></tr>
+<tr><td>
+
 [metadata?](./ts-chocolate.crypto_2.iencryptedcollectionfile.metadata.md)
 
 

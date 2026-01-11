@@ -12,10 +12,11 @@ import { AppShell } from './components/layout';
 import type { ToolId } from './types/navigation';
 
 // Tool components
-import { IngredientsTool, IngredientsToolSidebar, type IIngredientFilters } from './tools/ingredients';
+import { IngredientsToolSidebar, type IIngredientFilters } from './tools/ingredients';
 import { BrowseView } from './tools/ingredients/views/BrowseView';
 import { DetailView } from './tools/ingredients/views/DetailView';
-import { RecipesTool } from './tools/recipes/RecipesTool';
+import { RecipesTool, RecipesToolSidebar, type IRecipeFilters } from './tools/recipes';
+import { ProceduresTool } from './tools/procedures';
 import { MoldsTool } from './tools/molds/MoldsTool';
 import { ConfectionsTool } from './tools/confections/ConfectionsTool';
 import { SettingsTool } from './tools/settings/SettingsTool';
@@ -35,15 +36,25 @@ function AppContent(): React.ReactElement {
     tags: []
   });
 
+  // Recipe filters state (lifted here for sidebar sync)
+  const [recipeFilters, setRecipeFilters] = useState<IRecipeFilters>({
+    search: '',
+    categories: [],
+    collections: [],
+    tags: []
+  });
+
   // Render the active tool's sidebar
   const sidebar = useMemo(() => {
     switch (activeTool) {
       case 'ingredients':
         return <IngredientsToolSidebar filters={ingredientFilters} onFiltersChange={setIngredientFilters} />;
+      case 'recipes':
+        return <RecipesToolSidebar filters={recipeFilters} onFiltersChange={setRecipeFilters} />;
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters]);
+  }, [activeTool, ingredientFilters, recipeFilters]);
 
   // Render the active tool content
   const content = useMemo(() => {
@@ -51,7 +62,9 @@ function AppContent(): React.ReactElement {
       case 'ingredients':
         return <IngredientsToolContent filters={ingredientFilters} />;
       case 'recipes':
-        return <RecipesTool />;
+        return <RecipesTool filters={recipeFilters} />;
+      case 'procedures':
+        return <ProceduresTool />;
       case 'molds':
         return <MoldsTool />;
       case 'confections':
@@ -61,7 +74,7 @@ function AppContent(): React.ReactElement {
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters]);
+  }, [activeTool, ingredientFilters, recipeFilters]);
 
   return (
     <AppShell activeTool={activeTool} onToolChange={setActiveTool} sidebar={sidebar}>

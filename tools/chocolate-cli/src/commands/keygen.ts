@@ -19,9 +19,12 @@
 // SOFTWARE.
 
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Command } from 'commander';
-import { captureResult, Result, fail } from '@fgv/ts-utils';
+import { captureResult, Result, fail, succeed } from '@fgv/ts-utils';
 import { Crypto } from '@fgv/ts-chocolate';
+import * as yaml from 'yaml';
 
 /**
  * Command-line options for the keygen command
@@ -31,7 +34,34 @@ interface IKeygenCommandOptions {
   fromPassword?: boolean;
   salt?: string;
   iterations?: number;
+  update?: string;
+  name?: string;
 }
+
+/**
+ * Single secret entry in the secrets file.
+ * Can be:
+ * - A string (base64-encoded key only, for backwards compatibility)
+ * - An object with key and optional keyDerivation params
+ */
+interface ISecretEntry {
+  /** Base64-encoded 32-byte key */
+  key: string;
+  /** Optional key derivation parameters (for password-based decryption) */
+  keyDerivation?: Crypto.IKeyDerivationParams;
+}
+
+/**
+ * Secrets file format: mapping from secret name to key/params
+ * Supports both old format (string values) and new format (object values)
+ */
+type SecretsFile = Record<string, string | ISecretEntry>;
+
+/**
+ * Supported secrets file extensions
+ */
+const YAML_EXTENSIONS: ReadonlyArray<string> = ['.yaml', '.yml'];
+const JSON_EXTENSIONS: ReadonlyArray<string> = ['.json'];
 
 /**
  * Formats a key as base64 or hex string.
@@ -66,6 +96,52 @@ async function deriveKeyFromPassword(
 }
 
 /**
+ * Reads and parses a secrets file (YAML or JSON).
+ * Returns an empty object if the file doesn't exist.
+ */
+function readSecretsFile(filePath: string): Result<SecretsFile> {
+  const absolutePath = path.resolve(filePath);
+
+  // If file doesn't exist, return empty object (we'll create it)
+  if (!fs.existsSync(absolutePath)) {
+    return succeed({});
+  }
+
+  return captureResult(() => {
+    const content = fs.readFileSync(absolutePath, 'utf-8');
+    const ext = path.extname(absolutePath).toLowerCase();
+    if (YAML_EXTENSIONS.includes(ext)) {
+      return (yaml.parse(content) as SecretsFile) ?? {};
+    }
+    return (JSON.parse(content) as SecretsFile) ?? {};
+  }).withErrorFormat((e) => `Failed to read secrets file "${filePath}": ${e}`);
+}
+
+/**
+ * Writes a secrets file (YAML or JSON based on extension).
+ */
+function writeSecretsFile(filePath: string, secrets: SecretsFile): Result<void> {
+  const absolutePath = path.resolve(filePath);
+  const ext = path.extname(absolutePath).toLowerCase();
+
+  return captureResult(() => {
+    const dir = path.dirname(absolutePath);
+    fs.mkdirSync(dir, { recursive: true });
+
+    let content: string;
+    if (YAML_EXTENSIONS.includes(ext)) {
+      content = yaml.stringify(secrets);
+    } else if (JSON_EXTENSIONS.includes(ext)) {
+      content = JSON.stringify(secrets, null, 2) + '\n';
+    } else {
+      throw new Error(`Unsupported file extension: ${ext}. Use .yaml, .yml, or .json`);
+    }
+
+    fs.writeFileSync(absolutePath, content, 'utf-8');
+  }).withErrorFormat((e) => `Failed to write secrets file "${filePath}": ${e}`);
+}
+
+/**
  * Creates the keygen command.
  */
 export function createKeygenCommand(): Command {
@@ -77,9 +153,20 @@ export function createKeygenCommand(): Command {
     .option('-p, --from-password', 'Derive key from a password (reads from stdin)')
     .option('--salt <base64>', 'Salt for password derivation (generates random if not provided)')
     .option('--iterations <n>', 'Number of PBKDF2 iterations', '100000')
+    .option('-u, --update <file>', 'Update a secrets file with the generated key')
+    .option('-n, --name <name>', 'Secret name for --update (required when using --update)')
     .action(async (options: IKeygenCommandOptions) => {
       const format = (options.format ?? 'base64') as 'base64' | 'hex';
       const iterations = parseInt(String(options.iterations ?? '100000'), 10);
+
+      // Validate --update requires --name
+      if (options.update && !options.name) {
+        console.error('Error: --name is required when using --update');
+        process.exit(1);
+      }
+
+      let keyBase64: string;
+      let salt: string | undefined;
 
       if (options.fromPassword) {
         // Read password from stdin
@@ -89,7 +176,7 @@ export function createKeygenCommand(): Command {
           process.exit(1);
         }
 
-        const salt = options.salt ?? generateSalt();
+        salt = options.salt ?? generateSalt();
         console.error(`Using salt: ${salt}`);
         console.error(`Using iterations: ${iterations}`);
 
@@ -99,7 +186,12 @@ export function createKeygenCommand(): Command {
           process.exit(1);
         }
 
-        console.log(formatKey(keyResult.value, format));
+        keyBase64 = formatKey(keyResult.value, 'base64');
+
+        // Output in requested format (unless updating file)
+        if (!options.update) {
+          console.log(format === 'base64' ? keyBase64 : formatKey(keyResult.value, format));
+        }
       } else {
         // Generate random key
         const keyResult = await Crypto.nodeCryptoProvider.generateKey();
@@ -108,7 +200,52 @@ export function createKeygenCommand(): Command {
           process.exit(1);
         }
 
-        console.log(formatKey(keyResult.value, format));
+        keyBase64 = formatKey(keyResult.value, 'base64');
+
+        // Output in requested format (unless updating file)
+        if (!options.update) {
+          console.log(format === 'base64' ? keyBase64 : formatKey(keyResult.value, format));
+        }
+      }
+
+      // Update secrets file if requested
+      if (options.update && options.name) {
+        const secretsResult = readSecretsFile(options.update);
+        if (secretsResult.isFailure()) {
+          console.error(`Error: ${secretsResult.message}`);
+          process.exit(1);
+        }
+
+        const secrets = secretsResult.value;
+        const secretName = options.name;
+        const existed = secretName in secrets;
+
+        // Create the entry with the correct format
+        if (salt) {
+          // Password-derived key: include keyDerivation params
+          secrets[secretName] = {
+            key: keyBase64,
+            keyDerivation: {
+              kdf: 'pbkdf2',
+              salt,
+              iterations
+            }
+          };
+        } else {
+          // Random key: just include the key (using object format for consistency)
+          secrets[secretName] = {
+            key: keyBase64
+          };
+        }
+
+        const writeResult = writeSecretsFile(options.update, secrets);
+        if (writeResult.isFailure()) {
+          console.error(`Error: ${writeResult.message}`);
+          process.exit(1);
+        }
+
+        const action = existed ? 'Updated' : 'Added';
+        console.log(`${action} secret "${secretName}" in ${options.update}`);
       }
     });
 

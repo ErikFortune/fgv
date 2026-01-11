@@ -140,7 +140,7 @@ Derives a key from a password.
 </td></tr>
 <tr><td>
 
-[encrypt(content, secretName, key, metadata)](./ts-chocolate.crypto_2.encryptionhelper.encrypt.md)
+[encrypt(content, secretName, key, metadata, keyDerivation)](./ts-chocolate.crypto_2.encryptionhelper.encrypt.md)
 
 
 </td><td>

@@ -2,7 +2,12 @@
   "format": "encrypted-collection-v1",
   "secretName": "fgv",
   "algorithm": "AES-256-GCM",
-  "iv": "QznjcBurAr+UKYSz",
-  "authTag": "9lX1AeMiw+XQGud1kNzEAg==",
-  "encryptedData": "36XwpREG1wwixCc1DvyCyXcyI2YjThOXJu2Q2SDMKDAmF4YitiFq7uP9lr76Ari+DfKGr/lSpqT4oF1cojeSy6Hu3y+SYynm7AE4Q+FkWUbvHl5muA7YAsY6do+/07QA5wor+lquUl0BNGCzH98nuWc81CeARMGghfr705ghebdk2f6/KhqZZIxap6rHwugRAdQczC8Xc7BSXmVO5+I5DytcPYouInKxHrGbv/zeP2BvP+b2JlBEoiqB1Wz7zT/O4oUgJPfonXVCy1dULJZqYU7NRWAAJtKq8MO4RQa/SYhgB6DQWKW6xL+xsciQ2Zz6yVA/eYc/JDcD1bF9pavjN62VjbOtkQudynW4oUPWxkS7+SGb8RzttnS8PcUjpDcJjzgHKkGW3vxLvTOlYvAgAB0kb7UduSN50xMh95h5GJC5et5ilAhCHMOwIE6AtbaTJ9SEMMpjr2YWgIo5l83wiw3rwY6RFFp4hk8/wd7t4w8WbQVhIftPOVxwx+C76qw0g/jSt/TXWKWOtQzlnISmDFFmsqMjF795XjKl3ctwajCZHYgujFTFwnLNlcon6rlBCD/oZYpIZVIMxfJBOXcRnWXbi81a3D+8V1jwS+MuuS6ajCiBouX1UzzDssM/4rsNVs0hekXRTOp/sT4b7lTmC2JeYmwVdkRcqSTu+9clix8E/QN5FskECnN9/vE5BIw2uaditTUyX1P5zPdMyfMFoE4W9ng7Awh3XaOjiWpUu+8XfHV5oZV+1lzLnbo6+7CCZ7xPJA=="
+  "iv": "r21AErnYYQh3akmg",
+  "authTag": "lif4IhZSTrzcEoui1QtR4Q==",
+  "encryptedData": "WJawtzIHf03PNwm2qPmNCgiaJuhhP79Yce7zKjO3bOvFVuoa0FcrCIA+/HT0zSRuvfFH5FgkeK5yEmq3iwm0Brltbv4Lgrhwc0LvbOhKOEIog+rIetWMQbsm5HfnzqtFnSw6+pqkNLPLdaix+jN9N5Y9TVtGH6P62Ib33hP8d0Sqq16zLtMtq0mloI0W1g6LJxHspb7L4DnlAtoDIFzO1/q6GE4Oy2qkGYWzWG1676eqnYPEOgDvWagPrgYmRUos6eN41NHAJ4rBbs2cksC+KBQ0HwX19i39Zp9+00uuTmRcG33ovsl2BJFET/WVEEO8Q+GaWuAhBeAHvP3f+McgzsxXPi0uB15DQ+XOU1jJHTeDYCEJOZoZhSmsfS1wDeUo/Vr5cbgmE9xl5Xk0Lo0vv5NnF6byKNII6yMhZ9aN0jijLNadeihFKLoPK1WJBNA0Nsqd34c3jkPHKntIeXwVK5QiZ9ehMqo6VMNuyiS0gjZNHidHOLruyL6Teac49EFbKgiU2OE0pPoZSLSe2kFVxoJKDHYcu/5+44pIod9p9N1B1XlkOlDFR0oHz80GCHoGGLgJKrUuayHlvPLTIZoL0ckOEEsJMpX6DEiR7OQZ+z36EjK/5ITGeF8IEYQAg3koawv3NSgtUF0aRnTs0Vap0GVKH6yQ6TGh6NF8N2IOWaCN927Jd7O20S5Oqo/WVZPNaeov1sbuhpi/kARLJ//9wr3713PAZUjx5n6Ldd0oFKpCQWTJuSIed6lIALE+rtbQZIWSx1vOTIR73o0rlRUBHDXdJbzqpd2DaN0M+VRMLjrXDOHLpxhj1zGwXnHkiK5BCWz6KwcDo/VLd5mu3u3xHdtfxT5tqm9dAjZgDeJChTF0WC/n7A/2Y5rzKQilqlXnfjzxN+Rscig5G036f61S8dEh2672BP05GdvKIC71K1izQlBhvRJYeGLVIsb6p6H2pLlo",
+  "keyDerivation": {
+    "kdf": "pbkdf2",
+    "salt": "b66D4cOQ+u16mkzWNuayRw==",
+    "iterations": 100000
+  }
 }

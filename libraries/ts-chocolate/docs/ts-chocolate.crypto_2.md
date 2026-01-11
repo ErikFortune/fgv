@@ -205,6 +205,17 @@ Result of an encryption operation.
 </td></tr>
 <tr><td>
 
+[IKeyDerivationParams](./ts-chocolate.crypto_2.ikeyderivationparams.md)
+
+
+</td><td>
+
+Key derivation parameters stored in encrypted files. Allows decryption with password without needing to know the original salt/iterations.
+
+
+</td></tr>
+<tr><td>
+
 [INamedSecret](./ts-chocolate.crypto_2.inamedsecret.md)
 
 
@@ -364,6 +375,17 @@ Format version for encrypted collection files.
 </td><td>
 
 Supported encryption algorithms.
+
+
+</td></tr>
+<tr><td>
+
+[KeyDerivationFunction](./ts-chocolate.crypto_2.keyderivationfunction.md)
+
+
+</td><td>
+
+Supported key derivation functions.
 
 
 </td></tr>

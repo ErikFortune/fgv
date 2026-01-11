@@ -4,4 +4,6 @@
  */
 
 export * from './LoadingSpinner';
+export * from './Modal';
 export * from './SearchInput';
+export * from './UnlockCollectionModal';

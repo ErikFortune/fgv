@@ -80,6 +80,29 @@ describe('EncryptionHelper', () => {
       });
     });
 
+    test('includes keyDerivation when provided', async () => {
+      const content = { items: [1, 2, 3] };
+      const key = (await provider.generateKey()).orThrow();
+
+      const result = await createEncryptedCollectionFile({
+        content,
+        secretName: 'my-secret',
+        key,
+        keyDerivation: {
+          kdf: 'pbkdf2',
+          salt: 'dGVzdC1zYWx0LWJhc2U2NA==',
+          iterations: 100000
+        },
+        cryptoProvider: provider
+      });
+
+      expect(result).toSucceedAndSatisfy((encrypted) => {
+        expect(encrypted.keyDerivation?.kdf).toBe('pbkdf2');
+        expect(encrypted.keyDerivation?.salt).toBe('dGVzdC1zYWx0LWJhc2U2NA==');
+        expect(encrypted.keyDerivation?.iterations).toBe(100000);
+      });
+    });
+
     test('encrypts primitive JSON values', async () => {
       const key = (await provider.generateKey()).orThrow();
 
@@ -249,6 +272,21 @@ describe('EncryptionHelper', () => {
 
       expect(result).toSucceedAndSatisfy((encrypted) => {
         expect(encrypted.metadata?.collectionId).toBe('test');
+      });
+    });
+
+    test('encrypt with keyDerivation includes keyDerivation', async () => {
+      const content = { test: 'data' };
+      const result = await helper.encrypt(content, 'my-secret', key, undefined, {
+        kdf: 'pbkdf2',
+        salt: 'dGVzdC1zYWx0',
+        iterations: 50000
+      });
+
+      expect(result).toSucceedAndSatisfy((encrypted) => {
+        expect(encrypted.keyDerivation?.kdf).toBe('pbkdf2');
+        expect(encrypted.keyDerivation?.salt).toBe('dGVzdC1zYWx0');
+        expect(encrypted.keyDerivation?.iterations).toBe(50000);
       });
     });
 

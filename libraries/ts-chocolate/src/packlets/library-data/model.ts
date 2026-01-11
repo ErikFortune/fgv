@@ -24,6 +24,7 @@ import {
   EncryptedCollectionErrorMode,
   ICryptoProvider,
   IEncryptedCollectionFile,
+  IKeyDerivationParams,
   INamedSecret
 } from '../crypto';
 
@@ -417,6 +418,12 @@ export interface IProtectedCollectionInfo<TCollectionId extends string = string>
    * Built-in collections are always immutable.
    */
   readonly isBuiltIn: boolean;
+
+  /**
+   * Optional key derivation parameters from the encrypted file.
+   * If present, allows password-based decryption using these parameters.
+   */
+  readonly keyDerivation?: IKeyDerivationParams;
 }
 
 /**
