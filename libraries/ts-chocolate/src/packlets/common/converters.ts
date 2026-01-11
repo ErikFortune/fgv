@@ -48,6 +48,7 @@ import {
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
+  BaseTaskId,
   CacaoVariety,
   Celsius,
   Certification,
@@ -89,6 +90,7 @@ import {
   SlotId,
   SourceId,
   SpoonLevel,
+  TaskId,
   UrlCategory,
   VERSION_ID_SEPARATOR,
   WeightUnit
@@ -100,6 +102,7 @@ import {
   toBaseIngredientId,
   toBaseMoldId,
   toBaseProcedureId,
+  toBaseTaskId,
   toCelsius,
   toConfectionId,
   toConfectionName,
@@ -122,6 +125,7 @@ import {
   toSessionId,
   toSlotId,
   toSourceId,
+  toTaskId,
   toUrlCategory
 } from './validation';
 
@@ -161,6 +165,12 @@ export const baseMoldId: Converter<BaseMoldId> = Converters.generic(toBaseMoldId
 export const baseProcedureId: Converter<BaseProcedureId> = Converters.generic(toBaseProcedureId);
 
 /**
+ * Converter for BaseTaskId
+ * @public
+ */
+export const baseTaskId: Converter<BaseTaskId> = Converters.generic(toBaseTaskId);
+
+/**
  * Converter for BaseConfectionId
  * @public
  */
@@ -189,6 +199,12 @@ export const moldId: Converter<MoldId> = Converters.generic(toMoldId);
  * @public
  */
 export const procedureId: Converter<ProcedureId> = Converters.generic(toProcedureId);
+
+/**
+ * Converter for TaskId (composite)
+ * @public
+ */
+export const taskId: Converter<TaskId> = Converters.generic(toTaskId);
 
 /**
  * Converter for ConfectionId (composite)
@@ -268,6 +284,22 @@ export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compos
   sourceId,
   ID_SEPARATOR,
   baseProcedureId
+);
+
+/**
+ * Type alias for parsed TaskId components
+ * @public
+ */
+export type ParsedTaskId = Converters.ICompositeId<SourceId, BaseTaskId>;
+
+/**
+ * Converter that parses a TaskId string into its component parts
+ * @public
+ */
+export const parsedTaskId: Converter<ParsedTaskId> = Converters.compositeId(
+  sourceId,
+  ID_SEPARATOR,
+  baseTaskId
 );
 
 /**

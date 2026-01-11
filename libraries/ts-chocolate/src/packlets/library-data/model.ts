@@ -164,7 +164,14 @@ export interface ICollection<
  * Identifiers for sub-libraries within the chocolate library system.
  * @public
  */
-export type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'confections';
+export type SubLibraryId =
+  | 'ingredients'
+  | 'fillings'
+  | 'journals'
+  | 'molds'
+  | 'procedures'
+  | 'tasks'
+  | 'confections';
 
 /**
  * All valid sub-library identifiers.
@@ -176,6 +183,7 @@ export const allSubLibraryIds: ReadonlyArray<SubLibraryId> = [
   'journals',
   'molds',
   'procedures',
+  'tasks',
   'confections'
 ] as const;
 

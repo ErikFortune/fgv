@@ -4,7 +4,7 @@
 
 ## Procedures.IProcedureStep.activeTime property
 
-Time actively working on this step
+Time actively working on this step (overrides task default)
 
 **Signature:**
 

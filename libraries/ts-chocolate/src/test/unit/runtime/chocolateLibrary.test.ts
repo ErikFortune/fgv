@@ -53,6 +53,25 @@ import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
 import { ChocolateLibrary } from '../../../packlets/runtime';
 
+import { ITaskInvocation } from '../../../packlets/tasks';
+import { BaseTaskId } from '../../../packlets/common';
+
+/**
+ * Helper to create an inline task from a description string.
+ * Creates a synthetic baseId from the template for testing purposes.
+ */
+function inlineTask(template: string): ITaskInvocation {
+  const baseId = `test-inline-${template.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}` as BaseTaskId;
+  return {
+    task: {
+      baseId,
+      name: template.slice(0, 30),
+      template
+    },
+    params: {}
+  };
+}
+
 describe('ChocolateLibrary', () => {
   // ============================================================================
   // Test Data
@@ -317,8 +336,8 @@ describe('ChocolateLibrary', () => {
       name: 'Test Procedure',
       description: 'A test procedure',
       steps: [
-        { order: 1, description: 'Step 1' },
-        { order: 2, description: 'Step 2' }
+        { order: 1, task: inlineTask('Step 1') },
+        { order: 2, task: inlineTask('Step 2') }
       ],
       tags: ['test']
     };
@@ -473,7 +492,15 @@ describe('ChocolateLibrary', () => {
         'file-procedure': {
           baseId: 'file-procedure',
           name: 'File Procedure',
-          steps: [{ order: 1, description: 'Do something' }]
+          steps: [
+            {
+              order: 1,
+              task: {
+                task: { baseId: 'file-procedure-step-1', name: 'Do Something', template: 'Do something' },
+                params: {}
+              }
+            }
+          ]
         }
       }
     };

@@ -147,6 +147,14 @@ describe('libraryLoader', () => {
     test('returns correct path for procedures', () => {
       expect(getSubLibraryPath('procedures')).toBe(LibraryPaths.procedures);
     });
+
+    test('returns correct path for tasks', () => {
+      expect(getSubLibraryPath('tasks')).toBe(LibraryPaths.tasks);
+    });
+
+    test('returns correct path for confections', () => {
+      expect(getSubLibraryPath('confections')).toBe(LibraryPaths.confections);
+    });
   });
 
   // ============================================================================

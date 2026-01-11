@@ -48,6 +48,24 @@ import {
 import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
 import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
+import { ITaskInvocation } from '../../../packlets/tasks';
+import { BaseTaskId } from '../../../packlets/common';
+
+/**
+ * Helper to create an inline task from a description string.
+ * Creates a synthetic baseId from the template for testing purposes.
+ */
+function inlineTask(template: string): ITaskInvocation {
+  const baseId = `test-inline-${template.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}` as BaseTaskId;
+  return {
+    task: {
+      baseId,
+      name: template.slice(0, 30),
+      template
+    },
+    params: {}
+  };
+}
 
 describe('RuntimeContext', () => {
   // ============================================================================
@@ -175,13 +193,18 @@ describe('RuntimeContext', () => {
     steps: [
       {
         order: 1,
-        description: 'Melt chocolate to 40-45C',
+        task: inlineTask('Melt chocolate to 40-45C'),
         activeTime: 5 as Minutes,
         temperature: 45 as Celsius
       },
-      { order: 2, description: 'Warm cream to 35C', activeTime: 3 as Minutes, temperature: 35 as Celsius },
-      { order: 3, description: 'Combine and emulsify', activeTime: 5 as Minutes },
-      { order: 4, description: 'Rest at room temperature', waitTime: 30 as Minutes }
+      {
+        order: 2,
+        task: inlineTask('Warm cream to 35C'),
+        activeTime: 3 as Minutes,
+        temperature: 35 as Celsius
+      },
+      { order: 3, task: inlineTask('Combine and emulsify'), activeTime: 5 as Minutes },
+      { order: 4, task: inlineTask('Rest at room temperature'), waitTime: 30 as Minutes }
     ],
     tags: ['ganache', 'cold-process']
   };
@@ -192,9 +215,14 @@ describe('RuntimeContext', () => {
     description: 'Hot method for making ganache',
     category: 'ganache',
     steps: [
-      { order: 1, description: 'Bring cream to boil', activeTime: 5 as Minutes, temperature: 100 as Celsius },
-      { order: 2, description: 'Pour over chocolate', activeTime: 2 as Minutes },
-      { order: 3, description: 'Stir to emulsify', activeTime: 5 as Minutes }
+      {
+        order: 1,
+        task: inlineTask('Bring cream to boil'),
+        activeTime: 5 as Minutes,
+        temperature: 100 as Celsius
+      },
+      { order: 2, task: inlineTask('Pour over chocolate'), activeTime: 2 as Minutes },
+      { order: 3, task: inlineTask('Stir to emulsify'), activeTime: 5 as Minutes }
     ],
     tags: ['ganache', 'hot-process']
   };

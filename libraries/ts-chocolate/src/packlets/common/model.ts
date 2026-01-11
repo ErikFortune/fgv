@@ -69,6 +69,14 @@ export type BaseMoldId = Brand<string, 'BaseMoldId'>;
  */
 export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
 
+/**
+ * Task identifier within a single source
+ * Character restrictions: alphanumeric, dashes, underscores only (no dots)
+ * Pattern: /^[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type BaseTaskId = Brand<string, 'BaseTaskId'>;
+
 // ============================================================================
 // Branded String Types - Composite IDs (exactly one dot)
 // ============================================================================
@@ -108,6 +116,15 @@ export type MoldId = Brand<string, 'MoldId'>;
  * @public
  */
 export type ProcedureId = Brand<string, 'ProcedureId'>;
+
+/**
+ * Globally unique task identifier (composite)
+ * Format: "sourceId.baseTaskId"
+ * Must contain exactly one dot separator
+ * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
+ * @public
+ */
+export type TaskId = Brand<string, 'TaskId'>;
 
 /**
  * Non-unique filling recipe name used for display and grouping

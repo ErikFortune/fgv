@@ -26,8 +26,32 @@ import { Procedure } from '../../../packlets/procedures/procedure';
 import { IProcedure, IProcedureStep } from '../../../packlets/procedures/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IProcedureRenderContext } from '../../../packlets/procedures/renderContext';
-import { BaseProcedureId, Celsius, Minutes } from '../../../packlets/common';
+import { BaseProcedureId, BaseTaskId, Celsius, Minutes, TaskId } from '../../../packlets/common';
 import { IComputedScaledFillingRecipe } from '../../../packlets/fillings';
+import { ITaskInvocation } from '../../../packlets/tasks';
+
+/**
+ * Helper to create an inline task from a description string.
+ * Creates a synthetic baseId from the template for testing purposes.
+ */
+function inlineTask(template: string, params: Record<string, unknown> = {}): ITaskInvocation {
+  const baseId = `test-inline-${template.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}` as BaseTaskId;
+  return {
+    task: {
+      baseId,
+      name: template.slice(0, 30),
+      template
+    },
+    params
+  };
+}
+
+/**
+ * Helper to create a task reference
+ */
+function taskRef(taskId: TaskId | BaseTaskId, params: Record<string, unknown> = {}): ITaskInvocation {
+  return { taskId, params };
+}
 
 describe('Procedure', () => {
   // ============================================================================
@@ -37,24 +61,24 @@ describe('Procedure', () => {
   const steps: IProcedureStep[] = [
     {
       order: 1,
-      description: 'Melt chocolate to 45C',
+      task: inlineTask('Melt chocolate to 45C'),
       activeTime: 5 as Minutes,
       temperature: 45 as Celsius
     },
     {
       order: 2,
-      description: 'Warm cream to 35C',
+      task: inlineTask('Warm cream to 35C'),
       activeTime: 3 as Minutes,
       temperature: 35 as Celsius
     },
     {
       order: 3,
-      description: 'Combine and emulsify',
+      task: inlineTask('Combine and emulsify'),
       activeTime: 5 as Minutes
     },
     {
       order: 4,
-      description: 'Rest at room temperature',
+      task: inlineTask('Rest at room temperature'),
       waitTime: 30 as Minutes
     }
   ];
@@ -72,17 +96,17 @@ describe('Procedure', () => {
   const minimalProcedureData: IProcedure = {
     baseId: 'simple-procedure' as BaseProcedureId,
     name: 'Simple Procedure',
-    steps: [{ order: 1, description: 'Do something' }]
+    steps: [{ order: 1, task: inlineTask('Do something') }]
   };
 
   const procedureWithAllTimes: IProcedure = {
     baseId: 'full-timing' as BaseProcedureId,
     name: 'Full Timing Procedure',
     steps: [
-      { order: 1, description: 'Active step', activeTime: 10 as Minutes },
-      { order: 2, description: 'Wait step', waitTime: 20 as Minutes },
-      { order: 3, description: 'Hold step', holdTime: 15 as Minutes },
-      { order: 4, description: 'Combined step', activeTime: 5 as Minutes, waitTime: 10 as Minutes }
+      { order: 1, task: inlineTask('Active step'), activeTime: 10 as Minutes },
+      { order: 2, task: inlineTask('Wait step'), waitTime: 20 as Minutes },
+      { order: 3, task: inlineTask('Hold step'), holdTime: 15 as Minutes },
+      { order: 4, task: inlineTask('Combined step'), activeTime: 5 as Minutes, waitTime: 10 as Minutes }
     ]
   };
 
@@ -132,8 +156,8 @@ describe('Procedure', () => {
         baseId: 'no-active' as BaseProcedureId,
         name: 'No Active Time',
         steps: [
-          { order: 1, description: 'Wait', waitTime: 30 as Minutes },
-          { order: 2, description: 'Hold', holdTime: 15 as Minutes }
+          { order: 1, task: inlineTask('Wait'), waitTime: 30 as Minutes },
+          { order: 2, task: inlineTask('Hold'), holdTime: 15 as Minutes }
         ]
       };
       expect(Procedure.create(noActiveTimeData)).toSucceedAndSatisfy((procedure) => {
@@ -160,8 +184,8 @@ describe('Procedure', () => {
         baseId: 'no-wait' as BaseProcedureId,
         name: 'No Wait Time',
         steps: [
-          { order: 1, description: 'Active', activeTime: 10 as Minutes },
-          { order: 2, description: 'Hold', holdTime: 15 as Minutes }
+          { order: 1, task: inlineTask('Active'), activeTime: 10 as Minutes },
+          { order: 2, task: inlineTask('Hold'), holdTime: 15 as Minutes }
         ]
       };
       expect(Procedure.create(noWaitTimeData)).toSucceedAndSatisfy((procedure) => {
@@ -201,7 +225,7 @@ describe('Procedure', () => {
       const onlyActiveData: IProcedure = {
         baseId: 'only-active' as BaseProcedureId,
         name: 'Only Active',
-        steps: [{ order: 1, description: 'Active', activeTime: 10 as Minutes }]
+        steps: [{ order: 1, task: inlineTask('Active'), activeTime: 10 as Minutes }]
       };
       expect(Procedure.create(onlyActiveData)).toSucceedAndSatisfy((procedure) => {
         expect(procedure.totalTime).toBe(10);
@@ -281,12 +305,14 @@ describe('Procedure', () => {
       });
     });
 
-    test('rendered steps have renderedDescription matching description', () => {
+    test('rendered steps have renderedDescription matching template', () => {
       expect(Procedure.create(validProcedureData)).toSucceedAndSatisfy((procedure) => {
         expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          rendered.steps.forEach((step, index) => {
-            expect(step.renderedDescription).toBe(validProcedureData.steps[index].description);
-          });
+          // Each step's renderedDescription should match its inline task template
+          expect(rendered.steps[0].renderedDescription).toBe('Melt chocolate to 45C');
+          expect(rendered.steps[1].renderedDescription).toBe('Warm cream to 35C');
+          expect(rendered.steps[2].renderedDescription).toBe('Combine and emulsify');
+          expect(rendered.steps[3].renderedDescription).toBe('Rest at room temperature');
         });
       });
     });
@@ -306,9 +332,50 @@ describe('Procedure', () => {
         expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
           const firstStep = rendered.steps[0];
           expect(firstStep.order).toBe(1);
-          expect(firstStep.description).toBe('Melt chocolate to 45C');
+          expect(firstStep.renderedDescription).toBe('Melt chocolate to 45C');
           expect(firstStep.activeTime).toBe(5);
           expect(firstStep.temperature).toBe(45);
+        });
+      });
+    });
+
+    test('renders inline task with params substitution', () => {
+      const procedureWithParams: IProcedure = {
+        baseId: 'params-test' as BaseProcedureId,
+        name: 'Params Test',
+        steps: [
+          {
+            order: 1,
+            task: inlineTask('Heat {{ingredient}} to {{temp}}C', { ingredient: 'cream', temp: 35 }),
+            activeTime: 5 as Minutes
+          }
+        ]
+      };
+
+      expect(Procedure.create(procedureWithParams)).toSucceedAndSatisfy((procedure) => {
+        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
+          expect(rendered.steps[0].renderedDescription).toBe('Heat cream to 35C');
+        });
+      });
+    });
+
+    test('renders task references with placeholder', () => {
+      const procedureWithRef: IProcedure = {
+        baseId: 'ref-test' as BaseProcedureId,
+        name: 'Ref Test',
+        steps: [
+          {
+            order: 1,
+            task: taskRef('common.melt-chocolate' as TaskId, { temp: 45 }),
+            activeTime: 5 as Minutes
+          }
+        ]
+      };
+
+      expect(Procedure.create(procedureWithRef)).toSucceedAndSatisfy((procedure) => {
+        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
+          // For now, task refs render as placeholders
+          expect(rendered.steps[0].renderedDescription).toBe('[Task: common.melt-chocolate]');
         });
       });
     });

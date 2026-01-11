@@ -4,12 +4,12 @@
 
 ## Procedures.Procedure.render() method
 
-Renders the procedure with the given context. For now, this is a pass-through that copies the description to renderedDescription. Future implementation will support template interpolation.
+Renders the procedure with the given context. Renders task templates for each step using the task's params.
 
 **Signature:**
 
 ```typescript
-render(_context: IProcedureRenderContext): Result<IRenderedProcedure>;
+render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
 ```
 
 ## Parameters
@@ -32,7 +32,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-\_context
+context
 
 
 </td><td>
@@ -42,8 +42,6 @@ Description
 
 </td><td>
 
-The render context (unused in current implementation)
-
 
 </td></tr>
 </tbody></table>
@@ -52,5 +50,5 @@ The render context (unused in current implementation)
 
 Result&lt;[IRenderedProcedure](./ts-chocolate.procedures.irenderedprocedure.md)<!-- -->&gt;
 
-Success with rendered procedure
+Success with rendered procedure, or Failure if rendering fails
 

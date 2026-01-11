@@ -68,10 +68,12 @@ const {
   toBaseIngredientId,
   toBaseMoldId,
   toBaseProcedureId,
+  toBaseTaskId,
   toBaseFillingId,
   toIngredientId,
   toMoldId,
   toProcedureId,
+  toTaskId,
   toFillingId,
   toFillingName,
   toFillingVersionSpec,
@@ -306,6 +308,7 @@ describe('Common validation', () => {
       ['toBaseIngredientId', toBaseIngredientId, 'maracaibo-65', 'base.id', /Invalid BaseIngredientId/],
       ['toBaseMoldId', toBaseMoldId, 'cw-2227', 'mold.id', /Invalid BaseMoldId/],
       ['toBaseProcedureId', toBaseProcedureId, 'ganache-cold', 'proc.id', /Invalid BaseProcedureId/],
+      ['toBaseTaskId', toBaseTaskId, 'melt-chocolate', 'task.id', /Invalid BaseTaskId/],
       ['toBaseFillingId', toBaseFillingId, 'classic-ganache', 'recipe.id', /Invalid BaseFillingId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {
@@ -333,6 +336,7 @@ describe('Common validation', () => {
       ['toIngredientId', toIngredientId, 'felchlin.maracaibo-65', 'maracaibo-65', /Invalid IngredientId/],
       ['toMoldId', toMoldId, 'common.cw-2227', 'cw-2227', /Invalid MoldId/],
       ['toProcedureId', toProcedureId, 'common.ganache-cold', 'ganache-cold', /Invalid ProcedureId/],
+      ['toTaskId', toTaskId, 'common.melt-chocolate', 'melt-chocolate', /Invalid TaskId/],
       ['toFillingId', toFillingId, 'user.classic-ganache', 'classic-ganache', /Invalid FillingId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {

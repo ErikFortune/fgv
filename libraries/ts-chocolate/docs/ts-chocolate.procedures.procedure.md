@@ -341,7 +341,7 @@ Creates a Procedure instance from procedure data
 </td></tr>
 <tr><td>
 
-[render(\_context)](./ts-chocolate.procedures.procedure.render.md)
+[render(context)](./ts-chocolate.procedures.procedure.render.md)
 
 
 </td><td>
@@ -349,7 +349,7 @@ Creates a Procedure instance from procedure data
 
 </td><td>
 
-Renders the procedure with the given context. For now, this is a pass-through that copies the description to renderedDescription. Future implementation will support template interpolation.
+Renders the procedure with the given context. Renders task templates for each step using the task's params.
 
 
 </td></tr>

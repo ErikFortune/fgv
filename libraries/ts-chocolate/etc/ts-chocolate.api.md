@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_10 } from '@fgv/ts-utils';
+import { Converters as Converters_11 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -237,6 +237,12 @@ export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
 const baseProcedureId: Converter<BaseProcedureId>;
 
 // @public
+export type BaseTaskId = Brand<string, 'BaseTaskId'>;
+
+// @public
+const baseTaskId: Converter<BaseTaskId>;
+
+// @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
 
 // @public
@@ -253,6 +259,7 @@ declare namespace BuiltIn {
         confectionCollections,
         ingredientCollections,
         recipeCollections,
+        taskCollections,
         BuiltInData
     }
 }
@@ -268,6 +275,7 @@ class BuiltInData {
     static getLibraryTree(): Result<FileTree.IFileTreeDirectoryItem>;
     static getMoldsDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
     static getProceduresDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
+    static getTasksDirectory(): Result<FileTree.IFileTreeDirectoryItem>;
 }
 
 // @public
@@ -377,7 +385,7 @@ class ChocolateLibrary {
     getMold(id: MoldId): Result<Mold>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getProcedure(id: ProcedureId): Result<Procedure>;
-    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "Recipes"
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: FillingId): Result<IFillingRecipe>;
     hasConfection(id: ConfectionId): boolean;
     hasIngredient(id: IngredientId): boolean;
@@ -723,11 +731,13 @@ declare namespace Converters {
         baseFillingId,
         baseMoldId,
         baseProcedureId,
+        baseTaskId,
         baseConfectionId,
         ingredientId,
         fillingId,
         moldId,
         procedureId,
+        taskId,
         confectionId,
         journalId,
         ParsedIngredientId,
@@ -738,6 +748,8 @@ declare namespace Converters {
         parsedMoldId,
         ParsedProcedureId,
         parsedProcedureId,
+        ParsedTaskId,
+        parsedTaskId,
         fillingName,
         fillingVersionSpec,
         fillingVersionId,
@@ -780,6 +792,21 @@ declare namespace Converters {
     }
 }
 export { Converters }
+
+declare namespace Converters_10 {
+    export {
+        taskData,
+        taskIdOrBaseTaskId,
+        taskRef,
+        taskRefStatus,
+        inlineTask,
+        taskInvocation,
+        procedureStepTask,
+        validationBehavior,
+        renderOptions,
+        task
+    }
+}
 
 declare namespace Converters_2 {
     export {
@@ -966,6 +993,9 @@ function decryptCollectionFile(tombstone: IEncryptedCollectionFile, key: Uint8Ar
 
 // @public
 const DEFAULT_ALGORITHM: EncryptionAlgorithm;
+
+// @public
+const defaultRenderOptions: Required<Omit<IRenderOptions, 'additionalContext'>>;
 
 // @public
 const defaultScalerRegistry: UnitScalerRegistry;
@@ -1337,6 +1367,9 @@ function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IF
 
 // @public
 function getSubLibraryPath(subLibraryId: SubLibraryId): string;
+
+// @public
+function getTasksDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
 function hasAllTags<T>(tags: string[], getter: (item: T) => ReadonlyArray<string>): FilterPredicate<T>;
@@ -2086,6 +2119,12 @@ interface IIngredientUsageInfo {
     readonly isPrimary: boolean;
 }
 
+// @public
+interface IInlineTask {
+    readonly params: Record<string, unknown>;
+    readonly task: ITaskData;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2450,6 +2489,9 @@ const ingredientSnapshot: Converter<IIngredientSnapshot>;
 type IngredientUsageType = 'primary' | 'alternate' | 'any';
 
 // @public
+const inlineTask: Converter<IInlineTask>;
+
+// @public
 interface INormalizedMergeSource<TLibrary, TCollectionId extends string> {
     readonly filter: LibraryLoadSpec<TCollectionId>;
     readonly library: TLibrary;
@@ -2503,12 +2545,18 @@ type IProceduresLibraryParams = ISubLibraryParams<ProceduresLibrary, ProcedureCo
 // @public
 interface IProcedureStep {
     readonly activeTime?: Minutes;
-    readonly description: string;
     readonly holdTime?: Minutes;
     readonly notes?: string;
     readonly order: number;
+    readonly task: ITaskInvocation;
     readonly temperature?: Celsius;
     readonly waitTime?: Minutes;
+}
+
+// @public
+interface IProcedureStepValidation {
+    readonly messages: ReadonlyArray<string>;
+    readonly status: TaskRefStatus;
 }
 
 // @public
@@ -2594,6 +2642,13 @@ interface IRenderedProcedure {
 // @public
 interface IRenderedProcedureStep extends IProcedureStep {
     readonly renderedDescription: string;
+}
+
+// @public
+interface IRenderOptions {
+    readonly additionalContext?: Record<string, unknown>;
+    readonly onInvalidTaskRef?: ValidationBehavior;
+    readonly onMissingVariables?: ValidationBehavior;
 }
 
 // @public
@@ -3062,6 +3117,9 @@ function isFillingRecipeJournalRecord(record: AnyJournalRecord): record is IFill
 function isFillingRecipeVersion(version: AnyFillingRecipeVersion): version is IFillingRecipeVersion;
 
 // @public
+function isInlineTask(invocation: ITaskInvocation): invocation is IInlineTask;
+
+// @public
 function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TLibrary | IMergeLibrarySource<TLibrary, TCollectionId>): source is IMergeLibrarySource<TLibrary, TCollectionId>;
 
 // @public
@@ -3087,6 +3145,9 @@ function isScaledFillingRecipeVersion(version: AnyFillingRecipeVersion): version
 
 // @public
 function isSugarIngredient(ingredient: Ingredient): ingredient is ISugarIngredient;
+
+// @public
+function isTaskRef(invocation: ITaskInvocation): invocation is ITaskRef;
 
 // @public
 interface ISubLibraryAsyncLoadResult<TBaseId extends string, TItem> {
@@ -3146,6 +3207,9 @@ function isValidBaseMoldId(from: unknown): from is BaseMoldId;
 
 // @public
 function isValidBaseProcedureId(from: unknown): from is BaseProcedureId;
+
+// @public
+function isValidBaseTaskId(from: unknown): from is BaseTaskId;
 
 // @public
 function isValidCelsius(from: unknown): from is Celsius;
@@ -3214,12 +3278,60 @@ function isValidSlotId(from: unknown): from is SlotId;
 function isValidSourceId(from: unknown): from is SourceId;
 
 // @public
+function isValidTaskId(from: unknown): from is TaskId;
+
+// @public
 function isValidUrlCategory(from: unknown): from is UrlCategory;
 
 // Warning: (ae-forgotten-export) The symbol "WeightExcludedUnit" needs to be exported by the entry point index.d.ts
 //
 // @public
 function isWeightExcluded(unit: MeasurementUnit): unit is WeightExcludedUnit;
+
+// @public
+interface ITask extends ITaskData {
+    readonly requiredVariables: ReadonlyArray<string>;
+}
+
+// @public
+interface ITaskData {
+    readonly baseId: BaseTaskId;
+    readonly defaultActiveTime?: Minutes;
+    readonly defaultHoldTime?: Minutes;
+    readonly defaultTemperature?: Celsius;
+    readonly defaultWaitTime?: Minutes;
+    readonly name: string;
+    readonly notes?: string;
+    readonly tags?: ReadonlyArray<string>;
+    readonly template: string;
+}
+
+// @public
+type ITaskFileTreeSource = SubLibraryFileTreeSource;
+
+// @public
+type ITaskInvocation = IInlineTask | ITaskRef;
+
+// @public
+interface ITaskRef {
+    readonly params: Record<string, unknown>;
+    readonly taskId: TaskId | BaseTaskId;
+}
+
+// @public
+interface ITaskRefValidation {
+    readonly extraVariables: ReadonlyArray<string>;
+    readonly isValid: boolean;
+    readonly messages: ReadonlyArray<string>;
+    readonly missingVariables: ReadonlyArray<string>;
+    readonly taskFound: boolean;
+}
+
+// @public
+type ITasksLibraryAsyncParams = ISubLibraryAsyncParams<TasksLibrary, TaskCollectionEntryInit>;
+
+// @public
+type ITasksLibraryParams = ISubLibraryParams<TasksLibrary, TaskCollectionEntryInit>;
 
 // @public
 interface ITemperatureCurve {
@@ -3232,6 +3344,11 @@ interface ITemperatureCurve {
 interface IUnitScaler {
     scale(amount: Measurement, factor: number): Result<IScaledAmount>;
     readonly supportsScaling: boolean;
+}
+
+// @public
+interface IValidatedProcedureStep extends IProcedureStep {
+    readonly validation?: IProcedureStepValidation;
 }
 
 // @public
@@ -3397,6 +3514,7 @@ declare namespace LibraryData {
         getJournalsDirectory,
         getMoldsDirectory,
         getProceduresDirectory,
+        getTasksDirectory,
         getConfectionsDirectory,
         LibraryPaths,
         specToLoadParams,
@@ -3439,6 +3557,7 @@ const LibraryPaths: {
     readonly journals: "data/journals";
     readonly molds: "data/molds";
     readonly procedures: "data/procedures";
+    readonly tasks: "data/tasks";
     readonly confections: "data/confections";
 };
 
@@ -3622,46 +3741,52 @@ function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(o
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-type ParsedConfectionId = Converters_10.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_11.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_10.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionVersionId = Converters_11.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 // @public
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_10.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_11.ICompositeId<SourceId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_10.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingVersionId = Converters_11.ICompositeId<FillingId, FillingVersionSpec>;
 
 // @public
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_10.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_11.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedMoldId = Converters_10.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_11.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
 
 // @public
-type ParsedProcedureId = Converters_10.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_11.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
+
+// @public
+type ParsedTaskId = Converters_11.ICompositeId<SourceId, BaseTaskId>;
+
+// @public
+const parsedTaskId: Converter<ParsedTaskId>;
 
 // @public
 function parseFillingId(id: FillingId): Result<ParsedFillingId>;
@@ -3700,7 +3825,7 @@ class Procedure implements IProcedure {
     readonly name: string;
     // (undocumented)
     readonly notes?: string;
-    render(_context: IProcedureRenderContext): Result<IRenderedProcedure>;
+    render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
     get stepCount(): number;
     // (undocumented)
     readonly steps: ReadonlyArray<IProcedureStep>;
@@ -3752,6 +3877,8 @@ declare namespace Procedures {
     export {
         Converters_9 as Converters,
         IProcedureStep,
+        IProcedureStepValidation,
+        IValidatedProcedureStep,
         IProcedure,
         Procedure,
         ProcedureCollectionEntry,
@@ -3786,6 +3913,9 @@ type ProceduresMergeSource = SubLibraryMergeSource<ProceduresLibrary>;
 //
 // @public
 const procedureStep: Converter<IProcedureStep>;
+
+// @public @deprecated (undocumented)
+const procedureStepTask: Converter<ITaskInvocation>;
 
 // @public
 type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
@@ -4001,6 +4131,9 @@ function removeExtension(extensions: ReadonlyArray<string>): Converter<string>;
 
 // @public
 const removeJsonExtension: Converter<string>;
+
+// @public
+const renderOptions: Converter<IRenderOptions>;
 
 // @public
 type ResolutionStatus = 'resolved' | 'missing' | 'error';
@@ -4642,7 +4775,7 @@ type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.Aggregated
 type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;
 
 // @public
-type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'confections';
+type SubLibraryId = 'ingredients' | 'fillings' | 'journals' | 'molds' | 'procedures' | 'tasks' | 'confections';
 
 // @public
 type SubLibraryMergeSource<TLibrary> = TLibrary | IMergeLibrarySource<TLibrary, SourceId>;
@@ -4652,6 +4785,106 @@ const sugarIngredient: Converter<ISugarIngredient>;
 
 // @public
 function supportsScaling(unit: MeasurementUnit): boolean;
+
+// @public
+class Task implements ITask {
+    readonly baseId: BaseTaskId;
+    static create(data: ITaskData): Result<Task>;
+    readonly defaultActiveTime?: Minutes;
+    readonly defaultHoldTime?: Minutes;
+    readonly defaultTemperature?: Celsius;
+    readonly defaultWaitTime?: Minutes;
+    getTemplateVariables(): readonly string[];
+    readonly name: string;
+    readonly notes?: string;
+    render(params: Record<string, unknown>): Result<string>;
+    readonly requiredVariables: ReadonlyArray<string>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly template: string;
+    toData(): ITaskData;
+    validateAndRender(params: Record<string, unknown>): Result<string>;
+    validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
+}
+
+// @public
+const task: Converter<Task>;
+
+// @public
+type TaskCollection = SubLibraryCollection<BaseTaskId, Task>;
+
+// @public
+type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, Task>;
+
+// @public
+type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, Task>;
+
+// @public
+const taskCollections: Record<string, JsonObject>;
+
+// @public
+type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, Task>;
+
+// @public
+const taskData: Converter<ITaskData>;
+
+// @public
+export type TaskId = Brand<string, 'TaskId'>;
+
+// @public
+const taskId: Converter<TaskId>;
+
+// @public
+const taskIdOrBaseTaskId: Converter<TaskId | BaseTaskId>;
+
+// @public
+const taskInvocation: Converter<ITaskInvocation>;
+
+// @public
+const taskRef: Converter<ITaskRef>;
+
+// @public
+type TaskRefStatus = 'valid' | 'task-not-found' | 'missing-variables' | 'invalid-params';
+
+// @public
+const taskRefStatus: Converter<TaskRefStatus>;
+
+declare namespace Tasks {
+    export {
+        Converters_10 as Converters,
+        isTaskRef,
+        isInlineTask,
+        ITaskData,
+        ITask,
+        ITaskRef,
+        TaskRefStatus,
+        ITaskRefValidation,
+        IInlineTask,
+        ITaskInvocation,
+        ValidationBehavior,
+        IRenderOptions,
+        defaultRenderOptions,
+        Task,
+        TaskCollectionEntry,
+        TaskCollectionEntryInit,
+        TaskCollectionValidator,
+        TaskCollection,
+        ITaskFileTreeSource,
+        TasksMergeSource,
+        ITasksLibraryParams,
+        ITasksLibraryAsyncParams,
+        TasksLibrary
+    }
+}
+export { Tasks }
+
+// @public
+class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, Task> {
+    static create(params?: ITasksLibraryParams): Result<TasksLibrary>;
+    static createAsync(params?: ITasksLibraryAsyncParams): Promise<Result<TasksLibrary>>;
+}
+
+// @public
+type TasksMergeSource = SubLibraryMergeSource<TasksLibrary>;
 
 // @public
 const temperatureCurve: Converter<ITemperatureCurve>;
@@ -4670,6 +4903,9 @@ function toBaseMoldId(from: unknown): Result<BaseMoldId>;
 
 // @public
 function toBaseProcedureId(from: unknown): Result<BaseProcedureId>;
+
+// @public
+function toBaseTaskId(from: unknown): Result<BaseTaskId>;
 
 // @public
 function toCelsius(from: unknown): Result<Celsius>;
@@ -4738,6 +4974,9 @@ function toSlotId(from: unknown): Result<SlotId>;
 function toSourceId(from: unknown): Result<SourceId>;
 
 // @public
+function toTaskId(from: unknown): Result<TaskId>;
+
+// @public
 function toUrlCategory(from: unknown): Result<UrlCategory>;
 
 // @public
@@ -4788,6 +5027,8 @@ declare namespace Validation {
         toBaseMoldId,
         isValidBaseProcedureId,
         toBaseProcedureId,
+        isValidBaseTaskId,
+        toBaseTaskId,
         isValidBaseConfectionId,
         toBaseConfectionId,
         isValidUrlCategory,
@@ -4800,6 +5041,8 @@ declare namespace Validation {
         toMoldId,
         isValidProcedureId,
         toProcedureId,
+        isValidTaskId,
+        toTaskId,
         isValidConfectionId,
         toConfectionId,
         isValidFillingName,
@@ -4839,6 +5082,12 @@ declare namespace Validation {
     }
 }
 export { Validation }
+
+// @public
+type ValidationBehavior = 'ignore' | 'warn' | 'fail';
+
+// @public
+const validationBehavior: Converter<ValidationBehavior>;
 
 // @public
 export const VERSION_ID_SEPARATOR: string;

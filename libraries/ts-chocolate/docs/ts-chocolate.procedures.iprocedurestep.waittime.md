@@ -4,7 +4,7 @@
 
 ## Procedures.IProcedureStep.waitTime property
 
-Passive waiting time (e.g., resting, cooling)
+Passive waiting time (overrides task default)
 
 **Signature:**
 

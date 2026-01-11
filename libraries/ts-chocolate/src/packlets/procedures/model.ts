@@ -25,9 +25,11 @@
 
 import { BaseProcedureId, Celsius, Minutes } from '../common';
 import { FillingCategory } from '../fillings';
+import { ITaskInvocation, TaskRefStatus } from '../tasks';
 
 /**
- * A single step in a procedure
+ * A single step in a procedure (persisted data model).
+ * Does not include validation state - that is contextual and computed at runtime.
  * @public
  */
 export interface IProcedureStep {
@@ -37,28 +39,27 @@ export interface IProcedureStep {
   readonly order: number;
 
   /**
-   * Description of what to do in this step
-   * (Will support templating in the future)
+   * The task for this step - either a reference to a public task or an inline task definition
    */
-  readonly description: string;
+  readonly task: ITaskInvocation;
 
   /**
-   * Time actively working on this step
+   * Time actively working on this step (overrides task default)
    */
   readonly activeTime?: Minutes;
 
   /**
-   * Passive waiting time (e.g., resting, cooling)
+   * Passive waiting time (overrides task default)
    */
   readonly waitTime?: Minutes;
 
   /**
-   * Time to hold at a temperature
+   * Time to hold at a temperature (overrides task default)
    */
   readonly holdTime?: Minutes;
 
   /**
-   * Target temperature for this step
+   * Target temperature for this step (overrides task default)
    */
   readonly temperature?: Celsius;
 
@@ -66,6 +67,39 @@ export interface IProcedureStep {
    * Optional notes for this step
    */
   readonly notes?: string;
+}
+
+/**
+ * Runtime validation state for a procedure step.
+ * This is computed at render/use time based on which TasksLibrary is available.
+ * @public
+ */
+export interface IProcedureStepValidation {
+  /**
+   * Validation status for task reference
+   * - 'valid': Task found and all required variables provided
+   * - 'task-not-found': Referenced task not found in TasksLibrary
+   * - 'missing-variables': Task found but required variables missing from params
+   * - 'invalid-params': Params validation failed
+   */
+  readonly status: TaskRefStatus;
+
+  /**
+   * Validation messages describing any issues
+   */
+  readonly messages: ReadonlyArray<string>;
+}
+
+/**
+ * A procedure step with runtime validation state attached.
+ * Used during rendering when validation has been performed.
+ * @public
+ */
+export interface IValidatedProcedureStep extends IProcedureStep {
+  /**
+   * Runtime validation state (computed, not persisted)
+   */
+  readonly validation?: IProcedureStepValidation;
 }
 
 /**

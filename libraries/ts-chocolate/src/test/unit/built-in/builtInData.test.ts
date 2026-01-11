@@ -288,6 +288,47 @@ describe('BuiltInData', () => {
   });
 
   // ============================================================================
+  // getTasksDirectory Tests
+  // ============================================================================
+
+  describe('getTasksDirectory', () => {
+    test('returns the tasks directory', () => {
+      expect(BuiltInData.getTasksDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.type).toBe('directory');
+        expect(dir.name).toBe('tasks');
+      });
+    });
+
+    test('tasks directory contains expected collections', () => {
+      expect(BuiltInData.getTasksDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const names = children.map((c) => c.name).sort();
+          expect(names).toContain('common.json');
+        });
+      });
+    });
+
+    test('common.json contains expected tasks', () => {
+      expect(BuiltInData.getTasksDirectory()).toSucceedAndSatisfy((dir) => {
+        expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
+          const commonFile = children.find((c) => c.name === 'common.json');
+          expect(commonFile).toBeDefined();
+          expect(commonFile?.type).toBe('file');
+
+          if (commonFile?.type === 'file') {
+            expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
+              const sourceFile = contents as { items: Record<string, unknown> };
+              expect(sourceFile.items['melt-chocolate']).toBeDefined();
+              expect(sourceFile.items['heat-ingredient']).toBeDefined();
+              expect(sourceFile.items['combine-and-emulsify']).toBeDefined();
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // ============================================================================
   // Source Data Validation Tests
   // ============================================================================
 

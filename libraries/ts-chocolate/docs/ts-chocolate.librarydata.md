@@ -187,6 +187,17 @@ Gets the directory path for a sub-library.
 </td></tr>
 <tr><td>
 
+[getTasksDirectory(tree)](./ts-chocolate.librarydata.gettasksdirectory.md)
+
+
+</td><td>
+
+Gets the tasks directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [isMergeLibrarySource(source)](./ts-chocolate.librarydata.ismergelibrarysource.md)
 
 

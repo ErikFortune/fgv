@@ -67,7 +67,7 @@ export class FillingRecipe implements IFillingRecipe {
    */
   public static create(data: IFillingRecipe): Result<FillingRecipe> {
     const goldenVersion = data.versions.find((v) => v.versionSpec === data.goldenVersionSpec);
-    /* c8 ignore next 3 - defensive: converter validates golden version exists before calling create */
+    /* c8 ignore next 5 - defensive: converter validates golden version exists before calling create */
     if (!goldenVersion) {
       return Failure.with(
         `Golden version ${data.goldenVersionSpec} not found in filling recipe ${data.baseId}`

@@ -32,6 +32,7 @@ import {
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
+  BaseTaskId,
   Celsius,
   COMPOSITE_ID_PATTERN,
   CONFECTION_VERSION_SPEC_PATTERN,
@@ -62,6 +63,7 @@ import {
   SessionId,
   SlotId,
   SourceId,
+  TaskId,
   UrlCategory,
   VERSION_ID_SEPARATOR
 } from './model';
@@ -189,6 +191,29 @@ export function toBaseProcedureId(from: unknown): Result<BaseProcedureId> {
   return Failure.with(
     'Invalid BaseProcedureId: must be non-empty alphanumeric with dashes/underscores, no dots'
   );
+}
+
+/**
+ * Type guard for BaseTaskId
+ * @param from - Value to check
+ * @returns True if the value is a valid BaseTaskId
+ * @public
+ */
+export function isValidBaseTaskId(from: unknown): from is BaseTaskId {
+  return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to BaseTaskId
+ * @param from - Value to convert
+ * @returns Result with BaseTaskId or error
+ * @public
+ */
+export function toBaseTaskId(from: unknown): Result<BaseTaskId> {
+  if (isValidBaseTaskId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with('Invalid BaseTaskId: must be non-empty alphanumeric with dashes/underscores, no dots');
 }
 
 /**
@@ -340,6 +365,31 @@ export function toProcedureId(from: unknown): Result<ProcedureId> {
   }
   return Failure.with(
     'Invalid ProcedureId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
+  );
+}
+
+/**
+ * Type guard for TaskId
+ * @param from - Value to check
+ * @returns True if the value is a valid composite TaskId
+ * @public
+ */
+export function isValidTaskId(from: unknown): from is TaskId {
+  return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
+}
+
+/**
+ * Converts unknown value to TaskId
+ * @param from - Value to convert
+ * @returns Result with TaskId or error
+ * @public
+ */
+export function toTaskId(from: unknown): Result<TaskId> {
+  if (isValidTaskId(from)) {
+    return Success.with(from);
+  }
+  return Failure.with(
+    'Invalid TaskId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
   );
 }
 

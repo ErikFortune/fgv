@@ -106,6 +106,8 @@ export function getSubLibraryPath(subLibraryId: SubLibraryId): string {
       return LibraryPaths.molds;
     case 'procedures':
       return LibraryPaths.procedures;
+    case 'tasks':
+      return LibraryPaths.tasks;
     /* c8 ignore next 2 - functional code tested but coverage intermittently missed */
     case 'confections':
       return LibraryPaths.confections;

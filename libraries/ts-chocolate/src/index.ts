@@ -36,6 +36,7 @@ import * as LibraryData from './packlets/library-data';
 import * as Molds from './packlets/molds';
 import * as Procedures from './packlets/procedures';
 import * as Runtime from './packlets/runtime';
+import * as Tasks from './packlets/tasks';
 
 export {
   BuiltIn,
@@ -48,5 +49,6 @@ export {
   LibraryData,
   Molds,
   Procedures,
-  Runtime
+  Runtime,
+  Tasks
 };

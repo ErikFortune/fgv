@@ -76,5 +76,16 @@ Generated recipe collections from source YAML files.
 
 
 </td></tr>
+<tr><td>
+
+[taskCollections](./ts-chocolate.builtin.taskcollections.md)
+
+
+</td><td>
+
+Generated task collections from source YAML files.
+
+
+</td></tr>
 </tbody></table>
 

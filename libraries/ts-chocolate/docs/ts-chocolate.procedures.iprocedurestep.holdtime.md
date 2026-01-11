@@ -4,7 +4,7 @@
 
 ## Procedures.IProcedureStep.holdTime property
 
-Time to hold at a temperature
+Time to hold at a temperature (overrides task default)
 
 **Signature:**
 

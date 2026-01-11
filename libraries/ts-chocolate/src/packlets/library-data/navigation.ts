@@ -47,6 +47,10 @@ export const LibraryPaths = {
    */
   procedures: 'data/procedures',
   /**
+   * Path to the tasks data directory.
+   */
+  tasks: 'data/tasks',
+  /**
    * Path to the confections data directory.
    */
   confections: 'data/confections'
@@ -146,6 +150,16 @@ export function getMoldsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.
  */
 export function getProceduresDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
   return navigateToDirectory(tree, LibraryPaths.procedures);
+}
+
+/**
+ * Gets the tasks directory from a library tree.
+ * @param tree - The root library FileTree item.
+ * @returns `Success` with the tasks directory or `Failure` if not found.
+ * @public
+ */
+export function getTasksDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.tasks);
 }
 
 /**

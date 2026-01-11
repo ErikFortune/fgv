@@ -25,14 +25,16 @@ import {
   getIngredientsDirectory,
   getMoldsDirectory,
   getProceduresDirectory,
-  getFillingsDirectory
+  getFillingsDirectory,
+  getTasksDirectory
 } from '../library-data';
 import {
   confectionCollections,
   ingredientCollections,
   moldCollections,
   procedureCollections,
-  recipeCollections
+  recipeCollections,
+  taskCollections
 } from './builtInData.generated';
 
 /**
@@ -55,6 +57,10 @@ const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
   })),
   ...Object.entries(procedureCollections).map(([name, data]) => ({
     path: `/data/procedures/${name}.json`,
+    contents: data
+  })),
+  ...Object.entries(taskCollections).map(([name, data]) => ({
+    path: `/data/tasks/${name}.json`,
     contents: data
   })),
   ...Object.entries(confectionCollections).map(([name, data]) => ({
@@ -87,6 +93,8 @@ export class BuiltInData {
    *     ├── molds/
    *     │   └── common.json
    *     ├── procedures/
+   *     │   └── common.json
+   *     ├── tasks/
    *     │   └── common.json
    *     └── confections/
    *         └── common.json
@@ -141,6 +149,14 @@ export class BuiltInData {
    */
   public static getProceduresDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
     return BuiltInData.getLibraryTree().onSuccess((tree) => getProceduresDirectory(tree));
+  }
+
+  /**
+   * Gets the tasks directory from the built-in library tree.
+   * @returns `Success` with the tasks directory, or `Failure` if not found.
+   */
+  public static getTasksDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    return BuiltInData.getLibraryTree().onSuccess((tree) => getTasksDirectory(tree));
   }
 
   /**

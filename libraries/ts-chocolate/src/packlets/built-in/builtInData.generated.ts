@@ -12,8 +12,10 @@
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/procedures/common.yaml
+//   - data/published/tasks/common.yaml
 //   - data/published/confections/common.yaml
 
+/* eslint-disable max-lines */
 import { JsonObject } from '@fgv/ts-json-base';
 
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -1519,30 +1521,65 @@ export const procedureCollections: Record<string, JsonObject> = {
         steps: [
           {
             order: 1,
-            description: 'Melt chocolate to 40-45C',
+            task: {
+              task: {
+                baseId: 'ganache-cold-method-step-1',
+                name: 'Melt Chocolate',
+                template: 'Melt chocolate to 40-45C'
+              },
+              params: {}
+            },
             activeTime: 5,
             temperature: 45
           },
           {
             order: 2,
-            description: 'Warm cream to 35C',
+            task: {
+              task: {
+                baseId: 'ganache-cold-method-step-2',
+                name: 'Warm Cream',
+                template: 'Warm cream to 35C'
+              },
+              params: {}
+            },
             activeTime: 3,
             temperature: 35
           },
           {
             order: 3,
-            description: 'Combine and emulsify with immersion blender',
+            task: {
+              task: {
+                baseId: 'ganache-cold-method-step-3',
+                name: 'Combine and Emulsify',
+                template: 'Combine and emulsify with immersion blender'
+              },
+              params: {}
+            },
             activeTime: 5
           },
           {
             order: 4,
-            description: 'Add butter at 35C and blend until smooth',
+            task: {
+              task: {
+                baseId: 'ganache-cold-method-step-4',
+                name: 'Add Butter',
+                template: 'Add butter at 35C and blend until smooth'
+              },
+              params: {}
+            },
             activeTime: 2,
             temperature: 35
           },
           {
             order: 5,
-            description: 'Rest at room temperature',
+            task: {
+              task: {
+                baseId: 'ganache-cold-method-step-5',
+                name: 'Rest',
+                template: 'Rest at room temperature'
+              },
+              params: {}
+            },
             waitTime: 30
           }
         ],
@@ -1555,28 +1592,63 @@ export const procedureCollections: Record<string, JsonObject> = {
         steps: [
           {
             order: 1,
-            description: 'Bring cream to boil',
+            task: {
+              task: {
+                baseId: 'ganache-hot-method-step-1',
+                name: 'Boil Cream',
+                template: 'Bring cream to boil'
+              },
+              params: {}
+            },
             activeTime: 5,
             temperature: 100
           },
           {
             order: 2,
-            description: 'Pour over finely chopped chocolate',
+            task: {
+              task: {
+                baseId: 'ganache-hot-method-step-2',
+                name: 'Pour Over Chocolate',
+                template: 'Pour over finely chopped chocolate'
+              },
+              params: {}
+            },
             activeTime: 1
           },
           {
             order: 3,
-            description: 'Let stand 1-2 minutes',
+            task: {
+              task: {
+                baseId: 'ganache-hot-method-step-3',
+                name: 'Let Stand',
+                template: 'Let stand 1-2 minutes'
+              },
+              params: {}
+            },
             waitTime: 2
           },
           {
             order: 4,
-            description: 'Stir from center outward to emulsify',
+            task: {
+              task: {
+                baseId: 'ganache-hot-method-step-4',
+                name: 'Stir to Emulsify',
+                template: 'Stir from center outward to emulsify'
+              },
+              params: {}
+            },
             activeTime: 5
           },
           {
             order: 5,
-            description: 'Add butter and blend until smooth',
+            task: {
+              task: {
+                baseId: 'ganache-hot-method-step-5',
+                name: 'Add Butter',
+                template: 'Add butter and blend until smooth'
+              },
+              params: {}
+            },
             activeTime: 2
           }
         ],
@@ -1589,38 +1661,206 @@ export const procedureCollections: Record<string, JsonObject> = {
         steps: [
           {
             order: 1,
-            description: 'Roast hazelnuts at 150C until golden',
+            task: {
+              task: {
+                baseId: 'gianduja-step-1',
+                name: 'Roast Hazelnuts',
+                template: 'Roast hazelnuts at 150C until golden'
+              },
+              params: {}
+            },
             activeTime: 15,
             temperature: 150
           },
           {
             order: 2,
-            description: 'Rub off skins while warm',
+            task: {
+              task: {
+                baseId: 'gianduja-step-2',
+                name: 'Remove Skins',
+                template: 'Rub off skins while warm'
+              },
+              params: {}
+            },
             activeTime: 5
           },
           {
             order: 3,
-            description: 'Grind to paste in food processor',
+            task: {
+              task: {
+                baseId: 'gianduja-step-3',
+                name: 'Grind to Paste',
+                template: 'Grind to paste in food processor'
+              },
+              params: {}
+            },
             activeTime: 10
           },
           {
             order: 4,
-            description: 'Melt chocolate to 45C',
+            task: {
+              task: {
+                baseId: 'gianduja-step-4',
+                name: 'Melt Chocolate',
+                template: 'Melt chocolate to 45C'
+              },
+              params: {}
+            },
             activeTime: 5,
             temperature: 45
           },
           {
             order: 5,
-            description: 'Combine paste and chocolate, mix until smooth',
+            task: {
+              task: {
+                baseId: 'gianduja-step-5',
+                name: 'Combine',
+                template: 'Combine paste and chocolate, mix until smooth'
+              },
+              params: {}
+            },
             activeTime: 5
           },
           {
             order: 6,
-            description: 'Temper and pour into molds',
+            task: {
+              task: {
+                baseId: 'gianduja-step-6',
+                name: 'Temper and Mold',
+                template: 'Temper and pour into molds'
+              },
+              params: {}
+            },
             activeTime: 15
           }
         ],
         tags: ['gianduja', 'hazelnut', 'nut-paste']
+      }
+    }
+  }
+};
+
+/**
+ * Generated task collections from source YAML files.
+ * @public
+ */
+export const taskCollections: Record<string, JsonObject> = {
+  common: {
+    metadata: {
+      name: 'Common Tasks',
+      description: 'Reusable task templates for chocolate-making'
+    },
+    items: {
+      'melt-chocolate': {
+        baseId: 'melt-chocolate',
+        name: 'Melt Chocolate',
+        template: 'Melt {{ingredient}} to {{temp}}C',
+        defaultActiveTime: 5,
+        tags: ['chocolate', 'melting', 'heating']
+      },
+      'heat-ingredient': {
+        baseId: 'heat-ingredient',
+        name: 'Heat Ingredient',
+        template: 'Heat {{ingredient}} to {{temp}}C',
+        defaultActiveTime: 3,
+        tags: ['heating']
+      },
+      'warm-ingredient': {
+        baseId: 'warm-ingredient',
+        name: 'Warm Ingredient',
+        template: 'Warm {{ingredient}} to {{temp}}C',
+        defaultActiveTime: 3,
+        tags: ['heating', 'warming']
+      },
+      'bring-to-boil': {
+        baseId: 'bring-to-boil',
+        name: 'Bring to Boil',
+        template: 'Bring {{ingredient}} to boil',
+        defaultActiveTime: 5,
+        defaultTemperature: 100,
+        tags: ['heating', 'boiling']
+      },
+      'combine-and-emulsify': {
+        baseId: 'combine-and-emulsify',
+        name: 'Combine and Emulsify',
+        template: 'Combine {{ingredients}} and emulsify{{#tool}} with {{tool}}{{/tool}}',
+        defaultActiveTime: 5,
+        tags: ['mixing', 'emulsion']
+      },
+      'stir-to-emulsify': {
+        baseId: 'stir-to-emulsify',
+        name: 'Stir to Emulsify',
+        template: 'Stir from center outward to emulsify',
+        defaultActiveTime: 5,
+        tags: ['mixing', 'emulsion', 'stirring']
+      },
+      'add-and-blend': {
+        baseId: 'add-and-blend',
+        name: 'Add and Blend',
+        template: 'Add {{ingredient}} at {{temp}}C and blend until smooth',
+        defaultActiveTime: 2,
+        tags: ['mixing', 'blending']
+      },
+      'blend-until-smooth': {
+        baseId: 'blend-until-smooth',
+        name: 'Blend Until Smooth',
+        template: 'Add {{ingredient}} and blend until smooth',
+        defaultActiveTime: 2,
+        tags: ['mixing', 'blending']
+      },
+      'combine-and-mix': {
+        baseId: 'combine-and-mix',
+        name: 'Combine and Mix',
+        template: 'Combine {{ingredients}}, mix until smooth',
+        defaultActiveTime: 5,
+        tags: ['mixing']
+      },
+      'pour-over': {
+        baseId: 'pour-over',
+        name: 'Pour Over',
+        template: 'Pour {{source}} over {{target}}',
+        defaultActiveTime: 1,
+        tags: ['pouring', 'transferring']
+      },
+      'rest-at-temperature': {
+        baseId: 'rest-at-temperature',
+        name: 'Rest at Temperature',
+        template: 'Rest at {{temp}}',
+        tags: ['resting', 'waiting']
+      },
+      'let-stand': {
+        baseId: 'let-stand',
+        name: 'Let Stand',
+        template: 'Let stand {{duration}} minutes',
+        tags: ['resting', 'waiting']
+      },
+      'roast-nuts': {
+        baseId: 'roast-nuts',
+        name: 'Roast Nuts',
+        template: 'Roast {{nuts}} at {{temp}}C until golden',
+        defaultActiveTime: 15,
+        tags: ['roasting', 'nuts']
+      },
+      'remove-skins': {
+        baseId: 'remove-skins',
+        name: 'Remove Skins',
+        template: 'Rub off skins while warm',
+        defaultActiveTime: 5,
+        tags: ['preparation', 'nuts']
+      },
+      'grind-to-paste': {
+        baseId: 'grind-to-paste',
+        name: 'Grind to Paste',
+        template: 'Grind {{ingredient}} to paste in food processor',
+        defaultActiveTime: 10,
+        tags: ['grinding', 'processing']
+      },
+      'temper-and-mold': {
+        baseId: 'temper-and-mold',
+        name: 'Temper and Mold',
+        template: 'Temper and pour into molds',
+        defaultActiveTime: 15,
+        tags: ['tempering', 'molding']
       }
     }
   }

@@ -23,10 +23,11 @@
  * @packageDocumentation
  */
 
-import { Result, Success } from '@fgv/ts-utils';
+import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
 import { BaseProcedureId, Minutes } from '../common';
 import { FillingCategory } from '../fillings';
+import { isInlineTask, isTaskRef, Task } from '../tasks';
 import { IProcedure, IProcedureStep } from './model';
 import { IProcedureRenderContext, IRenderedProcedure, IRenderedProcedureStep } from './renderContext';
 
@@ -123,20 +124,25 @@ export class Procedure implements IProcedure {
 
   /**
    * Renders the procedure with the given context.
-   * For now, this is a pass-through that copies the description to renderedDescription.
-   * Future implementation will support template interpolation.
-   * @param _context - The render context (unused in current implementation)
-   * @returns Success with rendered procedure
+   * Renders task templates for each step using the task's params.
+   * @param _context - The render context (currently unused, for future recipe context integration)
+   * @returns Success with rendered procedure, or Failure if rendering fails
    */
-  public render(_context: IProcedureRenderContext): Result<IRenderedProcedure> {
-    // Future: implement template rendering using the context
-    // For now, pass through the description unchanged
-    const renderedSteps: IRenderedProcedureStep[] = this.steps.map((step) => ({
-      ...step,
-      renderedDescription: step.description
-    }));
+  public render(context: IProcedureRenderContext): Result<IRenderedProcedure> {
+    const renderedStepsResults: Result<IRenderedProcedureStep>[] = this.steps.map((step) =>
+      this._renderStep(context, step)
+    );
 
-    return Success.with({
+    // Collect all failures
+    const failures = renderedStepsResults.filter((r) => r.isFailure());
+    /* c8 ignore next 3 - defensive: step rendering currently cannot fail */
+    if (failures.length > 0) {
+      return fail(`Failed to render procedure steps: ${failures.map((f) => f.message).join('; ')}`);
+    }
+
+    const renderedSteps = renderedStepsResults.map((r) => r.value as IRenderedProcedureStep);
+
+    return succeed({
       name: this.name,
       description: this.description,
       steps: renderedSteps,
@@ -144,5 +150,41 @@ export class Procedure implements IProcedure {
       totalWaitTime: this.totalWaitTime,
       totalHoldTime: this.totalHoldTime
     });
+  }
+
+  /**
+   * Renders a single step's task to produce the description
+   * @param __context - The render context
+   * @param step - The procedure step to render
+   * @returns Success with rendered step, or Failure if rendering fails
+   */
+  private _renderStep(
+    __context: IProcedureRenderContext,
+    step: IProcedureStep
+  ): Result<IRenderedProcedureStep> {
+    const invocation = step.task;
+
+    if (isTaskRef(invocation)) {
+      // For ref tasks, we need the TasksLibrary to resolve the task
+      // For now, return a placeholder indicating the task reference
+      return succeed({
+        ...step,
+        renderedDescription: `[Task: ${invocation.taskId}]`
+      });
+    }
+
+    if (isInlineTask(invocation)) {
+      // For inline tasks, instantiate a Task and use its render method
+      return Task.create(invocation.task).onSuccess((task) => {
+        return task.render(invocation.params).onSuccess((renderedDescription) => {
+          return succeed({
+            ...step,
+            renderedDescription
+          });
+        });
+      });
+    }
+    /* c8 ignore next 2 - defensive code: type system prevents this path */
+    return fail('Step has invalid task structure');
   }
 }

@@ -10,6 +10,7 @@
  *   - data/published/fillings/
  *   - data/published/molds/
  *   - data/published/procedures/
+ *   - data/published/tasks/
  * and generates a TypeScript file with the data embedded as JSON objects.
  *
  * - YAML files are parsed and converted to JSON objects (unencrypted data)
@@ -24,6 +25,7 @@ const INGREDIENTS_DIR = path.join(__dirname, '../data/published/ingredients');
 const FILLINGS_DIR = path.join(__dirname, '../data/published/fillings');
 const MOLDS_DIR = path.join(__dirname, '../data/published/molds');
 const PROCEDURES_DIR = path.join(__dirname, '../data/published/procedures');
+const TASKS_DIR = path.join(__dirname, '../data/published/tasks');
 const CONFECTIONS_DIR = path.join(__dirname, '../data/published/confections');
 const OUTPUT_FILE = path.join(__dirname, '../src/packlets/built-in/builtInData.generated.ts');
 
@@ -86,6 +88,9 @@ const molds = loadCollectionsFromDir(MOLDS_DIR);
 // Load procedures
 const procedures = loadCollectionsFromDir(PROCEDURES_DIR);
 
+// Load tasks
+const tasks = loadCollectionsFromDir(TASKS_DIR);
+
 // Load confections
 const confections = loadCollectionsFromDir(CONFECTIONS_DIR);
 
@@ -95,6 +100,7 @@ const sourceComments = [
   ...recipes.files.map((f) => `//   - data/published/fillings/${f}`),
   ...molds.files.map((f) => `//   - data/published/molds/${f}`),
   ...procedures.files.map((f) => `//   - data/published/procedures/${f}`),
+  ...tasks.files.map((f) => `//   - data/published/tasks/${f}`),
   ...confections.files.map((f) => `//   - data/published/confections/${f}`)
 ].join('\n');
 
@@ -142,6 +148,12 @@ export const procedureCollections: Record<string, JsonObject> = ${JSON.stringify
 )};
 
 /**
+ * Generated task collections from source YAML files.
+ * @public
+ */
+export const taskCollections: Record<string, JsonObject> = ${JSON.stringify(tasks.collections, null, 2)};
+
+/**
  * Generated confection collections from source YAML files.
  * @public
  */
@@ -161,6 +173,7 @@ const allFiles = [
   ...recipes.files,
   ...molds.files,
   ...procedures.files,
+  ...tasks.files,
   ...confections.files
 ];
 const yamlCount = allFiles.filter(isYamlFile).length;
@@ -171,5 +184,7 @@ console.log(
     ingredients.files.length
   } ingredient files, ${recipes.files.length} filling files, ${molds.files.length} mold files, ${
     procedures.files.length
-  } procedure files, and ${confections.files.length} confection files (${yamlCount} YAML, ${jsonCount} JSON)`
+  } procedure files, ${tasks.files.length} task files, and ${
+    confections.files.length
+  } confection files (${yamlCount} YAML, ${jsonCount} JSON)`
 );

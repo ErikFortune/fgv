@@ -4,7 +4,7 @@
 
 ## Procedures.IProcedureStep.temperature property
 
-Target temperature for this step
+Target temperature for this step (overrides task default)
 
 **Signature:**
 

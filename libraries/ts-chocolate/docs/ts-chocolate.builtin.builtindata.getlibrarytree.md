@@ -20,6 +20,8 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   └── common.json
     ├── procedures/
     │   └── common.json
+    ├── tasks/
+    │   └── common.json
     └── confections/
         └── common.json
 ```

@@ -4,7 +4,7 @@
 
 ## Procedures.IProcedureStep interface
 
-A single step in a procedure
+A single step in a procedure (persisted data model). Does not include validation state - that is contextual and computed at runtime.
 
 **Signature:**
 
@@ -52,28 +52,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Time actively working on this step
-
-
-</td></tr>
-<tr><td>
-
-[description](./ts-chocolate.procedures.iprocedurestep.description.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-Description of what to do in this step (Will support templating in the future)
+_(Optional)_ Time actively working on this step (overrides task default)
 
 
 </td></tr>
@@ -94,7 +73,7 @@ Description of what to do in this step (Will support templating in the future)
 
 </td><td>
 
-_(Optional)_ Time to hold at a temperature
+_(Optional)_ Time to hold at a temperature (overrides task default)
 
 
 </td></tr>
@@ -142,6 +121,27 @@ Order number of this step (1-based)
 </td></tr>
 <tr><td>
 
+[task](./ts-chocolate.procedures.iprocedurestep.task.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ITaskInvocation](./ts-chocolate.tasks.itaskinvocation.md)
+
+
+</td><td>
+
+The task for this step - either a reference to a public task or an inline task definition
+
+
+</td></tr>
+<tr><td>
+
 [temperature?](./ts-chocolate.procedures.iprocedurestep.temperature.md)
 
 
@@ -157,7 +157,7 @@ Order number of this step (1-based)
 
 </td><td>
 
-_(Optional)_ Target temperature for this step
+_(Optional)_ Target temperature for this step (overrides task default)
 
 
 </td></tr>
@@ -178,7 +178,7 @@ _(Optional)_ Target temperature for this step
 
 </td><td>
 
-_(Optional)_ Passive waiting time (e.g., resting, cooling)
+_(Optional)_ Passive waiting time (overrides task default)
 
 
 </td></tr>

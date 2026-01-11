@@ -74,6 +74,17 @@ Type guard for BaseProcedureId
 </td></tr>
 <tr><td>
 
+[isValidBaseTaskId(from)](./ts-chocolate.validation.isvalidbasetaskid.md)
+
+
+</td><td>
+
+Type guard for BaseTaskId
+
+
+</td></tr>
+<tr><td>
+
 [isValidCelsius(from)](./ts-chocolate.validation.isvalidcelsius.md)
 
 
@@ -316,6 +327,17 @@ Type guard for SourceId
 </td></tr>
 <tr><td>
 
+[isValidTaskId(from)](./ts-chocolate.validation.isvalidtaskid.md)
+
+
+</td><td>
+
+Type guard for TaskId
+
+
+</td></tr>
+<tr><td>
+
 [isValidUrlCategory(from)](./ts-chocolate.validation.isvalidurlcategory.md)
 
 
@@ -377,6 +399,17 @@ Converts unknown value to BaseMoldId
 </td><td>
 
 Converts unknown value to BaseProcedureId
+
+
+</td></tr>
+<tr><td>
+
+[toBaseTaskId(from)](./ts-chocolate.validation.tobasetaskid.md)
+
+
+</td><td>
+
+Converts unknown value to BaseTaskId
 
 
 </td></tr>
@@ -619,6 +652,17 @@ Converts unknown value to SlotId
 </td><td>
 
 Converts unknown value to SourceId
+
+
+</td></tr>
+<tr><td>
+
+[toTaskId(from)](./ts-chocolate.validation.totaskid.md)
+
+
+</td><td>
+
+Converts unknown value to TaskId
 
 
 </td></tr>

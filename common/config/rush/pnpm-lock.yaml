@@ -344,6 +344,9 @@ importers:
 
   ../../libraries/ts-chocolate:
     dependencies:
+      '@fgv/ts-extras':
+        specifier: workspace:*
+        version: link:../ts-extras
       '@fgv/ts-json':
         specifier: workspace:*
         version: link:../ts-json

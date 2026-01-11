@@ -106,6 +106,8 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   └── common.json
     ├── procedures/
     │   └── common.json
+    ├── tasks/
+    │   └── common.json
     └── confections/
         └── common.json
 ```
@@ -141,6 +143,22 @@ Gets the molds directory from the built-in library tree.
 </td><td>
 
 Gets the procedures directory from the built-in library tree.
+
+
+</td></tr>
+<tr><td>
+
+[getTasksDirectory()](./ts-chocolate.builtin.builtindata.gettasksdirectory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets the tasks directory from the built-in library tree.
 
 
 </td></tr>

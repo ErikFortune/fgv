@@ -27,6 +27,7 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../common';
 import { Converters as RecipeConverters } from '../fillings';
+import { Converters as TaskConverters } from '../tasks';
 import { IProcedure, IProcedureStep } from './model';
 import { Procedure } from './procedure';
 
@@ -36,7 +37,7 @@ import { Procedure } from './procedure';
  */
 export const procedureStep: Converter<IProcedureStep> = Converters.object<IProcedureStep>({
   order: Converters.number,
-  description: Converters.string,
+  task: TaskConverters.procedureStepTask,
   activeTime: CommonConverters.minutes.optional(),
   waitTime: CommonConverters.minutes.optional(),
   holdTime: CommonConverters.minutes.optional(),

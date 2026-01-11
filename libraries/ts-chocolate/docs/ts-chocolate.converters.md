@@ -144,6 +144,17 @@ Converter for BaseProcedureId
 </td></tr>
 <tr><td>
 
+[baseTaskId](./ts-chocolate.converters.basetaskid.md)
+
+
+</td><td>
+
+Converter for BaseTaskId
+
+
+</td></tr>
+<tr><td>
+
 [categorizedUrl](./ts-chocolate.converters.categorizedurl.md)
 
 
@@ -540,6 +551,17 @@ Converter that parses a ProcedureId string into its component parts
 </td></tr>
 <tr><td>
 
+[parsedTaskId](./ts-chocolate.converters.parsedtaskid.md)
+
+
+</td><td>
+
+Converter that parses a TaskId string into its component parts
+
+
+</td></tr>
+<tr><td>
+
 [percentage](./ts-chocolate.converters.percentage.md)
 
 
@@ -612,6 +634,17 @@ Converter for SourceId
 </td><td>
 
 Converter for SpoonLevel
+
+
+</td></tr>
+<tr><td>
+
+[taskId](./ts-chocolate.converters.taskid.md)
+
+
+</td><td>
+
+Converter for TaskId (composite)
 
 
 </td></tr>
@@ -726,6 +759,17 @@ Type alias for parsed MoldId components
 </td><td>
 
 Type alias for parsed ProcedureId components
+
+
+</td></tr>
+<tr><td>
+
+[ParsedTaskId](./ts-chocolate.converters.parsedtaskid.md)
+
+
+</td><td>
+
+Type alias for parsed TaskId components
 
 
 </td></tr>

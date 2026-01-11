@@ -19,4 +19,9 @@
 // SOFTWARE.
 
 export * from './builtInData';
-export { confectionCollections, ingredientCollections, recipeCollections } from './builtInData.generated';
+export {
+  confectionCollections,
+  ingredientCollections,
+  recipeCollections,
+  taskCollections
+} from './builtInData.generated';

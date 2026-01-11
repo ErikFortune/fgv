@@ -85,7 +85,18 @@ Context for rendering a procedure with templating. Designed for future templatin
 
 </td><td>
 
-A single step in a procedure
+A single step in a procedure (persisted data model). Does not include validation state - that is contextual and computed at runtime.
+
+
+</td></tr>
+<tr><td>
+
+[IProcedureStepValidation](./ts-chocolate.procedures.iprocedurestepvalidation.md)
+
+
+</td><td>
+
+Runtime validation state for a procedure step. This is computed at render/use time based on which TasksLibrary is available.
 
 
 </td></tr>
@@ -108,6 +119,17 @@ A rendered procedure with all template values resolved
 </td><td>
 
 A rendered procedure step with resolved template values
+
+
+</td></tr>
+<tr><td>
+
+[IValidatedProcedureStep](./ts-chocolate.procedures.ivalidatedprocedurestep.md)
+
+
+</td><td>
+
+A procedure step with runtime validation state attached. Used during rendering when validation has been performed.
 
 
 </td></tr>

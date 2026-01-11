@@ -15,6 +15,7 @@ LibraryPaths: {
     readonly journals: "data/journals";
     readonly molds: "data/molds";
     readonly procedures: "data/procedures";
+    readonly tasks: "data/tasks";
     readonly confections: "data/confections";
 }
 ```

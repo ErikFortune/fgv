@@ -219,6 +219,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Tasks](./ts-chocolate.tasks.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Validation](./ts-chocolate.validation.md)
 
 
@@ -632,6 +641,17 @@ Procedure identifier within a single source Character restrictions: alphanumeric
 </td></tr>
 <tr><td>
 
+[BaseTaskId](./ts-chocolate.basetaskid.md)
+
+
+</td><td>
+
+Task identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
 [BuiltInSource](./ts-chocolate.builtinsource.md)
 
 
@@ -1034,6 +1054,17 @@ Spoon level indicator for dry measurements. This is a display hint only and does
 </td><td>
 
 Spoon measurement units that share the same scaling system
+
+
+</td></tr>
+<tr><td>
+
+[TaskId](./ts-chocolate.taskid.md)
+
+
+</td><td>
+
+Globally unique task identifier (composite) Format: "sourceId.baseTaskId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
