@@ -26,8 +26,11 @@ import {
   scaleMoldedBonBonByFrames,
   canScaleByFrames,
   IMoldedBonBon,
+  IMoldedBonBonVersion,
   IBarTruffle,
-  IRolledTruffle
+  IBarTruffleVersion,
+  IRolledTruffle,
+  IRolledTruffleVersion
 } from '../../../packlets/confections';
 import {
   BaseConfectionId,
@@ -44,11 +47,9 @@ describe('Confection Scaler', () => {
   // Test Data
   // ============================================================================
 
-  const moldedBonBon: IMoldedBonBon = {
-    baseId: 'test-bonbon' as BaseConfectionId,
-    confectionType: 'molded-bonbon',
-    name: 'Test Bonbon' as ConfectionName,
-    goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+  const moldedBonBonVersion: IMoldedBonBonVersion = {
+    versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    createdDate: '2026-01-01',
     yield: {
       count: 24,
       unit: 'pieces',
@@ -61,8 +62,27 @@ describe('Confection Scaler', () => {
     shellChocolate: {
       ids: ['common.chocolate-dark-64' as IngredientId],
       preferredId: 'common.chocolate-dark-64' as IngredientId
+    }
+  };
+
+  const moldedBonBon: IMoldedBonBon = {
+    baseId: 'test-bonbon' as BaseConfectionId,
+    confectionType: 'molded-bonbon',
+    name: 'Test Bonbon' as ConfectionName,
+    goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    versions: [moldedBonBonVersion]
+  };
+
+  const barTruffleVersion: IBarTruffleVersion = {
+    versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    createdDate: '2026-01-01',
+    yield: {
+      count: 48,
+      unit: 'pieces',
+      weightPerPiece: 10 as Measurement
     },
-    versions: [{ versionSpec: '2026-01-01-01' as ConfectionVersionSpec, createdDate: '2026-01-01' }]
+    frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 8 as Millimeters },
+    singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters }
   };
 
   const barTruffle: IBarTruffle = {
@@ -70,14 +90,17 @@ describe('Confection Scaler', () => {
     confectionType: 'bar-truffle',
     name: 'Test Bar' as ConfectionName,
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    versions: [barTruffleVersion]
+  };
+
+  const rolledTruffleVersion: IRolledTruffleVersion = {
+    versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
+    createdDate: '2026-01-01',
     yield: {
-      count: 48,
-      unit: 'pieces',
-      weightPerPiece: 10 as Measurement
-    },
-    frameDimensions: { width: 300 as Millimeters, height: 200 as Millimeters, depth: 8 as Millimeters },
-    singleBonBonDimensions: { width: 25 as Millimeters, height: 25 as Millimeters },
-    versions: [{ versionSpec: '2026-01-01-01' as ConfectionVersionSpec, createdDate: '2026-01-01' }]
+      count: 40,
+      unit: 'pieces'
+      // No weightPerPiece to test optional field handling
+    }
   };
 
   const rolledTruffle: IRolledTruffle = {
@@ -85,12 +108,7 @@ describe('Confection Scaler', () => {
     confectionType: 'rolled-truffle',
     name: 'Test Rolled' as ConfectionName,
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-    yield: {
-      count: 40,
-      unit: 'pieces'
-      // No weightPerPiece to test optional field handling
-    },
-    versions: [{ versionSpec: '2026-01-01-01' as ConfectionVersionSpec, createdDate: '2026-01-01' }]
+    versions: [rolledTruffleVersion]
   };
 
   // ============================================================================
@@ -101,6 +119,7 @@ describe('Confection Scaler', () => {
     test('scales by factor 2.0', () => {
       expect(scaleConfectionByFactor(moldedBonBon, 2.0)).toSucceedAndSatisfy((result) => {
         expect(result.confection).toBe(moldedBonBon);
+        expect(result.versionSpec).toBe('2026-01-01-01');
         expect(result.scaledYield.originalCount).toBe(24);
         expect(result.scaledYield.scaledCount).toBe(48);
         expect(result.scaledYield.scaleFactor).toBe(2.0);
@@ -220,9 +239,13 @@ describe('Confection Scaler', () => {
     });
 
     test('fails for confection with zero yield count', () => {
+      const zeroYieldVersion: IMoldedBonBonVersion = {
+        ...moldedBonBonVersion,
+        yield: { ...moldedBonBonVersion.yield, count: 0 }
+      };
       const zeroYield: IMoldedBonBon = {
         ...moldedBonBon,
-        yield: { ...moldedBonBon.yield, count: 0 }
+        versions: [zeroYieldVersion]
       };
       expect(scaleConfectionToCount(zeroYield, 24)).toFailWith(/yield count must be greater than zero/i);
     });

@@ -30,7 +30,8 @@ import {
   Millimeters,
   MoldId,
   RecipeId,
-  SlotId
+  SlotId,
+  UrlCategory
 } from '../../../packlets/common';
 import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../packlets/confections';
 import {
@@ -53,48 +54,67 @@ describe('RuntimeConfection', () => {
     description: 'A test molded bonbon',
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     tags: ['test', 'bonbon'],
-    yield: {
-      count: 24,
-      unit: 'pieces',
-      weightPerPiece: 12 as Measurement
-    },
-    fillings: [
-      {
-        slotId: 'center' as SlotId,
-        filling: {
-          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
-        }
-      }
-    ],
-    decorations: [{ description: 'Gold leaf', preferred: true }, { description: 'Cocoa butter transfer' }],
-    molds: {
-      options: [{ id: 'common.dome-25mm' as MoldId }],
-      preferredId: 'common.dome-25mm' as MoldId
-    },
-    shellChocolate: {
-      ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-dark-70' as IngredientId],
-      preferredId: 'common.chocolate-dark-64' as IngredientId
-    },
-    additionalChocolates: [
-      {
-        chocolate: {
-          ids: ['common.chocolate-dark-64' as IngredientId],
-          preferredId: 'common.chocolate-dark-64' as IngredientId
-        },
-        purpose: 'seal'
-      }
-    ],
+    urls: [{ url: 'https://example.com/bonbon', category: 'Reference' as UrlCategory }],
     versions: [
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
         createdDate: '2026-01-01',
-        notes: 'Initial version'
+        notes: 'Initial version',
+        yield: {
+          count: 24,
+          unit: 'pieces',
+          weightPerPiece: 12 as Measurement
+        },
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+              preferredId: 'common.dark-ganache-classic' as RecipeId
+            }
+          }
+        ],
+        decorations: [
+          { description: 'Gold leaf', preferred: true },
+          { description: 'Cocoa butter transfer' }
+        ],
+        molds: {
+          options: [{ id: 'common.dome-25mm' as MoldId }],
+          preferredId: 'common.dome-25mm' as MoldId
+        },
+        shellChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-dark-70' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        },
+        additionalChocolates: [
+          {
+            chocolate: {
+              ids: ['common.chocolate-dark-64' as IngredientId],
+              preferredId: 'common.chocolate-dark-64' as IngredientId
+            },
+            purpose: 'seal'
+          }
+        ],
+        additionalTags: ['v1', 'classic'],
+        additionalUrls: [{ url: 'https://example.com/v1', category: 'Version' as UrlCategory }]
       },
       {
         versionSpec: '2026-01-02-01' as ConfectionVersionSpec,
         createdDate: '2026-01-02',
-        notes: 'Updated recipe'
+        notes: 'Updated recipe',
+        yield: {
+          count: 24,
+          unit: 'pieces',
+          weightPerPiece: 12 as Measurement
+        },
+        molds: {
+          options: [{ id: 'common.dome-25mm' as MoldId }],
+          preferredId: 'common.dome-25mm' as MoldId
+        },
+        shellChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        }
       }
     ]
   };
@@ -105,28 +125,28 @@ describe('RuntimeConfection', () => {
     name: 'Test Bar Truffle' as ConfectionName,
     description: 'A test bar truffle',
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-    yield: {
-      count: 48,
-      unit: 'pieces',
-      weightPerPiece: 10 as Measurement
-    },
-    frameDimensions: {
-      width: 300 as Millimeters,
-      height: 200 as Millimeters,
-      depth: 8 as Millimeters
-    },
-    singleBonBonDimensions: {
-      width: 25 as Millimeters,
-      height: 25 as Millimeters
-    },
-    enrobingChocolate: {
-      ids: ['common.chocolate-dark-64' as IngredientId],
-      preferredId: 'common.chocolate-dark-64' as IngredientId
-    },
     versions: [
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-        createdDate: '2026-01-01'
+        createdDate: '2026-01-01',
+        yield: {
+          count: 48,
+          unit: 'pieces',
+          weightPerPiece: 10 as Measurement
+        },
+        frameDimensions: {
+          width: 300 as Millimeters,
+          height: 200 as Millimeters,
+          depth: 8 as Millimeters
+        },
+        singleBonBonDimensions: {
+          width: 25 as Millimeters,
+          height: 25 as Millimeters
+        },
+        enrobingChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        }
       }
     ]
   };
@@ -136,22 +156,22 @@ describe('RuntimeConfection', () => {
     confectionType: 'rolled-truffle',
     name: 'Test Rolled Truffle' as ConfectionName,
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-    yield: {
-      count: 40,
-      unit: 'pieces'
-    },
-    enrobingChocolate: {
-      ids: ['common.chocolate-dark-64' as IngredientId],
-      preferredId: 'common.chocolate-dark-64' as IngredientId
-    },
-    coatings: {
-      ids: ['common.cocoa-powder' as IngredientId],
-      preferredId: 'common.cocoa-powder' as IngredientId
-    },
     versions: [
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-        createdDate: '2026-01-01'
+        createdDate: '2026-01-01',
+        yield: {
+          count: 40,
+          unit: 'pieces'
+        },
+        enrobingChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        },
+        coatings: {
+          ids: ['common.cocoa-powder' as IngredientId],
+          preferredId: 'common.cocoa-powder' as IngredientId
+        }
       }
     ]
   };
@@ -284,6 +304,60 @@ describe('RuntimeConfection', () => {
     test('procedures is undefined when not set', () => {
       expect(runtime.procedures).toBeUndefined();
     });
+
+    test('exposes urls from base confection', () => {
+      expect(runtime.urls).toHaveLength(1);
+      expect(runtime.urls?.[0].url).toBe('https://example.com/bonbon');
+      expect(runtime.urls?.[0].category).toBe('Reference');
+    });
+
+    test('exposes typed goldenVersion', () => {
+      const golden = runtime.goldenVersion;
+      expect(golden.versionSpec).toBe('2026-01-01-01');
+      expect(golden.molds.options).toHaveLength(1);
+      expect(golden.shellChocolate.ids).toContain('common.chocolate-dark-64');
+    });
+
+    test('exposes typed versions array', () => {
+      const versions = runtime.versions;
+      expect(versions).toHaveLength(2);
+      expect(versions[0].versionSpec).toBe('2026-01-01-01');
+      expect(versions[1].versionSpec).toBe('2026-01-02-01');
+      expect(versions[0].molds.options).toHaveLength(1);
+    });
+
+    test('effectiveTags merges base and version tags with deduplication', () => {
+      const effective = runtime.effectiveTags;
+      expect(effective).toContain('test');
+      expect(effective).toContain('bonbon');
+      expect(effective).toContain('v1');
+      expect(effective).toContain('classic');
+      expect(effective.length).toBe(4);
+    });
+
+    test('effectiveUrls merges base and version urls', () => {
+      const effective = runtime.effectiveUrls;
+      expect(effective).toHaveLength(2);
+      expect(effective[0].url).toBe('https://example.com/bonbon');
+      expect(effective[1].url).toBe('https://example.com/v1');
+    });
+
+    test('getEffectiveTags with specific version', () => {
+      const secondVersion = runtime.versions[1];
+      const effective = runtime.getEffectiveTags(secondVersion);
+      // Base tags only since second version has no additionalTags
+      expect(effective).toContain('test');
+      expect(effective).toContain('bonbon');
+      expect(effective.length).toBe(2);
+    });
+
+    test('getEffectiveUrls with specific version', () => {
+      const secondVersion = runtime.versions[1];
+      const effective = runtime.getEffectiveUrls(secondVersion);
+      // Base URLs only since second version has no additionalUrls
+      expect(effective).toHaveLength(1);
+      expect(effective[0].url).toBe('https://example.com/bonbon');
+    });
   });
 
   // ============================================================================
@@ -330,6 +404,13 @@ describe('RuntimeConfection', () => {
     test('raw returns underlying data', () => {
       expect(runtime.raw).toBe(barTruffleData);
     });
+
+    test('exposes typed versions array', () => {
+      const versions = runtime.versions;
+      expect(versions).toHaveLength(1);
+      expect(versions[0].versionSpec).toBe('2026-01-01-01');
+      expect(versions[0].frameDimensions.width).toBe(300);
+    });
   });
 
   // ============================================================================
@@ -373,6 +454,13 @@ describe('RuntimeConfection', () => {
     test('raw returns underlying data', () => {
       expect(runtime.raw).toBe(rolledTruffleData);
     });
+
+    test('exposes typed versions array', () => {
+      const versions = runtime.versions;
+      expect(versions).toHaveLength(1);
+      expect(versions[0].versionSpec).toBe('2026-01-01-01');
+      expect(versions[0].coatings?.ids).toHaveLength(1);
+    });
   });
 
   // ============================================================================
@@ -385,17 +473,17 @@ describe('RuntimeConfection', () => {
       confectionType: 'molded-bonbon',
       name: 'Minimal Bonbon' as ConfectionName,
       goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-      yield: { count: 12 },
-      molds: {
-        options: [{ id: 'common.dome-25mm' as MoldId }]
-      },
-      shellChocolate: {
-        ids: ['common.chocolate-dark-64' as IngredientId]
-      },
       versions: [
         {
           versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-          createdDate: '2026-01-01'
+          createdDate: '2026-01-01',
+          yield: { count: 12 },
+          molds: {
+            options: [{ id: 'common.dome-25mm' as MoldId }]
+          },
+          shellChocolate: {
+            ids: ['common.chocolate-dark-64' as IngredientId]
+          }
         }
       ]
     };
@@ -412,6 +500,26 @@ describe('RuntimeConfection', () => {
         expect(runtime.procedures).toBeUndefined();
       });
     });
+
+    test('returns empty arrays for effectiveTags when no tags defined', () => {
+      expect(
+        RuntimeMoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
+      ).toSucceedAndSatisfy((runtime) => {
+        // Tests both branches in getEffectiveTags: version undefined (uses golden) and tags undefined
+        expect(runtime.getEffectiveTags()).toEqual([]);
+        expect(runtime.effectiveTags).toEqual([]);
+      });
+    });
+
+    test('returns empty arrays for effectiveUrls when no urls defined', () => {
+      expect(
+        RuntimeMoldedBonBon.create(mockContext, 'test.minimal' as ConfectionId, minimalMolded)
+      ).toSucceedAndSatisfy((runtime) => {
+        // Tests both branches in getEffectiveUrls: version undefined (uses golden) and urls undefined
+        expect(runtime.getEffectiveUrls()).toEqual([]);
+        expect(runtime.effectiveUrls).toEqual([]);
+      });
+    });
   });
 
   // ============================================================================
@@ -424,20 +532,20 @@ describe('RuntimeConfection', () => {
       confectionType: 'bar-truffle',
       name: 'Bar Without Enrobing' as ConfectionName,
       goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-      yield: { count: 24 },
-      frameDimensions: {
-        width: 200 as Millimeters,
-        height: 150 as Millimeters,
-        depth: 10 as Millimeters
-      },
-      singleBonBonDimensions: {
-        width: 20 as Millimeters,
-        height: 20 as Millimeters
-      },
       versions: [
         {
           versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-          createdDate: '2026-01-01'
+          createdDate: '2026-01-01',
+          yield: { count: 24 },
+          frameDimensions: {
+            width: 200 as Millimeters,
+            height: 150 as Millimeters,
+            depth: 10 as Millimeters
+          },
+          singleBonBonDimensions: {
+            width: 20 as Millimeters,
+            height: 20 as Millimeters
+          }
         }
       ]
     };
@@ -461,11 +569,11 @@ describe('RuntimeConfection', () => {
       confectionType: 'rolled-truffle',
       name: 'Rolled Without Coatings' as ConfectionName,
       goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-      yield: { count: 30 },
       versions: [
         {
           versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-          createdDate: '2026-01-01'
+          createdDate: '2026-01-01',
+          yield: { count: 30 }
         }
       ]
     };

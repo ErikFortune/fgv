@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeMoldedBonBon.molds property
 
-Required molds with preferred selection
+Molds from the golden version
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeRolledTruffle.coatings property
 
-Optional coatings (cocoa powder, nuts, etc.)
+Coatings from the golden version
 
 **Signature:**
 

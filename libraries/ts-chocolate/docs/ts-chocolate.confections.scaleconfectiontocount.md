@@ -4,7 +4,7 @@
 
 ## Confections.scaleConfectionToCount() function
 
-Scales a confection to a target count.
+Scales a confection to a target count using the golden version.
 
 **Signature:**
 

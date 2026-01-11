@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeConfectionBase.procedures property
 
-Optional procedures with preferred selection
+Optional procedures with preferred selection from the golden version
 
 **Signature:**
 

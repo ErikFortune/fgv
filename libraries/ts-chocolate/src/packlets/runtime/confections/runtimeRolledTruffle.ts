@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId } from '../../common';
-import { IChocolateSpec, ICoatings, IRolledTruffle } from '../../confections';
+import { IChocolateSpec, ICoatings, IRolledTruffle, IRolledTruffleVersion } from '../../confections';
 import { IConfectionContext, IRuntimeRolledTruffle } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 
@@ -79,21 +79,39 @@ export class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRunt
   }
 
   // ============================================================================
-  // Rolled Truffle-Specific Properties
+  // Version Access (typed)
   // ============================================================================
 
   /**
-   * Enrobing chocolate specification (optional)
+   * Golden version typed as IRolledTruffleVersion
    */
-  public get enrobingChocolate(): IChocolateSpec | undefined {
-    return this._rolledTruffle.enrobingChocolate;
+  public override get goldenVersion(): IRolledTruffleVersion {
+    return this._goldenVersion as IRolledTruffleVersion;
   }
 
   /**
-   * Coating specification (cocoa powder, nuts, etc.)
+   * All versions typed as IRolledTruffleVersion
+   */
+  public override get versions(): ReadonlyArray<IRolledTruffleVersion> {
+    return this._rolledTruffle.versions;
+  }
+
+  // ============================================================================
+  // Rolled Truffle-Specific Properties (from golden version)
+  // ============================================================================
+
+  /**
+   * Enrobing chocolate specification (from golden version, optional)
+   */
+  public get enrobingChocolate(): IChocolateSpec | undefined {
+    return this.goldenVersion.enrobingChocolate;
+  }
+
+  /**
+   * Coating specification (cocoa powder, nuts, etc.) (from golden version)
    */
   public get coatings(): ICoatings | undefined {
-    return this._rolledTruffle.coatings;
+    return this.goldenVersion.coatings;
   }
 
   // ============================================================================

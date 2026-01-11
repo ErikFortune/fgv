@@ -74,7 +74,7 @@ Type is always 'bar-truffle' for this confection
 
 </td><td>
 
-_(Optional)_ Optional enrobing chocolate specification
+_(Optional)_ Enrobing chocolate from the golden version
 
 
 </td></tr>
@@ -95,7 +95,28 @@ _(Optional)_ Optional enrobing chocolate specification
 
 </td><td>
 
-Frame dimensions for ganache slab
+Frame dimensions from the golden version
+
+
+</td></tr>
+<tr><td>
+
+[goldenVersion](./ts-chocolate.runtime.iruntimebartruffle.goldenversion.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IBarTruffleVersion](./ts-chocolate.confections.ibartruffleversion.md)
+
+
+</td><td>
+
+Golden version typed as IBarTruffleVersion
 
 
 </td></tr>
@@ -137,7 +158,28 @@ Raw data typed to IBarTruffle
 
 </td><td>
 
-Single bonbon dimensions for cutting
+Single bonbon dimensions from the golden version
+
+
+</td></tr>
+<tr><td>
+
+[versions](./ts-chocolate.runtime.iruntimebartruffle.versions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IBarTruffleVersion](./ts-chocolate.confections.ibartruffleversion.md)<!-- -->&gt;
+
+
+</td><td>
+
+All versions typed as IBarTruffleVersion
 
 
 </td></tr>

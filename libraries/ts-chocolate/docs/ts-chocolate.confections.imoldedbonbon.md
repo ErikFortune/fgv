@@ -9,9 +9,9 @@ Molded bonbon confection Uses chocolate molds for shell formation
 **Signature:**
 
 ```typescript
-export interface IMoldedBonBon extends IConfection 
+export interface IMoldedBonBon extends IConfectionBase 
 ```
-**Extends:** [IConfection](./ts-chocolate.confections.iconfection.md)
+**Extends:** [IConfectionBase](./ts-chocolate.confections.iconfectionbase.md)
 
 ## Properties
 
@@ -38,27 +38,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[additionalChocolates?](./ts-chocolate.confections.imoldedbonbon.additionalchocolates.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;[IAdditionalChocolate](./ts-chocolate.confections.iadditionalchocolate.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional additional chocolates (seal, decoration)
-
-
-</td></tr>
-<tr><td>
-
 [confectionType](./ts-chocolate.confections.imoldedbonbon.confectiontype.md)
 
 
@@ -80,7 +59,7 @@ Type discriminator
 </td></tr>
 <tr><td>
 
-[molds](./ts-chocolate.confections.imoldedbonbon.molds.md)
+[versions](./ts-chocolate.confections.imoldedbonbon.versions.md)
 
 
 </td><td>
@@ -90,33 +69,12 @@ Type discriminator
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+ReadonlyArray&lt;[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-Required molds with preferred selection
-
-
-</td></tr>
-<tr><td>
-
-[shellChocolate](./ts-chocolate.confections.imoldedbonbon.shellchocolate.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
-
-
-</td><td>
-
-Required shell chocolate specification
+Version history with molded bonbon specific details
 
 
 </td></tr>

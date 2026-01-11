@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[Confection](./ts-chocolate.confections.confection.md)
+
+
+</td><td>
+
+Confection class with helper methods for version management. Provides computed properties for effective tags/urls (merged base + version).
+
+
+</td></tr>
+<tr><td>
+
 [ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
 
 
@@ -69,6 +80,17 @@ Type guard for IBarTruffle
 </td></tr>
 <tr><td>
 
+[isBarTruffleVersion(version)](./ts-chocolate.confections.isbartruffleversion.md)
+
+
+</td><td>
+
+Type guard for IBarTruffleVersion
+
+
+</td></tr>
+<tr><td>
+
 [isMoldedBonBon(confection)](./ts-chocolate.confections.ismoldedbonbon.md)
 
 
@@ -80,12 +102,34 @@ Type guard for IMoldedBonBon
 </td></tr>
 <tr><td>
 
+[isMoldedBonBonVersion(version)](./ts-chocolate.confections.ismoldedbonbonversion.md)
+
+
+</td><td>
+
+Type guard for IMoldedBonBonVersion
+
+
+</td></tr>
+<tr><td>
+
 [isRolledTruffle(confection)](./ts-chocolate.confections.isrolledtruffle.md)
 
 
 </td><td>
 
 Type guard for IRolledTruffle
+
+
+</td></tr>
+<tr><td>
+
+[isRolledTruffleVersion(version)](./ts-chocolate.confections.isrolledtruffleversion.md)
+
+
+</td><td>
+
+Type guard for IRolledTruffleVersion
 
 
 </td></tr>
@@ -109,9 +153,9 @@ For molded bonbons, if frameCount and cavitiesPerMold are provided, uses frame-b
 
 </td><td>
 
-Scales a confection by a factor.
+Scales a confection by a factor using the golden version.
 
-This function applies a linear scale factor to the confection's yield.
+This function applies a linear scale factor to the golden version's yield.
 
 
 </td></tr>
@@ -122,7 +166,31 @@ This function applies a linear scale factor to the confection's yield.
 
 </td><td>
 
-Scales a confection to a target count.
+Scales a confection to a target count using the golden version.
+
+
+</td></tr>
+<tr><td>
+
+[scaleConfectionVersionByFactor(confection, version, factor, options)](./ts-chocolate.confections.scaleconfectionversionbyfactor.md)
+
+
+</td><td>
+
+Scales a confection version by a factor.
+
+This function applies a linear scale factor to the version's yield.
+
+
+</td></tr>
+<tr><td>
+
+[scaleConfectionVersionToCount(confection, version, targetCount, options)](./ts-chocolate.confections.scaleconfectionversiontocount.md)
+
+
+</td><td>
+
+Scales a confection version to a target count.
 
 
 </td></tr>
@@ -133,9 +201,22 @@ Scales a confection to a target count.
 
 </td><td>
 
-Scales a molded bonbon confection by number of frames/molds.
+Scales a molded bonbon confection by number of frames/molds using the golden version.
 
 For molded bonbons, this calculates the yield based on the number of frames and the cavities per mold. Requires the confection to have a recommended mold with known cavity count.
+
+
+</td></tr>
+<tr><td>
+
+[scaleMoldedBonBonVersionByFrames(confection, version, frameCount, cavitiesPerMold, options)](./ts-chocolate.confections.scalemoldedbonbonversionbyframes.md)
+
+
+</td><td>
+
+Scales a molded bonbon version by number of frames/molds.
+
+For molded bonbons, this calculates the yield based on the number of frames and the cavities per mold.
 
 
 </td></tr>
@@ -178,6 +259,17 @@ Bar truffle confection Ganache slab cut into squares and enrobed
 </td></tr>
 <tr><td>
 
+[IBarTruffleVersion](./ts-chocolate.confections.ibartruffleversion.md)
+
+
+</td><td>
+
+Version interface for bar truffle confections. Includes frame and cutting dimensions.
+
+
+</td></tr>
+<tr><td>
+
 [IBonBonDimensions](./ts-chocolate.confections.ibonbondimensions.md)
 
 
@@ -189,12 +281,12 @@ Single bonbon dimensions for bar truffle cutting
 </td></tr>
 <tr><td>
 
-[IConfection](./ts-chocolate.confections.iconfection.md)
+[IConfectionBase](./ts-chocolate.confections.iconfectionbase.md)
 
 
 </td><td>
 
-Base confection interface - all confection types share these properties
+Base confection interface - all confection types share these properties. Contains stable identity and metadata; configuration details are in versions.
 
 
 </td></tr>
@@ -222,12 +314,12 @@ Options for confection scaling
 </td></tr>
 <tr><td>
 
-[IConfectionVersion](./ts-chocolate.confections.iconfectionversion.md)
+[IConfectionVersionBase](./ts-chocolate.confections.iconfectionversionbase.md)
 
 
 </td><td>
 
-A version of a confection
+Base version interface - shared by all confection version types. Contains the configuration details that can change between versions.
 
 
 </td></tr>
@@ -299,6 +391,17 @@ Molded bonbon confection Uses chocolate molds for shell formation
 </td></tr>
 <tr><td>
 
+[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)
+
+
+</td><td>
+
+Version interface for molded bonbon confections. Includes mold and chocolate shell specifications.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeFillingOption](./ts-chocolate.confections.irecipefillingoption.md)
 
 
@@ -316,6 +419,17 @@ Recipe filling option - references a recipe (e.g., ganache)
 </td><td>
 
 Rolled truffle confection Hand-rolled ganache balls with various coatings
+
+
+</td></tr>
+<tr><td>
+
+[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)
+
+
+</td><td>
+
+Version interface for rolled truffle confections. Includes enrobing and coating specifications.
 
 
 </td></tr>
@@ -381,6 +495,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)
+
+
+</td><td>
+
+Union type for all confection version types.
+
+
+</td></tr>
+<tr><td>
 
 [AnyFillingOption](./ts-chocolate.confections.anyfillingoption.md)
 

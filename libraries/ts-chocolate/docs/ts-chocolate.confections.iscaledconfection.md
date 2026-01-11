@@ -98,5 +98,26 @@ The scaled yield specification
 
 
 </td></tr>
+<tr><td>
+
+[versionSpec](./ts-chocolate.confections.iscaledconfection.versionspec.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[ConfectionVersionSpec](./ts-chocolate.confectionversionspec.md)
+
+
+</td><td>
+
+The version that was scaled
+
+
+</td></tr>
 </tbody></table>
 

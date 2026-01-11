@@ -9,5 +9,5 @@ The golden (default) version
 **Signature:**
 
 ```typescript
-get goldenVersion(): IConfectionVersion;
+get goldenVersion(): AnyConfectionVersion;
 ```

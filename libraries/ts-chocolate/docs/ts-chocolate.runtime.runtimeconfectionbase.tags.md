@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeConfectionBase.tags property
 
-Tags for searching/filtering
+Base tags for searching/filtering (version may add more via additionalTags)
 
 **Signature:**
 

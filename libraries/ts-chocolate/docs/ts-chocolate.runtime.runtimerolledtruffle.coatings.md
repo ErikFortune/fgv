@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeRolledTruffle.coatings property
 
-Coating specification (cocoa powder, nuts, etc.)
+Coating specification (cocoa powder, nuts, etc.) (from golden version)
 
 **Signature:**
 

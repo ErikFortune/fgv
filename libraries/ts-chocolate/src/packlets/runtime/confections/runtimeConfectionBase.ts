@@ -31,14 +31,15 @@ import {
   ConfectionName,
   ConfectionType,
   ConfectionVersionSpec,
+  ICategorizedUrl,
   ID_SEPARATOR,
   SourceId
 } from '../../common';
 import { IProcedureRef } from '../../recipes';
 import {
+  AnyConfectionVersion,
   ConfectionData,
   IConfectionDecoration,
-  IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
   isMoldedBonBon,
@@ -68,7 +69,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   protected readonly _confection: ConfectionData;
   protected readonly _sourceId: SourceId;
   protected readonly _baseId: BaseConfectionId;
-  protected readonly _goldenVersion: IConfectionVersion;
+  protected readonly _goldenVersion: AnyConfectionVersion;
 
   /**
    * Creates a RuntimeConfectionBase.
@@ -122,7 +123,7 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   }
 
   // ============================================================================
-  // Core Properties (passthrough to underlying Confection)
+  // Core Properties (identity/metadata from confection, config from golden version)
   // ============================================================================
 
   /**
@@ -145,38 +146,17 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   }
 
   /**
-   * Optional decorations
-   */
-  public get decorations(): ReadonlyArray<IConfectionDecoration> | undefined {
-    return this._confection.decorations;
-  }
-
-  /**
-   * Tags for searching/filtering
+   * Base tags for searching/filtering (version may add more via additionalTags)
    */
   public get tags(): ReadonlyArray<string> | undefined {
     return this._confection.tags;
   }
 
   /**
-   * Yield specification
+   * Base URLs (version may add more via additionalUrls)
    */
-  public get yield(): IConfectionYield {
-    return this._confection.yield;
-  }
-
-  /**
-   * Optional filling slots
-   */
-  public get fillings(): ReadonlyArray<IFillingSlot> | undefined {
-    return this._confection.fillings;
-  }
-
-  /**
-   * Optional procedures with preferred selection
-   */
-  public get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined {
-    return this._confection.procedures;
+  public get urls(): ReadonlyArray<ICategorizedUrl> | undefined {
+    return this._confection.urls;
   }
 
   /**
@@ -187,20 +167,54 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   }
 
   // ============================================================================
+  // Properties from Golden Version (convenience accessors)
+  // ============================================================================
+
+  /**
+   * Decorations from the golden version
+   */
+  public get decorations(): ReadonlyArray<IConfectionDecoration> | undefined {
+    return this._goldenVersion.decorations;
+  }
+
+  /**
+   * Yield specification from the golden version
+   */
+  public get yield(): IConfectionYield {
+    return this._goldenVersion.yield;
+  }
+
+  /**
+   * Optional filling slots from the golden version
+   */
+  public get fillings(): ReadonlyArray<IFillingSlot> | undefined {
+    return this._goldenVersion.fillings;
+  }
+
+  /**
+   * Optional procedures with preferred selection from the golden version
+   */
+  public get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined {
+    return this._goldenVersion.procedures;
+  }
+
+  // ============================================================================
   // Version Navigation
   // ============================================================================
 
   /**
    * The golden (default) version
    */
-  public get goldenVersion(): IConfectionVersion {
+  /* c8 ignore next 3 - base class getter overridden by all concrete subclasses */
+  public get goldenVersion(): AnyConfectionVersion {
     return this._goldenVersion;
   }
 
   /**
    * All versions
    */
-  public get versions(): ReadonlyArray<IConfectionVersion> {
+  /* c8 ignore next 3 - base class getter overridden by all concrete subclasses */
+  public get versions(): ReadonlyArray<AnyConfectionVersion> {
     return this._confection.versions;
   }
 
@@ -209,12 +223,53 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    * @param versionSpec - The version specifier to find
    * @returns Success with version, or Failure if not found
    */
-  public getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion> {
+  public getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion> {
     const version = this._confection.versions.find((v) => v.versionSpec === versionSpec);
     if (!version) {
       return Failure.with(`Version ${versionSpec} not found in confection ${this._id}`);
     }
     return Success.with(version);
+  }
+
+  // ============================================================================
+  // Effective Tags/URLs (merged from base + version)
+  // ============================================================================
+
+  /**
+   * Gets effective tags for the golden version (base tags + version's additional tags).
+   */
+  public get effectiveTags(): ReadonlyArray<string> {
+    return this.getEffectiveTags(this._goldenVersion);
+  }
+
+  /**
+   * Gets effective URLs for the golden version (base URLs + version's additional URLs).
+   */
+  public get effectiveUrls(): ReadonlyArray<ICategorizedUrl> {
+    return this.getEffectiveUrls(this._goldenVersion);
+  }
+
+  /**
+   * Gets effective tags for a specific version (base tags + version's additional tags).
+   * @param version - The version to get tags for (defaults to golden version)
+   */
+  public getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string> {
+    const targetVersion = version ?? this._goldenVersion;
+    const baseTags = this._confection.tags ?? [];
+    const versionTags = targetVersion.additionalTags ?? [];
+    // Deduplicate while preserving order (base first)
+    return [...new Set([...baseTags, ...versionTags])];
+  }
+
+  /**
+   * Gets effective URLs for a specific version (base URLs + version's additional URLs).
+   * @param version - The version to get URLs for (defaults to golden version)
+   */
+  public getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl> {
+    const targetVersion = version ?? this._goldenVersion;
+    const baseUrls = this._confection.urls ?? [];
+    const versionUrls = targetVersion.additionalUrls ?? [];
+    return [...baseUrls, ...versionUrls];
   }
 
   // ============================================================================

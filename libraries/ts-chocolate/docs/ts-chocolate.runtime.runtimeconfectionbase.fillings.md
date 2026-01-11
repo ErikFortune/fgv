@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeConfectionBase.fillings property
 
-Optional filling slots
+Optional filling slots from the golden version
 
 **Signature:**
 

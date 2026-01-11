@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeConfectionBase.yield property
 
-Yield specification
+Yield specification from the golden version
 
 **Signature:**
 

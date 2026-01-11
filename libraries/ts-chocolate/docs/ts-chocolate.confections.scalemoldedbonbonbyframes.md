@@ -4,7 +4,7 @@
 
 ## Confections.scaleMoldedBonBonByFrames() function
 
-Scales a molded bonbon confection by number of frames/molds.
+Scales a molded bonbon confection by number of frames/molds using the golden version.
 
 For molded bonbons, this calculates the yield based on the number of frames and the cavities per mold. Requires the confection to have a recommended mold with known cavity count.
 

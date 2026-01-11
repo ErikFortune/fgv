@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeBarTruffle.frameDimensions property
 
-Frame dimensions for ganache slab
+Frame dimensions from the golden version
 
 **Signature:**
 

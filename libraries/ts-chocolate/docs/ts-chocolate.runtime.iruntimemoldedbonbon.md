@@ -53,7 +53,7 @@ ReadonlyArray&lt;[IAdditionalChocolate](./ts-chocolate.confections.iadditionalch
 
 </td><td>
 
-_(Optional)_ Optional additional chocolates (seal, decoration)
+_(Optional)_ Additional chocolates from the golden version
 
 
 </td></tr>
@@ -80,6 +80,27 @@ Type is always 'molded-bonbon' for this confection
 </td></tr>
 <tr><td>
 
+[goldenVersion](./ts-chocolate.runtime.iruntimemoldedbonbon.goldenversion.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)
+
+
+</td><td>
+
+Golden version typed as IMoldedBonBonVersion
+
+
+</td></tr>
+<tr><td>
+
 [molds](./ts-chocolate.runtime.iruntimemoldedbonbon.molds.md)
 
 
@@ -95,7 +116,7 @@ Type is always 'molded-bonbon' for this confection
 
 </td><td>
 
-Required molds with preferred selection
+Molds from the golden version
 
 
 </td></tr>
@@ -137,7 +158,28 @@ Raw data typed to IMoldedBonBon
 
 </td><td>
 
-Required shell chocolate specification
+Shell chocolate from the golden version
+
+
+</td></tr>
+<tr><td>
+
+[versions](./ts-chocolate.runtime.iruntimemoldedbonbon.versions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)<!-- -->&gt;
+
+
+</td><td>
+
+All versions typed as IMoldedBonBonVersion
 
 
 </td></tr>

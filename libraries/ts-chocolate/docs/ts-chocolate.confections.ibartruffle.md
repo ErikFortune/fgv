@@ -9,9 +9,9 @@ Bar truffle confection Ganache slab cut into squares and enrobed
 **Signature:**
 
 ```typescript
-export interface IBarTruffle extends IConfection 
+export interface IBarTruffle extends IConfectionBase 
 ```
-**Extends:** [IConfection](./ts-chocolate.confections.iconfection.md)
+**Extends:** [IConfectionBase](./ts-chocolate.confections.iconfectionbase.md)
 
 ## Properties
 
@@ -59,7 +59,7 @@ Type discriminator
 </td></tr>
 <tr><td>
 
-[enrobingChocolate?](./ts-chocolate.confections.ibartruffle.enrobingchocolate.md)
+[versions](./ts-chocolate.confections.ibartruffle.versions.md)
 
 
 </td><td>
@@ -69,54 +69,12 @@ Type discriminator
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+ReadonlyArray&lt;[IBarTruffleVersion](./ts-chocolate.confections.ibartruffleversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional enrobing chocolate specification
-
-
-</td></tr>
-<tr><td>
-
-[frameDimensions](./ts-chocolate.confections.ibartruffle.framedimensions.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IFrameDimensions](./ts-chocolate.confections.iframedimensions.md)
-
-
-</td><td>
-
-Frame dimensions for ganache slab
-
-
-</td></tr>
-<tr><td>
-
-[singleBonBonDimensions](./ts-chocolate.confections.ibartruffle.singlebonbondimensions.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IBonBonDimensions](./ts-chocolate.confections.ibonbondimensions.md)
-
-
-</td><td>
-
-Single bonbon dimensions for cutting
+Version history with bar truffle specific details
 
 
 </td></tr>

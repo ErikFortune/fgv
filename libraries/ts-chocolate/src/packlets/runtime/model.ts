@@ -80,22 +80,25 @@ import {
   IRecipeRating as IRecipeRating
 } from '../recipes';
 import {
+  AnyConfectionVersion,
   ConfectionData,
   IAdditionalChocolate,
   IBarTruffle,
+  IBarTruffleVersion,
   IBonBonDimensions,
   IChocolateSpec,
   ICoatings,
   IConfectionDecoration,
   IConfectionMoldRef,
-  IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
   IFrameDimensions,
   IMoldedBonBon,
-  IRolledTruffle
+  IMoldedBonBonVersion,
+  IRolledTruffle,
+  IRolledTruffleVersion
 } from '../confections';
-import { IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
+import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
@@ -1211,10 +1214,11 @@ export interface IRuntimeContext {
 /**
  * A resolved runtime view of a confection with navigation capabilities.
  *
- * This interface includes all properties from the data layer `IConfection`
+ * This interface includes all properties from the data layer `IConfectionBase`
  * plus runtime-specific additions:
  * - Composite identity (`id`, `sourceId`) for cross-source references
- * - Version navigation
+ * - Version navigation with typed versions
+ * - Effective tags/urls (merged from base + version)
  * - Type narrowing methods for discriminated access
  * - Raw access to underlying data
  *
@@ -1239,7 +1243,7 @@ export interface IRuntimeConfection {
    */
   readonly baseId: BaseConfectionId;
 
-  // ---- Core Properties (from IConfection) ----
+  // ---- Core Properties (from IConfectionBase - identity/metadata only) ----
 
   /** Confection type (discriminator) */
   readonly confectionType: ConfectionType;
@@ -1250,20 +1254,11 @@ export interface IRuntimeConfection {
   /** Optional description */
   readonly description?: string;
 
-  /** Optional decorations */
-  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
-
-  /** Optional tags for searching/filtering */
+  /** Base tags for searching/filtering (version may add more) */
   readonly tags?: ReadonlyArray<string>;
 
-  /** Yield specification */
-  readonly yield: IConfectionYield;
-
-  /** Optional filling slots */
-  readonly fillings?: ReadonlyArray<IFillingSlot>;
-
-  /** Optional procedures with preferred selection */
-  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+  /** Base URLs (version may add more) */
+  readonly urls?: ReadonlyArray<ICategorizedUrl>;
 
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;
@@ -1273,19 +1268,57 @@ export interface IRuntimeConfection {
   /**
    * The golden (default) version.
    */
-  readonly goldenVersion: IConfectionVersion;
+  readonly goldenVersion: AnyConfectionVersion;
 
   /**
    * All versions.
    */
-  readonly versions: ReadonlyArray<IConfectionVersion>;
+  readonly versions: ReadonlyArray<AnyConfectionVersion>;
 
   /**
    * Gets a specific version by version specifier.
    * @param versionSpec - The version specifier to find
    * @returns Success with version, or Failure if not found
    */
-  getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
+  getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+
+  // ---- Effective tags/urls (merged from base + version) ----
+
+  /**
+   * Gets effective tags for the golden version (base + version's additional tags).
+   */
+  readonly effectiveTags: ReadonlyArray<string>;
+
+  /**
+   * Gets effective URLs for the golden version (base + version's additional URLs).
+   */
+  readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
+
+  /**
+   * Gets effective tags for a specific version.
+   * @param version - The version to get tags for (defaults to golden version)
+   */
+  getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
+
+  /**
+   * Gets effective URLs for a specific version.
+   * @param version - The version to get URLs for (defaults to golden version)
+   */
+  getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+
+  // ---- Convenience accessors for golden version properties ----
+
+  /** Decorations from the golden version */
+  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+
+  /** Yield specification from the golden version */
+  readonly yield: IConfectionYield;
+
+  /** Filling slots from the golden version */
+  readonly fillings?: ReadonlyArray<IFillingSlot>;
+
+  /** Procedures from the golden version */
+  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 
   // ---- Type narrowing methods ----
 
@@ -1323,13 +1356,19 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   /** Type is always 'molded-bonbon' for this confection */
   readonly confectionType: 'molded-bonbon';
 
-  /** Required molds with preferred selection */
+  /** Golden version typed as IMoldedBonBonVersion */
+  readonly goldenVersion: IMoldedBonBonVersion;
+
+  /** All versions typed as IMoldedBonBonVersion */
+  readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
+
+  /** Molds from the golden version */
   readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
 
-  /** Required shell chocolate specification */
+  /** Shell chocolate from the golden version */
   readonly shellChocolate: IChocolateSpec;
 
-  /** Optional additional chocolates (seal, decoration) */
+  /** Additional chocolates from the golden version */
   readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
 
   /** Raw data typed to IMoldedBonBon */
@@ -1344,13 +1383,19 @@ export interface IRuntimeBarTruffle extends IRuntimeConfection {
   /** Type is always 'bar-truffle' for this confection */
   readonly confectionType: 'bar-truffle';
 
-  /** Frame dimensions for ganache slab */
+  /** Golden version typed as IBarTruffleVersion */
+  readonly goldenVersion: IBarTruffleVersion;
+
+  /** All versions typed as IBarTruffleVersion */
+  readonly versions: ReadonlyArray<IBarTruffleVersion>;
+
+  /** Frame dimensions from the golden version */
   readonly frameDimensions: IFrameDimensions;
 
-  /** Single bonbon dimensions for cutting */
+  /** Single bonbon dimensions from the golden version */
   readonly singleBonBonDimensions: IBonBonDimensions;
 
-  /** Optional enrobing chocolate specification */
+  /** Enrobing chocolate from the golden version */
   readonly enrobingChocolate?: IChocolateSpec;
 
   /** Raw data typed to IBarTruffle */
@@ -1365,10 +1410,16 @@ export interface IRuntimeRolledTruffle extends IRuntimeConfection {
   /** Type is always 'rolled-truffle' for this confection */
   readonly confectionType: 'rolled-truffle';
 
-  /** Optional enrobing chocolate specification */
+  /** Golden version typed as IRolledTruffleVersion */
+  readonly goldenVersion: IRolledTruffleVersion;
+
+  /** All versions typed as IRolledTruffleVersion */
+  readonly versions: ReadonlyArray<IRolledTruffleVersion>;
+
+  /** Enrobing chocolate from the golden version */
   readonly enrobingChocolate?: IChocolateSpec;
 
-  /** Optional coatings (cocoa powder, nuts, etc.) */
+  /** Coatings from the golden version */
   readonly coatings?: ICoatings;
 
   /** Raw data typed to IRolledTruffle */

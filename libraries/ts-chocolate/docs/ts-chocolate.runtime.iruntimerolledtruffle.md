@@ -53,7 +53,7 @@ Description
 
 </td><td>
 
-_(Optional)_ Optional coatings (cocoa powder, nuts, etc.)
+_(Optional)_ Coatings from the golden version
 
 
 </td></tr>
@@ -95,7 +95,28 @@ Type is always 'rolled-truffle' for this confection
 
 </td><td>
 
-_(Optional)_ Optional enrobing chocolate specification
+_(Optional)_ Enrobing chocolate from the golden version
+
+
+</td></tr>
+<tr><td>
+
+[goldenVersion](./ts-chocolate.runtime.iruntimerolledtruffle.goldenversion.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)
+
+
+</td><td>
+
+Golden version typed as IRolledTruffleVersion
 
 
 </td></tr>
@@ -117,6 +138,27 @@ _(Optional)_ Optional enrobing chocolate specification
 </td><td>
 
 Raw data typed to IRolledTruffle
+
+
+</td></tr>
+<tr><td>
+
+[versions](./ts-chocolate.runtime.iruntimerolledtruffle.versions.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)<!-- -->&gt;
+
+
+</td><td>
+
+All versions typed as IRolledTruffleVersion
 
 
 </td></tr>

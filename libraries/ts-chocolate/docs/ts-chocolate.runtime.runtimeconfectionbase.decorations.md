@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeConfectionBase.decorations property
 
-Optional decorations
+Decorations from the golden version
 
 **Signature:**
 

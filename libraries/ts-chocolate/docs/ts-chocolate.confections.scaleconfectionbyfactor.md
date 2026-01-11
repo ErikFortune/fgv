@@ -4,9 +4,9 @@
 
 ## Confections.scaleConfectionByFactor() function
 
-Scales a confection by a factor.
+Scales a confection by a factor using the golden version.
 
-This function applies a linear scale factor to the confection's yield.
+This function applies a linear scale factor to the golden version's yield.
 
 **Signature:**
 

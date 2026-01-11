@@ -25,8 +25,16 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Measurement } from '../common';
-import { ConfectionData, IConfectionYield, IMoldedBonBon, isMoldedBonBon } from './model';
+import { ConfectionVersionSpec, Measurement } from '../common';
+import { Confection } from './confection';
+import {
+  AnyConfectionVersion,
+  ConfectionData,
+  IConfectionYield,
+  IMoldedBonBon,
+  IMoldedBonBonVersion,
+  isMoldedBonBon
+} from './model';
 
 // ============================================================================
 // Scaled Confection Types
@@ -58,6 +66,8 @@ export interface IScaledConfectionYield {
 export interface IScaledConfection<T extends ConfectionData = ConfectionData> {
   /** The original confection data */
   readonly confection: T;
+  /** The version that was scaled */
+  readonly versionSpec: ConfectionVersionSpec;
   /** The scaled yield specification */
   readonly scaledYield: IScaledConfectionYield;
   /** Date the scaling was created (ISO 8601 format) */
@@ -146,9 +156,50 @@ function createScaledYield(
 }
 
 /**
- * Scales a confection by a factor.
+ * Gets the yield from a version.
+ * @internal
+ */
+function getVersionYield(version: AnyConfectionVersion): IConfectionYield {
+  return version.yield;
+}
+
+/**
+ * Scales a confection version by a factor.
  *
- * This function applies a linear scale factor to the confection's yield.
+ * This function applies a linear scale factor to the version's yield.
+ *
+ * @param confection - The confection data to scale
+ * @param version - The specific version to scale (must exist in confection.versions)
+ * @param factor - The scale factor to apply (e.g., 2.0 for double, 0.5 for half)
+ * @param options - Optional scaling options
+ * @returns Success with scaled confection, or Failure if invalid
+ * @public
+ */
+export function scaleConfectionVersionByFactor<T extends ConfectionData>(
+  confection: T,
+  version: AnyConfectionVersion,
+  factor: number,
+  options: IConfectionScaleOptions = {}
+): Result<IScaledConfection<T>> {
+  if (factor <= 0) {
+    return Failure.with('Scale factor must be greater than zero');
+  }
+
+  const versionYield = getVersionYield(version);
+  const scaledYield = createScaledYield(versionYield, factor, options);
+
+  return Success.with({
+    confection,
+    versionSpec: version.versionSpec,
+    scaledYield,
+    createdDate: new Date().toISOString().split('T')[0]
+  });
+}
+
+/**
+ * Scales a confection by a factor using the golden version.
+ *
+ * This function applies a linear scale factor to the golden version's yield.
  *
  * @param confection - The confection data to scale
  * @param factor - The scale factor to apply (e.g., 2.0 for double, 0.5 for half)
@@ -161,21 +212,42 @@ export function scaleConfectionByFactor<T extends ConfectionData>(
   factor: number,
   options: IConfectionScaleOptions = {}
 ): Result<IScaledConfection<T>> {
-  if (factor <= 0) {
-    return Failure.with('Scale factor must be greater than zero');
-  }
-
-  const scaledYield = createScaledYield(confection.yield, factor, options);
-
-  return Success.with({
-    confection,
-    scaledYield,
-    createdDate: new Date().toISOString().split('T')[0]
+  return Confection.create(confection).onSuccess((conf) => {
+    return scaleConfectionVersionByFactor(confection, conf.goldenVersion, factor, options);
   });
 }
 
 /**
- * Scales a confection to a target count.
+ * Scales a confection version to a target count.
+ *
+ * @param confection - The confection data to scale
+ * @param version - The specific version to scale
+ * @param targetCount - The target number of pieces
+ * @param options - Optional scaling options
+ * @returns Success with scaled confection, or Failure if invalid
+ * @public
+ */
+export function scaleConfectionVersionToCount<T extends ConfectionData>(
+  confection: T,
+  version: AnyConfectionVersion,
+  targetCount: number,
+  options: IConfectionScaleOptions = {}
+): Result<IScaledConfection<T>> {
+  if (targetCount <= 0) {
+    return Failure.with('Target count must be greater than zero');
+  }
+
+  const versionYield = getVersionYield(version);
+  if (versionYield.count <= 0) {
+    return Failure.with('Version yield count must be greater than zero');
+  }
+
+  const factor = targetCount / versionYield.count;
+  return scaleConfectionVersionByFactor(confection, version, factor, options);
+}
+
+/**
+ * Scales a confection to a target count using the golden version.
  *
  * @param confection - The confection data to scale
  * @param targetCount - The target number of pieces
@@ -188,34 +260,28 @@ export function scaleConfectionToCount<T extends ConfectionData>(
   targetCount: number,
   options: IConfectionScaleOptions = {}
 ): Result<IScaledConfection<T>> {
-  if (targetCount <= 0) {
-    return Failure.with('Target count must be greater than zero');
-  }
-
-  if (confection.yield.count <= 0) {
-    return Failure.with('Confection yield count must be greater than zero');
-  }
-
-  const factor = targetCount / confection.yield.count;
-  return scaleConfectionByFactor(confection, factor, options);
+  return Confection.create(confection).onSuccess((conf) => {
+    return scaleConfectionVersionToCount(confection, conf.goldenVersion, targetCount, options);
+  });
 }
 
 /**
- * Scales a molded bonbon confection by number of frames/molds.
+ * Scales a molded bonbon version by number of frames/molds.
  *
  * For molded bonbons, this calculates the yield based on the number of frames
- * and the cavities per mold. Requires the confection to have a recommended mold
- * with known cavity count.
+ * and the cavities per mold.
  *
  * @param confection - The molded bonbon confection to scale
+ * @param version - The specific version to scale
  * @param frameCount - Number of frames/molds to use
  * @param cavitiesPerMold - Number of cavities per mold
  * @param options - Optional frame scaling options
  * @returns Success with scaled confection, or Failure if invalid
  * @public
  */
-export function scaleMoldedBonBonByFrames(
+export function scaleMoldedBonBonVersionByFrames(
   confection: IMoldedBonBon,
+  version: IMoldedBonBonVersion,
   frameCount: number,
   cavitiesPerMold: number,
   options: IFrameScaleOptions = {}
@@ -237,7 +303,33 @@ export function scaleMoldedBonBonByFrames(
     targetCount = Math.ceil(targetCount * (1 + overagePercent / 100));
   }
 
-  return scaleConfectionToCount(confection, targetCount, options);
+  return scaleConfectionVersionToCount(confection, version, targetCount, options);
+}
+
+/**
+ * Scales a molded bonbon confection by number of frames/molds using the golden version.
+ *
+ * For molded bonbons, this calculates the yield based on the number of frames
+ * and the cavities per mold. Requires the confection to have a recommended mold
+ * with known cavity count.
+ *
+ * @param confection - The molded bonbon confection to scale
+ * @param frameCount - Number of frames/molds to use
+ * @param cavitiesPerMold - Number of cavities per mold
+ * @param options - Optional frame scaling options
+ * @returns Success with scaled confection, or Failure if invalid
+ * @public
+ */
+export function scaleMoldedBonBonByFrames(
+  confection: IMoldedBonBon,
+  frameCount: number,
+  cavitiesPerMold: number,
+  options: IFrameScaleOptions = {}
+): Result<IScaledConfection<IMoldedBonBon>> {
+  return Confection.create(confection).onSuccess((conf) => {
+    const version = conf.goldenVersion as IMoldedBonBonVersion;
+    return scaleMoldedBonBonVersionByFrames(confection, version, frameCount, cavitiesPerMold, options);
+  });
 }
 
 /**

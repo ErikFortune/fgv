@@ -653,7 +653,7 @@ Runtime ingredient narrowed to chocolate type.
 
 A resolved runtime view of a confection with navigation capabilities.
 
-This interface includes all properties from the data layer `IConfection` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Version navigation - Type narrowing methods for discriminated access - Raw access to underlying data
+This interface includes all properties from the data layer `IConfectionBase` plus runtime-specific additions: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Version navigation with typed versions - Effective tags/urls (merged from base + version) - Type narrowing methods for discriminated access - Raw access to underlying data
 
 
 </td></tr>

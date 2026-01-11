@@ -485,8 +485,7 @@ describe('ChocolateLibrary', () => {
           confectionType: 'rolled-truffle',
           name: 'File Confection',
           goldenVersionSpec: '2026-01-01-01',
-          yield: { count: 24 },
-          versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+          versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01', yield: { count: 24 } }]
         }
       }
     };

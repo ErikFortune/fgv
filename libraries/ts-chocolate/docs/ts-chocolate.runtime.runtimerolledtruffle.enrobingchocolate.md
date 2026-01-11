@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeRolledTruffle.enrobingChocolate property
 
-Enrobing chocolate specification (optional)
+Enrobing chocolate specification (from golden version, optional)
 
 **Signature:**
 

@@ -118,6 +118,12 @@ export const allWeightUnits: WeightUnit[];
 function andFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
+type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
+
+// @public
+const anyConfectionVersion: Converter<AnyConfectionVersion>;
+
+// @public
 type AnyFillingOption = IRecipeFillingOption | IIngredientFillingOption;
 
 // @public
@@ -150,13 +156,16 @@ function atMost<T>(max: number, getter: (item: T) => number | undefined): Filter
 const barTruffle: Converter<IBarTruffle>;
 
 // @public
+const barTruffleVersion: Converter<IBarTruffleVersion>;
+
+// @public
 const base64String: Converter<string>;
 
 // @public
 export const BASE_ID_PATTERN: RegExp;
 
 // @public
-const baseConfection: Converter<IConfection>;
+const baseConfection: Converter<IConfectionBase>;
 
 // @public
 export type BaseConfectionId = Brand<string, 'BaseConfectionId'>;
@@ -464,6 +473,34 @@ type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 // @public
 export const COMPOSITE_ID_PATTERN: RegExp;
 
+// @public
+class Confection implements IConfectionBase {
+    // (undocumented)
+    readonly baseId: BaseConfectionId;
+    // (undocumented)
+    readonly confectionType: ConfectionType;
+    static create(data: ConfectionData): Result<Confection>;
+    // (undocumented)
+    readonly description?: string;
+    get effectiveTags(): ReadonlyArray<string>;
+    get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
+    getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
+    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+    // (undocumented)
+    readonly goldenVersion: AnyConfectionVersion;
+    // (undocumented)
+    readonly goldenVersionSpec: ConfectionVersionSpec;
+    // (undocumented)
+    readonly name: ConfectionName;
+    // (undocumented)
+    readonly tags?: ReadonlyArray<string>;
+    // (undocumented)
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    // (undocumented)
+    readonly versions: ReadonlyArray<AnyConfectionVersion>;
+}
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -474,6 +511,9 @@ export const CONFECTION_VERSION_ID_PATTERN: RegExp;
 
 // @public
 export const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
+
+// @public
+const confectionClass: Converter<Confection>;
 
 // @public
 type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
@@ -579,6 +619,9 @@ declare namespace Confections {
         isMoldedBonBon,
         isBarTruffle,
         isRolledTruffle,
+        isMoldedBonBonVersion,
+        isBarTruffleVersion,
+        isRolledTruffleVersion,
         IConfectionYield,
         IConfectionDecoration,
         FillingOptionType,
@@ -593,12 +636,17 @@ declare namespace Confections {
         IFrameDimensions,
         IBonBonDimensions,
         ICoatings,
-        IConfectionVersion,
-        IConfection,
+        IConfectionVersionBase,
+        IMoldedBonBonVersion,
+        IBarTruffleVersion,
+        IRolledTruffleVersion,
+        AnyConfectionVersion,
+        IConfectionBase,
         IMoldedBonBon,
         IBarTruffle,
         IRolledTruffle,
         ConfectionData,
+        Confection,
         ConfectionCollectionEntry,
         ConfectionCollectionEntryInit,
         ConfectionCollectionValidator,
@@ -608,8 +656,11 @@ declare namespace Confections {
         IConfectionsLibraryParams,
         IConfectionsLibraryAsyncParams,
         ConfectionsLibrary,
+        scaleConfectionVersionByFactor,
         scaleConfectionByFactor,
+        scaleConfectionVersionToCount,
         scaleConfectionToCount,
+        scaleMoldedBonBonVersionByFrames,
         scaleMoldedBonBonByFrames,
         scaleConfection,
         canScaleByFrames,
@@ -638,9 +689,6 @@ export type ConfectionType = 'molded-bonbon' | 'bar-truffle' | 'rolled-truffle';
 
 // @public
 const confectionType: Converter<ConfectionType>;
-
-// @public
-const confectionVersion: Converter<IConfectionVersion>;
 
 // @public
 export type ConfectionVersionId = Brand<string, 'ConfectionVersionId'>;
@@ -749,13 +797,17 @@ declare namespace Converters_2 {
         frameDimensions,
         bonBonDimensions,
         coatings,
-        confectionVersion,
+        moldedBonBonVersion,
+        barTruffleVersion,
+        rolledTruffleVersion,
+        anyConfectionVersion,
         baseConfection,
         moldedBonBon,
         barTruffle,
         rolledTruffle,
         confectionData,
-        confection
+        confection,
+        confectionClass
     }
 }
 
@@ -1136,8 +1188,13 @@ interface IAlcoholIngredient extends IIngredient {
 }
 
 // @public
-interface IBarTruffle extends IConfection {
+interface IBarTruffle extends IConfectionBase {
     readonly confectionType: 'bar-truffle';
+    readonly versions: ReadonlyArray<IBarTruffleVersion>;
+}
+
+// @public
+interface IBarTruffleVersion extends IConfectionVersionBase {
     readonly enrobingChocolate?: IChocolateSpec;
     readonly frameDimensions: IFrameDimensions;
     readonly singleBonBonDimensions: IBonBonDimensions;
@@ -1291,19 +1348,15 @@ interface IComputedScaledRecipe {
 }
 
 // @public
-interface IConfection {
+interface IConfectionBase {
     readonly baseId: BaseConfectionId;
     readonly confectionType: ConfectionType;
-    readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
-    readonly fillings?: ReadonlyArray<IFillingSlot>;
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly name: ConfectionName;
-    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<ICategorizedUrl>;
-    readonly versions: ReadonlyArray<IConfectionVersion>;
-    readonly yield: IConfectionYield;
+    readonly versions: ReadonlyArray<AnyConfectionVersion>;
 }
 
 // @internal
@@ -1414,10 +1467,16 @@ type IConfectionsLibraryAsyncParams = ISubLibraryAsyncParams<ConfectionsLibrary,
 type IConfectionsLibraryParams = ISubLibraryParams<ConfectionsLibrary, ConfectionCollectionEntryInit>;
 
 // @public
-interface IConfectionVersion {
+interface IConfectionVersionBase {
+    readonly additionalTags?: ReadonlyArray<string>;
+    readonly additionalUrls?: ReadonlyArray<ICategorizedUrl>;
     readonly createdDate: string;
+    readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+    readonly fillings?: ReadonlyArray<IFillingSlot>;
     readonly notes?: string;
+    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly versionSpec: ConfectionVersionSpec;
+    readonly yield: IConfectionYield;
 }
 
 // @public
@@ -1844,9 +1903,14 @@ interface IMold {
 }
 
 // @public
-interface IMoldedBonBon extends IConfection {
-    readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+interface IMoldedBonBon extends IConfectionBase {
     readonly confectionType: 'molded-bonbon';
+    readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
+}
+
+// @public
+interface IMoldedBonBonVersion extends IConfectionVersionBase {
+    readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
     readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     readonly shellChocolate: IChocolateSpec;
 }
@@ -2386,9 +2450,14 @@ interface IResolvedSubLibrarySource {
 }
 
 // @public
-interface IRolledTruffle extends IConfection {
-    readonly coatings?: ICoatings;
+interface IRolledTruffle extends IConfectionBase {
     readonly confectionType: 'rolled-truffle';
+    readonly versions: ReadonlyArray<IRolledTruffleVersion>;
+}
+
+// @public
+interface IRolledTruffleVersion extends IConfectionVersionBase {
+    readonly coatings?: ICoatings;
     readonly enrobingChocolate?: IChocolateSpec;
 }
 
@@ -2408,8 +2477,10 @@ interface IRuntimeBarTruffle extends IRuntimeConfection {
     readonly confectionType: 'bar-truffle';
     readonly enrobingChocolate?: IChocolateSpec;
     readonly frameDimensions: IFrameDimensions;
+    readonly goldenVersion: IBarTruffleVersion;
     readonly raw: IBarTruffle;
     readonly singleBonBonDimensions: IBonBonDimensions;
+    readonly versions: ReadonlyArray<IBarTruffleVersion>;
 }
 
 // @public
@@ -2435,9 +2506,13 @@ interface IRuntimeConfection {
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
+    readonly effectiveTags: ReadonlyArray<string>;
+    readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
     readonly fillings?: ReadonlyArray<IFillingSlot>;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
-    readonly goldenVersion: IConfectionVersion;
+    getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
+    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+    readonly goldenVersion: AnyConfectionVersion;
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly id: ConfectionId;
     isBarTruffle(): this is IRuntimeBarTruffle;
@@ -2448,7 +2523,8 @@ interface IRuntimeConfection {
     readonly raw: ConfectionData;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
-    readonly versions: ReadonlyArray<IConfectionVersion>;
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+    readonly versions: ReadonlyArray<AnyConfectionVersion>;
     readonly yield: IConfectionYield;
 }
 
@@ -2526,9 +2602,11 @@ interface IRuntimeIngredient {
 interface IRuntimeMoldedBonBon extends IRuntimeConfection {
     readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
+    readonly goldenVersion: IMoldedBonBonVersion;
     readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     readonly raw: IMoldedBonBon;
     readonly shellChocolate: IChocolateSpec;
+    readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
 }
 
 // @public
@@ -2575,7 +2653,9 @@ interface IRuntimeRolledTruffle extends IRuntimeConfection {
     readonly coatings?: ICoatings;
     readonly confectionType: 'rolled-truffle';
     readonly enrobingChocolate?: IChocolateSpec;
+    readonly goldenVersion: IRolledTruffleVersion;
     readonly raw: IRolledTruffle;
+    readonly versions: ReadonlyArray<IRolledTruffleVersion>;
 }
 
 // @public
@@ -2633,6 +2713,9 @@ interface ISaveResult {
 function isBarTruffle(confection: ConfectionData): confection is IBarTruffle;
 
 // @public
+function isBarTruffleVersion(version: AnyConfectionVersion): version is IBarTruffleVersion;
+
+// @public
 interface IScaledAmount {
     readonly displayValue: string;
     readonly scalable: boolean;
@@ -2645,6 +2728,7 @@ interface IScaledConfection<T extends ConfectionData = ConfectionData> {
     readonly confection: T;
     readonly createdDate: string;
     readonly scaledYield: IScaledConfectionYield;
+    readonly versionSpec: ConfectionVersionSpec;
 }
 
 // @public
@@ -2783,6 +2867,9 @@ function isMergeLibrarySource<TLibrary, TCollectionId extends string>(source: TL
 function isMoldedBonBon(confection: ConfectionData): confection is IMoldedBonBon;
 
 // @public
+function isMoldedBonBonVersion(version: AnyConfectionVersion): version is IMoldedBonBonVersion;
+
+// @public
 interface ISpoonScalerOptions {
     readonly maxTeaspoons?: number;
     readonly preferTablespoons?: boolean;
@@ -2796,6 +2883,9 @@ function isRecipeVersion(version: AnyRecipeVersion): version is IRecipeVersion;
 
 // @public
 function isRolledTruffle(confection: ConfectionData): confection is IRolledTruffle;
+
+// @public
+function isRolledTruffleVersion(version: AnyConfectionVersion): version is IRolledTruffleVersion;
 
 // @public
 function isScaledRecipeVersion(version: AnyRecipeVersion): version is IScaledRecipeVersion;
@@ -3247,6 +3337,9 @@ const moldData: Converter<IMold>;
 
 // @public
 const moldedBonBon: Converter<IMoldedBonBon>;
+
+// @public
+const moldedBonBonVersion: Converter<IMoldedBonBonVersion>;
 
 // @public
 export type MoldFormat = 'series-1000' | 'series-2000';
@@ -3927,6 +4020,9 @@ function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubL
 // @public
 const rolledTruffle: Converter<IRolledTruffle>;
 
+// @public
+const rolledTruffleVersion: Converter<IRolledTruffleVersion>;
+
 declare namespace Runtime {
     export {
         RuntimeReverseIndex,
@@ -4037,8 +4133,10 @@ class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruf
     static create(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle): Result<RuntimeBarTruffle>;
     get enrobingChocolate(): IChocolateSpec | undefined;
     get frameDimensions(): IFrameDimensions;
+    get goldenVersion(): IBarTruffleVersion;
     get raw(): IBarTruffle;
     get singleBonBonDimensions(): IBonBonDimensions;
+    get versions(): ReadonlyArray<IBarTruffleVersion>;
 }
 
 // @public
@@ -4084,11 +4182,15 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     protected readonly _context: IConfectionContext;
     get decorations(): ReadonlyArray<IConfectionDecoration> | undefined;
     get description(): string | undefined;
+    get effectiveTags(): ReadonlyArray<string>;
+    get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
     get fillings(): ReadonlyArray<IFillingSlot> | undefined;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<IConfectionVersion>;
-    get goldenVersion(): IConfectionVersion;
+    getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
+    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
+    getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
+    get goldenVersion(): AnyConfectionVersion;
     // (undocumented)
-    protected readonly _goldenVersion: IConfectionVersion;
+    protected readonly _goldenVersion: AnyConfectionVersion;
     get goldenVersionSpec(): ConfectionVersionSpec;
     get id(): ConfectionId;
     // (undocumented)
@@ -4103,7 +4205,8 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     // (undocumented)
     protected readonly _sourceId: SourceId;
     get tags(): ReadonlyArray<string> | undefined;
-    get versions(): ReadonlyArray<IConfectionVersion>;
+    get urls(): ReadonlyArray<ICategorizedUrl> | undefined;
+    get versions(): ReadonlyArray<AnyConfectionVersion>;
     get yield(): IConfectionYield;
 }
 
@@ -4237,9 +4340,11 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon): Result<RuntimeMoldedBonBon>;
+    get goldenVersion(): IMoldedBonBonVersion;
     get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
     get raw(): IMoldedBonBon;
     get shellChocolate(): IChocolateSpec;
+    get versions(): ReadonlyArray<IMoldedBonBonVersion>;
 }
 
 // @public
@@ -4293,7 +4398,9 @@ class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRoll
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle): Result<RuntimeRolledTruffle>;
     get enrobingChocolate(): IChocolateSpec | undefined;
+    get goldenVersion(): IRolledTruffleVersion;
     get raw(): IRolledTruffle;
+    get versions(): ReadonlyArray<IRolledTruffleVersion>;
 }
 
 // @public
@@ -4366,6 +4473,12 @@ function scaleConfectionByFactor<T extends ConfectionData>(confection: T, factor
 // @public
 function scaleConfectionToCount<T extends ConfectionData>(confection: T, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
 
+// @public
+function scaleConfectionVersionByFactor<T extends ConfectionData>(confection: T, version: AnyConfectionVersion, factor: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+
+// @public
+function scaleConfectionVersionToCount<T extends ConfectionData>(confection: T, version: AnyConfectionVersion, targetCount: number, options?: IConfectionScaleOptions): Result<IScaledConfection<T>>;
+
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -4378,6 +4491,9 @@ const scaledRecipeVersion: Converter<IScaledRecipeVersion>;
 
 // @public
 function scaleMoldedBonBonByFrames(confection: IMoldedBonBon, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
+
+// @public
+function scaleMoldedBonBonVersionByFrames(confection: IMoldedBonBon, version: IMoldedBonBonVersion, frameCount: number, cavitiesPerMold: number, options?: IFrameScaleOptions): Result<IScaledConfection<IMoldedBonBon>>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

@@ -216,27 +216,87 @@ export type ICoatings = IIdsWithPreferred<IngredientId>;
 // ============================================================================
 
 /**
- * A version of a confection
+ * Base version interface - shared by all confection version types.
+ * Contains the configuration details that can change between versions.
  * @public
  */
-export interface IConfectionVersion {
+export interface IConfectionVersionBase {
   /** Unique identifier for this version */
   readonly versionSpec: ConfectionVersionSpec;
   /** Date this version was created (ISO 8601 format) */
   readonly createdDate: string;
+  /** Yield specification for this version */
+  readonly yield: IConfectionYield;
+  /** Optional filling slots - each slot has independent options with a preferred selection */
+  readonly fillings?: ReadonlyArray<IFillingSlot>;
+  /** Optional decorations for this version */
+  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
+  /** Optional procedures with preferred selection */
+  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
   /** Optional notes about this version */
   readonly notes?: string;
+  /** Additional tags (merged with base confection tags) */
+  readonly additionalTags?: ReadonlyArray<string>;
+  /** Additional URLs (merged with base confection URLs) */
+  readonly additionalUrls?: ReadonlyArray<ICategorizedUrl>;
 }
+
+/**
+ * Version interface for molded bonbon confections.
+ * Includes mold and chocolate shell specifications.
+ * @public
+ */
+export interface IMoldedBonBonVersion extends IConfectionVersionBase {
+  /** Required molds with preferred selection */
+  readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+  /** Required shell chocolate specification */
+  readonly shellChocolate: IChocolateSpec;
+  /** Optional additional chocolates (seal, decoration) */
+  readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+}
+
+/**
+ * Version interface for bar truffle confections.
+ * Includes frame and cutting dimensions.
+ * @public
+ */
+export interface IBarTruffleVersion extends IConfectionVersionBase {
+  /** Frame dimensions for ganache slab */
+  readonly frameDimensions: IFrameDimensions;
+  /** Single bonbon dimensions for cutting */
+  readonly singleBonBonDimensions: IBonBonDimensions;
+  /** Optional enrobing chocolate specification */
+  readonly enrobingChocolate?: IChocolateSpec;
+}
+
+/**
+ * Version interface for rolled truffle confections.
+ * Includes enrobing and coating specifications.
+ * @public
+ */
+export interface IRolledTruffleVersion extends IConfectionVersionBase {
+  /** Optional enrobing chocolate specification */
+  readonly enrobingChocolate?: IChocolateSpec;
+  /** Optional coatings (cocoa powder, nuts, etc.) */
+  readonly coatings?: ICoatings;
+}
+
+/**
+ * Union type for all confection version types.
+ * @public
+ */
+export type AnyConfectionVersion = IMoldedBonBonVersion | IBarTruffleVersion | IRolledTruffleVersion;
 
 // ============================================================================
 // Base Confection Interface
 // ============================================================================
 
 /**
- * Base confection interface - all confection types share these properties
+ * Base confection interface - all confection types share these properties.
+ * Contains stable identity and metadata; configuration details are in versions.
  * @public
  */
-export interface IConfection {
+export interface IConfectionBase {
   /** Base identifier within source (no dots) */
   readonly baseId: BaseConfectionId;
   /** Confection type (discriminator) */
@@ -245,22 +305,14 @@ export interface IConfection {
   readonly name: ConfectionName;
   /** Optional description */
   readonly description?: string;
-  /** Optional decorations */
-  readonly decorations?: ReadonlyArray<IConfectionDecoration>;
   /** Optional tags for searching/filtering */
   readonly tags?: ReadonlyArray<string>;
-  /** Yield specification */
-  readonly yield: IConfectionYield;
-  /** Optional filling slots - each slot has independent options with a preferred selection */
-  readonly fillings?: ReadonlyArray<IFillingSlot>;
-  /** Optional procedures with preferred selection */
-  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
-  /** Version history */
-  readonly versions: ReadonlyArray<IConfectionVersion>;
-  /** The ID of the golden (approved default) version */
-  readonly goldenVersionSpec: ConfectionVersionSpec;
   /** Optional categorized URLs for external resources (tutorials, videos, etc.) */
   readonly urls?: ReadonlyArray<ICategorizedUrl>;
+  /** The ID of the golden (approved default) version */
+  readonly goldenVersionSpec: ConfectionVersionSpec;
+  /** Version history - contains type-specific configuration details */
+  readonly versions: ReadonlyArray<AnyConfectionVersion>;
 }
 
 // ============================================================================
@@ -272,15 +324,11 @@ export interface IConfection {
  * Uses chocolate molds for shell formation
  * @public
  */
-export interface IMoldedBonBon extends IConfection {
+export interface IMoldedBonBon extends IConfectionBase {
   /** Type discriminator */
   readonly confectionType: 'molded-bonbon';
-  /** Required molds with preferred selection */
-  readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
-  /** Required shell chocolate specification */
-  readonly shellChocolate: IChocolateSpec;
-  /** Optional additional chocolates (seal, decoration) */
-  readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+  /** Version history with molded bonbon specific details */
+  readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
 }
 
 /**
@@ -288,15 +336,11 @@ export interface IMoldedBonBon extends IConfection {
  * Ganache slab cut into squares and enrobed
  * @public
  */
-export interface IBarTruffle extends IConfection {
+export interface IBarTruffle extends IConfectionBase {
   /** Type discriminator */
   readonly confectionType: 'bar-truffle';
-  /** Frame dimensions for ganache slab */
-  readonly frameDimensions: IFrameDimensions;
-  /** Single bonbon dimensions for cutting */
-  readonly singleBonBonDimensions: IBonBonDimensions;
-  /** Optional enrobing chocolate specification */
-  readonly enrobingChocolate?: IChocolateSpec;
+  /** Version history with bar truffle specific details */
+  readonly versions: ReadonlyArray<IBarTruffleVersion>;
 }
 
 /**
@@ -304,13 +348,11 @@ export interface IBarTruffle extends IConfection {
  * Hand-rolled ganache balls with various coatings
  * @public
  */
-export interface IRolledTruffle extends IConfection {
+export interface IRolledTruffle extends IConfectionBase {
   /** Type discriminator */
   readonly confectionType: 'rolled-truffle';
-  /** Optional enrobing chocolate specification */
-  readonly enrobingChocolate?: IChocolateSpec;
-  /** Optional coatings (cocoa powder, nuts, etc.) */
-  readonly coatings?: ICoatings;
+  /** Version history with rolled truffle specific details */
+  readonly versions: ReadonlyArray<IRolledTruffleVersion>;
 }
 
 // ============================================================================
@@ -356,4 +398,38 @@ export function isBarTruffle(confection: ConfectionData): confection is IBarTruf
  */
 export function isRolledTruffle(confection: ConfectionData): confection is IRolledTruffle {
   return confection.confectionType === 'rolled-truffle';
+}
+
+// ============================================================================
+// Version Type Guards
+// ============================================================================
+
+/**
+ * Type guard for IMoldedBonBonVersion
+ * @param version - Version to check
+ * @returns True if the version is a molded bonbon version
+ * @public
+ */
+export function isMoldedBonBonVersion(version: AnyConfectionVersion): version is IMoldedBonBonVersion {
+  return 'molds' in version && 'shellChocolate' in version;
+}
+
+/**
+ * Type guard for IBarTruffleVersion
+ * @param version - Version to check
+ * @returns True if the version is a bar truffle version
+ * @public
+ */
+export function isBarTruffleVersion(version: AnyConfectionVersion): version is IBarTruffleVersion {
+  return 'frameDimensions' in version && 'singleBonBonDimensions' in version;
+}
+
+/**
+ * Type guard for IRolledTruffleVersion
+ * @param version - Version to check
+ * @returns True if the version is a rolled truffle version
+ * @public
+ */
+export function isRolledTruffleVersion(version: AnyConfectionVersion): version is IRolledTruffleVersion {
+  return !isMoldedBonBonVersion(version) && !isBarTruffleVersion(version);
 }

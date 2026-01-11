@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeMoldedBonBon.shellChocolate property
 
-Required shell chocolate specification
+Shell chocolate from the golden version
 
 **Signature:**
 

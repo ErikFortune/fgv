@@ -26,7 +26,13 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId } from '../../common';
-import { IBarTruffle, IBonBonDimensions, IChocolateSpec, IFrameDimensions } from '../../confections';
+import {
+  IBarTruffle,
+  IBarTruffleVersion,
+  IBonBonDimensions,
+  IChocolateSpec,
+  IFrameDimensions
+} from '../../confections';
 import { IConfectionContext, IRuntimeBarTruffle } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 
@@ -79,28 +85,46 @@ export class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntime
   }
 
   // ============================================================================
-  // Bar Truffle-Specific Properties
+  // Version Access (typed)
   // ============================================================================
 
   /**
-   * Frame dimensions for ganache slab
+   * Golden version typed as IBarTruffleVersion
+   */
+  public override get goldenVersion(): IBarTruffleVersion {
+    return this._goldenVersion as IBarTruffleVersion;
+  }
+
+  /**
+   * All versions typed as IBarTruffleVersion
+   */
+  public override get versions(): ReadonlyArray<IBarTruffleVersion> {
+    return this._barTruffle.versions;
+  }
+
+  // ============================================================================
+  // Bar Truffle-Specific Properties (from golden version)
+  // ============================================================================
+
+  /**
+   * Frame dimensions for ganache slab (from golden version)
    */
   public get frameDimensions(): IFrameDimensions {
-    return this._barTruffle.frameDimensions;
+    return this.goldenVersion.frameDimensions;
   }
 
   /**
-   * Single bonbon dimensions for cutting
+   * Single bonbon dimensions for cutting (from golden version)
    */
   public get singleBonBonDimensions(): IBonBonDimensions {
-    return this._barTruffle.singleBonBonDimensions;
+    return this.goldenVersion.singleBonBonDimensions;
   }
 
   /**
-   * Enrobing chocolate specification (optional)
+   * Enrobing chocolate specification (from golden version, optional)
    */
   public get enrobingChocolate(): IChocolateSpec | undefined {
-    return this._barTruffle.enrobingChocolate;
+    return this.goldenVersion.enrobingChocolate;
   }
 
   // ============================================================================

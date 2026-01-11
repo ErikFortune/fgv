@@ -4,10 +4,10 @@
 
 ## Confections.Converters.baseConfection variable
 
-Converter for base IConfection properties
+Converter for base IConfectionBase properties
 
 **Signature:**
 
 ```typescript
-baseConfection: Converter<IConfection>
+baseConfection: Converter<IConfectionBase>
 ```

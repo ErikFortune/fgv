@@ -30,6 +30,17 @@ Converter for IAdditionalChocolate
 </td></tr>
 <tr><td>
 
+[anyConfectionVersion](./ts-chocolate.confections.converters.anyconfectionversion.md)
+
+
+</td><td>
+
+Converter for AnyConfectionVersion (discriminated by presence of type-specific fields)
+
+
+</td></tr>
+<tr><td>
+
 [anyFillingOption](./ts-chocolate.confections.converters.anyfillingoption.md)
 
 
@@ -52,12 +63,23 @@ Converter for IBarTruffle
 </td></tr>
 <tr><td>
 
+[barTruffleVersion](./ts-chocolate.confections.converters.bartruffleversion.md)
+
+
+</td><td>
+
+Converter for IBarTruffleVersion
+
+
+</td></tr>
+<tr><td>
+
 [baseConfection](./ts-chocolate.confections.converters.baseconfection.md)
 
 
 </td><td>
 
-Converter for base IConfection properties
+Converter for base IConfectionBase properties
 
 
 </td></tr>
@@ -107,6 +129,17 @@ Converter for [ConfectionData](./ts-chocolate.confections.confectiondata.md) wit
 </td></tr>
 <tr><td>
 
+[confectionClass](./ts-chocolate.confections.converters.confectionclass.md)
+
+
+</td><td>
+
+Converter for Confection class instance. Validates that goldenVersionSpec exists in versions and returns a class instance with helper methods for version management.
+
+
+</td></tr>
+<tr><td>
+
 [confectionData](./ts-chocolate.confections.converters.confectiondata.md)
 
 
@@ -146,17 +179,6 @@ Converter for IConfectionMoldRef
 </td><td>
 
 Converter for confection molds with preferred selection. Validates that preferredId (if specified) exists in options.
-
-
-</td></tr>
-<tr><td>
-
-[confectionVersion](./ts-chocolate.confections.converters.confectionversion.md)
-
-
-</td><td>
-
-Converter for IConfectionVersion
 
 
 </td></tr>
@@ -228,6 +250,17 @@ Converter for IMoldedBonBon
 </td></tr>
 <tr><td>
 
+[moldedBonBonVersion](./ts-chocolate.confections.converters.moldedbonbonversion.md)
+
+
+</td><td>
+
+Converter for IMoldedBonBonVersion
+
+
+</td></tr>
+<tr><td>
+
 [recipeFillingOption](./ts-chocolate.confections.converters.recipefillingoption.md)
 
 
@@ -245,6 +278,17 @@ Converter for IRecipeFillingOption
 </td><td>
 
 Converter for IRolledTruffle
+
+
+</td></tr>
+<tr><td>
+
+[rolledTruffleVersion](./ts-chocolate.confections.converters.rolledtruffleversion.md)
+
+
+</td><td>
+
+Converter for IRolledTruffleVersion
 
 
 </td></tr>

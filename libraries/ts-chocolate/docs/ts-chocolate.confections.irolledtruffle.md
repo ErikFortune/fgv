@@ -9,9 +9,9 @@ Rolled truffle confection Hand-rolled ganache balls with various coatings
 **Signature:**
 
 ```typescript
-export interface IRolledTruffle extends IConfection 
+export interface IRolledTruffle extends IConfectionBase 
 ```
-**Extends:** [IConfection](./ts-chocolate.confections.iconfection.md)
+**Extends:** [IConfectionBase](./ts-chocolate.confections.iconfectionbase.md)
 
 ## Properties
 
@@ -38,27 +38,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[coatings?](./ts-chocolate.confections.irolledtruffle.coatings.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ICoatings](./ts-chocolate.confections.icoatings.md)
-
-
-</td><td>
-
-_(Optional)_ Optional coatings (cocoa powder, nuts, etc.)
-
-
-</td></tr>
-<tr><td>
-
 [confectionType](./ts-chocolate.confections.irolledtruffle.confectiontype.md)
 
 
@@ -80,7 +59,7 @@ Type discriminator
 </td></tr>
 <tr><td>
 
-[enrobingChocolate?](./ts-chocolate.confections.irolledtruffle.enrobingchocolate.md)
+[versions](./ts-chocolate.confections.irolledtruffle.versions.md)
 
 
 </td><td>
@@ -90,12 +69,12 @@ Type discriminator
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+ReadonlyArray&lt;[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Optional enrobing chocolate specification
+Version history with rolled truffle specific details
 
 
 </td></tr>

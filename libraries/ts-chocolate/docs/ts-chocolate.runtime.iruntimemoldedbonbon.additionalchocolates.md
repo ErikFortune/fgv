@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeMoldedBonBon.additionalChocolates property
 
-Optional additional chocolates (seal, decoration)
+Additional chocolates from the golden version
 
 **Signature:**
 

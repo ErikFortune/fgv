@@ -24,7 +24,6 @@ import {
   IOptionsWithPreferred,
   IRefWithNotes,
   Measurement,
-  MoldId,
   ProcedureId,
   Procedures,
   RecipeId,

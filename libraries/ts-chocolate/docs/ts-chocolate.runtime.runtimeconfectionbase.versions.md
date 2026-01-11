@@ -9,5 +9,5 @@ All versions
 **Signature:**
 
 ```typescript
-get versions(): ReadonlyArray<IConfectionVersion>;
+get versions(): ReadonlyArray<AnyConfectionVersion>;
 ```

@@ -39,14 +39,19 @@ describe('ConfectionsLibrary', () => {
     confectionType: 'molded-bonbon' as const,
     name: 'Test Molded Bonbon',
     goldenVersionSpec: '2026-01-01-01',
-    yield: { count: 24 },
-    molds: {
-      options: [{ id: 'common.dome-25mm' }]
-    },
-    shellChocolate: {
-      ids: ['common.chocolate-dark-64']
-    },
-    versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+    versions: [
+      {
+        versionSpec: '2026-01-01-01',
+        createdDate: '2026-01-01',
+        yield: { count: 24 },
+        molds: {
+          options: [{ id: 'common.dome-25mm' }]
+        },
+        shellChocolate: {
+          ids: ['common.chocolate-dark-64']
+        }
+      }
+    ]
   };
 
   const barTruffleData = {
@@ -54,10 +59,15 @@ describe('ConfectionsLibrary', () => {
     confectionType: 'bar-truffle' as const,
     name: 'Test Bar Truffle',
     goldenVersionSpec: '2026-01-01-01',
-    yield: { count: 48 },
-    frameDimensions: { width: 300, height: 200, depth: 8 },
-    singleBonBonDimensions: { width: 25, height: 25 },
-    versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+    versions: [
+      {
+        versionSpec: '2026-01-01-01',
+        createdDate: '2026-01-01',
+        yield: { count: 48 },
+        frameDimensions: { width: 300, height: 200, depth: 8 },
+        singleBonBonDimensions: { width: 25, height: 25 }
+      }
+    ]
   };
 
   const rolledTruffleData = {
@@ -65,8 +75,13 @@ describe('ConfectionsLibrary', () => {
     confectionType: 'rolled-truffle' as const,
     name: 'Test Rolled Truffle',
     goldenVersionSpec: '2026-01-01-01',
-    yield: { count: 40 },
-    versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+    versions: [
+      {
+        versionSpec: '2026-01-01-01',
+        createdDate: '2026-01-01',
+        yield: { count: 40 }
+      }
+    ]
   };
 
   const testCollection: ConfectionCollectionEntryInit = {
@@ -243,9 +258,10 @@ describe('ConfectionsLibrary', () => {
     test('molded bonbon has type-specific properties', () => {
       expect(library.get('test.test-molded' as ConfectionId)).toSucceedAndSatisfy((confection) => {
         if (isMoldedBonBon(confection)) {
-          expect(confection.molds).toBeDefined();
-          expect(confection.shellChocolate).toBeDefined();
-          expect(confection.molds.options[0].id).toBe('common.dome-25mm');
+          const version = confection.versions[0];
+          expect(version.molds).toBeDefined();
+          expect(version.shellChocolate).toBeDefined();
+          expect(version.molds.options[0].id).toBe('common.dome-25mm');
         } else {
           fail('Expected molded bonbon');
         }
@@ -255,9 +271,10 @@ describe('ConfectionsLibrary', () => {
     test('bar truffle has type-specific properties', () => {
       expect(library.get('test.test-bar' as ConfectionId)).toSucceedAndSatisfy((confection) => {
         if (isBarTruffle(confection)) {
-          expect(confection.frameDimensions).toBeDefined();
-          expect(confection.singleBonBonDimensions).toBeDefined();
-          expect(confection.frameDimensions.width).toBe(300);
+          const version = confection.versions[0];
+          expect(version.frameDimensions).toBeDefined();
+          expect(version.singleBonBonDimensions).toBeDefined();
+          expect(version.frameDimensions.width).toBe(300);
         } else {
           fail('Expected bar truffle');
         }
@@ -267,9 +284,10 @@ describe('ConfectionsLibrary', () => {
     test('rolled truffle has type-specific properties', () => {
       expect(library.get('test.test-rolled' as ConfectionId)).toSucceedAndSatisfy((confection) => {
         if (isRolledTruffle(confection)) {
+          const version = confection.versions[0];
           // Rolled truffle optional properties
-          expect(confection.coatings).toBeUndefined();
-          expect(confection.enrobingChocolate).toBeUndefined();
+          expect(version.coatings).toBeUndefined();
+          expect(version.enrobingChocolate).toBeUndefined();
         } else {
           fail('Expected rolled truffle');
         }
@@ -463,8 +481,7 @@ describe('ConfectionsLibrary.createAsync', () => {
               confectionType: 'rolled-truffle',
               name: 'External Confection',
               goldenVersionSpec: '2026-01-01-01',
-              yield: { count: 30 },
-              versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+              versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01', yield: { count: 30 } }]
             }
           }
         } as unknown as JsonObject
@@ -497,8 +514,7 @@ describe('ConfectionsLibrary.createAsync', () => {
         confectionType: 'rolled-truffle',
         name: 'Secret Confection',
         goldenVersionSpec: '2026-01-01-01',
-        yield: { count: 20 },
-        versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01' }]
+        versions: [{ versionSpec: '2026-01-01-01', createdDate: '2026-01-01', yield: { count: 20 } }]
       }
     };
 

@@ -63,55 +63,55 @@ describe('ConfectionEditingSession', () => {
     description: 'A test molded bonbon',
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
     tags: ['test', 'bonbon'],
-    yield: {
-      count: 24,
-      unit: 'pieces',
-      weightPerPiece: 12 as Measurement
-    },
-    fillings: [
-      {
-        slotId: 'center' as SlotId,
-        name: 'Ganache Center',
-        filling: {
-          options: [
-            { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
-            { type: 'recipe', id: 'common.milk-ganache' as RecipeId },
-            { type: 'ingredient', id: 'common.caramel' as IngredientId }
-          ],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
-        }
-      }
-    ],
-    decorations: [{ description: 'Gold leaf', preferred: true }],
-    molds: {
-      options: [{ id: 'common.dome-25mm' as MoldId }, { id: 'common.square-20mm' as MoldId }],
-      preferredId: 'common.dome-25mm' as MoldId
-    },
-    shellChocolate: {
-      ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-dark-70' as IngredientId],
-      preferredId: 'common.chocolate-dark-64' as IngredientId
-    },
-    additionalChocolates: [
-      {
-        chocolate: {
-          ids: ['common.chocolate-dark-64' as IngredientId],
-          preferredId: 'common.chocolate-dark-64' as IngredientId
-        },
-        purpose: 'seal'
-      }
-    ],
-    procedures: {
-      options: [
-        { id: 'common.molded-bonbon-standard' as ProcedureId },
-        { id: 'common.molded-bonbon-double-shell' as ProcedureId }
-      ],
-      preferredId: 'common.molded-bonbon-standard' as ProcedureId
-    },
     versions: [
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
         createdDate: '2026-01-01',
-        notes: 'Initial version'
+        notes: 'Initial version',
+        yield: {
+          count: 24,
+          unit: 'pieces',
+          weightPerPiece: 12 as Measurement
+        },
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            name: 'Ganache Center',
+            filling: {
+              options: [
+                { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
+                { type: 'recipe', id: 'common.milk-ganache' as RecipeId },
+                { type: 'ingredient', id: 'common.caramel' as IngredientId }
+              ],
+              preferredId: 'common.dark-ganache-classic' as RecipeId
+            }
+          }
+        ],
+        decorations: [{ description: 'Gold leaf', preferred: true }],
+        molds: {
+          options: [{ id: 'common.dome-25mm' as MoldId }, { id: 'common.square-20mm' as MoldId }],
+          preferredId: 'common.dome-25mm' as MoldId
+        },
+        shellChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId, 'common.chocolate-dark-70' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        },
+        additionalChocolates: [
+          {
+            chocolate: {
+              ids: ['common.chocolate-dark-64' as IngredientId],
+              preferredId: 'common.chocolate-dark-64' as IngredientId
+            },
+            purpose: 'seal'
+          }
+        ],
+        procedures: {
+          options: [
+            { id: 'common.molded-bonbon-standard' as ProcedureId },
+            { id: 'common.molded-bonbon-double-shell' as ProcedureId }
+          ],
+          preferredId: 'common.molded-bonbon-standard' as ProcedureId
+        }
       }
     ]
   };
@@ -122,37 +122,37 @@ describe('ConfectionEditingSession', () => {
     name: 'Test Bar Truffle' as ConfectionName,
     description: 'A test bar truffle',
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-    yield: {
-      count: 48,
-      unit: 'pieces',
-      weightPerPiece: 10 as Measurement
-    },
-    fillings: [
-      {
-        slotId: 'center' as SlotId,
-        filling: {
-          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
-        }
-      }
-    ],
-    frameDimensions: {
-      width: 300 as Millimeters,
-      height: 200 as Millimeters,
-      depth: 8 as Millimeters
-    },
-    singleBonBonDimensions: {
-      width: 25 as Millimeters,
-      height: 25 as Millimeters
-    },
-    enrobingChocolate: {
-      ids: ['common.chocolate-dark-64' as IngredientId],
-      preferredId: 'common.chocolate-dark-64' as IngredientId
-    },
     versions: [
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-        createdDate: '2026-01-01'
+        createdDate: '2026-01-01',
+        yield: {
+          count: 48,
+          unit: 'pieces',
+          weightPerPiece: 10 as Measurement
+        },
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+              preferredId: 'common.dark-ganache-classic' as RecipeId
+            }
+          }
+        ],
+        frameDimensions: {
+          width: 300 as Millimeters,
+          height: 200 as Millimeters,
+          depth: 8 as Millimeters
+        },
+        singleBonBonDimensions: {
+          width: 25 as Millimeters,
+          height: 25 as Millimeters
+        },
+        enrobingChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        }
       }
     ]
   };
@@ -163,32 +163,32 @@ describe('ConfectionEditingSession', () => {
     name: 'Test Rolled Truffle' as ConfectionName,
     description: 'A test rolled truffle',
     goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-    yield: {
-      count: 40,
-      unit: 'pieces',
-      weightPerPiece: 15 as Measurement
-    },
-    fillings: [
-      {
-        slotId: 'center' as SlotId,
-        filling: {
-          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
-        }
-      }
-    ],
-    enrobingChocolate: {
-      ids: ['common.chocolate-dark-64' as IngredientId],
-      preferredId: 'common.chocolate-dark-64' as IngredientId
-    },
-    coatings: {
-      ids: ['common.cocoa-powder' as IngredientId, 'common.powdered-sugar' as IngredientId],
-      preferredId: 'common.cocoa-powder' as IngredientId
-    },
     versions: [
       {
         versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-        createdDate: '2026-01-01'
+        createdDate: '2026-01-01',
+        yield: {
+          count: 40,
+          unit: 'pieces',
+          weightPerPiece: 15 as Measurement
+        },
+        fillings: [
+          {
+            slotId: 'center' as SlotId,
+            filling: {
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+              preferredId: 'common.dark-ganache-classic' as RecipeId
+            }
+          }
+        ],
+        enrobingChocolate: {
+          ids: ['common.chocolate-dark-64' as IngredientId],
+          preferredId: 'common.chocolate-dark-64' as IngredientId
+        },
+        coatings: {
+          ids: ['common.cocoa-powder' as IngredientId, 'common.powdered-sugar' as IngredientId],
+          preferredId: 'common.cocoa-powder' as IngredientId
+        }
       }
     ]
   };
@@ -372,16 +372,21 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon where the preferred filling is an ingredient
       const ingredientPreferredData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: [
+        versions: [
           {
-            slotId: 'center' as SlotId,
-            filling: {
-              options: [
-                { type: 'ingredient', id: 'common.caramel' as IngredientId },
-                { type: 'ingredient', id: 'common.praline' as IngredientId }
-              ],
-              preferredId: 'common.caramel' as IngredientId
-            }
+            ...moldedBonBonData.versions[0],
+            fillings: [
+              {
+                slotId: 'center' as SlotId,
+                filling: {
+                  options: [
+                    { type: 'ingredient', id: 'common.caramel' as IngredientId },
+                    { type: 'ingredient', id: 'common.praline' as IngredientId }
+                  ],
+                  preferredId: 'common.caramel' as IngredientId
+                }
+              }
+            ]
           }
         ]
       };
@@ -404,16 +409,21 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with options but no preferredId
       const noPreferredData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: [
+        versions: [
           {
-            slotId: 'center' as SlotId,
-            filling: {
-              options: [
-                { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
-                { type: 'ingredient', id: 'common.caramel' as IngredientId }
-              ]
-              // No preferredId
-            }
+            ...moldedBonBonData.versions[0],
+            fillings: [
+              {
+                slotId: 'center' as SlotId,
+                filling: {
+                  options: [
+                    { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
+                    { type: 'ingredient', id: 'common.caramel' as IngredientId }
+                  ]
+                  // No preferredId
+                }
+              }
+            ]
           }
         ]
       };
@@ -435,12 +445,17 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with empty options array
       const emptyOptionsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: [
+        versions: [
           {
-            slotId: 'center' as SlotId,
-            filling: {
-              options: []
-            }
+            ...moldedBonBonData.versions[0],
+            fillings: [
+              {
+                slotId: 'center' as SlotId,
+                filling: {
+                  options: []
+                }
+              }
+            ]
           }
         ]
       };
@@ -460,22 +475,27 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with multiple filling slots
       const multiSlotData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: [
+        versions: [
           {
-            slotId: 'outer-layer' as SlotId,
-            name: 'Outer Ganache',
-            filling: {
-              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-              preferredId: 'common.dark-ganache-classic' as RecipeId
-            }
-          },
-          {
-            slotId: 'center' as SlotId,
-            name: 'Center Insert',
-            filling: {
-              options: [{ type: 'ingredient', id: 'common.praline' as IngredientId }],
-              preferredId: 'common.praline' as IngredientId
-            }
+            ...moldedBonBonData.versions[0],
+            fillings: [
+              {
+                slotId: 'outer-layer' as SlotId,
+                name: 'Outer Ganache',
+                filling: {
+                  options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
+                  preferredId: 'common.dark-ganache-classic' as RecipeId
+                }
+              },
+              {
+                slotId: 'center' as SlotId,
+                name: 'Center Insert',
+                filling: {
+                  options: [{ type: 'ingredient', id: 'common.praline' as IngredientId }],
+                  preferredId: 'common.praline' as IngredientId
+                }
+              }
+            ]
           }
         ]
       };
@@ -496,7 +516,12 @@ describe('ConfectionEditingSession', () => {
       // Create a rolled truffle without coatings
       const noCoatingsData: IRolledTruffle = {
         ...rolledTruffleData,
-        coatings: undefined
+        versions: [
+          {
+            ...rolledTruffleData.versions[0],
+            coatings: undefined
+          }
+        ]
       };
       const confection = RuntimeRolledTruffle.create(
         mockContext,
@@ -529,7 +554,10 @@ describe('ConfectionEditingSession', () => {
 
     test('fails for confection without fillings', () => {
       // Create a molded bonbon without fillings
-      const noFillingsData = { ...moldedBonBonData, fillings: undefined };
+      const noFillingsData: IMoldedBonBon = {
+        ...moldedBonBonData,
+        versions: [{ ...moldedBonBonData.versions[0], fillings: undefined }]
+      };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
         'test.test-bonbon-no-fillings' as ConfectionId,
@@ -576,10 +604,15 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with an empty options array in filling slot
       const emptyOptionsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: [
+        versions: [
           {
-            slotId: 'center' as SlotId,
-            filling: { options: [] }
+            ...moldedBonBonData.versions[0],
+            fillings: [
+              {
+                slotId: 'center' as SlotId,
+                filling: { options: [] }
+              }
+            ]
           }
         ]
       };
@@ -614,7 +647,10 @@ describe('ConfectionEditingSession', () => {
     });
 
     test('fails for confection without fillings', () => {
-      const noFillingsData = { ...moldedBonBonData, fillings: undefined };
+      const noFillingsData: IMoldedBonBon = {
+        ...moldedBonBonData,
+        versions: [{ ...moldedBonBonData.versions[0], fillings: undefined }]
+      };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
         'test.test-bonbon-no-fillings2' as ConfectionId,
@@ -640,10 +676,15 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with empty options in filling slot
       const emptyOptionsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        fillings: [
+        versions: [
           {
-            slotId: 'center' as SlotId,
-            filling: { options: [] }
+            ...moldedBonBonData.versions[0],
+            fillings: [
+              {
+                slotId: 'center' as SlotId,
+                filling: { options: [] }
+              }
+            ]
           }
         ]
       };
@@ -697,9 +738,14 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with empty molds array
       const emptyMoldsData: IMoldedBonBon = {
         ...moldedBonBonData,
-        molds: {
-          options: [] // Empty array means no initial mold
-        }
+        versions: [
+          {
+            ...moldedBonBonData.versions[0],
+            molds: {
+              options: [] // Empty array means no initial mold
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
@@ -724,10 +770,15 @@ describe('ConfectionEditingSession', () => {
       // This covers the preferredId ?? molds.options[0]?.id branch
       const noPreferredMoldData: IMoldedBonBon = {
         ...moldedBonBonData,
-        molds: {
-          options: [{ id: 'common.square-20mm' as MoldId }]
-          // No preferredId
-        }
+        versions: [
+          {
+            ...moldedBonBonData.versions[0],
+            molds: {
+              options: [{ id: 'common.square-20mm' as MoldId }]
+              // No preferredId
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
@@ -872,7 +923,10 @@ describe('ConfectionEditingSession', () => {
     });
 
     test('fails for confection without procedures', () => {
-      const noProceduresData = { ...moldedBonBonData, procedures: undefined };
+      const noProceduresData: IMoldedBonBon = {
+        ...moldedBonBonData,
+        versions: [{ ...moldedBonBonData.versions[0], procedures: undefined }]
+      };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
         'test.test-bonbon-no-procedures' as ConfectionId,
@@ -898,9 +952,14 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with empty procedures array
       const emptyProceduresData: IMoldedBonBon = {
         ...moldedBonBonData,
-        procedures: {
-          options: [] // Empty array means no initial procedure
-        }
+        versions: [
+          {
+            ...moldedBonBonData.versions[0],
+            procedures: {
+              options: [] // Empty array means no initial procedure
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
@@ -925,10 +984,15 @@ describe('ConfectionEditingSession', () => {
       // This covers the preferredId ?? procedures.options[0]?.id branch
       const noPreferredProcData: IMoldedBonBon = {
         ...moldedBonBonData,
-        procedures: {
-          options: [{ id: 'common.molded-bonbon-double-shell' as ProcedureId }]
-          // No preferredId
-        }
+        versions: [
+          {
+            ...moldedBonBonData.versions[0],
+            procedures: {
+              options: [{ id: 'common.molded-bonbon-double-shell' as ProcedureId }]
+              // No preferredId
+            }
+          }
+        ]
       };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
@@ -981,7 +1045,12 @@ describe('ConfectionEditingSession', () => {
       // Create a rolled truffle without coatings
       const noCoatingsData: IRolledTruffle = {
         ...rolledTruffleData,
-        coatings: undefined
+        versions: [
+          {
+            ...rolledTruffleData.versions[0],
+            coatings: undefined
+          }
+        ]
       };
       const confection = RuntimeRolledTruffle.create(
         mockContext,
@@ -1006,10 +1075,15 @@ describe('ConfectionEditingSession', () => {
       // This covers the preferredId ?? ids[0] branch
       const noPreferredCoatingData: IRolledTruffle = {
         ...rolledTruffleData,
-        coatings: {
-          ids: ['common.powdered-sugar' as IngredientId, 'common.cocoa-powder' as IngredientId]
-          // No preferredId
-        }
+        versions: [
+          {
+            ...rolledTruffleData.versions[0],
+            coatings: {
+              ids: ['common.powdered-sugar' as IngredientId, 'common.cocoa-powder' as IngredientId]
+              // No preferredId
+            }
+          }
+        ]
       };
       const confection = RuntimeRolledTruffle.create(
         mockContext,
@@ -1029,10 +1103,15 @@ describe('ConfectionEditingSession', () => {
       // This covers the ids[0] short-circuit branch
       const emptyIdsCoatingData: IRolledTruffle = {
         ...rolledTruffleData,
-        coatings: {
-          ids: []
-          // No preferredId
-        }
+        versions: [
+          {
+            ...rolledTruffleData.versions[0],
+            coatings: {
+              ids: []
+              // No preferredId
+            }
+          }
+        ]
       };
       const confection = RuntimeRolledTruffle.create(
         mockContext,

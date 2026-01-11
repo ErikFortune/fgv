@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeBarTruffle.enrobingChocolate property
 
-Optional enrobing chocolate specification
+Enrobing chocolate from the golden version
 
 **Signature:**
 

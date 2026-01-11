@@ -26,7 +26,13 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId, IOptionsWithPreferred, MoldId } from '../../common';
-import { IAdditionalChocolate, IChocolateSpec, IConfectionMoldRef, IMoldedBonBon } from '../../confections';
+import {
+  IAdditionalChocolate,
+  IChocolateSpec,
+  IConfectionMoldRef,
+  IMoldedBonBon,
+  IMoldedBonBonVersion
+} from '../../confections';
 import { IConfectionContext, IRuntimeMoldedBonBon } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 
@@ -79,28 +85,46 @@ export class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRunti
   }
 
   // ============================================================================
-  // Molded BonBon-Specific Properties
+  // Version Access (typed)
   // ============================================================================
 
   /**
-   * Molds with preferred selection
+   * Golden version typed as IMoldedBonBonVersion
+   */
+  public override get goldenVersion(): IMoldedBonBonVersion {
+    return this._goldenVersion as IMoldedBonBonVersion;
+  }
+
+  /**
+   * All versions typed as IMoldedBonBonVersion
+   */
+  public override get versions(): ReadonlyArray<IMoldedBonBonVersion> {
+    return this._moldedBonBon.versions;
+  }
+
+  // ============================================================================
+  // Molded BonBon-Specific Properties (from golden version)
+  // ============================================================================
+
+  /**
+   * Molds with preferred selection (from golden version)
    */
   public get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId> {
-    return this._moldedBonBon.molds;
+    return this.goldenVersion.molds;
   }
 
   /**
-   * Shell chocolate specification
+   * Shell chocolate specification (from golden version)
    */
   public get shellChocolate(): IChocolateSpec {
-    return this._moldedBonBon.shellChocolate;
+    return this.goldenVersion.shellChocolate;
   }
 
   /**
-   * Additional chocolates (seal, decoration)
+   * Additional chocolates (seal, decoration) (from golden version)
    */
   public get additionalChocolates(): ReadonlyArray<IAdditionalChocolate> | undefined {
-    return this._moldedBonBon.additionalChocolates;
+    return this.goldenVersion.additionalChocolates;
   }
 
   // ============================================================================

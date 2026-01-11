@@ -19,6 +19,7 @@
 // SOFTWARE.
 
 export * from './model';
+export * from './confection';
 export * from './confectionsCollection';
 export * from './confectionsLibrary';
 export * from './scaler';

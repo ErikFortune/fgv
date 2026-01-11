@@ -117,7 +117,7 @@ IConfectionContext
 
 </td><td>
 
-[IConfectionVersion](./ts-chocolate.confections.iconfectionversion.md)
+[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)
 
 
 </td><td>
@@ -227,7 +227,7 @@ ReadonlyArray&lt;[IConfectionDecoration](./ts-chocolate.confections.iconfectiond
 
 </td><td>
 
-Optional decorations
+Decorations from the golden version
 
 
 </td></tr>
@@ -254,6 +254,48 @@ Optional description
 </td></tr>
 <tr><td>
 
+[effectiveTags](./ts-chocolate.runtime.runtimeconfectionbase.effectivetags.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;string&gt;
+
+
+</td><td>
+
+Gets effective tags for the golden version (base tags + version's additional tags).
+
+
+</td></tr>
+<tr><td>
+
+[effectiveUrls](./ts-chocolate.runtime.runtimeconfectionbase.effectiveurls.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt;
+
+
+</td><td>
+
+Gets effective URLs for the golden version (base URLs + version's additional URLs).
+
+
+</td></tr>
+<tr><td>
+
 [fillings](./ts-chocolate.runtime.runtimeconfectionbase.fillings.md)
 
 
@@ -269,7 +311,7 @@ ReadonlyArray&lt;[IFillingSlot](./ts-chocolate.confections.ifillingslot.md)<!-- 
 
 </td><td>
 
-Optional filling slots
+Optional filling slots from the golden version
 
 
 </td></tr>
@@ -285,7 +327,7 @@ Optional filling slots
 
 </td><td>
 
-[IConfectionVersion](./ts-chocolate.confections.iconfectionversion.md)
+[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)
 
 
 </td><td>
@@ -374,7 +416,7 @@ Human-readable name
 
 </td><td>
 
-Optional procedures with preferred selection
+Optional procedures with preferred selection from the golden version
 
 
 </td></tr>
@@ -439,7 +481,28 @@ ReadonlyArray&lt;string&gt; \| undefined
 
 </td><td>
 
-Tags for searching/filtering
+Base tags for searching/filtering (version may add more via additionalTags)
+
+
+</td></tr>
+<tr><td>
+
+[urls](./ts-chocolate.runtime.runtimeconfectionbase.urls.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[ICategorizedUrl](./ts-chocolate.icategorizedurl.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
+
+Base URLs (version may add more via additionalUrls)
 
 
 </td></tr>
@@ -455,7 +518,7 @@ Tags for searching/filtering
 
 </td><td>
 
-ReadonlyArray&lt;[IConfectionVersion](./ts-chocolate.confections.iconfectionversion.md)<!-- -->&gt;
+ReadonlyArray&lt;[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)<!-- -->&gt;
 
 
 </td><td>
@@ -481,7 +544,7 @@ All versions
 
 </td><td>
 
-Yield specification
+Yield specification from the golden version
 
 
 </td></tr>
@@ -506,6 +569,34 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[getEffectiveTags(version)](./ts-chocolate.runtime.runtimeconfectionbase.geteffectivetags.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets effective tags for a specific version (base tags + version's additional tags).
+
+
+</td></tr>
+<tr><td>
+
+[getEffectiveUrls(version)](./ts-chocolate.runtime.runtimeconfectionbase.geteffectiveurls.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets effective URLs for a specific version (base URLs + version's additional URLs).
+
+
+</td></tr>
+<tr><td>
 
 [getVersion(versionSpec)](./ts-chocolate.runtime.runtimeconfectionbase.getversion.md)
 

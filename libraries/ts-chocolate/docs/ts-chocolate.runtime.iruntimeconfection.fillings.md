@@ -4,7 +4,7 @@
 
 ## Runtime.IRuntimeConfection.fillings property
 
-Optional filling slots
+Filling slots from the golden version
 
 **Signature:**
 

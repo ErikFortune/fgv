@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeMoldedBonBon.molds property
 
-Molds with preferred selection
+Molds with preferred selection (from golden version)
 
 **Signature:**
 
