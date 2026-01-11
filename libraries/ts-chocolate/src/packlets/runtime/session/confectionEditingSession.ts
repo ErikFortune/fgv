@@ -418,7 +418,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
    * @public
    */
   public selectProcedure(procedureId: ProcedureId): Result<true> {
-    if (!this._sourceConfection.confectionProcedures) {
+    if (!this._sourceConfection.procedures) {
       return fail('This confection does not support procedure selection');
     }
 
@@ -674,7 +674,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   }
 
   private _initializeProcedure(): void {
-    const procedures = this._sourceConfection.confectionProcedures;
+    const procedures = this._sourceConfection.procedures;
     if (!procedures) {
       return;
     }

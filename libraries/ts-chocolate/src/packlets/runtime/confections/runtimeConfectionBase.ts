@@ -34,10 +34,10 @@ import {
   ID_SEPARATOR,
   SourceId
 } from '../../common';
+import { IProcedureRef } from '../../recipes';
 import {
   ConfectionData,
   IConfectionDecoration,
-  IConfectionProcedureRef,
   IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
@@ -175,8 +175,8 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   /**
    * Optional procedures with preferred selection
    */
-  public get confectionProcedures(): IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId> | undefined {
-    return this._confection.confectionProcedures;
+  public get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined {
+    return this._confection.procedures;
   }
 
   /**

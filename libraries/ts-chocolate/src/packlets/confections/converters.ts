@@ -25,7 +25,7 @@
 
 import { Conversion, Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
+import { Converters as CommonConverters, IOptionsWithPreferred, MoldId } from '../common';
 import {
   AnyFillingOption,
   ConfectionData,
@@ -38,7 +38,6 @@ import {
   IConfection,
   IConfectionDecoration,
   IConfectionMoldRef,
-  IConfectionProcedureRef,
   IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
@@ -48,6 +47,8 @@ import {
   IRecipeFillingOption,
   IRolledTruffle
 } from './model';
+
+import { Converters as RecipeConverters } from '../recipes';
 
 // ============================================================================
 // Yield and Decoration Converters
@@ -179,30 +180,6 @@ export const confectionMolds: Converter<IOptionsWithPreferred<IConfectionMoldRef
   CommonConverters.optionsWithPreferred(confectionMoldRef, CommonConverters.moldId, 'confectionMolds');
 
 // ============================================================================
-// Procedure Converters
-// ============================================================================
-
-/**
- * Converter for IConfectionProcedureRef
- * @public
- */
-export const confectionProcedureRef: Converter<IConfectionProcedureRef> = CommonConverters.refWithNotes(
-  CommonConverters.procedureId
-);
-
-/**
- * Converter for confection procedures with preferred selection.
- * Validates that preferredId (if specified) exists in options.
- * @public
- */
-export const confectionProcedures: Converter<IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>> =
-  CommonConverters.optionsWithPreferred(
-    confectionProcedureRef,
-    CommonConverters.procedureId,
-    'confectionProcedures'
-  );
-
-// ============================================================================
 // Dimension Converters
 // ============================================================================
 
@@ -269,7 +246,7 @@ const commonConfectionFields: Conversion.FieldConverters<Omit<IConfection, 'conf
   tags: Converters.arrayOf(Converters.string).optional(),
   yield: confectionYield,
   fillings: Converters.arrayOf(fillingSlot).optional(),
-  confectionProcedures: confectionProcedures.optional(),
+  procedures: RecipeConverters.procedures.optional(),
   versions: Converters.arrayOf(confectionVersion),
   goldenVersionSpec: CommonConverters.confectionVersionSpec,
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()

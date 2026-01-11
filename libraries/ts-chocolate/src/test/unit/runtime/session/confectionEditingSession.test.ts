@@ -100,7 +100,7 @@ describe('ConfectionEditingSession', () => {
         purpose: 'seal'
       }
     ],
-    confectionProcedures: {
+    procedures: {
       options: [
         { id: 'common.molded-bonbon-standard' as ProcedureId },
         { id: 'common.molded-bonbon-double-shell' as ProcedureId }
@@ -872,7 +872,7 @@ describe('ConfectionEditingSession', () => {
     });
 
     test('fails for confection without procedures', () => {
-      const noProceduresData = { ...moldedBonBonData, confectionProcedures: undefined };
+      const noProceduresData = { ...moldedBonBonData, procedures: undefined };
       const confection = RuntimeMoldedBonBon.create(
         mockContext,
         'test.test-bonbon-no-procedures' as ConfectionId,
@@ -898,7 +898,7 @@ describe('ConfectionEditingSession', () => {
       // Create a bonbon with empty procedures array
       const emptyProceduresData: IMoldedBonBon = {
         ...moldedBonBonData,
-        confectionProcedures: {
+        procedures: {
           options: [] // Empty array means no initial procedure
         }
       };
@@ -925,7 +925,7 @@ describe('ConfectionEditingSession', () => {
       // This covers the preferredId ?? procedures.options[0]?.id branch
       const noPreferredProcData: IMoldedBonBon = {
         ...moldedBonBonData,
-        confectionProcedures: {
+        procedures: {
           options: [{ id: 'common.molded-bonbon-double-shell' as ProcedureId }]
           // No preferredId
         }

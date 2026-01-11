@@ -104,6 +104,27 @@ _(Optional)_ Optional notes about this version.
 </td></tr>
 <tr><td>
 
+[procedures?](./ts-chocolate.runtime.iruntimerecipeversion.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedProcedures](./ts-chocolate.runtime.iresolvedprocedures.md)
+
+
+</td><td>
+
+_(Optional)_ Resolved procedures associated with this version. Undefined if the version has no associated procedures.
+
+
+</td></tr>
+<tr><td>
+
 [ratings](./ts-chocolate.runtime.iruntimerecipeversion.ratings.md)
 
 

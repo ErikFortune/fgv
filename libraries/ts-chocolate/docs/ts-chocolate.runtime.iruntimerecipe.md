@@ -167,27 +167,6 @@ Gets the latest version (by created date).
 </td></tr>
 <tr><td>
 
-[molds?](./ts-chocolate.runtime.iruntimerecipe.molds.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRuntimeRecipeMolds](./ts-chocolate.runtime.iruntimerecipemolds.md)
-
-
-</td><td>
-
-_(Optional)_ Molds associated with this recipe. Undefined if the recipe has no associated molds.
-
-
-</td></tr>
-<tr><td>
-
 [name](./ts-chocolate.runtime.iruntimerecipe.name.md)
 
 
@@ -204,27 +183,6 @@ _(Optional)_ Molds associated with this recipe. Undefined if the recipe has no a
 </td><td>
 
 Human-readable recipe name.
-
-
-</td></tr>
-<tr><td>
-
-[procedures?](./ts-chocolate.runtime.iruntimerecipe.procedures.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IResolvedRecipeProcedures](./ts-chocolate.runtime.iresolvedrecipeprocedures.md)
-
-
-</td><td>
-
-_(Optional)_ Resolved procedures associated with this recipe. Undefined if the recipe has no associated procedures.
 
 
 </td></tr>

@@ -37,7 +37,11 @@ items:
         baseWeight: 620
         yield: '~50 bonbons'
         notes: Standard 2:1 ratio with butter finish
-
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
+          preferredId: common.ganache-cold-method
   # Classic milk chocolate ganache (~1.75:1 ratio)
   milk-ganache-classic:
     baseId: milk-ganache-classic
@@ -67,7 +71,11 @@ items:
         baseWeight: 570
         yield: '~45 bonbons'
         notes: 1.75:1 ratio for proper set with milk chocolate
-
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
+          preferredId: common.ganache-cold-method
   # Classic white chocolate ganache (~2.5:1 ratio)
   white-ganache-classic:
     baseId: white-ganache-classic
@@ -97,7 +105,11 @@ items:
         baseWeight: 715
         yield: '~55 bonbons'
         notes: 2.5:1 ratio essential for white chocolate emulsion
-
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
+          preferredId: common.ganache-cold-method
   # Vegan ganache with coconut cream
   vegan-ganache-coconut-cream:
     baseId: vegan-ganache-coconut-cream
@@ -184,6 +196,11 @@ items:
         baseWeight: 650
         yield: '~52 bonbons'
         notes: Slightly higher chocolate ratio for caramelized varieties
+        procedures:
+          options:
+            - id: common.ganache-cold-method
+            - id: common.ganache-hot-method
+          preferredId: common.ganache-cold-method
 
   # Basic gianduja
   gianduja-basic:
@@ -215,3 +232,7 @@ items:
         baseWeight: 550
         yield: '~44 bonbons'
         notes: Traditional 60:40 chocolate to hazelnut ratio
+        procedures:
+          options:
+            - id: common.gianduja
+          preferredId: common.gianduja

@@ -781,32 +781,4 @@ describe('Confections converters', () => {
       );
     });
   });
-
-  // ============================================================================
-  // confectionProcedures converter
-  // ============================================================================
-
-  describe('confectionProcedures', () => {
-    test('converts valid procedures with preferredId', () => {
-      const input = {
-        options: [{ id: 'common.temper-dark', notes: 'For shells' }, { id: 'common.fill-molds' }],
-        preferredId: 'common.temper-dark'
-      };
-      expect(ConfectionConverters.confectionProcedures.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.options).toHaveLength(2);
-        expect(result.options[0].notes).toBe('For shells');
-        expect(result.preferredId).toBe('common.temper-dark');
-      });
-    });
-
-    test('fails when preferredId is not in options', () => {
-      const input = {
-        options: [{ id: 'common.temper-dark' }],
-        preferredId: 'common.nonexistent-procedure'
-      };
-      expect(ConfectionConverters.confectionProcedures.convert(input)).toFailWith(
-        /confectionProcedures: preferredId 'common.nonexistent-procedure' not found in options/
-      );
-    });
-  });
 });

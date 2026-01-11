@@ -641,34 +641,23 @@ Union type for consumers who can work with either scaled or unscaled versions
 </td></tr>
 <tr><td>
 
+[IProcedureRef](./ts-chocolate.recipes.iprocedureref.md)
+
+
+</td><td>
+
+Reference to a procedure that can be used with a recipe. Contains the procedure ID and optional notes.
+
+
+</td></tr>
+<tr><td>
+
 [IRecipeFileTreeSource](./ts-chocolate.recipes.irecipefiletreesource.md)
 
 
 </td><td>
 
 File tree source for recipe data.
-
-
-</td></tr>
-<tr><td>
-
-[IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)
-
-
-</td><td>
-
-Reference to a mold that can be used with a recipe. Contains the mold ID and optional notes.
-
-
-</td></tr>
-<tr><td>
-
-[IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)
-
-
-</td><td>
-
-Reference to a procedure that can be used with a recipe. Contains the procedure ID and optional notes.
 
 
 </td></tr>

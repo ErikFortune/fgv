@@ -58,27 +58,6 @@ Base identifier within source (no dots)
 </td></tr>
 <tr><td>
 
-[confectionProcedures?](./ts-chocolate.confections.iconfection.confectionprocedures.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional procedures with preferred selection
-
-
-</td></tr>
-<tr><td>
-
 [confectionType](./ts-chocolate.confections.iconfection.confectiontype.md)
 
 
@@ -200,6 +179,27 @@ The ID of the golden (approved default) version
 </td><td>
 
 Human-readable name
+
+
+</td></tr>
+<tr><td>
+
+[procedures?](./ts-chocolate.confections.iconfection.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IProcedureRef](./ts-chocolate.recipes.iprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional procedures with preferred selection
 
 
 </td></tr>

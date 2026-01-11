@@ -175,48 +175,6 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[recipeMolds?](./ts-chocolate.recipes.recipe.recipemolds.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[recipeProcedures?](./ts-chocolate.recipes.recipe.recipeprocedures.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
 [tags?](./ts-chocolate.recipes.recipe.tags.md)
 
 

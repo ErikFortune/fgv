@@ -121,6 +121,27 @@ _(Optional)_ Optional notes about this version
 </td></tr>
 <tr><td>
 
+[procedures?](./ts-chocolate.recipes.irecipeversion.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IProcedureRef](./ts-chocolate.recipes.iprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_ Optional procedures associated with this version. Contains applicable procedures and the preferred default.
+
+
+</td></tr>
+<tr><td>
+
 [ratings?](./ts-chocolate.recipes.irecipeversion.ratings.md)
 
 

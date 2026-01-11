@@ -525,17 +525,6 @@ Reference to a mold used for a confection. Satisfies IHasId for use with IOption
 </td></tr>
 <tr><td>
 
-[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)
-
-
-</td><td>
-
-Reference to a procedure that can be used with a confection. Satisfies IHasId for use with IOptionsWithPreferred.
-
-
-</td></tr>
-<tr><td>
-
 [IConfectionsLibraryAsyncParams](./ts-chocolate.confections.iconfectionslibraryasyncparams.md)
 
 

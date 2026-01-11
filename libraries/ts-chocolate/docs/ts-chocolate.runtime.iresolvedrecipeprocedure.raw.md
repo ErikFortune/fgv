@@ -9,5 +9,5 @@ The original raw procedure reference data.
 **Signature:**
 
 ```typescript
-readonly raw: IRecipeProcedureRef;
+readonly raw: IProcedureRef;
 ```

@@ -41,6 +41,28 @@ Converter for [IIngredientSnapshot](./ts-chocolate.recipes.iingredientsnapshot.m
 </td></tr>
 <tr><td>
 
+[procedureRef](./ts-chocolate.recipes.converters.procedureref.md)
+
+
+</td><td>
+
+Converter for [IProcedureRef](./ts-chocolate.recipes.iprocedureref.md)
+
+
+</td></tr>
+<tr><td>
+
+[procedures](./ts-chocolate.recipes.converters.procedures.md)
+
+
+</td><td>
+
+Converter for recipe procedures with preferred selection. Validates that preferredId (if specified) exists in options.
+
+
+</td></tr>
+<tr><td>
+
 [ratingCategory](./ts-chocolate.recipes.converters.ratingcategory.md)
 
 
@@ -113,50 +135,6 @@ Converter for [IRecipeDerivation](./ts-chocolate.recipes.irecipederivation.md)
 </td><td>
 
 Converter for [IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->. Uses IIdsWithPreferred pattern for ingredient selection with validation.
-
-
-</td></tr>
-<tr><td>
-
-[recipeMoldRef](./ts-chocolate.recipes.converters.recipemoldref.md)
-
-
-</td><td>
-
-Converter for [IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)
-
-
-</td></tr>
-<tr><td>
-
-[recipeMolds](./ts-chocolate.recipes.converters.recipemolds.md)
-
-
-</td><td>
-
-Converter for recipe molds with preferred selection. Validates that preferredId (if specified) exists in options.
-
-
-</td></tr>
-<tr><td>
-
-[recipeProcedureRef](./ts-chocolate.recipes.converters.recipeprocedureref.md)
-
-
-</td><td>
-
-Converter for [IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)
-
-
-</td></tr>
-<tr><td>
-
-[recipeProcedures](./ts-chocolate.recipes.converters.recipeprocedures.md)
-
-
-</td><td>
-
-Converter for recipe procedures with preferred selection. Validates that preferredId (if specified) exists in options.
 
 
 </td></tr>

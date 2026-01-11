@@ -163,48 +163,6 @@ Human-readable recipe name
 </td></tr>
 <tr><td>
 
-[recipeMolds?](./ts-chocolate.recipes.irecipe.recipemolds.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IRecipeMoldRef](./ts-chocolate.recipes.irecipemoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional molds associated with this recipe. Contains available molds and the preferred default.
-
-
-</td></tr>
-<tr><td>
-
-[recipeProcedures?](./ts-chocolate.recipes.irecipe.recipeprocedures.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
-
-
-</td><td>
-
-_(Optional)_ Optional procedures associated with this recipe. Contains applicable procedures and the preferred default.
-
-
-</td></tr>
-<tr><td>
-
 [tags?](./ts-chocolate.recipes.irecipe.tags.md)
 
 

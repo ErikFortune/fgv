@@ -1087,7 +1087,7 @@ export abstract class SubLibraryBase<
     );
 
     // If there were errors, report them
-    /* c8 ignore next 5 - defensive: error path only with malformed encrypted data */
+    /* c8 ignore next 7 - defensive: error path only with malformed encrypted data */
     if (errors.hasMessages) {
       const errorMsg = `Failed to convert items in collection ${
         internal.ref.collectionId

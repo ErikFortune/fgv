@@ -168,27 +168,6 @@ Gets the latest version (by created date). Resolved lazily on first access.
 </td></tr>
 <tr><td>
 
-[molds](./ts-chocolate.runtime.runtimerecipe.molds.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRuntimeRecipeMolds](./ts-chocolate.runtime.iruntimerecipemolds.md) \| undefined
-
-
-</td><td>
-
-Molds associated with this recipe. Undefined if the recipe has no associated molds. Loaded lazily on first access.
-
-
-</td></tr>
-<tr><td>
-
 [name](./ts-chocolate.runtime.runtimerecipe.name.md)
 
 
@@ -205,27 +184,6 @@ Molds associated with this recipe. Undefined if the recipe has no associated mol
 </td><td>
 
 Human-readable recipe name
-
-
-</td></tr>
-<tr><td>
-
-[procedures](./ts-chocolate.runtime.runtimerecipe.procedures.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IResolvedRecipeProcedures](./ts-chocolate.runtime.iresolvedrecipeprocedures.md) \| undefined
-
-
-</td><td>
-
-Resolved procedures associated with this recipe. Undefined if the recipe has no associated procedures. Resolved lazily on first access.
 
 
 </td></tr>

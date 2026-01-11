@@ -133,23 +133,6 @@ function formatProcedureRefs(
 }
 
 /**
- * Formats mold references for human output
- */
-function formatMoldRefs(molds: IOptionsWithPreferred<IRefWithNotes<MoldId>, MoldId>, lines: string[]): void {
-  const preferredId = getPreferredId(molds);
-
-  lines.push('');
-  lines.push('Molds:');
-
-  for (const ref of molds.options) {
-    const isPreferred = ref.id === preferredId;
-    const preferredMarker = isPreferred ? ' (preferred)' : '';
-    const notes = ref.notes ? ` - ${ref.notes}` : '';
-    lines.push(`  ${ref.id}${preferredMarker}${notes}`);
-  }
-}
-
-/**
  * Formats categorized URLs for human output
  */
 function formatUrls(urls: ReadonlyArray<ICategorizedUrl>, lines: string[]): void {
@@ -347,13 +330,8 @@ function formatRecipeHuman(
   }
 
   // Show procedures if present
-  if (recipe.recipeProcedures && recipe.recipeProcedures.options.length > 0) {
-    formatProcedureRefs(recipe.recipeProcedures, lines, context);
-  }
-
-  // Show molds if present
-  if (recipe.recipeMolds && recipe.recipeMolds.options.length > 0) {
-    formatMoldRefs(recipe.recipeMolds, lines);
+  if (version.procedures && version.procedures.options.length > 0) {
+    formatProcedureRefs(version.procedures, lines, context);
   }
 
   // Show URLs if present

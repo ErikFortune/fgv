@@ -36,15 +36,7 @@ import {
   SourceId
 } from '../common';
 import { IRecipe, Recipe } from '../recipes';
-import {
-  IIngredientQueryOptions,
-  IResolvedRecipeProcedure,
-  IResolvedRecipeProcedures,
-  IRuntimeRecipe,
-  IRuntimeRecipeMold,
-  IRuntimeRecipeMolds,
-  IVersionContext
-} from './model';
+import { IIngredientQueryOptions, IRuntimeRecipe, IVersionContext } from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';
 
@@ -73,8 +65,6 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   private _latestVersion: RuntimeVersion | undefined;
   private _preferredIngredientIds: Set<IngredientId> | undefined;
   private _allIngredientIds: Set<IngredientId> | undefined;
-  private _procedures: IResolvedRecipeProcedures | undefined | null; // null = no procedures
-  private _molds: IRuntimeRecipeMolds | undefined | null; // null = no molds
 
   /**
    * Creates a RuntimeRecipe.
@@ -302,126 +292,6 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   public usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean {
     return this.getIngredientIds(options).has(ingredientId);
-  }
-
-  // ============================================================================
-  // Procedures (lazy)
-  // ============================================================================
-
-  /**
-   * Resolved procedures associated with this recipe.
-   * Undefined if the recipe has no associated procedures.
-   * Resolved lazily on first access.
-   */
-  public get procedures(): IResolvedRecipeProcedures | undefined {
-    // Use null to distinguish "not yet resolved" from "no procedures"
-    if (this._procedures === undefined) {
-      this._procedures = this._resolveProcedures();
-    }
-    return this._procedures ?? undefined;
-  }
-
-  /**
-   * Resolves procedure references to full procedure objects.
-   * @returns Resolved procedures, or null if recipe has no procedures
-   */
-  private _resolveProcedures(): IResolvedRecipeProcedures | null {
-    const rawProcedures = this._recipe.recipeProcedures;
-    if (!rawProcedures || rawProcedures.options.length === 0) {
-      return null;
-    }
-
-    const resolvedProcedures: IResolvedRecipeProcedure[] = [];
-    for (const ref of rawProcedures.options) {
-      const procedureResult = this._context.getProcedure(ref.id);
-      if (procedureResult.isSuccess()) {
-        resolvedProcedures.push({
-          procedure: procedureResult.value,
-          notes: ref.notes,
-          raw: ref
-        });
-      }
-      // Skip procedures that fail to resolve (e.g., missing from library)
-    }
-
-    // Resolve preferred procedure if specified
-    let recommendedProcedure = undefined;
-    if (rawProcedures.preferredId) {
-      const recommendedResult = this._context.getProcedure(rawProcedures.preferredId);
-      if (recommendedResult.isSuccess()) {
-        recommendedProcedure = recommendedResult.value;
-      }
-    }
-
-    // Return null if all procedures failed to resolve
-    if (resolvedProcedures.length === 0 && !recommendedProcedure) {
-      return null;
-    }
-
-    return {
-      procedures: resolvedProcedures,
-      recommendedProcedure
-    };
-  }
-
-  // ============================================================================
-  // Molds (lazy)
-  // ============================================================================
-
-  /**
-   * Molds associated with this recipe.
-   * Undefined if the recipe has no associated molds.
-   * Loaded lazily on first access.
-   */
-  public get molds(): IRuntimeRecipeMolds | undefined {
-    // Use null to distinguish "not yet loaded" from "no molds"
-    if (this._molds === undefined) {
-      this._molds = this._loadMolds();
-    }
-    return this._molds ?? undefined;
-  }
-
-  /**
-   * Loads mold references to full mold objects.
-   * @returns Runtime molds, or null if recipe has no molds
-   */
-  private _loadMolds(): IRuntimeRecipeMolds | null {
-    const rawMolds = this._recipe.recipeMolds;
-    if (!rawMolds || rawMolds.options.length === 0) {
-      return null;
-    }
-
-    const runtimeMolds: IRuntimeRecipeMold[] = [];
-    for (const ref of rawMolds.options) {
-      const moldResult = this._context.getMold(ref.id);
-      if (moldResult.isSuccess()) {
-        runtimeMolds.push({
-          mold: moldResult.value,
-          notes: ref.notes,
-          raw: ref
-        });
-      }
-      // Skip molds that fail to load (e.g., missing from library)
-    }
-
-    // Load preferred mold if specified
-    let recommendedMold = undefined;
-    if (rawMolds.preferredId) {
-      const recommendedResult = this._context.getMold(rawMolds.preferredId);
-      if (recommendedResult.isSuccess()) {
-        recommendedMold = recommendedResult.value;
-      }
-    }
-
-    // Return null if all molds failed to load
-    if (runtimeMolds.length === 0 && !recommendedMold) {
-      return null;
-    }
-
-    return {
-      molds: runtimeMolds,
-      recommendedMold
-    };
   }
 
   // ============================================================================

@@ -42,6 +42,8 @@ import {
   SlotId
 } from '../common';
 
+import { IProcedureRef } from '../recipes';
+
 // ============================================================================
 // Yield and Decoration Types
 // ============================================================================
@@ -170,17 +172,6 @@ export interface IAdditionalChocolate {
 export type IConfectionMoldRef = IRefWithNotes<MoldId>;
 
 // ============================================================================
-// Procedure Types (similar to recipes)
-// ============================================================================
-
-/**
- * Reference to a procedure that can be used with a confection.
- * Satisfies IHasId for use with IOptionsWithPreferred.
- * @public
- */
-export type IConfectionProcedureRef = IRefWithNotes<ProcedureId>;
-
-// ============================================================================
 // Dimension Types (for bar truffles)
 // ============================================================================
 
@@ -263,7 +254,7 @@ export interface IConfection {
   /** Optional filling slots - each slot has independent options with a preferred selection */
   readonly fillings?: ReadonlyArray<IFillingSlot>;
   /** Optional procedures with preferred selection */
-  readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
+  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
   /** Version history */
   readonly versions: ReadonlyArray<IConfectionVersion>;
   /** The ID of the golden (approved default) version */

@@ -36,6 +36,8 @@ import {
 import {
   ICategoryFilter,
   IResolvedRecipeIngredient,
+  IResolvedRecipeProcedure,
+  IResolvedProcedures,
   IRuntimeRecipe,
   IRuntimeRecipeVersion,
   IRuntimeScaledRecipeVersion,
@@ -107,6 +109,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   private _resolvedIngredients: ReadonlyArray<IResolvedRecipeIngredient<AnyRuntimeIngredient>> | undefined;
   private _resolutionError: string | undefined;
   private _recipe: IRuntimeRecipe | undefined;
+  private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
 
   /**
    * Creates a RuntimeVersion.
@@ -331,6 +334,66 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
         validation
       });
     });
+  }
+
+  // ============================================================================
+  // Procedures (lazy)
+  // ============================================================================
+
+  /**
+   * Resolved procedures associated with this version.
+   * Undefined if the version has no associated procedures.
+   * Resolved lazily on first access.
+   */
+  public get procedures(): IResolvedProcedures | undefined {
+    // Use null to distinguish "not yet resolved" from "no procedures"
+    if (this._procedures === undefined) {
+      this._procedures = this._resolveProcedures();
+    }
+    return this._procedures ?? undefined;
+  }
+
+  /**
+   * Resolves procedure references to full procedure objects.
+   * @returns Resolved procedures, or null if version has no procedures
+   */
+  private _resolveProcedures(): IResolvedProcedures | null {
+    const rawProcedures = this._version.procedures;
+    if (!rawProcedures || rawProcedures.options.length === 0) {
+      return null;
+    }
+
+    const resolvedProcedures: IResolvedRecipeProcedure[] = [];
+    for (const ref of rawProcedures.options) {
+      const procedureResult = this._context.getProcedure(ref.id);
+      if (procedureResult.isSuccess()) {
+        resolvedProcedures.push({
+          procedure: procedureResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip procedures that fail to resolve (e.g., missing from library)
+    }
+
+    // Resolve preferred procedure if specified
+    let recommendedProcedure = undefined;
+    if (rawProcedures.preferredId) {
+      const recommendedResult = this._context.getProcedure(rawProcedures.preferredId);
+      if (recommendedResult.isSuccess()) {
+        recommendedProcedure = recommendedResult.value;
+      }
+    }
+
+    // Return null if all procedures failed to resolve
+    if (resolvedProcedures.length === 0 && !recommendedProcedure) {
+      return null;
+    }
+
+    return {
+      procedures: resolvedProcedures,
+      recommendedProcedure
+    };
   }
 
   // ============================================================================

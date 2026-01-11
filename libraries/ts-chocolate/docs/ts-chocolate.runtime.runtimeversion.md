@@ -105,6 +105,27 @@ Optional notes about this version
 </td></tr>
 <tr><td>
 
+[procedures](./ts-chocolate.runtime.runtimeversion.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IResolvedProcedures](./ts-chocolate.runtime.iresolvedprocedures.md) \| undefined
+
+
+</td><td>
+
+Resolved procedures associated with this version. Undefined if the version has no associated procedures. Resolved lazily on first access.
+
+
+</td></tr>
+<tr><td>
+
 [ratings](./ts-chocolate.runtime.runtimeversion.ratings.md)
 
 

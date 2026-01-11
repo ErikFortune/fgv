@@ -151,28 +151,6 @@ Converter for confection molds with preferred selection. Validates that preferre
 </td></tr>
 <tr><td>
 
-[confectionProcedureRef](./ts-chocolate.confections.converters.confectionprocedureref.md)
-
-
-</td><td>
-
-Converter for IConfectionProcedureRef
-
-
-</td></tr>
-<tr><td>
-
-[confectionProcedures](./ts-chocolate.confections.converters.confectionprocedures.md)
-
-
-</td><td>
-
-Converter for confection procedures with preferred selection. Validates that preferredId (if specified) exists in options.
-
-
-</td></tr>
-<tr><td>
-
 [confectionVersion](./ts-chocolate.confections.converters.confectionversion.md)
 
 

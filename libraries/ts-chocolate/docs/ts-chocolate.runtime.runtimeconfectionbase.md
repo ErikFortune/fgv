@@ -189,27 +189,6 @@ The base confection ID within the source
 </td></tr>
 <tr><td>
 
-[confectionProcedures](./ts-chocolate.runtime.runtimeconfectionbase.confectionprocedures.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionProcedureRef](./ts-chocolate.confections.iconfectionprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
-
-
-</td><td>
-
-Optional procedures with preferred selection
-
-
-</td></tr>
-<tr><td>
-
 [confectionType](./ts-chocolate.runtime.runtimeconfectionbase.confectiontype.md)
 
 
@@ -375,6 +354,27 @@ The composite confection ID (e.g., "common.dark-dome-bonbon")
 </td><td>
 
 Human-readable name
+
+
+</td></tr>
+<tr><td>
+
+[procedures](./ts-chocolate.runtime.runtimeconfectionbase.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IProcedureRef](./ts-chocolate.recipes.iprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
+
+Optional procedures with preferred selection
 
 
 </td></tr>

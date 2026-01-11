@@ -73,8 +73,7 @@ import {
   IComputedScaledRecipe,
   IRecipe,
   IRecipeIngredient,
-  IRecipeMoldRef,
-  IRecipeProcedureRef,
+  IProcedureRef,
   IRecipeVersion,
   IScaledRecipeIngredient,
   IVersionScaleOptions,
@@ -89,7 +88,6 @@ import {
   ICoatings,
   IConfectionDecoration,
   IConfectionMoldRef,
-  IConfectionProcedureRef,
   IConfectionVersion,
   IConfectionYield,
   IFillingSlot,
@@ -101,7 +99,6 @@ import { IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { IRecipeJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
-import { Mold } from '../molds';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================
@@ -512,6 +509,14 @@ export interface IRuntimeRecipeVersion {
    */
   calculateGanache(): Result<IGanacheCalculation>;
 
+  // ---- Procedures (resolved) ----
+
+  /**
+   * Resolved procedures associated with this version.
+   * Undefined if the version has no associated procedures.
+   */
+  readonly procedures?: IResolvedProcedures;
+
   // ---- Raw access ----
 
   /**
@@ -680,14 +685,14 @@ export interface IResolvedRecipeProcedure {
   /**
    * The original raw procedure reference data.
    */
-  readonly raw: IRecipeProcedureRef;
+  readonly raw: IProcedureRef;
 }
 
 /**
  * Collection of resolved procedures associated with a recipe.
  * @public
  */
-export interface IResolvedRecipeProcedures {
+export interface IResolvedProcedures {
   /**
    * Available procedures for this recipe - fully resolved.
    */
@@ -698,49 +703,6 @@ export interface IResolvedRecipeProcedures {
    * Undefined if no recommended procedure is specified.
    */
   readonly recommendedProcedure?: Procedure;
-}
-
-// ============================================================================
-// Runtime Mold Reference
-// ============================================================================
-
-/**
- * A runtime mold reference with the full mold object.
- * Used in runtime recipes to provide direct access to mold details.
- * @public
- */
-export interface IRuntimeRecipeMold {
-  /**
-   * The mold object.
-   */
-  readonly mold: Mold;
-
-  /**
-   * Optional notes specific to using this mold with the recipe.
-   */
-  readonly notes?: string;
-
-  /**
-   * The original raw mold reference data.
-   */
-  readonly raw: IRecipeMoldRef;
-}
-
-/**
- * Collection of molds associated with a recipe at runtime.
- * @public
- */
-export interface IRuntimeRecipeMolds {
-  /**
-   * Available molds for this recipe.
-   */
-  readonly molds: ReadonlyArray<IRuntimeRecipeMold>;
-
-  /**
-   * The recommended/default mold.
-   * Undefined if no recommended mold is specified.
-   */
-  readonly recommendedMold?: Mold;
 }
 
 // ============================================================================
@@ -852,22 +814,6 @@ export interface IRuntimeRecipe {
    * @returns True if the ingredient is used in any version
    */
   usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;
-
-  // ---- Procedures (resolved) ----
-
-  /**
-   * Resolved procedures associated with this recipe.
-   * Undefined if the recipe has no associated procedures.
-   */
-  readonly procedures?: IResolvedRecipeProcedures;
-
-  // ---- Molds ----
-
-  /**
-   * Molds associated with this recipe.
-   * Undefined if the recipe has no associated molds.
-   */
-  readonly molds?: IRuntimeRecipeMolds;
 
   // ---- Raw access ----
 
@@ -1129,8 +1075,6 @@ export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRunti
   readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
   /** Gets a procedure by its composite ID. */
   getProcedure(id: string): Result<Procedure>;
-  /** Gets a mold by its composite ID. */
-  getMold(id: string): Result<Mold>;
 }
 
 /**
@@ -1319,7 +1263,7 @@ export interface IRuntimeConfection {
   readonly fillings?: ReadonlyArray<IFillingSlot>;
 
   /** Optional procedures with preferred selection */
-  readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
+  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 
   /** The ID of the golden (approved default) version */
   readonly goldenVersionSpec: ConfectionVersionSpec;

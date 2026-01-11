@@ -1091,7 +1091,18 @@ export const recipeCollections: Record<string, JsonObject> = {
             ],
             baseWeight: 620,
             yield: '~50 bonbons',
-            notes: 'Standard 2:1 ratio with butter finish'
+            notes: 'Standard 2:1 ratio with butter finish',
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ]
       },
@@ -1131,7 +1142,18 @@ export const recipeCollections: Record<string, JsonObject> = {
             ],
             baseWeight: 570,
             yield: '~45 bonbons',
-            notes: '1.75:1 ratio for proper set with milk chocolate'
+            notes: '1.75:1 ratio for proper set with milk chocolate',
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ]
       },
@@ -1171,7 +1193,18 @@ export const recipeCollections: Record<string, JsonObject> = {
             ],
             baseWeight: 715,
             yield: '~55 bonbons',
-            notes: '2.5:1 ratio essential for white chocolate emulsion'
+            notes: '2.5:1 ratio essential for white chocolate emulsion',
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ]
       },
@@ -1286,7 +1319,18 @@ export const recipeCollections: Record<string, JsonObject> = {
             ],
             baseWeight: 650,
             yield: '~52 bonbons',
-            notes: 'Slightly higher chocolate ratio for caramelized varieties'
+            notes: 'Slightly higher chocolate ratio for caramelized varieties',
+            procedures: {
+              options: [
+                {
+                  id: 'common.ganache-cold-method'
+                },
+                {
+                  id: 'common.ganache-hot-method'
+                }
+              ],
+              preferredId: 'common.ganache-cold-method'
+            }
           }
         ]
       },
@@ -1326,7 +1370,15 @@ export const recipeCollections: Record<string, JsonObject> = {
             ],
             baseWeight: 550,
             yield: '~44 bonbons',
-            notes: 'Traditional 60:40 chocolate to hazelnut ratio'
+            notes: 'Traditional 60:40 chocolate to hazelnut ratio',
+            procedures: {
+              options: [
+                {
+                  id: 'common.gianduja'
+                }
+              ],
+              preferredId: 'common.gianduja'
+            }
           }
         ]
       }
@@ -1336,10 +1388,10 @@ export const recipeCollections: Record<string, JsonObject> = {
     format: 'encrypted-collection-v1',
     secretName: 'fgv',
     algorithm: 'AES-256-GCM',
-    iv: 'r21AErnYYQh3akmg',
-    authTag: 'lif4IhZSTrzcEoui1QtR4Q==',
+    iv: '1363O4p0WWcnt9Zp',
+    authTag: 'dhh6RNsjaQisbq6UIFSu2w==',
     encryptedData:
-      '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',
+      'tfluZtQaM+3hlp6QWiEqlLGLqDrzrZyZfujqJ5a0eGT09bt0IG6aSMyvDtFHSv0JC5QgXXyz5wDrNfXgz4zdaH3FwkWvrXY6TDgeAXKKCWAfmuu4NEM3MI511rMxQPUc8a18I4M/TgaoRH2KkPuHdZ+coNIz36VqmWCcouA7Vi5G5/wYg4XdaE7O2szNfuBOXYWR4nHjByG3sjS9TE+o6RTRKCOOCkj6EJ159iY+HwPAZlQOEhbUK/QIz0Lipa8CgdEujmM8BLzfjCCDi44SowPQtA4gEknsWhpgirjbi4uk9iGjU5n9kzYpzz0R1oib3pMFxV/XhsVgXDo2tPGJSSMAt6Uk+8GIvXhPUjAnAGgg+0NBYMRyknLiaL7r4808LH+XOPuulzz9sZDGZBDaVLl7zu3o7H0NcOCbOHj0v0LJ1YXyIzsFwP0RfG1GqZgCYidQ+6xmu3uQr8RD6BqFNnaGKV6Jenx/hMZyHYTOsQXdWvbuuHX8NJ9aupWXSyZcs1Dkfpi/NOjcCPAUJtxRuSR/lvNY7XCvW1uyagzdsBqXJl2e+yG7OPuXb/bkZUXFjynG/tWPumxjYxdduCdzkDSYQtE6nGXC/M9nc9+I9SbSbOTXYr00Bfc94M7Fg2Cmy67LyOJpcbMEyws3IBbEDxuKVib9+fjKlsaLq9GPItZfcAk2/oQRsFibVmv2oHQ35anksNu7yVQtbCz1GYcNOF8v96RbFCmvlxEL2xvPONiV5OEhSJKWcUOvIYQtClXMHzWwA03jpsXiGq4Rtl6aSCKJIm5PZAoIrx2HWPjxQkmZeXoQSkw4ca5U2rjtp1e8JGQZ2YFOcTHaeXLiMUzhYkIhlwFQiRas6Py6TogYzOQm8EArgWNFQa+ZXg1Unpm6RnYx6NG2E6kbFQPPslkcgxORxe+U0zacFSBVS7Dq5ShVtSm4LqEvwtbzBBSxyTTLL2LtBK1QsccKD5vcIL7BsKlFc9QmYo1ghEo/6JMf1vMvx9rrIoV+WDfHsoW6YC49A3wxC8UVTW+tNqbbZh+zbnVxjLtwQD4mgS/crkOY/2hTS6KNtj3eDkZHd3qkrx14jXECH56aZ2CntZFGFzDTDPG7Aj2zipHQlZGsFpKvHx2rkVqAHLeGo//rBmXUU+h5',
     keyDerivation: {
       kdf: 'pbkdf2',
       salt: 'b66D4cOQ+u16mkzWNuayRw==',

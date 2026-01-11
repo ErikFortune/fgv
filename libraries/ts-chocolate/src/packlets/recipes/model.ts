@@ -32,7 +32,6 @@ import {
   IRefWithNotes,
   Measurement,
   MeasurementUnit,
-  MoldId,
   ProcedureId,
   RatingScore,
   RecipeName,
@@ -233,6 +232,12 @@ export interface IRecipeVersion {
    * Optional ratings for this version
    */
   readonly ratings?: ReadonlyArray<IRecipeRating>;
+
+  /**
+   * Optional procedures associated with this version.
+   * Contains applicable procedures and the preferred default.
+   */
+  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
 }
 
 /**
@@ -263,14 +268,7 @@ export interface IRecipeDerivation {
  * Contains the procedure ID and optional notes.
  * @public
  */
-export type IRecipeProcedureRef = IRefWithNotes<ProcedureId>;
-
-/**
- * Reference to a mold that can be used with a recipe.
- * Contains the mold ID and optional notes.
- * @public
- */
-export type IRecipeMoldRef = IRefWithNotes<MoldId>;
+export type IProcedureRef = IRefWithNotes<ProcedureId>;
 
 /**
  * Complete recipe with version history
@@ -317,18 +315,6 @@ export interface IRecipe {
    * from another recipe (e.g., when editing a read-only recipe)
    */
   readonly derivedFrom?: IRecipeDerivation;
-
-  /**
-   * Optional procedures associated with this recipe.
-   * Contains applicable procedures and the preferred default.
-   */
-  readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
-
-  /**
-   * Optional molds associated with this recipe.
-   * Contains available molds and the preferred default.
-   */
-  readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
 
   /**
    * Optional categorized URLs for external resources (tutorials, videos, etc.)

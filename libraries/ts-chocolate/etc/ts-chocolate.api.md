@@ -573,12 +573,6 @@ export type ConfectionName = Brand<string, 'ConfectionName'>;
 // @public
 const confectionName: Converter<ConfectionName>;
 
-// @public
-const confectionProcedureRef: Converter<IConfectionProcedureRef>;
-
-// @public
-const confectionProcedures: Converter<IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>>;
-
 declare namespace Confections {
     export {
         Converters_2 as Converters,
@@ -596,7 +590,6 @@ declare namespace Confections {
         IChocolateSpec,
         IAdditionalChocolate,
         IConfectionMoldRef,
-        IConfectionProcedureRef,
         IFrameDimensions,
         IBonBonDimensions,
         ICoatings,
@@ -753,8 +746,6 @@ declare namespace Converters_2 {
         additionalChocolate,
         confectionMoldRef,
         confectionMolds,
-        confectionProcedureRef,
-        confectionProcedures,
         frameDimensions,
         bonBonDimensions,
         coatings,
@@ -849,10 +840,8 @@ declare namespace Converters_9 {
         recipeCategory,
         recipeRating,
         recipeDerivation,
-        recipeProcedureRef,
-        recipeProcedures,
-        recipeMoldRef,
-        recipeMolds,
+        procedureRef,
+        procedures,
         recipeVersion,
         recipeData,
         recipe,
@@ -1304,13 +1293,13 @@ interface IComputedScaledRecipe {
 // @public
 interface IConfection {
     readonly baseId: BaseConfectionId;
-    readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
     readonly fillings?: ReadonlyArray<IFillingSlot>;
     readonly goldenVersionSpec: ConfectionVersionSpec;
     readonly name: ConfectionName;
+    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<ICategorizedUrl>;
     readonly versions: ReadonlyArray<IConfectionVersion>;
@@ -1380,9 +1369,6 @@ interface IConfectionJournalRecord {
 
 // @public
 type IConfectionMoldRef = IRefWithNotes<MoldId>;
-
-// @public
-type IConfectionProcedureRef = IRefWithNotes<ProcedureId>;
 
 // @public
 interface IConfectionSaveOptions {
@@ -2143,6 +2129,9 @@ interface IProcedure {
 type IProcedureFileTreeSource = SubLibraryFileTreeSource;
 
 // @public
+type IProcedureRef = IRefWithNotes<ProcedureId>;
+
+// @public
 interface IProcedureRenderContext {
     readonly library: unknown;
     readonly mold?: IMold;
@@ -2210,8 +2199,6 @@ interface IRecipe {
     readonly description?: string;
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly name: RecipeName;
-    readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
-    readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<ICategorizedUrl>;
     readonly versions: ReadonlyArray<IRecipeVersion>;
@@ -2255,12 +2242,6 @@ interface IRecipeJournalRecord {
     readonly scaleFactor: number;
     readonly targetWeight: Measurement;
 }
-
-// @public
-type IRecipeMoldRef = IRefWithNotes<MoldId>;
-
-// @public
-type IRecipeProcedureRef = IRefWithNotes<ProcedureId>;
 
 // @public
 interface IRecipeQuerySpec {
@@ -2329,6 +2310,7 @@ interface IRecipeVersion {
     readonly createdDate: string;
     readonly ingredients: ReadonlyArray<IRecipeIngredient>;
     readonly notes?: string;
+    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly ratings?: ReadonlyArray<IRecipeRating>;
     readonly versionSpec: RecipeVersionSpec;
     readonly yield?: string;
@@ -2364,6 +2346,12 @@ interface IResolvedIngredient {
 }
 
 // @public
+interface IResolvedProcedures {
+    readonly procedures: ReadonlyArray<IResolvedRecipeProcedure>;
+    readonly recommendedProcedure?: Procedure;
+}
+
+// @public
 interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Measurement;
@@ -2376,13 +2364,7 @@ interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredient = IRu
 interface IResolvedRecipeProcedure {
     readonly notes?: string;
     readonly procedure: Procedure;
-    readonly raw: IRecipeProcedureRef;
-}
-
-// @public
-interface IResolvedRecipeProcedures {
-    readonly procedures: ReadonlyArray<IResolvedRecipeProcedure>;
-    readonly recommendedProcedure?: Procedure;
+    readonly raw: IProcedureRef;
 }
 
 // @public
@@ -2450,7 +2432,6 @@ interface IRuntimeChocolateIngredient extends IRuntimeIngredient {
 // @public
 interface IRuntimeConfection {
     readonly baseId: BaseConfectionId;
-    readonly confectionProcedures?: IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId>;
     readonly confectionType: ConfectionType;
     readonly decorations?: ReadonlyArray<IConfectionDecoration>;
     readonly description?: string;
@@ -2463,6 +2444,7 @@ interface IRuntimeConfection {
     isMoldedBonBon(): this is IRuntimeMoldedBonBon;
     isRolledTruffle(): this is IRuntimeRolledTruffle;
     readonly name: ConfectionName;
+    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
     readonly raw: ConfectionData;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
@@ -2559,9 +2541,7 @@ interface IRuntimeRecipe {
     readonly goldenVersionSpec: RecipeVersionSpec;
     readonly id: RecipeId;
     readonly latestVersion: IRuntimeRecipeVersion;
-    readonly molds?: IRuntimeRecipeMolds;
     readonly name: RecipeName;
-    readonly procedures?: IResolvedRecipeProcedures;
     readonly raw: IRecipe;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
@@ -2571,25 +2551,13 @@ interface IRuntimeRecipe {
 }
 
 // @public
-interface IRuntimeRecipeMold {
-    readonly mold: Mold;
-    readonly notes?: string;
-    readonly raw: IRecipeMoldRef;
-}
-
-// @public
-interface IRuntimeRecipeMolds {
-    readonly molds: ReadonlyArray<IRuntimeRecipeMold>;
-    readonly recommendedMold?: Mold;
-}
-
-// @public
 interface IRuntimeRecipeVersion {
     readonly baseWeight: Measurement;
     calculateGanache(): Result<IGanacheCalculation>;
     readonly createdDate: string;
     getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedRecipeIngredient<IRuntimeIngredient>>>;
     readonly notes?: string;
+    readonly procedures?: IResolvedProcedures;
     readonly ratings: ReadonlyArray<IRecipeRating>;
     readonly raw: IRecipeVersion;
     readonly recipe: IRuntimeRecipe;
@@ -2988,7 +2956,6 @@ interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = T
 
 // @internal
 interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
-    getMold(id: string): Result<Mold>;
     getProcedure(id: string): Result<Procedure>;
     readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
 }
@@ -3488,6 +3455,11 @@ export type ProcedureId = Brand<string, 'ProcedureId'>;
 // @public
 const procedureId: Converter<ProcedureId>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const procedureRef: Converter<IProcedureRef>;
+
 declare namespace Procedures {
     export {
         Converters_8 as Converters,
@@ -3509,6 +3481,9 @@ declare namespace Procedures {
     }
 }
 export { Procedures }
+
+// @public
+const procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
 
 // @public
 class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, Procedure> {
@@ -3559,10 +3534,6 @@ class Recipe implements IRecipe {
     readonly goldenVersionSpec: RecipeVersionSpec;
     // (undocumented)
     readonly name: RecipeName;
-    // (undocumented)
-    readonly recipeMolds?: IOptionsWithPreferred<IRecipeMoldRef, MoldId>;
-    // (undocumented)
-    readonly recipeProcedures?: IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>;
     // (undocumented)
     readonly tags?: ReadonlyArray<string>;
     // (undocumented)
@@ -3696,27 +3667,11 @@ type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 // @public
 const recipeJournalRecord: Converter<IRecipeJournalRecord>;
 
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const recipeMoldRef: Converter<IRecipeMoldRef>;
-
-// @public
-const recipeMolds: Converter<IOptionsWithPreferred<IRecipeMoldRef, MoldId>>;
-
 // @public
 export type RecipeName = Brand<string, 'RecipeName'>;
 
 // @public
 const recipeName: Converter<RecipeName>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const recipeProcedureRef: Converter<IRecipeProcedureRef>;
-
-// @public
-const recipeProcedures: Converter<IOptionsWithPreferred<IRecipeProcedureRef, ProcedureId>>;
 
 // @public
 class RecipeQuery {
@@ -3774,8 +3729,7 @@ declare namespace Recipes {
         IRecipeUsage,
         IRecipeVersion,
         IRecipeDerivation,
-        IRecipeProcedureRef,
-        IRecipeMoldRef,
+        IProcedureRef,
         IRecipe,
         IScaledRecipeIngredient,
         IScalingRef,
@@ -4016,9 +3970,7 @@ declare namespace Runtime {
         IRuntimeScalingSource,
         IRuntimeScaledRecipeVersion,
         IResolvedRecipeProcedure,
-        IResolvedRecipeProcedures,
-        IRuntimeRecipeMold,
-        IRuntimeRecipeMolds,
+        IResolvedProcedures,
         IRuntimeRecipe,
         IResolvedRecipeIngredient,
         IResolvedScaledIngredient,
@@ -4124,7 +4076,6 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     protected readonly _baseId: BaseConfectionId;
     // (undocumented)
     protected readonly _confection: ConfectionData;
-    get confectionProcedures(): IOptionsWithPreferred<IConfectionProcedureRef, ProcedureId> | undefined;
     abstract get confectionType(): ConfectionType;
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "_context" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
@@ -4146,6 +4097,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     isMoldedBonBon(): this is RuntimeMoldedBonBon;
     isRolledTruffle(): this is RuntimeRolledTruffle;
     get name(): ConfectionName;
+    get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined;
     abstract get raw(): ConfectionData;
     get sourceId(): SourceId;
     // (undocumented)
@@ -4179,7 +4131,6 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
     getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
-    getMold(id: string): Result<Mold>;
     getProcedure(id: string): Result<Procedure>;
     // @internal
     _getRecipe(id: RecipeId): Result<RuntimeRecipe>;
@@ -4306,9 +4257,7 @@ class RuntimeRecipe implements IRuntimeRecipe {
     get goldenVersionSpec(): RecipeVersionSpec;
     get id(): RecipeId;
     get latestVersion(): RuntimeVersion;
-    get molds(): IRuntimeRecipeMolds | undefined;
     get name(): RecipeName;
-    get procedures(): IResolvedRecipeProcedures | undefined;
     get raw(): IRecipe;
     get rawAsRecipe(): Recipe | undefined;
     get sourceId(): SourceId;
@@ -4392,6 +4341,7 @@ class RuntimeVersion implements IRuntimeRecipeVersion {
     get createdDate(): string;
     getIngredients(filter?: RecipeIngredientsFilter[]): Result<IterableIterator<IResolvedRecipeIngredient<AnyRuntimeIngredient>>>;
     get notes(): string | undefined;
+    get procedures(): IResolvedProcedures | undefined;
     get ratings(): ReadonlyArray<IRecipeRating>;
     get raw(): IRecipeVersion;
     get recipe(): IRuntimeRecipe;

@@ -89,7 +89,7 @@ The fully resolved procedure object.
 
 </td><td>
 
-[IRecipeProcedureRef](./ts-chocolate.recipes.irecipeprocedureref.md)
+[IProcedureRef](./ts-chocolate.recipes.iprocedureref.md)
 
 
 </td><td>

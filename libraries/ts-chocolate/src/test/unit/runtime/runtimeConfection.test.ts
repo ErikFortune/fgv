@@ -281,8 +281,8 @@ describe('RuntimeConfection', () => {
       expect(runtime.raw).toBe(moldedBonBonData);
     });
 
-    test('confectionProcedures is undefined when not set', () => {
-      expect(runtime.confectionProcedures).toBeUndefined();
+    test('procedures is undefined when not set', () => {
+      expect(runtime.procedures).toBeUndefined();
     });
   });
 
@@ -409,7 +409,7 @@ describe('RuntimeConfection', () => {
         expect(runtime.decorations).toBeUndefined();
         expect(runtime.fillings).toBeUndefined();
         expect(runtime.additionalChocolates).toBeUndefined();
-        expect(runtime.confectionProcedures).toBeUndefined();
+        expect(runtime.procedures).toBeUndefined();
       });
     });
   });
