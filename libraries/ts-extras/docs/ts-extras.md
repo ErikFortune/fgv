@@ -55,6 +55,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Mustache](./ts-extras.mustache.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [RecordJar](./ts-extras.recordjar.md)
 
 
