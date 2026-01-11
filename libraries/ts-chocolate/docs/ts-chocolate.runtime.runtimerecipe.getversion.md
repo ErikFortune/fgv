@@ -9,7 +9,7 @@ Gets a specific version by ID.
 **Signature:**
 
 ```typescript
-getVersion(versionSpec: RecipeVersionSpec): Result<RuntimeVersion>;
+getVersion(versionSpec: FillingVersionSpec): Result<RuntimeVersion>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ versionSpec
 
 </td><td>
 
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
 
 
 </td><td>

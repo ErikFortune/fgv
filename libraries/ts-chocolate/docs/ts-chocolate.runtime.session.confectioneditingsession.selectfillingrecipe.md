@@ -9,7 +9,7 @@ Selects a filling recipe for a specific slot.
 **Signature:**
 
 ```typescript
-selectFillingRecipe(slotId: SlotId, recipeId: RecipeId): Result<true>;
+selectFillingRecipe(slotId: SlotId, fillingId: FillingId): Result<true>;
 ```
 
 ## Parameters
@@ -48,12 +48,12 @@ The slot ID to select the filling for
 </td></tr>
 <tr><td>
 
-recipeId
+fillingId
 
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>

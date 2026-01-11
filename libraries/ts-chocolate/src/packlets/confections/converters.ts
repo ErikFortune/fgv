@@ -53,7 +53,7 @@ import {
 } from './model';
 import { Confection } from './confection';
 
-import { Converters as RecipeConverters } from '../recipes';
+import { Converters as RecipeConverters } from '../fillings';
 
 // ============================================================================
 // Yield and Decoration Converters
@@ -89,7 +89,7 @@ export const confectionDecoration: Converter<IConfectionDecoration> =
  * @internal
  */
 const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOptionId>([
-  CommonConverters.recipeId,
+  CommonConverters.fillingId,
   CommonConverters.ingredientId
 ]);
 
@@ -99,7 +99,7 @@ const fillingOptionId: Converter<FillingOptionId> = Converters.oneOf<FillingOpti
  */
 export const recipeFillingOption: Converter<IRecipeFillingOption> = Converters.object<IRecipeFillingOption>({
   type: Converters.literal('recipe'),
-  id: CommonConverters.recipeId,
+  id: CommonConverters.fillingId,
   notes: Converters.string.optional()
 });
 

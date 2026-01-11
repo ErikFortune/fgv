@@ -327,25 +327,25 @@ export class IngredientQuery {
   // ============================================================================
 
   /**
-   * Filter to ingredients used in at least one recipe.
+   * Filter to ingredients used in at least one filling recipe.
    */
-  public usedInRecipes(): IngredientQuery {
-    return this._addFilter((i) => i.usedByRecipes().length > 0);
+  public usedInFillings(): IngredientQuery {
+    return this._addFilter((i) => i.usedByFillings().length > 0);
   }
 
   /**
-   * Filter to ingredients not used in any recipe.
+   * Filter to ingredients not used in any filling recipe.
    */
   public unused(): IngredientQuery {
-    return this._addFilter((i) => i.usedByRecipes().length === 0);
+    return this._addFilter((i) => i.usedByFillings().length === 0);
   }
 
   /**
-   * Filter to ingredients used in at least N recipes.
-   * @param count - Minimum number of recipes
+   * Filter to ingredients used in at least N filling recipes.
+   * @param count - Minimum number of filling recipes
    */
   public usedInAtLeast(count: number): IngredientQuery {
-    return this._addFilter((i) => i.usedByRecipes().length >= count);
+    return this._addFilter((i) => i.usedByFillings().length >= count);
   }
 
   // ============================================================================

@@ -147,6 +147,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Fillings](./ts-chocolate.fillings.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Helpers](./ts-chocolate.helpers.md)
 
 
@@ -193,15 +202,6 @@ Description
 <tr><td>
 
 [Procedures](./ts-chocolate.procedures.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[Recipes](./ts-chocolate.recipes.md)
 
 
 </td><td>
@@ -331,6 +331,17 @@ All possible confection types
 </td></tr>
 <tr><td>
 
+[allFillingCategories](./ts-chocolate.allfillingcategories.md)
+
+
+</td><td>
+
+All possible filling recipe categories
+
+
+</td></tr>
+<tr><td>
+
 [allFluidityStars](./ts-chocolate.allfluiditystars.md)
 
 
@@ -381,17 +392,6 @@ All possible measurement units
 </td><td>
 
 All possible mold formats
-
-
-</td></tr>
-<tr><td>
-
-[allRecipeCategories](./ts-chocolate.allrecipecategories.md)
-
-
-</td><td>
-
-All possible recipe categories
 
 
 </td></tr>
@@ -474,6 +474,28 @@ Pattern for valid confection version specs Format: YYYY-MM-DD-NN with optional l
 </td></tr>
 <tr><td>
 
+[FILLING\_VERSION\_ID\_PATTERN](./ts-chocolate.filling_version_id_pattern.md)
+
+
+</td><td>
+
+Pattern for valid filling version IDs Format: fillingId<!-- -->@<!-- -->versionSpec where fillingId is sourceId.baseFillingId
+
+
+</td></tr>
+<tr><td>
+
+[FILLING\_VERSION\_SPEC\_PATTERN](./ts-chocolate.filling_version_spec_pattern.md)
+
+
+</td><td>
+
+Pattern for valid filling version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
+
+
+</td></tr>
+<tr><td>
+
 [ID\_SEPARATOR](./ts-chocolate.id_separator.md)
 
 
@@ -496,28 +518,6 @@ Pattern for valid journal IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- 
 </td></tr>
 <tr><td>
 
-[RECIPE\_VERSION\_ID\_PATTERN](./ts-chocolate.recipe_version_id_pattern.md)
-
-
-</td><td>
-
-Pattern for valid recipe version IDs Format: recipeId<!-- -->@<!-- -->versionSpec where recipeId is sourceId.baseRecipeId
-
-
-</td></tr>
-<tr><td>
-
-[RECIPE\_VERSION\_SPEC\_PATTERN](./ts-chocolate.recipe_version_spec_pattern.md)
-
-
-</td><td>
-
-Pattern for valid recipe version specs Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
-
-
-</td></tr>
-<tr><td>
-
 [SESSION\_ID\_PATTERN](./ts-chocolate.session_id_pattern.md)
 
 
@@ -534,7 +534,7 @@ Pattern for valid session IDs Format: YYYY-MM-DD-HHMMSS-\[0-9a-f\]<!-- -->{<!-- 
 
 </td><td>
 
-Separator character used in recipe version IDs (between RecipeId and RecipeVersionSpec)
+Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
 
 
 </td></tr>
@@ -588,6 +588,17 @@ Confection identifier within a single source Character restrictions: alphanumeri
 </td></tr>
 <tr><td>
 
+[BaseFillingId](./ts-chocolate.basefillingid.md)
+
+
+</td><td>
+
+Filling recipe identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
 [BaseIngredientId](./ts-chocolate.baseingredientid.md)
 
 
@@ -616,17 +627,6 @@ Mold identifier within a single source Character restrictions: alphanumeric, das
 </td><td>
 
 Procedure identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
-
-
-</td></tr>
-<tr><td>
-
-[BaseRecipeId](./ts-chocolate.baserecipeid.md)
-
-
-</td><td>
-
-Recipe identifier within a single source Character restrictions: alphanumeric, dashes, underscores only (no dots) Pattern: /^\[a-zA-Z0-9\_-\]+$/
 
 
 </td></tr>
@@ -764,6 +764,61 @@ Viscosity in degrees MacMichael
 </td></tr>
 <tr><td>
 
+[FillingCategory](./ts-chocolate.fillingcategory.md)
+
+
+</td><td>
+
+Filling recipe category for classification
+
+
+</td></tr>
+<tr><td>
+
+[FillingId](./ts-chocolate.fillingid.md)
+
+
+</td><td>
+
+Globally unique filling recipe identifier (composite) Format: "sourceId.baseFillingId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[FillingName](./ts-chocolate.fillingname.md)
+
+
+</td><td>
+
+Non-unique filling recipe name used for display and grouping
+
+
+</td></tr>
+<tr><td>
+
+[FillingVersionId](./ts-chocolate.fillingversionid.md)
+
+
+</td><td>
+
+Globally unique filling recipe version identifier (composite) Format: "fillingId<!-- -->@<!-- -->versionSpec" where fillingId is "sourceId.baseFillingId" Examples: "user.ganache<!-- -->@<!-- -->2026-01-03-01", "felchlin.truffle<!-- -->@<!-- -->2026-01-03-02-less-sugar"
+
+
+</td></tr>
+<tr><td>
+
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
+
+
+</td><td>
+
+Specifier for a filling recipe version within a filling recipe Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
+
+
+</td></tr>
+<tr><td>
+
 [FluidityStars](./ts-chocolate.fluiditystars.md)
 
 
@@ -824,7 +879,7 @@ Physical phase of an ingredient - display hint for UI. Used to determine action 
 
 </td><td>
 
-Unique identifier for a cooking journal record Format: UUID or "recipeId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
+Unique identifier for a cooking journal record Format: UUID or "fillingId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
 
 
 </td></tr>
@@ -924,61 +979,6 @@ Globally unique procedure identifier (composite) Format: "sourceId.baseProcedure
 </td><td>
 
 Rating score (1-5 scale)
-
-
-</td></tr>
-<tr><td>
-
-[RecipeCategory](./ts-chocolate.recipecategory.md)
-
-
-</td><td>
-
-Recipe category for classification
-
-
-</td></tr>
-<tr><td>
-
-[RecipeId](./ts-chocolate.recipeid.md)
-
-
-</td><td>
-
-Globally unique recipe identifier (composite) Format: "sourceId.baseRecipeId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
-
-
-</td></tr>
-<tr><td>
-
-[RecipeName](./ts-chocolate.recipename.md)
-
-
-</td><td>
-
-Non-unique recipe name used for display and grouping
-
-
-</td></tr>
-<tr><td>
-
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
-
-
-</td><td>
-
-Globally unique recipe version identifier (composite) Format: "recipeId<!-- -->@<!-- -->versionSpec" where recipeId is "sourceId.baseRecipeId" Examples: "user.ganache<!-- -->@<!-- -->2026-01-03-01", "felchlin.truffle<!-- -->@<!-- -->2026-01-03-02-less-sugar"
-
-
-</td></tr>
-<tr><td>
-
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
-
-
-</td><td>
-
-Specifier for a recipe version within a recipe Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
 
 
 </td></tr>

@@ -17,14 +17,14 @@ import {
   Crypto,
   Runtime,
   type IngredientId,
-  type RecipeId,
+  type FillingId,
   type LibraryData
 } from '@fgv/ts-chocolate';
 
 // Aliases for cleaner code
 type ChocolateRuntimeContext = Runtime.RuntimeContext;
 type AnyRuntimeIngredient = Runtime.AnyRuntimeIngredient;
-type RuntimeRecipe = Runtime.RuntimeRecipe;
+type RuntimeFillingRecipe = Runtime.RuntimeFillingRecipe;
 import type { Result } from '@fgv/ts-utils';
 import { fail, succeed } from '@fgv/ts-utils';
 import { useObservability } from '@fgv/ts-chocolate-ui';
@@ -35,7 +35,7 @@ const DEFAULT_PBKDF2_ITERATIONS = 100000;
 /**
  * Sub-library type for tracking which libraries a collection belongs to
  */
-export type SubLibraryType = 'ingredients' | 'recipes' | 'molds' | 'confections';
+export type SubLibraryType = 'ingredients' | 'fillings' | 'molds' | 'confections';
 
 /**
  * Collection metadata for UI display
@@ -94,8 +94,8 @@ export interface IChocolateContext {
   reload: () => Promise<void>;
   /** Count of loaded ingredients */
   ingredientCount: number;
-  /** Count of loaded recipes */
-  recipeCount: number;
+  /** Count of loaded fillings */
+  fillingCount: number;
   /** Count of loaded molds */
   moldCount: number;
   /** Count of loaded confections */
@@ -114,7 +114,7 @@ const defaultChocolateContext: IChocolateContext = {
   unlockCollection: async () => fail('No ChocolateProvider'),
   reload: async () => Promise.resolve(),
   ingredientCount: 0,
-  recipeCount: 0,
+  fillingCount: 0,
   moldCount: 0,
   confectionCount: 0,
   dataVersion: 0
@@ -214,11 +214,11 @@ export function ChocolateProvider({
         }
       }
 
-      // Get source IDs from loaded recipes
-      for (const [id] of ctx.recipes.entries()) {
+      // Get source IDs from loaded fillings
+      for (const [id] of ctx.fillings.entries()) {
         const sourceId = id.split('.')[0];
         if (sourceId) {
-          addSubLibrary(sourceId, 'recipes');
+          addSubLibrary(sourceId, 'fillings');
         }
       }
 
@@ -227,35 +227,35 @@ export function ChocolateProvider({
       const protectedIngredientIds = new Set<string>(
         ctx.library.ingredients.protectedCollections.map((pc) => pc.collectionId as string)
       );
-      const protectedRecipeIds = new Set<string>(
-        ctx.library.recipes.protectedCollections.map((pc) => pc.collectionId as string)
+      const protectedFillingIds = new Set<string>(
+        ctx.library.fillings.protectedCollections.map((pc) => pc.collectionId as string)
       );
 
       // Debug: log protected collections found
       diag.info(`Protected ingredients: ${Array.from(protectedIngredientIds).join(', ') || 'none'}`);
-      diag.info(`Protected recipes: ${Array.from(protectedRecipeIds).join(', ') || 'none'}`);
+      diag.info(`Protected fillings: ${Array.from(protectedFillingIds).join(', ') || 'none'}`);
 
       // Add protected ingredient collections (not yet loaded)
       for (const collectionId of protectedIngredientIds) {
         addSubLibrary(collectionId, 'ingredients');
       }
 
-      // Add protected recipe collections (not yet loaded)
-      for (const collectionId of protectedRecipeIds) {
-        addSubLibrary(collectionId, 'recipes');
+      // Add protected filling collections (not yet loaded)
+      for (const collectionId of protectedFillingIds) {
+        addSubLibrary(collectionId, 'fillings');
       }
 
       // Build collection metadata from the map
       const collectionMeta: ICollectionMetadata[] = [];
       for (const [collectionId, subLibs] of collectionSubLibraries) {
         const isProtectedIngredients = protectedIngredientIds.has(collectionId);
-        const isProtectedRecipes = protectedRecipeIds.has(collectionId);
-        const isProtected = isProtectedIngredients || isProtectedRecipes;
+        const isProtectedFillings = protectedFillingIds.has(collectionId);
+        const isProtected = isProtectedIngredients || isProtectedFillings;
 
         // A collection is loaded if it has items in the runtime (not just protected entries)
         const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
-        const hasLoadedRecipes = !isProtectedRecipes && subLibs.has('recipes');
-        const isLoaded = hasLoadedIngredients || hasLoadedRecipes;
+        const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
+        const isLoaded = hasLoadedIngredients || hasLoadedFillings;
 
         collectionMeta.push({
           id: collectionId,
@@ -271,9 +271,9 @@ export function ChocolateProvider({
       setLoadingState('ready');
 
       const ingredientCount = ctx.ingredients.size;
-      const recipeCount = ctx.recipes.size;
-      user.success(`Loaded ${ingredientCount} ingredients and ${recipeCount} recipes`);
-      diag.info(`Library loaded: ${ingredientCount} ingredients, ${recipeCount} recipes`);
+      const fillingCount = ctx.fillings.size;
+      user.success(`Loaded ${ingredientCount} ingredients and ${fillingCount} fillings`);
+      diag.info(`Library loaded: ${ingredientCount} ingredients, ${fillingCount} fillings`);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       setError(message);
@@ -330,15 +330,15 @@ export function ChocolateProvider({
         }
 
         // Look for keyDerivation params from the protected collection metadata
-        // Check both ingredients and recipes libraries for this collection
+        // Check both ingredients and fillings libraries for this collection
         const ingredientProtected = runtime.library.ingredients.protectedCollections.find(
           (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
         );
-        const recipeProtected = runtime.library.recipes.protectedCollections.find(
+        const fillingProtected = runtime.library.fillings.protectedCollections.find(
           (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
         );
 
-        const keyDerivation = ingredientProtected?.keyDerivation ?? recipeProtected?.keyDerivation;
+        const keyDerivation = ingredientProtected?.keyDerivation ?? fillingProtected?.keyDerivation;
 
         // Require keyDerivation params for password-based decryption
         // Files encrypted with a raw key (no keyDerivation) must use key mode instead
@@ -384,14 +384,14 @@ export function ChocolateProvider({
         [collectionId]
       );
 
-      // Try to unlock in recipes library
-      const recipesResult = await runtime.library.recipes.loadProtectedCollectionAsync(encryptionConfig, [
+      // Try to unlock in fillings library
+      const fillingsResult = await runtime.library.fillings.loadProtectedCollectionAsync(encryptionConfig, [
         collectionId
       ]);
 
       // Check results and get counts
       const ingredientCount = ingredientsResult.isSuccess() ? ingredientsResult.value.length : 0;
-      const recipeCount = recipesResult.isSuccess() ? recipesResult.value.length : 0;
+      const fillingCount = fillingsResult.isSuccess() ? fillingsResult.value.length : 0;
 
       // Log results
       if (ingredientsResult.isFailure()) {
@@ -399,21 +399,21 @@ export function ChocolateProvider({
       } else {
         diag.info(`Unlock ${collectionId} ingredients: loaded ${ingredientCount} collection(s)`);
       }
-      if (recipesResult.isFailure()) {
-        diag.info(`Unlock ${collectionId} recipes: ${recipesResult.message}`);
+      if (fillingsResult.isFailure()) {
+        diag.info(`Unlock ${collectionId} fillings: ${fillingsResult.message}`);
       } else {
-        diag.info(`Unlock ${collectionId} recipes: loaded ${recipeCount} collection(s)`);
+        diag.info(`Unlock ${collectionId} fillings: loaded ${fillingCount} collection(s)`);
       }
 
       // Check for errors - report if both failed or neither loaded anything
-      if (ingredientCount === 0 && recipeCount === 0) {
+      if (ingredientCount === 0 && fillingCount === 0) {
         // Build error message from failures
         const errors: string[] = [];
         if (ingredientsResult.isFailure()) {
           errors.push(`ingredients: ${ingredientsResult.message}`);
         }
-        if (recipesResult.isFailure()) {
-          errors.push(`recipes: ${recipesResult.message}`);
+        if (fillingsResult.isFailure()) {
+          errors.push(`fillings: ${fillingsResult.message}`);
         }
         if (errors.length === 0) {
           errors.push('no matching collections found');
@@ -437,7 +437,7 @@ export function ChocolateProvider({
       // Build detailed success message
       const parts: string[] = [];
       if (ingredientCount > 0) parts.push(`${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''}`);
-      if (recipeCount > 0) parts.push(`${recipeCount} recipe${recipeCount !== 1 ? 's' : ''}`);
+      if (fillingCount > 0) parts.push(`${fillingCount} filling${fillingCount !== 1 ? 's' : ''}`);
       user.success(`Unlocked ${collectionId}: ${parts.join(', ')}`);
 
       return succeed(undefined);
@@ -446,12 +446,12 @@ export function ChocolateProvider({
   );
 
   // Calculate counts - dataVersion dependency ensures recalculation after unlock
-  const { ingredientCount, recipeCount, moldCount, confectionCount } = useMemo(() => {
+  const { ingredientCount, fillingCount, moldCount, confectionCount } = useMemo(() => {
     // dataVersion is used to trigger recalculation when library data changes
     void dataVersion;
     return {
       ingredientCount: runtime?.ingredients.size ?? 0,
-      recipeCount: runtime?.recipes.size ?? 0,
+      fillingCount: runtime?.fillings.size ?? 0,
       moldCount: runtime?.library.molds.size ?? 0,
       confectionCount: runtime?.confections.size ?? 0
     };
@@ -466,7 +466,7 @@ export function ChocolateProvider({
       unlockCollection,
       reload: loadLibrary,
       ingredientCount,
-      recipeCount,
+      fillingCount,
       moldCount,
       confectionCount,
       dataVersion
@@ -479,7 +479,7 @@ export function ChocolateProvider({
       unlockCollection,
       loadLibrary,
       ingredientCount,
-      recipeCount,
+      fillingCount,
       moldCount,
       confectionCount,
       dataVersion
@@ -517,19 +517,19 @@ export function useIngredients(): {
 }
 
 /**
- * Hook for recipe-specific operations
+ * Hook for filling-specific operations
  */
-export function useRecipes(): {
-  recipes: ReadonlyMap<RecipeId, RuntimeRecipe> | undefined;
-  getRecipe: (id: RecipeId) => Result<RuntimeRecipe> | undefined;
+export function useFillings(): {
+  fillings: ReadonlyMap<FillingId, RuntimeFillingRecipe> | undefined;
+  getFilling: (id: FillingId) => Result<RuntimeFillingRecipe> | undefined;
   isLoading: boolean;
 } {
   const { runtime, loadingState } = useChocolate();
 
   return useMemo(
     () => ({
-      recipes: runtime?.recipes as ReadonlyMap<RecipeId, RuntimeRecipe> | undefined,
-      getRecipe: runtime ? (id: RecipeId) => runtime.recipes.get(id).asResult : undefined,
+      fillings: runtime?.fillings as ReadonlyMap<FillingId, RuntimeFillingRecipe> | undefined,
+      getFilling: runtime ? (id: FillingId) => runtime.fillings.get(id).asResult : undefined,
       isLoading: loadingState === 'loading'
     }),
     [runtime, loadingState]

@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { IComputedScaledRecipe } from '../recipes';
+import { IComputedScaledFillingRecipe } from '../fillings';
 import { IMold } from '../molds';
 import { IProcedureStep } from './model';
 
@@ -44,9 +44,9 @@ export interface IProcedureRenderContext {
   readonly library: unknown;
 
   /**
-   * The specific scaled recipe this procedure is being rendered for
+   * The specific scaled filling recipe this procedure is being rendered for
    */
-  readonly recipe: IComputedScaledRecipe;
+  readonly recipe: IComputedScaledFillingRecipe;
 
   /**
    * Optional mold being used for this recipe

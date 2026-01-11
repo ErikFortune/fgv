@@ -24,9 +24,9 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { RecipeId } from '../../common';
+import { FillingId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeRecipe } from '../model';
+import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -71,9 +71,9 @@ export const recipesByTagConfigConverter: Converter<IRecipesByTagConfig> =
  *
  * @public
  */
-export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipesByTagConfig> {
+export class RecipesByTagIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByTagConfig> {
   // Index structure: lowercase tag -> recipe IDs
-  private _tagToRecipes: Map<string, Set<RecipeId>> | undefined;
+  private _tagToRecipes: Map<string, Set<FillingId>> | undefined;
 
   /**
    * Creates a new RecipesByTagIndexer.
@@ -95,13 +95,13 @@ export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, I
 
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
-    this._tagToRecipes = new Map<string, Set<RecipeId>>();
-    const recipes = this.library.recipes;
+    this._tagToRecipes = new Map<string, Set<FillingId>>();
+    const recipes = this.library.fillings;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       if (recipe.tags) {
         for (const tag of recipe.tags) {
-          this._addToSetIndex(this._tagToRecipes, tag.toLowerCase(), recipeId as RecipeId);
+          this._addToSetIndex(this._tagToRecipes, tag.toLowerCase(), recipeId as FillingId);
         }
       }
     }
@@ -113,7 +113,9 @@ export class RecipesByTagIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, I
   }
 
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._findInternal} */
-  protected _findInternal(config: IRecipesByTagConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>> {
+  protected _findInternal(
+    config: IRecipesByTagConfig
+  ): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>> {
     const recipeIds = this._getFromSetIndex(this._tagToRecipes!, config.tag.toLowerCase());
     return Success.with(recipeIds);
   }

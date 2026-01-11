@@ -9,5 +9,5 @@ Gets the underlying raw version data
 **Signature:**
 
 ```typescript
-get raw(): IRecipeVersion;
+get raw(): IFillingRecipeVersion;
 ```

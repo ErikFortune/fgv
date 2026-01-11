@@ -25,9 +25,9 @@
 
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
-import { Measurement, Helpers, IngredientId, Percentage, RecipeVersionSpec } from '../common';
+import { Measurement, Helpers, IngredientId, Percentage, FillingVersionSpec } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
-import { IRecipe, IRecipeIngredient, Recipe } from '../recipes';
+import { IFillingRecipe, IFillingIngredient, FillingRecipe } from '../fillings';
 
 // ============================================================================
 // Analysis Result Types
@@ -256,7 +256,7 @@ export function calculateFromIngredients(
  * @public
  */
 export function calculateFromRecipeIngredients(
-  recipeIngredients: ReadonlyArray<IRecipeIngredient>,
+  recipeIngredients: ReadonlyArray<IFillingIngredient>,
   resolver: IngredientResolver
 ): Result<IGanacheAnalysis> {
   // Resolve all ingredients using the preferred ingredient ID
@@ -289,12 +289,12 @@ export function calculateFromRecipeIngredients(
  * @public
  */
 export function calculateForRecipe(
-  recipe: IRecipe,
+  recipe: IFillingRecipe,
   resolver: IngredientResolver,
-  versionSpec?: RecipeVersionSpec
+  versionSpec?: FillingVersionSpec
 ): Result<IGanacheAnalysis> {
-  // If a Recipe instance, use helper methods; otherwise find the version manually
-  if (recipe instanceof Recipe) {
+  // If a FillingRecipe instance, use helper methods; otherwise find the version manually
+  if (recipe instanceof FillingRecipe) {
     const version = versionSpec ? recipe.getVersion(versionSpec) : Success.with(recipe.goldenVersion);
     return version.onSuccess((v) => calculateFromRecipeIngredients(v.ingredients, resolver));
   }
@@ -427,9 +427,9 @@ export function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation 
  * @public
  */
 export function calculateGanache(
-  recipe: IRecipe,
+  recipe: IFillingRecipe,
   resolver: IngredientResolver,
-  versionSpec?: RecipeVersionSpec
+  versionSpec?: FillingVersionSpec
 ): Result<IGanacheCalculation> {
   return calculateForRecipe(recipe, resolver, versionSpec).onSuccess((analysis) =>
     Success.with({

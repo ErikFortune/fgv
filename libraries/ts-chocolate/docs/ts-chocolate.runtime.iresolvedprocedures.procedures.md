@@ -9,5 +9,5 @@ Available procedures for this recipe - fully resolved.
 **Signature:**
 
 ```typescript
-readonly procedures: ReadonlyArray<IResolvedRecipeProcedure>;
+readonly procedures: ReadonlyArray<IResolvedFillingRecipeProcedure>;
 ```

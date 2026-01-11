@@ -30,7 +30,7 @@ import {
   Millimeters,
   MoldId,
   ProcedureId,
-  RecipeId,
+  FillingId,
   SlotId
 } from '../../../../packlets/common';
 import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../../packlets/confections';
@@ -79,11 +79,11 @@ describe('ConfectionEditingSession', () => {
             name: 'Ganache Center',
             filling: {
               options: [
-                { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
-                { type: 'recipe', id: 'common.milk-ganache' as RecipeId },
+                { type: 'recipe', id: 'common.dark-ganache-classic' as FillingId },
+                { type: 'recipe', id: 'common.milk-ganache' as FillingId },
                 { type: 'ingredient', id: 'common.caramel' as IngredientId }
               ],
-              preferredId: 'common.dark-ganache-classic' as RecipeId
+              preferredId: 'common.dark-ganache-classic' as FillingId
             }
           }
         ],
@@ -135,8 +135,8 @@ describe('ConfectionEditingSession', () => {
           {
             slotId: 'center' as SlotId,
             filling: {
-              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-              preferredId: 'common.dark-ganache-classic' as RecipeId
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as FillingId }],
+              preferredId: 'common.dark-ganache-classic' as FillingId
             }
           }
         ],
@@ -176,8 +176,8 @@ describe('ConfectionEditingSession', () => {
           {
             slotId: 'center' as SlotId,
             filling: {
-              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-              preferredId: 'common.dark-ganache-classic' as RecipeId
+              options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as FillingId }],
+              preferredId: 'common.dark-ganache-classic' as FillingId
             }
           }
         ],
@@ -308,7 +308,7 @@ describe('ConfectionEditingSession', () => {
 
       const centerFilling = session.fillings.get('center' as SlotId);
       expect(centerFilling).toBeDefined();
-      expect(centerFilling?.recipeId).toBe('common.dark-ganache-classic');
+      expect(centerFilling?.fillingId).toBe('common.dark-ganache-classic');
       expect(centerFilling?.status).toBe('original');
     });
 
@@ -401,7 +401,7 @@ describe('ConfectionEditingSession', () => {
       const centerFilling = session.fillings.get('center' as SlotId);
       expect(centerFilling).toBeDefined();
       expect(centerFilling?.ingredientId).toBe('common.caramel');
-      expect(centerFilling?.recipeId).toBeUndefined();
+      expect(centerFilling?.fillingId).toBeUndefined();
       expect(centerFilling?.status).toBe('original');
     });
 
@@ -417,7 +417,7 @@ describe('ConfectionEditingSession', () => {
                 slotId: 'center' as SlotId,
                 filling: {
                   options: [
-                    { type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId },
+                    { type: 'recipe', id: 'common.dark-ganache-classic' as FillingId },
                     { type: 'ingredient', id: 'common.caramel' as IngredientId }
                   ]
                   // No preferredId
@@ -437,7 +437,7 @@ describe('ConfectionEditingSession', () => {
 
       const centerFilling = session.fillings.get('center' as SlotId);
       expect(centerFilling).toBeDefined();
-      expect(centerFilling?.recipeId).toBe('common.dark-ganache-classic');
+      expect(centerFilling?.fillingId).toBe('common.dark-ganache-classic');
       expect(centerFilling?.status).toBe('original');
     });
 
@@ -483,8 +483,8 @@ describe('ConfectionEditingSession', () => {
                 slotId: 'outer-layer' as SlotId,
                 name: 'Outer Ganache',
                 filling: {
-                  options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-                  preferredId: 'common.dark-ganache-classic' as RecipeId
+                  options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as FillingId }],
+                  preferredId: 'common.dark-ganache-classic' as FillingId
                 }
               },
               {
@@ -508,7 +508,7 @@ describe('ConfectionEditingSession', () => {
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
       expect(session.fillings.size).toBe(2);
-      expect(session.fillings.get('outer-layer' as SlotId)?.recipeId).toBe('common.dark-ganache-classic');
+      expect(session.fillings.get('outer-layer' as SlotId)?.fillingId).toBe('common.dark-ganache-classic');
       expect(session.fillings.get('center' as SlotId)?.ingredientId).toBe('common.praline');
     });
 
@@ -544,9 +544,9 @@ describe('ConfectionEditingSession', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId)).toSucceed();
+      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId)).toSucceed();
       const centerFilling = session.fillings.get('center' as SlotId);
-      expect(centerFilling?.recipeId).toBe('common.milk-ganache');
+      expect(centerFilling?.fillingId).toBe('common.milk-ganache');
       expect(centerFilling?.ingredientId).toBeUndefined();
       expect(centerFilling?.status).toBe('modified');
       expect(session.isDirty).toBe(true);
@@ -565,7 +565,7 @@ describe('ConfectionEditingSession', () => {
       ).orThrow();
 
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
-      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId)).toFailWith(
+      expect(session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId)).toFailWith(
         /does not exist/
       );
     });
@@ -575,7 +575,7 @@ describe('ConfectionEditingSession', () => {
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
       expect(
-        session.selectFillingRecipe('non-existent-slot' as SlotId, 'common.milk-ganache' as RecipeId)
+        session.selectFillingRecipe('non-existent-slot' as SlotId, 'common.milk-ganache' as FillingId)
       ).toFailWith(/does not exist/);
     });
 
@@ -583,7 +583,7 @@ describe('ConfectionEditingSession', () => {
       const confection = createMoldedBonBon();
       const session = ConfectionEditingSession.create({ sourceConfection: confection }).orThrow();
 
-      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId);
+      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId);
       expect(session.journalEntries.length).toBe(1);
       expect(session.journalEntries[0].eventType).toBe('filling-select');
       expect(session.journalEntries[0].fillingSlotId).toBe('center');
@@ -596,7 +596,7 @@ describe('ConfectionEditingSession', () => {
         enableJournal: false
       }).orThrow();
 
-      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as RecipeId);
+      session.selectFillingRecipe('center' as SlotId, 'common.milk-ganache' as FillingId);
       expect(session.journalEntries.length).toBe(0);
     });
 
@@ -626,7 +626,7 @@ describe('ConfectionEditingSession', () => {
 
       // Slots with empty options are not initialized, so selection fails
       expect(
-        session.selectFillingRecipe('center' as SlotId, 'common.dark-ganache-classic' as RecipeId)
+        session.selectFillingRecipe('center' as SlotId, 'common.dark-ganache-classic' as FillingId)
       ).toFailWith(/does not exist/);
     });
   });
@@ -641,7 +641,7 @@ describe('ConfectionEditingSession', () => {
       ).toSucceed();
       const centerFilling = session.fillings.get('center' as SlotId);
       expect(centerFilling?.ingredientId).toBe('common.caramel');
-      expect(centerFilling?.recipeId).toBeUndefined();
+      expect(centerFilling?.fillingId).toBeUndefined();
       expect(centerFilling?.status).toBe('modified');
       expect(session.isDirty).toBe(true);
     });

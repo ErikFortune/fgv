@@ -9,7 +9,7 @@ Creates a journal record from this session
 **Signature:**
 
 ```typescript
-toJournalRecord(notes?: string): Result<IRecipeJournalRecord>;
+toJournalRecord(notes?: string): Result<IFillingRecipeJournalRecord>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ _(Optional)_ Optional notes for the record
 
 **Returns:**
 
-Result&lt;[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)<!-- -->&gt;
+Result&lt;[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)<!-- -->&gt;
 
 Success with journal record, or Failure
 

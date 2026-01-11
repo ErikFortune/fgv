@@ -569,18 +569,7 @@ Read-only interface for ValidatingLibrary. Extends IReadOnlyValidatingResultMap 
 </td></tr>
 <tr><td>
 
-[IResolvedProcedures](./ts-chocolate.runtime.iresolvedprocedures.md)
-
-
-</td><td>
-
-Collection of resolved procedures associated with a recipe.
-
-
-</td></tr>
-<tr><td>
-
-[IResolvedRecipeIngredient](./ts-chocolate.runtime.iresolvedrecipeingredient.md)
+[IResolvedFillingIngredient](./ts-chocolate.runtime.iresolvedfillingingredient.md)
 
 
 </td><td>
@@ -591,12 +580,23 @@ A resolved ingredient reference with full ingredient data and alternates. This i
 </td></tr>
 <tr><td>
 
-[IResolvedRecipeProcedure](./ts-chocolate.runtime.iresolvedrecipeprocedure.md)
+[IResolvedFillingRecipeProcedure](./ts-chocolate.runtime.iresolvedfillingrecipeprocedure.md)
 
 
 </td><td>
 
 A resolved procedure reference with the full procedure object. Used in runtime recipes to provide direct access to procedure details.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedProcedures](./ts-chocolate.runtime.iresolvedprocedures.md)
+
+
+</td><td>
+
+Collection of resolved procedures associated with a recipe.
 
 
 </td></tr>
@@ -707,6 +707,36 @@ Runtime ingredient narrowed to fat type.
 </td></tr>
 <tr><td>
 
+[IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)
+
+
+</td><td>
+
+A resolved runtime view of a recipe with navigation and version access.
+
+This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
+
+Note: Does not extend `IFillingRecipe` because `versions` has a different type (resolved vs raw versions).
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
+
+
+</td><td>
+
+A resolved runtime view of a recipe version with resolved ingredients.
+
+This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
+
+Note: Does not extend `IFillingRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
+
+
+</td></tr>
+<tr><td>
+
 [IRuntimeIngredient](./ts-chocolate.runtime.iruntimeingredient.md)
 
 
@@ -733,36 +763,6 @@ Runtime confection narrowed to molded bonbon type.
 </td></tr>
 <tr><td>
 
-[IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
-
-
-</td><td>
-
-A resolved runtime view of a recipe with navigation and version access.
-
-This interface provides runtime-layer access to recipe data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Resolved version access (full objects, not just raw data) - Scaling and calculation operations - Usage and ingredient queries - Resolved procedure access
-
-Note: Does not extend `IRecipe` because `versions` has a different type (resolved vs raw versions).
-
-
-</td></tr>
-<tr><td>
-
-[IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
-
-
-</td><td>
-
-A resolved runtime view of a recipe version with resolved ingredients.
-
-This interface provides runtime-layer access to version data with: - Parent recipe reference (both ID and resolved object) - Resolved ingredient access via flexible filtering - Ganache calculation
-
-Note: Does not extend `IRecipeVersion` because `ingredients` has a different type (resolved vs raw references).
-
-
-</td></tr>
-<tr><td>
-
 [IRuntimeRolledTruffle](./ts-chocolate.runtime.iruntimerolledtruffle.md)
 
 
@@ -774,7 +774,7 @@ Runtime confection narrowed to rolled truffle type.
 </td></tr>
 <tr><td>
 
-[IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)
+[IRuntimeScaledFillingRecipeVersion](./ts-chocolate.runtime.iruntimescaledfillingrecipeversion.md)
 
 
 </td><td>

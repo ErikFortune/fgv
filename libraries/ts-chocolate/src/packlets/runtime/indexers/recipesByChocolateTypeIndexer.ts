@@ -24,10 +24,10 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { ChocolateType, Converters as ChocolateConverters, Helpers, RecipeId } from '../../common';
+import { ChocolateType, Converters as ChocolateConverters, FillingId, Helpers } from '../../common';
 import { isChocolateIngredient } from '../../ingredients';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeRecipe } from '../model';
+import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -69,12 +69,12 @@ export const recipesByChocolateTypeConfigConverter: Converter<IRecipesByChocolat
  * @public
  */
 export class RecipesByChocolateTypeIndexer extends BaseIndexer<
-  IRuntimeRecipe,
-  RecipeId,
+  IRuntimeFillingRecipe,
+  FillingId,
   IRecipesByChocolateTypeConfig
 > {
   // Index structure: chocolate type -> recipe IDs
-  private _typeToRecipes: Map<ChocolateType, Set<RecipeId>> | undefined;
+  private _typeToRecipes: Map<ChocolateType, Set<FillingId>> | undefined;
 
   /**
    * Creates a new RecipesByChocolateTypeIndexer.
@@ -86,8 +86,8 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
 
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
-    this._typeToRecipes = new Map<ChocolateType, Set<RecipeId>>();
-    const recipes = this.library.recipes;
+    this._typeToRecipes = new Map<ChocolateType, Set<FillingId>>();
+    const recipes = this.library.fillings;
     const ingredients = this.library.ingredients;
 
     for (const [recipeId, recipe] of recipes.entries()) {
@@ -107,7 +107,7 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
           if (isChocolateIngredient(ingredient)) {
-            this._addToSetIndex(this._typeToRecipes, ingredient.chocolateType, recipeId as RecipeId);
+            this._addToSetIndex(this._typeToRecipes, ingredient.chocolateType, recipeId as FillingId);
           }
         }
       }
@@ -122,7 +122,7 @@ export class RecipesByChocolateTypeIndexer extends BaseIndexer<
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(
     config: IRecipesByChocolateTypeConfig
-  ): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>> {
+  ): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>> {
     const recipeIds = this._getFromSetIndex(this._typeToRecipes!, config.chocolateType);
     return Success.with(recipeIds);
   }

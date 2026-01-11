@@ -4,12 +4,12 @@
 
 ## Runtime.ChocolateLibrary.getRecipe() method
 
-Gets a [recipe](./ts-chocolate.recipes.recipe.md) by its [composite ID](./ts-chocolate.recipeid.md)
+Gets a  by its [composite ID](./ts-chocolate.fillingid.md)
 
 **Signature:**
 
 ```typescript
-getRecipe(id: RecipeId): Result<IRecipe>;
+getRecipe(id: FillingId): Result<IFillingRecipe>;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ id
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>
 
-The [id](./ts-chocolate.recipeid.md) of the recipe to retrieve.
+The [id](./ts-chocolate.fillingid.md) of the recipe to retrieve.
 
 
 </td></tr>
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.recipeid.md) of the recipe to retrieve.
 
 **Returns:**
 
-Result&lt;[IRecipe](./ts-chocolate.recipes.irecipe.md)<!-- -->&gt;
+Result&lt;[IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)<!-- -->&gt;
 
 `Success` with recipe, or `Failure` if not found
 

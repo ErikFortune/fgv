@@ -9,5 +9,5 @@ The golden version ID
 **Signature:**
 
 ```typescript
-get goldenVersionSpec(): RecipeVersionSpec;
+get goldenVersionSpec(): FillingVersionSpec;
 ```

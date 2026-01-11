@@ -79,7 +79,7 @@ export {
 
 // Recipe orchestrator with query spec types
 export {
-  IRecipeQuerySpec,
+  IFillingRecipeQuerySpec,
   RecipeIndexerName,
   RecipeIndexerOrchestrator,
   RecipeResolver,

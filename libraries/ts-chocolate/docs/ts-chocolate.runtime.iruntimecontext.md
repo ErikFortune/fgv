@@ -83,6 +83,27 @@ Gets the number of cached recipes.
 </td></tr>
 <tr><td>
 
+[fillings](./ts-chocolate.runtime.iruntimecontext.fillings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+
+
+</td><td>
+
+A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
+
+
+</td></tr>
+<tr><td>
+
 [ingredients](./ts-chocolate.runtime.iruntimecontext.ingredients.md)
 
 
@@ -144,27 +165,6 @@ The underlying ChocolateLibrary for direct access when needed.
 
 
 </td></tr>
-<tr><td>
-
-[recipes](./ts-chocolate.runtime.iruntimecontext.recipes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)<!-- -->, [IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)<!-- -->&gt;
-
-
-</td><td>
-
-A searchable library of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached. Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search, `.has(id)` for existence checks, `.values()` for iteration.
-
-
-</td></tr>
 </tbody></table>
 
 ## Methods
@@ -193,23 +193,23 @@ Clears all cached runtime objects. Use if underlying library data has changed.
 </td></tr>
 <tr><td>
 
+[getAllFillingTags()](./ts-chocolate.runtime.iruntimecontext.getallfillingtags.md)
+
+
+</td><td>
+
+Gets all unique tags used across fillings.
+
+
+</td></tr>
+<tr><td>
+
 [getAllIngredientTags()](./ts-chocolate.runtime.iruntimecontext.getallingredienttags.md)
 
 
 </td><td>
 
 Gets all unique tags used across ingredients.
-
-
-</td></tr>
-<tr><td>
-
-[getAllRecipeTags()](./ts-chocolate.runtime.iruntimecontext.getallrecipetags.md)
-
-
-</td><td>
-
-Gets all unique tags used across recipes.
 
 
 </td></tr>
@@ -226,23 +226,23 @@ Gets detailed usage information for an ingredient.
 </td></tr>
 <tr><td>
 
-[getJournalsForRecipe(recipeId)](./ts-chocolate.runtime.iruntimecontext.getjournalsforrecipe.md)
+[getJournalsForFilling(fillingId)](./ts-chocolate.runtime.iruntimecontext.getjournalsforfilling.md)
 
 
 </td><td>
 
-Gets all journal records for a recipe (across all versions).
+Gets all journal records for a filling (across all versions).
 
 
 </td></tr>
 <tr><td>
 
-[getJournalsForVersion(versionId)](./ts-chocolate.runtime.iruntimecontext.getjournalsforversion.md)
+[getJournalsForFillingVersion(versionId)](./ts-chocolate.runtime.iruntimecontext.getjournalsforfillingversion.md)
 
 
 </td><td>
 
-Gets all journal records for a specific recipe version.
+Gets all journal records for a specific filling version.
 
 
 </td></tr>

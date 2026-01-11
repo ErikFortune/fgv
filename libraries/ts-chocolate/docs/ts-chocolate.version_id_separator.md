@@ -4,7 +4,7 @@
 
 ## VERSION\_ID\_SEPARATOR variable
 
-Separator character used in recipe version IDs (between RecipeId and RecipeVersionSpec)
+Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
 
 **Signature:**
 

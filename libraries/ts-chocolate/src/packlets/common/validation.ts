@@ -28,10 +28,10 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 import {
   BASE_ID_PATTERN,
   BaseConfectionId,
+  BaseFillingId,
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
-  BaseRecipeId,
   Celsius,
   COMPOSITE_ID_PATTERN,
   CONFECTION_VERSION_SPEC_PATTERN,
@@ -40,6 +40,11 @@ import {
   ConfectionVersionId,
   ConfectionVersionSpec,
   DegreesMacMichael,
+  FillingId,
+  FillingName,
+  FillingVersionId,
+  FillingVersionSpec,
+  FILLING_VERSION_SPEC_PATTERN,
   IHasId,
   IIdsWithPreferred,
   IngredientId,
@@ -53,11 +58,6 @@ import {
   Percentage,
   ProcedureId,
   RatingScore,
-  RECIPE_VERSION_SPEC_PATTERN,
-  RecipeId,
-  RecipeName,
-  RecipeVersionId,
-  RecipeVersionSpec,
   SESSION_ID_PATTERN,
   SessionId,
   SlotId,
@@ -119,27 +119,27 @@ export function toBaseIngredientId(from: unknown): Result<BaseIngredientId> {
 }
 
 /**
- * Type guard for BaseRecipeId
+ * Type guard for BaseFillingId
  * @param from - Value to check
- * @returns True if the value is a valid BaseRecipeId
+ * @returns True if the value is a valid BaseFillingId
  * @public
  */
-export function isValidBaseRecipeId(from: unknown): from is BaseRecipeId {
+export function isValidBaseFillingId(from: unknown): from is BaseFillingId {
   return typeof from === 'string' && from.length > 0 && BASE_ID_PATTERN.test(from);
 }
 
 /**
- * Converts unknown value to BaseRecipeId
+ * Converts unknown value to BaseFillingId
  * @param from - Value to convert
- * @returns Result with BaseRecipeId or error
+ * @returns Result with BaseFillingId or error
  * @public
  */
-export function toBaseRecipeId(from: unknown): Result<BaseRecipeId> {
-  if (isValidBaseRecipeId(from)) {
+export function toBaseFillingId(from: unknown): Result<BaseFillingId> {
+  if (isValidBaseFillingId(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid BaseRecipeId: must be non-empty alphanumeric with dashes/underscores, no dots'
+    'Invalid BaseFillingId: must be non-empty alphanumeric with dashes/underscores, no dots'
   );
 }
 
@@ -269,27 +269,27 @@ export function toIngredientId(from: unknown): Result<IngredientId> {
 }
 
 /**
- * Type guard for RecipeId
+ * Type guard for FillingId
  * @param from - Value to check
- * @returns True if the value is a valid composite RecipeId
+ * @returns True if the value is a valid composite FillingId
  * @public
  */
-export function isValidRecipeId(from: unknown): from is RecipeId {
+export function isValidFillingId(from: unknown): from is FillingId {
   return typeof from === 'string' && COMPOSITE_ID_PATTERN.test(from);
 }
 
 /**
- * Converts unknown value to RecipeId
+ * Converts unknown value to FillingId
  * @param from - Value to convert
- * @returns Result with RecipeId or error
+ * @returns Result with FillingId or error
  * @public
  */
-export function toRecipeId(from: unknown): Result<RecipeId> {
-  if (isValidRecipeId(from)) {
+export function toFillingId(from: unknown): Result<FillingId> {
+  if (isValidFillingId(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid RecipeId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
+    'Invalid FillingId: must be in format "sourceId.baseId" with alphanumeric characters, dashes, and underscores'
   );
 }
 
@@ -373,26 +373,26 @@ export function toConfectionId(from: unknown): Result<ConfectionId> {
 // ============================================================================
 
 /**
- * Type guard for RecipeName
+ * Type guard for FillingName
  * @param from - Value to check
- * @returns True if the value is a valid RecipeName
+ * @returns True if the value is a valid FillingName
  * @public
  */
-export function isValidRecipeName(from: unknown): from is RecipeName {
+export function isValidFillingName(from: unknown): from is FillingName {
   return typeof from === 'string' && from.length > 0;
 }
 
 /**
- * Converts unknown value to RecipeName
+ * Converts unknown value to FillingName
  * @param from - Value to convert
- * @returns Result with RecipeName or error
+ * @returns Result with FillingName or error
  * @public
  */
-export function toRecipeName(from: unknown): Result<RecipeName> {
-  if (isValidRecipeName(from)) {
+export function toFillingName(from: unknown): Result<FillingName> {
+  if (isValidFillingName(from)) {
     return Success.with(from);
   }
-  return Failure.with('Invalid RecipeName: must be a non-empty string');
+  return Failure.with('Invalid FillingName: must be a non-empty string');
 }
 
 /**
@@ -419,37 +419,37 @@ export function toConfectionName(from: unknown): Result<ConfectionName> {
 }
 
 /**
- * Type guard for RecipeVersionSpec
+ * Type guard for FillingVersionSpec
  * @param from - Value to check
- * @returns True if the value is a valid RecipeVersionSpec
+ * @returns True if the value is a valid FillingVersionSpec
  * @public
  */
-export function isValidRecipeVersionSpec(from: unknown): from is RecipeVersionSpec {
-  return typeof from === 'string' && RECIPE_VERSION_SPEC_PATTERN.test(from);
+export function isValidFillingVersionSpec(from: unknown): from is FillingVersionSpec {
+  return typeof from === 'string' && FILLING_VERSION_SPEC_PATTERN.test(from);
 }
 
 /**
- * Converts unknown value to RecipeVersionSpec
+ * Converts unknown value to FillingVersionSpec
  * @param from - Value to convert
- * @returns Result with {@link RecipeVersionSpec | RecipeVersionSpec} or error
+ * @returns Result with {@link FillingVersionSpec | FillingVersionSpec} or error
  * @public
  */
-export function toRecipeVersionSpec(from: unknown): Result<RecipeVersionSpec> {
-  if (isValidRecipeVersionSpec(from)) {
+export function toFillingVersionSpec(from: unknown): Result<FillingVersionSpec> {
+  if (isValidFillingVersionSpec(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid RecipeVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
+    'Invalid FillingVersionSpec: must be in format YYYY-MM-DD-NN with optional lowercase label (e.g., "2026-01-03-01" or "2026-01-03-02-tweaked")'
   );
 }
 
 /**
- * Type guard for RecipeVersionId
+ * Type guard for FillingVersionId
  * @param from - Value to check
- * @returns True if the value is a valid RecipeVersionId
+ * @returns True if the value is a valid FillingVersionId
  * @public
  */
-export function isValidRecipeVersionId(from: unknown): from is RecipeVersionId {
+export function isValidFillingVersionId(from: unknown): from is FillingVersionId {
   if (typeof from !== 'string') {
     return false;
   }
@@ -457,21 +457,21 @@ export function isValidRecipeVersionId(from: unknown): from is RecipeVersionId {
   if (parts.length !== 2) {
     return false;
   }
-  return isValidRecipeId(parts[0]) && isValidRecipeVersionSpec(parts[1]);
+  return isValidFillingId(parts[0]) && isValidFillingVersionSpec(parts[1]);
 }
 
 /**
- * Converts unknown value to RecipeVersionId
+ * Converts unknown value to FillingVersionId
  * @param from - Value to convert
- * @returns Result with {@link RecipeVersionId | RecipeVersionId} or error
+ * @returns Result with {@link FillingVersionId | FillingVersionId} or error
  * @public
  */
-export function toRecipeVersionId(from: unknown): Result<RecipeVersionId> {
-  if (isValidRecipeVersionId(from)) {
+export function toFillingVersionId(from: unknown): Result<FillingVersionId> {
+  if (isValidFillingVersionId(from)) {
     return Success.with(from);
   }
   return Failure.with(
-    'Invalid RecipeVersionId: must be in format "recipeId@versionSpec" (e.g., "user.ganache@2026-01-03-01")'
+    'Invalid FillingVersionId: must be in format "fillingId@versionSpec" (e.g., "user.ganache@2026-01-03-01")'
   );
 }
 

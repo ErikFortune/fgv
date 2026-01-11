@@ -68,7 +68,7 @@ The scaling factor applied.
 
 </td><td>
 
-[IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
+[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
 
 
 </td><td>

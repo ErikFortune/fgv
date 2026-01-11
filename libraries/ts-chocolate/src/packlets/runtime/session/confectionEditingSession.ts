@@ -31,7 +31,7 @@ import {
   IngredientId,
   MoldId,
   ProcedureId,
-  RecipeId,
+  FillingId,
   SessionId,
   SlotId,
   Converters as CommonConverters
@@ -208,24 +208,24 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   /**
    * Selects a filling recipe for a specific slot.
    * @param slotId - The slot ID to select the filling for
-   * @param recipeId - The recipe ID to select as the filling
+   * @param fillingId - The recipe ID to select as the filling
    * @returns Success, or Failure if the slot doesn't exist
    * @public
    */
-  public selectFillingRecipe(slotId: SlotId, recipeId: RecipeId): Result<true> {
+  public selectFillingRecipe(slotId: SlotId, fillingId: FillingId): Result<true> {
     const existingSlot = this._fillings.get(slotId);
     if (!existingSlot) {
       return fail(`Filling slot '${slotId}' does not exist`);
     }
 
-    const previousRecipeId = existingSlot.recipeId;
+    const previousFillingId = existingSlot.fillingId;
     const previousIngredientId = existingSlot.ingredientId;
 
     this._fillings.set(slotId, {
       slotId,
-      recipeId,
+      fillingId,
       ingredientId: undefined,
-      originalRecipeId: existingSlot.originalRecipeId,
+      originalFillingId: existingSlot.originalFillingId,
       originalIngredientId: existingSlot.originalIngredientId,
       status: 'modified'
     });
@@ -233,12 +233,12 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     this._isDirty = true;
     this._addJournalEntry('filling-select', {
       fillingSlotId: slotId,
-      fillingRecipeId: recipeId,
-      previousFillingRecipeId: previousRecipeId,
+      fillingRecipeId: fillingId,
+      previousFillingRecipeId: previousFillingId,
       previousFillingIngredientId: previousIngredientId
     });
 
-    this._logger.info(`Selected filling recipe for slot '${slotId}': ${recipeId}`);
+    this._logger.info(`Selected filling recipe for slot '${slotId}': ${fillingId}`);
     return succeed(true);
   }
 
@@ -255,14 +255,14 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return fail(`Filling slot '${slotId}' does not exist`);
     }
 
-    const previousRecipeId = existingSlot.recipeId;
+    const previousFillingId = existingSlot.fillingId;
     const previousIngredientId = existingSlot.ingredientId;
 
     this._fillings.set(slotId, {
       slotId,
-      recipeId: undefined,
+      fillingId: undefined,
       ingredientId,
-      originalRecipeId: existingSlot.originalRecipeId,
+      originalFillingId: existingSlot.originalFillingId,
       originalIngredientId: existingSlot.originalIngredientId,
       status: 'modified'
     });
@@ -271,7 +271,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
     this._addJournalEntry('filling-select', {
       fillingSlotId: slotId,
       fillingIngredientId: ingredientId,
-      previousFillingRecipeId: previousRecipeId,
+      previousFillingRecipeId: previousFillingId,
       previousFillingIngredientId: previousIngredientId
     });
 
@@ -583,8 +583,8 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       if (selectedOption.type === 'recipe') {
         this._fillings.set(slotId, {
           slotId,
-          recipeId: selectedOption.id,
-          originalRecipeId: selectedOption.id,
+          fillingId: selectedOption.id,
+          originalFillingId: selectedOption.id,
           status: 'original'
         });
       } else {

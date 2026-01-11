@@ -27,11 +27,11 @@ import { Logging } from '@fgv/ts-utils';
 
 import {
   ConfectionVersionSpec,
+  FillingId,
   Measurement,
   IngredientId,
   MoldId,
   ProcedureId,
-  RecipeId,
   SessionId,
   SlotId
 } from '../../common';
@@ -40,9 +40,9 @@ import {
   IConfectionJournalEntry,
   IConfectionJournalRecord,
   IJournalEntry,
-  IRecipeJournalRecord
+  IFillingRecipeJournalRecord
 } from '../../journal';
-import { IRuntimeConfection, IRuntimeRecipeVersion } from '../model';
+import { IRuntimeConfection, IRuntimeFillingRecipeVersion } from '../model';
 
 // ============================================================================
 // Session Ingredient State
@@ -102,7 +102,7 @@ export interface IEditingSessionParams {
   /**
    * The source version to edit from
    */
-  readonly sourceVersion: IRuntimeRecipeVersion;
+  readonly sourceVersion: IRuntimeFillingRecipeVersion;
 
   /**
    * Initial scale factor (default: 1.0)
@@ -142,7 +142,7 @@ export interface ISessionState {
   /**
    * Source version being edited
    */
-  readonly sourceVersion: IRuntimeRecipeVersion;
+  readonly sourceVersion: IRuntimeFillingRecipeVersion;
 
   /**
    * Current scale factor
@@ -219,7 +219,7 @@ export interface ISaveResult {
    * The full journal record if one was created.
    * Callers can use this to persist the journal via `context.journals.addJournal(record)`.
    */
-  readonly journalRecord?: IRecipeJournalRecord;
+  readonly journalRecord?: IFillingRecipeJournalRecord;
 
   /**
    * The new version spec if one was created
@@ -248,19 +248,19 @@ export interface ISessionFillingSlot {
   readonly slotId: SlotId;
 
   /**
-   * The currently selected filling recipe ID (mutually exclusive with ingredientId)
+   * The currently selected filling ID (mutually exclusive with ingredientId)
    */
-  readonly recipeId?: RecipeId;
+  readonly fillingId?: FillingId;
 
   /**
-   * The currently selected filling ingredient ID (mutually exclusive with recipeId)
+   * The currently selected filling ingredient ID (mutually exclusive with fillingId)
    */
   readonly ingredientId?: IngredientId;
 
   /**
    * The original filling recipe ID when the session started
    */
-  readonly originalRecipeId?: RecipeId;
+  readonly originalFillingId?: FillingId;
 
   /**
    * The original filling ingredient ID when the session started

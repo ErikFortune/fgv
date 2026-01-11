@@ -148,19 +148,19 @@ describe('BuiltInData', () => {
   });
 
   // ============================================================================
-  // getRecipesDirectory Tests
+  // getFillingsDirectory Tests
   // ============================================================================
 
-  describe('getRecipesDirectory', () => {
+  describe('getFillingsDirectory', () => {
     test('returns the recipes directory', () => {
-      expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
+      expect(BuiltInData.getFillingsDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.type).toBe('directory');
-        expect(dir.name).toBe('recipes');
+        expect(dir.name).toBe('fillings');
       });
     });
 
     test('recipes directory contains expected collections', () => {
-      expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
+      expect(BuiltInData.getFillingsDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const names = children.map((c) => c.name).sort();
           // common.json is unencrypted public recipes, fgv.json is encrypted private recipes
@@ -170,7 +170,7 @@ describe('BuiltInData', () => {
     });
 
     test('common.json contains expected recipes', () => {
-      expect(BuiltInData.getRecipesDirectory()).toSucceedAndSatisfy((dir) => {
+      expect(BuiltInData.getFillingsDirectory()).toSucceedAndSatisfy((dir) => {
         expect(dir.getChildren()).toSucceedAndSatisfy((children) => {
           const commonFile = children.find((c) => c.name === 'common.json');
           expect(commonFile).toBeDefined();
@@ -295,7 +295,7 @@ describe('BuiltInData', () => {
     // The test runs from lib/test/unit/built-in/, so we need to go up to the library root
     const libraryRoot = path.resolve(__dirname, '..', '..', '..', '..');
     const ingredientsSourceDir = path.join(libraryRoot, 'data', 'published', 'ingredients');
-    const recipesSourceDir = path.join(libraryRoot, 'data', 'published', 'recipes');
+    const recipesSourceDir = path.join(libraryRoot, 'data', 'published', 'fillings');
 
     test('generated ingredient data matches source YAML files', () => {
       // Read source YAML files directly

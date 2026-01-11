@@ -110,7 +110,7 @@ _(Optional)_ Initial scale factor (default: 1.0)
 
 </td><td>
 
-[IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
+[IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
 
 
 </td><td>

@@ -9,7 +9,7 @@ Checks if a recipe exists
 **Signature:**
 
 ```typescript
-hasRecipe(id: RecipeId): boolean;
+hasRecipe(id: FillingId): boolean;
 ```
 
 ## Parameters
@@ -37,12 +37,12 @@ id
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>
 
-The [id](./ts-chocolate.recipeid.md) of the recipe to check.
+The [id](./ts-chocolate.fillingid.md) of the recipe to check.
 
 
 </td></tr>

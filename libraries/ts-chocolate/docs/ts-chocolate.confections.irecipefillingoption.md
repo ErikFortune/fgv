@@ -47,12 +47,12 @@ Description
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>
 
-The recipe ID
+The filling recipe ID
 
 
 </td></tr>

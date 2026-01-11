@@ -9,5 +9,5 @@ The original raw scaled ingredient reference data
 **Signature:**
 
 ```typescript
-readonly raw: IScaledRecipeIngredient;
+readonly raw: IScaledFillingIngredient;
 ```

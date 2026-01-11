@@ -350,12 +350,12 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[alternateInRecipes()](./ts-chocolate.runtime.iruntimeingredient.alternateinrecipes.md)
+[alternateInFillings()](./ts-chocolate.runtime.iruntimeingredient.alternateinfillings.md)
 
 
 </td><td>
 
-Gets recipes where this ingredient is listed as an alternate.
+Gets filling recipes where this ingredient is listed as an alternate.
 
 
 </td></tr>
@@ -416,23 +416,23 @@ Returns true if this is a sugar ingredient. When true, sugar-specific properties
 </td></tr>
 <tr><td>
 
-[primaryInRecipes()](./ts-chocolate.runtime.iruntimeingredient.primaryinrecipes.md)
+[primaryInFillings()](./ts-chocolate.runtime.iruntimeingredient.primaryinfillings.md)
 
 
 </td><td>
 
-Gets recipes where this ingredient is the primary choice.
+Gets filling recipes where this ingredient is the primary choice.
 
 
 </td></tr>
 <tr><td>
 
-[usedByRecipes()](./ts-chocolate.runtime.iruntimeingredient.usedbyrecipes.md)
+[usedByFillings()](./ts-chocolate.runtime.iruntimeingredient.usedbyfillings.md)
 
 
 </td><td>
 
-Gets all recipes that use this ingredient (primary or alternate).
+Gets all filling recipes that use this ingredient (primary or alternate).
 
 
 </td></tr>

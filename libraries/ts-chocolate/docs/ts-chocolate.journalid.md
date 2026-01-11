@@ -4,7 +4,7 @@
 
 ## JournalId type
 
-Unique identifier for a cooking journal record Format: UUID or "recipeId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
+Unique identifier for a cooking journal record Format: UUID or "fillingId<!-- -->@<!-- -->versionSpec<!-- -->@<!-- -->date"
 
 **Signature:**
 

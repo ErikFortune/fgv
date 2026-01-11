@@ -9,5 +9,5 @@ The composite recipe ID (e.g., "user.dark-ganache")
 **Signature:**
 
 ```typescript
-get id(): RecipeId;
+get id(): FillingId;
 ```

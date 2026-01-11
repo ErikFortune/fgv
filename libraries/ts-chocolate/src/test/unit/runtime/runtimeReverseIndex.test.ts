@@ -22,13 +22,13 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
-  BaseRecipeId,
+  BaseFillingId,
   Measurement,
   IngredientId,
   Percentage,
-  RecipeId,
-  RecipeName,
-  RecipeVersionSpec,
+  FillingId,
+  FillingName,
+  FillingVersionSpec,
   SourceId
 } from '../../../packlets/common';
 
@@ -38,7 +38,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
+import { IFillingRecipe, FillingsLibrary } from '../../../packlets/fillings';
 import { ChocolateLibrary, RuntimeReverseIndex } from '../../../packlets/runtime';
 
 describe('RuntimeReverseIndex', () => {
@@ -99,15 +99,15 @@ describe('RuntimeReverseIndex', () => {
     tags: ['fresh']
   };
 
-  const darkGanacheRecipe: IRecipe = {
-    baseId: 'dark-ganache' as BaseRecipeId,
-    name: 'Dark Ganache' as RecipeName,
+  const darkGanacheRecipe: IFillingRecipe = {
+    baseId: 'dark-ganache' as BaseFillingId,
+    name: 'Dark Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           {
@@ -124,15 +124,15 @@ describe('RuntimeReverseIndex', () => {
     ]
   };
 
-  const milkGanacheRecipe: IRecipe = {
-    baseId: 'milk-ganache' as BaseRecipeId,
-    name: 'Milk Ganache' as RecipeName,
+  const milkGanacheRecipe: IFillingRecipe = {
+    baseId: 'milk-ganache' as BaseFillingId,
+    name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -165,7 +165,7 @@ describe('RuntimeReverseIndex', () => {
       ]
     }).orThrow();
 
-    const recipes = RecipesLibrary.create({
+    const recipes = FillingsLibrary.create({
       builtin: false,
       collections: [
         {
@@ -183,7 +183,7 @@ describe('RuntimeReverseIndex', () => {
 
     library = ChocolateLibrary.create({
       builtin: false,
-      libraries: { ingredients, recipes }
+      libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
     reverseIndex = new RuntimeReverseIndex(library);
@@ -194,49 +194,49 @@ describe('RuntimeReverseIndex', () => {
   // ============================================================================
 
   describe('ingredient to recipe lookups', () => {
-    test('getRecipesUsingIngredient returns recipes using a primary ingredient', () => {
-      const recipes = reverseIndex.getRecipesUsingIngredient('test.dark-chocolate' as IngredientId);
+    test('getFillingsUsingIngredient returns recipes using a primary ingredient', () => {
+      const recipes = reverseIndex.getFillingsUsingIngredient('test.dark-chocolate' as IngredientId);
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesUsingIngredient returns recipes using an alternate ingredient', () => {
-      const recipes = reverseIndex.getRecipesUsingIngredient('test.alt-chocolate' as IngredientId);
+    test('getFillingsUsingIngredient returns recipes using an alternate ingredient', () => {
+      const recipes = reverseIndex.getFillingsUsingIngredient('test.alt-chocolate' as IngredientId);
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesUsingIngredient returns multiple recipes for shared ingredient', () => {
-      const recipes = reverseIndex.getRecipesUsingIngredient('test.cream' as IngredientId);
+    test('getFillingsUsingIngredient returns multiple recipes for shared ingredient', () => {
+      const recipes = reverseIndex.getFillingsUsingIngredient('test.cream' as IngredientId);
       expect(recipes.size).toBe(2);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
-      expect(recipes.has('test.milk-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
+      expect(recipes.has('test.milk-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesUsingIngredient returns empty set for unused ingredient', () => {
-      const recipes = reverseIndex.getRecipesUsingIngredient('test.nonexistent' as IngredientId);
+    test('getFillingsUsingIngredient returns empty set for unused ingredient', () => {
+      const recipes = reverseIndex.getFillingsUsingIngredient('test.nonexistent' as IngredientId);
       expect(recipes.size).toBe(0);
     });
 
-    test('getRecipesWithPrimaryIngredient returns only primary usages', () => {
-      const recipes = reverseIndex.getRecipesWithPrimaryIngredient('test.dark-chocolate' as IngredientId);
+    test('getFillingsWithPrimaryIngredient returns only primary usages', () => {
+      const recipes = reverseIndex.getFillingsWithPrimaryIngredient('test.dark-chocolate' as IngredientId);
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesWithPrimaryIngredient excludes alternate usages', () => {
-      const recipes = reverseIndex.getRecipesWithPrimaryIngredient('test.alt-chocolate' as IngredientId);
+    test('getFillingsWithPrimaryIngredient excludes alternate usages', () => {
+      const recipes = reverseIndex.getFillingsWithPrimaryIngredient('test.alt-chocolate' as IngredientId);
       expect(recipes.size).toBe(0);
     });
 
-    test('getRecipesWithAlternateIngredient returns only alternate usages', () => {
-      const recipes = reverseIndex.getRecipesWithAlternateIngredient('test.alt-chocolate' as IngredientId);
+    test('getFillingsWithAlternateIngredient returns only alternate usages', () => {
+      const recipes = reverseIndex.getFillingsWithAlternateIngredient('test.alt-chocolate' as IngredientId);
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesWithAlternateIngredient excludes primary usages', () => {
-      const recipes = reverseIndex.getRecipesWithAlternateIngredient('test.dark-chocolate' as IngredientId);
+    test('getFillingsWithAlternateIngredient excludes primary usages', () => {
+      const recipes = reverseIndex.getFillingsWithAlternateIngredient('test.dark-chocolate' as IngredientId);
       expect(recipes.size).toBe(0);
     });
   });
@@ -249,21 +249,21 @@ describe('RuntimeReverseIndex', () => {
     test('getIngredientUsage returns detailed usage info', () => {
       const usage = reverseIndex.getIngredientUsage('test.dark-chocolate' as IngredientId);
       expect(usage.length).toBe(1);
-      expect(usage[0].recipeId).toBe('test.dark-ganache');
+      expect(usage[0].fillingId).toBe('test.dark-ganache');
       expect(usage[0].isPrimary).toBe(true);
     });
 
     test('getIngredientUsage returns info for alternate ingredients', () => {
       const usage = reverseIndex.getIngredientUsage('test.alt-chocolate' as IngredientId);
       expect(usage.length).toBe(1);
-      expect(usage[0].recipeId).toBe('test.dark-ganache');
+      expect(usage[0].fillingId).toBe('test.dark-ganache');
       expect(usage[0].isPrimary).toBe(false);
     });
 
     test('getIngredientUsage returns multiple usage records', () => {
       const usage = reverseIndex.getIngredientUsage('test.cream' as IngredientId);
       expect(usage.length).toBe(2);
-      const recipeIds = usage.map((u) => u.recipeId);
+      const recipeIds = usage.map((u) => u.fillingId);
       expect(recipeIds).toContain('test.dark-ganache');
       expect(recipeIds).toContain('test.milk-ganache');
       expect(usage.every((u) => u.isPrimary)).toBe(true);
@@ -280,29 +280,29 @@ describe('RuntimeReverseIndex', () => {
   // ============================================================================
 
   describe('tag lookups', () => {
-    test('getRecipesByTag returns recipes with tag', () => {
-      const recipes = reverseIndex.getRecipesByTag('classic');
+    test('getFillingsByTag returns recipes with tag', () => {
+      const recipes = reverseIndex.getFillingsByTag('classic');
       expect(recipes.size).toBe(2);
     });
 
-    test('getRecipesByTag is case-insensitive', () => {
-      const recipes = reverseIndex.getRecipesByTag('CLASSIC');
+    test('getFillingsByTag is case-insensitive', () => {
+      const recipes = reverseIndex.getFillingsByTag('CLASSIC');
       expect(recipes.size).toBe(2);
     });
 
-    test('getRecipesByTag returns specific recipes for unique tag', () => {
-      const recipes = reverseIndex.getRecipesByTag('dark');
+    test('getFillingsByTag returns specific recipes for unique tag', () => {
+      const recipes = reverseIndex.getFillingsByTag('dark');
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesByTag returns empty set for unknown tag', () => {
-      const recipes = reverseIndex.getRecipesByTag('unknown');
+    test('getFillingsByTag returns empty set for unknown tag', () => {
+      const recipes = reverseIndex.getFillingsByTag('unknown');
       expect(recipes.size).toBe(0);
     });
 
-    test('getAllRecipeTags returns all unique tags', () => {
-      const tags = reverseIndex.getAllRecipeTags();
+    test('getAllFillingTags returns all unique tags', () => {
+      const tags = reverseIndex.getAllFillingTags();
       expect(tags).toContain('classic');
       expect(tags).toContain('dark');
       expect(tags).toContain('milk');
@@ -333,20 +333,20 @@ describe('RuntimeReverseIndex', () => {
   // ============================================================================
 
   describe('chocolate type lookups', () => {
-    test('getRecipesByChocolateType returns recipes with dark chocolate', () => {
-      const recipes = reverseIndex.getRecipesByChocolateType('dark');
+    test('getFillingsByChocolateType returns recipes with dark chocolate', () => {
+      const recipes = reverseIndex.getFillingsByChocolateType('dark');
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesByChocolateType returns recipes with milk chocolate', () => {
-      const recipes = reverseIndex.getRecipesByChocolateType('milk');
+    test('getFillingsByChocolateType returns recipes with milk chocolate', () => {
+      const recipes = reverseIndex.getFillingsByChocolateType('milk');
       expect(recipes.size).toBe(1);
-      expect(recipes.has('test.milk-ganache' as RecipeId)).toBe(true);
+      expect(recipes.has('test.milk-ganache' as FillingId)).toBe(true);
     });
 
-    test('getRecipesByChocolateType returns empty set for unused type', () => {
-      const recipes = reverseIndex.getRecipesByChocolateType('white');
+    test('getFillingsByChocolateType returns empty set for unused type', () => {
+      const recipes = reverseIndex.getFillingsByChocolateType('white');
       expect(recipes.size).toBe(0);
     });
   });
@@ -358,25 +358,25 @@ describe('RuntimeReverseIndex', () => {
   describe('cache management', () => {
     test('indexes are built lazily', () => {
       // First access builds the index
-      const recipes1 = reverseIndex.getRecipesByTag('classic');
+      const recipes1 = reverseIndex.getFillingsByTag('classic');
       expect(recipes1.size).toBe(2);
 
       // Second access uses cached index
-      const recipes2 = reverseIndex.getRecipesByTag('classic');
+      const recipes2 = reverseIndex.getFillingsByTag('classic');
       expect(recipes2.size).toBe(2);
     });
 
     test('invalidate clears all indexes', () => {
       // Build indexes
-      reverseIndex.getRecipesUsingIngredient('test.dark-chocolate' as IngredientId);
-      reverseIndex.getRecipesByTag('classic');
-      reverseIndex.getRecipesByChocolateType('dark');
+      reverseIndex.getFillingsUsingIngredient('test.dark-chocolate' as IngredientId);
+      reverseIndex.getFillingsByTag('classic');
+      reverseIndex.getFillingsByChocolateType('dark');
 
       // Invalidate
       reverseIndex.invalidate();
 
       // Indexes should rebuild on next access
-      const recipes = reverseIndex.getRecipesByTag('classic');
+      const recipes = reverseIndex.getFillingsByTag('classic');
       expect(recipes.size).toBe(2);
     });
 
@@ -384,10 +384,10 @@ describe('RuntimeReverseIndex', () => {
       reverseIndex.warmUp();
 
       // All lookups should work
-      expect(reverseIndex.getRecipesUsingIngredient('test.cream' as IngredientId).size).toBe(2);
-      expect(reverseIndex.getRecipesByTag('classic').size).toBe(2);
+      expect(reverseIndex.getFillingsUsingIngredient('test.cream' as IngredientId).size).toBe(2);
+      expect(reverseIndex.getFillingsByTag('classic').size).toBe(2);
       expect(reverseIndex.getIngredientsByTag('premium').size).toBe(1);
-      expect(reverseIndex.getRecipesByChocolateType('dark').size).toBe(1);
+      expect(reverseIndex.getFillingsByChocolateType('dark').size).toBe(1);
     });
   });
 });

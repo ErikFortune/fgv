@@ -9,7 +9,7 @@ Executes the query against the built index.
 **Signature:**
 
 ```typescript
-protected _findInternal(config: IRecipesByChocolateTypeConfig): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>>;
+protected _findInternal(config: IRecipesByChocolateTypeConfig): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The query configuration
 
 **Returns:**
 
-Result&lt;ReadonlyArray&lt;[IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md) \| [RecipeId](./ts-chocolate.recipeid.md)<!-- -->&gt;&gt;
+Result&lt;ReadonlyArray&lt;[IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md) \| [FillingId](./ts-chocolate.fillingid.md)<!-- -->&gt;&gt;
 
 Array of matching entities or IDs
 

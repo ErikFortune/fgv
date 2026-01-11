@@ -4,10 +4,10 @@
 
 ## Procedures.IProcedureRenderContext.recipe property
 
-The specific scaled recipe this procedure is being rendered for
+The specific scaled filling recipe this procedure is being rendered for
 
 **Signature:**
 
 ```typescript
-readonly recipe: IComputedScaledRecipe;
+readonly recipe: IComputedScaledFillingRecipe;
 ```

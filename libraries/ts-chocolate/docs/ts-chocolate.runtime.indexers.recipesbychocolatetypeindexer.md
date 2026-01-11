@@ -9,9 +9,9 @@ Indexer that finds recipes containing a specific chocolate type. Only checks the
 **Signature:**
 
 ```typescript
-export declare class RecipesByChocolateTypeIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipesByChocolateTypeConfig> 
+export declare class RecipesByChocolateTypeIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByChocolateTypeConfig> 
 ```
-**Extends:** [BaseIndexer](./ts-chocolate.runtime.indexers.baseindexer.md)<!-- -->&lt;[IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)<!-- -->, [RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.irecipesbychocolatetypeconfig.md)<!-- -->&gt;
+**Extends:** [BaseIndexer](./ts-chocolate.runtime.indexers.baseindexer.md)<!-- -->&lt;[IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IRecipesByChocolateTypeConfig](./ts-chocolate.runtime.indexers.irecipesbychocolatetypeconfig.md)<!-- -->&gt;
 
 ## Constructors
 

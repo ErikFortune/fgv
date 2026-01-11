@@ -68,12 +68,12 @@ Base procedure identifier (unique within source)
 
 </td><td>
 
-RecipeCategory
+FillingCategory
 
 
 </td><td>
 
-_(Optional)_ Optional recipe category this procedure applies to. If set, procedure is category-specific; if not, it's general/reusable.
+_(Optional)_ Optional filling category this procedure applies to. If set, procedure is category-specific; if not, it's general/reusable.
 
 
 </td></tr>

@@ -237,6 +237,17 @@ Interface for resolving entity IDs to entities. The orchestrator uses this to re
 </td></tr>
 <tr><td>
 
+[IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)
+
+
+</td><td>
+
+Query specification for recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
+
+
+</td></tr>
+<tr><td>
+
 [IFindOptions](./ts-chocolate.runtime.indexers.ifindoptions.md)
 
 
@@ -280,17 +291,6 @@ Query specification for ingredient indexers. Each key corresponds to an indexer,
 </td><td>
 
 Configuration for the IngredientsByTag indexer.
-
-
-</td></tr>
-<tr><td>
-
-[IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)
-
-
-</td><td>
-
-Query specification for recipe indexers. Each key corresponds to an indexer, and the value is that indexer's config.
 
 
 </td></tr>

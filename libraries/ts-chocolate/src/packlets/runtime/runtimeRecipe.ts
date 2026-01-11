@@ -26,17 +26,17 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
-  BaseRecipeId,
+  BaseFillingId,
   Helpers,
   ID_SEPARATOR,
   IngredientId,
-  RecipeId,
-  RecipeName,
-  RecipeVersionSpec,
+  FillingId,
+  FillingName,
+  FillingVersionSpec,
   SourceId
 } from '../common';
-import { IRecipe, Recipe } from '../recipes';
-import { IIngredientQueryOptions, IRuntimeRecipe, IVersionContext } from './model';
+import { IFillingRecipe, FillingRecipe } from '../fillings';
+import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';
 
@@ -52,12 +52,12 @@ type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
  * Immutable - does not allow modification of underlying data.
  * @public
  */
-export class RuntimeRecipe implements IRuntimeRecipe {
+export class RuntimeRecipe implements IRuntimeFillingRecipe {
   private readonly _context: RecipeContext;
-  private readonly _id: RecipeId;
-  private readonly _recipe: Recipe | IRecipe;
+  private readonly _id: FillingId;
+  private readonly _recipe: FillingRecipe | IFillingRecipe;
   private readonly _sourceId: SourceId;
-  private readonly _baseId: BaseRecipeId;
+  private readonly _baseId: BaseFillingId;
 
   // Lazy-loaded versions
   private _goldenVersion: RuntimeVersion | undefined;
@@ -71,7 +71,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    * Use RuntimeContext.getRecipe() instead of calling this directly.
    * @internal
    */
-  public constructor(context: RecipeContext, id: RecipeId, recipe: Recipe | IRecipe) {
+  public constructor(context: RecipeContext, id: FillingId, recipe: FillingRecipe | IFillingRecipe) {
     this._context = context;
     this._id = id;
     this._recipe = recipe;
@@ -79,7 +79,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
     // Parse the composite ID
     const parts = (id as string).split(ID_SEPARATOR);
     this._sourceId = parts[0] as SourceId;
-    this._baseId = parts[1] as BaseRecipeId;
+    this._baseId = parts[1] as BaseFillingId;
   }
 
   /**
@@ -91,8 +91,8 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    */
   public static create(
     context: RecipeContext,
-    id: RecipeId,
-    recipe: Recipe | IRecipe
+    id: FillingId,
+    recipe: FillingRecipe | IFillingRecipe
   ): Result<RuntimeRecipe> {
     return Success.with(new RuntimeRecipe(context, id, recipe));
   }
@@ -104,7 +104,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   /**
    * The composite recipe ID (e.g., "user.dark-ganache")
    */
-  public get id(): RecipeId {
+  public get id(): FillingId {
     return this._id;
   }
 
@@ -118,7 +118,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   /**
    * The base recipe ID within the source
    */
-  public get baseId(): BaseRecipeId {
+  public get baseId(): BaseFillingId {
     return this._baseId;
   }
 
@@ -129,7 +129,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   /**
    * Human-readable recipe name
    */
-  public get name(): RecipeName {
+  public get name(): FillingName {
     return this._recipe.name;
   }
 
@@ -150,7 +150,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   /**
    * The golden version ID
    */
-  public get goldenVersionSpec(): RecipeVersionSpec {
+  public get goldenVersionSpec(): FillingVersionSpec {
     return this._recipe.goldenVersionSpec;
   }
 
@@ -190,7 +190,7 @@ export class RuntimeRecipe implements IRuntimeRecipe {
    * @param versionSpec - The version ID to find
    * @returns Success with RuntimeVersion, or Failure if not found
    */
-  public getVersion(versionSpec: RecipeVersionSpec): Result<RuntimeVersion> {
+  public getVersion(versionSpec: FillingVersionSpec): Result<RuntimeVersion> {
     const version = this.versions.find((v) => v.versionSpec === versionSpec);
     if (!version) {
       return Failure.with(`Version ${versionSpec} not found in recipe ${this._id}`);
@@ -301,17 +301,17 @@ export class RuntimeRecipe implements IRuntimeRecipe {
   /**
    * Gets the underlying raw recipe data
    */
-  public get raw(): IRecipe {
+  public get raw(): IFillingRecipe {
     return this._recipe;
   }
 
   /**
-   * Gets the underlying Recipe class instance if available.
-   * Returns undefined if the raw data is a plain IRecipe.
-   * Useful for accessing Recipe-specific methods not available on IRecipe.
+   * Gets the underlying FillingRecipe class instance if available.
+   * Returns undefined if the raw data is a plain IFillingRecipe.
+   * Useful for accessing FillingRecipe-specific methods not available on IFillingRecipe.
    */
-  /* c8 ignore next 3 - rawAsRecipe returns undefined when constructed with plain IRecipe */
-  public get rawAsRecipe(): Recipe | undefined {
-    return this._recipe instanceof Recipe ? this._recipe : undefined;
+  /* c8 ignore next 3 - rawAsFillingRecipe returns undefined when constructed with plain IFillingRecipe */
+  public get rawAsFillingRecipe(): FillingRecipe | undefined {
+    return this._recipe instanceof FillingRecipe ? this._recipe : undefined;
   }
 }

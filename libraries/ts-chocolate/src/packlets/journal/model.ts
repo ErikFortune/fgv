@@ -26,12 +26,12 @@
 import {
   ConfectionVersionId,
   Measurement,
+  FillingId,
+  FillingVersionId,
   IngredientId,
   JournalId,
   MoldId,
   ProcedureId,
-  RecipeId,
-  RecipeVersionId,
   SlotId
 } from '../common';
 
@@ -175,12 +175,12 @@ export interface IConfectionJournalEntry {
   /**
    * The filling recipe ID selected (for filling-select events)
    */
-  readonly fillingRecipeId?: RecipeId;
+  readonly fillingRecipeId?: FillingId;
 
   /**
    * The previous filling recipe ID (for filling-select events)
    */
-  readonly previousFillingRecipeId?: RecipeId;
+  readonly previousFillingRecipeId?: FillingId;
 
   /**
    * The filling ingredient ID selected (for filling-select events with ingredient fillings)
@@ -296,12 +296,12 @@ export const allJournalTypes: JournalType[] = ['recipe', 'confection'];
 // ============================================================================
 
 /**
- * A complete journal record for a recipe cooking session.
- * Tracks what recipe version was used, how it was scaled, and what
+ * A complete journal record for a filling recipe cooking session.
+ * Tracks what filling version was used, how it was scaled, and what
  * modifications were made during the session.
  * @public
  */
-export interface IRecipeJournalRecord {
+export interface IFillingRecipeJournalRecord {
   /**
    * Journal type discriminator
    */
@@ -313,9 +313,9 @@ export interface IRecipeJournalRecord {
   readonly journalId: JournalId;
 
   /**
-   * Recipe version ID that was used (format: "sourceId.recipeId\@versionSpec")
+   * Filling version ID that was used (format: "sourceId.fillingId\@versionSpec")
    */
-  readonly recipeVersionId: RecipeVersionId;
+  readonly fillingVersionId: FillingVersionId;
 
   /**
    * Date of the cooking session (ISO 8601 format)
@@ -341,7 +341,7 @@ export interface IRecipeJournalRecord {
    * If modifications during this session created a new version,
    * this references that new version
    */
-  readonly modifiedVersionId?: RecipeVersionId;
+  readonly modifiedVersionId?: FillingVersionId;
 
   /**
    * Optional detailed journal entries recording what actually happened.
@@ -420,15 +420,17 @@ export interface IConfectionJournalRecord {
  * Use type guards to narrow to specific types.
  * @public
  */
-export type AnyJournalRecord = IRecipeJournalRecord | IConfectionJournalRecord;
+export type AnyJournalRecord = IFillingRecipeJournalRecord | IConfectionJournalRecord;
 
 /**
- * Type guard for IRecipeJournalRecord
+ * Type guard for IFillingRecipeJournalRecord
  * @param record - Journal record to check
- * @returns True if the record is a recipe journal record
+ * @returns True if the record is a filling recipe journal record
  * @public
  */
-export function isRecipeJournalRecord(record: AnyJournalRecord): record is IRecipeJournalRecord {
+export function isFillingRecipeJournalRecord(
+  record: AnyJournalRecord
+): record is IFillingRecipeJournalRecord {
   return record.journalType === 'recipe';
 }
 

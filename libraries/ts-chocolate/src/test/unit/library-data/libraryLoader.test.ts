@@ -49,7 +49,7 @@ describe('libraryLoader', () => {
   // Full library with both ingredients and recipes
   const fullLibraryFiles: FileTree.IInMemoryFile[] = [
     { path: '/library/data/ingredients/felchlin.yaml', contents: 'test: data' },
-    { path: '/library/data/recipes/common.yaml', contents: 'test: data' }
+    { path: '/library/data/fillings/common.yaml', contents: 'test: data' }
   ];
 
   // Partial library with only ingredients
@@ -133,7 +133,7 @@ describe('libraryLoader', () => {
     });
 
     test('returns correct path for recipes', () => {
-      expect(getSubLibraryPath('recipes')).toBe(LibraryPaths.recipes);
+      expect(getSubLibraryPath('fillings')).toBe(LibraryPaths.fillings);
     });
 
     test('returns correct path for journals', () => {
@@ -163,8 +163,8 @@ describe('libraryLoader', () => {
 
     test('navigates to recipes directory', () => {
       const tree = getLibraryDir(fullLibraryFiles);
-      expect(navigateToSubLibrary(tree, 'recipes')).toSucceedAndSatisfy((dir) => {
-        expect(dir.name).toBe('recipes');
+      expect(navigateToSubLibrary(tree, 'fillings')).toSucceedAndSatisfy((dir) => {
+        expect(dir.name).toBe('fillings');
       });
     });
 
@@ -233,7 +233,7 @@ describe('libraryLoader', () => {
       expect(resolveFileTreeSource(source)).toSucceedAndSatisfy((results) => {
         expect(results.length).toBe(2);
         expect(results.map((r) => r.subLibraryId)).toContain('ingredients');
-        expect(results.map((r) => r.subLibraryId)).toContain('recipes');
+        expect(results.map((r) => r.subLibraryId)).toContain('fillings');
       });
     });
 
@@ -258,7 +258,7 @@ describe('libraryLoader', () => {
       const tree = getLibraryDir(fullLibraryFiles);
       const source: ILibraryFileTreeSource = {
         directory: tree,
-        load: { ingredients: true, recipes: false }
+        load: { ingredients: true, fillings: false }
       };
 
       expect(resolveFileTreeSource(source)).toSucceedAndSatisfy((results) => {
@@ -279,24 +279,24 @@ describe('libraryLoader', () => {
 
     test('returns spec value for boolean spec', () => {
       expect(resolveBuiltInSpec(true, 'ingredients')).toBe(true);
-      expect(resolveBuiltInSpec(false, 'recipes')).toBe(false);
+      expect(resolveBuiltInSpec(false, 'fillings')).toBe(false);
     });
 
     test('returns specific sub-library spec when defined', () => {
-      const spec = { ingredients: ['felchlin'], recipes: false };
+      const spec = { ingredients: ['felchlin'], fillings: false };
       expect(resolveBuiltInSpec(spec, 'ingredients')).toEqual(['felchlin']);
-      expect(resolveBuiltInSpec(spec, 'recipes')).toBe(false);
+      expect(resolveBuiltInSpec(spec, 'fillings')).toBe(false);
     });
 
     test('returns default when sub-library not specified', () => {
       const spec = { default: true };
       expect(resolveBuiltInSpec(spec, 'ingredients')).toBe(true);
-      expect(resolveBuiltInSpec(spec, 'recipes')).toBe(true);
+      expect(resolveBuiltInSpec(spec, 'fillings')).toBe(true);
     });
 
     test('returns false when no default and sub-library not specified', () => {
       const spec = { ingredients: true };
-      expect(resolveBuiltInSpec(spec, 'recipes')).toBe(false);
+      expect(resolveBuiltInSpec(spec, 'fillings')).toBe(false);
     });
   });
 
@@ -393,7 +393,7 @@ describe('libraryLoader', () => {
     test('works with ILibraryFileTreeSource', () => {
       const source: ILibraryFileTreeSource = {
         directory: mockDirectory,
-        load: { ingredients: true, recipes: false },
+        load: { ingredients: true, fillings: false },
         mutable: true
       };
       const result = normalizeFileSources(source);

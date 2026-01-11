@@ -27,7 +27,7 @@ import { IProcedure, IProcedureStep } from '../../../packlets/procedures/model';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IProcedureRenderContext } from '../../../packlets/procedures/renderContext';
 import { BaseProcedureId, Celsius, Minutes } from '../../../packlets/common';
-import { IComputedScaledRecipe } from '../../../packlets/recipes';
+import { IComputedScaledFillingRecipe } from '../../../packlets/fillings';
 
 describe('Procedure', () => {
   // ============================================================================
@@ -268,7 +268,7 @@ describe('Procedure', () => {
         createdDate: '2026-01-01',
         ingredients: [],
         baseWeight: 100
-      } as unknown as IComputedScaledRecipe
+      } as unknown as IComputedScaledFillingRecipe
     };
 
     test('renders procedure with steps', () => {

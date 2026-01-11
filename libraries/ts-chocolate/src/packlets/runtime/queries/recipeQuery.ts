@@ -125,7 +125,7 @@ export class RecipeQuery {
    */
   public withChocolateType(type: ChocolateType): RecipeQuery {
     // Get recipe IDs from reverse index for efficiency
-    const matchingRecipes = this._context.recipes.find({ byChocolateType: { chocolateType: type } });
+    const matchingRecipes = this._context.fillings.find({ byChocolateType: { chocolateType: type } });
     /* c8 ignore next 2 - defensive coding: recipes.find with valid spec always succeeds */
     const matchingIds = new Set<string>(
       matchingRecipes.isSuccess() ? matchingRecipes.value.map((r) => r.id as string) : []
@@ -287,7 +287,7 @@ export class RecipeQuery {
    */
   public execute(): ReadonlyArray<RuntimeRecipe> {
     const results: RuntimeRecipe[] = [];
-    for (const recipe of this._context.recipes.values()) {
+    for (const recipe of this._context.fillings.values()) {
       if (this._matchesAllFilters(recipe)) {
         results.push(recipe);
       }
@@ -299,7 +299,7 @@ export class RecipeQuery {
    * Execute and return first matching recipe.
    */
   public first(): RuntimeRecipe | undefined {
-    for (const recipe of this._context.recipes.values()) {
+    for (const recipe of this._context.fillings.values()) {
       if (this._matchesAllFilters(recipe)) {
         return recipe;
       }
@@ -313,7 +313,7 @@ export class RecipeQuery {
    */
   public count(): number {
     let count = 0;
-    for (const recipe of this._context.recipes.values()) {
+    for (const recipe of this._context.fillings.values()) {
       if (this._matchesAllFilters(recipe)) {
         count++;
       }

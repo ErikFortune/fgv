@@ -9,11 +9,11 @@ Creates recipe ingredients from the current session state
 **Signature:**
 
 ```typescript
-toRecipeIngredients(): IRecipeIngredient[];
+toRecipeIngredients(): IFillingIngredient[];
 ```
 **Returns:**
 
-[IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->\[\]
+[IFillingIngredient](./ts-chocolate.fillings.ifillingingredient.md)<!-- -->\[\]
 
 Array of recipe ingredients (collapsed, non-removed)
 

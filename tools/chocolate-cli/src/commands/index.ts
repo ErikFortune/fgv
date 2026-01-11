@@ -23,4 +23,4 @@ export { createDecryptCommand } from './decrypt';
 export { createKeygenCommand } from './keygen';
 export { createPublishDataCommand } from './publishData';
 export { createFetchDataCommand } from './fetchData';
-export { createRecipeCommand } from './recipe';
+export { createFillingCommand } from './filling';

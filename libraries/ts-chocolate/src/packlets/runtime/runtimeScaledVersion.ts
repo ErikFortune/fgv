@@ -26,7 +26,7 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers } from '../common';
-import { IComputedScaledRecipe, IRecipeRating } from '../recipes';
+import { IComputedScaledFillingRecipe, IFillingRating } from '../fillings';
 import {
   IGanacheCalculation,
   calculateFromIngredients,
@@ -36,7 +36,7 @@ import {
 import {
   ICategoryFilter,
   IResolvedScaledIngredient,
-  IRuntimeScaledRecipeVersion,
+  IRuntimeScaledFillingRecipeVersion,
   IRuntimeScalingSource,
   IScaledVersionContext,
   RecipeIngredientsFilter
@@ -96,9 +96,9 @@ function matchesFilter(
  * A resolved view of a scaled recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
+export class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion {
   private readonly _context: ScaledVersionContext;
-  private readonly _scaled: IComputedScaledRecipe;
+  private readonly _scaled: IComputedScaledFillingRecipe;
 
   // Lazy-loaded resolved data
   private _resolvedIngredients: ReadonlyArray<IResolvedScaledIngredient<AnyRuntimeIngredient>> | undefined;
@@ -110,7 +110,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
    * Creates a RuntimeScaledVersion.
    * @internal
    */
-  public constructor(context: ScaledVersionContext, scaled: IComputedScaledRecipe) {
+  public constructor(context: ScaledVersionContext, scaled: IComputedScaledFillingRecipe) {
     this._context = context;
     this._scaled = scaled;
   }
@@ -123,7 +123,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
    */
   public static create(
     context: ScaledVersionContext,
-    scaled: IComputedScaledRecipe
+    scaled: IComputedScaledFillingRecipe
   ): Result<RuntimeScaledVersion> {
     return Success.with(new RuntimeScaledVersion(context, scaled));
   }
@@ -211,7 +211,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * Optional ratings from the source version
    */
-  public get ratings(): ReadonlyArray<IRecipeRating> {
+  public get ratings(): ReadonlyArray<IFillingRating> {
     /* c8 ignore next - empty array returned when ratings undefined */
     return this._scaled.ratings ?? [];
   }
@@ -317,7 +317,7 @@ export class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion {
   /**
    * Gets the underlying raw scaled version data
    */
-  public get raw(): IComputedScaledRecipe {
+  public get raw(): IComputedScaledFillingRecipe {
     return this._scaled;
   }
 

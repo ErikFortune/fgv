@@ -36,8 +36,8 @@ import {
   ConfectionJournalEventType,
   IConfectionJournalEntry,
   IConfectionJournalRecord,
+  IFillingRecipeJournalRecord,
   IJournalEntry,
-  IRecipeJournalRecord,
   JournalEventType,
   JournalType
 } from './model';
@@ -69,20 +69,21 @@ export const journalEntry: Converter<IJournalEntry> = Converters.object<IJournal
 export const journalType: Converter<JournalType> = Converters.enumeratedValue(allJournalTypes);
 
 /**
- * Converter for {@link Journal.IRecipeJournalRecord | IRecipeJournalRecord}.
+ * Converter for {@link Journal.IFillingRecipeJournalRecord | IFillingRecipeJournalRecord}.
  * @public
  */
-export const recipeJournalRecord: Converter<IRecipeJournalRecord> = Converters.object<IRecipeJournalRecord>({
-  journalType: Converters.literal('recipe'),
-  journalId: CommonConverters.journalId,
-  recipeVersionId: CommonConverters.recipeVersionId,
-  date: Converters.string, // ISO 8601 date string
-  targetWeight: CommonConverters.measurement,
-  scaleFactor: Converters.number,
-  notes: Converters.string.optional(),
-  modifiedVersionId: CommonConverters.recipeVersionId.optional(),
-  entries: Converters.arrayOf(journalEntry).optional()
-});
+export const fillingRecipeJournalRecord: Converter<IFillingRecipeJournalRecord> =
+  Converters.object<IFillingRecipeJournalRecord>({
+    journalType: Converters.literal('recipe'),
+    journalId: CommonConverters.journalId,
+    fillingVersionId: CommonConverters.fillingVersionId,
+    date: Converters.string, // ISO 8601 date string
+    targetWeight: CommonConverters.measurement,
+    scaleFactor: Converters.number,
+    notes: Converters.string.optional(),
+    modifiedVersionId: CommonConverters.fillingVersionId.optional(),
+    entries: Converters.arrayOf(journalEntry).optional()
+  });
 
 /**
  * Converter for {@link Journal.ConfectionJournalEventType | ConfectionJournalEventType}.
@@ -107,8 +108,9 @@ export const confectionJournalEntry: Converter<IConfectionJournalEntry> =
     timestamp: Converters.string, // ISO 8601 timestamp
     eventType: confectionJournalEventType,
     // filling-select fields
-    fillingRecipeId: CommonConverters.recipeId.optional(),
-    previousFillingRecipeId: CommonConverters.recipeId.optional(),
+    fillingSlotId: CommonConverters.slotId.optional(),
+    fillingRecipeId: CommonConverters.fillingId.optional(),
+    previousFillingRecipeId: CommonConverters.fillingId.optional(),
     fillingIngredientId: CommonConverters.ingredientId.optional(),
     previousFillingIngredientId: CommonConverters.ingredientId.optional(),
     // mold-select fields
@@ -159,7 +161,7 @@ export const confectionJournalRecord: Converter<IConfectionJournalRecord> =
 export const anyJournalRecord: Converter<AnyJournalRecord> = Converters.discriminatedObject<AnyJournalRecord>(
   'journalType',
   {
-    recipe: recipeJournalRecord,
+    recipe: fillingRecipeJournalRecord,
     confection: confectionJournalRecord
   }
 );

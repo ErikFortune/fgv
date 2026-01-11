@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseIngredientId,
   BaseProcedureId,
-  BaseRecipeId,
+  BaseFillingId,
   Celsius,
   Measurement,
   IngredientId,
@@ -31,13 +31,13 @@ import {
   Minutes,
   Percentage,
   ProcedureId,
-  RecipeId,
-  RecipeName,
-  RecipeVersionId,
-  RecipeVersionSpec,
+  FillingId,
+  FillingName,
+  FillingVersionId,
+  FillingVersionSpec,
   SourceId
 } from '../../../packlets/common';
-import { IRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
 
 import {
   IGanacheCharacteristics,
@@ -46,7 +46,7 @@ import {
   IngredientsLibrary
 } from '../../../packlets/ingredients';
 import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
-import { IRecipe, IRecipeVersion, RecipesLibrary } from '../../../packlets/recipes';
+import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 
 describe('RuntimeContext', () => {
@@ -110,16 +110,16 @@ describe('RuntimeContext', () => {
     tags: ['fresh']
   };
 
-  const darkGanacheRecipe: IRecipe = {
-    baseId: 'dark-ganache' as BaseRecipeId,
-    name: 'Dark Ganache' as RecipeName,
+  const darkGanacheRecipe: IFillingRecipe = {
+    baseId: 'dark-ganache' as BaseFillingId,
+    name: 'Dark Ganache' as FillingName,
     category: 'ganache',
     description: 'A classic dark chocolate ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         notes: 'Original version',
         ingredients: [
@@ -135,7 +135,7 @@ describe('RuntimeContext', () => {
         baseWeight: 300 as Measurement
       },
       {
-        versionSpec: '2026-02-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-02-01-01' as FillingVersionSpec,
         createdDate: '2026-02-01',
         notes: 'Revised version',
         ingredients: [
@@ -147,15 +147,15 @@ describe('RuntimeContext', () => {
     ]
   };
 
-  const milkGanacheRecipe: IRecipe = {
-    baseId: 'milk-ganache' as BaseRecipeId,
-    name: 'Milk Ganache' as RecipeName,
+  const milkGanacheRecipe: IFillingRecipe = {
+    baseId: 'milk-ganache' as BaseFillingId,
+    name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -200,8 +200,8 @@ describe('RuntimeContext', () => {
   };
 
   // Version with procedures - using IOptionsWithPreferred pattern at version level
-  const versionWithProcedures: IRecipeVersion = {
-    versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+  const versionWithProcedures: IFillingRecipeVersion = {
+    versionSpec: '2026-01-01-01' as FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [
       { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -217,25 +217,25 @@ describe('RuntimeContext', () => {
     }
   };
 
-  const darkGanacheWithProceduresRecipe: IRecipe = {
-    baseId: 'dark-ganache-with-procedures' as BaseRecipeId,
-    name: 'Dark Ganache with Procedures' as RecipeName,
+  const darkGanacheWithProceduresRecipe: IFillingRecipe = {
+    baseId: 'dark-ganache-with-procedures' as BaseFillingId,
+    name: 'Dark Ganache with Procedures' as FillingName,
     category: 'ganache',
     description: 'A dark ganache with linked procedures',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [versionWithProcedures]
   };
 
   // Recipe with missing procedure reference (for error handling test)
-  const recipeWithMissingProcedure: IRecipe = {
-    baseId: 'ganache-missing-proc' as BaseRecipeId,
-    name: 'Ganache Missing Proc' as RecipeName,
+  const recipeWithMissingProcedure: IFillingRecipe = {
+    baseId: 'ganache-missing-proc' as BaseFillingId,
+    name: 'Ganache Missing Proc' as FillingName,
     category: 'ganache',
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -270,7 +270,7 @@ describe('RuntimeContext', () => {
       ]
     }).orThrow();
 
-    const recipes = RecipesLibrary.create({
+    const recipes = FillingsLibrary.create({
       builtin: false,
       collections: [
         {
@@ -288,7 +288,7 @@ describe('RuntimeContext', () => {
 
     library = ChocolateLibrary.create({
       builtin: false,
-      libraries: { ingredients, recipes }
+      libraries: { ingredients, fillings: recipes }
     }).orThrow();
   });
 
@@ -313,7 +313,7 @@ describe('RuntimeContext', () => {
     test('create with no builtins creates empty library', () => {
       expect(RuntimeContext.create({ libraryParams: { builtin: false } })).toSucceedAndSatisfy((ctx) => {
         expect(ctx.library.ingredients.size).toBe(0);
-        expect(ctx.library.recipes.size).toBe(0);
+        expect(ctx.library.fillings.size).toBe(0);
       });
     });
 
@@ -389,7 +389,7 @@ describe('RuntimeContext', () => {
     });
 
     test('recipes.get returns RuntimeRecipe', () => {
-      expect(ctx.recipes.get('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+      expect(ctx.fillings.get('test.dark-ganache' as FillingId)).toSucceedAndSatisfy((recipe) => {
         expect(recipe.id).toBe('test.dark-ganache');
         expect(recipe.name).toBe('Dark Ganache');
         expect(recipe.sourceId).toBe('test');
@@ -398,21 +398,21 @@ describe('RuntimeContext', () => {
     });
 
     test('recipes.get caches results', () => {
-      const result1 = ctx.recipes.get('test.dark-ganache' as RecipeId).value;
-      const result2 = ctx.recipes.get('test.dark-ganache' as RecipeId).value;
+      const result1 = ctx.fillings.get('test.dark-ganache' as FillingId).value;
+      const result2 = ctx.fillings.get('test.dark-ganache' as FillingId).value;
       expect(result1).toBe(result2); // Same instance
     });
 
     test('recipes.get fails for non-existent', () => {
-      expect(ctx.recipes.get('test.nonexistent' as RecipeId)).toFail();
+      expect(ctx.fillings.get('test.nonexistent' as FillingId)).toFail();
     });
 
     test('recipes.has returns true for existing', () => {
-      expect(ctx.recipes.has('test.dark-ganache' as RecipeId)).toBe(true);
+      expect(ctx.fillings.has('test.dark-ganache' as FillingId)).toBe(true);
     });
 
     test('recipes.has returns false for non-existent', () => {
-      expect(ctx.recipes.has('test.nonexistent' as RecipeId)).toBe(false);
+      expect(ctx.fillings.has('test.nonexistent' as FillingId)).toBe(false);
     });
   });
 
@@ -436,7 +436,7 @@ describe('RuntimeContext', () => {
     });
 
     test('recipes.values() iterates all recipes', () => {
-      const recipes = Array.from(ctx.recipes.values());
+      const recipes = Array.from(ctx.fillings.values());
       expect(recipes.length).toBe(2);
       const names = recipes.map((r) => r.name);
       expect(names).toContain('Dark Ganache');
@@ -448,7 +448,7 @@ describe('RuntimeContext', () => {
     });
 
     test('recipes.size returns count', () => {
-      expect(ctx.recipes.size).toBe(2);
+      expect(ctx.fillings.size).toBe(2);
     });
   });
 
@@ -486,8 +486,8 @@ describe('RuntimeContext', () => {
       ctx = RuntimeContext.fromLibrary(library).orThrow();
     });
 
-    test('getAllRecipeTags returns unique tags', () => {
-      const tags = ctx.getAllRecipeTags();
+    test('getAllFillingTags returns unique tags', () => {
+      const tags = ctx.getAllFillingTags();
       expect(tags).toContain('classic');
       expect(tags).toContain('dark');
       expect(tags).toContain('milk');
@@ -514,13 +514,13 @@ describe('RuntimeContext', () => {
 
     describe('recipes.find', () => {
       test('finds recipes by tag using indexer', () => {
-        expect(ctx.recipes.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
+        expect(ctx.fillings.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
           expect(recipes.length).toBe(2);
         });
       });
 
       test('finds recipes by chocolate type using indexer', () => {
-        expect(ctx.recipes.find({ byChocolateType: { chocolateType: 'dark' } })).toSucceedAndSatisfy(
+        expect(ctx.fillings.find({ byChocolateType: { chocolateType: 'dark' } })).toSucceedAndSatisfy(
           (recipes) => {
             expect(recipes.length).toBe(1);
             expect(recipes[0].name).toBe('Dark Ganache');
@@ -530,14 +530,14 @@ describe('RuntimeContext', () => {
 
       test('finds recipes by ingredient using indexer', () => {
         expect(
-          ctx.recipes.find({ byIngredient: { ingredientId: 'test.cream' as IngredientId } })
+          ctx.fillings.find({ byIngredient: { ingredientId: 'test.cream' as IngredientId } })
         ).toSucceedAndSatisfy((recipes) => {
           expect(recipes.length).toBe(2);
         });
       });
 
       test('returns empty for no matches', () => {
-        expect(ctx.recipes.find({ byChocolateType: { chocolateType: 'white' } })).toSucceedAndSatisfy(
+        expect(ctx.fillings.find({ byChocolateType: { chocolateType: 'white' } })).toSucceedAndSatisfy(
           (recipes) => {
             expect(recipes.length).toBe(0);
           }
@@ -545,7 +545,7 @@ describe('RuntimeContext', () => {
       });
 
       test('returns empty for empty spec', () => {
-        expect(ctx.recipes.find({})).toSucceedAndSatisfy((recipes) => {
+        expect(ctx.fillings.find({})).toSucceedAndSatisfy((recipes) => {
           expect(recipes.length).toBe(0);
         });
       });
@@ -578,12 +578,12 @@ describe('RuntimeContext', () => {
         ctx.warmUp();
 
         // Use an indexer to build its index
-        expect(ctx.recipes.find({ byTag: { tag: 'classic' } })).toSucceed();
+        expect(ctx.fillings.find({ byTag: { tag: 'classic' } })).toSucceed();
 
         // Invalidate and verify still works (rebuilds on next query)
         ctx.invalidateIndexers();
 
-        expect(ctx.recipes.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
+        expect(ctx.fillings.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
           expect(recipes.length).toBe(2);
         });
       });
@@ -604,7 +604,7 @@ describe('RuntimeContext', () => {
     test('cache counts reflect cached items', () => {
       // Access ingredients to populate cache (eager loading populates all)
       ctx.ingredients.get('test.dark-chocolate' as IngredientId);
-      ctx.recipes.get('test.dark-ganache' as RecipeId);
+      ctx.fillings.get('test.dark-ganache' as FillingId);
 
       // With eager loading, accessing any item loads all items
       expect(ctx.cachedIngredientCount).toBe(4);
@@ -614,7 +614,7 @@ describe('RuntimeContext', () => {
     test('clearCache clears all caches', () => {
       // Populate cache
       ctx.ingredients.get('test.dark-chocolate' as IngredientId);
-      ctx.recipes.get('test.dark-ganache' as RecipeId);
+      ctx.fillings.get('test.dark-ganache' as FillingId);
 
       ctx.clearCache();
 
@@ -626,7 +626,7 @@ describe('RuntimeContext', () => {
       ctx.warmUp();
 
       // Lookups should still work
-      expect(ctx.recipes.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
+      expect(ctx.fillings.find({ byTag: { tag: 'classic' } })).toSucceedAndSatisfy((recipes) => {
         expect(recipes.length).toBe(2);
       });
     });
@@ -637,10 +637,10 @@ describe('RuntimeContext', () => {
   // ============================================================================
 
   describe('journals', () => {
-    const testJournalRecord: IRecipeJournalRecord = {
+    const testJournalRecord: IFillingRecipeJournalRecord = {
       journalType: 'recipe',
       journalId: '2026-03-15-100000-00000001' as JournalId,
-      recipeVersionId: 'test.dark-ganache@2026-01-01-01' as RecipeVersionId,
+      fillingVersionId: 'test.dark-ganache@2026-01-01-01' as FillingVersionId,
       date: '2026-03-15',
       targetWeight: 450 as Measurement,
       scaleFactor: 1.5,
@@ -653,19 +653,19 @@ describe('RuntimeContext', () => {
       ]
     };
 
-    const testJournalRecord2: IRecipeJournalRecord = {
+    const testJournalRecord2: IFillingRecipeJournalRecord = {
       journalType: 'recipe',
       journalId: '2026-03-16-100000-00000002' as JournalId,
-      recipeVersionId: 'test.dark-ganache@2026-02-01-01' as RecipeVersionId,
+      fillingVersionId: 'test.dark-ganache@2026-02-01-01' as FillingVersionId,
       date: '2026-03-16',
       targetWeight: 600 as Measurement,
       scaleFactor: 2.0
     };
 
-    const testJournalRecord3: IRecipeJournalRecord = {
+    const testJournalRecord3: IFillingRecipeJournalRecord = {
       journalType: 'recipe',
       journalId: '2026-03-17-100000-00000003' as JournalId,
-      recipeVersionId: 'test.milk-ganache@2026-01-01-01' as RecipeVersionId,
+      fillingVersionId: 'test.milk-ganache@2026-01-01-01' as FillingVersionId,
       date: '2026-03-17',
       targetWeight: 350 as Measurement,
       scaleFactor: 1.0
@@ -676,7 +676,7 @@ describe('RuntimeContext', () => {
       expect(ctx.journals).toBeInstanceOf(JournalLibrary);
     });
 
-    test('getJournalsForRecipe returns journals for a recipe', () => {
+    test('getJournalsForFilling returns journals for a recipe', () => {
       // Create library with pre-populated journals
       const journalsLib = JournalLibrary.create().orThrow();
       journalsLib.addJournal(testJournalRecord).orThrow();
@@ -687,7 +687,7 @@ describe('RuntimeContext', () => {
         builtin: false,
         libraries: {
           ingredients: library.ingredients,
-          recipes: library.recipes,
+          fillings: library.fillings,
           journals: journalsLib
         }
       }).orThrow();
@@ -695,19 +695,19 @@ describe('RuntimeContext', () => {
       const ctx = RuntimeContext.fromLibrary(libWithJournals).orThrow();
 
       // Get journals for dark-ganache recipe (should have 2)
-      const journals = ctx.getJournalsForRecipe('test.dark-ganache' as RecipeId);
+      const journals = ctx.getJournalsForFilling('test.dark-ganache' as FillingId);
       expect(journals.length).toBe(2);
       expect(journals.map((j) => j.journalId)).toContain('2026-03-15-100000-00000001');
       expect(journals.map((j) => j.journalId)).toContain('2026-03-16-100000-00000002');
     });
 
-    test('getJournalsForRecipe returns empty array for recipe with no journals', () => {
+    test('getJournalsForFilling returns empty array for recipe with no journals', () => {
       const ctx = RuntimeContext.fromLibrary(library).orThrow();
-      const journals = ctx.getJournalsForRecipe('test.dark-ganache' as RecipeId);
+      const journals = ctx.getJournalsForFilling('test.dark-ganache' as FillingId);
       expect(journals).toEqual([]);
     });
 
-    test('getJournalsForVersion returns journals for a specific version', () => {
+    test('getJournalsForFillingVersion returns journals for a specific version', () => {
       // Create library with pre-populated journals
       const journalsLib = JournalLibrary.create().orThrow();
       journalsLib.addJournal(testJournalRecord).orThrow();
@@ -717,7 +717,7 @@ describe('RuntimeContext', () => {
         builtin: false,
         libraries: {
           ingredients: library.ingredients,
-          recipes: library.recipes,
+          fillings: library.fillings,
           journals: journalsLib
         }
       }).orThrow();
@@ -725,14 +725,18 @@ describe('RuntimeContext', () => {
       const ctx = RuntimeContext.fromLibrary(libWithJournals).orThrow();
 
       // Get journals for specific version
-      const journals = ctx.getJournalsForVersion('test.dark-ganache@2026-01-01-01' as RecipeVersionId);
+      const journals = ctx.getJournalsForFillingVersion(
+        'test.dark-ganache@2026-01-01-01' as FillingVersionId
+      );
       expect(journals.length).toBe(1);
       expect(journals[0].journalId).toBe('2026-03-15-100000-00000001');
     });
 
-    test('getJournalsForVersion returns empty array for version with no journals', () => {
+    test('getJournalsForFillingVersion returns empty array for version with no journals', () => {
       const ctx = RuntimeContext.fromLibrary(library).orThrow();
-      const journals = ctx.getJournalsForVersion('test.dark-ganache@2026-01-01-01' as RecipeVersionId);
+      const journals = ctx.getJournalsForFillingVersion(
+        'test.dark-ganache@2026-01-01-01' as FillingVersionId
+      );
       expect(journals).toEqual([]);
     });
   });
@@ -765,7 +769,7 @@ describe('RuntimeContext', () => {
       }).orThrow();
 
       // Create recipes library with procedure references
-      const recipes = RecipesLibrary.create({
+      const recipes = FillingsLibrary.create({
         builtin: false,
         collections: [
           {
@@ -786,7 +790,7 @@ describe('RuntimeContext', () => {
         builtin: false,
         libraries: {
           ingredients: library.ingredients,
-          recipes,
+          fillings: recipes,
           procedures
         }
       }).orThrow();
@@ -794,14 +798,14 @@ describe('RuntimeContext', () => {
 
     test('version without procedures returns undefined', () => {
       const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
-      expect(ctx.recipes.get('test.dark-ganache' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+      expect(ctx.fillings.get('test.dark-ganache' as FillingId)).toSucceedAndSatisfy((recipe) => {
         expect(recipe.goldenVersion.procedures).toBeUndefined();
       });
     });
 
     test('version with procedures resolves procedure objects', () => {
       const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
-      expect(ctx.recipes.get('test.dark-ganache-with-procedures' as RecipeId)).toSucceedAndSatisfy(
+      expect(ctx.fillings.get('test.dark-ganache-with-procedures' as FillingId)).toSucceedAndSatisfy(
         (recipe) => {
           const version = recipe.goldenVersion;
           expect(version.procedures).toBeDefined();
@@ -823,7 +827,7 @@ describe('RuntimeContext', () => {
 
     test('version with procedures resolves recommended procedure', () => {
       const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
-      expect(ctx.recipes.get('test.dark-ganache-with-procedures' as RecipeId)).toSucceedAndSatisfy(
+      expect(ctx.fillings.get('test.dark-ganache-with-procedures' as FillingId)).toSucceedAndSatisfy(
         (recipe) => {
           const version = recipe.goldenVersion;
           expect(version.procedures).toBeDefined();
@@ -835,7 +839,7 @@ describe('RuntimeContext', () => {
 
     test('version with missing procedure reference returns undefined procedures', () => {
       const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
-      expect(ctx.recipes.get('test.ganache-missing-proc' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+      expect(ctx.fillings.get('test.ganache-missing-proc' as FillingId)).toSucceedAndSatisfy((recipe) => {
         // When all procedure references fail to resolve, procedures returns undefined
         expect(recipe.goldenVersion.procedures).toBeUndefined();
       });
@@ -856,7 +860,7 @@ describe('RuntimeContext', () => {
 
     test('procedures are lazily resolved and cached', () => {
       const ctx = RuntimeContext.fromLibrary(libraryWithProcedures).orThrow();
-      expect(ctx.recipes.get('test.dark-ganache-with-procedures' as RecipeId)).toSucceedAndSatisfy(
+      expect(ctx.fillings.get('test.dark-ganache-with-procedures' as FillingId)).toSucceedAndSatisfy(
         (recipe) => {
           const version = recipe.goldenVersion;
           // First access

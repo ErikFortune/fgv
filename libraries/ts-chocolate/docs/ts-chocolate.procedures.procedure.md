@@ -67,7 +67,7 @@ Description
 
 </td><td>
 
-RecipeCategory
+FillingCategory
 
 
 </td><td>

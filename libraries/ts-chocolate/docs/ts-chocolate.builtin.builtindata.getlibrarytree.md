@@ -14,7 +14,7 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   ├── felchlin.json
     │   ├── cacao-barry.json
     │   └── guittard.json
-    ├── recipes/
+    ├── fillings/
     │   └── common.json
     ├── molds/
     │   └── common.json

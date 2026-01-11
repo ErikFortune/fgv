@@ -22,12 +22,12 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
-  BaseRecipeId,
+  BaseFillingId,
   Measurement,
   IngredientId,
   Percentage,
-  RecipeName,
-  RecipeVersionSpec,
+  FillingName,
+  FillingVersionSpec,
   SourceId
 } from '../../../packlets/common';
 
@@ -40,7 +40,7 @@ import {
   IAlcoholIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
+import { IFillingRecipe, FillingsLibrary } from '../../../packlets/fillings';
 import {
   ChocolateLibrary,
   RuntimeContext,
@@ -176,16 +176,16 @@ describe('Query Filters and Builders', () => {
     }
   };
 
-  const darkGanacheRecipe: IRecipe = {
-    baseId: 'dark-ganache' as BaseRecipeId,
-    name: 'Dark Ganache' as RecipeName,
+  const darkGanacheRecipe: IFillingRecipe = {
+    baseId: 'dark-ganache' as BaseFillingId,
+    name: 'Dark Ganache' as FillingName,
     category: 'ganache',
     description: 'A classic dark chocolate ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -194,7 +194,7 @@ describe('Query Filters and Builders', () => {
         baseWeight: 300 as Measurement
       },
       {
-        versionSpec: '2026-02-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-02-01-01' as FillingVersionSpec,
         createdDate: '2026-02-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 180 as Measurement },
@@ -205,15 +205,15 @@ describe('Query Filters and Builders', () => {
     ]
   };
 
-  const milkGanacheRecipe: IRecipe = {
-    baseId: 'milk-ganache' as BaseRecipeId,
-    name: 'Milk Ganache' as RecipeName,
+  const milkGanacheRecipe: IFillingRecipe = {
+    baseId: 'milk-ganache' as BaseFillingId,
+    name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -224,15 +224,15 @@ describe('Query Filters and Builders', () => {
     ]
   };
 
-  const whiteGanacheRecipe: IRecipe = {
-    baseId: 'white-ganache' as BaseRecipeId,
-    name: 'White Ganache' as RecipeName,
+  const whiteGanacheRecipe: IFillingRecipe = {
+    baseId: 'white-ganache' as BaseFillingId,
+    name: 'White Ganache' as FillingName,
     category: 'ganache',
     tags: ['sweet', 'white'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.white-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -267,7 +267,7 @@ describe('Query Filters and Builders', () => {
       ]
     }).orThrow();
 
-    const recipes = RecipesLibrary.create({
+    const recipes = FillingsLibrary.create({
       builtin: false,
       collections: [
         {
@@ -286,7 +286,7 @@ describe('Query Filters and Builders', () => {
 
     const library = ChocolateLibrary.create({
       builtin: false,
-      libraries: { ingredients, recipes }
+      libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
     ctx = RuntimeContext.fromLibrary(library).orThrow();
@@ -645,9 +645,9 @@ describe('Query Filters and Builders', () => {
     });
 
     describe('usage filters', () => {
-      test('usedInRecipes() filters to used ingredients', () => {
+      test('usedInFillings() filters to used ingredients', () => {
         const query = new IngredientQuery(ctx);
-        const results = query.usedInRecipes().execute();
+        const results = query.usedInFillings().execute();
         expect(results.length).toBeGreaterThan(0);
       });
 

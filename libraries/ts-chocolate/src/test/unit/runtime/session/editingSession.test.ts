@@ -22,13 +22,13 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
-  BaseRecipeId,
+  BaseFillingId,
   Measurement,
   IngredientId,
   Percentage,
-  RecipeId,
-  RecipeName,
-  RecipeVersionSpec,
+  FillingId,
+  FillingName,
+  FillingVersionSpec,
   SourceId
 } from '../../../../packlets/common';
 import {
@@ -37,7 +37,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../../packlets/ingredients';
-import { IRecipe, RecipesLibrary } from '../../../../packlets/recipes';
+import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/fillings';
 import { ChocolateLibrary, RuntimeContext, Session } from '../../../../packlets/runtime';
 
 describe('EditingSession', () => {
@@ -107,15 +107,15 @@ describe('EditingSession', () => {
     }
   };
 
-  const testRecipe: IRecipe = {
-    baseId: 'test-ganache' as BaseRecipeId,
-    name: 'Test Ganache' as RecipeName,
+  const testRecipe: IFillingRecipe = {
+    baseId: 'test-ganache' as BaseFillingId,
+    name: 'Test Ganache' as FillingName,
     category: 'ganache',
     description: 'A test ganache recipe',
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         notes: 'Original recipe',
         ingredients: [
@@ -148,7 +148,7 @@ describe('EditingSession', () => {
       ]
     }).orThrow();
 
-    const recipes = RecipesLibrary.create({
+    const recipes = FillingsLibrary.create({
       builtin: false,
       collections: [
         {
@@ -165,7 +165,7 @@ describe('EditingSession', () => {
 
     const library = ChocolateLibrary.create({
       builtin: false,
-      libraries: { ingredients, recipes }
+      libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
     ctx = RuntimeContext.fromLibrary(library).orThrow();
@@ -177,7 +177,7 @@ describe('EditingSession', () => {
 
   describe('create', () => {
     test('creates session with default scale factor', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       expect(Session.RecipeEditingSession.create({ sourceVersion: version })).toSucceedAndSatisfy(
         (session) => {
           expect(session.scaleFactor).toBe(1.0);
@@ -191,7 +191,7 @@ describe('EditingSession', () => {
     });
 
     test('creates session with specified scale factor', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       expect(
         Session.RecipeEditingSession.create({
           sourceVersion: version,
@@ -204,7 +204,7 @@ describe('EditingSession', () => {
     });
 
     test('creates session with specified target weight', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       expect(
         Session.RecipeEditingSession.create({
           sourceVersion: version,
@@ -217,7 +217,7 @@ describe('EditingSession', () => {
     });
 
     test('creates session with journaling disabled', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       expect(
         Session.RecipeEditingSession.create({
           sourceVersion: version,
@@ -229,7 +229,7 @@ describe('EditingSession', () => {
     });
 
     test('initializes ingredients from source version', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       expect(Session.RecipeEditingSession.create({ sourceVersion: version })).toSucceedAndSatisfy(
         (session) => {
           expect(session.ingredients.size).toBe(2);
@@ -249,7 +249,7 @@ describe('EditingSession', () => {
 
   describe('setScaleFactor', () => {
     test('scales all ingredients proportionally', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.setScaleFactor(2.0)).toSucceed();
@@ -266,7 +266,7 @@ describe('EditingSession', () => {
     });
 
     test('adds journal entry for scale change', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setScaleFactor(1.5).orThrow();
@@ -278,7 +278,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for non-positive scale factor', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.setScaleFactor(0)).toFailWith(/positive/);
@@ -286,7 +286,7 @@ describe('EditingSession', () => {
     });
 
     test('does not rescale added ingredients', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       // Add a new ingredient
@@ -310,7 +310,7 @@ describe('EditingSession', () => {
 
   describe('setTargetWeight', () => {
     test('calculates scale factor from target weight', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.setTargetWeight(600 as Measurement)).toSucceed();
@@ -319,7 +319,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for non-positive target weight', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.setTargetWeight(0 as Measurement)).toFailWith(/positive/);
@@ -333,7 +333,7 @@ describe('EditingSession', () => {
 
   describe('getIngredient', () => {
     test('returns existing ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.getIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy((ing) => {
@@ -342,7 +342,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.getIngredient('test.non-existent' as IngredientId)).toFailWith(/not found/);
@@ -351,7 +351,7 @@ describe('EditingSession', () => {
 
   describe('setIngredientAmount', () => {
     test('updates ingredient amount', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -365,7 +365,7 @@ describe('EditingSession', () => {
     });
 
     test('reverts to original status if amount matches original', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
@@ -377,7 +377,7 @@ describe('EditingSession', () => {
     });
 
     test('adds journal entry for amount change', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setIngredientAmount('test.dark-chocolate' as IngredientId, 250 as Measurement).orThrow();
@@ -390,7 +390,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.setIngredientAmount('test.non-existent' as IngredientId, 100 as Measurement)).toFailWith(
@@ -399,7 +399,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for negative amount', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -408,7 +408,7 @@ describe('EditingSession', () => {
     });
 
     test('maintains added status when modifying added ingredient amount', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       // Add a new ingredient
@@ -427,7 +427,7 @@ describe('EditingSession', () => {
 
   describe('addIngredientAmount', () => {
     test('adds to existing ingredient amount', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -439,7 +439,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.addIngredientAmount('test.non-existent' as IngredientId, 50 as Measurement)).toFailWith(
@@ -450,7 +450,7 @@ describe('EditingSession', () => {
 
   describe('addIngredient', () => {
     test('adds new ingredient to session', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.addIngredient('test.butter' as IngredientId, 30 as Measurement)).toSucceed();
@@ -463,7 +463,7 @@ describe('EditingSession', () => {
     });
 
     test('adds journal entry for new ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
@@ -475,7 +475,7 @@ describe('EditingSession', () => {
     });
 
     test('fails if ingredient already exists', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.addIngredient('test.dark-chocolate' as IngredientId, 100 as Measurement)).toFailWith(
@@ -484,7 +484,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for negative amount', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.addIngredient('test.butter' as IngredientId, -10 as Measurement)).toFailWith(/negative/);
@@ -493,7 +493,7 @@ describe('EditingSession', () => {
 
   describe('removeIngredient', () => {
     test('marks original ingredient as removed', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.removeIngredient('test.cream' as IngredientId)).toSucceed();
@@ -504,7 +504,7 @@ describe('EditingSession', () => {
     });
 
     test('completely removes added ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.addIngredient('test.butter' as IngredientId, 30 as Measurement).orThrow();
@@ -513,7 +513,7 @@ describe('EditingSession', () => {
     });
 
     test('adds journal entry for removal', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.removeIngredient('test.cream' as IngredientId).orThrow();
@@ -524,7 +524,7 @@ describe('EditingSession', () => {
     });
 
     test('fails for non-existent ingredient', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(session.removeIngredient('test.non-existent' as IngredientId)).toFailWith(/not found/);
@@ -533,7 +533,7 @@ describe('EditingSession', () => {
 
   describe('substituteIngredient', () => {
     test('substitutes one ingredient for another', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -555,7 +555,7 @@ describe('EditingSession', () => {
     });
 
     test('allows specifying different amount for substitute', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -572,7 +572,7 @@ describe('EditingSession', () => {
     });
 
     test('adds journal entry for substitution', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.substituteIngredient('test.cream' as IngredientId, 'test.butter' as IngredientId).orThrow();
@@ -584,7 +584,7 @@ describe('EditingSession', () => {
     });
 
     test('fails if original not found', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -593,7 +593,7 @@ describe('EditingSession', () => {
     });
 
     test('fails if substitute already exists', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -604,7 +604,7 @@ describe('EditingSession', () => {
 
   describe('addNote', () => {
     test('adds note to journal', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.addNote('Starting cooking session');
@@ -615,7 +615,7 @@ describe('EditingSession', () => {
     });
 
     test('does not add note when journaling is disabled', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({
         sourceVersion: version,
         enableJournal: false
@@ -632,7 +632,7 @@ describe('EditingSession', () => {
 
   describe('toJournalRecord', () => {
     test('creates journal record from session', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setScaleFactor(1.5).orThrow();
@@ -640,7 +640,7 @@ describe('EditingSession', () => {
 
       expect(session.toJournalRecord('Session notes')).toSucceedAndSatisfy((record) => {
         expect(record.journalId).toBeDefined();
-        expect(record.recipeVersionId).toBe('test.test-ganache@2026-01-01-01');
+        expect(record.fillingVersionId).toBe('test.test-ganache@2026-01-01-01');
         expect(record.targetWeight).toBe(450);
         expect(record.scaleFactor).toBe(1.5);
         expect(record.notes).toBe('Session notes');
@@ -649,7 +649,7 @@ describe('EditingSession', () => {
     });
 
     test('omits entries when journaling is disabled', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({
         sourceVersion: version,
         enableJournal: false
@@ -663,7 +663,7 @@ describe('EditingSession', () => {
 
   describe('toRecipeIngredients', () => {
     test('returns non-removed ingredients', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.removeIngredient('test.cream' as IngredientId).orThrow();
@@ -677,7 +677,7 @@ describe('EditingSession', () => {
     });
 
     test('excludes zero-amount ingredients', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setIngredientAmount('test.cream' as IngredientId, 0 as Measurement).orThrow();
@@ -690,7 +690,7 @@ describe('EditingSession', () => {
 
   describe('toRecipeVersion', () => {
     test('creates recipe version from session state', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.setScaleFactor(2).orThrow();
@@ -703,7 +703,7 @@ describe('EditingSession', () => {
     });
 
     test('fails if no ingredients remain', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       session.removeIngredient('test.dark-chocolate' as IngredientId).orThrow();
@@ -715,7 +715,7 @@ describe('EditingSession', () => {
 
   describe('save', () => {
     test('creates journal record when requested', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -730,7 +730,7 @@ describe('EditingSession', () => {
     });
 
     test('creates new version when requested', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -744,7 +744,7 @@ describe('EditingSession', () => {
     });
 
     test('fails if versionLabel missing when creating new version', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -755,7 +755,7 @@ describe('EditingSession', () => {
     });
 
     test('creates both journal record and version', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({ sourceVersion: version }).orThrow();
 
       expect(
@@ -778,7 +778,7 @@ describe('EditingSession', () => {
 
   describe('journaling disabled', () => {
     test('does not record journal entries when disabled', () => {
-      const version = ctx.recipes.get('test.test-ganache' as RecipeId).orThrow().goldenVersion;
+      const version = ctx.fillings.get('test.test-ganache' as FillingId).orThrow().goldenVersion;
       const session = Session.RecipeEditingSession.create({
         sourceVersion: version,
         enableJournal: false

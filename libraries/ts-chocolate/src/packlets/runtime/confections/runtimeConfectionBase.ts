@@ -35,7 +35,7 @@ import {
   ID_SEPARATOR,
   SourceId
 } from '../../common';
-import { IProcedureRef } from '../../recipes';
+import { IProcedureRef } from '../../fillings';
 import {
   AnyConfectionVersion,
   ConfectionData,

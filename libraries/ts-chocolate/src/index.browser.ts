@@ -31,12 +31,12 @@ import * as Calculations from './packlets/calculations';
 import * as Confections from './packlets/confections';
 // eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific crypto exports
 import * as Crypto from './packlets/crypto/index.browser';
+import * as Fillings from './packlets/fillings';
 import * as Ingredients from './packlets/ingredients';
 import * as Journal from './packlets/journal';
 import * as LibraryData from './packlets/library-data';
 import * as Molds from './packlets/molds';
 import * as Procedures from './packlets/procedures';
-import * as Recipes from './packlets/recipes';
 import * as Runtime from './packlets/runtime';
 
 export {
@@ -44,11 +44,11 @@ export {
   Calculations,
   Confections,
   Crypto,
+  Fillings,
   Ingredients,
   Journal,
   LibraryData,
   Molds,
   Procedures,
-  Recipes,
   Runtime
 };

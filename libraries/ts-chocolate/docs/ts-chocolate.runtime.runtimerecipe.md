@@ -9,9 +9,9 @@ A resolved view of a recipe with navigation and version access. Immutable - does
 **Signature:**
 
 ```typescript
-export declare class RuntimeRecipe implements IRuntimeRecipe 
+export declare class RuntimeRecipe implements IRuntimeFillingRecipe 
 ```
-**Implements:** [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
+**Implements:** [IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)
 
 ## Remarks
 
@@ -52,7 +52,7 @@ Description
 
 </td><td>
 
-[BaseRecipeId](./ts-chocolate.baserecipeid.md)
+[BaseFillingId](./ts-chocolate.basefillingid.md)
 
 
 </td><td>
@@ -115,7 +115,7 @@ The golden (default approved) version - resolved. Resolved lazily on first acces
 
 </td><td>
 
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
 
 
 </td><td>
@@ -136,7 +136,7 @@ The golden version ID
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>
@@ -178,7 +178,7 @@ Gets the latest version (by created date). Resolved lazily on first access.
 
 </td><td>
 
-[RecipeName](./ts-chocolate.recipename.md)
+[FillingName](./ts-chocolate.fillingname.md)
 
 
 </td><td>
@@ -199,7 +199,7 @@ Human-readable recipe name
 
 </td><td>
 
-[IRecipe](./ts-chocolate.recipes.irecipe.md)
+[IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)
 
 
 </td><td>
@@ -210,7 +210,7 @@ Gets the underlying raw recipe data
 </td></tr>
 <tr><td>
 
-[rawAsRecipe](./ts-chocolate.runtime.runtimerecipe.rawasrecipe.md)
+[rawAsFillingRecipe](./ts-chocolate.runtime.runtimerecipe.rawasfillingrecipe.md)
 
 
 </td><td>
@@ -220,12 +220,12 @@ Gets the underlying raw recipe data
 
 </td><td>
 
-[Recipe](./ts-chocolate.recipes.recipe.md) \| undefined
+[FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md) \| undefined
 
 
 </td><td>
 
-Gets the underlying Recipe class instance if available. Returns undefined if the raw data is a plain IRecipe. Useful for accessing Recipe-specific methods not available on IRecipe.
+Gets the underlying FillingRecipe class instance if available. Returns undefined if the raw data is a plain IFillingRecipe. Useful for accessing FillingRecipe-specific methods not available on IFillingRecipe.
 
 
 </td></tr>

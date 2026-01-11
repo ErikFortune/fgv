@@ -9,7 +9,7 @@ Discriminated union of all journal record types. Use type guards to narrow to sp
 **Signature:**
 
 ```typescript
-export type AnyJournalRecord = IRecipeJournalRecord | IConfectionJournalRecord;
+export type AnyJournalRecord = IFillingRecipeJournalRecord | IConfectionJournalRecord;
 ```
-**References:** [IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)<!-- -->, [IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjournalrecord.md)
+**References:** [IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)<!-- -->, [IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjournalrecord.md)
 

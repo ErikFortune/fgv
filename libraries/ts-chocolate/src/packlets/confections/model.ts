@@ -38,11 +38,11 @@ import {
   Millimeters,
   MoldId,
   ProcedureId,
-  RecipeId,
+  FillingId,
   SlotId
 } from '../common';
 
-import { IProcedureRef } from '../recipes';
+import { IProcedureRef } from '../fillings';
 
 // ============================================================================
 // Yield and Decoration Types
@@ -87,7 +87,7 @@ export type FillingOptionType = 'recipe' | 'ingredient';
  * Can be either a RecipeId or IngredientId - disambiguation happens via the type discriminator.
  * @public
  */
-export type FillingOptionId = RecipeId | IngredientId;
+export type FillingOptionId = FillingId | IngredientId;
 
 /**
  * Recipe filling option - references a recipe (e.g., ganache)
@@ -96,8 +96,8 @@ export type FillingOptionId = RecipeId | IngredientId;
 export interface IRecipeFillingOption {
   /** Discriminator for recipe filling */
   readonly type: 'recipe';
-  /** The recipe ID */
-  readonly id: RecipeId;
+  /** The filling recipe ID */
+  readonly id: FillingId;
   /** Optional notes specific to this filling option */
   readonly notes?: string;
 }

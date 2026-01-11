@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[fillingId?](./ts-chocolate.runtime.session.isessionfillingslot.fillingid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FillingId](./ts-chocolate.fillingid.md)
+
+
+</td><td>
+
+_(Optional)_ The currently selected filling ID (mutually exclusive with ingredientId)
+
+
+</td></tr>
+<tr><td>
+
 [ingredientId?](./ts-chocolate.runtime.session.isessionfillingslot.ingredientid.md)
 
 
@@ -52,7 +73,28 @@ Description
 
 </td><td>
 
-_(Optional)_ The currently selected filling ingredient ID (mutually exclusive with recipeId)
+_(Optional)_ The currently selected filling ingredient ID (mutually exclusive with fillingId)
+
+
+</td></tr>
+<tr><td>
+
+[originalFillingId?](./ts-chocolate.runtime.session.isessionfillingslot.originalfillingid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FillingId](./ts-chocolate.fillingid.md)
+
+
+</td><td>
+
+_(Optional)_ The original filling recipe ID when the session started
 
 
 </td></tr>
@@ -74,48 +116,6 @@ _(Optional)_ The currently selected filling ingredient ID (mutually exclusive wi
 </td><td>
 
 _(Optional)_ The original filling ingredient ID when the session started
-
-
-</td></tr>
-<tr><td>
-
-[originalRecipeId?](./ts-chocolate.runtime.session.isessionfillingslot.originalrecipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeId](./ts-chocolate.recipeid.md)
-
-
-</td><td>
-
-_(Optional)_ The original filling recipe ID when the session started
-
-
-</td></tr>
-<tr><td>
-
-[recipeId?](./ts-chocolate.runtime.session.isessionfillingslot.recipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeId](./ts-chocolate.recipeid.md)
-
-
-</td><td>
-
-_(Optional)_ The currently selected filling recipe ID (mutually exclusive with ingredientId)
 
 
 </td></tr>

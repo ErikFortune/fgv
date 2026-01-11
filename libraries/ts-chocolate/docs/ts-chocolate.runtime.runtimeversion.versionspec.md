@@ -9,5 +9,5 @@ The version specifier
 **Signature:**
 
 ```typescript
-get versionSpec(): RecipeVersionSpec;
+get versionSpec(): FillingVersionSpec;
 ```

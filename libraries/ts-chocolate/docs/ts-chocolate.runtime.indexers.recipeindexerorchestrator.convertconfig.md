@@ -9,7 +9,7 @@ Converts a JSON query specification to a typed config.
 **Signature:**
 
 ```typescript
-convertConfig(json: unknown): Result<IRecipeQuerySpec>;
+convertConfig(json: unknown): Result<IFillingRecipeQuerySpec>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ JSON object with indexer name strings as keys and config objects as values
 
 **Returns:**
 
-Result&lt;[IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)<!-- -->&gt;
+Result&lt;[IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
 
 Typed query spec
 

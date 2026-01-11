@@ -9,5 +9,5 @@ The base recipe ID within the source
 **Signature:**
 
 ```typescript
-get baseId(): BaseRecipeId;
+get baseId(): BaseFillingId;
 ```

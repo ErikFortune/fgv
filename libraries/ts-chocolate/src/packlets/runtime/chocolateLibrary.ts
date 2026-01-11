@@ -31,15 +31,15 @@ import {
   JournalId,
   MoldId,
   ProcedureId,
-  RecipeId,
-  RecipeVersionId,
-  RecipeVersionSpec,
+  FillingId,
+  FillingVersionId,
+  FillingVersionSpec,
   SourceId
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
-import { IRecipe, RecipesLibrary } from '../recipes';
-import { IRecipeJournalRecord, JournalLibrary } from '../journal';
+import { IFillingRecipe, FillingsLibrary } from '../fillings';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
 import { Mold, MoldsLibrary } from '../molds';
 import { Procedure, ProceduresLibrary } from '../procedures';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
@@ -68,9 +68,9 @@ export interface IInstantiatedLibrarySource {
   readonly ingredients?: IngredientsLibrary;
 
   /**
-   * Pre-built recipes library
+   * Pre-built fillings library
    */
-  readonly recipes?: RecipesLibrary;
+  readonly fillings?: FillingsLibrary;
 
   /**
    * Pre-built journals library
@@ -154,7 +154,7 @@ export interface IChocolateLibraryCreateParams {
  */
 export class ChocolateLibrary {
   private readonly _ingredients: IngredientsLibrary;
-  private readonly _recipes: RecipesLibrary;
+  private readonly _recipes: FillingsLibrary;
   private readonly _journals: JournalLibrary;
   private readonly _molds: MoldsLibrary;
   private readonly _procedures: ProceduresLibrary;
@@ -167,7 +167,7 @@ export class ChocolateLibrary {
 
   private constructor(
     ingredients: IngredientsLibrary,
-    recipes: RecipesLibrary,
+    recipes: FillingsLibrary,
     journals: JournalLibrary,
     molds: MoldsLibrary,
     procedures: ProceduresLibrary,
@@ -206,10 +206,10 @@ export class ChocolateLibrary {
       logger
     }).report(logger);
 
-    const recipesResult = RecipesLibrary.create({
-      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'recipes'),
-      fileSources: ChocolateLibrary._toFileSources(fileSources, 'recipes'),
-      mergeLibraries: params.libraries?.recipes,
+    const recipesResult = FillingsLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'fillings'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'fillings'),
+      mergeLibraries: params.libraries?.fillings,
       logger
     }).report(logger);
 
@@ -290,9 +290,9 @@ export class ChocolateLibrary {
   }
 
   /**
-   * The {@link Recipes.RecipesLibrary | recipes library}.
+   * The {@link Fillings.FillingsLibrary | fillings library}.
    */
-  public get recipes(): RecipesLibrary {
+  public get fillings(): FillingsLibrary {
     return this._recipes;
   }
 
@@ -343,20 +343,20 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Recipes.Recipe | recipe} by its {@link RecipeId | composite ID}
-   * @param id - The {@link RecipeId | id} of the recipe to retrieve.
+   * Gets a {@link Recipes.Recipe | recipe} by its {@link FillingId | composite ID}
+   * @param id - The {@link FillingId | id} of the recipe to retrieve.
    * @returns `Success` with recipe, or `Failure` if not found
    */
-  public getRecipe(id: RecipeId): Result<IRecipe> {
+  public getRecipe(id: FillingId): Result<IFillingRecipe> {
     return this._recipes.get(id);
   }
 
   /**
    * Checks if a recipe exists
-   * @param id - The {@link RecipeId | id} of the recipe to check.
+   * @param id - The {@link FillingId | id} of the recipe to check.
    * @returns `true` if the recipe exists
    */
-  public hasRecipe(id: RecipeId): boolean {
+  public hasRecipe(id: FillingId): boolean {
     return this._recipes.has(id);
   }
 
@@ -433,7 +433,7 @@ export class ChocolateLibrary {
    * @param versionSpec - Optional version ID (default: golden version)
    * @returns Success with ganache calculation, or Failure if recipe not found or ingredients missing
    */
-  public calculateGanache(id: RecipeId, versionSpec?: RecipeVersionSpec): Result<IGanacheCalculation> {
+  public calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation> {
     return this.getRecipe(id).onSuccess((recipe) =>
       calculateGanache(recipe, this.createIngredientResolver(), versionSpec)
     );
@@ -448,8 +448,8 @@ export class ChocolateLibrary {
    * @returns Success with ganache calculation, or Failure if ingredients missing
    */
   public calculateGanacheForRecipe(
-    recipe: IRecipe,
-    versionSpec?: RecipeVersionSpec
+    recipe: IFillingRecipe,
+    versionSpec?: FillingVersionSpec
   ): Result<IGanacheCalculation> {
     return calculateGanache(recipe, this.createIngredientResolver(), versionSpec);
   }
@@ -459,32 +459,34 @@ export class ChocolateLibrary {
   // ============================================================================
 
   /**
-   * Gets all {@link Journal.IRecipeJournalRecord | journal records} for a recipe (across all versions)
-   * @param recipeId - The {@link RecipeId | recipe ID} to search for
+   * Gets all {@link Journal.IFillingRecipeJournalRecord | journal records} for a filling (across all versions)
+   * @param fillingId - The {@link FillingId | filling ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
    */
-  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord> {
-    return this._journals.getJournalsForRecipe(recipeId);
+  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord> {
+    return this._journals.getJournalsForFilling(fillingId);
   }
 
   /**
-   * Gets all {@link Journal.IRecipeJournalRecord | journal records} for a specific recipe version
-   * @param versionId - The {@link RecipeVersionId | recipe version ID} to search for
+   * Gets all {@link Journal.IFillingRecipeJournalRecord | journal records} for a specific filling version
+   * @param versionId - The {@link FillingVersionId | filling version ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
    */
-  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord> {
-    return this._journals.getJournalsForRecipeVersion(versionId);
+  public getJournalsForFillingVersion(
+    versionId: FillingVersionId
+  ): ReadonlyArray<IFillingRecipeJournalRecord> {
+    return this._journals.getJournalsForFillingVersion(versionId);
   }
 
   /**
-   * Adds a {@link Journal.IRecipeJournalRecord | journal record} to the library
+   * Adds a {@link Journal.IFillingRecipeJournalRecord | journal record} to the library
    * @param journal - The journal record to add
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
    * @public
    */
-  public addJournal(journal: IRecipeJournalRecord): Result<JournalId> {
+  public addJournal(journal: IFillingRecipeJournalRecord): Result<JournalId> {
     return this._journals.addJournal(journal).report(this.logger);
   }
 }

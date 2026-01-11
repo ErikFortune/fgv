@@ -28,17 +28,17 @@ import { captureResult, Failure, Logging, mapResults, Result, Success } from '@f
 import {
   ConfectionId,
   ConfectionVersionId,
+  FillingId,
+  FillingVersionId,
   JournalId,
-  RecipeId,
-  RecipeVersionId,
   Converters as CommonConverters
 } from '../common';
 import {
   AnyJournalRecord,
   IConfectionJournalRecord,
-  IRecipeJournalRecord,
+  IFillingRecipeJournalRecord,
   isConfectionJournalRecord,
-  isRecipeJournalRecord
+  isFillingRecipeJournalRecord
 } from './model';
 import { anyJournalRecord as anyJournalRecordConverter } from './converters';
 
@@ -98,14 +98,14 @@ export class JournalLibrary {
   private readonly _journals: Map<JournalId, AnyJournalRecord>;
 
   /**
-   * Index from {@link RecipeId | recipe ID} to {@link JournalId | journal IDs}
+   * Index from {@link FillingId | filling ID} to {@link JournalId | journal IDs}
    */
-  private readonly _byRecipeId: Map<RecipeId, Set<JournalId>>;
+  private readonly _byFillingId: Map<FillingId, Set<JournalId>>;
 
   /**
-   * Index from {@link RecipeVersionId | recipe version ID} to {@link JournalId | journal IDs}
+   * Index from {@link FillingVersionId | filling version ID} to {@link JournalId | journal IDs}
    */
-  private readonly _byRecipeVersionId: Map<RecipeVersionId, Set<JournalId>>;
+  private readonly _byFillingVersionId: Map<FillingVersionId, Set<JournalId>>;
 
   /**
    * Index from {@link ConfectionId | confection ID} to {@link JournalId | journal IDs}
@@ -124,8 +124,8 @@ export class JournalLibrary {
 
   private constructor(params?: IJournalLibraryParams) {
     this._journals = new Map();
-    this._byRecipeId = new Map();
-    this._byRecipeVersionId = new Map();
+    this._byFillingId = new Map();
+    this._byFillingVersionId = new Map();
     this._byConfectionId = new Map();
     this._byConfectionVersionId = new Map();
     this._logger = params?.logger ?? Logging.LogReporter.createDefault().orThrow();
@@ -163,35 +163,37 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IRecipeJournalRecord | recipe journal records} for a recipe (across all versions)
-   * @param recipeId - The {@link RecipeId | recipe ID} to search for
-   * @returns Array of recipe journal records (empty if none found)
+   * Gets all {@link Journal.IFillingRecipeJournalRecord | filling recipe journal records} for a filling (across all versions)
+   * @param fillingId - The {@link FillingId | filling ID} to search for
+   * @returns Array of filling recipe journal records (empty if none found)
    * @public
    */
-  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord> {
-    const journalIds = this._byRecipeId.get(recipeId);
+  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord> {
+    const journalIds = this._byFillingId.get(fillingId);
     if (!journalIds) {
       return [];
     }
     return Array.from(journalIds)
       .map((id) => this._journals.get(id))
-      .filter((j): j is IRecipeJournalRecord => j !== undefined && isRecipeJournalRecord(j));
+      .filter((j): j is IFillingRecipeJournalRecord => j !== undefined && isFillingRecipeJournalRecord(j));
   }
 
   /**
-   * Gets all {@link Journal.IRecipeJournalRecord | recipe journal records} for a specific recipe version
-   * @param versionId - The {@link RecipeVersionId | recipe version ID} to search for
-   * @returns Array of recipe journal records (empty if none found)
+   * Gets all {@link Journal.IFillingRecipeJournalRecord | filling recipe journal records} for a specific filling version
+   * @param versionId - The {@link FillingVersionId | filling version ID} to search for
+   * @returns Array of filling recipe journal records (empty if none found)
    * @public
    */
-  public getJournalsForRecipeVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord> {
-    const journalIds = this._byRecipeVersionId.get(versionId);
+  public getJournalsForFillingVersion(
+    versionId: FillingVersionId
+  ): ReadonlyArray<IFillingRecipeJournalRecord> {
+    const journalIds = this._byFillingVersionId.get(versionId);
     if (!journalIds) {
       return [];
     }
     return Array.from(journalIds)
       .map((id) => this._journals.get(id))
-      .filter((j): j is IRecipeJournalRecord => j !== undefined && isRecipeJournalRecord(j));
+      .filter((j): j is IFillingRecipeJournalRecord => j !== undefined && isFillingRecipeJournalRecord(j));
   }
 
   /**
@@ -267,13 +269,13 @@ export class JournalLibrary {
   }
 
   /**
-   * Adds a recipe journal record to the library.
-   * @param journal - The recipe journal record to add (validated)
+   * Adds a filling recipe journal record to the library.
+   * @param journal - The filling recipe journal record to add (validated)
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
-   * @deprecated Use addJournal instead which accepts both recipe and confection journals
+   * @deprecated Use addJournal instead which accepts both filling recipe and confection journals
    * @public
    */
-  public addRecipeJournal(journal: IRecipeJournalRecord): Result<JournalId> {
+  public addFillingJournal(journal: IFillingRecipeJournalRecord): Result<JournalId> {
     return this.addJournal(journal);
   }
 
@@ -293,7 +295,7 @@ export class JournalLibrary {
     this._journals.delete(journalId);
 
     // Remove from type-specific indices
-    if (isRecipeJournalRecord(journal)) {
+    if (isFillingRecipeJournalRecord(journal)) {
       this._removeRecipeJournalFromIndices(journal);
     } else if (isConfectionJournalRecord(journal)) {
       this._removeConfectionJournalFromIndices(journal);
@@ -314,7 +316,7 @@ export class JournalLibrary {
     this._journals.set(journal.journalId, journal);
 
     // Add to type-specific indices
-    if (isRecipeJournalRecord(journal)) {
+    if (isFillingRecipeJournalRecord(journal)) {
       this._addRecipeJournalToIndices(journal);
     } else if (isConfectionJournalRecord(journal)) {
       this._addConfectionJournalToIndices(journal);
@@ -324,23 +326,23 @@ export class JournalLibrary {
   /**
    * Adds a recipe journal to the recipe-specific indices
    */
-  private _addRecipeJournalToIndices(journal: IRecipeJournalRecord): void {
+  private _addRecipeJournalToIndices(journal: IFillingRecipeJournalRecord): void {
     // Extract recipe ID from version ID for the recipe index
-    const recipeId = this._extractRecipeId(journal.recipeVersionId);
+    const recipeId = this._extractFillingId(journal.fillingVersionId);
 
     // Add to recipe index
-    let recipeJournals = this._byRecipeId.get(recipeId);
+    let recipeJournals = this._byFillingId.get(recipeId);
     if (!recipeJournals) {
       recipeJournals = new Set();
-      this._byRecipeId.set(recipeId, recipeJournals);
+      this._byFillingId.set(recipeId, recipeJournals);
     }
     recipeJournals.add(journal.journalId);
 
     // Add to version index
-    let versionJournals = this._byRecipeVersionId.get(journal.recipeVersionId);
+    let versionJournals = this._byFillingVersionId.get(journal.fillingVersionId);
     if (!versionJournals) {
       versionJournals = new Set();
-      this._byRecipeVersionId.set(journal.recipeVersionId, versionJournals);
+      this._byFillingVersionId.set(journal.fillingVersionId, versionJournals);
     }
     versionJournals.add(journal.journalId);
   }
@@ -372,24 +374,24 @@ export class JournalLibrary {
   /**
    * Removes a recipe journal from the recipe-specific indices
    */
-  private _removeRecipeJournalFromIndices(journal: IRecipeJournalRecord): void {
-    const recipeId = this._extractRecipeId(journal.recipeVersionId);
+  private _removeRecipeJournalFromIndices(journal: IFillingRecipeJournalRecord): void {
+    const recipeId = this._extractFillingId(journal.fillingVersionId);
 
     // Remove from recipe index
-    const recipeJournals = this._byRecipeId.get(recipeId);
+    const recipeJournals = this._byFillingId.get(recipeId);
     if (recipeJournals) {
       recipeJournals.delete(journal.journalId);
       if (recipeJournals.size === 0) {
-        this._byRecipeId.delete(recipeId);
+        this._byFillingId.delete(recipeId);
       }
     }
 
     // Remove from version index
-    const versionJournals = this._byRecipeVersionId.get(journal.recipeVersionId);
+    const versionJournals = this._byFillingVersionId.get(journal.fillingVersionId);
     if (versionJournals) {
       versionJournals.delete(journal.journalId);
       if (versionJournals.size === 0) {
-        this._byRecipeVersionId.delete(journal.recipeVersionId);
+        this._byFillingVersionId.delete(journal.fillingVersionId);
       }
     }
   }
@@ -420,11 +422,11 @@ export class JournalLibrary {
   }
 
   /**
-   * Extracts the RecipeId from a RecipeVersionId
-   * RecipeVersionId format: "recipeId\@versionSpec"
+   * Extracts the FillingId from a FillingVersionId
+   * FillingVersionId format: "fillingId\@versionSpec"
    */
-  private _extractRecipeId(versionId: RecipeVersionId): RecipeId {
-    return CommonConverters.parsedRecipeVersionId.convert(versionId).orThrow().collectionId;
+  private _extractFillingId(versionId: FillingVersionId): FillingId {
+    return CommonConverters.parsedFillingVersionId.convert(versionId).orThrow().collectionId;
   }
 
   /**
@@ -503,8 +505,8 @@ export class JournalLibrary {
    */
   public clear(): void {
     this._journals.clear();
-    this._byRecipeId.clear();
-    this._byRecipeVersionId.clear();
+    this._byFillingId.clear();
+    this._byFillingVersionId.clear();
     this._byConfectionId.clear();
     this._byConfectionVersionId.clear();
   }

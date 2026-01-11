@@ -25,10 +25,10 @@
 
 import { captureResult, Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
-import { Measurement, IngredientId, SessionId } from '../../common';
-import { IJournalEntry, IRecipeJournalRecord, JournalEventType } from '../../journal';
-import { IRecipeIngredient, IRecipeVersion } from '../../recipes';
-import { IRuntimeRecipeVersion } from '../model';
+import { Measurement, IngredientId, SessionId, FillingVersionSpec } from '../../common';
+import { IJournalEntry, IFillingRecipeJournalRecord, JournalEventType } from '../../journal';
+import { IFillingIngredient, IFillingRecipeVersion } from '../../fillings';
+import { IRuntimeFillingRecipeVersion } from '../model';
 import {
   IEditingSessionParams,
   ISaveOptions,
@@ -60,7 +60,7 @@ import { generateJournalId, generateSessionId } from './sessionUtils';
  */
 export class RecipeEditingSession implements ISessionState {
   private readonly _sessionId: SessionId;
-  private readonly _sourceVersion: IRuntimeRecipeVersion;
+  private readonly _sourceVersion: IRuntimeFillingRecipeVersion;
   private readonly _enableJournal: boolean;
   private readonly _validator: EditingSessionValidator;
   private readonly _logger: Logging.LogReporter<unknown>;
@@ -118,7 +118,7 @@ export class RecipeEditingSession implements ISessionState {
     return this._sessionId;
   }
 
-  public get sourceVersion(): IRuntimeRecipeVersion {
+  public get sourceVersion(): IRuntimeFillingRecipeVersion {
     return this._sourceVersion;
   }
 
@@ -427,14 +427,14 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Success with journal record, or Failure
    * @public
    */
-  public toJournalRecord(notes?: string): Result<IRecipeJournalRecord> {
+  public toJournalRecord(notes?: string): Result<IFillingRecipeJournalRecord> {
     const date = new Date().toISOString().split('T')[0];
 
     return generateJournalId().onSuccess((journalId) =>
       Success.with({
         journalType: 'recipe',
         journalId,
-        recipeVersionId: this._sourceVersion.versionId,
+        fillingVersionId: this._sourceVersion.versionId,
         date,
         targetWeight: this._targetWeight,
         scaleFactor: this._scaleFactor,
@@ -449,8 +449,8 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Array of recipe ingredients (collapsed, non-removed)
    * @public
    */
-  public toRecipeIngredients(): IRecipeIngredient[] {
-    const ingredients: IRecipeIngredient[] = [];
+  public toRecipeIngredients(): IFillingIngredient[] {
+    const ingredients: IFillingIngredient[] = [];
 
     for (const [, session] of this._ingredients) {
       // Skip removed ingredients
@@ -479,7 +479,7 @@ export class RecipeEditingSession implements ISessionState {
    * @returns Success with recipe version data, or Failure
    * @public
    */
-  public toRecipeVersion(versionSpec: string): Result<IRecipeVersion> {
+  public toRecipeVersion(versionSpec: string): Result<IFillingRecipeVersion> {
     const ingredients = this.toRecipeIngredients();
 
     if (ingredients.length === 0) {
@@ -490,7 +490,7 @@ export class RecipeEditingSession implements ISessionState {
     const baseWeight = ingredients.reduce((sum, i) => sum + i.amount, 0) as Measurement;
 
     return Success.with({
-      versionSpec: versionSpec as import('../../common').RecipeVersionSpec,
+      versionSpec: versionSpec as FillingVersionSpec,
       createdDate: new Date().toISOString().split('T')[0],
       ingredients,
       baseWeight
@@ -513,7 +513,7 @@ export class RecipeEditingSession implements ISessionState {
         return journalResult as unknown as Result<ISaveResult>;
       }
       (result as { journalId: string }).journalId = journalResult.value.journalId;
-      (result as { journalRecord: IRecipeJournalRecord }).journalRecord = journalResult.value;
+      (result as { journalRecord: IFillingRecipeJournalRecord }).journalRecord = journalResult.value;
     }
 
     if (options.createNewVersion) {

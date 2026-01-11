@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-get sourceVersion(): IRuntimeRecipeVersion;
+get sourceVersion(): IRuntimeFillingRecipeVersion;
 ```

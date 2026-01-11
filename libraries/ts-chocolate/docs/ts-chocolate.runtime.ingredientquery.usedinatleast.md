@@ -4,7 +4,7 @@
 
 ## Runtime.IngredientQuery.usedInAtLeast() method
 
-Filter to ingredients used in at least N recipes.
+Filter to ingredients used in at least N filling recipes.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ number
 
 </td><td>
 
-Minimum number of recipes
+Minimum number of filling recipes
 
 
 </td></tr>

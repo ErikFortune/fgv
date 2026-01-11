@@ -9,5 +9,5 @@ The source version that was scaled - fully resolved.
 **Signature:**
 
 ```typescript
-readonly sourceVersion: IRuntimeRecipeVersion;
+readonly sourceVersion: IRuntimeFillingRecipeVersion;
 ```

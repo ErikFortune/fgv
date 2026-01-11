@@ -131,7 +131,7 @@ _(Optional)_ The filling ingredient ID selected (for filling-select events with 
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>
@@ -299,7 +299,7 @@ _(Optional)_ The previous filling ingredient ID (for filling-select events)
 
 </td><td>
 
-[RecipeId](./ts-chocolate.recipeid.md)
+[FillingId](./ts-chocolate.fillingid.md)
 
 
 </td><td>

@@ -24,7 +24,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import {
   getIngredientsDirectory,
   getJournalsDirectory,
-  getRecipesDirectory,
+  getFillingsDirectory,
   LibraryPaths,
   navigateToDirectory
 } from '../../../packlets/library-data';
@@ -34,7 +34,7 @@ describe('LibraryData Navigation', () => {
   const mockLibraryFiles: FileTree.IInMemoryFile[] = [
     { path: '/library/data/ingredients/common.json', contents: { items: [] } },
     { path: '/library/data/ingredients/custom.json', contents: { items: [] } },
-    { path: '/library/data/recipes/ganache.json', contents: { items: [] } },
+    { path: '/library/data/fillings/ganache.json', contents: { items: [] } },
     { path: '/library/data/journals/session.json', contents: { items: [] } },
     { path: '/library/other/file.txt', contents: 'some content' }
   ];
@@ -62,7 +62,7 @@ describe('LibraryData Navigation', () => {
     });
 
     test('has correct recipes path', () => {
-      expect(LibraryPaths.recipes).toBe('data/recipes');
+      expect(LibraryPaths.fillings).toBe('data/fillings');
     });
 
     test('has correct journals path', () => {
@@ -139,7 +139,7 @@ describe('LibraryData Navigation', () => {
 
     test('fails when ingredients directory does not exist', () => {
       const noIngredientsFiles: FileTree.IInMemoryFile[] = [
-        { path: '/library/data/recipes/test.json', contents: {} }
+        { path: '/library/data/fillings/test.json', contents: {} }
       ];
 
       expect(FileTree.inMemory(noIngredientsFiles)).toSucceedAndSatisfy((tree) => {
@@ -162,13 +162,13 @@ describe('LibraryData Navigation', () => {
   });
 
   // ============================================================================
-  // getRecipesDirectory Tests
+  // getFillingsDirectory Tests
   // ============================================================================
 
-  describe('getRecipesDirectory', () => {
+  describe('getFillingsDirectory', () => {
     test('returns recipes directory from library tree', () => {
-      expect(getRecipesDirectory(mockLibraryTree)).toSucceedAndSatisfy((dir) => {
-        expect(dir.name).toBe('recipes');
+      expect(getFillingsDirectory(mockLibraryTree)).toSucceedAndSatisfy((dir) => {
+        expect(dir.name).toBe('fillings');
         expect(dir.type).toBe('directory');
       });
     });
@@ -180,7 +180,7 @@ describe('LibraryData Navigation', () => {
 
       expect(FileTree.inMemory(noRecipesFiles)).toSucceedAndSatisfy((tree) => {
         expect(tree.getItem('/library')).toSucceedAndSatisfy((libraryDir) => {
-          expect(getRecipesDirectory(libraryDir)).toFailWith(/directory not found/i);
+          expect(getFillingsDirectory(libraryDir)).toFailWith(/directory not found/i);
         });
       });
     });
@@ -193,7 +193,7 @@ describe('LibraryData Navigation', () => {
       expect(fileResult).toSucceed();
       const file = fileResult.orThrow();
 
-      expect(getRecipesDirectory(file)).toFailWith(/not a directory/i);
+      expect(getFillingsDirectory(file)).toFailWith(/not a directory/i);
     });
   });
 
@@ -211,7 +211,7 @@ describe('LibraryData Navigation', () => {
 
     test('fails when journals directory does not exist', () => {
       const noJournalsFiles: FileTree.IInMemoryFile[] = [
-        { path: '/library/data/recipes/test.json', contents: {} }
+        { path: '/library/data/fillings/test.json', contents: {} }
       ];
 
       expect(FileTree.inMemory(noJournalsFiles)).toSucceedAndSatisfy((tree) => {

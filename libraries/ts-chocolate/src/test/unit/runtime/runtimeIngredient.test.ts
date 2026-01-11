@@ -22,14 +22,14 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseIngredientId,
-  BaseRecipeId,
+  BaseFillingId,
   Celsius,
   DegreesMacMichael,
   Measurement,
   IngredientId,
   Percentage,
-  RecipeName,
-  RecipeVersionSpec,
+  FillingName,
+  FillingVersionSpec,
   SourceId
 } from '../../../packlets/common';
 
@@ -42,7 +42,7 @@ import {
   IAlcoholIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IRecipe, RecipesLibrary } from '../../../packlets/recipes';
+import { IFillingRecipe, FillingsLibrary } from '../../../packlets/fillings';
 import {
   ChocolateLibrary,
   RuntimeContext,
@@ -153,14 +153,14 @@ describe('RuntimeIngredient', () => {
     flavorProfile: 'Rich, sweet, with vanilla and caramel notes'
   };
 
-  const testRecipe: IRecipe = {
-    baseId: 'ganache' as BaseRecipeId,
-    name: 'Test Ganache' as RecipeName,
+  const testRecipe: IFillingRecipe = {
+    baseId: 'ganache' as BaseFillingId,
+    name: 'Test Ganache' as FillingName,
     category: 'ganache',
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.dark-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -192,7 +192,7 @@ describe('RuntimeIngredient', () => {
       ]
     }).orThrow();
 
-    const recipes = RecipesLibrary.create({
+    const recipes = FillingsLibrary.create({
       builtin: false,
       collections: [
         {
@@ -205,7 +205,7 @@ describe('RuntimeIngredient', () => {
 
     const library = ChocolateLibrary.create({
       builtin: false,
-      libraries: { ingredients, recipes }
+      libraries: { ingredients, fillings: recipes }
     }).orThrow();
 
     ctx = RuntimeContext.fromLibrary(library).orThrow();
@@ -550,22 +550,22 @@ describe('RuntimeIngredient', () => {
   // ============================================================================
 
   describe('navigation', () => {
-    test('usedByRecipes returns recipes using ingredient', () => {
+    test('usedByFillings returns recipes using ingredient', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      const recipes = ingredient.usedByRecipes();
+      const recipes = ingredient.usedByFillings();
       expect(recipes.length).toBe(1);
       expect(recipes[0].id).toBe('test.ganache');
     });
 
-    test('primaryInRecipes returns primary usages', () => {
+    test('primaryInFillings returns primary usages', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      const recipes = ingredient.primaryInRecipes();
+      const recipes = ingredient.primaryInFillings();
       expect(recipes.length).toBe(1);
     });
 
-    test('alternateInRecipes returns alternate usages', () => {
+    test('alternateInFillings returns alternate usages', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
-      const recipes = ingredient.alternateInRecipes();
+      const recipes = ingredient.alternateInFillings();
       expect(recipes.length).toBe(0);
     });
   });

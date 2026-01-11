@@ -60,6 +60,27 @@ The [confections library](./ts-chocolate.confections.confectionslibrary.md)<!-- 
 </td></tr>
 <tr><td>
 
+[fillings](./ts-chocolate.runtime.chocolatelibrary.fillings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FillingsLibrary](./ts-chocolate.fillings.fillingslibrary.md)
+
+
+</td><td>
+
+The [fillings library](./ts-chocolate.fillings.fillingslibrary.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [ingredients](./ts-chocolate.runtime.chocolatelibrary.ingredients.md)
 
 
@@ -163,27 +184,6 @@ The [procedures library](./ts-chocolate.procedures.procedureslibrary.md)<!-- -->
 
 
 </td></tr>
-<tr><td>
-
-[recipes](./ts-chocolate.runtime.chocolatelibrary.recipes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipesLibrary](./ts-chocolate.recipes.recipeslibrary.md)
-
-
-</td><td>
-
-The [recipes library](./ts-chocolate.recipes.recipeslibrary.md)<!-- -->.
-
-
-</td></tr>
 </tbody></table>
 
 ## Methods
@@ -214,7 +214,7 @@ Description
 
 </td><td>
 
-Adds a [journal record](./ts-chocolate.journal.irecipejournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.journal.ifillingrecipejournalrecord.md) to the library
 
 
 </td></tr>
@@ -306,7 +306,7 @@ Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite
 </td></tr>
 <tr><td>
 
-[getJournalsForRecipe(recipeId)](./ts-chocolate.runtime.chocolatelibrary.getjournalsforrecipe.md)
+[getJournalsForFilling(fillingId)](./ts-chocolate.runtime.chocolatelibrary.getjournalsforfilling.md)
 
 
 </td><td>
@@ -314,13 +314,13 @@ Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a recipe (across all versions)
+Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a filling (across all versions)
 
 
 </td></tr>
 <tr><td>
 
-[getJournalsForVersion(versionId)](./ts-chocolate.runtime.chocolatelibrary.getjournalsforversion.md)
+[getJournalsForFillingVersion(versionId)](./ts-chocolate.runtime.chocolatelibrary.getjournalsforfillingversion.md)
 
 
 </td><td>
@@ -328,7 +328,7 @@ Gets all [journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a specific recipe version
+Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a specific filling version
 
 
 </td></tr>
@@ -370,7 +370,7 @@ Gets a [procedure](./ts-chocolate.procedures.procedure.md) by its [composite ID]
 
 </td><td>
 
-Gets a [recipe](./ts-chocolate.recipes.recipe.md) by its [composite ID](./ts-chocolate.recipeid.md)
+Gets a  by its [composite ID](./ts-chocolate.fillingid.md)
 
 
 </td></tr>

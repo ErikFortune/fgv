@@ -103,6 +103,27 @@ The confections library for accessing confection data.
 </td></tr>
 <tr><td>
 
+[fillings](./ts-chocolate.runtime.runtimecontext.fillings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[FillingId](./ts-chocolate.fillingid.md)<!-- -->, [RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)<!-- -->, [IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)<!-- -->&gt;
+
+
+</td><td>
+
+A searchable library of all fillings, keyed by composite ID. Fillings are resolved eagerly on first access and cached.
+
+
+</td></tr>
+<tr><td>
+
 [ingredients](./ts-chocolate.runtime.runtimecontext.ingredients.md)
 
 
@@ -181,27 +202,6 @@ Logging.LogReporter&lt;unknown&gt;
 </td><td>
 
 Logger used by this runtime context and its libraries.
-
-
-</td></tr>
-<tr><td>
-
-[recipes](./ts-chocolate.runtime.runtimecontext.recipes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IReadOnlyValidatingLibrary](./ts-chocolate.runtime.ireadonlyvalidatinglibrary.md)<!-- -->&lt;[RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [RuntimeRecipe](./ts-chocolate.runtime.runtimerecipe.md)<!-- -->, [IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)<!-- -->&gt;
-
-
-</td><td>
-
-A searchable library of all recipes, keyed by composite ID. Recipes are resolved eagerly on first access and cached.
 
 
 </td></tr>
@@ -287,6 +287,20 @@ Creates a RuntimeContext wrapping an existing ChocolateLibrary. Use this when yo
 </td></tr>
 <tr><td>
 
+[getAllFillingTags()](./ts-chocolate.runtime.runtimecontext.getallfillingtags.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all unique tags used across fillings.
+
+
+</td></tr>
+<tr><td>
+
 [getAllIngredientTags()](./ts-chocolate.runtime.runtimecontext.getallingredienttags.md)
 
 
@@ -296,20 +310,6 @@ Creates a RuntimeContext wrapping an existing ChocolateLibrary. Use this when yo
 </td><td>
 
 Gets all unique tags used across ingredients.
-
-
-</td></tr>
-<tr><td>
-
-[getAllRecipeTags()](./ts-chocolate.runtime.runtimecontext.getallrecipetags.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets all unique tags used across recipes.
 
 
 </td></tr>
@@ -343,7 +343,7 @@ Gets detailed usage information for an ingredient.
 </td></tr>
 <tr><td>
 
-[getJournalsForRecipe(recipeId)](./ts-chocolate.runtime.runtimecontext.getjournalsforrecipe.md)
+[getJournalsForFilling(fillingId)](./ts-chocolate.runtime.runtimecontext.getjournalsforfilling.md)
 
 
 </td><td>
@@ -351,13 +351,13 @@ Gets detailed usage information for an ingredient.
 
 </td><td>
 
-Gets all journal records for a recipe (across all versions).
+Gets all journal records for a filling (across all versions).
 
 
 </td></tr>
 <tr><td>
 
-[getJournalsForVersion(versionId)](./ts-chocolate.runtime.runtimecontext.getjournalsforversion.md)
+[getJournalsForFillingVersion(versionId)](./ts-chocolate.runtime.runtimecontext.getjournalsforfillingversion.md)
 
 
 </td><td>
@@ -365,7 +365,7 @@ Gets all journal records for a recipe (across all versions).
 
 </td><td>
 
-Gets all journal records for a specific recipe version.
+Gets all journal records for a specific filling version.
 
 
 </td></tr>

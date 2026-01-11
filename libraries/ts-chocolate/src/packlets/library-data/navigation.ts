@@ -31,9 +31,9 @@ export const LibraryPaths = {
    */
   ingredients: 'data/ingredients',
   /**
-   * Path to the recipes data directory.
+   * Path to the fillings data directory.
    */
-  recipes: 'data/recipes',
+  fillings: 'data/fillings',
   /**
    * Path to the journals data directory.
    */
@@ -109,13 +109,13 @@ export function getIngredientsDirectory(
 }
 
 /**
- * Gets the recipes directory from a library tree.
+ * Gets the fillings directory from a library tree.
  * @param tree - The root library FileTree item.
- * @returns `Success` with the recipes directory or `Failure` if not found.
+ * @returns `Success` with the fillings directory or `Failure` if not found.
  * @public
  */
-export function getRecipesDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
-  return navigateToDirectory(tree, LibraryPaths.recipes);
+export function getFillingsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem> {
+  return navigateToDirectory(tree, LibraryPaths.fillings);
 }
 
 /**

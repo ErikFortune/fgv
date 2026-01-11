@@ -24,10 +24,10 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { RecipeId } from '../../common';
-import { allRecipeCategories, RecipeCategory } from '../../recipes';
+import { FillingId } from '../../common';
+import { allFillingCategories, FillingCategory } from '../../fillings';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeRecipe } from '../model';
+import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -42,14 +42,14 @@ export interface IRecipesByCategoryConfig {
   /**
    * The recipe category to search for.
    */
-  readonly category: RecipeCategory;
+  readonly category: FillingCategory;
 }
 
 /**
  * Creates a RecipesByCategory config.
  * @public
  */
-export function recipesByCategoryConfig(category: RecipeCategory): IRecipesByCategoryConfig {
+export function recipesByCategoryConfig(category: FillingCategory): IRecipesByCategoryConfig {
   return { category };
 }
 
@@ -59,7 +59,7 @@ export function recipesByCategoryConfig(category: RecipeCategory): IRecipesByCat
  */
 export const recipesByCategoryConfigConverter: Converter<IRecipesByCategoryConfig> =
   Converters.strictObject<IRecipesByCategoryConfig>({
-    category: Converters.enumeratedValue(allRecipeCategories)
+    category: Converters.enumeratedValue(allFillingCategories)
   });
 
 // ============================================================================
@@ -72,12 +72,12 @@ export const recipesByCategoryConfigConverter: Converter<IRecipesByCategoryConfi
  * @public
  */
 export class RecipesByCategoryIndexer extends BaseIndexer<
-  IRuntimeRecipe,
-  RecipeId,
+  IRuntimeFillingRecipe,
+  FillingId,
   IRecipesByCategoryConfig
 > {
   // Index structure: category -> recipe IDs
-  private _categoryToRecipes: Map<RecipeCategory, Set<RecipeId>> | undefined;
+  private _categoryToRecipes: Map<FillingCategory, Set<FillingId>> | undefined;
 
   /**
    * Creates a new RecipesByCategoryIndexer.
@@ -92,19 +92,19 @@ export class RecipesByCategoryIndexer extends BaseIndexer<
    * Note: Forces index build if not already built.
    * @returns Array of categories
    */
-  public getAllCategories(): ReadonlyArray<RecipeCategory> {
+  public getAllCategories(): ReadonlyArray<FillingCategory> {
     this._ensureBuilt();
     return Array.from(this._categoryToRecipes!.keys());
   }
 
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
-    this._categoryToRecipes = new Map<RecipeCategory, Set<RecipeId>>();
-    const recipes = this.library.recipes;
+    this._categoryToRecipes = new Map<FillingCategory, Set<FillingId>>();
+    const recipes = this.library.fillings;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       if (recipe.category) {
-        this._addToSetIndex(this._categoryToRecipes, recipe.category, recipeId as RecipeId);
+        this._addToSetIndex(this._categoryToRecipes, recipe.category, recipeId as FillingId);
       }
     }
   }
@@ -117,7 +117,7 @@ export class RecipesByCategoryIndexer extends BaseIndexer<
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(
     config: IRecipesByCategoryConfig
-  ): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>> {
+  ): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>> {
     const recipeIds = this._getFromSetIndex(this._categoryToRecipes!, config.category);
     return Success.with(recipeIds);
   }

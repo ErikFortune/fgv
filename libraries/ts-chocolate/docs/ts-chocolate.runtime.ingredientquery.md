@@ -410,7 +410,7 @@ Filter to only sugar ingredients.
 
 </td><td>
 
-Filter to ingredients not used in any recipe.
+Filter to ingredients not used in any filling recipe.
 
 
 </td></tr>
@@ -424,13 +424,13 @@ Filter to ingredients not used in any recipe.
 
 </td><td>
 
-Filter to ingredients used in at least N recipes.
+Filter to ingredients used in at least N filling recipes.
 
 
 </td></tr>
 <tr><td>
 
-[usedInRecipes()](./ts-chocolate.runtime.ingredientquery.usedinrecipes.md)
+[usedInFillings()](./ts-chocolate.runtime.ingredientquery.usedinfillings.md)
 
 
 </td><td>
@@ -438,7 +438,7 @@ Filter to ingredients used in at least N recipes.
 
 </td><td>
 
-Filter to ingredients used in at least one recipe.
+Filter to ingredients used in at least one filling recipe.
 
 
 </td></tr>

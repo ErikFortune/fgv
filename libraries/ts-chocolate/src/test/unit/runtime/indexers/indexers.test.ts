@@ -23,13 +23,13 @@ import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import {
   BaseIngredientId,
-  BaseRecipeId,
+  BaseFillingId,
   Measurement,
   IngredientId,
   Percentage,
-  RecipeId,
-  RecipeName,
-  RecipeVersionSpec,
+  FillingId,
+  FillingName,
+  FillingVersionSpec,
   SourceId
 } from '../../../../packlets/common';
 
@@ -39,8 +39,13 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../../packlets/ingredients';
-import { IRecipe, RecipesLibrary } from '../../../../packlets/recipes';
-import { ChocolateLibrary, Indexers, IRuntimeRecipe, IRuntimeIngredient } from '../../../../packlets/runtime';
+import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/fillings';
+import {
+  ChocolateLibrary,
+  Indexers,
+  IRuntimeFillingRecipe,
+  IRuntimeIngredient
+} from '../../../../packlets/runtime';
 
 // Destructure the Indexers namespace for convenient access
 const {
@@ -124,15 +129,15 @@ describe('Indexers', () => {
     tags: ['fresh']
   };
 
-  const darkGanacheRecipe: IRecipe = {
-    baseId: 'dark-ganache' as BaseRecipeId,
-    name: 'Dark Ganache' as RecipeName,
+  const darkGanacheRecipe: IFillingRecipe = {
+    baseId: 'dark-ganache' as BaseFillingId,
+    name: 'Dark Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'dark'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           {
@@ -149,15 +154,15 @@ describe('Indexers', () => {
     ]
   };
 
-  const milkGanacheRecipe: IRecipe = {
-    baseId: 'milk-ganache' as BaseRecipeId,
-    name: 'Milk Ganache' as RecipeName,
+  const milkGanacheRecipe: IFillingRecipe = {
+    baseId: 'milk-ganache' as BaseFillingId,
+    name: 'Milk Ganache' as FillingName,
     category: 'ganache',
     tags: ['classic', 'milk'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [
           { ingredient: { ids: ['test.milk-chocolate' as IngredientId] }, amount: 200 as Measurement },
@@ -168,15 +173,15 @@ describe('Indexers', () => {
     ]
   };
 
-  const saltedCaramelRecipe: IRecipe = {
-    baseId: 'salted-caramel' as BaseRecipeId,
-    name: 'Salted Caramel' as RecipeName,
+  const saltedCaramelRecipe: IFillingRecipe = {
+    baseId: 'salted-caramel' as BaseFillingId,
+    name: 'Salted Caramel' as FillingName,
     category: 'caramel',
     tags: ['classic', 'salted'],
-    goldenVersionSpec: '2026-01-01-01' as RecipeVersionSpec,
+    goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
     versions: [
       {
-        versionSpec: '2026-01-01-01' as RecipeVersionSpec,
+        versionSpec: '2026-01-01-01' as FillingVersionSpec,
         createdDate: '2026-01-01',
         ingredients: [{ ingredient: { ids: ['test.cream' as IngredientId] }, amount: 200 as Measurement }],
         baseWeight: 200 as Measurement
@@ -205,7 +210,7 @@ describe('Indexers', () => {
       ]
     }).orThrow();
 
-    const recipes = RecipesLibrary.create({
+    const recipes = FillingsLibrary.create({
       builtin: false,
       collections: [
         {
@@ -224,7 +229,7 @@ describe('Indexers', () => {
 
     library = ChocolateLibrary.create({
       builtin: false,
-      libraries: { ingredients, recipes }
+      libraries: { ingredients, fillings: recipes }
     }).orThrow();
   });
 
@@ -517,12 +522,12 @@ describe('Indexers', () => {
 
   describe('RecipeIndexerOrchestrator', () => {
     // Mock recipe resolver that just returns ID as "resolved"
-    const mockRecipeResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+    const mockRecipeResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
       // Create a minimal mock recipe - in real usage this would come from RuntimeContext
       return Success.with({
         id,
-        name: `Recipe ${id}` as RecipeName
-      } as unknown as IRuntimeRecipe);
+        name: `Recipe ${id}` as FillingName
+      } as unknown as IRuntimeFillingRecipe);
     };
 
     let orchestrator: InstanceType<typeof RecipeIndexerOrchestrator>;
@@ -720,11 +725,11 @@ describe('Indexers', () => {
     describe('intersection logic', () => {
       test('intersection removes items not in all sets', () => {
         // Create a resolver that works for all IDs
-        const mockRecipeResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+        const mockRecipeResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
           return Success.with({
             id,
-            name: `Recipe ${id}` as RecipeName
-          } as unknown as IRuntimeRecipe);
+            name: `Recipe ${id}` as FillingName
+          } as unknown as IRuntimeFillingRecipe);
         };
 
         const orchestrator = new RecipeIndexerOrchestrator(library, mockRecipeResolver);
@@ -745,7 +750,7 @@ describe('Indexers', () => {
     describe('entity resolution failures', () => {
       test('fails when recipe resolver returns failure', () => {
         // Create a resolver that always fails
-        const failingResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+        const failingResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
           return Failure.with(`Cannot resolve recipe: ${id}`);
         };
 
@@ -775,7 +780,7 @@ describe('Indexers', () => {
 
       test('aggregates multiple resolution failures', () => {
         // Create a resolver that fails for all IDs
-        const failingResolver = (id: RecipeId): Result<IRuntimeRecipe> => {
+        const failingResolver = (id: FillingId): Result<IRuntimeFillingRecipe> => {
           return Failure.with(`Not found: ${id}`);
         };
 

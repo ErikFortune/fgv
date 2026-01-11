@@ -25,7 +25,7 @@ import {
   getIngredientsDirectory,
   getMoldsDirectory,
   getProceduresDirectory,
-  getRecipesDirectory
+  getFillingsDirectory
 } from '../library-data';
 import {
   confectionCollections,
@@ -46,7 +46,7 @@ const builtInLibraryFiles: FileTree.IInMemoryFile[] = [
     contents: data
   })),
   ...Object.entries(recipeCollections).map(([name, data]) => ({
-    path: `/data/recipes/${name}.json`,
+    path: `/data/fillings/${name}.json`,
     contents: data
   })),
   ...Object.entries(moldCollections).map(([name, data]) => ({
@@ -82,7 +82,7 @@ export class BuiltInData {
    *     │   ├── felchlin.json
    *     │   ├── cacao-barry.json
    *     │   └── guittard.json
-   *     ├── recipes/
+   *     ├── fillings/
    *     │   └── common.json
    *     ├── molds/
    *     │   └── common.json
@@ -123,8 +123,8 @@ export class BuiltInData {
    * Gets the recipes directory from the built-in library tree.
    * @returns `Success` with the recipes directory, or `Failure` if not found.
    */
-  public static getRecipesDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
-    return BuiltInData.getLibraryTree().onSuccess((tree) => getRecipesDirectory(tree));
+  public static getFillingsDirectory(): Result<FileTree.IFileTreeDirectoryItem> {
+    return BuiltInData.getLibraryTree().onSuccess((tree) => getFillingsDirectory(tree));
   }
 
   /**

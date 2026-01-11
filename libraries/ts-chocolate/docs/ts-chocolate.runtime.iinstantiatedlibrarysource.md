@@ -58,6 +58,27 @@ _(Optional)_ Pre-built confections library
 </td></tr>
 <tr><td>
 
+[fillings?](./ts-chocolate.runtime.iinstantiatedlibrarysource.fillings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FillingsLibrary](./ts-chocolate.fillings.fillingslibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built fillings library
+
+
+</td></tr>
+<tr><td>
+
 [ingredients?](./ts-chocolate.runtime.iinstantiatedlibrarysource.ingredients.md)
 
 
@@ -137,27 +158,6 @@ _(Optional)_ Pre-built molds library
 </td><td>
 
 _(Optional)_ Pre-built procedures library
-
-
-</td></tr>
-<tr><td>
-
-[recipes?](./ts-chocolate.runtime.iinstantiatedlibrarysource.recipes.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipesLibrary](./ts-chocolate.recipes.recipeslibrary.md)
-
-
-</td><td>
-
-_(Optional)_ Pre-built recipes library
 
 
 </td></tr>

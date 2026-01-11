@@ -9,7 +9,7 @@ Scales this version to a target weight.
 **Signature:**
 
 ```typescript
-scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ options
 
 </td><td>
 
-[IVersionScaleOptions](./ts-chocolate.recipes.iversionscaleoptions.md)
+[IVersionScaleOptions](./ts-chocolate.fillings.iversionscaleoptions.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional scaling options (precision, minimum amount)
 
 **Returns:**
 
-Result&lt;[IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)<!-- -->&gt;
+Result&lt;[IRuntimeScaledFillingRecipeVersion](./ts-chocolate.runtime.iruntimescaledfillingrecipeversion.md)<!-- -->&gt;
 
 Success with RuntimeScaledVersion, or Failure if scaling fails
 

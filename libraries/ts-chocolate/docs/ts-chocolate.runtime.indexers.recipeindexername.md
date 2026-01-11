@@ -9,7 +9,7 @@ Valid recipe indexer names (inferred from query spec keys).
 **Signature:**
 
 ```typescript
-export type RecipeIndexerName = keyof IRecipeQuerySpec;
+export type RecipeIndexerName = keyof IFillingRecipeQuerySpec;
 ```
-**References:** [IRecipeQuerySpec](./ts-chocolate.runtime.indexers.irecipequeryspec.md)
+**References:** [IFillingRecipeQuerySpec](./ts-chocolate.runtime.indexers.ifillingrecipequeryspec.md)
 

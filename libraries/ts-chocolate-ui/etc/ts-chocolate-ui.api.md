@@ -4,6 +4,7 @@
 
 ```ts
 
+import type { Fillings } from '@fgv/ts-chocolate';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
 import type { IngredientId } from '@fgv/ts-chocolate';
 import type { Ingredients } from '@fgv/ts-chocolate';
@@ -13,7 +14,6 @@ import type { MessageLogLevel } from '@fgv/ts-utils';
 import * as React_2 from 'react';
 import { default as React_3 } from 'react';
 import { ReactNode } from 'react';
-import type { Recipes } from '@fgv/ts-chocolate';
 import type { Runtime } from '@fgv/ts-chocolate';
 import type { Success } from '@fgv/ts-utils';
 
@@ -25,6 +25,12 @@ export function CollectionBadge({ name, isProtected, isLocked, className, size, 
 
 // @public
 export function DetailSection({ title, children, icon: Icon, collapsible, defaultCollapsed, className, badge }: IDetailSectionProps): React_2.ReactElement;
+
+// @public
+export function FillingCard({ filling, showCollection, className, onClick, isSelected }: IFillingCardProps): React_2.ReactElement;
+
+// @public
+export function FillingCategoryBadge({ category, size, className }: IFillingCategoryBadgeProps): React_2.ReactElement;
 
 // @public
 export function GanacheCharacteristicsDisplay({ characteristics, className, showLegend, mode }: IGanacheCharacteristicsDisplayProps): React_2.ReactElement;
@@ -58,6 +64,22 @@ export interface IDetailSectionProps {
         className?: string;
     }>;
     title: string;
+}
+
+// @public
+export interface IFillingCardProps {
+    className?: string;
+    filling: Runtime.RuntimeRecipe;
+    isSelected?: boolean;
+    onClick?: () => void;
+    showCollection?: boolean;
+}
+
+// @public
+export interface IFillingCategoryBadgeProps {
+    category: Fillings.FillingCategory;
+    className?: string;
+    size?: 'sm' | 'md' | 'lg';
 }
 
 // @public
@@ -135,22 +157,6 @@ export interface IPercentageSegment {
 }
 
 // @public
-export interface IRecipeCardProps {
-    className?: string;
-    isSelected?: boolean;
-    onClick?: () => void;
-    recipe: Runtime.RuntimeRecipe;
-    showCollection?: boolean;
-}
-
-// @public
-export interface IRecipeCategoryBadgeProps {
-    category: Recipes.RecipeCategory;
-    className?: string;
-    size?: 'sm' | 'md' | 'lg';
-}
-
-// @public
 export interface ITagBadgeProps {
     className?: string;
     isActive?: boolean;
@@ -205,12 +211,6 @@ export function ObservabilityProvider({ children, maxMessages, userLogLevel, dia
 
 // @public
 export function PercentageBar({ segments, className, height, showLabels, showLegend }: IPercentageBarProps): React_2.ReactElement;
-
-// @public
-export function RecipeCard({ recipe, showCollection, className, onClick, isSelected }: IRecipeCardProps): React_2.ReactElement;
-
-// @public
-export function RecipeCategoryBadge({ category, size, className }: IRecipeCategoryBadgeProps): React_2.ReactElement;
 
 // @public
 export function TagBadge({ tag, className, size, onClick, onRemove, isActive }: ITagBadgeProps): React_2.ReactElement;

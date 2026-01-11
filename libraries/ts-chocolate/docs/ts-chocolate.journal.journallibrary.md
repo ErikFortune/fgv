@@ -80,6 +80,20 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[addFillingJournal(journal)](./ts-chocolate.journal.journallibrary.addfillingjournal.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Adds a filling recipe journal record to the library.
+
+
+</td></tr>
+<tr><td>
+
 [addJournal(journal)](./ts-chocolate.journal.journallibrary.addjournal.md)
 
 
@@ -89,20 +103,6 @@ Description
 </td><td>
 
 Adds a [journal record](./ts-chocolate.journal.anyjournalrecord.md) to the library. Accepts both recipe and confection journal records.
-
-
-</td></tr>
-<tr><td>
-
-[addRecipeJournal(journal)](./ts-chocolate.journal.journallibrary.addrecipejournal.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Adds a recipe journal record to the library.
 
 
 </td></tr>
@@ -208,7 +208,7 @@ Gets all [confection journal records](./ts-chocolate.journal.iconfectionjournalr
 </td></tr>
 <tr><td>
 
-[getJournalsForRecipe(recipeId)](./ts-chocolate.journal.journallibrary.getjournalsforrecipe.md)
+[getJournalsForFilling(fillingId)](./ts-chocolate.journal.journallibrary.getjournalsforfilling.md)
 
 
 </td><td>
@@ -216,13 +216,13 @@ Gets all [confection journal records](./ts-chocolate.journal.iconfectionjournalr
 
 </td><td>
 
-Gets all [recipe journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a recipe (across all versions)
+Gets all [filling recipe journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a filling (across all versions)
 
 
 </td></tr>
 <tr><td>
 
-[getJournalsForRecipeVersion(versionId)](./ts-chocolate.journal.journallibrary.getjournalsforrecipeversion.md)
+[getJournalsForFillingVersion(versionId)](./ts-chocolate.journal.journallibrary.getjournalsforfillingversion.md)
 
 
 </td><td>
@@ -230,7 +230,7 @@ Gets all [recipe journal records](./ts-chocolate.journal.irecipejournalrecord.md
 
 </td><td>
 
-Gets all [recipe journal records](./ts-chocolate.journal.irecipejournalrecord.md) for a specific recipe version
+Gets all [filling recipe journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a specific filling version
 
 
 </td></tr>

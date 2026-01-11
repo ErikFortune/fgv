@@ -9,7 +9,7 @@ Creates a RecipesByCategory config.
 **Signature:**
 
 ```typescript
-export declare function recipesByCategoryConfig(category: RecipeCategory): IRecipesByCategoryConfig;
+export declare function recipesByCategoryConfig(category: FillingCategory): IRecipesByCategoryConfig;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ category
 
 </td><td>
 
-RecipeCategory
+FillingCategory
 
 
 </td><td>

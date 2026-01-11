@@ -37,6 +37,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[fillingId](./ts-chocolate.runtime.iingredientusageinfo.fillingid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FillingId](./ts-chocolate.fillingid.md)
+
+
+</td><td>
+
+The filling ID where the ingredient is used.
+
+
+</td></tr>
+<tr><td>
+
 [isPrimary](./ts-chocolate.runtime.iingredientusageinfo.isprimary.md)
 
 
@@ -53,27 +74,6 @@ boolean
 </td><td>
 
 Whether this is a primary ingredient (vs alternate).
-
-
-</td></tr>
-<tr><td>
-
-[recipeId](./ts-chocolate.runtime.iingredientusageinfo.recipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeId](./ts-chocolate.recipeid.md)
-
-
-</td><td>
-
-The recipe ID where the ingredient is used.
 
 
 </td></tr>

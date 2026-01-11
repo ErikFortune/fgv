@@ -4,10 +4,10 @@
 
 ## Confections.IRecipeFillingOption.id property
 
-The recipe ID
+The filling recipe ID
 
 **Signature:**
 
 ```typescript
-readonly id: RecipeId;
+readonly id: FillingId;
 ```

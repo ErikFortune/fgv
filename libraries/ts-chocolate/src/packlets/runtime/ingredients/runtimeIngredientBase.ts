@@ -41,7 +41,7 @@ import {
   isFatIngredient,
   isAlcoholIngredient
 } from '../../ingredients';
-import { IIngredientContext, IRuntimeIngredient, IRuntimeRecipe } from '../model';
+import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports
 import type { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
@@ -226,24 +226,24 @@ export abstract class RuntimeIngredientBase implements IRuntimeIngredient {
   // ============================================================================
 
   /**
-   * Gets all recipes that use this ingredient (primary or alternate).
+   * Gets all filling recipes that use this ingredient (primary or alternate).
    */
-  public usedByRecipes(): IRuntimeRecipe[] {
-    return this._context.getRecipesUsingIngredient(this._id);
+  public usedByFillings(): IRuntimeFillingRecipe[] {
+    return this._context.getFillingsUsingIngredient(this._id);
   }
 
   /**
-   * Gets recipes where this ingredient is the primary choice.
+   * Gets filling recipes where this ingredient is the primary choice.
    */
-  public primaryInRecipes(): IRuntimeRecipe[] {
-    return this._context.getRecipesWithPrimaryIngredient(this._id);
+  public primaryInFillings(): IRuntimeFillingRecipe[] {
+    return this._context.getFillingsWithPrimaryIngredient(this._id);
   }
 
   /**
-   * Gets recipes where this ingredient is listed as an alternate.
+   * Gets filling recipes where this ingredient is listed as an alternate.
    */
-  public alternateInRecipes(): IRuntimeRecipe[] {
-    return this._context.getRecipesWithAlternateIngredient(this._id);
+  public alternateInFillings(): IRuntimeFillingRecipe[] {
+    return this._context.getFillingsWithAlternateIngredient(this._id);
   }
 
   // ============================================================================

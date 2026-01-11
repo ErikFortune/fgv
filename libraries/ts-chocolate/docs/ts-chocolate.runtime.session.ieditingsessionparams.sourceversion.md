@@ -9,5 +9,5 @@ The source version to edit from
 **Signature:**
 
 ```typescript
-readonly sourceVersion: IRuntimeRecipeVersion;
+readonly sourceVersion: IRuntimeFillingRecipeVersion;
 ```

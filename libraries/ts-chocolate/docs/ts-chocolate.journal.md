@@ -58,12 +58,12 @@ Type guard for IConfectionJournalRecord
 </td></tr>
 <tr><td>
 
-[isRecipeJournalRecord(record)](./ts-chocolate.journal.isrecipejournalrecord.md)
+[isFillingRecipeJournalRecord(record)](./ts-chocolate.journal.isfillingrecipejournalrecord.md)
 
 
 </td><td>
 
-Type guard for IRecipeJournalRecord
+Type guard for IFillingRecipeJournalRecord
 
 
 </td></tr>
@@ -106,6 +106,17 @@ A complete journal record for a confection production session. Tracks what confe
 </td></tr>
 <tr><td>
 
+[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)
+
+
+</td><td>
+
+A complete journal record for a filling recipe cooking session. Tracks what filling version was used, how it was scaled, and what modifications were made during the session.
+
+
+</td></tr>
+<tr><td>
+
 [IJournalEntry](./ts-chocolate.journal.ijournalentry.md)
 
 
@@ -134,17 +145,6 @@ Result of importing journals into the library
 </td><td>
 
 Parameters for creating a [JournalLibrary](./ts-chocolate.journal.journallibrary.md) instance
-
-
-</td></tr>
-<tr><td>
-
-[IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)
-
-
-</td><td>
-
-A complete journal record for a recipe cooking session. Tracks what recipe version was used, how it was scaled, and what modifications were made during the session.
 
 
 </td></tr>

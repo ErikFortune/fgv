@@ -48,6 +48,22 @@ Gets the confections directory from the built-in library tree.
 </td></tr>
 <tr><td>
 
+[getFillingsDirectory()](./ts-chocolate.builtin.builtindata.getfillingsdirectory.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Gets the recipes directory from the built-in library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory()](./ts-chocolate.builtin.builtindata.getingredientsdirectory.md)
 
 
@@ -84,7 +100,7 @@ Gets the full built-in library tree. The tree is structured to mirror a real fil
     │   ├── felchlin.json
     │   ├── cacao-barry.json
     │   └── guittard.json
-    ├── recipes/
+    ├── fillings/
     │   └── common.json
     ├── molds/
     │   └── common.json
@@ -125,22 +141,6 @@ Gets the molds directory from the built-in library tree.
 </td><td>
 
 Gets the procedures directory from the built-in library tree.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipesDirectory()](./ts-chocolate.builtin.builtindata.getrecipesdirectory.md)
-
-
-</td><td>
-
-`static`
-
-
-</td><td>
-
-Gets the recipes directory from the built-in library tree.
 
 
 </td></tr>

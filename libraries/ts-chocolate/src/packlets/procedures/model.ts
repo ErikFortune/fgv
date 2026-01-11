@@ -24,7 +24,7 @@
  */
 
 import { BaseProcedureId, Celsius, Minutes } from '../common';
-import { RecipeCategory } from '../recipes';
+import { FillingCategory } from '../fillings';
 
 /**
  * A single step in a procedure
@@ -89,10 +89,10 @@ export interface IProcedure {
   readonly description?: string;
 
   /**
-   * Optional recipe category this procedure applies to.
+   * Optional filling category this procedure applies to.
    * If set, procedure is category-specific; if not, it's general/reusable.
    */
-  readonly category?: RecipeCategory;
+  readonly category?: FillingCategory;
 
   /**
    * Steps of the procedure in order

@@ -9,5 +9,5 @@ Optional ratings from the source version
 **Signature:**
 
 ```typescript
-get ratings(): ReadonlyArray<IRecipeRating>;
+get ratings(): ReadonlyArray<IFillingRating>;
 ```

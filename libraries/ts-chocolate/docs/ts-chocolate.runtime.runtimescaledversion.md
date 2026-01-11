@@ -9,9 +9,9 @@ A resolved view of a scaled recipe version with all ingredients resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeScaledVersion implements IRuntimeScaledRecipeVersion 
+export declare class RuntimeScaledVersion implements IRuntimeScaledFillingRecipeVersion 
 ```
-**Implements:** [IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)
+**Implements:** [IRuntimeScaledFillingRecipeVersion](./ts-chocolate.runtime.iruntimescaledfillingrecipeversion.md)
 
 ## Remarks
 
@@ -115,7 +115,7 @@ Optional notes from the source version
 
 </td><td>
 
-ReadonlyArray&lt;[IRecipeRating](./ts-chocolate.recipes.ireciperating.md)<!-- -->&gt;
+ReadonlyArray&lt;[IFillingRating](./ts-chocolate.fillings.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>
@@ -136,7 +136,7 @@ Optional ratings from the source version
 
 </td><td>
 
-[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)
+[IComputedScaledFillingRecipe](./ts-chocolate.fillings.icomputedscaledfillingrecipe.md)
 
 
 </td><td>

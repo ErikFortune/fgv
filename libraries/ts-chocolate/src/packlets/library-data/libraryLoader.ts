@@ -98,8 +98,8 @@ export function getSubLibraryPath(subLibraryId: SubLibraryId): string {
   switch (subLibraryId) {
     case 'ingredients':
       return LibraryPaths.ingredients;
-    case 'recipes':
-      return LibraryPaths.recipes;
+    case 'fillings':
+      return LibraryPaths.fillings;
     case 'journals':
       return LibraryPaths.journals;
     case 'molds':
@@ -196,7 +196,7 @@ export function resolveFileTreeSource(
   const results: IResolvedSubLibrarySource[] = [];
 
   // Try each sub-library
-  for (const subLibraryId of ['ingredients', 'recipes'] as const) {
+  for (const subLibraryId of ['ingredients', 'fillings'] as const) {
     const resolveResult = resolveFileTreeSourceForSubLibrary(source, subLibraryId);
     if (resolveResult.isFailure()) {
       // If the directory doesn't exist, that's okay - just skip it

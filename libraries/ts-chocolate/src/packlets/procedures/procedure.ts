@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { BaseProcedureId, Minutes } from '../common';
-import { RecipeCategory } from '../recipes';
+import { FillingCategory } from '../fillings';
 import { IProcedure, IProcedureStep } from './model';
 import { IProcedureRenderContext, IRenderedProcedure, IRenderedProcedureStep } from './renderContext';
 
@@ -42,7 +42,7 @@ export class Procedure implements IProcedure {
   public readonly baseId: BaseProcedureId;
   public readonly name: string;
   public readonly description?: string;
-  public readonly category?: RecipeCategory;
+  public readonly category?: FillingCategory;
   public readonly steps: ReadonlyArray<IProcedureStep>;
   public readonly tags?: ReadonlyArray<string>;
   public readonly notes?: string;

@@ -9,9 +9,9 @@ Indexer that finds recipes with a specific category.
 **Signature:**
 
 ```typescript
-export declare class RecipesByCategoryIndexer extends BaseIndexer<IRuntimeRecipe, RecipeId, IRecipesByCategoryConfig> 
+export declare class RecipesByCategoryIndexer extends BaseIndexer<IRuntimeFillingRecipe, FillingId, IRecipesByCategoryConfig> 
 ```
-**Extends:** [BaseIndexer](./ts-chocolate.runtime.indexers.baseindexer.md)<!-- -->&lt;[IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)<!-- -->, [RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.irecipesbycategoryconfig.md)<!-- -->&gt;
+**Extends:** [BaseIndexer](./ts-chocolate.runtime.indexers.baseindexer.md)<!-- -->&lt;[IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IRecipesByCategoryConfig](./ts-chocolate.runtime.indexers.irecipesbycategoryconfig.md)<!-- -->&gt;
 
 ## Constructors
 

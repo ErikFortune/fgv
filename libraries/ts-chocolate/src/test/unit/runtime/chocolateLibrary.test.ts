@@ -25,7 +25,7 @@ import { FileTree } from '@fgv/ts-json-base';
 import {
   BaseMoldId,
   BaseProcedureId,
-  BaseRecipeId,
+  BaseFillingId,
   Measurement,
   IngredientId,
   JournalId,
@@ -33,17 +33,17 @@ import {
   MoldId,
   Percentage,
   ProcedureId,
-  RecipeId,
-  RecipeName,
-  RecipeVersionId,
+  FillingId,
+  FillingName,
+  FillingVersionId,
   SourceId
 } from '../../../packlets/common';
 
-import { IRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
 
 import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
 
-import { IRecipe, IRecipeVersion, RecipesLibrary } from '../../../packlets/recipes';
+import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
 
 import { IMold, Mold, MoldsLibrary } from '../../../packlets/molds';
 
@@ -74,19 +74,19 @@ describe('ChocolateLibrary', () => {
     ganacheCharacteristics: testChars
   };
 
-  const testRecipeVersion: IRecipeVersion = {
-    versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec,
+  const testRecipeVersion: IFillingRecipeVersion = {
+    versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [{ ingredient: { ids: ['test.testChoco' as IngredientId] }, amount: 100 as Measurement }],
     baseWeight: 100 as Measurement
   };
 
-  const testRecipe: IRecipe = {
-    baseId: 'testRecipe' as BaseRecipeId,
-    name: 'Test Recipe' as RecipeName,
+  const testRecipe: IFillingRecipe = {
+    baseId: 'testRecipe' as BaseFillingId,
+    name: 'Test Recipe' as FillingName,
     category: 'ganache',
     versions: [testRecipeVersion],
-    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').RecipeVersionSpec
+    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec
   };
 
   // ============================================================================
@@ -97,13 +97,13 @@ describe('ChocolateLibrary', () => {
     test('creates with built-in ingredients and recipes by default', () => {
       expect(ChocolateLibrary.create()).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBeGreaterThan(0);
-        expect(lib.recipes.size).toBeGreaterThan(0);
+        expect(lib.fillings.size).toBeGreaterThan(0);
       });
     });
 
     test('creates without built-in ingredients when specified', () => {
       expect(
-        ChocolateLibrary.create({ builtin: { ingredients: false, recipes: false } })
+        ChocolateLibrary.create({ builtin: { ingredients: false, fillings: false } })
       ).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBe(0);
       });
@@ -123,16 +123,16 @@ describe('ChocolateLibrary', () => {
     });
 
     test('creates with provided recipes library only (no builtins)', () => {
-      const recipes = RecipesLibrary.create({
+      const recipes = FillingsLibrary.create({
         builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      expect(ChocolateLibrary.create({ builtin: false, libraries: { recipes } })).toSucceedAndSatisfy(
-        (lib) => {
-          expect(lib.recipes.size).toBe(1);
-        }
-      );
+      expect(
+        ChocolateLibrary.create({ builtin: false, libraries: { fillings: recipes } })
+      ).toSucceedAndSatisfy((lib) => {
+        expect(lib.fillings.size).toBe(1);
+      });
     });
 
     test('merges provided ingredients library with builtins', () => {
@@ -163,14 +163,14 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
-      const recipes = RecipesLibrary.create({
+      const recipes = FillingsLibrary.create({
         builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({
         builtin: false,
-        libraries: { ingredients, recipes }
+        libraries: { ingredients, fillings: recipes }
       }).orThrow();
     });
 
@@ -178,8 +178,8 @@ describe('ChocolateLibrary', () => {
       expect(library.ingredients).toBeInstanceOf(IngredientsLibrary);
     });
 
-    test('recipes returns RecipesLibrary', () => {
-      expect(library.recipes).toBeInstanceOf(RecipesLibrary);
+    test('recipes returns FillingsLibrary', () => {
+      expect(library.fillings).toBeInstanceOf(FillingsLibrary);
     });
   });
 
@@ -221,30 +221,30 @@ describe('ChocolateLibrary', () => {
     let library: ChocolateLibrary;
 
     beforeEach(() => {
-      const recipes = RecipesLibrary.create({
+      const recipes = FillingsLibrary.create({
         builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
-      library = ChocolateLibrary.create({ builtin: false, libraries: { recipes } }).orThrow();
+      library = ChocolateLibrary.create({ builtin: false, libraries: { fillings: recipes } }).orThrow();
     });
 
     test('getRecipe returns existing recipe', () => {
-      expect(library.getRecipe('test.testRecipe' as RecipeId)).toSucceedAndSatisfy((recipe) => {
+      expect(library.getRecipe('test.testRecipe' as FillingId)).toSucceedAndSatisfy((recipe) => {
         expect(recipe.name).toBe('Test Recipe');
       });
     });
 
     test('getRecipe fails for non-existent', () => {
-      expect(library.getRecipe('test.nonexistent' as RecipeId)).toFail();
+      expect(library.getRecipe('test.nonexistent' as FillingId)).toFail();
     });
 
     test('hasRecipe returns true for existing', () => {
-      expect(library.hasRecipe('test.testRecipe' as RecipeId)).toBe(true);
+      expect(library.hasRecipe('test.testRecipe' as FillingId)).toBe(true);
     });
 
     test('hasRecipe returns false for non-existent', () => {
-      expect(library.hasRecipe('test.nonexistent' as RecipeId)).toBe(false);
+      expect(library.hasRecipe('test.nonexistent' as FillingId)).toBe(false);
     });
   });
 
@@ -373,14 +373,14 @@ describe('ChocolateLibrary', () => {
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testChoco: testIngredient } }]
       }).orThrow();
 
-      const recipes = RecipesLibrary.create({
+      const recipes = FillingsLibrary.create({
         builtin: false,
         collections: [{ id: 'test' as SourceId, isMutable: true, items: { testRecipe } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({
         builtin: false,
-        libraries: { ingredients, recipes }
+        libraries: { ingredients, fillings: recipes }
       }).orThrow();
     });
 
@@ -390,14 +390,14 @@ describe('ChocolateLibrary', () => {
     });
 
     test('calculateGanache returns analysis for valid recipe', () => {
-      expect(library.calculateGanache('test.testRecipe' as RecipeId)).toSucceedAndSatisfy((calc) => {
+      expect(library.calculateGanache('test.testRecipe' as FillingId)).toSucceedAndSatisfy((calc) => {
         expect(calc.analysis).toBeDefined();
         expect(calc.validation).toBeDefined();
       });
     });
 
     test('calculateGanache fails for non-existent recipe', () => {
-      expect(library.calculateGanache('test.nonexistent' as RecipeId)).toFail();
+      expect(library.calculateGanache('test.nonexistent' as FillingId)).toFail();
     });
 
     test('calculateGanacheForRecipe calculates for recipe object', () => {
@@ -501,7 +501,7 @@ describe('ChocolateLibrary', () => {
     ): ILibraryFileTreeSource => {
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/file-source.json', contents: ingredientData },
-        { path: '/data/recipes/file-source.json', contents: recipeData },
+        { path: '/data/fillings/file-source.json', contents: recipeData },
         { path: '/data/molds/file-source.json', contents: minimalMoldData },
         { path: '/data/procedures/file-source.json', contents: minimalProcedureData },
         { path: '/data/confections/file-source.json', contents: minimalConfectionData }
@@ -522,8 +522,8 @@ describe('ChocolateLibrary', () => {
       ).toSucceedAndSatisfy((lib) => {
         expect(lib.ingredients.size).toBe(1);
         expect(lib.hasIngredient('file-source.file-chocolate' as IngredientId)).toBe(true);
-        expect(lib.recipes.size).toBe(1);
-        expect(lib.hasRecipe('file-source.file-recipe' as RecipeId)).toBe(true);
+        expect(lib.fillings.size).toBe(1);
+        expect(lib.hasRecipe('file-source.file-recipe' as FillingId)).toBe(true);
       });
     });
 
@@ -554,7 +554,7 @@ describe('ChocolateLibrary', () => {
       // Second source with different ingredient data
       const files2: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/source2.json', contents: secondIngredientData },
-        { path: '/data/recipes/source2.json', contents: minimalRecipeData },
+        { path: '/data/fillings/source2.json', contents: minimalRecipeData },
         { path: '/data/molds/source2.json', contents: minimalMoldData },
         { path: '/data/procedures/source2.json', contents: minimalProcedureData },
         { path: '/data/confections/source2.json', contents: minimalConfectionData }
@@ -613,7 +613,7 @@ describe('ChocolateLibrary', () => {
 
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/felchlin.json', contents: conflictingData },
-        { path: '/data/recipes/felchlin.json', contents: minimalRecipeData },
+        { path: '/data/fillings/felchlin.json', contents: minimalRecipeData },
         { path: '/data/molds/felchlin.json', contents: minimalMoldData },
         { path: '/data/procedures/felchlin.json', contents: minimalProcedureData },
         { path: '/data/confections/felchlin.json', contents: minimalConfectionData }
@@ -633,7 +633,7 @@ describe('ChocolateLibrary', () => {
       // Create file source with directories but no matching .json files
       const files: FileTree.IInMemoryFile[] = [
         { path: '/data/ingredients/readme.txt', contents: 'empty' },
-        { path: '/data/recipes/readme.txt', contents: 'empty' },
+        { path: '/data/fillings/readme.txt', contents: 'empty' },
         { path: '/data/molds/readme.txt', contents: 'empty' },
         { path: '/data/procedures/readme.txt', contents: 'empty' },
         { path: '/data/confections/readme.txt', contents: 'empty' }
@@ -658,19 +658,19 @@ describe('ChocolateLibrary', () => {
   // ============================================================================
 
   describe('journals', () => {
-    const testJournal: IRecipeJournalRecord = {
+    const testJournal: IFillingRecipeJournalRecord = {
       journalType: 'recipe',
       journalId: '2026-01-01-120000-abcd1234' as JournalId,
-      recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
+      fillingVersionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
       date: '2026-01-01',
       targetWeight: 200 as Measurement,
       scaleFactor: 2.0
     };
 
-    const testJournal2: IRecipeJournalRecord = {
+    const testJournal2: IFillingRecipeJournalRecord = {
       journalType: 'recipe',
       journalId: '2026-01-02-120000-efgh5678' as JournalId,
-      recipeVersionId: 'test.testRecipe@2026-01-01-01' as RecipeVersionId,
+      fillingVersionId: 'test.testRecipe@2026-01-01-01' as FillingVersionId,
       date: '2026-01-02',
       targetWeight: 300 as Measurement,
       scaleFactor: 3.0
@@ -705,41 +705,41 @@ describe('ChocolateLibrary', () => {
       });
     });
 
-    test('getJournalsForRecipe returns journals for a recipe', () => {
+    test('getJournalsForFilling returns journals for a recipe', () => {
       const journals = JournalLibrary.create({ journals: [testJournal, testJournal2] }).orThrow();
 
       expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
         (lib) => {
-          const recipeJournals = lib.getJournalsForRecipe('test.testRecipe' as RecipeId);
+          const recipeJournals = lib.getJournalsForFilling('test.testRecipe' as FillingId);
           expect(recipeJournals.length).toBe(2);
         }
       );
     });
 
-    test('getJournalsForRecipe returns empty array for non-existent recipe', () => {
+    test('getJournalsForFilling returns empty array for non-existent recipe', () => {
       expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        const recipeJournals = lib.getJournalsForRecipe('test.nonexistent' as RecipeId);
+        const recipeJournals = lib.getJournalsForFilling('test.nonexistent' as FillingId);
         expect(recipeJournals.length).toBe(0);
       });
     });
 
-    test('getJournalsForVersion returns journals for a specific version', () => {
+    test('getJournalsForFillingVersion returns journals for a specific version', () => {
       const journals = JournalLibrary.create({ journals: [testJournal, testJournal2] }).orThrow();
 
       expect(ChocolateLibrary.create({ builtin: false, libraries: { journals } })).toSucceedAndSatisfy(
         (lib) => {
-          const versionJournals = lib.getJournalsForVersion(
-            'test.testRecipe@2026-01-01-01' as RecipeVersionId
+          const versionJournals = lib.getJournalsForFillingVersion(
+            'test.testRecipe@2026-01-01-01' as FillingVersionId
           );
           expect(versionJournals.length).toBe(2);
         }
       );
     });
 
-    test('getJournalsForVersion returns empty array for non-existent version', () => {
+    test('getJournalsForFillingVersion returns empty array for non-existent version', () => {
       expect(ChocolateLibrary.create({ builtin: false })).toSucceedAndSatisfy((lib) => {
-        const versionJournals = lib.getJournalsForVersion(
-          'test.nonexistent@2026-01-01-01' as RecipeVersionId
+        const versionJournals = lib.getJournalsForFillingVersion(
+          'test.nonexistent@2026-01-01-01' as FillingVersionId
         );
         expect(versionJournals.length).toBe(0);
       });

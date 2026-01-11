@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IResolvedRecipeProcedure](./ts-chocolate.runtime.iresolvedrecipeprocedure.md)<!-- -->&gt;
+ReadonlyArray&lt;[IResolvedFillingRecipeProcedure](./ts-chocolate.runtime.iresolvedfillingrecipeprocedure.md)<!-- -->&gt;
 
 
 </td><td>

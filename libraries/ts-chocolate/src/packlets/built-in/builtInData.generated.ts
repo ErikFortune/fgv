@@ -7,8 +7,8 @@
 //   - data/published/ingredients/common.yaml
 //   - data/published/ingredients/felchlin.yaml
 //   - data/published/ingredients/guittard.yaml
-//   - data/published/recipes/common.yaml
-//   - data/published/recipes/fgv.json
+//   - data/published/fillings/common.yaml
+//   - data/published/fillings/fgv.json
 //   - data/published/molds/common.yaml
 //   - data/published/molds/cw.yaml
 //   - data/published/procedures/common.yaml

@@ -26,26 +26,26 @@
 import { Result } from '@fgv/ts-utils';
 
 import {
+  BaseFillingId,
   BaseIngredientId,
-  BaseRecipeId,
+  FillingId,
+  FillingVersionId,
+  FillingVersionSpec,
   ID_SEPARATOR,
   IHasId,
   IIdsWithPreferred,
   IngredientId,
   IOptionsWithPreferred,
-  RecipeId,
-  RecipeVersionId,
-  RecipeVersionSpec,
   SourceId,
   VERSION_ID_SEPARATOR
 } from './model';
 import {
+  ParsedFillingId,
+  ParsedFillingVersionId,
   ParsedIngredientId,
-  ParsedRecipeId,
-  ParsedRecipeVersionId,
-  parsedIngredientId,
-  parsedRecipeId,
-  parsedRecipeVersionId
+  parsedFillingId,
+  parsedFillingVersionId,
+  parsedIngredientId
 } from './converters';
 
 // ============================================================================
@@ -94,89 +94,92 @@ export function getIngredientBaseId(id: IngredientId): BaseIngredientId {
 }
 
 /**
- * Creates a composite RecipeId from source ID and base ID
+ * Creates a composite FillingId from source ID and base ID
  * @param sourceId - The source identifier
- * @param baseId - The base recipe identifier
- * @returns Composite recipe ID in format "sourceId.baseId"
+ * @param baseId - The base filling identifier
+ * @returns Composite filling ID in format "sourceId.baseId"
  * @public
  */
-export function createRecipeId(sourceId: SourceId, baseId: BaseRecipeId): RecipeId {
-  return `${sourceId}${ID_SEPARATOR}${baseId}` as RecipeId;
+export function createFillingId(sourceId: SourceId, baseId: BaseFillingId): FillingId {
+  return `${sourceId}${ID_SEPARATOR}${baseId}` as FillingId;
 }
 
 /**
- * Parses a composite RecipeId into its component parts
- * @param id - The composite recipe ID to parse
+ * Parses a composite FillingId into its component parts
+ * @param id - The composite filling ID to parse
  * @returns Result with parsed composite ID or error
  * @public
  */
-export function parseRecipeId(id: RecipeId): Result<ParsedRecipeId> {
-  return parsedRecipeId.convert(id);
+export function parseFillingId(id: FillingId): Result<ParsedFillingId> {
+  return parsedFillingId.convert(id);
 }
 
 /**
- * Gets the source ID from a composite RecipeId
- * @param id - The composite recipe ID
+ * Gets the source ID from a composite FillingId
+ * @param id - The composite filling ID
  * @returns The source ID portion
  * @public
  */
-export function getRecipeSourceId(id: RecipeId): SourceId {
-  return parsedRecipeId.convert(id).orThrow().collectionId;
+export function getFillingSourceId(id: FillingId): SourceId {
+  return parsedFillingId.convert(id).orThrow().collectionId;
 }
 
 /**
- * Gets the base ID from a composite RecipeId
- * @param id - The composite recipe ID
- * @returns The base recipe ID portion
+ * Gets the base ID from a composite FillingId
+ * @param id - The composite filling ID
+ * @returns The base filling ID portion
  * @public
  */
-export function getRecipeBaseId(id: RecipeId): BaseRecipeId {
-  return parsedRecipeId.convert(id).orThrow().itemId;
+export function getFillingBaseId(id: FillingId): BaseFillingId {
+  return parsedFillingId.convert(id).orThrow().itemId;
 }
 
 // ============================================================================
-// Recipe Version ID Helpers
+// Filling Version ID Helpers
 // ============================================================================
 
 /**
- * Creates a composite RecipeVersionId from recipe ID and version spec
- * @param recipeId - The recipe identifier
+ * Creates a composite FillingVersionId from filling ID and version spec
+ * @param fillingId - The filling identifier
  * @param versionSpec - The version specifier
- * @returns Composite recipe version ID in format "recipeId\@versionSpec"
+ * @returns Composite filling version ID in format "fillingId\@versionSpec"
  * @public
  */
-export function createRecipeVersionId(recipeId: RecipeId, versionSpec: RecipeVersionSpec): RecipeVersionId {
-  return `${recipeId}${VERSION_ID_SEPARATOR}${versionSpec}` as RecipeVersionId;
+export function createFillingVersionId(
+  fillingId: FillingId,
+  versionSpec: FillingVersionSpec
+): FillingVersionId {
+  return `${fillingId}${VERSION_ID_SEPARATOR}${versionSpec}` as FillingVersionId;
 }
 
 /**
- * Parses a composite RecipeVersionId into its component parts
- * @param id - The composite recipe version ID to parse
+ * Parses a composite FillingVersionId into its component parts
+ * @param id - The composite filling version ID to parse
  * @returns Result with parsed composite ID or error
  * @public
  */
-export function parseRecipeVersionId(id: RecipeVersionId): Result<ParsedRecipeVersionId> {
-  return parsedRecipeVersionId.convert(id);
+export function parseFillingVersionId(id: FillingVersionId): Result<ParsedFillingVersionId> {
+  return parsedFillingVersionId.convert(id);
 }
 
 /**
- * Gets the recipe ID from a composite RecipeVersionId
- * @param id - The composite recipe version ID
- * @returns The recipe ID portion
+ * Gets the filling ID from a composite FillingVersionId
+ * @param id - The composite filling version ID
+ * @returns The filling ID portion
  * @public
  */
-export function getRecipeVersionRecipeId(id: RecipeVersionId): RecipeId {
-  return parsedRecipeVersionId.convert(id).orThrow().collectionId;
+export function getFillingVersionFillingId(id: FillingVersionId): FillingId {
+  return parsedFillingVersionId.convert(id).orThrow().collectionId;
 }
 
 /**
- * Gets the version spec from a composite RecipeVersionId
- * @param id - The composite recipe version ID
+ * Gets the version spec from a composite FillingVersionId
+ * @param id - The composite filling version ID
  * @returns The version spec portion
  * @public
  */
-export function getRecipeVersionSpec(id: RecipeVersionId): RecipeVersionSpec {
-  return parsedRecipeVersionId.convert(id).orThrow().itemId;
+export function getFillingVersionSpec(id: FillingVersionId): FillingVersionSpec {
+  return parsedFillingVersionId.convert(id).orThrow().itemId;
 }
 
 // ============================================================================

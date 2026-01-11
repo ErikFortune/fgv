@@ -41,7 +41,7 @@ import {
   ConfectionVersionSpec,
   IngredientId,
   MoldId,
-  RecipeId,
+  FillingId,
   SlotId,
   UrlCategory
 } from '../../../packlets/common';
@@ -65,8 +65,8 @@ describe('Confections model', () => {
       {
         slotId: 'center' as SlotId,
         filling: {
-          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as FillingId }],
+          preferredId: 'common.dark-ganache-classic' as FillingId
         }
       }
     ],
@@ -103,8 +103,8 @@ describe('Confections model', () => {
       {
         slotId: 'center' as SlotId,
         filling: {
-          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as FillingId }],
+          preferredId: 'common.dark-ganache-classic' as FillingId
         }
       }
     ],
@@ -146,8 +146,8 @@ describe('Confections model', () => {
       {
         slotId: 'center' as SlotId,
         filling: {
-          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as RecipeId }],
-          preferredId: 'common.dark-ganache-classic' as RecipeId
+          options: [{ type: 'recipe', id: 'common.dark-ganache-classic' as FillingId }],
+          preferredId: 'common.dark-ganache-classic' as FillingId
         }
       }
     ],

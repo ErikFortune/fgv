@@ -29,10 +29,10 @@ import {
   ChocolateRole,
   allJournalTypes,
   JournalType,
-  isRecipeJournalRecord,
+  isFillingRecipeJournalRecord,
   isConfectionJournalRecord,
   AnyJournalRecord,
-  IRecipeJournalRecord,
+  IFillingRecipeJournalRecord,
   IConfectionJournalRecord
 } from '../../../packlets/journal';
 
@@ -122,12 +122,12 @@ describe('Journal Model', () => {
   });
 
   describe('type guards', () => {
-    const recipeJournal: IRecipeJournalRecord = {
+    const recipeJournal: IFillingRecipeJournalRecord = {
       journalType: 'recipe',
-      journalId: '2026-01-15-100000-00000001' as IRecipeJournalRecord['journalId'],
-      recipeVersionId: 'source.recipe@2026-01-01-01' as IRecipeJournalRecord['recipeVersionId'],
+      journalId: '2026-01-15-100000-00000001' as IFillingRecipeJournalRecord['journalId'],
+      fillingVersionId: 'source.recipe@2026-01-01-01' as IFillingRecipeJournalRecord['fillingVersionId'],
       date: '2026-01-15',
-      targetWeight: 300 as IRecipeJournalRecord['targetWeight'],
+      targetWeight: 300 as IFillingRecipeJournalRecord['targetWeight'],
       scaleFactor: 2
     };
 
@@ -139,20 +139,20 @@ describe('Journal Model', () => {
       yieldCount: 24
     };
 
-    describe('isRecipeJournalRecord', () => {
+    describe('isFillingRecipeJournalRecord', () => {
       test('returns true for recipe journal records', () => {
-        expect(isRecipeJournalRecord(recipeJournal)).toBe(true);
+        expect(isFillingRecipeJournalRecord(recipeJournal)).toBe(true);
       });
 
       test('returns false for confection journal records', () => {
-        expect(isRecipeJournalRecord(confectionJournal)).toBe(false);
+        expect(isFillingRecipeJournalRecord(confectionJournal)).toBe(false);
       });
 
       test('narrows type correctly', () => {
         const record: AnyJournalRecord = recipeJournal;
-        if (isRecipeJournalRecord(record)) {
-          // TypeScript should know this is IRecipeJournalRecord
-          expect(record.recipeVersionId).toBe('source.recipe@2026-01-01-01');
+        if (isFillingRecipeJournalRecord(record)) {
+          // TypeScript should know this is IFillingRecipeJournalRecord
+          expect(record.fillingVersionId).toBe('source.recipe@2026-01-01-01');
         }
       });
     });

@@ -80,6 +80,28 @@ A collapsible section for detail views
 </td></tr>
 <tr><td>
 
+[FillingCard({ filling, showCollection, className, onClick, isSelected })](./ts-chocolate-ui.fillingcard.md)
+
+
+</td><td>
+
+Displays a filling recipe as a summary card for browse views
+
+
+</td></tr>
+<tr><td>
+
+[FillingCategoryBadge({ category, size, className })](./ts-chocolate-ui.fillingcategorybadge.md)
+
+
+</td><td>
+
+Badge displaying a filling category with appropriate styling
+
+
+</td></tr>
+<tr><td>
+
 [GanacheCharacteristicsDisplay({ characteristics, className, showLegend, mode })](./ts-chocolate-ui.ganachecharacteristicsdisplay.md)
 
 
@@ -130,28 +152,6 @@ Provider component that manages observability infrastructure
 </td><td>
 
 Displays a horizontal stacked percentage bar with colored segments
-
-
-</td></tr>
-<tr><td>
-
-[RecipeCard({ recipe, showCollection, className, onClick, isSelected })](./ts-chocolate-ui.recipecard.md)
-
-
-</td><td>
-
-Displays a recipe as a summary card for browse views
-
-
-</td></tr>
-<tr><td>
-
-[RecipeCategoryBadge({ category, size, className })](./ts-chocolate-ui.recipecategorybadge.md)
-
-
-</td><td>
-
-Badge displaying a recipe category with appropriate styling
 
 
 </td></tr>
@@ -249,6 +249,28 @@ Props for the DetailSection component
 </td></tr>
 <tr><td>
 
+[IFillingCardProps](./ts-chocolate-ui.ifillingcardprops.md)
+
+
+</td><td>
+
+Props for the FillingCard component
+
+
+</td></tr>
+<tr><td>
+
+[IFillingCategoryBadgeProps](./ts-chocolate-ui.ifillingcategorybadgeprops.md)
+
+
+</td><td>
+
+Props for the FillingCategoryBadge component
+
+
+</td></tr>
+<tr><td>
+
 [IGanacheCharacteristicsDisplayProps](./ts-chocolate-ui.iganachecharacteristicsdisplayprops.md)
 
 
@@ -332,28 +354,6 @@ Props for the PercentageBar component
 </td><td>
 
 A segment in the percentage bar
-
-
-</td></tr>
-<tr><td>
-
-[IRecipeCardProps](./ts-chocolate-ui.irecipecardprops.md)
-
-
-</td><td>
-
-Props for the RecipeCard component
-
-
-</td></tr>
-<tr><td>
-
-[IRecipeCategoryBadgeProps](./ts-chocolate-ui.irecipecategorybadgeprops.md)
-
-
-</td><td>
-
-Props for the RecipeCategoryBadge component
 
 
 </td></tr>

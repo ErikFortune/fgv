@@ -9,7 +9,7 @@ Scales this version by a multiplicative factor.
 **Signature:**
 
 ```typescript
-scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
 ```
 
 ## Parameters
@@ -53,7 +53,7 @@ options
 
 </td><td>
 
-[IVersionScaleOptions](./ts-chocolate.recipes.iversionscaleoptions.md)
+[IVersionScaleOptions](./ts-chocolate.fillings.iversionscaleoptions.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional scaling options
 
 **Returns:**
 
-Result&lt;[IRuntimeScaledRecipeVersion](./ts-chocolate.runtime.iruntimescaledrecipeversion.md)<!-- -->&gt;
+Result&lt;[IRuntimeScaledFillingRecipeVersion](./ts-chocolate.runtime.iruntimescaledfillingrecipeversion.md)<!-- -->&gt;
 
 Success with RuntimeScaledVersion, or Failure if scaling fails
 

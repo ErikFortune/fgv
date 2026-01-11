@@ -9,5 +9,5 @@ The filling recipe ID selected (for filling-select events)
 **Signature:**
 
 ```typescript
-readonly fillingRecipeId?: RecipeId;
+readonly fillingRecipeId?: FillingId;
 ```

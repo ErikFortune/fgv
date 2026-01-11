@@ -9,5 +9,5 @@ Converter for recipe query specification from JSON.
 **Signature:**
 
 ```typescript
-recipeQuerySpecConverter: Converter<IRecipeQuerySpec>
+recipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec>
 ```

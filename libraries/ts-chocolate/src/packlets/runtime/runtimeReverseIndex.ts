@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { ChocolateType, Helpers, IngredientId, RecipeId } from '../common';
+import { ChocolateType, Helpers, IngredientId, FillingId } from '../common';
 import { isChocolateIngredient } from '../ingredients';
 import { ChocolateLibrary } from './chocolateLibrary';
 import { IIngredientUsageInfo } from './model';
@@ -53,11 +53,11 @@ export class RuntimeReverseIndex {
   private readonly _library: ChocolateLibrary;
 
   // Lazily built indexes
-  private _ingredientToRecipes: Map<IngredientId, Set<RecipeId>> | undefined;
+  private _ingredientToFillings: Map<IngredientId, Set<FillingId>> | undefined;
   private _ingredientUsage: Map<IngredientId, IIngredientUsageInfo[]> | undefined;
-  private _tagToRecipes: Map<string, Set<RecipeId>> | undefined;
+  private _tagToFillings: Map<string, Set<FillingId>> | undefined;
   private _tagToIngredients: Map<string, Set<IngredientId>> | undefined;
-  private _chocolateTypeToRecipes: Map<ChocolateType, Set<RecipeId>> | undefined;
+  private _chocolateTypeToFillings: Map<ChocolateType, Set<FillingId>> | undefined;
 
   /**
    * Creates a new reverse index for the given library
@@ -67,23 +67,23 @@ export class RuntimeReverseIndex {
   }
 
   // ============================================================================
-  // Ingredient → Recipe Lookups
+  // Ingredient → Filling Lookups
   // ============================================================================
 
   /**
-   * Gets recipe IDs that use a specific ingredient (as primary or alternate).
+   * Gets filling IDs that use a specific ingredient (as primary or alternate).
    * @param ingredientId - The ingredient ID to look up
-   * @returns Set of recipe IDs using this ingredient
+   * @returns Set of filling IDs using this ingredient
    */
-  public getRecipesUsingIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId> {
-    this._ensureIngredientToRecipesIndex();
-    return this._ingredientToRecipes!.get(ingredientId) ?? new Set();
+  public getFillingsUsingIngredient(ingredientId: IngredientId): ReadonlySet<FillingId> {
+    this._ensureIngredientToFillingsIndex();
+    return this._ingredientToFillings!.get(ingredientId) ?? new Set();
   }
 
   /**
-   * Gets detailed usage information for an ingredient across all recipes.
+   * Gets detailed usage information for an ingredient across all fillings.
    * @param ingredientId - The ingredient ID to look up
-   * @returns Array of usage info (recipe ID and primary/alternate status)
+   * @returns Array of usage info (filling ID and primary/alternate status)
    */
   public getIngredientUsage(ingredientId: IngredientId): ReadonlyArray<IIngredientUsageInfo> {
     this._ensureIngredientUsageIndex();
@@ -91,32 +91,32 @@ export class RuntimeReverseIndex {
   }
 
   /**
-   * Gets recipe IDs where this ingredient is used as the primary (not an alternate).
+   * Gets filling IDs where this ingredient is used as the primary (not an alternate).
    * @param ingredientId - The ingredient ID to look up
-   * @returns Set of recipe IDs where this is the primary ingredient
+   * @returns Set of filling IDs where this is the primary ingredient
    */
-  public getRecipesWithPrimaryIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId> {
+  public getFillingsWithPrimaryIngredient(ingredientId: IngredientId): ReadonlySet<FillingId> {
     const usage = this.getIngredientUsage(ingredientId);
-    const result = new Set<RecipeId>();
+    const result = new Set<FillingId>();
     for (const info of usage) {
       if (info.isPrimary) {
-        result.add(info.recipeId);
+        result.add(info.fillingId);
       }
     }
     return result;
   }
 
   /**
-   * Gets recipe IDs where this ingredient is listed as an alternate.
+   * Gets filling IDs where this ingredient is listed as an alternate.
    * @param ingredientId - The ingredient ID to look up
-   * @returns Set of recipe IDs where this is an alternate ingredient
+   * @returns Set of filling IDs where this is an alternate ingredient
    */
-  public getRecipesWithAlternateIngredient(ingredientId: IngredientId): ReadonlySet<RecipeId> {
+  public getFillingsWithAlternateIngredient(ingredientId: IngredientId): ReadonlySet<FillingId> {
     const usage = this.getIngredientUsage(ingredientId);
-    const result = new Set<RecipeId>();
+    const result = new Set<FillingId>();
     for (const info of usage) {
       if (!info.isPrimary) {
-        result.add(info.recipeId);
+        result.add(info.fillingId);
       }
     }
     return result;
@@ -127,22 +127,22 @@ export class RuntimeReverseIndex {
   // ============================================================================
 
   /**
-   * Gets recipe IDs with a specific tag.
+   * Gets filling IDs with a specific tag.
    * @param tag - The tag to look up
-   * @returns Set of recipe IDs with this tag
+   * @returns Set of filling IDs with this tag
    */
-  public getRecipesByTag(tag: string): ReadonlySet<RecipeId> {
-    this._ensureTagToRecipesIndex();
-    return this._tagToRecipes!.get(tag.toLowerCase()) ?? new Set();
+  public getFillingsByTag(tag: string): ReadonlySet<FillingId> {
+    this._ensureTagToFillingsIndex();
+    return this._tagToFillings!.get(tag.toLowerCase()) ?? new Set();
   }
 
   /**
-   * Gets all unique tags used across recipes.
-   * @returns Array of all recipe tags
+   * Gets all unique tags used across fillings.
+   * @returns Array of all filling tags
    */
-  public getAllRecipeTags(): ReadonlyArray<string> {
-    this._ensureTagToRecipesIndex();
-    return Array.from(this._tagToRecipes!.keys());
+  public getAllFillingTags(): ReadonlyArray<string> {
+    this._ensureTagToFillingsIndex();
+    return Array.from(this._tagToFillings!.keys());
   }
 
   /**
@@ -170,13 +170,13 @@ export class RuntimeReverseIndex {
   // ============================================================================
 
   /**
-   * Gets recipe IDs containing a specific chocolate type.
+   * Gets filling IDs containing a specific chocolate type.
    * @param type - The chocolate type to look up
-   * @returns Set of recipe IDs containing this chocolate type
+   * @returns Set of filling IDs containing this chocolate type
    */
-  public getRecipesByChocolateType(type: ChocolateType): ReadonlySet<RecipeId> {
-    this._ensureChocolateTypeIndex();
-    return this._chocolateTypeToRecipes!.get(type) ?? new Set();
+  public getFillingsByChocolateType(type: ChocolateType): ReadonlySet<FillingId> {
+    this._ensureChocolateTypeToFillingsIndex();
+    return this._chocolateTypeToFillings!.get(type) ?? new Set();
   }
 
   // ============================================================================
@@ -188,11 +188,11 @@ export class RuntimeReverseIndex {
    * Call this if the underlying library data changes.
    */
   public invalidate(): void {
-    this._ingredientToRecipes = undefined;
+    this._ingredientToFillings = undefined;
     this._ingredientUsage = undefined;
-    this._tagToRecipes = undefined;
+    this._tagToFillings = undefined;
     this._tagToIngredients = undefined;
-    this._chocolateTypeToRecipes = undefined;
+    this._chocolateTypeToFillings = undefined;
   }
 
   /**
@@ -200,32 +200,32 @@ export class RuntimeReverseIndex {
    * Useful for warming up the cache before heavy query usage.
    */
   public warmUp(): void {
-    this._ensureIngredientToRecipesIndex();
+    this._ensureIngredientToFillingsIndex();
     this._ensureIngredientUsageIndex();
-    this._ensureTagToRecipesIndex();
+    this._ensureTagToFillingsIndex();
     this._ensureTagToIngredientsIndex();
-    this._ensureChocolateTypeIndex();
+    this._ensureChocolateTypeToFillingsIndex();
   }
 
   // ============================================================================
   // Private Index Building
   // ============================================================================
 
-  private _ensureIngredientToRecipesIndex(): void {
-    if (this._ingredientToRecipes !== undefined) {
+  private _ensureIngredientToFillingsIndex(): void {
+    if (this._ingredientToFillings !== undefined) {
       return;
     }
 
-    this._ingredientToRecipes = new Map<IngredientId, Set<RecipeId>>();
-    const recipes = this._library.recipes;
+    this._ingredientToFillings = new Map<IngredientId, Set<FillingId>>();
+    const recipes = this._library.fillings;
 
-    for (const [recipeId, recipe] of recipes.entries()) {
+    for (const [fillingId, recipe] of recipes.entries()) {
       // Index ingredients from all versions
       for (const version of recipe.versions) {
         for (const ri of version.ingredients) {
           // Index all ingredient IDs (primary and alternates)
           for (const id of ri.ingredient.ids) {
-            this._addToIndex(this._ingredientToRecipes, id, recipeId as RecipeId);
+            this._addToIndex(this._ingredientToFillings, id, fillingId as FillingId);
           }
         }
       }
@@ -239,9 +239,9 @@ export class RuntimeReverseIndex {
     }
 
     this._ingredientUsage = new Map<IngredientId, IIngredientUsageInfo[]>();
-    const recipes = this._library.recipes;
+    const recipes = this._library.fillings;
 
-    for (const [recipeId, recipe] of recipes.entries()) {
+    for (const [fillingId, recipe] of recipes.entries()) {
       // Index ingredients from all versions
       for (const version of recipe.versions) {
         for (const ri of version.ingredients) {
@@ -251,7 +251,7 @@ export class RuntimeReverseIndex {
           // Index all ingredient IDs with primary/alternate status
           for (const id of ri.ingredient.ids) {
             this._addUsageInfo(this._ingredientUsage, id, {
-              recipeId: recipeId as RecipeId,
+              fillingId: fillingId as FillingId,
               isPrimary: id === primaryId
             });
           }
@@ -260,18 +260,18 @@ export class RuntimeReverseIndex {
     }
   }
 
-  private _ensureTagToRecipesIndex(): void {
-    if (this._tagToRecipes !== undefined) {
+  private _ensureTagToFillingsIndex(): void {
+    if (this._tagToFillings !== undefined) {
       return;
     }
 
-    this._tagToRecipes = new Map<string, Set<RecipeId>>();
-    const recipes = this._library.recipes;
+    this._tagToFillings = new Map<string, Set<FillingId>>();
+    const recipes = this._library.fillings;
 
-    for (const [recipeId, recipe] of recipes.entries()) {
+    for (const [fillingId, recipe] of recipes.entries()) {
       if (recipe.tags) {
         for (const tag of recipe.tags) {
-          this._addToIndex(this._tagToRecipes, tag.toLowerCase(), recipeId as RecipeId);
+          this._addToIndex(this._tagToFillings, tag.toLowerCase(), fillingId as FillingId);
         }
       }
     }
@@ -294,16 +294,16 @@ export class RuntimeReverseIndex {
     }
   }
 
-  private _ensureChocolateTypeIndex(): void {
-    if (this._chocolateTypeToRecipes !== undefined) {
+  private _ensureChocolateTypeToFillingsIndex(): void {
+    if (this._chocolateTypeToFillings !== undefined) {
       return;
     }
 
-    this._chocolateTypeToRecipes = new Map<ChocolateType, Set<RecipeId>>();
-    const recipes = this._library.recipes;
+    this._chocolateTypeToFillings = new Map<ChocolateType, Set<FillingId>>();
+    const recipes = this._library.fillings;
     const ingredients = this._library.ingredients;
 
-    for (const [recipeId, recipe] of recipes.entries()) {
+    for (const [fillingId, recipe] of recipes.entries()) {
       // Check golden version for chocolate types
       const goldenVersion = recipe.versions.find((v) => v.versionSpec === recipe.goldenVersionSpec);
       /* c8 ignore next - defensive: data validation ensures golden version exists */
@@ -317,7 +317,7 @@ export class RuntimeReverseIndex {
         if (ingredientResult.isSuccess()) {
           const ingredient = ingredientResult.value;
           if (isChocolateIngredient(ingredient)) {
-            this._addToIndex(this._chocolateTypeToRecipes, ingredient.chocolateType, recipeId as RecipeId);
+            this._addToIndex(this._chocolateTypeToFillings, ingredient.chocolateType, fillingId as FillingId);
           }
         }
       }
@@ -344,7 +344,7 @@ export class RuntimeReverseIndex {
       index.set(ingredientId, usage);
     }
     // Avoid duplicates for same recipe
-    if (!usage.some((u) => u.recipeId === info.recipeId && u.isPrimary === info.isPrimary)) {
+    if (!usage.some((u) => u.fillingId === info.fillingId && u.isPrimary === info.isPrimary)) {
       usage.push(info);
     }
   }

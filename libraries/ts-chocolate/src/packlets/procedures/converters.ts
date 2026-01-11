@@ -26,7 +26,7 @@
 import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../common';
-import { Converters as RecipeConverters } from '../recipes';
+import { Converters as RecipeConverters } from '../fillings';
 import { IProcedure, IProcedureStep } from './model';
 import { Procedure } from './procedure';
 
@@ -52,7 +52,7 @@ export const procedureData: Converter<IProcedure> = Converters.object<IProcedure
   baseId: CommonConverters.baseProcedureId,
   name: Converters.string,
   description: Converters.string.optional(),
-  category: RecipeConverters.recipeCategory.optional(),
+  category: RecipeConverters.fillingCategory.optional(),
   steps: Converters.arrayOf(procedureStep),
   tags: Converters.arrayOf(Converters.string).optional(),
   notes: Converters.string.optional()

@@ -357,7 +357,7 @@ Selects a filling ingredient for a specific slot.
 </td></tr>
 <tr><td>
 
-[selectFillingRecipe(slotId, recipeId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingrecipe.md)
+[selectFillingRecipe(slotId, fillingId)](./ts-chocolate.runtime.session.confectioneditingsession.selectfillingrecipe.md)
 
 
 </td><td>

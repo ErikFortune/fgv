@@ -4,7 +4,7 @@
 
 ## Runtime.IngredientQuery.unused() method
 
-Filter to ingredients not used in any recipe.
+Filter to ingredients not used in any filling recipe.
 
 **Signature:**
 

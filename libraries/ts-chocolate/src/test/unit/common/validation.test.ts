@@ -23,7 +23,7 @@ import '@fgv/ts-utils-jest';
 import {
   BaseConfectionId,
   BaseIngredientId,
-  BaseRecipeId,
+  BaseFillingId,
   ConfectionId,
   ConfectionName,
   ConfectionVersionId,
@@ -34,9 +34,9 @@ import {
   JournalId,
   Percentage,
   RatingScore,
-  RecipeId,
-  RecipeVersionId,
-  RecipeVersionSpec,
+  FillingId,
+  FillingVersionId,
+  FillingVersionSpec,
   SessionId,
   SlotId,
   SourceId,
@@ -49,14 +49,14 @@ const {
   isValidBaseIngredientId,
   isValidBaseMoldId,
   isValidBaseProcedureId,
-  isValidBaseRecipeId,
+  isValidBaseFillingId,
   isValidIngredientId,
   isValidMoldId,
   isValidProcedureId,
-  isValidRecipeId,
-  isValidRecipeName,
-  isValidRecipeVersionSpec,
-  isValidRecipeVersionId,
+  isValidFillingId,
+  isValidFillingName,
+  isValidFillingVersionSpec,
+  isValidFillingVersionId,
   isValidSessionId,
   isValidJournalId,
   isValidRatingScore,
@@ -68,14 +68,14 @@ const {
   toBaseIngredientId,
   toBaseMoldId,
   toBaseProcedureId,
-  toBaseRecipeId,
+  toBaseFillingId,
   toIngredientId,
   toMoldId,
   toProcedureId,
-  toRecipeId,
-  toRecipeName,
-  toRecipeVersionSpec,
-  toRecipeVersionId,
+  toFillingId,
+  toFillingName,
+  toFillingVersionSpec,
+  toFillingVersionId,
   toSessionId,
   toJournalId,
   isValidSlotId,
@@ -97,17 +97,17 @@ const {
 
 const {
   createIngredientId,
-  createRecipeId,
-  createRecipeVersionId,
+  createFillingId,
+  createFillingVersionId,
   parseIngredientId,
-  parseRecipeId,
-  parseRecipeVersionId,
+  parseFillingId,
+  parseFillingVersionId,
   getIngredientSourceId,
   getIngredientBaseId,
-  getRecipeSourceId,
-  getRecipeBaseId,
-  getRecipeVersionRecipeId,
-  getRecipeVersionSpec
+  getFillingSourceId,
+  getFillingBaseId,
+  getFillingVersionFillingId,
+  getFillingVersionSpec
 } = Helpers;
 
 describe('Common validation', () => {
@@ -137,7 +137,7 @@ describe('Common validation', () => {
       ['isValidBaseIngredientId', isValidBaseIngredientId],
       ['isValidBaseMoldId', isValidBaseMoldId],
       ['isValidBaseProcedureId', isValidBaseProcedureId],
-      ['isValidBaseRecipeId', isValidBaseRecipeId]
+      ['isValidBaseFillingId', isValidBaseFillingId]
     ])('%s', (_name, fn) => {
       test.each(validBaseIds)('returns true for %s', (_desc, input) => {
         expect(fn(input)).toBe(true);
@@ -173,7 +173,7 @@ describe('Common validation', () => {
       ['isValidIngredientId', isValidIngredientId],
       ['isValidMoldId', isValidMoldId],
       ['isValidProcedureId', isValidProcedureId],
-      ['isValidRecipeId', isValidRecipeId]
+      ['isValidFillingId', isValidFillingId]
     ])('%s', (_name, fn) => {
       test.each(validCompositeIds)('returns true for %s', (_desc, input) => {
         expect(fn(input)).toBe(true);
@@ -185,19 +185,19 @@ describe('Common validation', () => {
     });
   });
 
-  describe('isValidRecipeName', () => {
+  describe('isValidFillingName', () => {
     test.each([
       ['valid name', 'Classic Dark Chocolate Ganache', true],
       ['short name', 'Test', true],
       ['empty string', '', false],
       ['number', 123, false],
       ['null', null, false]
-    ])('%s: isValidRecipeName(%p) returns %p', (_desc, input, expected) => {
-      expect(isValidRecipeName(input)).toBe(expected);
+    ])('%s: isValidFillingName(%p) returns %p', (_desc, input, expected) => {
+      expect(isValidFillingName(input)).toBe(expected);
     });
   });
 
-  describe('isValidRecipeVersionSpec', () => {
+  describe('isValidFillingVersionSpec', () => {
     test.each([
       ['basic version', '2026-01-03-01', true],
       ['with label', '2026-01-03-02-tweaked', true],
@@ -210,8 +210,8 @@ describe('Common validation', () => {
       ['empty string', '', false],
       ['number', 123, false],
       ['null', null, false]
-    ])('%s: isValidRecipeVersionSpec(%p) returns %p', (_desc, input, expected) => {
-      expect(isValidRecipeVersionSpec(input)).toBe(expected);
+    ])('%s: isValidFillingVersionSpec(%p) returns %p', (_desc, input, expected) => {
+      expect(isValidFillingVersionSpec(input)).toBe(expected);
     });
   });
 
@@ -306,7 +306,7 @@ describe('Common validation', () => {
       ['toBaseIngredientId', toBaseIngredientId, 'maracaibo-65', 'base.id', /Invalid BaseIngredientId/],
       ['toBaseMoldId', toBaseMoldId, 'cw-2227', 'mold.id', /Invalid BaseMoldId/],
       ['toBaseProcedureId', toBaseProcedureId, 'ganache-cold', 'proc.id', /Invalid BaseProcedureId/],
-      ['toBaseRecipeId', toBaseRecipeId, 'classic-ganache', 'recipe.id', /Invalid BaseRecipeId/]
+      ['toBaseFillingId', toBaseFillingId, 'classic-ganache', 'recipe.id', /Invalid BaseFillingId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {
         expect(fn(validInput)).toSucceedAndSatisfy((result) => {
@@ -333,7 +333,7 @@ describe('Common validation', () => {
       ['toIngredientId', toIngredientId, 'felchlin.maracaibo-65', 'maracaibo-65', /Invalid IngredientId/],
       ['toMoldId', toMoldId, 'common.cw-2227', 'cw-2227', /Invalid MoldId/],
       ['toProcedureId', toProcedureId, 'common.ganache-cold', 'ganache-cold', /Invalid ProcedureId/],
-      ['toRecipeId', toRecipeId, 'user.classic-ganache', 'classic-ganache', /Invalid RecipeId/]
+      ['toFillingId', toFillingId, 'user.classic-ganache', 'classic-ganache', /Invalid FillingId/]
     ])('%s', (_name, fn, validInput, invalidInput, errorPattern) => {
       test(`succeeds with valid input "${validInput}"`, () => {
         expect(fn(validInput)).toSucceedAndSatisfy((result) => {
@@ -351,47 +351,47 @@ describe('Common validation', () => {
     });
   });
 
-  describe('toRecipeName', () => {
+  describe('toFillingName', () => {
     test('succeeds with valid recipe name', () => {
-      expect(toRecipeName('My Recipe')).toSucceedAndSatisfy((result) => {
+      expect(toFillingName('My Recipe')).toSucceedAndSatisfy((result) => {
         expect(result).toBe('My Recipe');
       });
     });
 
     test('fails with empty string', () => {
-      expect(toRecipeName('')).toFailWith(/Invalid RecipeName/);
+      expect(toFillingName('')).toFailWith(/Invalid FillingName/);
     });
   });
 
-  describe('toRecipeVersionSpec', () => {
+  describe('toFillingVersionSpec', () => {
     test('succeeds with valid basic version ID', () => {
-      expect(toRecipeVersionSpec('2026-01-03-01')).toSucceedWith('2026-01-03-01' as RecipeVersionSpec);
+      expect(toFillingVersionSpec('2026-01-03-01')).toSucceedWith('2026-01-03-01' as FillingVersionSpec);
     });
 
     test('succeeds with version ID with label', () => {
-      expect(toRecipeVersionSpec('2026-01-03-02-tweaked')).toSucceedWith(
-        '2026-01-03-02-tweaked' as RecipeVersionSpec
+      expect(toFillingVersionSpec('2026-01-03-02-tweaked')).toSucceedWith(
+        '2026-01-03-02-tweaked' as FillingVersionSpec
       );
     });
 
     test('fails with missing counter', () => {
-      expect(toRecipeVersionSpec('2026-01-03')).toFailWith(/Invalid RecipeVersionSpec/);
+      expect(toFillingVersionSpec('2026-01-03')).toFailWith(/Invalid FillingVersionSpec/);
     });
 
     test('fails with invalid format', () => {
-      expect(toRecipeVersionSpec('invalid')).toFailWith(/Invalid RecipeVersionSpec/);
+      expect(toFillingVersionSpec('invalid')).toFailWith(/Invalid FillingVersionSpec/);
     });
 
     test('fails with uppercase label', () => {
-      expect(toRecipeVersionSpec('2026-01-03-01-WRONG')).toFailWith(/Invalid RecipeVersionSpec/);
+      expect(toFillingVersionSpec('2026-01-03-01-WRONG')).toFailWith(/Invalid FillingVersionSpec/);
     });
 
     test('fails with empty string', () => {
-      expect(toRecipeVersionSpec('')).toFailWith(/Invalid RecipeVersionSpec/);
+      expect(toFillingVersionSpec('')).toFailWith(/Invalid FillingVersionSpec/);
     });
 
     test('fails with non-string', () => {
-      expect(toRecipeVersionSpec(123)).toFailWith(/Invalid RecipeVersionSpec/);
+      expect(toFillingVersionSpec(123)).toFailWith(/Invalid FillingVersionSpec/);
     });
   });
 
@@ -627,10 +627,10 @@ describe('Common validation', () => {
         expect(createIngredientId(sourceId, baseId)).toBe('felchlin.maracaibo-65');
       });
 
-      test('createRecipeId creates composite ID', () => {
+      test('createFillingId creates composite ID', () => {
         const sourceId = 'user' as SourceId;
-        const baseId = 'classic-ganache' as BaseRecipeId;
-        expect(createRecipeId(sourceId, baseId)).toBe('user.classic-ganache');
+        const baseId = 'classic-ganache' as BaseFillingId;
+        expect(createFillingId(sourceId, baseId)).toBe('user.classic-ganache');
       });
     });
 
@@ -648,17 +648,17 @@ describe('Common validation', () => {
         expect(parseIngredientId('invalid' as IngredientId)).toFailWith(/separator.*not found/i);
       });
 
-      test('parseRecipeId parses composite ID', () => {
-        const id = 'user.classic-ganache' as RecipeId;
-        expect(parseRecipeId(id)).toSucceedAndSatisfy((parsed) => {
+      test('parseFillingId parses composite ID', () => {
+        const id = 'user.classic-ganache' as FillingId;
+        expect(parseFillingId(id)).toSucceedAndSatisfy((parsed) => {
           expect(parsed.collectionId).toBe('user');
           expect(parsed.itemId).toBe('classic-ganache');
           expect(parsed.separator).toBe('.');
         });
       });
 
-      test('parseRecipeId fails with invalid format', () => {
-        expect(parseRecipeId('invalid' as unknown as RecipeId)).toFailWith(/separator.*not found/i);
+      test('parseFillingId fails with invalid format', () => {
+        expect(parseFillingId('invalid' as unknown as FillingId)).toFailWith(/separator.*not found/i);
       });
     });
 
@@ -666,19 +666,19 @@ describe('Common validation', () => {
       test.each([
         ['getIngredientSourceId', getIngredientSourceId, 'felchlin.maracaibo-65', 'felchlin'],
         ['getIngredientBaseId', getIngredientBaseId, 'felchlin.maracaibo-65', 'maracaibo-65'],
-        ['getRecipeSourceId', getRecipeSourceId, 'user.classic-ganache', 'user'],
-        ['getRecipeBaseId', getRecipeBaseId, 'user.classic-ganache', 'classic-ganache']
+        ['getFillingSourceId', getFillingSourceId, 'user.classic-ganache', 'user'],
+        ['getFillingBaseId', getFillingBaseId, 'user.classic-ganache', 'classic-ganache']
       ])('%s extracts correct part', (_name, fn, input, expected) => {
-        expect(fn(input as IngredientId & RecipeId)).toBe(expected);
+        expect(fn(input as IngredientId & FillingId)).toBe(expected);
       });
     });
   });
 
   // ============================================================================
-  // RecipeVersionId Tests
+  // FillingVersionId Tests
   // ============================================================================
 
-  describe('RecipeVersionId validation', () => {
+  describe('FillingVersionId validation', () => {
     const validVersionIds: [string, string][] = [
       ['simple', 'user.ganache@2026-01-03-01'],
       ['with label', 'felchlin.truffle@2026-01-03-02-less-sugar'],
@@ -697,48 +697,48 @@ describe('Common validation', () => {
       ['null', null]
     ];
 
-    describe('isValidRecipeVersionId', () => {
-      test.each(validVersionIds)('%s: returns true for valid RecipeVersionId', (_name, value) => {
-        expect(isValidRecipeVersionId(value)).toBe(true);
+    describe('isValidFillingVersionId', () => {
+      test.each(validVersionIds)('%s: returns true for valid FillingVersionId', (_name, value) => {
+        expect(isValidFillingVersionId(value)).toBe(true);
       });
 
-      test.each(invalidVersionIds)('%s: returns false for invalid RecipeVersionId', (_name, value) => {
-        expect(isValidRecipeVersionId(value)).toBe(false);
+      test.each(invalidVersionIds)('%s: returns false for invalid FillingVersionId', (_name, value) => {
+        expect(isValidFillingVersionId(value)).toBe(false);
       });
     });
 
-    describe('toRecipeVersionId', () => {
-      test.each(validVersionIds)('%s: succeeds for valid RecipeVersionId', (_name, value) => {
-        expect(toRecipeVersionId(value)).toSucceedWith(value as RecipeVersionId);
+    describe('toFillingVersionId', () => {
+      test.each(validVersionIds)('%s: succeeds for valid FillingVersionId', (_name, value) => {
+        expect(toFillingVersionId(value)).toSucceedWith(value as FillingVersionId);
       });
 
-      test.each(invalidVersionIds)('%s: fails for invalid RecipeVersionId', (_name, value) => {
-        expect(toRecipeVersionId(value)).toFailWith(/Invalid RecipeVersionId/i);
+      test.each(invalidVersionIds)('%s: fails for invalid FillingVersionId', (_name, value) => {
+        expect(toFillingVersionId(value)).toFailWith(/Invalid FillingVersionId/i);
       });
     });
   });
 
-  describe('RecipeVersionId helpers', () => {
-    describe('createRecipeVersionId', () => {
+  describe('FillingVersionId helpers', () => {
+    describe('createFillingVersionId', () => {
       test('creates composite ID', () => {
-        const recipeId = 'user.ganache' as RecipeId;
-        const versionSpec = '2026-01-03-01' as RecipeVersionSpec;
-        expect(createRecipeVersionId(recipeId, versionSpec)).toBe('user.ganache@2026-01-03-01');
+        const recipeId = 'user.ganache' as FillingId;
+        const versionSpec = '2026-01-03-01' as FillingVersionSpec;
+        expect(createFillingVersionId(recipeId, versionSpec)).toBe('user.ganache@2026-01-03-01');
       });
 
       test('creates composite ID with label', () => {
-        const recipeId = 'felchlin.truffle' as RecipeId;
-        const versionSpec = '2026-01-03-02-less-sugar' as RecipeVersionSpec;
-        expect(createRecipeVersionId(recipeId, versionSpec)).toBe(
+        const recipeId = 'felchlin.truffle' as FillingId;
+        const versionSpec = '2026-01-03-02-less-sugar' as FillingVersionSpec;
+        expect(createFillingVersionId(recipeId, versionSpec)).toBe(
           'felchlin.truffle@2026-01-03-02-less-sugar'
         );
       });
     });
 
-    describe('parseRecipeVersionId', () => {
+    describe('parseFillingVersionId', () => {
       test('parses composite ID', () => {
-        const id = 'user.ganache@2026-01-03-01' as RecipeVersionId;
-        expect(parseRecipeVersionId(id)).toSucceedAndSatisfy((parsed) => {
+        const id = 'user.ganache@2026-01-03-01' as FillingVersionId;
+        expect(parseFillingVersionId(id)).toSucceedAndSatisfy((parsed) => {
           expect(parsed.collectionId).toBe('user.ganache');
           expect(parsed.itemId).toBe('2026-01-03-01');
           expect(parsed.separator).toBe('@');
@@ -746,8 +746,8 @@ describe('Common validation', () => {
       });
 
       test('parses composite ID with label', () => {
-        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as RecipeVersionId;
-        expect(parseRecipeVersionId(id)).toSucceedAndSatisfy((parsed) => {
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingVersionId;
+        expect(parseFillingVersionId(id)).toSucceedAndSatisfy((parsed) => {
           expect(parsed.collectionId).toBe('felchlin.truffle');
           expect(parsed.itemId).toBe('2026-01-03-02-less-sugar');
           expect(parsed.separator).toBe('@');
@@ -755,24 +755,24 @@ describe('Common validation', () => {
       });
 
       test('fails with invalid format', () => {
-        expect(parseRecipeVersionId('invalid' as RecipeVersionId)).toFailWith(/separator.*not found/i);
+        expect(parseFillingVersionId('invalid' as FillingVersionId)).toFailWith(/separator.*not found/i);
       });
     });
 
     describe('get helpers', () => {
-      test('getRecipeVersionRecipeId extracts recipe ID', () => {
-        const id = 'user.ganache@2026-01-03-01' as RecipeVersionId;
-        expect(getRecipeVersionRecipeId(id)).toBe('user.ganache');
+      test('getFillingVersionFillingId extracts recipe ID', () => {
+        const id = 'user.ganache@2026-01-03-01' as FillingVersionId;
+        expect(getFillingVersionFillingId(id)).toBe('user.ganache');
       });
 
-      test('getRecipeVersionSpec extracts version spec', () => {
-        const id = 'user.ganache@2026-01-03-01' as RecipeVersionId;
-        expect(getRecipeVersionSpec(id)).toBe('2026-01-03-01');
+      test('getFillingVersionSpec extracts version spec', () => {
+        const id = 'user.ganache@2026-01-03-01' as FillingVersionId;
+        expect(getFillingVersionSpec(id)).toBe('2026-01-03-01');
       });
 
-      test('getRecipeVersionSpec extracts version spec with label', () => {
-        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as RecipeVersionId;
-        expect(getRecipeVersionSpec(id)).toBe('2026-01-03-02-less-sugar');
+      test('getFillingVersionSpec extracts version spec with label', () => {
+        const id = 'felchlin.truffle@2026-01-03-02-less-sugar' as FillingVersionId;
+        expect(getFillingVersionSpec(id)).toBe('2026-01-03-02-less-sugar');
       });
     });
   });

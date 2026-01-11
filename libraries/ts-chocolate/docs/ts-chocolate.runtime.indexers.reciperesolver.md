@@ -9,7 +9,7 @@ Recipe resolver function type. Provided by RuntimeContext to resolve recipe IDs 
 **Signature:**
 
 ```typescript
-export type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
+export type RecipeResolver = (id: FillingId) => Result<IRuntimeFillingRecipe>;
 ```
-**References:** [RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
+**References:** [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)
 

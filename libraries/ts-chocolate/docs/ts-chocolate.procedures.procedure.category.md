@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly category?: RecipeCategory;
+readonly category?: FillingCategory;
 ```

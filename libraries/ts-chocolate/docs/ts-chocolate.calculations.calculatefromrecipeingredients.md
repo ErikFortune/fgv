@@ -9,7 +9,7 @@ Resolves recipe ingredients and calculates blended characteristics
 **Signature:**
 
 ```typescript
-export declare function calculateFromRecipeIngredients(recipeIngredients: ReadonlyArray<IRecipeIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
+export declare function calculateFromRecipeIngredients(recipeIngredients: ReadonlyArray<IFillingIngredient>, resolver: IngredientResolver): Result<IGanacheAnalysis>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ recipeIngredients
 
 </td><td>
 
-ReadonlyArray&lt;[IRecipeIngredient](./ts-chocolate.recipes.irecipeingredient.md)<!-- -->&gt;
+ReadonlyArray&lt;[IFillingIngredient](./ts-chocolate.fillings.ifillingingredient.md)<!-- -->&gt;
 
 
 </td><td>

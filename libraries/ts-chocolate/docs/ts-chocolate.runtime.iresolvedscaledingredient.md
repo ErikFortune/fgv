@@ -152,7 +152,7 @@ Original amount before scaling
 
 </td><td>
 
-[IScaledRecipeIngredient](./ts-chocolate.recipes.iscaledrecipeingredient.md)
+[IScaledFillingIngredient](./ts-chocolate.fillings.iscaledfillingingredient.md)
 
 
 </td><td>

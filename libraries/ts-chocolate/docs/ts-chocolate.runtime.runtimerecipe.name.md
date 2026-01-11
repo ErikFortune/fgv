@@ -9,5 +9,5 @@ Human-readable recipe name
 **Signature:**
 
 ```typescript
-get name(): RecipeName;
+get name(): FillingName;
 ```

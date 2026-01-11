@@ -4,7 +4,7 @@
 
 ## Runtime.Session.ISessionFillingSlot.ingredientId property
 
-The currently selected filling ingredient ID (mutually exclusive with recipeId)
+The currently selected filling ingredient ID (mutually exclusive with fillingId)
 
 **Signature:**
 

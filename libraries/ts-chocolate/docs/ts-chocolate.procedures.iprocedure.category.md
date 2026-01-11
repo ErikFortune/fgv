@@ -4,10 +4,10 @@
 
 ## Procedures.IProcedure.category property
 
-Optional recipe category this procedure applies to. If set, procedure is category-specific; if not, it's general/reusable.
+Optional filling category this procedure applies to. If set, procedure is category-specific; if not, it's general/reusable.
 
 **Signature:**
 
 ```typescript
-readonly category?: RecipeCategory;
+readonly category?: FillingCategory;
 ```

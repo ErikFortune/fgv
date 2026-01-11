@@ -11,7 +11,7 @@ Canonical paths within a chocolate library tree.
 ```typescript
 LibraryPaths: {
     readonly ingredients: "data/ingredients";
-    readonly recipes: "data/recipes";
+    readonly fillings: "data/fillings";
     readonly journals: "data/journals";
     readonly molds: "data/molds";
     readonly procedures: "data/procedures";

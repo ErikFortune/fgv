@@ -46,12 +46,12 @@ export type SourceId = Brand<string, 'SourceId'>;
 export type BaseIngredientId = Brand<string, 'BaseIngredientId'>;
 
 /**
- * Recipe identifier within a single source
+ * Filling recipe identifier within a single source
  * Character restrictions: alphanumeric, dashes, underscores only (no dots)
  * Pattern: /^[a-zA-Z0-9_-]+$/
  * @public
  */
-export type BaseRecipeId = Brand<string, 'BaseRecipeId'>;
+export type BaseFillingId = Brand<string, 'BaseFillingId'>;
 
 /**
  * Mold identifier within a single source
@@ -83,13 +83,13 @@ export type BaseProcedureId = Brand<string, 'BaseProcedureId'>;
 export type IngredientId = Brand<string, 'IngredientId'>;
 
 /**
- * Globally unique recipe identifier (composite)
- * Format: "sourceId.baseRecipeId"
+ * Globally unique filling recipe identifier (composite)
+ * Format: "sourceId.baseFillingId"
  * Must contain exactly one dot separator
  * Pattern: /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/
  * @public
  */
-export type RecipeId = Brand<string, 'RecipeId'>;
+export type FillingId = Brand<string, 'FillingId'>;
 
 /**
  * Globally unique mold identifier (composite)
@@ -110,18 +110,18 @@ export type MoldId = Brand<string, 'MoldId'>;
 export type ProcedureId = Brand<string, 'ProcedureId'>;
 
 /**
- * Non-unique recipe name used for display and grouping
+ * Non-unique filling recipe name used for display and grouping
  * @public
  */
-export type RecipeName = Brand<string, 'RecipeName'>;
+export type FillingName = Brand<string, 'FillingName'>;
 
 /**
- * Specifier for a recipe version within a recipe
+ * Specifier for a filling recipe version within a filling recipe
  * Format: YYYY-MM-DD-NN with optional label where NN is a 2-digit counter
  * Examples: "2026-01-03-01", "2026-01-03-02-less-sugar"
  * @public
  */
-export type RecipeVersionSpec = Brand<string, 'RecipeVersionSpec'>;
+export type FillingVersionSpec = Brand<string, 'FillingVersionSpec'>;
 
 /**
  * Unique identifier for an indexer in the reverse index system
@@ -131,16 +131,16 @@ export type RecipeVersionSpec = Brand<string, 'RecipeVersionSpec'>;
 export type IndexerId = Brand<string, 'IndexerId'>;
 
 /**
- * Globally unique recipe version identifier (composite)
- * Format: "recipeId\@versionSpec" where recipeId is "sourceId.baseRecipeId"
+ * Globally unique filling recipe version identifier (composite)
+ * Format: "fillingId\@versionSpec" where fillingId is "sourceId.baseFillingId"
  * Examples: "user.ganache\@2026-01-03-01", "felchlin.truffle\@2026-01-03-02-less-sugar"
  * @public
  */
-export type RecipeVersionId = Brand<string, 'RecipeVersionId'>;
+export type FillingVersionId = Brand<string, 'FillingVersionId'>;
 
 /**
  * Unique identifier for a cooking journal record
- * Format: UUID or "recipeId\@versionSpec\@date"
+ * Format: UUID or "fillingId\@versionSpec\@date"
  * @public
  */
 export type JournalId = Brand<string, 'JournalId'>;
@@ -554,16 +554,16 @@ export type AdditionalChocolatePurpose = 'seal' | 'decoration';
 export const allAdditionalChocolatePurposes: AdditionalChocolatePurpose[] = ['seal', 'decoration'];
 
 /**
- * Recipe category for classification
+ * Filling recipe category for classification
  * @public
  */
-export type RecipeCategory = 'ganache' | 'caramel' | 'gianduja';
+export type FillingCategory = 'ganache' | 'caramel' | 'gianduja';
 
 /**
- * All possible recipe categories
+ * All possible filling recipe categories
  * @public
  */
-export const allRecipeCategories: RecipeCategory[] = ['ganache', 'caramel', 'gianduja'];
+export const allFillingCategories: FillingCategory[] = ['ganache', 'caramel', 'gianduja'];
 
 // ============================================================================
 // URLs
@@ -612,24 +612,24 @@ export const BASE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+$/;
 export const COMPOSITE_ID_PATTERN: RegExp = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+$/;
 
 /**
- * Pattern for valid recipe version specs
+ * Pattern for valid filling version specs
  * Format: YYYY-MM-DD-NN with optional label (lowercase alphanumeric with dashes)
  * @public
  */
-export const RECIPE_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
+export const FILLING_VERSION_SPEC_PATTERN: RegExp = /^\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
 
 /**
- * Separator character used in recipe version IDs (between RecipeId and RecipeVersionSpec)
+ * Separator character used in filling version IDs (between FillingId and FillingVersionSpec)
  * @public
  */
 export const VERSION_ID_SEPARATOR: string = '@';
 
 /**
- * Pattern for valid recipe version IDs
- * Format: recipeId\@versionSpec where recipeId is sourceId.baseRecipeId
+ * Pattern for valid filling version IDs
+ * Format: fillingId\@versionSpec where fillingId is sourceId.baseFillingId
  * @public
  */
-export const RECIPE_VERSION_ID_PATTERN: RegExp =
+export const FILLING_VERSION_ID_PATTERN: RegExp =
   /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+@\d{4}-\d{2}-\d{2}-\d{2}(-[a-z0-9-]+)?$/;
 
 /**

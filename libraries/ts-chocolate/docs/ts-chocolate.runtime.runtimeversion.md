@@ -9,9 +9,9 @@ A resolved view of a recipe version with all ingredients resolved.
 **Signature:**
 
 ```typescript
-export declare class RuntimeVersion implements IRuntimeRecipeVersion 
+export declare class RuntimeVersion implements IRuntimeFillingRecipeVersion 
 ```
-**Implements:** [IRuntimeRecipeVersion](./ts-chocolate.runtime.iruntimerecipeversion.md)
+**Implements:** [IRuntimeFillingRecipeVersion](./ts-chocolate.runtime.iruntimefillingrecipeversion.md)
 
 ## Remarks
 
@@ -84,6 +84,48 @@ Date this version was created (ISO 8601 format)
 </td></tr>
 <tr><td>
 
+[fillingId](./ts-chocolate.runtime.runtimeversion.fillingid.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[FillingId](./ts-chocolate.fillingid.md)
+
+
+</td><td>
+
+The parent filling ID
+
+
+</td></tr>
+<tr><td>
+
+[fillingRecipe](./ts-chocolate.runtime.runtimeversion.fillingrecipe.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[IRuntimeFillingRecipe](./ts-chocolate.runtime.iruntimefillingrecipe.md)
+
+
+</td><td>
+
+The parent filling recipe - resolved. Enables navigation: `version.fillingRecipe.name`
+
+
+</td></tr>
+<tr><td>
+
 [notes](./ts-chocolate.runtime.runtimeversion.notes.md)
 
 
@@ -136,7 +178,7 @@ Resolved procedures associated with this version. Undefined if the version has n
 
 </td><td>
 
-ReadonlyArray&lt;[IRecipeRating](./ts-chocolate.recipes.ireciperating.md)<!-- -->&gt;
+ReadonlyArray&lt;[IFillingRating](./ts-chocolate.fillings.ifillingrating.md)<!-- -->&gt;
 
 
 </td><td>
@@ -157,54 +199,12 @@ Optional ratings for this version
 
 </td><td>
 
-[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)
+[IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)
 
 
 </td><td>
 
 Gets the underlying raw version data
-
-
-</td></tr>
-<tr><td>
-
-[recipe](./ts-chocolate.runtime.runtimeversion.recipe.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IRuntimeRecipe](./ts-chocolate.runtime.iruntimerecipe.md)
-
-
-</td><td>
-
-The parent recipe - resolved. Enables navigation: `version.recipe.name`
-
-
-</td></tr>
-<tr><td>
-
-[recipeId](./ts-chocolate.runtime.runtimeversion.recipeid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[RecipeId](./ts-chocolate.recipeid.md)
-
-
-</td><td>
-
-The parent recipe ID
 
 
 </td></tr>
@@ -220,12 +220,12 @@ The parent recipe ID
 
 </td><td>
 
-[RecipeVersionId](./ts-chocolate.recipeversionid.md)
+[FillingVersionId](./ts-chocolate.fillingversionid.md)
 
 
 </td><td>
 
-Qualified identifier for this version (recipeId<!-- -->@<!-- -->versionSpec).
+Qualified identifier for this version (fillingId<!-- -->@<!-- -->versionSpec).
 
 
 </td></tr>
@@ -241,7 +241,7 @@ Qualified identifier for this version (recipeId<!-- -->@<!-- -->versionSpec).
 
 </td><td>
 
-[RecipeVersionSpec](./ts-chocolate.recipeversionspec.md)
+[FillingVersionSpec](./ts-chocolate.fillingversionspec.md)
 
 
 </td><td>
@@ -307,7 +307,7 @@ Calculates ganache characteristics for this version.
 </td></tr>
 <tr><td>
 
-[create(context, recipeId, version)](./ts-chocolate.runtime.runtimeversion.create.md)
+[create(context, fillingId, version)](./ts-chocolate.runtime.runtimeversion.create.md)
 
 
 </td><td>

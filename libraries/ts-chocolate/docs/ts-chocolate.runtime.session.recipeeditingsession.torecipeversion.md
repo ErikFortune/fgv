@@ -9,7 +9,7 @@ Creates a new recipe version from the current session state
 **Signature:**
 
 ```typescript
-toRecipeVersion(versionSpec: string): Result<IRecipeVersion>;
+toRecipeVersion(versionSpec: string): Result<IFillingRecipeVersion>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ Version specifier for the new version
 
 **Returns:**
 
-Result&lt;[IRecipeVersion](./ts-chocolate.recipes.irecipeversion.md)<!-- -->&gt;
+Result&lt;[IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)<!-- -->&gt;
 
 Success with recipe version data, or Failure
 

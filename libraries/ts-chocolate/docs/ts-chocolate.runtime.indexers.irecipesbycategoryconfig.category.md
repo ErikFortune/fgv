@@ -9,5 +9,5 @@ The recipe category to search for.
 **Signature:**
 
 ```typescript
-readonly category: RecipeCategory;
+readonly category: FillingCategory;
 ```

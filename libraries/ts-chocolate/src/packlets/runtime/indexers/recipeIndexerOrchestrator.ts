@@ -24,9 +24,9 @@
  */
 
 import { Converter, Converters, Failure, MessageAggregator, Result, Success } from '@fgv/ts-utils';
-import { RecipeId } from '../../common';
+import { FillingId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeRecipe } from '../model';
+import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexerOrchestrator } from './baseIndexerOrchestrator';
 import { AggregationMode, IFindOptions } from './model';
 import {
@@ -51,7 +51,7 @@ import {
  * Each key corresponds to an indexer, and the value is that indexer's config.
  * @public
  */
-export interface IRecipeQuerySpec {
+export interface IFillingRecipeQuerySpec {
   readonly byTag?: IRecipesByTagConfig;
   readonly byIngredient?: IRecipesByIngredientConfig;
   readonly byChocolateType?: IRecipesByChocolateTypeConfig;
@@ -62,14 +62,14 @@ export interface IRecipeQuerySpec {
  * Valid recipe indexer names (inferred from query spec keys).
  * @public
  */
-export type RecipeIndexerName = keyof IRecipeQuerySpec;
+export type RecipeIndexerName = keyof IFillingRecipeQuerySpec;
 
 /**
  * Converter for recipe query specification from JSON.
  * @public
  */
-export const recipeQuerySpecConverter: Converter<IRecipeQuerySpec> =
-  Converters.strictObject<IRecipeQuerySpec>({
+export const recipeQuerySpecConverter: Converter<IFillingRecipeQuerySpec> =
+  Converters.strictObject<IFillingRecipeQuerySpec>({
     byTag: recipesByTagConfigConverter.optional(),
     byIngredient: recipesByIngredientConfigConverter.optional(),
     byChocolateType: recipesByChocolateTypeConfigConverter.optional(),
@@ -81,7 +81,7 @@ export const recipeQuerySpecConverter: Converter<IRecipeQuerySpec> =
  * Provided by RuntimeContext to resolve recipe IDs to entities.
  * @public
  */
-export type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
+export type RecipeResolver = (id: FillingId) => Result<IRuntimeFillingRecipe>;
 
 /**
  * Orchestrator for recipe indexers.
@@ -92,7 +92,7 @@ export type RecipeResolver = (id: RecipeId) => Result<IRuntimeRecipe>;
  *
  * @public
  */
-export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeRecipe, RecipeId> {
+export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeFillingRecipe, FillingId> {
   private readonly _indexers: {
     byTag: RecipesByTagIndexer;
     byIngredient: RecipesByIngredientIndexer;
@@ -108,7 +108,7 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
   public constructor(library: ChocolateLibrary, resolver: RecipeResolver) {
     super(library, {
       resolve: resolver,
-      isId: (value): value is RecipeId => typeof value === 'string'
+      isId: (value): value is FillingId => typeof value === 'string'
     });
 
     this._indexers = {
@@ -125,11 +125,14 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
    * @param options - Optional find options (aggregation mode)
    * @returns Array of matching recipes
    */
-  public find(spec: IRecipeQuerySpec, options?: IFindOptions): Result<ReadonlyArray<IRuntimeRecipe>> {
+  public find(
+    spec: IFillingRecipeQuerySpec,
+    options?: IFindOptions
+  ): Result<ReadonlyArray<IRuntimeFillingRecipe>> {
     const aggregation: AggregationMode = options?.aggregation ?? 'intersection';
 
     // Collect results from each specified indexer
-    const indexerResults: Array<Set<RecipeId | IRuntimeRecipe>> = [];
+    const indexerResults: Array<Set<FillingId | IRuntimeFillingRecipe>> = [];
     const errors = new MessageAggregator();
 
     if (spec.byTag !== undefined) {
@@ -173,7 +176,7 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
     }
 
     // Aggregate results
-    let aggregatedSet: Set<RecipeId | IRuntimeRecipe>;
+    let aggregatedSet: Set<FillingId | IRuntimeFillingRecipe>;
     if (aggregation === 'intersection') {
       aggregatedSet = this._intersect(indexerResults);
     } else {
@@ -189,7 +192,7 @@ export class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeR
    * @param json - JSON object with indexer name strings as keys and config objects as values
    * @returns Typed query spec
    */
-  public convertConfig(json: unknown): Result<IRecipeQuerySpec> {
+  public convertConfig(json: unknown): Result<IFillingRecipeQuerySpec> {
     return recipeQuerySpecConverter.convert(json);
   }
 

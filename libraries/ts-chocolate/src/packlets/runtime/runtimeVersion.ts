@@ -25,8 +25,15 @@
 
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import { Measurement, Helpers, IngredientId, RecipeId, RecipeVersionId, RecipeVersionSpec } from '../common';
-import { IRecipeVersion, IRecipeRating, scaleVersion, IVersionScaleOptions } from '../recipes';
+import {
+  Measurement,
+  Helpers,
+  IngredientId,
+  FillingId,
+  FillingVersionId,
+  FillingVersionSpec
+} from '../common';
+import { IFillingRecipeVersion, IFillingRating, scaleVersion, IVersionScaleOptions } from '../fillings';
 import {
   IGanacheCalculation,
   calculateFromIngredients,
@@ -35,12 +42,12 @@ import {
 } from '../calculations';
 import {
   ICategoryFilter,
-  IResolvedRecipeIngredient,
-  IResolvedRecipeProcedure,
+  IResolvedFillingIngredient,
+  IResolvedFillingRecipeProcedure,
   IResolvedProcedures,
-  IRuntimeRecipe,
-  IRuntimeRecipeVersion,
-  IRuntimeScaledRecipeVersion,
+  IRuntimeFillingRecipe,
+  IRuntimeFillingRecipeVersion,
+  IRuntimeScaledFillingRecipeVersion,
   IVersionContext,
   RecipeIngredientsFilter
 } from './model';
@@ -65,7 +72,7 @@ function isCategoryFilter(filter: RecipeIngredientsFilter): filter is ICategoryF
  * Check if an ingredient matches a single filter
  */
 function matchesFilter(
-  resolved: IResolvedRecipeIngredient<AnyRuntimeIngredient>,
+  resolved: IResolvedFillingIngredient<AnyRuntimeIngredient>,
   filter: RecipeIngredientsFilter
 ): boolean {
   const ingredient = resolved.ingredient;
@@ -100,15 +107,15 @@ function matchesFilter(
  * A resolved view of a recipe version with all ingredients resolved.
  * @public
  */
-export class RuntimeVersion implements IRuntimeRecipeVersion {
+export class RuntimeVersion implements IRuntimeFillingRecipeVersion {
   private readonly _context: VersionContext;
-  private readonly _recipeId: RecipeId;
-  private readonly _version: IRecipeVersion;
+  private readonly _fillingId: FillingId;
+  private readonly _version: IFillingRecipeVersion;
 
   // Lazy-loaded resolved data
-  private _resolvedIngredients: ReadonlyArray<IResolvedRecipeIngredient<AnyRuntimeIngredient>> | undefined;
+  private _resolvedIngredients: ReadonlyArray<IResolvedFillingIngredient<AnyRuntimeIngredient>> | undefined;
   private _resolutionError: string | undefined;
-  private _recipe: IRuntimeRecipe | undefined;
+  private _recipe: IRuntimeFillingRecipe | undefined;
   private _procedures: IResolvedProcedures | undefined | null; // null = no procedures
 
   /**
@@ -116,25 +123,25 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
    * Use RuntimeRecipe.getVersion() or goldenVersion instead of calling this directly.
    * @internal
    */
-  public constructor(context: VersionContext, recipeId: RecipeId, version: IRecipeVersion) {
+  public constructor(context: VersionContext, fillingId: FillingId, version: IFillingRecipeVersion) {
     this._context = context;
-    this._recipeId = recipeId;
+    this._fillingId = fillingId;
     this._version = version;
   }
 
   /**
    * Factory method for creating a RuntimeVersion.
    * @param context - The runtime context
-   * @param recipeId - The parent recipe ID
+   * @param fillingId - The parent recipe ID
    * @param version - The raw version data
    * @returns Success with RuntimeVersion
    */
   public static create(
     context: VersionContext,
-    recipeId: RecipeId,
-    version: IRecipeVersion
+    fillingId: FillingId,
+    version: IFillingRecipeVersion
   ): Result<RuntimeVersion> {
-    return Success.with(new RuntimeVersion(context, recipeId, version));
+    return Success.with(new RuntimeVersion(context, fillingId, version));
   }
 
   // ============================================================================
@@ -142,16 +149,16 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   // ============================================================================
 
   /**
-   * Qualified identifier for this version (recipeId\@versionSpec).
+   * Qualified identifier for this version (fillingId\@versionSpec).
    */
-  public get versionId(): RecipeVersionId {
-    return Helpers.createRecipeVersionId(this._recipeId, this._version.versionSpec);
+  public get versionId(): FillingVersionId {
+    return Helpers.createFillingVersionId(this._fillingId, this._version.versionSpec);
   }
 
   /**
    * The version specifier
    */
-  public get versionSpec(): RecipeVersionSpec {
+  public get versionSpec(): FillingVersionSpec {
     return this._version.versionSpec;
   }
 
@@ -163,20 +170,20 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   }
 
   /**
-   * The parent recipe ID
+   * The parent filling ID
    */
-  public get recipeId(): RecipeId {
-    return this._recipeId;
+  public get fillingId(): FillingId {
+    return this._fillingId;
   }
 
   /**
-   * The parent recipe - resolved.
-   * Enables navigation: `version.recipe.name`
+   * The parent filling recipe - resolved.
+   * Enables navigation: `version.fillingRecipe.name`
    */
-  public get recipe(): IRuntimeRecipe {
+  public get fillingRecipe(): IRuntimeFillingRecipe {
     if (this._recipe === undefined) {
       // orThrow is safe - version was created from a valid recipe
-      this._recipe = this._context.recipes.get(this._recipeId).value;
+      this._recipe = this._context.fillings.get(this._fillingId).value;
     }
     return this._recipe!;
   }
@@ -209,7 +216,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   /**
    * Optional ratings for this version
    */
-  public get ratings(): ReadonlyArray<IRecipeRating> {
+  public get ratings(): ReadonlyArray<IFillingRating> {
     return this._version.ratings ?? [];
   }
 
@@ -229,7 +236,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
    */
   public getIngredients(
     filter?: RecipeIngredientsFilter[]
-  ): Result<IterableIterator<IResolvedRecipeIngredient<AnyRuntimeIngredient>>> {
+  ): Result<IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>>> {
     // Ensure ingredients are resolved
     if (this._resolvedIngredients === undefined) {
       this._resolveIngredients();
@@ -243,7 +250,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
     const resolved = this._resolvedIngredients!;
 
     // Create generator based on filter
-    function* ingredientIterator(): IterableIterator<IResolvedRecipeIngredient<AnyRuntimeIngredient>> {
+    function* ingredientIterator(): IterableIterator<IResolvedFillingIngredient<AnyRuntimeIngredient>> {
       // undefined filter = all ingredients
       if (filter === undefined) {
         for (const ri of resolved) {
@@ -294,7 +301,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   public scale(
     targetWeight: Measurement,
     options?: IVersionScaleOptions
-  ): Result<IRuntimeScaledRecipeVersion> {
+  ): Result<IRuntimeScaledFillingRecipeVersion> {
     return scaleVersion(this._version, this.versionId, targetWeight, options).onSuccess((scaled) =>
       RuntimeScaledVersion.create(this._context, scaled)
     );
@@ -306,7 +313,10 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
    * @param options - Optional scaling options
    * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
    */
-  public scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion> {
+  public scaleByFactor(
+    factor: number,
+    options?: IVersionScaleOptions
+  ): Result<IRuntimeScaledFillingRecipeVersion> {
     if (factor <= 0) {
       return Failure.with('Scale factor must be greater than zero');
     }
@@ -363,7 +373,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
       return null;
     }
 
-    const resolvedProcedures: IResolvedRecipeProcedure[] = [];
+    const resolvedProcedures: IResolvedFillingRecipeProcedure[] = [];
     for (const ref of rawProcedures.options) {
       const procedureResult = this._context.getProcedure(ref.id);
       if (procedureResult.isSuccess()) {
@@ -403,7 +413,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   /**
    * Gets the underlying raw version data
    */
-  public get raw(): IRecipeVersion {
+  public get raw(): IFillingRecipeVersion {
     return this._version;
   }
 
@@ -412,7 +422,7 @@ export class RuntimeVersion implements IRuntimeRecipeVersion {
   // ============================================================================
 
   private _resolveIngredients(): void {
-    const resolved: IResolvedRecipeIngredient<AnyRuntimeIngredient>[] = [];
+    const resolved: IResolvedFillingIngredient<AnyRuntimeIngredient>[] = [];
     const errors: string[] = [];
 
     for (const ri of this._version.ingredients) {

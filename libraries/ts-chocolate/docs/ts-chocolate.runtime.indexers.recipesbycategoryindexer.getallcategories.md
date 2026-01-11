@@ -9,11 +9,11 @@ Gets all categories that have at least one recipe. Note: Forces index build if n
 **Signature:**
 
 ```typescript
-getAllCategories(): ReadonlyArray<RecipeCategory>;
+getAllCategories(): ReadonlyArray<FillingCategory>;
 ```
 **Returns:**
 
-ReadonlyArray&lt;RecipeCategory&gt;
+ReadonlyArray&lt;FillingCategory&gt;
 
 Array of categories
 

@@ -9,7 +9,7 @@ Union type for filling option IDs. Can be either a RecipeId or IngredientId - di
 **Signature:**
 
 ```typescript
-export type FillingOptionId = RecipeId | IngredientId;
+export type FillingOptionId = FillingId | IngredientId;
 ```
-**References:** [RecipeId](./ts-chocolate.recipeid.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
+**References:** [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)
 

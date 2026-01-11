@@ -30,21 +30,21 @@ import {
   Helpers,
   IngredientId,
   ProcedureId,
-  RecipeId,
-  RecipeVersionId,
+  FillingId,
+  FillingVersionId,
   Validation
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../confections';
-import { IComputedScaledRecipe, IWeightCalculationContext } from '../recipes';
-import { IRecipeJournalRecord, JournalLibrary } from '../journal';
+import { IComputedScaledFillingRecipe, IWeightCalculationContext } from '../fillings';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
 import { Procedure } from '../procedures';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
   IIngredientUsageInfo,
   IRuntimeIngredient,
-  IRuntimeRecipe,
-  IRuntimeRecipeVersion,
+  IRuntimeFillingRecipe,
+  IRuntimeFillingRecipeVersion,
   IScaledVersionContext,
   IVersionContext
 } from './model';
@@ -53,7 +53,7 @@ import { RuntimeIngredient, AnyRuntimeIngredient } from './ingredients';
 import { RuntimeRecipe } from './runtimeRecipe';
 import {
   IIngredientQuerySpec,
-  IRecipeQuerySpec,
+  IFillingRecipeQuerySpec,
   IngredientIndexerOrchestrator,
   RecipeIndexerOrchestrator
 } from './indexers';
@@ -112,7 +112,9 @@ export class RuntimeContext
   private _ingredients:
     | ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IRuntimeIngredient>
     | undefined;
-  private _recipes: ValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec, IRuntimeRecipe> | undefined;
+  private _recipes:
+    | ValidatingLibrary<FillingId, RuntimeRecipe, IFillingRecipeQuerySpec, IRuntimeFillingRecipe>
+    | undefined;
 
   // Extensible indexer orchestrators
   private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
@@ -184,21 +186,23 @@ export class RuntimeContext
   }
 
   /**
-   * Gets all journal records for a recipe (across all versions).
-   * @param recipeId - The recipe ID to search for
+   * Gets all journal records for a filling (across all versions).
+   * @param fillingId - The filling ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  public getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord> {
-    return this._library.getJournalsForRecipe(recipeId);
+  public getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord> {
+    return this._library.getJournalsForFilling(fillingId);
   }
 
   /**
-   * Gets all journal records for a specific recipe version.
-   * @param versionId - The recipe version ID to search for
+   * Gets all journal records for a specific filling version.
+   * @param versionId - The filling version ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  public getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord> {
-    return this._library.getJournalsForVersion(versionId);
+  public getJournalsForFillingVersion(
+    versionId: FillingVersionId
+  ): ReadonlyArray<IFillingRecipeJournalRecord> {
+    return this._library.getJournalsForFillingVersion(versionId);
   }
 
   // ============================================================================
@@ -247,10 +251,10 @@ export class RuntimeContext
   }
 
   /**
-   * A searchable library of all recipes, keyed by composite ID.
-   * Recipes are resolved eagerly on first access and cached.
+   * A searchable library of all fillings, keyed by composite ID.
+   * Fillings are resolved eagerly on first access and cached.
    */
-  public get recipes(): IReadOnlyValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec> {
+  public get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeRecipe, IFillingRecipeQuerySpec> {
     return this._resolveRecipes();
   }
 
@@ -290,11 +294,16 @@ export class RuntimeContext
    * Resolves and caches all recipes from the library.
    * @internal
    */
-  private _resolveRecipes(): ValidatingLibrary<RecipeId, RuntimeRecipe, IRecipeQuerySpec, IRuntimeRecipe> {
+  private _resolveRecipes(): ValidatingLibrary<
+    FillingId,
+    RuntimeRecipe,
+    IFillingRecipeQuerySpec,
+    IRuntimeFillingRecipe
+  > {
     if (this._recipes === undefined) {
       this._recipes = new ValidatingLibrary({
-        converters: new Collections.KeyValueConverters<RecipeId, RuntimeRecipe>({
-          key: Validation.toRecipeId,
+        converters: new Collections.KeyValueConverters<FillingId, RuntimeRecipe>({
+          key: Validation.toFillingId,
           /* c8 ignore next 2 - defensive code: value converter only used for external validation, not internal population */
           value: (from: unknown) =>
             from instanceof RuntimeRecipe ? succeed(from) : fail('not a runtime recipe')
@@ -302,7 +311,7 @@ export class RuntimeContext
         orchestrator: this._recipeOrchestrator
       });
       // Populate from library
-      for (const [id, recipe] of this._library.recipes.entries()) {
+      for (const [id, recipe] of this._library.fillings.entries()) {
         this._recipes.set(id, new RuntimeRecipe(this, id, recipe));
       }
     }
@@ -321,7 +330,7 @@ export class RuntimeContext
    * Gets a resolved runtime recipe by ID.
    * @internal - for use by orchestrators and internal navigation
    */
-  public _getRecipe(id: RecipeId): Result<RuntimeRecipe> {
+  public _getRecipe(id: FillingId): Result<RuntimeRecipe> {
     return this._resolveRecipes().get(id).asResult;
   }
 
@@ -332,12 +341,12 @@ export class RuntimeContext
    * @returns Success with the resolved source version, or Failure if not found
    * @internal
    */
-  public getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion> {
-    // Parse the composite RecipeVersionId to get recipeId and versionSpec
-    return Helpers.parseRecipeVersionId(scaled.scaledFrom.sourceVersionId).onSuccess((parsed) => {
-      const recipeId = parsed.collectionId;
+  public getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion> {
+    // Parse the composite FillingVersionId to get fillingId and versionSpec
+    return Helpers.parseFillingVersionId(scaled.scaledFrom.sourceVersionId).onSuccess((parsed) => {
+      const fillingId = parsed.collectionId;
       const versionSpec = parsed.itemId;
-      return this._getRecipe(recipeId).onSuccess((recipe) => recipe.getVersion(versionSpec));
+      return this._getRecipe(fillingId).onSuccess((recipe) => recipe.getVersion(versionSpec));
     });
   }
 
@@ -362,42 +371,42 @@ export class RuntimeContext
   // ---- Internal methods for ingredient navigation (IIngredientContext) ----
 
   /**
-   * Gets all recipes that use a specific ingredient (primary or alternate).
+   * Gets all fillings that use a specific ingredient (primary or alternate).
    * Used internally by RuntimeIngredient for navigation.
    * @internal
    */
-  public getRecipesUsingIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
-    const recipeIds = this._reverseIndex.getRecipesUsingIngredient(ingredientId);
-    return this._resolveRecipeIds(recipeIds);
+  public getFillingsUsingIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
+    const fillingIds = this._reverseIndex.getFillingsUsingIngredient(ingredientId);
+    return this._resolveFillingIds(fillingIds);
   }
 
   /**
-   * Gets recipes where ingredient is primary.
+   * Gets fillings where ingredient is primary.
    * Used internally by RuntimeIngredient for navigation.
    * @internal
    */
-  public getRecipesWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
-    const recipeIds = this._reverseIndex.getRecipesWithPrimaryIngredient(ingredientId);
-    return this._resolveRecipeIds(recipeIds);
+  public getFillingsWithPrimaryIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
+    const fillingIds = this._reverseIndex.getFillingsWithPrimaryIngredient(ingredientId);
+    return this._resolveFillingIds(fillingIds);
   }
 
   /**
-   * Gets recipes where ingredient is an alternate.
+   * Gets fillings where ingredient is an alternate.
    * Used internally by RuntimeIngredient for navigation.
    * @internal
    */
-  public getRecipesWithAlternateIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
-    const recipeIds = this._reverseIndex.getRecipesWithAlternateIngredient(ingredientId);
-    return this._resolveRecipeIds(recipeIds);
+  public getFillingsWithAlternateIngredient(ingredientId: IngredientId): RuntimeRecipe[] {
+    const fillingIds = this._reverseIndex.getFillingsWithAlternateIngredient(ingredientId);
+    return this._resolveFillingIds(fillingIds);
   }
 
   /**
-   * Resolves a set of recipe IDs to RuntimeRecipe objects.
+   * Resolves a set of filling IDs to RuntimeRecipe objects.
    * @internal
    */
-  private _resolveRecipeIds(recipeIds: ReadonlySet<RecipeId>): RuntimeRecipe[] {
+  private _resolveFillingIds(fillingIds: ReadonlySet<FillingId>): RuntimeRecipe[] {
     const result: RuntimeRecipe[] = [];
-    for (const id of recipeIds) {
+    for (const id of fillingIds) {
       this._getRecipe(id).onSuccess((r: RuntimeRecipe) => Success.with(result.push(r)));
     }
     return result;
@@ -420,10 +429,10 @@ export class RuntimeContext
   // ============================================================================
 
   /**
-   * Gets all unique tags used across recipes.
+   * Gets all unique tags used across fillings.
    */
-  public getAllRecipeTags(): ReadonlyArray<string> {
-    return this._reverseIndex.getAllRecipeTags();
+  public getAllFillingTags(): ReadonlyArray<string> {
+    return this._reverseIndex.getAllFillingTags();
   }
 
   /**

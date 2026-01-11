@@ -121,6 +121,17 @@ Gets the confections directory from a library tree.
 </td></tr>
 <tr><td>
 
+[getFillingsDirectory(tree)](./ts-chocolate.librarydata.getfillingsdirectory.md)
+
+
+</td><td>
+
+Gets the fillings directory from a library tree.
+
+
+</td></tr>
+<tr><td>
+
 [getIngredientsDirectory(tree)](./ts-chocolate.librarydata.getingredientsdirectory.md)
 
 
@@ -160,17 +171,6 @@ Gets the molds directory from a library tree.
 </td><td>
 
 Gets the procedures directory from a library tree.
-
-
-</td></tr>
-<tr><td>
-
-[getRecipesDirectory(tree)](./ts-chocolate.librarydata.getrecipesdirectory.md)
-
-
-</td><td>
-
-Gets the recipes directory from a library tree.
 
 
 </td></tr>

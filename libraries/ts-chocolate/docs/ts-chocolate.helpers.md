@@ -19,6 +19,28 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[createFillingId(sourceId, baseId)](./ts-chocolate.helpers.createfillingid.md)
+
+
+</td><td>
+
+Creates a composite FillingId from source ID and base ID
+
+
+</td></tr>
+<tr><td>
+
+[createFillingVersionId(fillingId, versionSpec)](./ts-chocolate.helpers.createfillingversionid.md)
+
+
+</td><td>
+
+Creates a composite FillingVersionId from filling ID and version spec
+
+
+</td></tr>
+<tr><td>
+
 [createIngredientId(sourceId, baseId)](./ts-chocolate.helpers.createingredientid.md)
 
 
@@ -30,23 +52,45 @@ Creates a composite IngredientId from source ID and base ID
 </td></tr>
 <tr><td>
 
-[createRecipeId(sourceId, baseId)](./ts-chocolate.helpers.createrecipeid.md)
+[getFillingBaseId(id)](./ts-chocolate.helpers.getfillingbaseid.md)
 
 
 </td><td>
 
-Creates a composite RecipeId from source ID and base ID
+Gets the base ID from a composite FillingId
 
 
 </td></tr>
 <tr><td>
 
-[createRecipeVersionId(recipeId, versionSpec)](./ts-chocolate.helpers.createrecipeversionid.md)
+[getFillingSourceId(id)](./ts-chocolate.helpers.getfillingsourceid.md)
 
 
 </td><td>
 
-Creates a composite RecipeVersionId from recipe ID and version spec
+Gets the source ID from a composite FillingId
+
+
+</td></tr>
+<tr><td>
+
+[getFillingVersionFillingId(id)](./ts-chocolate.helpers.getfillingversionfillingid.md)
+
+
+</td><td>
+
+Gets the filling ID from a composite FillingVersionId
+
+
+</td></tr>
+<tr><td>
+
+[getFillingVersionSpec(id)](./ts-chocolate.helpers.getfillingversionspec.md)
+
+
+</td><td>
+
+Gets the version spec from a composite FillingVersionId
 
 
 </td></tr>
@@ -118,45 +162,23 @@ Gets the preferred option from a collection, falling back to the first option.
 </td></tr>
 <tr><td>
 
-[getRecipeBaseId(id)](./ts-chocolate.helpers.getrecipebaseid.md)
+[parseFillingId(id)](./ts-chocolate.helpers.parsefillingid.md)
 
 
 </td><td>
 
-Gets the base ID from a composite RecipeId
+Parses a composite FillingId into its component parts
 
 
 </td></tr>
 <tr><td>
 
-[getRecipeSourceId(id)](./ts-chocolate.helpers.getrecipesourceid.md)
+[parseFillingVersionId(id)](./ts-chocolate.helpers.parsefillingversionid.md)
 
 
 </td><td>
 
-Gets the source ID from a composite RecipeId
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeVersionRecipeId(id)](./ts-chocolate.helpers.getrecipeversionrecipeid.md)
-
-
-</td><td>
-
-Gets the recipe ID from a composite RecipeVersionId
-
-
-</td></tr>
-<tr><td>
-
-[getRecipeVersionSpec(id)](./ts-chocolate.helpers.getrecipeversionspec.md)
-
-
-</td><td>
-
-Gets the version spec from a composite RecipeVersionId
+Parses a composite FillingVersionId into its component parts
 
 
 </td></tr>
@@ -168,28 +190,6 @@ Gets the version spec from a composite RecipeVersionId
 </td><td>
 
 Parses a composite IngredientId into its component parts
-
-
-</td></tr>
-<tr><td>
-
-[parseRecipeId(id)](./ts-chocolate.helpers.parserecipeid.md)
-
-
-</td><td>
-
-Parses a composite RecipeId into its component parts
-
-
-</td></tr>
-<tr><td>
-
-[parseRecipeVersionId(id)](./ts-chocolate.helpers.parserecipeversionid.md)
-
-
-</td><td>
-
-Parses a composite RecipeVersionId into its component parts
 
 
 </td></tr>

@@ -89,12 +89,12 @@ _(Optional)_ Optional mold being used for this recipe
 
 </td><td>
 
-[IComputedScaledRecipe](./ts-chocolate.recipes.icomputedscaledrecipe.md)
+[IComputedScaledFillingRecipe](./ts-chocolate.fillings.icomputedscaledfillingrecipe.md)
 
 
 </td><td>
 
-The specific scaled recipe this procedure is being rendered for
+The specific scaled filling recipe this procedure is being rendered for
 
 
 </td></tr>

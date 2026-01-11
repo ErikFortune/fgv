@@ -74,6 +74,17 @@ Converter for [IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjourn
 </td></tr>
 <tr><td>
 
+[fillingRecipeJournalRecord](./ts-chocolate.journal.converters.fillingrecipejournalrecord.md)
+
+
+</td><td>
+
+Converter for [IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [journalEntry](./ts-chocolate.journal.converters.journalentry.md)
 
 
@@ -102,17 +113,6 @@ Converter for [JournalEventType](./ts-chocolate.journal.journaleventtype.md)<!--
 </td><td>
 
 Converter for [JournalType](./ts-chocolate.journal.journaltype.md)<!-- -->.
-
-
-</td></tr>
-<tr><td>
-
-[recipeJournalRecord](./ts-chocolate.journal.converters.recipejournalrecord.md)
-
-
-</td><td>
-
-Converter for [IRecipeJournalRecord](./ts-chocolate.journal.irecipejournalrecord.md)<!-- -->.
 
 
 </td></tr>

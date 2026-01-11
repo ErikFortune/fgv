@@ -24,9 +24,9 @@
  */
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
-import { Converters as ChocolateConverters, Helpers, IngredientId, RecipeId } from '../../common';
+import { Converters as ChocolateConverters, FillingId, Helpers, IngredientId } from '../../common';
 import { ChocolateLibrary } from '../chocolateLibrary';
-import { IRuntimeRecipe } from '../model';
+import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';
 
 // ============================================================================
@@ -98,7 +98,7 @@ export const recipesByIngredientConfigConverter: Converter<IRecipesByIngredientC
  * Internal structure for tracking ingredient usage.
  */
 interface IIngredientUsageEntry {
-  readonly recipeId: RecipeId;
+  readonly fillingId: FillingId;
   readonly isPrimary: boolean;
 }
 
@@ -117,8 +117,8 @@ interface IIngredientUsageEntry {
  * @public
  */
 export class RecipesByIngredientIndexer extends BaseIndexer<
-  IRuntimeRecipe,
-  RecipeId,
+  IRuntimeFillingRecipe,
+  FillingId,
   IRecipesByIngredientConfig
 > {
   // Index structure: ingredient -> usage info
@@ -135,7 +135,7 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._buildIndex} */
   protected _buildIndex(): void {
     this._ingredientUsage = new Map<IngredientId, IIngredientUsageEntry[]>();
-    const recipes = this.library.recipes;
+    const recipes = this.library.fillings;
 
     for (const [recipeId, recipe] of recipes.entries()) {
       // Index ingredients from all versions
@@ -147,7 +147,7 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
           // Index all ingredient IDs
           for (const id of ri.ingredient.ids) {
             this._addUsageInfo(id, {
-              recipeId: recipeId as RecipeId,
+              fillingId: recipeId as FillingId,
               isPrimary: id === primaryId
             });
           }
@@ -164,14 +164,14 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
   /** {@inheritdoc Runtime.Indexers.BaseIndexer._findInternal} */
   protected _findInternal(
     config: IRecipesByIngredientConfig
-  ): Result<ReadonlyArray<IRuntimeRecipe | RecipeId>> {
+  ): Result<ReadonlyArray<IRuntimeFillingRecipe | FillingId>> {
     const usage = this._ingredientUsage!.get(config.ingredientId);
     if (!usage) {
       return this._emptyResult();
     }
 
     const usageType = config.usageType ?? 'any';
-    const matchingRecipeIds = new Set<RecipeId>();
+    const matchingFillingIds = new Set<FillingId>();
 
     for (const entry of usage) {
       const matches =
@@ -180,12 +180,12 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
         (usageType === 'alternate' && !entry.isPrimary);
 
       if (matches) {
-        matchingRecipeIds.add(entry.recipeId);
+        matchingFillingIds.add(entry.fillingId);
       }
     }
 
     // Return IDs - orchestrator will resolve to entities
-    return Success.with([...matchingRecipeIds]);
+    return Success.with([...matchingFillingIds]);
   }
 
   /**
@@ -199,7 +199,7 @@ export class RecipesByIngredientIndexer extends BaseIndexer<
     }
     // Avoid duplicates for same recipe + same isPrimary
     /* c8 ignore next 3 - defensive: duplicate prevention for multi-version recipes */
-    if (!usage.some((u) => u.recipeId === entry.recipeId && u.isPrimary === entry.isPrimary)) {
+    if (!usage.some((u) => u.fillingId === entry.fillingId && u.isPrimary === entry.isPrimary)) {
       usage.push(entry);
     }
   }

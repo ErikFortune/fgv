@@ -35,19 +35,19 @@ import {
   allChocolateApplications,
   allChocolateTypes,
   allConfectionTypes,
+  allFillingCategories,
   allFluidityStars,
   allIngredientCategories,
   allIngredientPhases,
   allMeasurementUnits,
   allMoldFormats,
-  allRecipeCategories,
   allSpoonLevels,
   allWeightUnits,
   BaseConfectionId,
+  BaseFillingId,
   BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
-  BaseRecipeId,
   CacaoVariety,
   Celsius,
   Certification,
@@ -59,6 +59,11 @@ import {
   ConfectionVersionId,
   ConfectionVersionSpec,
   DegreesMacMichael,
+  FillingCategory,
+  FillingId,
+  FillingName,
+  FillingVersionId,
+  FillingVersionSpec,
   FluidityStars,
   ICategorizedUrl,
   ID_SEPARATOR,
@@ -80,11 +85,6 @@ import {
   Percentage,
   ProcedureId,
   RatingScore,
-  RecipeCategory,
-  RecipeId,
-  RecipeName,
-  RecipeVersionId,
-  RecipeVersionSpec,
   SessionId,
   SlotId,
   SourceId,
@@ -96,16 +96,20 @@ import {
 import { validateIdsWithPreferred, validateOptionsWithPreferred } from './validation';
 import {
   toBaseConfectionId,
+  toBaseFillingId,
   toBaseIngredientId,
   toBaseMoldId,
   toBaseProcedureId,
-  toBaseRecipeId,
   toCelsius,
   toConfectionId,
   toConfectionName,
   toConfectionVersionId,
   toConfectionVersionSpec,
   toDegreesMacMichael,
+  toFillingId,
+  toFillingName,
+  toFillingVersionId,
+  toFillingVersionSpec,
   toIngredientId,
   toJournalId,
   toMeasurement,
@@ -115,10 +119,6 @@ import {
   toPercentage,
   toProcedureId,
   toRatingScore,
-  toRecipeId,
-  toRecipeName,
-  toRecipeVersionId,
-  toRecipeVersionSpec,
   toSessionId,
   toSlotId,
   toSourceId,
@@ -142,11 +142,11 @@ export const sourceId: Converter<SourceId> = Converters.generic(toSourceId);
 export const baseIngredientId: Converter<BaseIngredientId> = Converters.generic(toBaseIngredientId);
 
 /**
- * Converter for BaseRecipeId
+ * Converter for BaseFillingId
  * @public
  */
 
-export const baseRecipeId: Converter<BaseRecipeId> = Converters.generic(toBaseRecipeId);
+export const baseFillingId: Converter<BaseFillingId> = Converters.generic(toBaseFillingId);
 
 /**
  * Converter for BaseMoldId
@@ -173,10 +173,10 @@ export const baseConfectionId: Converter<BaseConfectionId> = Converters.generic(
 export const ingredientId: Converter<IngredientId> = Converters.generic(toIngredientId);
 
 /**
- * Converter for RecipeId (composite)
+ * Converter for FillingId (composite)
  * @public
  */
-export const recipeId: Converter<RecipeId> = Converters.generic(toRecipeId);
+export const fillingId: Converter<FillingId> = Converters.generic(toFillingId);
 
 /**
  * Converter for MoldId (composite)
@@ -223,19 +223,19 @@ export const parsedIngredientId: Converter<ParsedIngredientId> = Converters.comp
 );
 
 /**
- * Type alias for parsed RecipeId components
+ * Type alias for parsed FillingId components
  * @public
  */
-export type ParsedRecipeId = Converters.ICompositeId<SourceId, BaseRecipeId>;
+export type ParsedFillingId = Converters.ICompositeId<SourceId, BaseFillingId>;
 
 /**
- * Converter that parses a RecipeId string into its component parts
+ * Converter that parses a FillingId string into its component parts
  * @public
  */
-export const parsedRecipeId: Converter<ParsedRecipeId> = Converters.compositeId(
+export const parsedFillingId: Converter<ParsedFillingId> = Converters.compositeId(
   sourceId,
   ID_SEPARATOR,
-  baseRecipeId
+  baseFillingId
 );
 
 /**
@@ -271,37 +271,37 @@ export const parsedProcedureId: Converter<ParsedProcedureId> = Converters.compos
 );
 
 /**
- * Converter for RecipeName
+ * Converter for FillingName
  * @public
  */
-export const recipeName: Converter<RecipeName> = Converters.generic(toRecipeName);
+export const fillingName: Converter<FillingName> = Converters.generic(toFillingName);
 
 /**
- * Converter for RecipeVersionSpec
+ * Converter for FillingVersionSpec
  * @public
  */
-export const recipeVersionSpec: Converter<RecipeVersionSpec> = Converters.generic(toRecipeVersionSpec);
+export const fillingVersionSpec: Converter<FillingVersionSpec> = Converters.generic(toFillingVersionSpec);
 
 /**
- * Converter for RecipeVersionId (composite)
+ * Converter for FillingVersionId (composite)
  * @public
  */
-export const recipeVersionId: Converter<RecipeVersionId> = Converters.generic(toRecipeVersionId);
+export const fillingVersionId: Converter<FillingVersionId> = Converters.generic(toFillingVersionId);
 
 /**
- * Type alias for parsed RecipeVersionId components
+ * Type alias for parsed FillingVersionId components
  * @public
  */
-export type ParsedRecipeVersionId = Converters.ICompositeId<RecipeId, RecipeVersionSpec>;
+export type ParsedFillingVersionId = Converters.ICompositeId<FillingId, FillingVersionSpec>;
 
 /**
- * Converter that parses a RecipeVersionId string into its component parts
+ * Converter that parses a FillingVersionId string into its component parts
  * @public
  */
-export const parsedRecipeVersionId: Converter<ParsedRecipeVersionId> = Converters.compositeId(
-  recipeId,
+export const parsedFillingVersionId: Converter<ParsedFillingVersionId> = Converters.compositeId(
+  fillingId,
   VERSION_ID_SEPARATOR,
-  recipeVersionSpec
+  fillingVersionSpec
 );
 
 /**
@@ -488,10 +488,10 @@ export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> =
 );
 
 /**
- * Converter for RecipeCategory
+ * Converter for FillingCategory
  * @public
  */
-export const recipeCategory: Converter<RecipeCategory> = Converters.enumeratedValue(allRecipeCategories);
+export const fillingCategory: Converter<FillingCategory> = Converters.enumeratedValue(allFillingCategories);
 
 /**
  * Converter for MeasurementUnit

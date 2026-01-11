@@ -30,14 +30,14 @@
 
 import { Collections, Result } from '@fgv/ts-utils';
 
-import { IIngredientQuerySpec, IRecipeQuerySpec } from './indexers';
+import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import { IReadOnlyValidatingLibrary } from './validatingLibrary';
 
 import {
   Allergen,
   BaseConfectionId,
+  BaseFillingId,
   BaseIngredientId,
-  BaseRecipeId,
   CacaoVariety,
   Celsius,
   Certification,
@@ -48,15 +48,15 @@ import {
   ConfectionType,
   ConfectionVersionSpec,
   DegreesMacMichael,
+  FillingId,
+  FillingName,
+  FillingVersionId,
+  FillingVersionSpec,
   FluidityStars,
-  Measurement,
   IngredientCategory,
   IngredientId,
+  Measurement,
   Percentage,
-  RecipeId,
-  RecipeName,
-  RecipeVersionId,
-  RecipeVersionSpec,
   SourceId
 } from '../common';
 import {
@@ -70,15 +70,15 @@ import {
   ITemperatureCurve
 } from '../ingredients';
 import {
-  IComputedScaledRecipe,
-  IRecipe,
-  IRecipeIngredient,
+  IComputedScaledFillingRecipe,
+  IFillingIngredient,
+  IFillingRating,
+  IFillingRecipe,
+  IFillingRecipeVersion,
   IProcedureRef,
-  IRecipeVersion,
-  IScaledRecipeIngredient,
-  IVersionScaleOptions,
-  IRecipeRating as IRecipeRating
-} from '../recipes';
+  IScaledFillingIngredient,
+  IVersionScaleOptions
+} from '../fillings';
 import {
   AnyConfectionVersion,
   ConfectionData,
@@ -99,7 +99,7 @@ import {
   IRolledTruffleVersion
 } from '../confections';
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
-import { IRecipeJournalRecord, JournalLibrary } from '../journal';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
 import { Procedure } from '../procedures';
 import { ChocolateLibrary } from './chocolateLibrary';
@@ -177,19 +177,19 @@ export interface IRuntimeIngredient {
   // ---- Navigation (runtime-specific) ----
 
   /**
-   * Gets all recipes that use this ingredient (primary or alternate).
+   * Gets all filling recipes that use this ingredient (primary or alternate).
    */
-  usedByRecipes(): IRuntimeRecipe[];
+  usedByFillings(): IRuntimeFillingRecipe[];
 
   /**
-   * Gets recipes where this ingredient is the primary choice.
+   * Gets filling recipes where this ingredient is the primary choice.
    */
-  primaryInRecipes(): IRuntimeRecipe[];
+  primaryInFillings(): IRuntimeFillingRecipe[];
 
   /**
-   * Gets recipes where this ingredient is listed as an alternate.
+   * Gets filling recipes where this ingredient is listed as an alternate.
    */
-  alternateInRecipes(): IRuntimeRecipe[];
+  alternateInFillings(): IRuntimeFillingRecipe[];
 
   // ---- Type narrowing methods ----
 
@@ -384,23 +384,23 @@ export type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
  * - Resolved ingredient access via flexible filtering
  * - Ganache calculation
  *
- * Note: Does not extend `IRecipeVersion` because `ingredients` has a different
+ * Note: Does not extend `IFillingRecipeVersion` because `ingredients` has a different
  * type (resolved vs raw references).
  *
  * @public
  */
-export interface IRuntimeRecipeVersion {
+export interface IRuntimeFillingRecipeVersion {
   // ---- Identity ----
 
   /**
    * Qualified identifier for this version (recipeId\@versionSpec).
    */
-  readonly versionId: RecipeVersionId;
+  readonly versionId: FillingVersionId;
 
   /**
    * Version spec portion of the identifier.
    */
-  readonly versionSpec: RecipeVersionSpec;
+  readonly versionSpec: FillingVersionSpec;
 
   /**
    * Date this version was created (ISO 8601 format).
@@ -408,17 +408,17 @@ export interface IRuntimeRecipeVersion {
   readonly createdDate: string;
 
   /**
-   * The parent recipe ID.
+   * The parent filling ID.
    */
-  readonly recipeId: RecipeId;
+  readonly fillingId: FillingId;
 
   /**
-   * The parent recipe - resolved.
-   * Enables navigation: `version.recipe.name`
+   * The parent filling recipe - resolved.
+   * Enables navigation: `version.fillingRecipe.name`
    */
-  readonly recipe: IRuntimeRecipe;
+  readonly fillingRecipe: IRuntimeFillingRecipe;
 
-  // ---- Version Properties (from IRecipeVersion) ----
+  // ---- Version Properties (from IFillingRecipeVersion) ----
 
   /**
    * Base weight of the recipe (sum of all ingredient amounts).
@@ -438,7 +438,7 @@ export interface IRuntimeRecipeVersion {
   /**
    * Optional ratings for this version.
    */
-  readonly ratings: ReadonlyArray<IRecipeRating>;
+  readonly ratings: ReadonlyArray<IFillingRating>;
 
   // ---- Resolved ingredients ----
 
@@ -477,7 +477,7 @@ export interface IRuntimeRecipeVersion {
    */
   getIngredients(
     filter?: RecipeIngredientsFilter[]
-  ): Result<IterableIterator<IResolvedRecipeIngredient<IRuntimeIngredient>>>;
+  ): Result<IterableIterator<IResolvedFillingIngredient<IRuntimeIngredient>>>;
 
   // ---- Ingredient queries ----
 
@@ -496,7 +496,10 @@ export interface IRuntimeRecipeVersion {
    * @param options - Optional scaling options (precision, minimum amount)
    * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
    */
-  scale(targetWeight: Measurement, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+  scale(
+    targetWeight: Measurement,
+    options?: IVersionScaleOptions
+  ): Result<IRuntimeScaledFillingRecipeVersion>;
 
   /**
    * Scales this version by a multiplicative factor.
@@ -504,7 +507,7 @@ export interface IRuntimeRecipeVersion {
    * @param options - Optional scaling options
    * @returns Success with RuntimeScaledVersion, or Failure if scaling fails
    */
-  scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledRecipeVersion>;
+  scaleByFactor(factor: number, options?: IVersionScaleOptions): Result<IRuntimeScaledFillingRecipeVersion>;
 
   /**
    * Calculates ganache characteristics for this version.
@@ -525,7 +528,7 @@ export interface IRuntimeRecipeVersion {
   /**
    * Gets the underlying raw version data.
    */
-  readonly raw: IRecipeVersion;
+  readonly raw: IFillingRecipeVersion;
 }
 
 // ============================================================================
@@ -541,7 +544,7 @@ export interface IRuntimeScalingSource {
   /**
    * The source version that was scaled - fully resolved.
    */
-  readonly sourceVersion: IRuntimeRecipeVersion;
+  readonly sourceVersion: IRuntimeFillingRecipeVersion;
 
   /**
    * The scaling factor applied.
@@ -568,7 +571,7 @@ export interface IRuntimeScalingSource {
  *
  * @public
  */
-export interface IRuntimeScaledRecipeVersion {
+export interface IRuntimeScaledFillingRecipeVersion {
   // ---- Scaling Info ----
 
   /**
@@ -607,7 +610,7 @@ export interface IRuntimeScaledRecipeVersion {
   /**
    * Optional ratings from the source version.
    */
-  readonly ratings: ReadonlyArray<IRecipeRating>;
+  readonly ratings: ReadonlyArray<IFillingRating>;
 
   // ---- Resolved ingredients ----
 
@@ -662,7 +665,7 @@ export interface IRuntimeScaledRecipeVersion {
   /**
    * Gets the underlying raw scaled version data.
    */
-  readonly raw: IComputedScaledRecipe;
+  readonly raw: IComputedScaledFillingRecipe;
 }
 
 // ============================================================================
@@ -674,7 +677,7 @@ export interface IRuntimeScaledRecipeVersion {
  * Used in runtime recipes to provide direct access to procedure details.
  * @public
  */
-export interface IResolvedRecipeProcedure {
+export interface IResolvedFillingRecipeProcedure {
   /**
    * The fully resolved procedure object.
    */
@@ -699,7 +702,7 @@ export interface IResolvedProcedures {
   /**
    * Available procedures for this recipe - fully resolved.
    */
-  readonly procedures: ReadonlyArray<IResolvedRecipeProcedure>;
+  readonly procedures: ReadonlyArray<IResolvedFillingRecipeProcedure>;
 
   /**
    * The recommended/default procedure - fully resolved.
@@ -722,19 +725,19 @@ export interface IResolvedProcedures {
  * - Usage and ingredient queries
  * - Resolved procedure access
  *
- * Note: Does not extend `IRecipe` because `versions` has a different
+ * Note: Does not extend `IFillingRecipe` because `versions` has a different
  * type (resolved vs raw versions).
  *
  * @public
  */
-export interface IRuntimeRecipe {
+export interface IRuntimeFillingRecipe {
   // ---- Composite Identity (runtime-specific) ----
 
   /**
    * The composite recipe ID (e.g., "user.dark-ganache").
    * Combines source and base ID for unique identification across sources.
    */
-  readonly id: RecipeId;
+  readonly id: FillingId;
 
   /**
    * The source ID part of the composite ID.
@@ -744,14 +747,14 @@ export interface IRuntimeRecipe {
   /**
    * The base recipe ID within the source.
    */
-  readonly baseId: BaseRecipeId;
+  readonly baseId: BaseFillingId;
 
-  // ---- Core Properties (from IRecipe) ----
+  // ---- Core Properties (from IFillingRecipe) ----
 
   /**
    * Human-readable recipe name.
    */
-  readonly name: RecipeName;
+  readonly name: FillingName;
 
   /**
    * Optional description of the recipe.
@@ -766,31 +769,31 @@ export interface IRuntimeRecipe {
   /**
    * The ID of the golden (approved default) version.
    */
-  readonly goldenVersionSpec: RecipeVersionSpec;
+  readonly goldenVersionSpec: FillingVersionSpec;
 
   // ---- Version navigation (resolved) ----
 
   /**
    * The golden (default approved) version - resolved.
    */
-  readonly goldenVersion: IRuntimeRecipeVersion;
+  readonly goldenVersion: IRuntimeFillingRecipeVersion;
 
   /**
    * All versions - resolved.
    */
-  readonly versions: ReadonlyArray<IRuntimeRecipeVersion>;
+  readonly versions: ReadonlyArray<IRuntimeFillingRecipeVersion>;
 
   /**
-   * Gets a specific version by {@link RecipeVersionSpec | version specifier}.
+   * Gets a specific version by {@link FillingVersionSpec | version specifier}.
    * @param versionSpec - The version specifier to find
    * @returns Success with RuntimeVersion, or Failure if not found
    */
-  getVersion(versionSpec: RecipeVersionSpec): Result<IRuntimeRecipeVersion>;
+  getVersion(versionSpec: FillingVersionSpec): Result<IRuntimeFillingRecipeVersion>;
 
   /**
    * Gets the latest version (by created date).
    */
-  readonly latestVersion: IRuntimeRecipeVersion;
+  readonly latestVersion: IRuntimeFillingRecipeVersion;
 
   /**
    * Number of versions.
@@ -823,7 +826,7 @@ export interface IRuntimeRecipe {
   /**
    * Gets the underlying raw recipe data.
    */
-  readonly raw: IRecipe;
+  readonly raw: IFillingRecipe;
 }
 
 // ============================================================================
@@ -835,7 +838,7 @@ export interface IRuntimeRecipe {
  * This is the primary interface for accessing recipe ingredients in the runtime layer.
  * @public
  */
-export interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
+export interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
   /**
    * The fully resolved ingredient object
    */
@@ -859,7 +862,7 @@ export interface IResolvedRecipeIngredient<TIngredient extends IRuntimeIngredien
   /**
    * The original raw ingredient reference data
    */
-  readonly raw: IRecipeIngredient;
+  readonly raw: IFillingIngredient;
 }
 
 /**
@@ -900,7 +903,7 @@ export interface IResolvedScaledIngredient<TIngredient extends IRuntimeIngredien
   /**
    * The original raw scaled ingredient reference data
    */
-  readonly raw: IScaledRecipeIngredient;
+  readonly raw: IScaledFillingIngredient;
 }
 
 // ============================================================================
@@ -1034,9 +1037,9 @@ export interface IIngredientQueryOptions {
  */
 export interface IIngredientUsageInfo {
   /**
-   * The recipe ID where the ingredient is used.
+   * The filling ID where the ingredient is used.
    */
-  readonly recipeId: RecipeId;
+  readonly fillingId: FillingId;
 
   /**
    * Whether this is a primary ingredient (vs alternate).
@@ -1059,7 +1062,7 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
   /** Map of all ingredients, keyed by composite ID. */
   readonly ingredients: Collections.IReadOnlyValidatingResultMap<IngredientId, TIngredient>;
   /** Gets the source version for a computed scaled recipe. */
-  getSourceVersion(scaled: IComputedScaledRecipe): Result<IRuntimeRecipeVersion>;
+  getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
 }
 
 /**
@@ -1074,8 +1077,8 @@ export interface IScaledVersionContext<TIngredient extends IRuntimeIngredient = 
  */
 export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient>
   extends IScaledVersionContext<TIngredient> {
-  /** Map of all recipes, keyed by composite ID. */
-  readonly recipes: Collections.IReadOnlyValidatingResultMap<RecipeId, IRuntimeRecipe>;
+  /** Map of all fillings, keyed by composite ID. */
+  readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
   /** Gets a procedure by its composite ID. */
   getProcedure(id: string): Result<Procedure>;
 }
@@ -1086,12 +1089,12 @@ export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRunti
  * @internal
  */
 export interface IIngredientContext {
-  /** Gets all recipes using this ingredient (primary or alternate). */
-  getRecipesUsingIngredient(id: IngredientId): IRuntimeRecipe[];
-  /** Gets recipes where this ingredient is primary. */
-  getRecipesWithPrimaryIngredient(id: IngredientId): IRuntimeRecipe[];
-  /** Gets recipes where this ingredient is an alternate. */
-  getRecipesWithAlternateIngredient(id: IngredientId): IRuntimeRecipe[];
+  /** Gets all fillings using this ingredient (primary or alternate). */
+  getFillingsUsingIngredient(id: IngredientId): IRuntimeFillingRecipe[];
+  /** Gets fillings where this ingredient is primary. */
+  getFillingsWithPrimaryIngredient(id: IngredientId): IRuntimeFillingRecipe[];
+  /** Gets fillings where this ingredient is an alternate. */
+  getFillingsWithAlternateIngredient(id: IngredientId): IRuntimeFillingRecipe[];
 }
 
 // ============================================================================
@@ -1132,12 +1135,12 @@ export interface IRuntimeContext {
   readonly ingredients: IReadOnlyValidatingLibrary<IngredientId, IRuntimeIngredient, IIngredientQuerySpec>;
 
   /**
-   * A searchable library of all recipes, keyed by composite ID.
-   * Recipes are resolved eagerly on first access and cached.
+   * A searchable library of all fillings, keyed by composite ID.
+   * Fillings are resolved eagerly on first access and cached.
    * Use `.get(id)` for ID-based lookup, `.find(spec)` for query-based search,
    * `.has(id)` for existence checks, `.values()` for iteration.
    */
-  readonly recipes: IReadOnlyValidatingLibrary<RecipeId, IRuntimeRecipe, IRecipeQuerySpec>;
+  readonly fillings: IReadOnlyValidatingLibrary<FillingId, IRuntimeFillingRecipe, IFillingRecipeQuerySpec>;
 
   // ---- Journals ----
 
@@ -1149,18 +1152,18 @@ export interface IRuntimeContext {
   readonly journals: JournalLibrary;
 
   /**
-   * Gets all journal records for a recipe (across all versions).
-   * @param recipeId - The recipe ID to search for
+   * Gets all journal records for a filling (across all versions).
+   * @param fillingId - The filling ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  getJournalsForRecipe(recipeId: RecipeId): ReadonlyArray<IRecipeJournalRecord>;
+  getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord>;
 
   /**
-   * Gets all journal records for a specific recipe version.
-   * @param versionId - The recipe version ID to search for
+   * Gets all journal records for a specific filling version.
+   * @param versionId - The filling version ID to search for
    * @returns Array of journal records (empty if none found)
    */
-  getJournalsForVersion(versionId: RecipeVersionId): ReadonlyArray<IRecipeJournalRecord>;
+  getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
 
   // ---- Reverse Lookups ----
 
@@ -1174,9 +1177,9 @@ export interface IRuntimeContext {
   // ---- Tag Discovery ----
 
   /**
-   * Gets all unique tags used across recipes.
+   * Gets all unique tags used across fillings.
    */
-  getAllRecipeTags(): ReadonlyArray<string>;
+  getAllFillingTags(): ReadonlyArray<string>;
 
   /**
    * Gets all unique tags used across ingredients.
