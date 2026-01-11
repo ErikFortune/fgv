@@ -12,22 +12,47 @@ items:
     category: ganache
     steps:
       - order: 1
-        description: Melt chocolate to 40-45C
+        task:
+          task:
+            baseId: ganache-cold-method-step-1
+            name: Melt Chocolate
+            template: Melt chocolate to 40-45C
+          params: {}
         activeTime: 5
         temperature: 45
       - order: 2
-        description: Warm cream to 35C
+        task:
+          task:
+            baseId: ganache-cold-method-step-2
+            name: Warm Cream
+            template: Warm cream to 35C
+          params: {}
         activeTime: 3
         temperature: 35
       - order: 3
-        description: Combine and emulsify with immersion blender
+        task:
+          task:
+            baseId: ganache-cold-method-step-3
+            name: Combine and Emulsify
+            template: Combine and emulsify with immersion blender
+          params: {}
         activeTime: 5
       - order: 4
-        description: Add butter at 35C and blend until smooth
+        task:
+          task:
+            baseId: ganache-cold-method-step-4
+            name: Add Butter
+            template: Add butter at 35C and blend until smooth
+          params: {}
         activeTime: 2
         temperature: 35
       - order: 5
-        description: Rest at room temperature
+        task:
+          task:
+            baseId: ganache-cold-method-step-5
+            name: Rest
+            template: Rest at room temperature
+          params: {}
         waitTime: 30
     tags: [ganache, emulsion, cold-process]
 
@@ -37,20 +62,45 @@ items:
     category: ganache
     steps:
       - order: 1
-        description: Bring cream to boil
+        task:
+          task:
+            baseId: ganache-hot-method-step-1
+            name: Boil Cream
+            template: Bring cream to boil
+          params: {}
         activeTime: 5
         temperature: 100
       - order: 2
-        description: Pour over finely chopped chocolate
+        task:
+          task:
+            baseId: ganache-hot-method-step-2
+            name: Pour Over Chocolate
+            template: Pour over finely chopped chocolate
+          params: {}
         activeTime: 1
       - order: 3
-        description: Let stand 1-2 minutes
+        task:
+          task:
+            baseId: ganache-hot-method-step-3
+            name: Let Stand
+            template: Let stand 1-2 minutes
+          params: {}
         waitTime: 2
       - order: 4
-        description: Stir from center outward to emulsify
+        task:
+          task:
+            baseId: ganache-hot-method-step-4
+            name: Stir to Emulsify
+            template: Stir from center outward to emulsify
+          params: {}
         activeTime: 5
       - order: 5
-        description: Add butter and blend until smooth
+        task:
+          task:
+            baseId: ganache-hot-method-step-5
+            name: Add Butter
+            template: Add butter and blend until smooth
+          params: {}
         activeTime: 2
     tags: [ganache, emulsion, hot-process]
 
@@ -60,23 +110,53 @@ items:
     category: gianduja
     steps:
       - order: 1
-        description: Roast hazelnuts at 150C until golden
+        task:
+          task:
+            baseId: gianduja-step-1
+            name: Roast Hazelnuts
+            template: Roast hazelnuts at 150C until golden
+          params: {}
         activeTime: 15
         temperature: 150
       - order: 2
-        description: Rub off skins while warm
+        task:
+          task:
+            baseId: gianduja-step-2
+            name: Remove Skins
+            template: Rub off skins while warm
+          params: {}
         activeTime: 5
       - order: 3
-        description: Grind to paste in food processor
+        task:
+          task:
+            baseId: gianduja-step-3
+            name: Grind to Paste
+            template: Grind to paste in food processor
+          params: {}
         activeTime: 10
       - order: 4
-        description: Melt chocolate to 45C
+        task:
+          task:
+            baseId: gianduja-step-4
+            name: Melt Chocolate
+            template: Melt chocolate to 45C
+          params: {}
         activeTime: 5
         temperature: 45
       - order: 5
-        description: Combine paste and chocolate, mix until smooth
+        task:
+          task:
+            baseId: gianduja-step-5
+            name: Combine
+            template: Combine paste and chocolate, mix until smooth
+          params: {}
         activeTime: 5
       - order: 6
-        description: Temper and pour into molds
+        task:
+          task:
+            baseId: gianduja-step-6
+            name: Temper and Mold
+            template: Temper and pour into molds
+          params: {}
         activeTime: 15
     tags: [gianduja, hazelnut, nut-paste]
