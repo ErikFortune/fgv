@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeConfection.fillings property
 
-Filling slots from the golden version
+Resolved filling slots from the golden version
 
 **Signature:**
 
 ```typescript
-readonly fillings?: ReadonlyArray<IFillingSlot>;
+readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
 ```

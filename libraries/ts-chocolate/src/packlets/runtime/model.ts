@@ -32,8 +32,11 @@ import { Collections, Result } from '@fgv/ts-utils';
 
 import { IIngredientQuerySpec, IFillingRecipeQuerySpec } from './indexers';
 import { IReadOnlyValidatingLibrary } from './validatingLibrary';
+import type { IRuntimeMold } from './molds/model';
+import type { IRuntimeProcedure } from './procedures/model';
 
 import {
+  AdditionalChocolatePurpose,
   Allergen,
   BaseConfectionId,
   BaseFillingId,
@@ -57,6 +60,7 @@ import {
   IngredientId,
   Measurement,
   Percentage,
+  SlotId,
   SourceId
 } from '../common';
 import {
@@ -82,19 +86,20 @@ import { IVersionScaleOptions } from '../calculations';
 import {
   AnyConfectionVersion,
   ConfectionData,
+  FillingOptionId,
   IAdditionalChocolate,
   IBarTruffle,
   IBarTruffleVersion,
   IBonBonDimensions,
   IChocolateSpec,
-  ICoatings,
   IConfectionDecoration,
   IConfectionMoldRef,
   IConfectionYield,
-  IFillingSlot,
   IFrameDimensions,
+  IIngredientFillingOption,
   IMoldedBonBon,
   IMoldedBonBonVersion,
+  IRecipeFillingOption,
   IRolledTruffle,
   IRolledTruffleVersion
 } from '../entities';
@@ -1317,11 +1322,11 @@ export interface IRuntimeConfection {
   /** Yield specification from the golden version */
   readonly yield: IConfectionYield;
 
-  /** Filling slots from the golden version */
-  readonly fillings?: ReadonlyArray<IFillingSlot>;
+  /** Resolved filling slots from the golden version */
+  readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
 
-  /** Procedures from the golden version */
-  readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+  /** Resolved procedures from the golden version */
+  readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 
   // ---- Type narrowing methods ----
 
@@ -1365,14 +1370,14 @@ export interface IRuntimeMoldedBonBon extends IRuntimeConfection {
   /** All versions typed as IMoldedBonBonVersion */
   readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
 
-  /** Molds from the golden version */
-  readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+  /** Resolved molds with preferred selection (from golden version) */
+  readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 
-  /** Shell chocolate from the golden version */
-  readonly shellChocolate: IChocolateSpec;
+  /** Resolved shell chocolate specification (from golden version) */
+  readonly shellChocolate: IResolvedChocolateSpec;
 
-  /** Additional chocolates from the golden version */
-  readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+  /** Resolved additional chocolates (from golden version) */
+  readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 
   /** Raw data typed to IMoldedBonBon */
   readonly raw: IMoldedBonBon;
@@ -1398,8 +1403,8 @@ export interface IRuntimeBarTruffle extends IRuntimeConfection {
   /** Single bonbon dimensions from the golden version */
   readonly singleBonBonDimensions: IBonBonDimensions;
 
-  /** Enrobing chocolate from the golden version */
-  readonly enrobingChocolate?: IChocolateSpec;
+  /** Resolved enrobing chocolate (from golden version, optional) */
+  readonly enrobingChocolate?: IResolvedChocolateSpec;
 
   /** Raw data typed to IBarTruffle */
   readonly raw: IBarTruffle;
@@ -1419,14 +1424,167 @@ export interface IRuntimeRolledTruffle extends IRuntimeConfection {
   /** All versions typed as IRolledTruffleVersion */
   readonly versions: ReadonlyArray<IRolledTruffleVersion>;
 
-  /** Enrobing chocolate from the golden version */
-  readonly enrobingChocolate?: IChocolateSpec;
+  /** Resolved enrobing chocolate (from golden version, optional) */
+  readonly enrobingChocolate?: IResolvedChocolateSpec;
 
-  /** Coatings from the golden version */
-  readonly coatings?: ICoatings;
+  /** Resolved coatings (from golden version, optional) */
+  readonly coatings?: IResolvedCoatings;
 
   /** Raw data typed to IRolledTruffle */
   readonly raw: IRolledTruffle;
+}
+
+/**
+ * A resolved filling option with the full recipe or ingredient object.
+ * Discriminated union for type-safe access.
+ * @public
+ */
+export type IResolvedFillingOption = IResolvedRecipeFillingOption | IResolvedIngredientFillingOption;
+
+/**
+ * Resolved recipe filling option.
+ * @public
+ */
+export interface IResolvedRecipeFillingOption {
+  /** Discriminator for type-safe access */
+  readonly type: 'recipe';
+  /** The filling ID (satisfies IHasId for IOptionsWithPreferred) */
+  readonly id: FillingId;
+  /** The resolved filling recipe object */
+  readonly filling: IRuntimeFillingRecipe;
+  /** Optional notes specific to this filling option */
+  readonly notes?: string;
+  /** The original raw recipe filling option data */
+  readonly raw: IRecipeFillingOption;
+}
+
+/**
+ * Resolved ingredient filling option.
+ * @public
+ */
+export interface IResolvedIngredientFillingOption {
+  /** Discriminator for type-safe access */
+  readonly type: 'ingredient';
+  /** The ingredient ID (satisfies IHasId for IOptionsWithPreferred) */
+  readonly id: IngredientId;
+  /** The resolved ingredient object */
+  readonly ingredient: IRuntimeIngredient;
+  /** Optional notes specific to this filling option */
+  readonly notes?: string;
+  /** The original raw ingredient filling option data */
+  readonly raw: IIngredientFillingOption;
+}
+
+/**
+ * A resolved filling slot with resolved recipe/ingredient references.
+ * @public
+ */
+export interface IResolvedFillingSlot {
+  /** Unique identifier for this slot within the confection */
+  readonly slotId: SlotId;
+  /** Human-readable name for display */
+  readonly name?: string;
+  /** Resolved filling options with preferred selection */
+  readonly filling: IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+}
+
+// ============================================================================
+// Resolved Chocolate Specification
+// ============================================================================
+
+/**
+ * A resolved chocolate specification with ingredient objects.
+ * Uses same pattern as IResolvedFillingIngredient - primary + alternates.
+ * @public
+ */
+export interface IResolvedChocolateSpec {
+  /** The preferred/primary chocolate ingredient (always chocolate category) */
+  readonly chocolate: IRuntimeChocolateIngredient;
+  /** Alternate chocolate options (all chocolate category) */
+  readonly alternates: ReadonlyArray<IRuntimeChocolateIngredient>;
+  /** The original raw chocolate spec */
+  readonly raw: IChocolateSpec;
+}
+
+/**
+ * Resolved additional chocolate with purpose.
+ * @public
+ */
+export interface IResolvedAdditionalChocolate {
+  /** Resolved chocolate specification */
+  readonly chocolate: IResolvedChocolateSpec;
+  /** Purpose of this additional chocolate */
+  readonly purpose: AdditionalChocolatePurpose;
+  /** The original raw additional chocolate data */
+  readonly raw: IAdditionalChocolate;
+}
+
+// ============================================================================
+// Resolved Mold Reference
+// ============================================================================
+
+/**
+ * A resolved mold reference with the full mold object.
+ * @public
+ */
+export interface IResolvedConfectionMoldRef {
+  /** The mold ID (for IOptionsWithPreferred compatibility) */
+  readonly id: MoldId;
+  /** The resolved mold object */
+  readonly mold: IRuntimeMold;
+  /** Optional notes specific to using this mold */
+  readonly notes?: string;
+  /** The original raw mold reference data */
+  readonly raw: IConfectionMoldRef;
+}
+
+// ============================================================================
+// Resolved Procedure Reference (for confections)
+// ============================================================================
+
+/**
+ * A resolved procedure reference for confections.
+ * Similar to IResolvedFillingRecipeProcedure but for confections.
+ * @public
+ */
+export interface IResolvedConfectionProcedure {
+  /** The procedure ID (for IOptionsWithPreferred compatibility) */
+  readonly id: ProcedureId;
+  /** The resolved procedure object */
+  readonly procedure: IRuntimeProcedure;
+  /** Optional notes specific to using this procedure */
+  readonly notes?: string;
+  /** The original raw procedure reference data */
+  readonly raw: IProcedureRef;
+}
+
+// ============================================================================
+// Resolved Coatings (for rolled truffles)
+// ============================================================================
+
+/**
+ * Resolved coatings specification for rolled truffles.
+ * Coatings are ingredient-based (e.g., cocoa powder, chopped nuts).
+ * @public
+ */
+export interface IResolvedCoatings {
+  /** All available coating ingredient options */
+  readonly options: ReadonlyArray<IResolvedCoatingOption>;
+  /** The preferred/default coating ID */
+  readonly preferredId?: IngredientId;
+}
+
+/**
+ * A resolved coating option with the full ingredient object.
+ * @public
+ */
+export interface IResolvedCoatingOption {
+  /** The coating ingredient ID */
+  readonly id: IngredientId;
+  /** The resolved ingredient object */
+  readonly ingredient: IRuntimeIngredient;
+  /** Optional notes specific to this coating option */
+  readonly notes?: string;
 }
 
 // ============================================================================
@@ -1435,10 +1593,31 @@ export interface IRuntimeRolledTruffle extends IRuntimeConfection {
 
 /**
  * Minimal context interface for RuntimeConfection.
- * Provides only what a confection needs for navigation.
+ * Provides what a confection needs for resolution.
  * @internal
  */
 export interface IConfectionContext {
-  // Currently empty - confections don't have navigation to other entities yet
-  // This can be extended when confection → recipe/ingredient navigation is needed
+  /**
+   * Gets a runtime ingredient by ID.
+   * Used for resolving chocolate specifications and ingredient filling options.
+   */
+  getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
+
+  /**
+   * Gets a runtime filling recipe by ID.
+   * Used for resolving recipe filling options.
+   */
+  getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
+
+  /**
+   * Gets a runtime mold by ID.
+   * Used for resolving mold references.
+   */
+  getRuntimeMold(id: MoldId): Result<IRuntimeMold>;
+
+  /**
+   * Gets a runtime procedure by ID.
+   * Used for resolving procedure references.
+   */
+  getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
 }

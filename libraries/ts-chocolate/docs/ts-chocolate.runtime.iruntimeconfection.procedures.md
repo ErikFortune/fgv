@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeConfection.procedures property
 
-Procedures from the golden version
+Resolved procedures from the golden version
 
 **Signature:**
 
 ```typescript
-readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
 ```

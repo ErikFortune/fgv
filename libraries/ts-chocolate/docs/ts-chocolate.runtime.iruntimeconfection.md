@@ -175,12 +175,12 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 
 </td><td>
 
-ReadonlyArray&lt;IFillingSlot&gt;
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Filling slots from the golden version
+_(Optional)_ Resolved filling slots from the golden version
 
 
 </td></tr>
@@ -280,12 +280,12 @@ Human-readable name
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Procedures from the golden version
+_(Optional)_ Resolved procedures from the golden version
 
 
 </td></tr>

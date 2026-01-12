@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeMoldedBonBon.molds property
 
-Molds from the golden version
+Resolved molds with preferred selection (from golden version)
 
 **Signature:**
 
 ```typescript
-readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 ```

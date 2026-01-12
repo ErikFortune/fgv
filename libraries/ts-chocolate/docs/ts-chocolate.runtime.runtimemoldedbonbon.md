@@ -54,12 +54,12 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;IAdditionalChocolate&gt; \| undefined
+ReadonlyArray&lt;import('../model').[IResolvedAdditionalChocolate](./ts-chocolate.runtime.iresolvedadditionalchocolate.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
 
-Additional chocolates (seal, decoration) (from golden version)
+Resolved additional chocolates (from golden version, lazy-loaded)
 
 
 </td></tr>
@@ -81,6 +81,27 @@ Additional chocolates (seal, decoration) (from golden version)
 </td><td>
 
 Confection type is always 'molded-bonbon' for this type
+
+
+</td></tr>
+<tr><td>
+
+[fillings](./ts-chocolate.runtime.runtimemoldedbonbon.fillings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;import('../model').[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
+
+Resolved filling slots from the golden version (lazy-loaded)
 
 
 </td></tr>
@@ -117,12 +138,33 @@ Golden version typed as IMoldedBonBonVersion
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+import('../../common').[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;import('../model').[IResolvedConfectionMoldRef](./ts-chocolate.runtime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
 
-Molds with preferred selection (from golden version)
+Resolved molds with preferred selection (from golden version, lazy-loaded)
+
+
+</td></tr>
+<tr><td>
+
+[procedures](./ts-chocolate.runtime.runtimemoldedbonbon.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+import('../../common').[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;import('../model').[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, import('../../common').[ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
+
+Resolved procedures from the golden version (lazy-loaded)
 
 
 </td></tr>
@@ -159,12 +201,12 @@ Gets the underlying raw molded bonbon data
 
 </td><td>
 
-IChocolateSpec
+import('../model').[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
 
 
 </td><td>
 
-Shell chocolate specification (from golden version)
+Resolved shell chocolate specification (from golden version, lazy-loaded)
 
 
 </td></tr>

@@ -33,21 +33,27 @@ import {
   ConfectionVersionSpec,
   ICategorizedUrl,
   ID_SEPARATOR,
+  IOptionsWithPreferred,
+  ProcedureId,
   SourceId
 } from '../../common';
-import { IProcedureRef } from '../../entities';
+import { AnyFillingOption, FillingOptionId, IFillingSlot, IProcedureRef } from '../../entities';
 import {
   AnyConfectionVersion,
   ConfectionData,
   IConfectionDecoration,
   IConfectionYield,
-  IFillingSlot,
   isMoldedBonBon,
   isBarTruffle,
   isRolledTruffle
 } from '../../entities';
-import { IOptionsWithPreferred, ProcedureId } from '../../common';
-import { IConfectionContext, IRuntimeConfection } from '../model';
+import {
+  IConfectionContext,
+  IResolvedConfectionProcedure,
+  IResolvedFillingOption,
+  IResolvedFillingSlot,
+  IRuntimeConfection
+} from '../model';
 
 // Forward declarations to avoid circular imports
 import type { RuntimeMoldedBonBon } from './runtimeMoldedBonBon';
@@ -185,18 +191,16 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
   }
 
   /**
-   * Optional filling slots from the golden version
+   * Resolved filling slots from the golden version (lazy-loaded)
    */
-  public get fillings(): ReadonlyArray<IFillingSlot> | undefined {
-    return this._goldenVersion.fillings;
-  }
+  public abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
 
   /**
-   * Optional procedures with preferred selection from the golden version
+   * Resolved procedures from the golden version (lazy-loaded)
    */
-  public get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined {
-    return this._goldenVersion.procedures;
-  }
+  public abstract get procedures():
+    | IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>
+    | undefined;
 
   // ============================================================================
   // Version Navigation
@@ -295,6 +299,122 @@ export abstract class RuntimeConfectionBase implements IRuntimeConfection {
    */
   public isRolledTruffle(): this is RuntimeRolledTruffle {
     return isRolledTruffle(this._confection);
+  }
+
+  // ============================================================================
+  // Resolution Helper Methods (protected for use by subclasses)
+  // ============================================================================
+
+  /**
+   * Resolves filling options for a filling slot.
+   * Skips options that fail to resolve (graceful degradation).
+   * @param options - The raw filling options to resolve
+   * @returns Resolved filling options
+   * @internal
+   */
+  protected _resolveFillingOptions(
+    options: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>
+  ): IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId> {
+    const resolvedOptions = options.options
+      .map((opt) => this._resolveFillingOption(opt))
+      .filter((r): r is IResolvedFillingOption => r !== undefined);
+
+    return {
+      options: resolvedOptions,
+      preferredId: options.preferredId
+    };
+  }
+
+  /**
+   * Resolves a single filling option to either a recipe or ingredient.
+   * @param option - The raw filling option
+   * @returns Resolved filling option, or undefined if resolution fails
+   * @internal
+   */
+  protected _resolveFillingOption(option: AnyFillingOption): IResolvedFillingOption | undefined {
+    if (option.type === 'recipe') {
+      const filling = this._context.getRuntimeFilling(option.id);
+      /* c8 ignore next - defensive: skip fillings that fail to resolve */
+      if (filling.isFailure()) return undefined;
+      return {
+        type: 'recipe',
+        id: option.id,
+        filling: filling.value,
+        notes: option.notes,
+        raw: option
+      };
+    } else {
+      const ingredient = this._context.getRuntimeIngredient(option.id);
+      /* c8 ignore next - defensive: skip ingredients that fail to resolve */
+      if (ingredient.isFailure()) return undefined;
+      return {
+        type: 'ingredient',
+        id: option.id,
+        ingredient: ingredient.value,
+        notes: option.notes,
+        raw: option
+      };
+    }
+  }
+
+  /**
+   * Resolves filling slots.
+   * Skips slots where all options fail to resolve (graceful degradation).
+   * @param slots - The raw filling slots to resolve
+   * @returns Resolved filling slots, or null if no slots
+   * @internal
+   */
+  protected _resolveFillingSlots(
+    slots: ReadonlyArray<IFillingSlot> | undefined
+  ): ReadonlyArray<IResolvedFillingSlot> | null {
+    if (!slots || slots.length === 0) {
+      return null;
+    }
+
+    return slots.map((slot) => ({
+      slotId: slot.slotId,
+      name: slot.name,
+      filling: this._resolveFillingOptions(slot.filling)
+    }));
+  }
+
+  /**
+   * Resolves procedures.
+   * Skips procedures that fail to resolve (graceful degradation).
+   * @param procedures - The raw procedures to resolve
+   * @returns Resolved procedures, or null if no procedures or all fail
+   * @internal
+   */
+  protected _resolveProcedures(
+    procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined
+  ): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | null {
+    if (!procedures || procedures.options.length === 0) {
+      return null;
+    }
+
+    const resolvedOptions: IResolvedConfectionProcedure[] = [];
+    for (const ref of procedures.options) {
+      const procedureResult = this._context.getRuntimeProcedure(ref.id);
+      if (procedureResult.isSuccess()) {
+        resolvedOptions.push({
+          id: ref.id,
+          procedure: procedureResult.value,
+          notes: ref.notes,
+          raw: ref
+        });
+      }
+      // Skip procedures that fail to resolve
+    }
+
+    /* c8 ignore next 4 - defensive: return null if all procedures failed to resolve */
+    if (resolvedOptions.length === 0) {
+      return null;
+    }
+
+    return {
+      options: resolvedOptions,
+      preferredId: procedures.preferredId
+    };
   }
 
   // ============================================================================

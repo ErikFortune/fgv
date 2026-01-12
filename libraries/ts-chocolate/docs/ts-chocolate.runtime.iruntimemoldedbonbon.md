@@ -48,12 +48,12 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;IAdditionalChocolate&gt;
+ReadonlyArray&lt;[IResolvedAdditionalChocolate](./ts-chocolate.runtime.iresolvedadditionalchocolate.md)<!-- -->&gt;
 
 
 </td><td>
 
-_(Optional)_ Additional chocolates from the golden version
+_(Optional)_ Resolved additional chocolates (from golden version)
 
 
 </td></tr>
@@ -111,12 +111,12 @@ Golden version typed as IMoldedBonBonVersion
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.runtime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
 
-Molds from the golden version
+Resolved molds with preferred selection (from golden version)
 
 
 </td></tr>
@@ -153,12 +153,12 @@ Raw data typed to IMoldedBonBon
 
 </td><td>
 
-IChocolateSpec
+[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
 
 
 </td><td>
 
-Shell chocolate from the golden version
+Resolved shell chocolate specification (from golden version)
 
 
 </td></tr>

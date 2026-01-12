@@ -11,9 +11,9 @@ This is the primary entry point for consumers who want resolved views of recipes
 **Signature:**
 
 ```typescript
-export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext 
+export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext 
 ```
-**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext
+**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext
 
 ## Properties
 
@@ -380,6 +380,34 @@ Gets all journal records for a specific filling version.
 </td><td>
 
 Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+
+
+</td></tr>
+<tr><td>
+
+[getRuntimeFilling(id)](./ts-chocolate.runtimecontext.getruntimefilling.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a runtime filling recipe by ID. Implements IConfectionContext interface.
+
+
+</td></tr>
+<tr><td>
+
+[getRuntimeIngredient(id)](./ts-chocolate.runtimecontext.getruntimeingredient.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a runtime ingredient by ID. Implements IConfectionContext interface.
 
 
 </td></tr>

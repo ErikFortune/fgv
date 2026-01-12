@@ -69,12 +69,12 @@ Type is always 'bar-truffle' for this confection
 
 </td><td>
 
-IChocolateSpec
+[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
 
 
 </td><td>
 
-_(Optional)_ Enrobing chocolate from the golden version
+_(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 
 
 </td></tr>

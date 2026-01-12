@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeMoldedBonBon.molds property
 
-Molds with preferred selection (from golden version)
+Resolved molds with preferred selection (from golden version, lazy-loaded)
 
 **Signature:**
 
 ```typescript
-get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+get molds(): import('../../common').IOptionsWithPreferred<import('../model').IResolvedConfectionMoldRef, MoldId>;
 ```

@@ -19,27 +19,47 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
+import { Success } from '@fgv/ts-utils';
 
 import {
   BaseConfectionId,
+  BaseFillingId,
+  BaseIngredientId,
+  ChocolateType,
   ConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
-  Measurement,
+  FillingName,
+  FillingVersionSpec,
+  IngredientCategory,
   IngredientId,
+  Measurement,
   Millimeters,
   MoldId,
   FillingId,
+  ProcedureId,
+  Percentage,
   SlotId,
+  SourceId,
   UrlCategory
 } from '../../../packlets/common';
-import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../packlets/entities';
 import {
+  IChocolateIngredient,
+  IFillingRecipe,
+  IMoldedBonBon,
+  IBarTruffle,
+  IRolledTruffle
+} from '../../../packlets/entities';
+import {
+  IConfectionContext,
+  IRuntimeChocolateIngredient,
+  IRuntimeFillingRecipe,
+  IRuntimeMold,
+  IRuntimeProcedure,
   RuntimeConfection,
   RuntimeMoldedBonBon,
   RuntimeBarTruffle,
-  RuntimeRolledTruffle,
-  IConfectionContext
+  RuntimeRolledTruffle
 } from '../../../packlets/runtime';
 
 describe('RuntimeConfection', () => {
@@ -176,10 +196,56 @@ describe('RuntimeConfection', () => {
     ]
   };
 
-  // Minimal context for testing
+  // Minimal context for testing - provides mock implementations for resolution
   const mockContext: IConfectionContext = {
-    getConfection: () => {
-      throw new Error('Not implemented in test context');
+    getRuntimeIngredient: (id: IngredientId) => {
+      // Return a minimal mock chocolate ingredient
+      return Success.with({
+        id,
+        sourceId: 'common' as SourceId,
+        baseId: 'chocolate-dark-64' as BaseIngredientId,
+        name: 'Mock Chocolate',
+        category: 'chocolate' as IngredientCategory,
+        ganacheCharacteristics: { fatContent: 0.35 as Percentage, waterContent: 0.05 as Percentage },
+        chocolateType: 'dark' as ChocolateType,
+        cacaoPercentage: 64 as Percentage,
+        raw: {} as IChocolateIngredient,
+        isChocolate: () => true,
+        isDairy: () => false,
+        isSugar: () => false,
+        isFat: () => false,
+        isAlcohol: () => false,
+        usedByFillings: () => [],
+        primaryInFillings: () => [],
+        alternateInFillings: () => []
+      } as unknown as IRuntimeChocolateIngredient);
+    },
+    getRuntimeFilling: (id: FillingId) => {
+      // Return a minimal mock filling recipe
+      return Success.with({
+        id,
+        sourceId: 'common' as SourceId,
+        baseId: 'dark-ganache-classic' as BaseFillingId,
+        name: 'Mock Ganache' as FillingName,
+        goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec,
+        raw: {} as IFillingRecipe
+      } as unknown as IRuntimeFillingRecipe);
+    },
+    getRuntimeMold: (id: MoldId) => {
+      // Return a minimal mock mold
+      return Success.with({
+        id,
+        name: 'Mock Mold',
+        dimensions: { width: 25 as Millimeters, height: 25 as Millimeters, depth: 10 as Millimeters }
+      } as unknown as IRuntimeMold);
+    },
+    getRuntimeProcedure: (id: ProcedureId) => {
+      // Return a minimal mock procedure
+      return Success.with({
+        id,
+        name: 'Mock Procedure',
+        steps: []
+      } as unknown as IRuntimeProcedure);
     }
   };
 
@@ -260,7 +326,11 @@ describe('RuntimeConfection', () => {
       expect(runtime.fillings).toHaveLength(1);
       const slot = runtime.fillings?.[0];
       expect(slot?.slotId).toBe('center');
-      expect(slot?.filling.options[0].id).toBe('common.dark-ganache-classic');
+      // filling.options is now resolved - check the filling object
+      expect(slot?.filling.options[0].type).toBe('recipe');
+      if (slot?.filling.options[0].type === 'recipe') {
+        expect(slot.filling.options[0].filling.id).toBe('common.dark-ganache-classic');
+      }
       expect(slot?.filling.preferredId).toBe('common.dark-ganache-classic');
     });
 
@@ -284,9 +354,10 @@ describe('RuntimeConfection', () => {
     test('exposes molded bonbon-specific properties', () => {
       expect(runtime.molds.options).toHaveLength(1);
       expect(runtime.molds.preferredId).toBe('common.dome-25mm');
-      expect(runtime.shellChocolate.ids).toContain('common.chocolate-dark-64');
-      expect(runtime.shellChocolate.ids).toContain('common.chocolate-dark-70');
-      expect(runtime.shellChocolate.preferredId).toBe('common.chocolate-dark-64');
+      // shellChocolate is now resolved - check chocolate and alternates
+      expect(runtime.shellChocolate.chocolate.id).toBe('common.chocolate-dark-64');
+      expect(runtime.shellChocolate.alternates).toHaveLength(1);
+      expect(runtime.shellChocolate.alternates[0].id).toBe('common.chocolate-dark-70');
       expect(runtime.additionalChocolates).toHaveLength(1);
       expect(runtime.additionalChocolates?.[0].purpose).toBe('seal');
     });
@@ -315,6 +386,7 @@ describe('RuntimeConfection', () => {
       const golden = runtime.goldenVersion;
       expect(golden.versionSpec).toBe('2026-01-01-01');
       expect(golden.molds.options).toHaveLength(1);
+      // shellChocolate is now resolved on runtime but still raw IDs on golden version
       expect(golden.shellChocolate.ids).toContain('common.chocolate-dark-64');
     });
 
@@ -392,7 +464,8 @@ describe('RuntimeConfection', () => {
       expect(runtime.frameDimensions.depth).toBe(8);
       expect(runtime.singleBonBonDimensions.width).toBe(25);
       expect(runtime.singleBonBonDimensions.height).toBe(25);
-      expect(runtime.enrobingChocolate?.ids[0]).toBe('common.chocolate-dark-64');
+      // enrobingChocolate is now resolved
+      expect(runtime.enrobingChocolate?.chocolate.id).toBe('common.chocolate-dark-64');
     });
 
     test('type guards work correctly', () => {
@@ -440,8 +513,10 @@ describe('RuntimeConfection', () => {
     });
 
     test('exposes rolled truffle-specific properties', () => {
-      expect(runtime.enrobingChocolate?.ids[0]).toBe('common.chocolate-dark-64');
-      expect(runtime.coatings?.ids).toHaveLength(1);
+      // enrobingChocolate is now resolved
+      expect(runtime.enrobingChocolate?.chocolate.id).toBe('common.chocolate-dark-64');
+      // coatings is now resolved
+      expect(runtime.coatings?.options).toHaveLength(1);
       expect(runtime.coatings?.preferredId).toBe('common.cocoa-powder');
     });
 

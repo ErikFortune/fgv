@@ -48,12 +48,12 @@ Description
 
 </td><td>
 
-ICoatings
+[IResolvedCoatings](./ts-chocolate.runtime.iresolvedcoatings.md)
 
 
 </td><td>
 
-_(Optional)_ Coatings from the golden version
+_(Optional)_ Resolved coatings (from golden version, optional)
 
 
 </td></tr>
@@ -90,12 +90,12 @@ Type is always 'rolled-truffle' for this confection
 
 </td><td>
 
-IChocolateSpec
+[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
 
 
 </td><td>
 
-_(Optional)_ Enrobing chocolate from the golden version
+_(Optional)_ Resolved enrobing chocolate (from golden version, optional)
 
 
 </td></tr>

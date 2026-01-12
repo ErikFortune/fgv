@@ -1648,6 +1648,10 @@ interface IConfectionBase {
 
 // @internal
 interface IConfectionContext {
+    getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
+    getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
+    getRuntimeMold(id: MoldId): Result<IRuntimeMold>;
+    getRuntimeProcedure(id: ProcedureId): Result<IRuntimeProcedure>;
 }
 
 // @public
@@ -2713,6 +2717,49 @@ interface IRenderOptions {
 }
 
 // @public
+interface IResolvedAdditionalChocolate {
+    readonly chocolate: IResolvedChocolateSpec;
+    readonly purpose: AdditionalChocolatePurpose;
+    readonly raw: IAdditionalChocolate;
+}
+
+// @public
+interface IResolvedChocolateSpec {
+    readonly alternates: ReadonlyArray<IRuntimeChocolateIngredient>;
+    readonly chocolate: IRuntimeChocolateIngredient;
+    readonly raw: IChocolateSpec;
+}
+
+// @public
+interface IResolvedCoatingOption {
+    readonly id: IngredientId;
+    readonly ingredient: IRuntimeIngredient;
+    readonly notes?: string;
+}
+
+// @public
+interface IResolvedCoatings {
+    readonly options: ReadonlyArray<IResolvedCoatingOption>;
+    readonly preferredId?: IngredientId;
+}
+
+// @public
+interface IResolvedConfectionMoldRef {
+    readonly id: MoldId;
+    readonly mold: IRuntimeMold;
+    readonly notes?: string;
+    readonly raw: IConfectionMoldRef;
+}
+
+// @public
+interface IResolvedConfectionProcedure {
+    readonly id: ProcedureId;
+    readonly notes?: string;
+    readonly procedure: IRuntimeProcedure;
+    readonly raw: IProcedureRef;
+}
+
+// @public
 interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> {
     readonly alternates: ReadonlyArray<TIngredient>;
     readonly amount: Measurement;
@@ -2722,10 +2769,20 @@ interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IR
 }
 
 // @public
+type IResolvedFillingOption = IResolvedRecipeFillingOption | IResolvedIngredientFillingOption;
+
+// @public
 interface IResolvedFillingRecipeProcedure {
     readonly notes?: string;
     readonly procedure: IProcedure;
     readonly raw: IProcedureRef;
+}
+
+// @public
+interface IResolvedFillingSlot {
+    readonly filling: IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+    readonly name?: string;
+    readonly slotId: SlotId;
 }
 
 // @public
@@ -2737,9 +2794,27 @@ interface IResolvedIngredient {
 }
 
 // @public
+interface IResolvedIngredientFillingOption {
+    readonly id: IngredientId;
+    readonly ingredient: IRuntimeIngredient;
+    readonly notes?: string;
+    readonly raw: IIngredientFillingOption;
+    readonly type: 'ingredient';
+}
+
+// @public
 interface IResolvedProcedures {
     readonly procedures: ReadonlyArray<IResolvedFillingRecipeProcedure>;
     readonly recommendedProcedure?: IProcedure;
+}
+
+// @public
+interface IResolvedRecipeFillingOption {
+    readonly filling: IRuntimeFillingRecipe;
+    readonly id: FillingId;
+    readonly notes?: string;
+    readonly raw: IRecipeFillingOption;
+    readonly type: 'recipe';
 }
 
 // @public
@@ -2786,7 +2861,7 @@ interface IRuntimeAlcoholIngredient extends IRuntimeIngredient {
 // @public
 interface IRuntimeBarTruffle extends IRuntimeConfection {
     readonly confectionType: 'bar-truffle';
-    readonly enrobingChocolate?: IChocolateSpec;
+    readonly enrobingChocolate?: IResolvedChocolateSpec;
     readonly frameDimensions: IFrameDimensions;
     readonly goldenVersion: IBarTruffleVersion;
     readonly raw: IBarTruffle;
@@ -2819,7 +2894,7 @@ interface IRuntimeConfection {
     readonly description?: string;
     readonly effectiveTags: ReadonlyArray<string>;
     readonly effectiveUrls: ReadonlyArray<ICategorizedUrl>;
-    readonly fillings?: ReadonlyArray<IFillingSlot>;
+    readonly fillings?: ReadonlyArray<IResolvedFillingSlot>;
     getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
     getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
@@ -2830,7 +2905,7 @@ interface IRuntimeConfection {
     isMoldedBonBon(): this is IRuntimeMoldedBonBon;
     isRolledTruffle(): this is IRuntimeRolledTruffle;
     readonly name: ConfectionName;
-    readonly procedures?: IOptionsWithPreferred<IProcedureRef, ProcedureId>;
+    readonly procedures?: IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId>;
     readonly raw: ConfectionData;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
@@ -2970,12 +3045,12 @@ interface IRuntimeMold {
 
 // @public
 interface IRuntimeMoldedBonBon extends IRuntimeConfection {
-    readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+    readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
     readonly goldenVersion: IMoldedBonBonVersion;
-    readonly molds: IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+    readonly molds: IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
     readonly raw: IMoldedBonBon;
-    readonly shellChocolate: IChocolateSpec;
+    readonly shellChocolate: IResolvedChocolateSpec;
     readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
 }
 
@@ -3026,9 +3101,9 @@ interface IRuntimeRenderedStep extends IProcedureStep {
 
 // @public
 interface IRuntimeRolledTruffle extends IRuntimeConfection {
-    readonly coatings?: ICoatings;
+    readonly coatings?: IResolvedCoatings;
     readonly confectionType: 'rolled-truffle';
-    readonly enrobingChocolate?: IChocolateSpec;
+    readonly enrobingChocolate?: IResolvedChocolateSpec;
     readonly goldenVersion: IRolledTruffleVersion;
     readonly raw: IRolledTruffle;
     readonly versions: ReadonlyArray<IRolledTruffleVersion>;
@@ -4334,6 +4409,16 @@ declare namespace Runtime {
         IRuntimeMoldedBonBon,
         IRuntimeBarTruffle,
         IRuntimeRolledTruffle,
+        IResolvedFillingOption,
+        IResolvedRecipeFillingOption,
+        IResolvedIngredientFillingOption,
+        IResolvedFillingSlot,
+        IResolvedChocolateSpec,
+        IResolvedAdditionalChocolate,
+        IResolvedConfectionMoldRef,
+        IResolvedConfectionProcedure,
+        IResolvedCoatings,
+        IResolvedCoatingOption,
         IConfectionContext,
         andFilters,
         orFilters,
@@ -4379,9 +4464,11 @@ class RuntimeBarTruffle extends RuntimeConfectionBase implements IRuntimeBarTruf
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: IBarTruffle): Result<RuntimeBarTruffle>;
-    get enrobingChocolate(): IChocolateSpec | undefined;
+    get enrobingChocolate(): IResolvedChocolateSpec | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     get frameDimensions(): IFrameDimensions;
     get goldenVersion(): IBarTruffleVersion;
+    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IBarTruffle;
     get singleBonBonDimensions(): IBonBonDimensions;
     get versions(): ReadonlyArray<IBarTruffleVersion>;
@@ -4432,7 +4519,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     get description(): string | undefined;
     get effectiveTags(): ReadonlyArray<string>;
     get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
-    get fillings(): ReadonlyArray<IFillingSlot> | undefined;
+    abstract get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
     getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
     getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
@@ -4447,8 +4534,16 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
     isMoldedBonBon(): this is RuntimeMoldedBonBon;
     isRolledTruffle(): this is RuntimeRolledTruffle;
     get name(): ConfectionName;
-    get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined;
+    abstract get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     abstract get raw(): ConfectionData;
+    // @internal
+    protected _resolveFillingOption(option: AnyFillingOption): IResolvedFillingOption | undefined;
+    // @internal
+    protected _resolveFillingOptions(options: IOptionsWithPreferred<AnyFillingOption, FillingOptionId>): IOptionsWithPreferred<IResolvedFillingOption, FillingOptionId>;
+    // @internal
+    protected _resolveFillingSlots(slots: ReadonlyArray<IFillingSlot> | undefined): ReadonlyArray<IResolvedFillingSlot> | null;
+    // @internal
+    protected _resolveProcedures(procedures: IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | null;
     get sourceId(): SourceId;
     // (undocumented)
     protected readonly _sourceId: SourceId;
@@ -4464,15 +4559,17 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
 //
 // @public
-export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext {
+export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext {
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
@@ -4498,6 +4595,8 @@ export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     getProcedure(id: string): Result<IProcedure>;
     // @internal
     _getRecipe(id: FillingId): Result<RuntimeRecipe>;
+    getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
+    getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
     getRuntimeMold(id: MoldId): Result<RuntimeMold>;
     getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
@@ -4618,15 +4717,17 @@ class RuntimeMold implements IRuntimeMold {
 class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
     // @internal
     protected constructor(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon);
-    get additionalChocolates(): ReadonlyArray<IAdditionalChocolate> | undefined;
+    get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
     get confectionType(): 'molded-bonbon';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon): Result<RuntimeMoldedBonBon>;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     get goldenVersion(): IMoldedBonBonVersion;
-    get molds(): IOptionsWithPreferred<IConfectionMoldRef, MoldId>;
+    get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
+    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IMoldedBonBon;
-    get shellChocolate(): IChocolateSpec;
+    get shellChocolate(): IResolvedChocolateSpec;
     get versions(): ReadonlyArray<IMoldedBonBonVersion>;
 }
 
@@ -4699,13 +4800,15 @@ class RuntimeReverseIndex {
 class RuntimeRolledTruffle extends RuntimeConfectionBase implements IRuntimeRolledTruffle {
     // @internal
     protected constructor(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle);
-    get coatings(): ICoatings | undefined;
+    get coatings(): IResolvedCoatings | undefined;
     get confectionType(): 'rolled-truffle';
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IConfectionContext" which is marked as @internal
     static create(context: IConfectionContext, id: ConfectionId, confection: IRolledTruffle): Result<RuntimeRolledTruffle>;
-    get enrobingChocolate(): IChocolateSpec | undefined;
+    get enrobingChocolate(): IResolvedChocolateSpec | undefined;
+    get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
     get goldenVersion(): IRolledTruffleVersion;
+    get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
     get raw(): IRolledTruffle;
     get versions(): ReadonlyArray<IRolledTruffleVersion>;
 }

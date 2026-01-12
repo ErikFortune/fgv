@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeRolledTruffle.coatings property
 
-Coatings from the golden version
+Resolved coatings (from golden version, optional)
 
 **Signature:**
 
 ```typescript
-readonly coatings?: ICoatings;
+readonly coatings?: IResolvedCoatings;
 ```

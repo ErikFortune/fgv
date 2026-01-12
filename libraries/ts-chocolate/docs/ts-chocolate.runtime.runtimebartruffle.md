@@ -75,12 +75,33 @@ Confection type is always 'bar-truffle' for this type
 
 </td><td>
 
-IChocolateSpec \| undefined
+import('../model').[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md) \| undefined
 
 
 </td><td>
 
-Enrobing chocolate specification (from golden version, optional)
+Resolved enrobing chocolate specification (from golden version, optional, lazy-loaded)
+
+
+</td></tr>
+<tr><td>
+
+[fillings](./ts-chocolate.runtime.runtimebartruffle.fillings.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;import('../model').[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
+
+Resolved filling slots from the golden version (lazy-loaded)
 
 
 </td></tr>
@@ -123,6 +144,27 @@ IBarTruffleVersion
 </td><td>
 
 Golden version typed as IBarTruffleVersion
+
+
+</td></tr>
+<tr><td>
+
+[procedures](./ts-chocolate.runtime.runtimebartruffle.procedures.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+import('../../common').[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;import('../model').[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, import('../../common').[ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
+
+Resolved procedures from the golden version (lazy-loaded)
 
 
 </td></tr>

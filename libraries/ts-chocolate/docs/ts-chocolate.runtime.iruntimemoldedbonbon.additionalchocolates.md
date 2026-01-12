@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeMoldedBonBon.additionalChocolates property
 
-Additional chocolates from the golden version
+Resolved additional chocolates (from golden version)
 
 **Signature:**
 
 ```typescript
-readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
+readonly additionalChocolates?: ReadonlyArray<IResolvedAdditionalChocolate>;
 ```

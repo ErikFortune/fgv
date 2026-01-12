@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeMoldedBonBon.additionalChocolates property
 
-Additional chocolates (seal, decoration) (from golden version)
+Resolved additional chocolates (from golden version, lazy-loaded)
 
 **Signature:**
 
 ```typescript
-get additionalChocolates(): ReadonlyArray<IAdditionalChocolate> | undefined;
+get additionalChocolates(): ReadonlyArray<import('../model').IResolvedAdditionalChocolate> | undefined;
 ```

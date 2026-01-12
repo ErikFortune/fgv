@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeConfectionBase.procedures property
 
-Optional procedures with preferred selection from the golden version
+Resolved procedures from the golden version (lazy-loaded)
 
 **Signature:**
 
 ```typescript
-get procedures(): IOptionsWithPreferred<IProcedureRef, ProcedureId> | undefined;
+abstract get procedures(): IOptionsWithPreferred<import('../model').IResolvedConfectionProcedure, ProcedureId> | undefined;
 ```

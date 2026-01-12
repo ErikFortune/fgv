@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeRolledTruffle.coatings property
 
-Coating specification (cocoa powder, nuts, etc.) (from golden version)
+Resolved coating specification (from golden version, optional, lazy-loaded)
 
 **Signature:**
 
 ```typescript
-get coatings(): ICoatings | undefined;
+get coatings(): import('../model').IResolvedCoatings | undefined;
 ```

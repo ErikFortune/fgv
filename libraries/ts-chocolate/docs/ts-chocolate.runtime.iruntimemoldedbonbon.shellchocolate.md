@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeMoldedBonBon.shellChocolate property
 
-Shell chocolate from the golden version
+Resolved shell chocolate specification (from golden version)
 
 **Signature:**
 
 ```typescript
-readonly shellChocolate: IChocolateSpec;
+readonly shellChocolate: IResolvedChocolateSpec;
 ```

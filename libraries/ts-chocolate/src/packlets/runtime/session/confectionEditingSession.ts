@@ -27,7 +27,6 @@ import { captureResult, fail, Logging, MessageAggregator, Result, succeed, Succe
 
 import {
   Measurement,
-  Helpers,
   IngredientId,
   MoldId,
   ProcedureId,
@@ -418,7 +417,13 @@ export class ConfectionEditingSession implements IConfectionSessionState {
    * @public
    */
   public selectProcedure(procedureId: ProcedureId): Result<true> {
-    if (!this._sourceConfection.procedures) {
+    // Check if procedures are supported by looking at the raw data
+    // (Runtime getter returns undefined for both "not supported" and "empty options")
+    const goldenVersion = this._sourceConfection.raw.versions.find(
+      (v) => v.versionSpec === this._sourceConfection.goldenVersionSpec
+    );
+    /* c8 ignore next 3 - defensive: golden version always exists for valid confection */
+    if (!goldenVersion?.procedures) {
       return fail('This confection does not support procedure selection');
     }
 
@@ -618,57 +623,53 @@ export class ConfectionEditingSession implements IConfectionSessionState {
   private _initializeChocolates(): void {
     if (this._sourceConfection.isMoldedBonBon()) {
       const shellChocolate = this._sourceConfection.shellChocolate;
-      const shellIngredientId = Helpers.getPreferredIdOrFirst(shellChocolate);
-      if (shellIngredientId) {
-        this._chocolates.set('shell', {
-          role: 'shell',
-          ingredientId: shellIngredientId,
-          originalIngredientId: shellIngredientId,
-          status: 'original'
-        });
-      }
+      // shellChocolate is now resolved - use chocolate.id for the primary
+      const shellIngredientId = shellChocolate.chocolate.id;
+      this._chocolates.set('shell', {
+        role: 'shell',
+        ingredientId: shellIngredientId,
+        originalIngredientId: shellIngredientId,
+        status: 'original'
+      });
 
       // Initialize additional chocolates if present
       const additionalChocolates = this._sourceConfection.additionalChocolates;
       if (additionalChocolates) {
         for (const additional of additionalChocolates) {
           const role = additional.purpose;
-          const ingredientId = Helpers.getPreferredIdOrFirst(additional.chocolate);
-          if (ingredientId) {
-            this._chocolates.set(role, {
-              role,
-              ingredientId,
-              originalIngredientId: ingredientId,
-              status: 'original'
-            });
-          }
+          // additional.chocolate is now resolved - use chocolate.id
+          const ingredientId = additional.chocolate.chocolate.id;
+          this._chocolates.set(role, {
+            role,
+            ingredientId,
+            originalIngredientId: ingredientId,
+            status: 'original'
+          });
         }
       }
     } else if (this._sourceConfection.isBarTruffle()) {
       const enrobingChocolate = this._sourceConfection.enrobingChocolate;
       if (enrobingChocolate) {
-        const ingredientId = Helpers.getPreferredIdOrFirst(enrobingChocolate);
-        if (ingredientId) {
-          this._chocolates.set('enrobing', {
-            role: 'enrobing',
-            ingredientId,
-            originalIngredientId: ingredientId,
-            status: 'original'
-          });
-        }
+        // enrobingChocolate is now resolved - use chocolate.id
+        const ingredientId = enrobingChocolate.chocolate.id;
+        this._chocolates.set('enrobing', {
+          role: 'enrobing',
+          ingredientId,
+          originalIngredientId: ingredientId,
+          status: 'original'
+        });
       }
     } else if (this._sourceConfection.isRolledTruffle()) {
       const enrobingChocolate = this._sourceConfection.enrobingChocolate;
       if (enrobingChocolate) {
-        const ingredientId = Helpers.getPreferredIdOrFirst(enrobingChocolate);
-        if (ingredientId) {
-          this._chocolates.set('enrobing', {
-            role: 'enrobing',
-            ingredientId,
-            originalIngredientId: ingredientId,
-            status: 'original'
-          });
-        }
+        // enrobingChocolate is now resolved - use chocolate.id
+        const ingredientId = enrobingChocolate.chocolate.id;
+        this._chocolates.set('enrobing', {
+          role: 'enrobing',
+          ingredientId,
+          originalIngredientId: ingredientId,
+          status: 'original'
+        });
       }
     }
   }
@@ -679,6 +680,7 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return;
     }
 
+    /* c8 ignore next - defensive: procedures always has at least one option when defined */
     const procedureId = procedures.preferredId ?? procedures.options[0]?.id;
 
     if (procedureId) {
@@ -700,7 +702,8 @@ export class ConfectionEditingSession implements IConfectionSessionState {
       return;
     }
 
-    const ingredientId = Helpers.getPreferredIdOrFirst(coatings);
+    // coatings is now resolved - use preferredId or first option
+    const ingredientId = coatings.preferredId ?? coatings.options[0]?.id;
 
     if (ingredientId) {
       this._coating = {

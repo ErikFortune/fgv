@@ -43,6 +43,7 @@ import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
 import { IProcedure } from '../entities';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
+  IConfectionContext,
   IIngredientContext,
   IIngredientUsageInfo,
   IRuntimeIngredient,
@@ -107,7 +108,8 @@ export class RuntimeContext
     IIngredientContext,
     ITaskContext,
     IProcedureContext,
-    IMoldContext
+    IMoldContext,
+    IConfectionContext
 {
   private readonly _library: ChocolateLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
@@ -377,6 +379,30 @@ export class RuntimeContext
    */
   public getProcedure(id: string): Result<IProcedure> {
     return this._library.getProcedure(id as ProcedureId);
+  }
+
+  // ============================================================================
+  // IConfectionContext Implementation
+  // ============================================================================
+
+  /**
+   * Gets a runtime ingredient by ID.
+   * Implements IConfectionContext interface.
+   * @param id - The ingredient ID (composite format: sourceId.baseIngredientId)
+   * @returns Success with IRuntimeIngredient, or Failure if not found
+   */
+  public getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient> {
+    return this._getIngredient(id);
+  }
+
+  /**
+   * Gets a runtime filling recipe by ID.
+   * Implements IConfectionContext interface.
+   * @param id - The filling ID (composite format: sourceId.baseFillingId)
+   * @returns Success with IRuntimeFillingRecipe, or Failure if not found
+   */
+  public getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe> {
+    return this._getRecipe(id);
   }
 
   // ============================================================================

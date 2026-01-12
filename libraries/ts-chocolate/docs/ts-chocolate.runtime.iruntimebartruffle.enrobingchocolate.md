@@ -4,10 +4,10 @@
 
 ## Runtime.IRuntimeBarTruffle.enrobingChocolate property
 
-Enrobing chocolate from the golden version
+Resolved enrobing chocolate (from golden version, optional)
 
 **Signature:**
 
 ```typescript
-readonly enrobingChocolate?: IChocolateSpec;
+readonly enrobingChocolate?: IResolvedChocolateSpec;
 ```

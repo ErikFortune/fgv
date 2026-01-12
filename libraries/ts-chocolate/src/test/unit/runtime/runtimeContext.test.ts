@@ -25,17 +25,20 @@ import {
   BaseProcedureId,
   BaseFillingId,
   Celsius,
+  ConfectionId,
   Measurement,
   IngredientId,
   JournalId,
   Minutes,
+  MoldId,
   Percentage,
   ProcedureId,
   FillingId,
   FillingName,
   FillingVersionId,
   FillingVersionSpec,
-  SourceId
+  SourceId,
+  TaskId
 } from '../../../packlets/common';
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/entities';
 
@@ -913,36 +916,30 @@ describe('RuntimeContext', () => {
 
     test('getConfection returns confection for valid ID', () => {
       expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
-        expect(
-          ctx.getConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
-        ).toSucceedAndSatisfy((confection) => {
-          expect(confection.name).toBe('Classic Dark Dome Bonbon');
-          expect(confection.confectionType).toBe('molded-bonbon');
-        });
+        expect(ctx.getConfection('common.dark-dome-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+          (confection) => {
+            expect(confection.name).toBe('Classic Dark Dome Bonbon');
+            expect(confection.confectionType).toBe('molded-bonbon');
+          }
+        );
       });
     });
 
     test('getConfection fails for non-existent ID', () => {
       expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
-        expect(
-          ctx.getConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
-        ).toFail();
+        expect(ctx.getConfection('common.nonexistent' as ConfectionId)).toFail();
       });
     });
 
     test('hasConfection returns true for existing ID', () => {
       expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
-        expect(
-          ctx.hasConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
-        ).toBe(true);
+        expect(ctx.hasConfection('common.dark-dome-bonbon' as ConfectionId)).toBe(true);
       });
     });
 
     test('hasConfection returns false for non-existent ID', () => {
       expect(RuntimeContext.create({ libraryParams: { builtin: true } })).toSucceedAndSatisfy((ctx) => {
-        expect(
-          ctx.hasConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
-        ).toBe(false);
+        expect(ctx.hasConfection('common.nonexistent' as ConfectionId)).toBe(false);
       });
     });
   });
@@ -961,42 +958,32 @@ describe('RuntimeContext', () => {
 
     describe('getTask', () => {
       test('returns task for valid ID', () => {
-        expect(
-          ctx.getTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
-        ).toSucceedAndSatisfy((task) => {
+        expect(ctx.getTask('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((task) => {
           expect(task.name).toBe('Melt Chocolate');
         });
       });
 
       test('fails for non-existent ID', () => {
-        expect(ctx.getTask('common.nonexistent' as import('../../../packlets/common').TaskId)).toFail();
+        expect(ctx.getTask('common.nonexistent' as TaskId)).toFail();
       });
     });
 
     describe('getRuntimeTask', () => {
       test('returns RuntimeTask for valid ID', () => {
-        expect(
-          ctx.getRuntimeTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
-        ).toSucceedAndSatisfy((runtimeTask) => {
+        expect(ctx.getRuntimeTask('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((runtimeTask) => {
           expect(runtimeTask.id).toBe('common.melt-chocolate');
           expect(runtimeTask.name).toBe('Melt Chocolate');
         });
       });
 
       test('caches runtime tasks', () => {
-        const result1 = ctx
-          .getRuntimeTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
-          .orThrow();
-        const result2 = ctx
-          .getRuntimeTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
-          .orThrow();
+        const result1 = ctx.getRuntimeTask('common.melt-chocolate' as TaskId).orThrow();
+        const result2 = ctx.getRuntimeTask('common.melt-chocolate' as TaskId).orThrow();
         expect(result1).toBe(result2); // Same instance
       });
 
       test('fails for non-existent ID', () => {
-        expect(
-          ctx.getRuntimeTask('common.nonexistent' as import('../../../packlets/common').TaskId)
-        ).toFail();
+        expect(ctx.getRuntimeTask('common.nonexistent' as TaskId)).toFail();
       });
     });
 
@@ -1023,28 +1010,66 @@ describe('RuntimeContext', () => {
 
     describe('getRuntimeMold', () => {
       test('returns RuntimeMold for valid ID', () => {
-        expect(
-          ctx.getRuntimeMold('cw.chocolate-world-cw-2227' as import('../../../packlets/common').MoldId)
-        ).toSucceedAndSatisfy((runtimeMold) => {
-          expect(runtimeMold.id).toBe('cw.chocolate-world-cw-2227');
-          expect(runtimeMold.manufacturer).toBe('Chocolate World');
-        });
+        expect(ctx.getRuntimeMold('cw.chocolate-world-cw-2227' as MoldId)).toSucceedAndSatisfy(
+          (runtimeMold) => {
+            expect(runtimeMold.id).toBe('cw.chocolate-world-cw-2227');
+            expect(runtimeMold.manufacturer).toBe('Chocolate World');
+          }
+        );
       });
 
       test('caches runtime molds', () => {
-        const result1 = ctx
-          .getRuntimeMold('cw.chocolate-world-cw-2227' as import('../../../packlets/common').MoldId)
-          .orThrow();
-        const result2 = ctx
-          .getRuntimeMold('cw.chocolate-world-cw-2227' as import('../../../packlets/common').MoldId)
-          .orThrow();
+        const result1 = ctx.getRuntimeMold('cw.chocolate-world-cw-2227' as MoldId).orThrow();
+        const result2 = ctx.getRuntimeMold('cw.chocolate-world-cw-2227' as MoldId).orThrow();
         expect(result1).toBe(result2); // Same instance
       });
 
       test('fails for non-existent ID', () => {
-        expect(
-          ctx.getRuntimeMold('common.nonexistent' as import('../../../packlets/common').MoldId)
-        ).toFail();
+        expect(ctx.getRuntimeMold('common.nonexistent' as MoldId)).toFail();
+      });
+    });
+
+    describe('getRuntimeIngredient', () => {
+      let testCtx: RuntimeContext;
+
+      beforeEach(() => {
+        // Use custom test data library that has 'test.' prefixed ingredients
+        testCtx = RuntimeContext.fromLibrary(library).orThrow();
+      });
+
+      test('returns RuntimeIngredient for valid ID', () => {
+        expect(testCtx.getRuntimeIngredient('test.dark-chocolate' as IngredientId)).toSucceedAndSatisfy(
+          (runtimeIngredient) => {
+            expect(runtimeIngredient.id).toBe('test.dark-chocolate');
+            expect(runtimeIngredient.category).toBe('chocolate');
+          }
+        );
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(testCtx.getRuntimeIngredient('test.nonexistent' as IngredientId)).toFail();
+      });
+    });
+
+    describe('getRuntimeFilling', () => {
+      let testCtx: RuntimeContext;
+
+      beforeEach(() => {
+        // Use custom test data library that has 'test.' prefixed fillings
+        testCtx = RuntimeContext.fromLibrary(library).orThrow();
+      });
+
+      test('returns RuntimeRecipe for valid ID', () => {
+        expect(testCtx.getRuntimeFilling('test.dark-ganache' as FillingId)).toSucceedAndSatisfy(
+          (runtimeRecipe) => {
+            expect(runtimeRecipe.id).toBe('test.dark-ganache');
+            expect(runtimeRecipe.name).toBe('Dark Ganache');
+          }
+        );
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(testCtx.getRuntimeFilling('test.nonexistent' as FillingId)).toFail();
       });
     });
   });

@@ -4,10 +4,10 @@
 
 ## Runtime.RuntimeBarTruffle.enrobingChocolate property
 
-Enrobing chocolate specification (from golden version, optional)
+Resolved enrobing chocolate specification (from golden version, optional, lazy-loaded)
 
 **Signature:**
 
 ```typescript
-get enrobingChocolate(): IChocolateSpec | undefined;
+get enrobingChocolate(): import('../model').IResolvedChocolateSpec | undefined;
 ```

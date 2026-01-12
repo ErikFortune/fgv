@@ -22,38 +22,211 @@ import '@fgv/ts-utils-jest';
 
 import {
   BaseConfectionId,
+  BaseFillingId,
+  BaseIngredientId,
+  BaseMoldId,
+  BaseProcedureId,
   ConfectionId,
   ConfectionName,
   ConfectionVersionSpec,
+  FillingName,
+  FillingVersionSpec,
   Measurement,
   IngredientId,
   Millimeters,
+  MoldFormat,
   MoldId,
+  Percentage,
   ProcedureId,
   FillingId,
-  SlotId
+  SlotId,
+  SourceId
 } from '../../../../packlets/common';
-import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../../packlets/entities';
+import {
+  IChocolateIngredient,
+  IFillingRecipe,
+  IGanacheCharacteristics,
+  IMold,
+  IMoldedBonBon,
+  IBarTruffle,
+  IProcedure,
+  IRolledTruffle,
+  Ingredient
+} from '../../../../packlets/entities';
 import {
   RuntimeMoldedBonBon,
   RuntimeBarTruffle,
   RuntimeRolledTruffle,
-  IConfectionContext
+  IConfectionContext,
+  IRuntimeAlcoholIngredient,
+  IRuntimeDairyIngredient,
+  IRuntimeFatIngredient,
+  IRuntimeFillingRecipe,
+  IRuntimeFillingRecipeVersion,
+  IRuntimeIngredient,
+  IRuntimeMold,
+  IRuntimeProcedure,
+  IRuntimeChocolateIngredient,
+  IRuntimeRenderedProcedure,
+  IRuntimeSugarIngredient
 } from '../../../../packlets/runtime';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { ConfectionEditingSession } from '../../../../packlets/runtime/session';
-import { Logging } from '@fgv/ts-utils';
+import { Logging, succeed } from '@fgv/ts-utils';
 
 describe('ConfectionEditingSession', () => {
   // ============================================================================
   // Test Data
   // ============================================================================
 
+  // Create mock runtime objects that match the new resolved types
+  const mockGanacheCharacteristics: IGanacheCharacteristics = {
+    cacaoFat: 0.35 as unknown as Percentage,
+    sugar: 0.25 as unknown as Percentage,
+    milkFat: 0 as unknown as Percentage,
+    water: 0.01 as unknown as Percentage,
+    solids: 0.99 as unknown as Percentage,
+    otherFats: 0 as unknown as Percentage
+  };
+
+  const mockChocolate64: IRuntimeChocolateIngredient = {
+    id: 'common.chocolate-dark-64' as IngredientId,
+    sourceId: 'common' as unknown as SourceId,
+    baseId: 'chocolate-dark-64' as unknown as BaseIngredientId,
+    name: 'Dark Chocolate 64%',
+    category: 'chocolate',
+    chocolateType: 'dark',
+    cacaoPercentage: 64 as unknown as Percentage,
+    ganacheCharacteristics: mockGanacheCharacteristics,
+    isChocolate(): this is IRuntimeChocolateIngredient {
+      return true;
+    },
+    isDairy(): this is IRuntimeDairyIngredient {
+      return false;
+    },
+    isSugar(): this is IRuntimeSugarIngredient {
+      return false;
+    },
+    isFat(): this is IRuntimeFatIngredient {
+      return false;
+    },
+    isAlcohol(): this is IRuntimeAlcoholIngredient {
+      return false;
+    },
+    usedByFillings: () => [],
+    primaryInFillings: () => [],
+    alternateInFillings: () => [],
+    raw: {} as unknown as IChocolateIngredient
+  };
+
+  const mockChocolate70: IRuntimeChocolateIngredient = {
+    ...mockChocolate64,
+    id: 'common.chocolate-dark-70' as IngredientId,
+    baseId: 'chocolate-dark-70' as unknown as BaseIngredientId,
+    name: 'Dark Chocolate 70%',
+    cacaoPercentage: 70 as unknown as Percentage
+  };
+
+  const mockIngredient = (id: IngredientId, name: string): IRuntimeIngredient => ({
+    id,
+    sourceId: 'common' as unknown as SourceId,
+    baseId: id.split('.')[1] as unknown as BaseIngredientId,
+    name,
+    category: 'other',
+    ganacheCharacteristics: mockGanacheCharacteristics,
+    isChocolate(): this is IRuntimeChocolateIngredient {
+      return false;
+    },
+    isDairy(): this is IRuntimeDairyIngredient {
+      return false;
+    },
+    isSugar(): this is IRuntimeSugarIngredient {
+      return false;
+    },
+    isFat(): this is IRuntimeFatIngredient {
+      return false;
+    },
+    isAlcohol(): this is IRuntimeAlcoholIngredient {
+      return false;
+    },
+    usedByFillings: () => [],
+    primaryInFillings: () => [],
+    alternateInFillings: () => [],
+    raw: {} as unknown as Ingredient
+  });
+
+  const mockFilling = (id: FillingId, name: string): IRuntimeFillingRecipe => ({
+    id,
+    sourceId: 'common' as unknown as SourceId,
+    baseId: id.split('.')[1] as unknown as BaseFillingId,
+    name: name as unknown as FillingName,
+    goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
+    goldenVersion: {} as unknown as IRuntimeFillingRecipeVersion,
+    versions: [],
+    getVersion: () => succeed({} as unknown as IRuntimeFillingRecipeVersion),
+    latestVersion: {} as unknown as IRuntimeFillingRecipeVersion,
+    versionCount: 1,
+    getIngredientIds: () => new Set(),
+    usesIngredient: () => false,
+    raw: {} as unknown as IFillingRecipe
+  });
+
+  const mockMold = (id: MoldId, name: string): IRuntimeMold => ({
+    id,
+    sourceId: 'common' as unknown as SourceId,
+    baseId: id.split('.')[1] as unknown as BaseMoldId,
+    manufacturer: 'Mock Manufacturer',
+    productNumber: 'MOCK-001',
+    description: name,
+    cavityCount: 24,
+    format: 'standard' as unknown as MoldFormat,
+    totalCapacity: undefined,
+    displayName: name,
+    raw: {} as unknown as IMold
+  });
+
+  const mockProcedure = (id: ProcedureId, name: string): IRuntimeProcedure => ({
+    id,
+    baseId: id.split('.')[1] as unknown as BaseProcedureId,
+    name,
+    steps: [],
+    totalActiveTime: undefined,
+    totalWaitTime: undefined,
+    totalHoldTime: undefined,
+    totalTime: undefined,
+    stepCount: 0,
+    isCategorySpecific: false,
+    render: () => succeed({} as unknown as IRuntimeRenderedProcedure),
+    raw: {} as unknown as IProcedure
+  });
+
   const mockContext: IConfectionContext = {
-    getRecipe: jest.fn(),
-    getIngredient: jest.fn(),
-    getMold: jest.fn(),
-    getProcedure: jest.fn()
+    getRuntimeIngredient: jest.fn((id: IngredientId) => {
+      if (id === 'common.chocolate-dark-64') return succeed(mockChocolate64);
+      if (id === 'common.chocolate-dark-70') return succeed(mockChocolate70);
+      if (id === 'common.caramel') return succeed(mockIngredient(id, 'Caramel'));
+      if (id === 'common.praline') return succeed(mockIngredient(id, 'Praline'));
+      if (id === 'common.cocoa-powder') return succeed(mockIngredient(id, 'Cocoa Powder'));
+      if (id === 'common.powdered-sugar') return succeed(mockIngredient(id, 'Powdered Sugar'));
+      if (id === 'common.chocolate-white') return succeed(mockIngredient(id, 'White Chocolate'));
+      return succeed(mockIngredient(id, `Mock ${id}`));
+    }),
+    getRuntimeFilling: jest.fn((id: FillingId) => {
+      if (id === 'common.dark-ganache-classic') return succeed(mockFilling(id, 'Dark Ganache Classic'));
+      if (id === 'common.milk-ganache') return succeed(mockFilling(id, 'Milk Ganache'));
+      return succeed(mockFilling(id, `Mock ${id}`));
+    }),
+    getRuntimeMold: jest.fn((id: MoldId) => {
+      if (id === 'common.dome-25mm') return succeed(mockMold(id, 'Dome 25mm'));
+      if (id === 'common.square-20mm') return succeed(mockMold(id, 'Square 20mm'));
+      return succeed(mockMold(id, `Mock ${id}`));
+    }),
+    getRuntimeProcedure: jest.fn((id: ProcedureId) => {
+      if (id === 'common.molded-bonbon-standard') return succeed(mockProcedure(id, 'Standard Molded Bonbon'));
+      if (id === 'common.molded-bonbon-double-shell')
+        return succeed(mockProcedure(id, 'Double Shell Molded Bonbon'));
+      return succeed(mockProcedure(id, `Mock ${id}`));
+    })
   };
 
   const moldedBonBonData: IMoldedBonBon = {

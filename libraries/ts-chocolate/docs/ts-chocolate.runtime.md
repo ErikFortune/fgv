@@ -610,6 +610,72 @@ Read-only interface for ValidatingLibrary. Extends IReadOnlyValidatingResultMap 
 </td></tr>
 <tr><td>
 
+[IResolvedAdditionalChocolate](./ts-chocolate.runtime.iresolvedadditionalchocolate.md)
+
+
+</td><td>
+
+Resolved additional chocolate with purpose.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
+
+
+</td><td>
+
+A resolved chocolate specification with ingredient objects. Uses same pattern as IResolvedFillingIngredient - primary + alternates.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedCoatingOption](./ts-chocolate.runtime.iresolvedcoatingoption.md)
+
+
+</td><td>
+
+A resolved coating option with the full ingredient object.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedCoatings](./ts-chocolate.runtime.iresolvedcoatings.md)
+
+
+</td><td>
+
+Resolved coatings specification for rolled truffles. Coatings are ingredient-based (e.g., cocoa powder, chopped nuts).
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedConfectionMoldRef](./ts-chocolate.runtime.iresolvedconfectionmoldref.md)
+
+
+</td><td>
+
+A resolved mold reference with the full mold object.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)
+
+
+</td><td>
+
+A resolved procedure reference for confections. Similar to IResolvedFillingRecipeProcedure but for confections.
+
+
+</td></tr>
+<tr><td>
+
 [IResolvedFillingIngredient](./ts-chocolate.runtime.iresolvedfillingingredient.md)
 
 
@@ -632,12 +698,45 @@ A resolved procedure reference with the full procedure object. Used in runtime r
 </td></tr>
 <tr><td>
 
+[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)
+
+
+</td><td>
+
+A resolved filling slot with resolved recipe/ingredient references.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedIngredientFillingOption](./ts-chocolate.runtime.iresolvedingredientfillingoption.md)
+
+
+</td><td>
+
+Resolved ingredient filling option.
+
+
+</td></tr>
+<tr><td>
+
 [IResolvedProcedures](./ts-chocolate.runtime.iresolvedprocedures.md)
 
 
 </td><td>
 
 Collection of resolved procedures associated with a recipe.
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedRecipeFillingOption](./ts-chocolate.runtime.iresolvedrecipefillingoption.md)
+
+
+</td><td>
+
+Resolved recipe filling option.
 
 
 </td></tr>
@@ -1035,6 +1134,17 @@ Generic filter predicate function
 </td><td>
 
 Filter for RuntimeIngredient
+
+
+</td></tr>
+<tr><td>
+
+[IResolvedFillingOption](./ts-chocolate.runtime.iresolvedfillingoption.md)
+
+
+</td><td>
+
+A resolved filling option with the full recipe or ingredient object. Discriminated union for type-safe access.
 
 
 </td></tr>

@@ -23,9 +23,12 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
 import {
+  BaseIngredientId,
   BaseMoldId,
   BaseProcedureId,
   BaseFillingId,
+  ConfectionId,
+  FillingVersionSpec,
   Measurement,
   IngredientId,
   JournalId,
@@ -36,7 +39,8 @@ import {
   FillingId,
   FillingName,
   FillingVersionId,
-  SourceId
+  SourceId,
+  TaskId
 } from '../../../packlets/common';
 
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/entities';
@@ -87,14 +91,14 @@ describe('ChocolateLibrary', () => {
   };
 
   const testIngredient: IIngredient = {
-    baseId: 'testChoco' as unknown as import('../../../packlets/common').BaseIngredientId,
+    baseId: 'testChoco' as unknown as BaseIngredientId,
     name: 'Test Chocolate',
     category: 'chocolate',
     ganacheCharacteristics: testChars
   };
 
   const testRecipeVersion: IFillingRecipeVersion = {
-    versionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec,
+    versionSpec: '2026-01-01-01' as unknown as FillingVersionSpec,
     createdDate: '2026-01-01',
     ingredients: [{ ingredient: { ids: ['test.testChoco' as IngredientId] }, amount: 100 as Measurement }],
     baseWeight: 100 as Measurement
@@ -105,7 +109,7 @@ describe('ChocolateLibrary', () => {
     name: 'Test Recipe' as FillingName,
     category: 'ganache',
     versions: [testRecipeVersion],
-    goldenVersionSpec: '2026-01-01-01' as unknown as import('../../../packlets/common').FillingVersionSpec
+    goldenVersionSpec: '2026-01-01-01' as unknown as FillingVersionSpec
   };
 
   // ============================================================================
@@ -801,36 +805,30 @@ describe('ChocolateLibrary', () => {
 
     test('getConfection returns confection for valid ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(
-          lib.getConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
-        ).toSucceedAndSatisfy((confection) => {
-          expect(confection.name).toBe('Classic Dark Dome Bonbon');
-          expect(confection.confectionType).toBe('molded-bonbon');
-        });
+        expect(lib.getConfection('common.dark-dome-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+          (confection) => {
+            expect(confection.name).toBe('Classic Dark Dome Bonbon');
+            expect(confection.confectionType).toBe('molded-bonbon');
+          }
+        );
       });
     });
 
     test('getConfection fails for non-existent ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(
-          lib.getConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
-        ).toFail();
+        expect(lib.getConfection('common.nonexistent' as ConfectionId)).toFail();
       });
     });
 
     test('hasConfection returns true for existing ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(
-          lib.hasConfection('common.dark-dome-bonbon' as import('../../../packlets/common').ConfectionId)
-        ).toBe(true);
+        expect(lib.hasConfection('common.dark-dome-bonbon' as ConfectionId)).toBe(true);
       });
     });
 
     test('hasConfection returns false for non-existent ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(
-          lib.hasConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
-        ).toBe(false);
+        expect(lib.hasConfection('common.nonexistent' as ConfectionId)).toBe(false);
       });
     });
   });
@@ -849,9 +847,7 @@ describe('ChocolateLibrary', () => {
 
     test('getTask returns task for valid ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(
-          lib.getTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
-        ).toSucceedAndSatisfy((task) => {
+        expect(lib.getTask('common.melt-chocolate' as TaskId)).toSucceedAndSatisfy((task) => {
           expect(task.name).toBe('Melt Chocolate');
         });
       });
@@ -859,19 +855,19 @@ describe('ChocolateLibrary', () => {
 
     test('getTask fails for non-existent ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(lib.getTask('common.nonexistent' as import('../../../packlets/common').TaskId)).toFail();
+        expect(lib.getTask('common.nonexistent' as TaskId)).toFail();
       });
     });
 
     test('hasTask returns true for existing ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(lib.hasTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)).toBe(true);
+        expect(lib.hasTask('common.melt-chocolate' as TaskId)).toBe(true);
       });
     });
 
     test('hasTask returns false for non-existent ID', () => {
       expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
-        expect(lib.hasTask('common.nonexistent' as import('../../../packlets/common').TaskId)).toBe(false);
+        expect(lib.hasTask('common.nonexistent' as TaskId)).toBe(false);
       });
     });
   });
