@@ -11,7 +11,7 @@ A rendered procedure step with resolved template values.
 ```typescript
 export interface IRuntimeRenderedStep extends IProcedureStep 
 ```
-**Extends:** [IProcedureStep](./ts-chocolate.procedures.iprocedurestep.md)
+**Extends:** IProcedureStep
 
 ## Properties
 

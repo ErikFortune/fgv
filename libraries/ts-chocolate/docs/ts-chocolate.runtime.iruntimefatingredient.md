@@ -90,7 +90,7 @@ _(Optional)_ Melting point in Celsius
 
 </td><td>
 
-[IFatIngredient](./ts-chocolate.ingredients.ifatingredient.md)
+IFatIngredient
 
 
 </td><td>

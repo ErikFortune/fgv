@@ -39,7 +39,7 @@ ingredient
 
 </td><td>
 
-[IFillingIngredient](./ts-chocolate.fillings.ifillingingredient.md)
+IFillingIngredient
 
 
 </td><td>

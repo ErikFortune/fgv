@@ -23,9 +23,9 @@ import { fail, Result, succeed } from '@fgv/ts-utils';
 import {
   Calculations,
   Converters,
+  Entities,
   FillingId,
   FillingVersionSpec,
-  Fillings,
   Measurement
 } from '@fgv/ts-chocolate';
 
@@ -163,7 +163,7 @@ export function createShowSubcommand(): Command {
           };
 
           // Scale the filling
-          let scaledResult: Result<Fillings.IComputedScaledFillingRecipe>;
+          let scaledResult: Result<Entities.Fillings.IComputedScaledFillingRecipe>;
           if (target.type === 'factor') {
             scaledResult = Calculations.scaleFillingRecipeByFactor(
               filling,

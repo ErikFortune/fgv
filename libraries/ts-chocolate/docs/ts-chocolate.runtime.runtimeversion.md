@@ -178,7 +178,7 @@ Resolved procedures associated with this version. Undefined if the version has n
 
 </td><td>
 
-ReadonlyArray&lt;[IFillingRating](./ts-chocolate.fillings.ifillingrating.md)<!-- -->&gt;
+ReadonlyArray&lt;IFillingRating&gt;
 
 
 </td><td>
@@ -199,7 +199,7 @@ Optional ratings for this version
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)
+IFillingRecipeVersion
 
 
 </td><td>

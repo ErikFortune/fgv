@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import type { Ingredients, IngredientId } from '@fgv/ts-chocolate';
+import type { Entities, IngredientId } from '@fgv/ts-chocolate';
 import { CategoryBadge, CollectionBadge } from '../common';
 
 /**
@@ -22,7 +22,7 @@ function getIngredientSourceId(id: IngredientId): string {
  */
 export interface IIngredientCardProps {
   /** Ingredient to display */
-  ingredient: Ingredients.Ingredient;
+  ingredient: Entities.Ingredients.Ingredient;
   /** Ingredient ID */
   ingredientId: IngredientId;
   /** Whether the collection is protected */

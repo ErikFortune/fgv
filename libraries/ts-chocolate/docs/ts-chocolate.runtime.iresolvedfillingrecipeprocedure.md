@@ -68,7 +68,7 @@ _(Optional)_ Optional notes specific to using this procedure with the recipe.
 
 </td><td>
 
-[IProcedure](./ts-chocolate.procedures.iprocedure.md)
+IProcedure
 
 
 </td><td>
@@ -89,7 +89,7 @@ The fully resolved procedure object.
 
 </td><td>
 
-[IProcedureRef](./ts-chocolate.fillings.iprocedureref.md)
+IProcedureRef
 
 
 </td><td>

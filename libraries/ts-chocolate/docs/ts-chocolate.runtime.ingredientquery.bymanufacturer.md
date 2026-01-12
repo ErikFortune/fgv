@@ -50,5 +50,5 @@ Manufacturer name (case-insensitive partial match)
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
 

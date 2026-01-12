@@ -131,7 +131,7 @@ _(Optional)_ Optional notes for this specific ingredient usage
 
 </td><td>
 
-[IFillingIngredient](./ts-chocolate.fillings.ifillingingredient.md)
+IFillingIngredient
 
 
 </td><td>

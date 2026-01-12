@@ -91,7 +91,7 @@ Confection type (discriminator)
 
 </td><td>
 
-ReadonlyArray&lt;[IConfectionDecoration](./ts-chocolate.confections.iconfectiondecoration.md)<!-- -->&gt;
+ReadonlyArray&lt;IConfectionDecoration&gt;
 
 
 </td><td>
@@ -175,7 +175,7 @@ Gets effective URLs for the golden version (base + version's additional URLs).
 
 </td><td>
 
-ReadonlyArray&lt;[IFillingSlot](./ts-chocolate.confections.ifillingslot.md)<!-- -->&gt;
+ReadonlyArray&lt;IFillingSlot&gt;
 
 
 </td><td>
@@ -196,7 +196,7 @@ _(Optional)_ Filling slots from the golden version
 
 </td><td>
 
-[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)
+AnyConfectionVersion
 
 
 </td><td>
@@ -280,7 +280,7 @@ Human-readable name
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IProcedureRef](./ts-chocolate.fillings.iprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -301,7 +301,7 @@ _(Optional)_ Procedures from the golden version
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.confections.confectiondata.md)
+ConfectionData
 
 
 </td><td>
@@ -385,7 +385,7 @@ _(Optional)_ Base URLs (version may add more)
 
 </td><td>
 
-ReadonlyArray&lt;[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)<!-- -->&gt;
+ReadonlyArray&lt;AnyConfectionVersion&gt;
 
 
 </td><td>
@@ -406,7 +406,7 @@ All versions.
 
 </td><td>
 
-[IConfectionYield](./ts-chocolate.confections.iconfectionyield.md)
+IConfectionYield
 
 
 </td><td>

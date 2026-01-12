@@ -22,7 +22,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { captureResult, fail, Result, succeed } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
-import { Crypto, Fillings, LibraryData } from '@fgv/ts-chocolate';
+import { Crypto, Entities, LibraryData } from '@fgv/ts-chocolate';
 import * as yaml from 'yaml';
 
 import { IDataSourceOptions } from './types';
@@ -114,8 +114,8 @@ function buildEncryptionConfig(
 /**
  * Builds file tree sources from library paths
  */
-function buildFileSources(libraryPaths: string[]): Result<Fillings.IFillingFileTreeSource[]> {
-  const sources: Fillings.IFillingFileTreeSource[] = [];
+function buildFileSources(libraryPaths: string[]): Result<Entities.Fillings.IFillingFileTreeSource[]> {
+  const sources: Entities.Fillings.IFillingFileTreeSource[] = [];
 
   for (const libraryPath of libraryPaths) {
     const resolvedPath = path.resolve(libraryPath);
@@ -158,7 +158,7 @@ function buildFileSources(libraryPaths: string[]): Result<Fillings.IFillingFileT
  */
 export async function loadFillingsLibrary(
   options: IDataSourceOptions
-): Promise<Result<Fillings.FillingsLibrary>> {
+): Promise<Result<Entities.Fillings.FillingsLibrary>> {
   // Load secrets file if provided
   let secrets: SecretsFile | undefined;
   if (options.secretsFile) {
@@ -183,12 +183,12 @@ export async function loadFillingsLibrary(
   }
 
   // Create library params
-  const params: Fillings.IFillingsLibraryAsyncParams = {
+  const params: Entities.Fillings.IFillingsLibraryAsyncParams = {
     builtin: options.noBuiltin !== true,
     fileSources: fileSourcesResult.value.length > 0 ? fileSourcesResult.value : undefined,
     encryption: encryptionResult.value
   };
 
   // Create the library
-  return Fillings.FillingsLibrary.createAsync(params);
+  return Entities.Fillings.FillingsLibrary.createAsync(params);
 }

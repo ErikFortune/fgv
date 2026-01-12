@@ -110,7 +110,7 @@ Whether journaling is enabled
 
 </td><td>
 
-ReadonlyArray&lt;[IJournalEntry](./ts-chocolate.journal.ijournalentry.md)<!-- -->&gt;
+ReadonlyArray&lt;IJournalEntry&gt;
 
 
 </td><td>

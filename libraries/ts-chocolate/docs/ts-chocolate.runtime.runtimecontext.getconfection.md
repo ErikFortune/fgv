@@ -50,7 +50,7 @@ The confection ID
 
 **Returns:**
 
-Result&lt;[ConfectionData](./ts-chocolate.confections.confectiondata.md)<!-- -->&gt;
+Result&lt;ConfectionData&gt;
 
 Success with confection data, or Failure if not found
 

@@ -558,7 +558,7 @@ export const allConfectionTypes: ConfectionType[] = ['molded-bonbon', 'bar-truff
 
 /**
  * Purpose for additional chocolates in molded bonbons.
- * These values align with {@link Journal.ChocolateRole | ChocolateRole} for type safety
+ * These values align with {@link Entities.Journal.ChocolateRole | ChocolateRole} for type safety
  * when converting between confection data and journal entries.
  * @public
  */

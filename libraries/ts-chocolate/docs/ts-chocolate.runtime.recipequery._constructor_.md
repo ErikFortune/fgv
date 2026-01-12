@@ -37,7 +37,7 @@ context
 
 </td><td>
 
-[RuntimeContext](./ts-chocolate.runtime.runtimecontext.md)
+[RuntimeContext](./ts-chocolate.runtimecontext.md)
 
 
 </td><td>

@@ -50,5 +50,5 @@ Allergens that must not be present
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
 

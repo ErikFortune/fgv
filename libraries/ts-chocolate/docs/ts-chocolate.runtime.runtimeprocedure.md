@@ -199,7 +199,7 @@ Optional notes
 
 </td><td>
 
-[IProcedure](./ts-chocolate.procedures.iprocedure.md)
+IProcedure
 
 
 </td><td>
@@ -241,7 +241,7 @@ Number of steps
 
 </td><td>
 
-ReadonlyArray&lt;[IProcedureStep](./ts-chocolate.procedures.iprocedurestep.md)<!-- -->&gt;
+ReadonlyArray&lt;IProcedureStep&gt;
 
 
 </td><td>

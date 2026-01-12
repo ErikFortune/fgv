@@ -68,7 +68,7 @@ _(Optional)_ The journal ID if a journal record was created
 
 </td><td>
 
-[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)
+IFillingRecipeJournalRecord
 
 
 </td><td>

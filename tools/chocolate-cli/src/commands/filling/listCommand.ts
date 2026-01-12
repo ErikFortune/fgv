@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import { Command } from 'commander';
-import { FillingId, Fillings, Helpers, SourceId } from '@fgv/ts-chocolate';
+import { Entities, FillingId, Helpers, SourceId } from '@fgv/ts-chocolate';
 
 import {
   IFillingListOptions,
@@ -33,7 +33,7 @@ import {
  * Checks if a filling matches the specified filters
  */
 function matchesFilters(
-  filling: Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipe,
   fillingId: FillingId,
   sourceId: SourceId,
   options: IFillingListOptions

@@ -37,7 +37,7 @@ library
 
 </td><td>
 
-[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Whether to pre-warm the reverse index
 
 **Returns:**
 
-Result&lt;[RuntimeContext](./ts-chocolate.runtime.runtimecontext.md)<!-- -->&gt;
+Result&lt;[RuntimeContext](./ts-chocolate.runtimecontext.md)<!-- -->&gt;
 
 Success with RuntimeContext
 

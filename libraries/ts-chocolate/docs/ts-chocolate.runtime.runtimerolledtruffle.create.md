@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-[IRolledTruffle](./ts-chocolate.confections.irolledtruffle.md)
+IRolledTruffle
 
 
 </td><td>

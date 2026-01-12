@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import type { Ingredients } from '@fgv/ts-chocolate';
+import type { Entities } from '@fgv/ts-chocolate';
 
 /**
  * Props for the TemperatureCurveDisplay component
@@ -12,7 +12,7 @@ import type { Ingredients } from '@fgv/ts-chocolate';
  */
 export interface ITemperatureCurveDisplayProps {
   /** Temperature curve to display */
-  curve: Ingredients.ITemperatureCurve;
+  curve: Entities.Ingredients.ITemperatureCurve;
   /** Optional additional CSS classes */
   className?: string;
   /** Whether to show Fahrenheit conversion */

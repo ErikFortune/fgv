@@ -117,7 +117,7 @@ IIngredientContext
 
 </td><td>
 
-[Ingredient](./ts-chocolate.ingredients.ingredient.md)
+Ingredient
 
 
 </td><td>
@@ -264,7 +264,7 @@ Optional description
 
 </td><td>
 
-[IGanacheCharacteristics](./ts-chocolate.ingredients.iganachecharacteristics.md)
+IGanacheCharacteristics
 
 
 </td><td>
@@ -350,7 +350,7 @@ Display name of the ingredient
 
 </td><td>
 
-[Ingredient](./ts-chocolate.ingredients.ingredient.md)
+Ingredient
 
 
 </td><td>

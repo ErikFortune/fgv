@@ -31,7 +31,7 @@ import { Converters as TaskConverters } from '../tasks';
 import { IProcedure, IProcedureStep } from './model';
 
 /**
- * Converter for {@link Procedures.IProcedureStep | IProcedureStep}.
+ * Converter for {@link Entities.Procedures.IProcedureStep | IProcedureStep}.
  * @public
  */
 export const procedureStep: Converter<IProcedureStep> = Converters.object<IProcedureStep>({
@@ -45,7 +45,7 @@ export const procedureStep: Converter<IProcedureStep> = Converters.object<IProce
 });
 
 /**
- * Converter for {@link Procedures.IProcedure | IProcedure} data structure.
+ * Converter for {@link Entities.Procedures.IProcedure | IProcedure} data structure.
  * @public
  */
 export const procedureData: Converter<IProcedure> = Converters.object<IProcedure>({

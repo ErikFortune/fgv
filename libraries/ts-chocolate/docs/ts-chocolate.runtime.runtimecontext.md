@@ -92,7 +92,7 @@ Gets the number of cached recipes.
 
 </td><td>
 
-[ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
+ConfectionsLibrary
 
 
 </td><td>
@@ -155,7 +155,7 @@ A searchable library of all ingredients, keyed by composite ID. Ingredients are 
 
 </td><td>
 
-[JournalLibrary](./ts-chocolate.journal.journallibrary.md)
+JournalLibrary
 
 
 </td><td>
@@ -176,7 +176,7 @@ The journals library for managing cooking session records.
 
 </td><td>
 
-[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)
 
 
 </td><td>

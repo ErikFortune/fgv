@@ -4,7 +4,7 @@
 
 ## Calculations.scaleFillingRecipeByFactor() function
 
-Scales a [filling recipe](./ts-chocolate.fillings.ifillingrecipe.md) by a supplied multiplier.
+Scales a [filling recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by a supplied multiplier.
 
 **Signature:**
 
@@ -37,12 +37,12 @@ fillingRecipe
 
 </td><td>
 
-[IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)
+IFillingRecipe
 
 
 </td><td>
 
-The [filling recipe](./ts-chocolate.fillings.ifillingrecipe.md) to scale.
+The [filling recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) to scale.
 
 
 </td></tr>
@@ -98,7 +98,7 @@ _(Optional)_ Optional [scaling options](./ts-chocolate.calculations.ifillingreci
 
 **Returns:**
 
-Result&lt;[IComputedScaledFillingRecipe](./ts-chocolate.fillings.icomputedscaledfillingrecipe.md)<!-- -->&gt;
+Result&lt;IComputedScaledFillingRecipe&gt;
 
 `Success` with computed scaled filling recipe, or `Failure` if invalid.
 

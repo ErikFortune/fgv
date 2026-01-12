@@ -20,16 +20,15 @@
 
 import * as yaml from 'yaml';
 import {
+  Entities,
   FillingId,
   FillingName,
   FillingVersionSpec,
-  Fillings,
   ICategorizedUrl,
   IOptionsWithPreferred,
   IRefWithNotes,
   Measurement,
   ProcedureId,
-  Procedures,
   SourceId
 } from '@fgv/ts-chocolate';
 
@@ -42,12 +41,12 @@ export interface IFillingRenderContext {
   /**
    * The library for ingredient/filling lookups (for future templating)
    */
-  library?: Fillings.FillingsLibrary;
+  library?: Entities.Fillings.FillingsLibrary;
 
   /**
    * Procedure library for resolving procedure references
    */
-  procedureLibrary?: Procedures.ProceduresLibrary;
+  procedureLibrary?: Entities.Procedures.ProceduresLibrary;
 }
 
 /**
@@ -57,7 +56,7 @@ export interface IFillingListItem {
   id: FillingId;
   name: FillingName;
   sourceId: SourceId;
-  category: Fillings.FillingCategory;
+  category: Entities.Fillings.FillingCategory;
   description?: string;
   tags?: ReadonlyArray<string>;
   versionCount: number;
@@ -90,7 +89,7 @@ function calculatePercentage(amount: Measurement, baseWeight: Measurement): stri
  * Gets the display ID for a filling ingredient.
  * Uses preferredId if available, otherwise the first ID in the list.
  */
-function getIngredientDisplayId(ingredient: Fillings.IFillingIngredient): string {
+function getIngredientDisplayId(ingredient: Entities.Fillings.IFillingIngredient): string {
   return ingredient.ingredient.preferredId ?? ingredient.ingredient.ids[0];
 }
 
@@ -256,7 +255,7 @@ export function formatFillingList(fillings: IFillingListItem[], format: OutputFo
  * Formats a filling for human-readable output
  */
 function formatFillingHuman(
-  filling: Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipe,
   fillingId: FillingId,
   versionSpec?: FillingVersionSpec,
   context?: IFillingRenderContext
@@ -357,7 +356,7 @@ function formatFillingHuman(
  * Formats a filling for table output (same as human for details)
  */
 function formatFillingTable(
-  filling: Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipe,
   fillingId: FillingId,
   versionSpec?: FillingVersionSpec,
   context?: IFillingRenderContext
@@ -369,7 +368,7 @@ function formatFillingTable(
  * Formats a filling for output
  */
 export function formatFilling(
-  filling: Fillings.IFillingRecipe,
+  filling: Entities.Fillings.IFillingRecipe,
   fillingId: FillingId,
   format: OutputFormat,
   versionSpec?: FillingVersionSpec,
@@ -395,7 +394,7 @@ export function formatFilling(
 /**
  * Formats a scaled filling for human-readable output
  */
-function formatScaledFillingHuman(scaled: Fillings.IComputedScaledFillingRecipe): string {
+function formatScaledFillingHuman(scaled: Entities.Fillings.IComputedScaledFillingRecipe): string {
   const lines: string[] = [];
 
   const sourceVersionId = scaled.scaledFrom.sourceVersionId;
@@ -439,7 +438,7 @@ function formatScaledFillingHuman(scaled: Fillings.IComputedScaledFillingRecipe)
 /**
  * Formats a scaled filling for table output (same as human)
  */
-function formatScaledFillingTable(scaled: Fillings.IComputedScaledFillingRecipe): string {
+function formatScaledFillingTable(scaled: Entities.Fillings.IComputedScaledFillingRecipe): string {
   return formatScaledFillingHuman(scaled);
 }
 
@@ -447,7 +446,7 @@ function formatScaledFillingTable(scaled: Fillings.IComputedScaledFillingRecipe)
  * Formats a scaled filling for output
  */
 export function formatScaledFilling(
-  scaled: Fillings.IComputedScaledFillingRecipe,
+  scaled: Entities.Fillings.IComputedScaledFillingRecipe,
   format: OutputFormat
 ): string {
   switch (format) {

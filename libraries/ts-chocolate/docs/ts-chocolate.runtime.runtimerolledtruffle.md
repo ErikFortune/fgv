@@ -54,7 +54,7 @@ Description
 
 </td><td>
 
-[ICoatings](./ts-chocolate.confections.icoatings.md) \| undefined
+ICoatings \| undefined
 
 
 </td><td>
@@ -96,7 +96,7 @@ Confection type is always 'rolled-truffle' for this type
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md) \| undefined
+IChocolateSpec \| undefined
 
 
 </td><td>
@@ -117,7 +117,7 @@ Enrobing chocolate specification (from golden version, optional)
 
 </td><td>
 
-[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)
+IRolledTruffleVersion
 
 
 </td><td>
@@ -138,7 +138,7 @@ Golden version typed as IRolledTruffleVersion
 
 </td><td>
 
-[IRolledTruffle](./ts-chocolate.confections.irolledtruffle.md)
+IRolledTruffle
 
 
 </td><td>
@@ -159,7 +159,7 @@ Gets the underlying raw rolled truffle data
 
 </td><td>
 
-ReadonlyArray&lt;[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)<!-- -->&gt;
+ReadonlyArray&lt;IRolledTruffleVersion&gt;
 
 
 </td><td>

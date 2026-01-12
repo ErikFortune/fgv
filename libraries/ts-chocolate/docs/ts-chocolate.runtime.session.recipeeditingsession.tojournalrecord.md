@@ -50,7 +50,7 @@ _(Optional)_ Optional notes for the record
 
 **Returns:**
 
-Result&lt;[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)<!-- -->&gt;
+Result&lt;IFillingRecipeJournalRecord&gt;
 
 Success with journal record, or Failure
 

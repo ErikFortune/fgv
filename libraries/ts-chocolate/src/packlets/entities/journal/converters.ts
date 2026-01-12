@@ -43,13 +43,13 @@ import {
 } from './model';
 
 /**
- * Converter for {@link Journal.JournalEventType | JournalEventType}.
+ * Converter for {@link Entities.Journal.JournalEventType | JournalEventType}.
  * @public
  */
 export const journalEventType: Converter<JournalEventType> = Converters.enumeratedValue(allJournalEventTypes);
 
 /**
- * Converter for {@link Journal.IJournalEntry | IJournalEntry}.
+ * Converter for {@link Entities.Journal.IJournalEntry | IJournalEntry}.
  * @public
  */
 export const journalEntry: Converter<IJournalEntry> = Converters.object<IJournalEntry>({
@@ -63,13 +63,13 @@ export const journalEntry: Converter<IJournalEntry> = Converters.object<IJournal
 });
 
 /**
- * Converter for {@link Journal.JournalType | JournalType}.
+ * Converter for {@link Entities.Journal.JournalType | JournalType}.
  * @public
  */
 export const journalType: Converter<JournalType> = Converters.enumeratedValue(allJournalTypes);
 
 /**
- * Converter for {@link Journal.IFillingRecipeJournalRecord | IFillingRecipeJournalRecord}.
+ * Converter for {@link Entities.Journal.IFillingRecipeJournalRecord | IFillingRecipeJournalRecord}.
  * @public
  */
 export const fillingRecipeJournalRecord: Converter<IFillingRecipeJournalRecord> =
@@ -86,7 +86,7 @@ export const fillingRecipeJournalRecord: Converter<IFillingRecipeJournalRecord> 
   });
 
 /**
- * Converter for {@link Journal.ConfectionJournalEventType | ConfectionJournalEventType}.
+ * Converter for {@link Entities.Journal.ConfectionJournalEventType | ConfectionJournalEventType}.
  * @public
  */
 export const confectionJournalEventType: Converter<ConfectionJournalEventType> = Converters.enumeratedValue(
@@ -94,13 +94,13 @@ export const confectionJournalEventType: Converter<ConfectionJournalEventType> =
 );
 
 /**
- * Converter for {@link Journal.ChocolateRole | ChocolateRole}.
+ * Converter for {@link Entities.Journal.ChocolateRole | ChocolateRole}.
  * @public
  */
 export const chocolateRole: Converter<ChocolateRole> = Converters.enumeratedValue(allChocolateRoles);
 
 /**
- * Converter for {@link Journal.IConfectionJournalEntry | IConfectionJournalEntry}.
+ * Converter for {@link Entities.Journal.IConfectionJournalEntry | IConfectionJournalEntry}.
  * @public
  */
 export const confectionJournalEntry: Converter<IConfectionJournalEntry> =
@@ -136,7 +136,7 @@ export const confectionJournalEntry: Converter<IConfectionJournalEntry> =
   });
 
 /**
- * Converter for {@link Journal.IConfectionJournalRecord | IConfectionJournalRecord}.
+ * Converter for {@link Entities.Journal.IConfectionJournalRecord | IConfectionJournalRecord}.
  * @public
  */
 export const confectionJournalRecord: Converter<IConfectionJournalRecord> =
@@ -154,7 +154,7 @@ export const confectionJournalRecord: Converter<IConfectionJournalRecord> =
   });
 
 /**
- * Converter for {@link Journal.AnyJournalRecord | AnyJournalRecord}.
+ * Converter for {@link Entities.Journal.AnyJournalRecord | AnyJournalRecord}.
  * Uses the `journalType` discriminator to select the appropriate converter.
  * @public
  */

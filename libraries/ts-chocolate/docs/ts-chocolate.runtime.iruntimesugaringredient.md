@@ -90,7 +90,7 @@ _(Optional)_ Hydration number (water molecules per sugar molecule)
 
 </td><td>
 
-[ISugarIngredient](./ts-chocolate.ingredients.isugaringredient.md)
+ISugarIngredient
 
 
 </td><td>

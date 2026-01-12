@@ -39,7 +39,7 @@ confection
 
 </td><td>
 
-[IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)
+IMoldedBonBon
 
 
 </td><td>
@@ -55,7 +55,7 @@ version
 
 </td><td>
 
-[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)
+IMoldedBonBonVersion
 
 
 </td><td>
@@ -116,7 +116,7 @@ _(Optional)_ Optional frame scaling options
 
 **Returns:**
 
-Result&lt;[IScaledConfection](./ts-chocolate.calculations.iscaledconfection.md)<!-- -->&lt;[IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)<!-- -->&gt;&gt;
+Result&lt;[IScaledConfection](./ts-chocolate.calculations.iscaledconfection.md)<!-- -->&lt;IMoldedBonBon&gt;&gt;
 
 Success with scaled confection, or Failure if invalid
 

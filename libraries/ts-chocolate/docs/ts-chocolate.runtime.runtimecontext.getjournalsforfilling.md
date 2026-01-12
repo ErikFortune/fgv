@@ -50,7 +50,7 @@ The filling ID to search for
 
 **Returns:**
 
-ReadonlyArray&lt;[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;IFillingRecipeJournalRecord&gt;
 
 Array of journal records (empty if none found)
 

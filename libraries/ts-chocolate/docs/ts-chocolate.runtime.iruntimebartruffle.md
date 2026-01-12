@@ -69,7 +69,7 @@ Type is always 'bar-truffle' for this confection
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+IChocolateSpec
 
 
 </td><td>
@@ -90,7 +90,7 @@ _(Optional)_ Enrobing chocolate from the golden version
 
 </td><td>
 
-[IFrameDimensions](./ts-chocolate.confections.iframedimensions.md)
+IFrameDimensions
 
 
 </td><td>
@@ -111,7 +111,7 @@ Frame dimensions from the golden version
 
 </td><td>
 
-[IBarTruffleVersion](./ts-chocolate.confections.ibartruffleversion.md)
+IBarTruffleVersion
 
 
 </td><td>
@@ -132,7 +132,7 @@ Golden version typed as IBarTruffleVersion
 
 </td><td>
 
-[IBarTruffle](./ts-chocolate.confections.ibartruffle.md)
+IBarTruffle
 
 
 </td><td>
@@ -153,7 +153,7 @@ Raw data typed to IBarTruffle
 
 </td><td>
 
-[IBonBonDimensions](./ts-chocolate.confections.ibonbondimensions.md)
+IBonBonDimensions
 
 
 </td><td>
@@ -174,7 +174,7 @@ Single bonbon dimensions from the golden version
 
 </td><td>
 
-ReadonlyArray&lt;[IBarTruffleVersion](./ts-chocolate.confections.ibartruffleversion.md)<!-- -->&gt;
+ReadonlyArray&lt;IBarTruffleVersion&gt;
 
 
 </td><td>

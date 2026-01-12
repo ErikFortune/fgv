@@ -92,7 +92,7 @@ Number of cavities in the mold
 
 </td><td>
 
-[ICavityDimensions](./ts-chocolate.molds.icavitydimensions.md) \| undefined
+ICavityDimensions \| undefined
 
 
 </td><td>
@@ -281,7 +281,7 @@ Product number from the manufacturer
 
 </td><td>
 
-[IMold](./ts-chocolate.molds.imold.md)
+IMold
 
 
 </td><td>

@@ -24,40 +24,48 @@
  * @packageDocumentation
  */
 
+// ============================================================================
+// PRIMARY EXPORTS - Classes developers use directly
+// ============================================================================
+
+// Main library entry point
+export { ChocolateLibrary } from './packlets/runtime';
+
+// Runtime context for queries and resolved operations
+export { RuntimeContext } from './packlets/runtime';
+
+// Query builders
+export { RecipeQuery, IngredientQuery } from './packlets/runtime';
+
+// All branded types and common utilities
 export * from './packlets/common';
 
-import * as BuiltIn from './packlets/built-in';
+// ============================================================================
+// NAMESPACE EXPORTS
+// ============================================================================
+
+// Data layer - models, converters, collections, libraries
+import * as Entities from './packlets/entities';
+export { Entities };
+
+// Runtime classes - RuntimeRecipe, RuntimeIngredient, etc.
+import * as Runtime from './packlets/runtime';
+export { Runtime };
+
+// Business logic - scaling, calculations
 import * as Calculations from './packlets/calculations';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Confections from './packlets/entities/confections';
+export { Calculations };
+
+// Note: Converters is exported via 'export * from ./packlets/common'
+// Entity-specific converters are accessible via Entities.Fillings.Converters, etc.
+
+// ============================================================================
+// SUPPORTING NAMESPACES
+// ============================================================================
+
 // eslint-disable-next-line @rushstack/packlets/mechanics -- Browser entry point must use browser-specific crypto exports
 import * as Crypto from './packlets/crypto/index.browser';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Fillings from './packlets/entities/fillings';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Ingredients from './packlets/entities/ingredients';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Journal from './packlets/entities/journal';
 import * as LibraryData from './packlets/library-data';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Molds from './packlets/entities/molds';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Procedures from './packlets/entities/procedures';
-// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
-import * as Tasks from './packlets/entities/tasks';
-import * as Runtime from './packlets/runtime';
+import * as BuiltIn from './packlets/built-in';
 
-export {
-  BuiltIn,
-  Calculations,
-  Confections,
-  Crypto,
-  Fillings,
-  Ingredients,
-  Journal,
-  LibraryData,
-  Molds,
-  Procedures,
-  Runtime,
-  Tasks
-};
+export { Crypto, LibraryData, BuiltIn };

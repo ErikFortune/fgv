@@ -153,7 +153,7 @@ Logger for reporting index operations.
 
 </td><td>
 
-[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)
 
 
 </td><td>

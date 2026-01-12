@@ -4,10 +4,9 @@
 
 ```ts
 
-import type { Fillings } from '@fgv/ts-chocolate';
+import type { Entities } from '@fgv/ts-chocolate';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
 import type { IngredientId } from '@fgv/ts-chocolate';
-import type { Ingredients } from '@fgv/ts-chocolate';
 import type { IResultReporter } from '@fgv/ts-utils';
 import { Logging } from '@fgv/ts-utils';
 import type { MessageLogLevel } from '@fgv/ts-utils';
@@ -77,14 +76,14 @@ export interface IFillingCardProps {
 
 // @public
 export interface IFillingCategoryBadgeProps {
-    category: Fillings.FillingCategory;
+    category: Entities.Fillings.FillingCategory;
     className?: string;
     size?: 'sm' | 'md' | 'lg';
 }
 
 // @public
 export interface IGanacheCharacteristicsDisplayProps {
-    characteristics: Ingredients.IGanacheCharacteristics;
+    characteristics: Entities.Ingredients.IGanacheCharacteristics;
     className?: string;
     mode?: 'bar' | 'detailed';
     showLegend?: boolean;
@@ -93,7 +92,7 @@ export interface IGanacheCharacteristicsDisplayProps {
 // @public
 export interface IIngredientCardProps {
     className?: string;
-    ingredient: Ingredients.Ingredient;
+    ingredient: Entities.Ingredients.Ingredient;
     ingredientId: IngredientId;
     isProtected?: boolean;
     isSelected?: boolean;
@@ -169,7 +168,7 @@ export interface ITagBadgeProps {
 // @public
 export interface ITemperatureCurveDisplayProps {
     className?: string;
-    curve: Ingredients.ITemperatureCurve;
+    curve: Entities.Ingredients.ITemperatureCurve;
     mode?: 'inline' | 'vertical';
     showFahrenheit?: boolean;
 }

@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import type { Fillings } from '@fgv/ts-chocolate';
+import type { Entities } from '@fgv/ts-chocolate';
 
 /**
  * Props for the FillingCategoryBadge component
@@ -12,7 +12,7 @@ import type { Fillings } from '@fgv/ts-chocolate';
  */
 export interface IFillingCategoryBadgeProps {
   /** Filling category to display */
-  category: Fillings.FillingCategory;
+  category: Entities.Fillings.FillingCategory;
   /** Size variant */
   size?: 'sm' | 'md' | 'lg';
   /** Additional CSS classes */
@@ -24,7 +24,7 @@ export interface IFillingCategoryBadgeProps {
  * @internal
  */
 const categoryColors: Record<
-  Fillings.FillingCategory,
+  Entities.Fillings.FillingCategory,
   { bg: string; text: string; darkBg: string; darkText: string }
 > = {
   ganache: {
@@ -61,7 +61,7 @@ const sizeClasses: Record<'sm' | 'md' | 'lg', string> = {
  * Display labels for filling categories
  * @internal
  */
-const categoryLabels: Record<Fillings.FillingCategory, string> = {
+const categoryLabels: Record<Entities.Fillings.FillingCategory, string> = {
   ganache: 'Ganache',
   caramel: 'Caramel',
   gianduja: 'Gianduja'

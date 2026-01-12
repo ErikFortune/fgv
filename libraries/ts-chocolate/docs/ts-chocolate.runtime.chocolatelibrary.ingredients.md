@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.ingredients property
 
-The [ingredients library](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- -->.
+The [ingredients library](./ts-chocolate.entities.ingredients.ingredientslibrary.md)<!-- -->.
 
 **Signature:**
 

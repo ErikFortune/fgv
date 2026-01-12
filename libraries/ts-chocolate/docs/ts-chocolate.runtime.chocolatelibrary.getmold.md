@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getMold() method
 
-Gets a [mold](./ts-chocolate.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
+Gets a [mold](./ts-chocolate.entities.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
 
 **Signature:**
 
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.moldid.md) of the mold to retrieve.
 
 **Returns:**
 
-Result&lt;[IMold](./ts-chocolate.molds.imold.md)<!-- -->&gt;
+Result&lt;IMold&gt;
 
 `Success` with mold data, or `Failure` if not found
 

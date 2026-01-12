@@ -50,5 +50,5 @@ Tags that must all be present
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
 

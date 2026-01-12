@@ -50,5 +50,5 @@ Tags to search for
 
 **Returns:**
 
-[RecipeQuery](./ts-chocolate.runtime.recipequery.md)
+[RecipeQuery](./ts-chocolate.recipequery.md)
 

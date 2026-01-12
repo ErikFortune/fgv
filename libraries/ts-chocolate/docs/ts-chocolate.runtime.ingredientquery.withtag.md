@@ -50,5 +50,5 @@ Tag to search for (case-insensitive)
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
 

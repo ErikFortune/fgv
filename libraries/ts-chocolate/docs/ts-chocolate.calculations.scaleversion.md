@@ -39,12 +39,12 @@ version
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)
+IFillingRecipeVersion
 
 
 </td><td>
 
-The [filling recipe version](./ts-chocolate.fillings.ifillingrecipeversion.md) to scale.
+The [filling recipe version](./ts-chocolate.entities.fillings.ifillingrecipeversion.md) to scale.
 
 
 </td></tr>
@@ -100,7 +100,7 @@ _(Optional)_ Optional [scaling options](./ts-chocolate.calculations.iversionscal
 
 **Returns:**
 
-Result&lt;[IComputedScaledFillingRecipe](./ts-chocolate.fillings.icomputedscaledfillingrecipe.md)<!-- -->&gt;
+Result&lt;IComputedScaledFillingRecipe&gt;
 
 `Success` with computed scaled filling recipe, or `Failure` if invalid.
 

@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.fillings property
 
-The [fillings library](./ts-chocolate.fillings.fillingslibrary.md)<!-- -->.
+The [fillings library](./ts-chocolate.entities.fillings.fillingslibrary.md)<!-- -->.
 
 **Signature:**
 

@@ -37,7 +37,7 @@ version
 
 </td><td>
 
-[IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)
+IFillingRecipeVersion
 
 
 </td><td>

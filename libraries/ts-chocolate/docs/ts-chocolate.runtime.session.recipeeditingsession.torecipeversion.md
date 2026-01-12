@@ -50,7 +50,7 @@ Version specifier for the new version
 
 **Returns:**
 
-Result&lt;[IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)<!-- -->&gt;
+Result&lt;IFillingRecipeVersion&gt;
 
 Success with recipe version data, or Failure
 

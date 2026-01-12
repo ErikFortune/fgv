@@ -66,7 +66,7 @@ Description
 
 </td><td>
 
-[Ingredient](./ts-chocolate.ingredients.ingredient.md)
+Ingredient
 
 
 </td><td>

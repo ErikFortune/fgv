@@ -37,7 +37,7 @@ confection
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.confections.confectiondata.md)
+ConfectionData
 
 
 </td><td>
@@ -50,7 +50,7 @@ The confection to check
 
 **Returns:**
 
-confection is [IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)
+confection is IMoldedBonBon
 
 True if the confection is a molded bonbon
 

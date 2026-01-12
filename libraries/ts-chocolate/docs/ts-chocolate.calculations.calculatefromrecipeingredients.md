@@ -37,7 +37,7 @@ recipeIngredients
 
 </td><td>
 
-ReadonlyArray&lt;[IFillingIngredient](./ts-chocolate.fillings.ifillingingredient.md)<!-- -->&gt;
+ReadonlyArray&lt;IFillingIngredient&gt;
 
 
 </td><td>

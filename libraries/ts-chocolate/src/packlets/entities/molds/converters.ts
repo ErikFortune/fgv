@@ -29,7 +29,7 @@ import { Converters as CommonConverters } from '../../common';
 import { ICavityDimensions, IMold } from './model';
 
 /**
- * Converter for {@link Molds.ICavityDimensions | ICavityDimensions}.
+ * Converter for {@link Entities.Molds.ICavityDimensions | ICavityDimensions}.
  * @public
  */
 export const cavityDimensions: Converter<ICavityDimensions> = Converters.object<ICavityDimensions>({
@@ -39,7 +39,7 @@ export const cavityDimensions: Converter<ICavityDimensions> = Converters.object<
 });
 
 /**
- * Converter for {@link Molds.IMold | IMold} data structure.
+ * Converter for {@link Entities.Molds.IMold | IMold} data structure.
  * @public
  */
 export const moldData: Converter<IMold> = Converters.object<IMold>({

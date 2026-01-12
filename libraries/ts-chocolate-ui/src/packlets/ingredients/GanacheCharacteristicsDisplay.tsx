@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import type { Ingredients } from '@fgv/ts-chocolate';
+import type { Entities } from '@fgv/ts-chocolate';
 import { PercentageBar } from '../common';
 import type { IPercentageSegment } from '../common';
 
@@ -14,7 +14,7 @@ import type { IPercentageSegment } from '../common';
  */
 export interface IGanacheCharacteristicsDisplayProps {
   /** Ganache characteristics to display */
-  characteristics: Ingredients.IGanacheCharacteristics;
+  characteristics: Entities.Ingredients.IGanacheCharacteristics;
   /** Optional additional CSS classes */
   className?: string;
   /** Whether to show a legend */
@@ -26,7 +26,7 @@ export interface IGanacheCharacteristicsDisplayProps {
 /**
  * Builds segments for the percentage bar from ganache characteristics
  */
-function buildSegments(characteristics: Ingredients.IGanacheCharacteristics): IPercentageSegment[] {
+function buildSegments(characteristics: Entities.Ingredients.IGanacheCharacteristics): IPercentageSegment[] {
   const segments: IPercentageSegment[] = [];
 
   if (characteristics.cacaoFat > 0) {

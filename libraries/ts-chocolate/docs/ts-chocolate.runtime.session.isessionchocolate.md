@@ -89,7 +89,7 @@ The original chocolate ingredient ID when the session started
 
 </td><td>
 
-[ChocolateRole](./ts-chocolate.journal.chocolaterole.md)
+ChocolateRole
 
 
 </td><td>

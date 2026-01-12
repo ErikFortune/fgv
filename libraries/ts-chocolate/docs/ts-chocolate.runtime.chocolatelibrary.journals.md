@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.journals property
 
-The [journals library](./ts-chocolate.journal.journallibrary.md)<!-- -->.
+The [journals library](./ts-chocolate.entities.journal.journallibrary.md)<!-- -->.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getProcedure() method
 
-Gets a [procedure](./ts-chocolate.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
+Gets a [procedure](./ts-chocolate.entities.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
 
 **Signature:**
 
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.procedureid.md) of the procedure to retrieve.
 
 **Returns:**
 
-Result&lt;[IProcedure](./ts-chocolate.procedures.iprocedure.md)<!-- -->&gt;
+Result&lt;IProcedure&gt;
 
 `Success` with procedure, or `Failure` if not found
 

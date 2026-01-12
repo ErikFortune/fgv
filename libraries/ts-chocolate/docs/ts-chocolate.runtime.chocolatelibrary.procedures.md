@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.procedures property
 
-The [procedures library](./ts-chocolate.procedures.procedureslibrary.md)<!-- -->.
+The [procedures library](./ts-chocolate.entities.procedures.procedureslibrary.md)<!-- -->.
 
 **Signature:**
 

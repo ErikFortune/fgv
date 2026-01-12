@@ -50,5 +50,5 @@ Tags to search for
 
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
 

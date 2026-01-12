@@ -37,7 +37,7 @@ recipe
 
 </td><td>
 
-[IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)
+IFillingRecipe
 
 
 </td><td>

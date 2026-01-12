@@ -49,12 +49,12 @@ Description
 
 </td><td>
 
-[ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
+ConfectionsLibrary
 
 
 </td><td>
 
-The [confections library](./ts-chocolate.confections.confectionslibrary.md)<!-- -->.
+The [confections library](./ts-chocolate.entities.confections.confectionslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -70,12 +70,12 @@ The [confections library](./ts-chocolate.confections.confectionslibrary.md)<!-- 
 
 </td><td>
 
-[FillingsLibrary](./ts-chocolate.fillings.fillingslibrary.md)
+FillingsLibrary
 
 
 </td><td>
 
-The [fillings library](./ts-chocolate.fillings.fillingslibrary.md)<!-- -->.
+The [fillings library](./ts-chocolate.entities.fillings.fillingslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -91,12 +91,12 @@ The [fillings library](./ts-chocolate.fillings.fillingslibrary.md)<!-- -->.
 
 </td><td>
 
-[IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)
+IngredientsLibrary
 
 
 </td><td>
 
-The [ingredients library](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- -->.
+The [ingredients library](./ts-chocolate.entities.ingredients.ingredientslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -112,12 +112,12 @@ The [ingredients library](./ts-chocolate.ingredients.ingredientslibrary.md)<!-- 
 
 </td><td>
 
-[JournalLibrary](./ts-chocolate.journal.journallibrary.md)
+JournalLibrary
 
 
 </td><td>
 
-The [journals library](./ts-chocolate.journal.journallibrary.md)<!-- -->.
+The [journals library](./ts-chocolate.entities.journal.journallibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -154,12 +154,12 @@ Logger used by this library and its sub-libraries.
 
 </td><td>
 
-[MoldsLibrary](./ts-chocolate.molds.moldslibrary.md)
+MoldsLibrary
 
 
 </td><td>
 
-The [molds library](./ts-chocolate.molds.moldslibrary.md)<!-- -->.
+The [molds library](./ts-chocolate.entities.molds.moldslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -175,12 +175,12 @@ The [molds library](./ts-chocolate.molds.moldslibrary.md)<!-- -->.
 
 </td><td>
 
-[ProceduresLibrary](./ts-chocolate.procedures.procedureslibrary.md)
+ProceduresLibrary
 
 
 </td><td>
 
-The [procedures library](./ts-chocolate.procedures.procedureslibrary.md)<!-- -->.
+The [procedures library](./ts-chocolate.entities.procedures.procedureslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -196,12 +196,12 @@ The [procedures library](./ts-chocolate.procedures.procedureslibrary.md)<!-- -->
 
 </td><td>
 
-[TasksLibrary](./ts-chocolate.tasks.taskslibrary.md)
+TasksLibrary
 
 
 </td><td>
 
-The [tasks library](./ts-chocolate.tasks.taskslibrary.md)<!-- -->.
+The [tasks library](./ts-chocolate.entities.tasks.taskslibrary.md)<!-- -->.
 
 
 </td></tr>
@@ -235,7 +235,7 @@ Description
 
 </td><td>
 
-Adds a [journal record](./ts-chocolate.journal.ifillingrecipejournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) to the library
 
 
 </td></tr>
@@ -307,7 +307,7 @@ Creates an ingredient resolver that looks up ingredients from this library
 
 </td><td>
 
-Gets a [confection](./ts-chocolate.confections.confectiondata.md) by its [composite ID](./ts-chocolate.confectionid.md)
+Gets a [confection](./ts-chocolate.entities.confections.confectiondata.md) by its [composite ID](./ts-chocolate.confectionid.md)
 
 
 </td></tr>
@@ -321,7 +321,7 @@ Gets a [confection](./ts-chocolate.confections.confectiondata.md) by its [compos
 
 </td><td>
 
-Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
+Gets an [ingredient](./ts-chocolate.entities.ingredients.ingredient.md) by its [composite ID](./ts-chocolate.ingredientid.md)
 
 
 </td></tr>
@@ -335,7 +335,7 @@ Gets an [ingredient](./ts-chocolate.ingredients.ingredient.md) by its [composite
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a filling (across all versions)
+Gets all [journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a filling (across all versions)
 
 
 </td></tr>
@@ -349,7 +349,7 @@ Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md
 
 </td><td>
 
-Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a specific filling version
+Gets all [journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a specific filling version
 
 
 </td></tr>
@@ -363,7 +363,7 @@ Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md
 
 </td><td>
 
-Gets a [mold](./ts-chocolate.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
+Gets a [mold](./ts-chocolate.entities.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
 
 
 </td></tr>
@@ -377,7 +377,7 @@ Gets a [mold](./ts-chocolate.molds.imold.md) by its [composite ID](./ts-chocolat
 
 </td><td>
 
-Gets a [procedure](./ts-chocolate.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
+Gets a [procedure](./ts-chocolate.entities.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
 
 
 </td></tr>
@@ -391,7 +391,7 @@ Gets a [procedure](./ts-chocolate.procedures.iprocedure.md) by its [composite ID
 
 </td><td>
 
-Gets a [recipe](./ts-chocolate.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
+Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
 
 
 </td></tr>
@@ -405,7 +405,7 @@ Gets a [recipe](./ts-chocolate.fillings.ifillingrecipe.md) by its [composite ID]
 
 </td><td>
 
-Gets a [task](./ts-chocolate.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
+Gets a [task](./ts-chocolate.entities.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
 
 
 </td></tr>

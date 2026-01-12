@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.confections property
 
-The [confections library](./ts-chocolate.confections.confectionslibrary.md)<!-- -->.
+The [confections library](./ts-chocolate.entities.confections.confectionslibrary.md)<!-- -->.
 
 **Signature:**
 

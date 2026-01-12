@@ -69,7 +69,7 @@ task
 
 </td><td>
 
-[ITaskData](./ts-chocolate.tasks.itaskdata.md)
+ITaskData
 
 
 </td><td>

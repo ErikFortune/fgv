@@ -129,7 +129,7 @@ The entity resolver for converting IDs to entities.
 
 </td><td>
 
-[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)
+[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)
 
 
 </td><td>

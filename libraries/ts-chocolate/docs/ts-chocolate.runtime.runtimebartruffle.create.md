@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-[IBarTruffle](./ts-chocolate.confections.ibartruffle.md)
+IBarTruffle
 
 
 </td><td>

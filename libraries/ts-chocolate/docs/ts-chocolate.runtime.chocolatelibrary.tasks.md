@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.tasks property
 
-The [tasks library](./ts-chocolate.tasks.taskslibrary.md)<!-- -->.
+The [tasks library](./ts-chocolate.entities.tasks.taskslibrary.md)<!-- -->.
 
 **Signature:**
 

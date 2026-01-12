@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getConfection() method
 
-Gets a [confection](./ts-chocolate.confections.confectiondata.md) by its [composite ID](./ts-chocolate.confectionid.md)
+Gets a [confection](./ts-chocolate.entities.confections.confectiondata.md) by its [composite ID](./ts-chocolate.confectionid.md)
 
 **Signature:**
 
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.confectionid.md) of the confection to retrieve.
 
 **Returns:**
 
-Result&lt;[ConfectionData](./ts-chocolate.confections.confectiondata.md)<!-- -->&gt;
+Result&lt;ConfectionData&gt;
 
 `Success` with confection data, or `Failure` if not found
 

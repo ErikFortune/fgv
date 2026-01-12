@@ -89,9 +89,9 @@ interface IScaleIngredientResult {
 }
 
 /**
- * Scales a single {@link Fillings.IFillingIngredient | filling recipe ingredient}.
+ * Scales a single {@link Entities.Fillings.IFillingIngredient | filling recipe ingredient}.
  * Uses unit-aware scaling for proper display formatting.
- * @param ingredient - The {@link Fillings.IFillingIngredient | ingredient} to scale
+ * @param ingredient - The {@link Entities.Fillings.IFillingIngredient | ingredient} to scale
  * @param scaleFactor - The scaling factor to apply
  * @param options - {@link Calculations.IVersionScaleOptions | Scaling options}
  * @returns Scaled ingredient with both original and scaled amounts, plus display info
@@ -153,7 +153,7 @@ function scaleIngredient(
  * This is the core scaling function that operates directly on a version.
  * Use this when you already have the version object and its ID.
  *
- * @param version - The {@link Fillings.IFillingRecipeVersion | filling recipe version} to scale.
+ * @param version - The {@link Entities.Fillings.IFillingRecipeVersion | filling recipe version} to scale.
  * @param sourceVersionId - The full composite {@link FillingVersionId | version ID}
  * @param targetWeight - Target total weight in grams
  * @param options - Optional {@link Calculations.IVersionScaleOptions | scaling options}
@@ -207,7 +207,7 @@ export function scaleVersion(
  * This function looks up a version by spec and delegates to {@link Calculations.scaleVersion | scaleVersion}.
  * Use this when you have a filling recipe and want to scale a specific version by spec.
  *
- * @param fillingRecipe - The {@link Fillings.IFillingRecipe | filling recipe} to scale.
+ * @param fillingRecipe - The {@link Entities.Fillings.IFillingRecipe | filling recipe} to scale.
  * @param fillingId - The full composite {@link FillingId | filling ID}
  * @param targetWeight - Target total weight in grams
  * @param options - Optional {@link Calculations.IFillingRecipeScaleOptions | scaling options}
@@ -232,9 +232,9 @@ export function scaleFillingRecipe(
 }
 
 /**
- * Scales a {@link Fillings.IFillingRecipe | filling recipe} by a supplied multiplier.
+ * Scales a {@link Entities.Fillings.IFillingRecipe | filling recipe} by a supplied multiplier.
  *
- * @param fillingRecipe - The {@link Fillings.IFillingRecipe | filling recipe} to scale.
+ * @param fillingRecipe - The {@link Entities.Fillings.IFillingRecipe | filling recipe} to scale.
  * @param fillingId - The full composite {@link FillingId | filling ID}.
  * @param factor - Multiplicative factor (e.g., 2.0 for double, 0.5 for half).
  * @param options - Optional {@link Calculations.IFillingRecipeScaleOptions | scaling options}.

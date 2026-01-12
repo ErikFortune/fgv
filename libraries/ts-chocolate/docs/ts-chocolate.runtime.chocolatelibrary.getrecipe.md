@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getRecipe() method
 
-Gets a [recipe](./ts-chocolate.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
+Gets a [recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
 
 **Signature:**
 
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.fillingid.md) of the recipe to retrieve.
 
 **Returns:**
 
-Result&lt;[IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)<!-- -->&gt;
+Result&lt;IFillingRecipe&gt;
 
 `Success` with recipe, or `Failure` if not found
 

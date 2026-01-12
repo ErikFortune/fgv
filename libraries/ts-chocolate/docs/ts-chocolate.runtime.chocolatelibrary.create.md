@@ -50,7 +50,7 @@ _(Optional)_ Optional [creation parameters](./ts-chocolate.runtime.ichocolatelib
 
 **Returns:**
 
-Result&lt;[ChocolateLibrary](./ts-chocolate.runtime.chocolatelibrary.md)<!-- -->&gt;
+Result&lt;[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)<!-- -->&gt;
 
 `Success` with new instance, or `Failure` with error message
 

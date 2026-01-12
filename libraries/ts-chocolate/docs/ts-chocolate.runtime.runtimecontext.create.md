@@ -50,7 +50,7 @@ _(Optional)_ Optional parameters for library and caching
 
 **Returns:**
 
-Result&lt;[RuntimeContext](./ts-chocolate.runtime.runtimecontext.md)<!-- -->&gt;
+Result&lt;[RuntimeContext](./ts-chocolate.runtimecontext.md)<!-- -->&gt;
 
 Success with RuntimeContext, or Failure if library creation fails
 

@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IAdditionalChocolate](./ts-chocolate.confections.iadditionalchocolate.md)<!-- -->&gt;
+ReadonlyArray&lt;IAdditionalChocolate&gt;
 
 
 </td><td>
@@ -90,7 +90,7 @@ Type is always 'molded-bonbon' for this confection
 
 </td><td>
 
-[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)
+IMoldedBonBonVersion
 
 
 </td><td>
@@ -111,7 +111,7 @@ Golden version typed as IMoldedBonBonVersion
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -132,7 +132,7 @@ Molds from the golden version
 
 </td><td>
 
-[IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)
+IMoldedBonBon
 
 
 </td><td>
@@ -153,7 +153,7 @@ Raw data typed to IMoldedBonBon
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+IChocolateSpec
 
 
 </td><td>
@@ -174,7 +174,7 @@ Shell chocolate from the golden version
 
 </td><td>
 
-ReadonlyArray&lt;[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)<!-- -->&gt;
+ReadonlyArray&lt;IMoldedBonBonVersion&gt;
 
 
 </td><td>

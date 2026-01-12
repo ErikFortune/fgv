@@ -37,7 +37,7 @@ role
 
 </td><td>
 
-[ChocolateRole](./ts-chocolate.journal.chocolaterole.md)
+ChocolateRole
 
 
 </td><td>

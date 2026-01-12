@@ -13,5 +13,5 @@ validGanache(): RecipeQuery;
 ```
 **Returns:**
 
-[RecipeQuery](./ts-chocolate.runtime.recipequery.md)
+[RecipeQuery](./ts-chocolate.recipequery.md)
 

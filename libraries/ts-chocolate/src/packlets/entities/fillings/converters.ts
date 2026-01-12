@@ -46,7 +46,7 @@ import {
 } from './model';
 
 /**
- * Converter for {@link Fillings.IIngredientModifiers | IIngredientModifiers}.
+ * Converter for {@link Entities.Fillings.IIngredientModifiers | IIngredientModifiers}.
  * @public
  */
 export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.object<IIngredientModifiers>({
@@ -55,7 +55,7 @@ export const ingredientModifiers: Converter<IIngredientModifiers> = Converters.o
 });
 
 /**
- * Converter for {@link Fillings.IFillingIngredient | IFillingIngredient}.
+ * Converter for {@link Entities.Fillings.IFillingIngredient | IFillingIngredient}.
  * Uses IIdsWithPreferred pattern for ingredient selection with validation.
  * @public
  */
@@ -68,19 +68,19 @@ export const fillingIngredient: Converter<IFillingIngredient> = Converters.objec
 });
 
 /**
- * Converter for {@link Fillings.RatingCategory | RatingCategory}.
+ * Converter for {@link Entities.Fillings.RatingCategory | RatingCategory}.
  * @public
  */
 export const ratingCategory: Converter<RatingCategory> = Converters.enumeratedValue(allRatingCategories);
 
 /**
- * Converter for {@link Fillings.FillingCategory | FillingCategory}.
+ * Converter for {@link Entities.Fillings.FillingCategory | FillingCategory}.
  * @public
  */
 export const fillingCategory: Converter<FillingCategory> = Converters.enumeratedValue(allFillingCategories);
 
 /**
- * Converter for {@link Fillings.IFillingRating | IFillingRating}
+ * Converter for {@link Entities.Fillings.IFillingRating | IFillingRating}
  * @public
  */
 export const fillingRating: Converter<IFillingRating> = Converters.object<IFillingRating>({
@@ -90,7 +90,7 @@ export const fillingRating: Converter<IFillingRating> = Converters.object<IFilli
 });
 
 /**
- * Converter for {@link Fillings.IFillingDerivation | IFillingDerivation}
+ * Converter for {@link Entities.Fillings.IFillingDerivation | IFillingDerivation}
  * @public
  */
 export const fillingDerivation: Converter<IFillingDerivation> = Converters.object<IFillingDerivation>({
@@ -100,7 +100,7 @@ export const fillingDerivation: Converter<IFillingDerivation> = Converters.objec
 });
 
 /**
- * Converter for {@link Fillings.IProcedureRef | IProcedureRef}
+ * Converter for {@link Entities.Fillings.IProcedureRef | IProcedureRef}
  * @public
  */
 export const procedureRef: Converter<IProcedureRef> = CommonConverters.refWithNotes(
@@ -116,7 +116,7 @@ export const procedures: Converter<IOptionsWithPreferred<IProcedureRef, Procedur
   CommonConverters.optionsWithPreferred(procedureRef, CommonConverters.procedureId, 'procedures');
 
 /**
- * Converter for {@link Fillings.IFillingRecipeVersion | IFillingRecipeVersion}.
+ * Converter for {@link Entities.Fillings.IFillingRecipeVersion | IFillingRecipeVersion}.
  * @public
  */
 export const fillingRecipeVersion: Converter<IFillingRecipeVersion> =
@@ -132,7 +132,7 @@ export const fillingRecipeVersion: Converter<IFillingRecipeVersion> =
   });
 
 /**
- * Converter for {@link Fillings.IFillingRecipe | IFillingRecipe} data structure
+ * Converter for {@link Entities.Fillings.IFillingRecipe | IFillingRecipe} data structure
  * @public
  */
 export const fillingRecipeData: Converter<IFillingRecipe> = Converters.object<IFillingRecipe>({
@@ -148,7 +148,7 @@ export const fillingRecipeData: Converter<IFillingRecipe> = Converters.object<IF
 });
 
 /**
- * Converter for {@link Fillings.IFillingRecipe | IFillingRecipe} with validation.
+ * Converter for {@link Entities.Fillings.IFillingRecipe | IFillingRecipe} with validation.
  * Validates that goldenVersionSpec exists in versions and returns the plain data object.
  * @public
  */
@@ -173,7 +173,7 @@ export const fillingRecipe: Converter<IFillingRecipe> = Converters.generic<IFill
 );
 
 /**
- * Converter for {@link Fillings.IScaledFillingIngredient | IScaledFillingIngredient}.
+ * Converter for {@link Entities.Fillings.IScaledFillingIngredient | IScaledFillingIngredient}.
  * Uses IIdsWithPreferred pattern for ingredient selection with validation.
  * @public
  */
@@ -189,7 +189,7 @@ export const scaledFillingIngredient: Converter<IScaledFillingIngredient> =
   });
 
 /**
- * Converter for {@link Fillings.IScalingRef | IScalingRef} (lightweight reference-based format)
+ * Converter for {@link Entities.Fillings.IScalingRef | IScalingRef} (lightweight reference-based format)
  * @public
  */
 export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>({
@@ -200,7 +200,7 @@ export const scalingRef: Converter<IScalingRef> = Converters.object<IScalingRef>
 });
 
 /**
- * Converter for {@link Fillings.IIngredientSnapshot | IIngredientSnapshot} (for archival)
+ * Converter for {@link Entities.Fillings.IIngredientSnapshot | IIngredientSnapshot} (for archival)
  * @public
  */
 export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.object<IIngredientSnapshot>({
@@ -211,7 +211,7 @@ export const ingredientSnapshot: Converter<IIngredientSnapshot> = Converters.obj
 });
 
 /**
- * Converter for {@link Fillings.IScaledFillingRecipeVersion | IScaledFillingRecipeVersion} (reference-based)
+ * Converter for {@link Entities.Fillings.IScaledFillingRecipeVersion | IScaledFillingRecipeVersion} (reference-based)
  * @public
  */
 export const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion> =
@@ -222,7 +222,7 @@ export const scaledFillingRecipeVersion: Converter<IScaledFillingRecipeVersion> 
   });
 
 /**
- * Converter for {@link Fillings.IScalingSource | IScalingSource} (runtime format with full ingredient data)
+ * Converter for {@link Entities.Fillings.IScalingSource | IScalingSource} (runtime format with full ingredient data)
  * @public
  */
 export const scalingSource: Converter<IScalingSource> = Converters.object<IScalingSource>({

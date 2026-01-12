@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getTask() method
 
-Gets a [task](./ts-chocolate.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
+Gets a [task](./ts-chocolate.entities.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
 
 **Signature:**
 
@@ -50,7 +50,7 @@ The [id](./ts-chocolate.taskid.md) of the task to retrieve.
 
 **Returns:**
 
-Result&lt;[ITaskData](./ts-chocolate.tasks.itaskdata.md)<!-- -->&gt;
+Result&lt;ITaskData&gt;
 
 `Success` with task data, or `Failure` if not found
 

@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[IGanacheCharacteristics](./ts-chocolate.ingredients.iganachecharacteristics.md)
+IGanacheCharacteristics
 
 
 </td><td>

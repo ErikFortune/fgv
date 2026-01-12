@@ -54,7 +54,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[IAdditionalChocolate](./ts-chocolate.confections.iadditionalchocolate.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IAdditionalChocolate&gt; \| undefined
 
 
 </td><td>
@@ -96,7 +96,7 @@ Confection type is always 'molded-bonbon' for this type
 
 </td><td>
 
-[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)
+IMoldedBonBonVersion
 
 
 </td><td>
@@ -117,7 +117,7 @@ Golden version typed as IMoldedBonBonVersion
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IConfectionMoldRef](./ts-chocolate.confections.iconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IConfectionMoldRef, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -138,7 +138,7 @@ Molds with preferred selection (from golden version)
 
 </td><td>
 
-[IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)
+IMoldedBonBon
 
 
 </td><td>
@@ -159,7 +159,7 @@ Gets the underlying raw molded bonbon data
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+IChocolateSpec
 
 
 </td><td>
@@ -180,7 +180,7 @@ Shell chocolate specification (from golden version)
 
 </td><td>
 
-ReadonlyArray&lt;[IMoldedBonBonVersion](./ts-chocolate.confections.imoldedbonbonversion.md)<!-- -->&gt;
+ReadonlyArray&lt;IMoldedBonBonVersion&gt;
 
 
 </td><td>

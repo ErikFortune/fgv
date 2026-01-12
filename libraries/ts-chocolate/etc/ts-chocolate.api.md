@@ -7,7 +7,7 @@
 import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
-import { Converters as Converters_11 } from '@fgv/ts-utils';
+import { Converters as Converters_5 } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -400,7 +400,7 @@ const chocolateApplication: Converter<ChocolateApplication>;
 const chocolateIngredient: Converter<IChocolateIngredient>;
 
 // @public
-class ChocolateLibrary {
+export class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     addJournal(journal: IFillingRecipeJournalRecord): Result<JournalId>;
     calculateGanache(id: FillingId, versionSpec?: FillingVersionSpec): Result<IGanacheCalculation>;
@@ -637,7 +637,36 @@ const confectionName: Converter<ConfectionName>;
 
 declare namespace Confections {
     export {
-        Converters_2 as Converters,
+        confectionYield,
+        confectionDecoration,
+        recipeFillingOption,
+        ingredientFillingOption,
+        anyFillingOption,
+        fillingOptions,
+        fillingSlot,
+        chocolateSpec,
+        additionalChocolate,
+        confectionMoldRef,
+        confectionMolds,
+        frameDimensions,
+        bonBonDimensions,
+        coatings,
+        moldedBonBonVersion,
+        barTruffleVersion,
+        rolledTruffleVersion,
+        anyConfectionVersion,
+        baseConfection,
+        moldedBonBon,
+        barTruffle,
+        rolledTruffle,
+        confectionData,
+        confection
+    }
+}
+
+declare namespace Confections_2 {
+    export {
+        Confections as Converters,
         isMoldedBonBon,
         isBarTruffle,
         isRolledTruffle,
@@ -679,7 +708,6 @@ declare namespace Confections {
         ConfectionsLibrary
     }
 }
-export { Confections }
 
 // @public
 type ConfectionSelectionStatus = 'original' | 'modified';
@@ -794,46 +822,15 @@ declare namespace Converters {
 }
 export { Converters }
 
-declare namespace Converters_10 {
-    export {
-        taskData,
-        taskIdOrBaseTaskId,
-        taskRef,
-        taskRefStatus,
-        inlineTask,
-        taskInvocation,
-        procedureStepTask,
-        validationBehavior,
-        renderOptions
-    }
-}
-
 declare namespace Converters_2 {
     export {
-        confectionYield,
-        confectionDecoration,
-        recipeFillingOption,
-        ingredientFillingOption,
-        anyFillingOption,
-        fillingOptions,
-        fillingSlot,
-        chocolateSpec,
-        additionalChocolate,
-        confectionMoldRef,
-        confectionMolds,
-        frameDimensions,
-        bonBonDimensions,
-        coatings,
-        moldedBonBonVersion,
-        barTruffleVersion,
-        rolledTruffleVersion,
-        anyConfectionVersion,
-        baseConfection,
-        moldedBonBon,
-        barTruffle,
-        rolledTruffle,
-        confectionData,
-        confection
+        Confections,
+        Fillings,
+        Ingredients,
+        Journal,
+        Molds,
+        Procedures,
+        Tasks
     }
 }
 
@@ -855,75 +852,12 @@ declare namespace Converters_3 {
 
 declare namespace Converters_4 {
     export {
-        ingredientModifiers,
-        fillingIngredient,
-        ratingCategory,
-        fillingCategory,
-        fillingRating,
-        fillingDerivation,
-        procedureRef,
-        procedures,
-        fillingRecipeVersion,
-        fillingRecipeData,
-        fillingRecipe,
-        scaledFillingIngredient,
-        scalingRef,
-        ingredientSnapshot,
-        scaledFillingRecipeVersion,
-        scalingSource
-    }
-}
-
-declare namespace Converters_5 {
-    export {
-        ganacheCharacteristics,
-        temperatureCurve,
-        baseIngredient,
-        chocolateIngredient,
-        sugarIngredient,
-        dairyIngredient,
-        fatIngredient,
-        alcoholIngredient,
-        ingredient
-    }
-}
-
-declare namespace Converters_6 {
-    export {
-        journalEventType,
-        journalEntry,
-        journalType,
-        fillingRecipeJournalRecord,
-        confectionJournalEventType,
-        chocolateRole,
-        confectionJournalEntry,
-        confectionJournalRecord,
-        anyJournalRecord
-    }
-}
-
-declare namespace Converters_7 {
-    export {
         removeExtension,
         collectionSourceFile,
         collection,
         removeJsonExtension,
         collectionSourceMetadata,
         ICollectionConverterParams
-    }
-}
-
-declare namespace Converters_8 {
-    export {
-        cavityDimensions,
-        moldData
-    }
-}
-
-declare namespace Converters_9 {
-    export {
-        procedureStep,
-        procedureData
     }
 }
 
@@ -1059,6 +993,175 @@ class EncryptionHelper {
     isEncrypted(json: unknown): boolean;
 }
 
+declare namespace Entities {
+    export {
+        Converters_2 as Converters,
+        Confections_2 as Confections,
+        Fillings_2 as Fillings,
+        Ingredients_2 as Ingredients,
+        Journal_2 as Journal,
+        Molds_2 as Molds,
+        Procedures_2 as Procedures,
+        Tasks_2 as Tasks,
+        isMoldedBonBon,
+        isBarTruffle,
+        isRolledTruffle,
+        isMoldedBonBonVersion,
+        isBarTruffleVersion,
+        isRolledTruffleVersion,
+        IConfectionYield,
+        IConfectionDecoration,
+        FillingOptionType,
+        FillingOptionId,
+        IRecipeFillingOption,
+        IIngredientFillingOption,
+        AnyFillingOption,
+        IFillingSlot,
+        IChocolateSpec,
+        IAdditionalChocolate,
+        IConfectionMoldRef,
+        IFrameDimensions,
+        IBonBonDimensions,
+        ICoatings,
+        IConfectionVersionBase,
+        IMoldedBonBonVersion,
+        IBarTruffleVersion,
+        IRolledTruffleVersion,
+        AnyConfectionVersion,
+        IConfectionBase,
+        IMoldedBonBon,
+        IBarTruffle,
+        IRolledTruffle,
+        ConfectionData,
+        ConfectionCollectionEntry,
+        ConfectionCollectionEntryInit,
+        ConfectionCollectionValidator,
+        ConfectionCollection,
+        IConfectionFileTreeSource,
+        ConfectionsMergeSource,
+        IConfectionsLibraryParams,
+        IConfectionsLibraryAsyncParams,
+        ConfectionsLibrary,
+        isScaledFillingRecipeVersion,
+        isFillingRecipeVersion,
+        IIngredientModifiers,
+        IFillingIngredient,
+        RatingCategory,
+        FillingCategory_2 as FillingCategory,
+        allFillingCategories_2 as allFillingCategories,
+        allRatingCategories,
+        IFillingRating,
+        IFillingUsage,
+        IFillingRecipeVersion,
+        IFillingDerivation,
+        IProcedureRef,
+        IFillingRecipe,
+        IScaledFillingIngredient,
+        IScalingRef,
+        IIngredientSnapshot,
+        IScaledFillingRecipeVersion,
+        IScalingSource,
+        IComputedScaledFillingRecipe,
+        AnyFillingRecipeVersion,
+        FillingCollectionEntry,
+        FillingCollectionEntryInit,
+        FillingCollectionValidator,
+        FillingCollection,
+        IFillingFileTreeSource,
+        FillingsMergeSource,
+        IFillingsLibraryParams,
+        IFillingsLibraryAsyncParams,
+        FillingsLibrary,
+        isChocolateIngredient,
+        isSugarIngredient,
+        isDairyIngredient,
+        isFatIngredient,
+        isAlcoholIngredient,
+        IGanacheCharacteristics,
+        ITemperatureCurve,
+        IIngredient,
+        IChocolateIngredient,
+        ISugarIngredient,
+        IDairyIngredient,
+        IFatIngredient,
+        IAlcoholIngredient,
+        Ingredient,
+        IngredientCollectionEntry,
+        IngredientCollectionEntryInit,
+        IngredientCollectionValidator,
+        IngredientCollection,
+        IIngredientFileTreeSource,
+        IngredientsMergeSource,
+        IIngredientsLibraryParams,
+        IIngredientsLibraryAsyncParams,
+        IngredientsLibrary,
+        isFillingRecipeJournalRecord,
+        isConfectionJournalRecord,
+        JournalEventType,
+        allJournalEventTypes,
+        ConfectionJournalEventType,
+        allConfectionJournalEventTypes,
+        ChocolateRole,
+        allChocolateRoles,
+        IJournalEntry,
+        IConfectionJournalEntry,
+        JournalType,
+        allJournalTypes,
+        IFillingRecipeJournalRecord,
+        IConfectionJournalRecord,
+        AnyJournalRecord,
+        IJournalImportResult,
+        IJournalLibraryParams,
+        JournalLibrary,
+        ICavityDimensions,
+        IMold,
+        MoldCollectionEntry,
+        MoldCollectionEntryInit,
+        MoldCollectionValidator,
+        MoldCollection,
+        IMoldFileTreeSource,
+        MoldsMergeSource,
+        IMoldsLibraryParams,
+        IMoldsLibraryAsyncParams,
+        MoldsLibrary,
+        IProcedureStep,
+        IProcedureStepValidation,
+        IValidatedProcedureStep,
+        IProcedure,
+        ProcedureCollectionEntry,
+        ProcedureCollectionEntryInit,
+        ProcedureCollectionValidator,
+        ProcedureCollection,
+        IProcedureFileTreeSource,
+        ProceduresMergeSource,
+        IProceduresLibraryParams,
+        IProceduresLibraryAsyncParams,
+        ProceduresLibrary,
+        isTaskRef,
+        isInlineTask,
+        ITaskData,
+        ITask,
+        ITaskRef,
+        TaskRefStatus,
+        ITaskRefValidation,
+        IInlineTask,
+        ITaskInvocation,
+        ValidationBehavior,
+        IRenderOptions,
+        defaultRenderOptions,
+        TaskCollectionEntry,
+        TaskCollectionEntryInit,
+        TaskCollectionValidator,
+        TaskCollection,
+        ITaskFileTreeSource,
+        TasksMergeSource,
+        ITasksLibraryParams,
+        ITasksLibraryAsyncParams,
+        TasksLibrary
+    }
+}
+export { Entities }
+
 // @public
 function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPredicate<T>;
 
@@ -1155,7 +1258,28 @@ const fillingRecipeVersion: Converter<IFillingRecipeVersion>;
 
 declare namespace Fillings {
     export {
-        Converters_4 as Converters,
+        ingredientModifiers,
+        fillingIngredient,
+        ratingCategory,
+        fillingCategory,
+        fillingRating,
+        fillingDerivation,
+        procedureRef,
+        procedures,
+        fillingRecipeVersion,
+        fillingRecipeData,
+        fillingRecipe,
+        scaledFillingIngredient,
+        scalingRef,
+        ingredientSnapshot,
+        scaledFillingRecipeVersion,
+        scalingSource
+    }
+}
+
+declare namespace Fillings_2 {
+    export {
+        Fillings as Converters,
         isScaledFillingRecipeVersion,
         isFillingRecipeVersion,
         IIngredientModifiers,
@@ -1188,7 +1312,6 @@ declare namespace Fillings {
         FillingsLibrary
     }
 }
-export { Fillings }
 
 // @public
 class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipe> {
@@ -2310,7 +2433,7 @@ export type IngredientPhase = 'solid' | 'liquid';
 const ingredientPhase: Converter<IngredientPhase>;
 
 // @public
-class IngredientQuery {
+export class IngredientQuery {
     constructor(context: RuntimeContext);
     alcohol(): IngredientQuery;
     byManufacturer(manufacturer: string): IngredientQuery;
@@ -2360,7 +2483,21 @@ type IngredientResolver_2 = (id: IngredientId) => Result<IRuntimeIngredient>;
 
 declare namespace Ingredients {
     export {
-        Converters_5 as Converters,
+        ganacheCharacteristics,
+        temperatureCurve,
+        baseIngredient,
+        chocolateIngredient,
+        sugarIngredient,
+        dairyIngredient,
+        fatIngredient,
+        alcoholIngredient,
+        ingredient
+    }
+}
+
+declare namespace Ingredients_2 {
+    export {
+        Ingredients as Converters,
         isChocolateIngredient,
         isSugarIngredient,
         isDairyIngredient,
@@ -2386,7 +2523,6 @@ declare namespace Ingredients {
         IngredientsLibrary
     }
 }
-export { Ingredients }
 
 // @public
 function ingredientsByTagConfig(tag: string): IIngredientsByTagConfig;
@@ -3400,7 +3536,21 @@ interface IWeightContribution {
 
 declare namespace Journal {
     export {
-        Converters_6 as Converters,
+        journalEventType,
+        journalEntry,
+        journalType,
+        fillingRecipeJournalRecord,
+        confectionJournalEventType,
+        chocolateRole,
+        confectionJournalEntry,
+        confectionJournalRecord,
+        anyJournalRecord
+    }
+}
+
+declare namespace Journal_2 {
+    export {
+        Journal as Converters,
         isFillingRecipeJournalRecord,
         isConfectionJournalRecord,
         JournalEventType,
@@ -3421,7 +3571,6 @@ declare namespace Journal {
         JournalLibrary
     }
 }
-export { Journal }
 
 // @public
 export const JOURNAL_ID_PATTERN: RegExp;
@@ -3495,7 +3644,7 @@ const keyDerivationParams: Converter<IKeyDerivationParams>;
 
 declare namespace LibraryData {
     export {
-        Converters_7 as Converters,
+        Converters_4 as Converters,
         resolveSubLibraryLoadSpec,
         ICollectionSourceMetadata,
         ICollectionSourceFile,
@@ -3650,7 +3799,14 @@ const moldId: Converter<MoldId>;
 
 declare namespace Molds {
     export {
-        Converters_8 as Converters,
+        cavityDimensions,
+        moldData
+    }
+}
+
+declare namespace Molds_2 {
+    export {
+        Molds as Converters,
         ICavityDimensions,
         IMold,
         MoldCollectionEntry,
@@ -3664,7 +3820,6 @@ declare namespace Molds {
         MoldsLibrary
     }
 }
-export { Molds }
 
 // @public
 class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMold> {
@@ -3721,49 +3876,49 @@ function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(o
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
 
 // @public
-type ParsedConfectionId = Converters_11.ICompositeId<SourceId, BaseConfectionId>;
+type ParsedConfectionId = Converters_5.ICompositeId<SourceId, BaseConfectionId>;
 
 // @public
 const parsedConfectionId: Converter<ParsedConfectionId>;
 
 // @public
-type ParsedConfectionVersionId = Converters_11.ICompositeId<ConfectionId, ConfectionVersionSpec>;
+type ParsedConfectionVersionId = Converters_5.ICompositeId<ConfectionId, ConfectionVersionSpec>;
 
 // @public
 const parsedConfectionVersionId: Converter<ParsedConfectionVersionId>;
 
 // @public
-type ParsedFillingId = Converters_11.ICompositeId<SourceId, BaseFillingId>;
+type ParsedFillingId = Converters_5.ICompositeId<SourceId, BaseFillingId>;
 
 // @public
 const parsedFillingId: Converter<ParsedFillingId>;
 
 // @public
-type ParsedFillingVersionId = Converters_11.ICompositeId<FillingId, FillingVersionSpec>;
+type ParsedFillingVersionId = Converters_5.ICompositeId<FillingId, FillingVersionSpec>;
 
 // @public
 const parsedFillingVersionId: Converter<ParsedFillingVersionId>;
 
 // @public
-type ParsedIngredientId = Converters_11.ICompositeId<SourceId, BaseIngredientId>;
+type ParsedIngredientId = Converters_5.ICompositeId<SourceId, BaseIngredientId>;
 
 // @public
 const parsedIngredientId: Converter<ParsedIngredientId>;
 
 // @public
-type ParsedMoldId = Converters_11.ICompositeId<SourceId, BaseMoldId>;
+type ParsedMoldId = Converters_5.ICompositeId<SourceId, BaseMoldId>;
 
 // @public
 const parsedMoldId: Converter<ParsedMoldId>;
 
 // @public
-type ParsedProcedureId = Converters_11.ICompositeId<SourceId, BaseProcedureId>;
+type ParsedProcedureId = Converters_5.ICompositeId<SourceId, BaseProcedureId>;
 
 // @public
 const parsedProcedureId: Converter<ParsedProcedureId>;
 
 // @public
-type ParsedTaskId = Converters_11.ICompositeId<SourceId, BaseTaskId>;
+type ParsedTaskId = Converters_5.ICompositeId<SourceId, BaseTaskId>;
 
 // @public
 const parsedTaskId: Converter<ParsedTaskId>;
@@ -3821,7 +3976,17 @@ const procedureRef: Converter<IProcedureRef>;
 
 declare namespace Procedures {
     export {
-        Converters_9 as Converters,
+        procedureStep,
+        procedureData
+    }
+}
+
+// @public
+const procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
+
+declare namespace Procedures_2 {
+    export {
+        Procedures as Converters,
         IProcedureStep,
         IProcedureStepValidation,
         IValidatedProcedureStep,
@@ -3837,10 +4002,6 @@ declare namespace Procedures {
         ProceduresLibrary
     }
 }
-export { Procedures }
-
-// @public
-const procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
 
 // @public
 class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, IProcedure> {
@@ -3936,7 +4097,7 @@ class RecipeIndexerOrchestrator extends BaseIndexerOrchestrator<IRuntimeFillingR
 type RecipeIngredientsFilter = string | RegExp | ICategoryFilter;
 
 // @public
-class RecipeQuery {
+export class RecipeQuery {
     constructor(context: RuntimeContext);
     count(): number;
     descriptionContains(text: string): RecipeQuery;
@@ -4311,7 +4472,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
 //
 // @public
-class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext {
+export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext {
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
@@ -4865,7 +5026,21 @@ const taskRefStatus: Converter<TaskRefStatus>;
 
 declare namespace Tasks {
     export {
-        Converters_10 as Converters,
+        taskData,
+        taskIdOrBaseTaskId,
+        taskRef,
+        taskRefStatus,
+        inlineTask,
+        taskInvocation,
+        procedureStepTask,
+        validationBehavior,
+        renderOptions
+    }
+}
+
+declare namespace Tasks_2 {
+    export {
+        Tasks as Converters,
         isTaskRef,
         isInlineTask,
         ITaskData,
@@ -4889,7 +5064,6 @@ declare namespace Tasks {
         TasksLibrary
     }
 }
-export { Tasks }
 
 // @public
 class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> {

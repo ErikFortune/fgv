@@ -70,7 +70,7 @@ The procedure context for task resolution. This provides type-safe access to tas
 
 </td><td>
 
-[IMold](./ts-chocolate.molds.imold.md)
+IMold
 
 
 </td><td>
@@ -91,7 +91,7 @@ _(Optional)_ Optional mold being used for this recipe
 
 </td><td>
 
-[IComputedScaledFillingRecipe](./ts-chocolate.fillings.icomputedscaledfillingrecipe.md)
+IComputedScaledFillingRecipe
 
 
 </td><td>

@@ -13,7 +13,7 @@ toRecipeIngredients(): IFillingIngredient[];
 ```
 **Returns:**
 
-[IFillingIngredient](./ts-chocolate.fillings.ifillingingredient.md)<!-- -->\[\]
+IFillingIngredient\[\]
 
 Array of recipe ingredients (collapsed, non-removed)
 

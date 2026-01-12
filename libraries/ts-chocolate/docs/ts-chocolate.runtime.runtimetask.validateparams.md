@@ -50,7 +50,7 @@ The parameter values to validate
 
 **Returns:**
 
-Result&lt;[ITaskRefValidation](./ts-chocolate.tasks.itaskrefvalidation.md)<!-- -->&gt;
+Result&lt;ITaskRefValidation&gt;
 
 Validation result with details about present/missing variables
 

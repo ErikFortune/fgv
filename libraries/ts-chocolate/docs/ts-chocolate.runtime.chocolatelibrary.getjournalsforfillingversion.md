@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.getJournalsForFillingVersion() method
 
-Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md) for a specific filling version
+Gets all [journal records](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) for a specific filling version
 
 **Signature:**
 
@@ -50,7 +50,7 @@ The [filling version ID](./ts-chocolate.fillingversionid.md) to search for
 
 **Returns:**
 
-ReadonlyArray&lt;[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)<!-- -->&gt;
+ReadonlyArray&lt;IFillingRecipeJournalRecord&gt;
 
 Array of journal records (empty if none found)
 

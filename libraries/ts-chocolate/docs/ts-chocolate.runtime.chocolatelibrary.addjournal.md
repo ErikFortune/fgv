@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.addJournal() method
 
-Adds a [journal record](./ts-chocolate.journal.ifillingrecipejournalrecord.md) to the library
+Adds a [journal record](./ts-chocolate.entities.journal.ifillingrecipejournalrecord.md) to the library
 
 **Signature:**
 
@@ -37,7 +37,7 @@ journal
 
 </td><td>
 
-[IFillingRecipeJournalRecord](./ts-chocolate.journal.ifillingrecipejournalrecord.md)
+IFillingRecipeJournalRecord
 
 
 </td><td>

@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
+ConfectionsLibrary
 
 
 </td><td>
@@ -68,7 +68,7 @@ _(Optional)_ Pre-built confections library
 
 </td><td>
 
-[FillingsLibrary](./ts-chocolate.fillings.fillingslibrary.md)
+FillingsLibrary
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_ Pre-built fillings library
 
 </td><td>
 
-[IngredientsLibrary](./ts-chocolate.ingredients.ingredientslibrary.md)
+IngredientsLibrary
 
 
 </td><td>
@@ -110,7 +110,7 @@ _(Optional)_ Pre-built ingredients library
 
 </td><td>
 
-[JournalLibrary](./ts-chocolate.journal.journallibrary.md)
+JournalLibrary
 
 
 </td><td>
@@ -131,7 +131,7 @@ _(Optional)_ Pre-built journals library
 
 </td><td>
 
-[MoldsLibrary](./ts-chocolate.molds.moldslibrary.md)
+MoldsLibrary
 
 
 </td><td>
@@ -152,7 +152,7 @@ _(Optional)_ Pre-built molds library
 
 </td><td>
 
-[ProceduresLibrary](./ts-chocolate.procedures.procedureslibrary.md)
+ProceduresLibrary
 
 
 </td><td>
@@ -173,7 +173,7 @@ _(Optional)_ Pre-built procedures library
 
 </td><td>
 
-[TasksLibrary](./ts-chocolate.tasks.taskslibrary.md)
+TasksLibrary
 
 
 </td><td>

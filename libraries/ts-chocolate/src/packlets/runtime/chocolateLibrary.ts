@@ -303,56 +303,56 @@ export class ChocolateLibrary {
   }
 
   /**
-   * The {@link Ingredients.IngredientsLibrary | ingredients library}.
+   * The {@link Entities.Ingredients.IngredientsLibrary | ingredients library}.
    */
   public get ingredients(): IngredientsLibrary {
     return this._ingredients;
   }
 
   /**
-   * The {@link Fillings.FillingsLibrary | fillings library}.
+   * The {@link Entities.Fillings.FillingsLibrary | fillings library}.
    */
   public get fillings(): FillingsLibrary {
     return this._recipes;
   }
 
   /**
-   * The {@link Journal.JournalLibrary | journals library}.
+   * The {@link Entities.Journal.JournalLibrary | journals library}.
    */
   public get journals(): JournalLibrary {
     return this._journals;
   }
 
   /**
-   * The {@link Molds.MoldsLibrary | molds library}.
+   * The {@link Entities.Molds.MoldsLibrary | molds library}.
    */
   public get molds(): MoldsLibrary {
     return this._molds;
   }
 
   /**
-   * The {@link Procedures.ProceduresLibrary | procedures library}.
+   * The {@link Entities.Procedures.ProceduresLibrary | procedures library}.
    */
   public get procedures(): ProceduresLibrary {
     return this._procedures;
   }
 
   /**
-   * The {@link Tasks.TasksLibrary | tasks library}.
+   * The {@link Entities.Tasks.TasksLibrary | tasks library}.
    */
   public get tasks(): TasksLibrary {
     return this._tasks;
   }
 
   /**
-   * The {@link Confections.ConfectionsLibrary | confections library}.
+   * The {@link Entities.Confections.ConfectionsLibrary | confections library}.
    */
   public get confections(): ConfectionsLibrary {
     return this._confections;
   }
 
   /**
-   * Gets an {@link Ingredients.Ingredient | ingredient} by its {@link IngredientId | composite ID}
+   * Gets an {@link Entities.Ingredients.Ingredient | ingredient} by its {@link IngredientId | composite ID}
    * @param id - The {@link IngredientId | id} of the ingredient to retrieve.
    * @returns `Success` with ingredient, or `Failure` if not found
    */
@@ -370,7 +370,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Fillings.IFillingRecipe | recipe} by its {@link FillingId | composite ID}
+   * Gets a {@link Entities.Fillings.IFillingRecipe | recipe} by its {@link FillingId | composite ID}
    * @param id - The {@link FillingId | id} of the recipe to retrieve.
    * @returns `Success` with recipe, or `Failure` if not found
    */
@@ -388,7 +388,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Molds.IMold | mold} by its {@link MoldId | composite ID}
+   * Gets a {@link Entities.Molds.IMold | mold} by its {@link MoldId | composite ID}
    * @param id - The {@link MoldId | id} of the mold to retrieve.
    * @returns `Success` with mold data, or `Failure` if not found
    */
@@ -406,7 +406,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Procedures.IProcedure | procedure} by its {@link ProcedureId | composite ID}
+   * Gets a {@link Entities.Procedures.IProcedure | procedure} by its {@link ProcedureId | composite ID}
    * @param id - The {@link ProcedureId | id} of the procedure to retrieve.
    * @returns `Success` with procedure, or `Failure` if not found
    */
@@ -424,7 +424,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Tasks.ITaskData | task} by its {@link TaskId | composite ID}
+   * Gets a {@link Entities.Tasks.ITaskData | task} by its {@link TaskId | composite ID}
    * @param id - The {@link TaskId | id} of the task to retrieve.
    * @returns `Success` with task data, or `Failure` if not found
    */
@@ -442,7 +442,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Confections.ConfectionData | confection} by its {@link ConfectionId | composite ID}
+   * Gets a {@link Entities.Confections.ConfectionData | confection} by its {@link ConfectionId | composite ID}
    * @param id - The {@link ConfectionId | id} of the confection to retrieve.
    * @returns `Success` with confection data, or `Failure` if not found
    */
@@ -504,7 +504,7 @@ export class ChocolateLibrary {
   // ============================================================================
 
   /**
-   * Gets all {@link Journal.IFillingRecipeJournalRecord | journal records} for a filling (across all versions)
+   * Gets all {@link Entities.Journal.IFillingRecipeJournalRecord | journal records} for a filling (across all versions)
    * @param fillingId - The {@link FillingId | filling ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
@@ -514,7 +514,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IFillingRecipeJournalRecord | journal records} for a specific filling version
+   * Gets all {@link Entities.Journal.IFillingRecipeJournalRecord | journal records} for a specific filling version
    * @param versionId - The {@link FillingVersionId | filling version ID} to search for
    * @returns Array of journal records (empty if none found)
    * @public
@@ -526,7 +526,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Adds a {@link Journal.IFillingRecipeJournalRecord | journal record} to the library
+   * Adds a {@link Entities.Journal.IFillingRecipeJournalRecord | journal record} to the library
    * @param journal - The journal record to add
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
    * @public

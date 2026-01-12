@@ -62,7 +62,7 @@ export interface IJournalImportResult {
 }
 
 /**
- * Parameters for creating a {@link Journal.JournalLibrary | JournalLibrary} instance
+ * Parameters for creating a {@link Entities.Journal.JournalLibrary | JournalLibrary} instance
  * @public
  */
 export interface IJournalLibraryParams {
@@ -79,7 +79,7 @@ export interface IJournalLibraryParams {
 }
 
 /**
- * A library for managing cooking {@link Journal.AnyJournalRecord | journal records}.
+ * A library for managing cooking {@link Entities.Journal.AnyJournalRecord | journal records}.
  *
  * Provides:
  * - Storage for journal records indexed by {@link JournalId | JournalId}
@@ -93,7 +93,7 @@ export interface IJournalLibraryParams {
  */
 export class JournalLibrary {
   /**
-   * Map of {@link Journal.AnyJournalRecord | journal records} by {@link JournalId | JournalId}
+   * Map of {@link Entities.Journal.AnyJournalRecord | journal records} by {@link JournalId | JournalId}
    */
   private readonly _journals: Map<JournalId, AnyJournalRecord>;
 
@@ -139,8 +139,8 @@ export class JournalLibrary {
   }
 
   /**
-   * Creates a new {@link Journal.JournalLibrary | JournalLibrary} instance.
-   * @param params - Optional {@link Journal.IJournalLibraryParams | creation parameters} with initial journals.
+   * Creates a new {@link Entities.Journal.JournalLibrary | JournalLibrary} instance.
+   * @param params - Optional {@link Entities.Journal.IJournalLibraryParams | creation parameters} with initial journals.
    * @returns `Success` with new instance, or `Failure` with error message
    * @public
    */
@@ -149,7 +149,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets a {@link Journal.AnyJournalRecord | journal record} by its ID
+   * Gets a {@link Entities.Journal.AnyJournalRecord | journal record} by its ID
    * @param journalId - The journal ID to look up
    * @returns `Success` with the journal record, or `Failure` if not found
    * @public
@@ -163,7 +163,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IFillingRecipeJournalRecord | filling recipe journal records} for a filling (across all versions)
+   * Gets all {@link Entities.Journal.IFillingRecipeJournalRecord | filling recipe journal records} for a filling (across all versions)
    * @param fillingId - The {@link FillingId | filling ID} to search for
    * @returns Array of filling recipe journal records (empty if none found)
    * @public
@@ -179,7 +179,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IFillingRecipeJournalRecord | filling recipe journal records} for a specific filling version
+   * Gets all {@link Entities.Journal.IFillingRecipeJournalRecord | filling recipe journal records} for a specific filling version
    * @param versionId - The {@link FillingVersionId | filling version ID} to search for
    * @returns Array of filling recipe journal records (empty if none found)
    * @public
@@ -197,7 +197,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IConfectionJournalRecord | confection journal records} for a confection (across all versions)
+   * Gets all {@link Entities.Journal.IConfectionJournalRecord | confection journal records} for a confection (across all versions)
    * @param confectionId - The {@link ConfectionId | confection ID} to search for
    * @returns Array of confection journal records (empty if none found)
    * @public
@@ -213,7 +213,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Gets all {@link Journal.IConfectionJournalRecord | confection journal records} for a specific confection version
+   * Gets all {@link Entities.Journal.IConfectionJournalRecord | confection journal records} for a specific confection version
    * @param versionId - The {@link ConfectionVersionId | confection version ID} to search for
    * @returns Array of confection journal records (empty if none found)
    * @public
@@ -248,7 +248,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Adds a {@link Journal.AnyJournalRecord | journal record} to the library.
+   * Adds a {@link Entities.Journal.AnyJournalRecord | journal record} to the library.
    * Accepts both recipe and confection journal records.
    * @param journal - The journal record to add (validated)
    * @returns `Success` with the JournalId, or `Failure` if journal already exists or invalid
@@ -280,7 +280,7 @@ export class JournalLibrary {
   }
 
   /**
-   * Removes a {@link Journal.AnyJournalRecord | journal record} from the library
+   * Removes a {@link Entities.Journal.AnyJournalRecord | journal record} from the library
    * @param journalId - The ID of the journal to remove
    * @returns `Success` with the removed journal, or `Failure` if not found
    * @public

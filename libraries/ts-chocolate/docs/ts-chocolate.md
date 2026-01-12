@@ -6,6 +6,69 @@
 
 Main exports for @<!-- -->fgv/ts-chocolate library
 
+## Classes
+
+<table><thead><tr><th>
+
+Class
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ChocolateLibrary](./ts-chocolate.chocolatelibrary.md)
+
+
+</td><td>
+
+Main entry point for the chocolate library
+
+Provides unified access to: - Ingredient management (multi-source with built-ins) - Recipe management (multi-source) - Journal management (cooking session records) - Recipe scaling - Ganache characteristic calculations
+
+
+</td></tr>
+<tr><td>
+
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
+
+
+</td><td>
+
+Fluent query builder for ingredients. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
+[RecipeQuery](./ts-chocolate.recipequery.md)
+
+
+</td><td>
+
+Fluent query builder for recipes. Allows chaining filters to build complex queries.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeContext](./ts-chocolate.runtimecontext.md)
+
+
+</td><td>
+
+Central context for the runtime object access layer. Provides factory methods for runtime objects, caching, and reverse lookups.
+
+This is the primary entry point for consumers who want resolved views of recipes and ingredients with automatic reference resolution.
+
+
+</td></tr>
+</tbody></table>
+
 ## Interfaces
 
 <table><thead><tr><th>
@@ -120,15 +183,6 @@ Description
 </td></tr>
 <tr><td>
 
-[Confections](./ts-chocolate.confections.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [Converters](./ts-chocolate.converters.md)
 
 
@@ -147,7 +201,7 @@ Description
 </td></tr>
 <tr><td>
 
-[Fillings](./ts-chocolate.fillings.md)
+[Entities](./ts-chocolate.entities.md)
 
 
 </td><td>
@@ -165,24 +219,6 @@ Description
 </td></tr>
 <tr><td>
 
-[Ingredients](./ts-chocolate.ingredients.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[Journal](./ts-chocolate.journal.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [LibraryData](./ts-chocolate.librarydata.md)
 
 
@@ -192,34 +228,7 @@ Description
 </td></tr>
 <tr><td>
 
-[Molds](./ts-chocolate.molds.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[Procedures](./ts-chocolate.procedures.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [Runtime](./ts-chocolate.runtime.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
-[Tasks](./ts-chocolate.tasks.md)
 
 
 </td><td>
@@ -569,7 +578,7 @@ Description
 
 </td><td>
 
-Purpose for additional chocolates in molded bonbons. These values align with [ChocolateRole](./ts-chocolate.journal.chocolaterole.md) for type safety when converting between confection data and journal entries.
+Purpose for additional chocolates in molded bonbons. These values align with [ChocolateRole](./ts-chocolate.entities.journal.chocolaterole.md) for type safety when converting between confection data and journal entries.
 
 
 </td></tr>

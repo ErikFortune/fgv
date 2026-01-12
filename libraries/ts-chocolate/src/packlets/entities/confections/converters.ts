@@ -361,7 +361,7 @@ export const confectionData: Converter<ConfectionData> = Converters.oneOf<Confec
 ]);
 
 /**
- * Converter for {@link Confections.ConfectionData | ConfectionData} with validation.
+ * Converter for {@link Entities.Confections.ConfectionData | ConfectionData} with validation.
  * Validates that goldenVersionSpec exists in versions.
  * Returns the plain data object (discriminated union), not a class instance.
  * @public

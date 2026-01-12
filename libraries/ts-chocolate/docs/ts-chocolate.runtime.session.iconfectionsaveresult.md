@@ -68,7 +68,7 @@ _(Optional)_ The journal ID if a journal record was created
 
 </td><td>
 
-[IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjournalrecord.md)
+IConfectionJournalRecord
 
 
 </td><td>

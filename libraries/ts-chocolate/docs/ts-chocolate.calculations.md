@@ -304,7 +304,7 @@ This function looks up a version by spec and delegates to [scaleVersion](./ts-ch
 
 </td><td>
 
-Scales a [filling recipe](./ts-chocolate.fillings.ifillingrecipe.md) by a supplied multiplier.
+Scales a [filling recipe](./ts-chocolate.entities.fillings.ifillingrecipe.md) by a supplied multiplier.
 
 
 </td></tr>

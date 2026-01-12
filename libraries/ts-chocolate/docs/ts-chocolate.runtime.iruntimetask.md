@@ -238,7 +238,7 @@ _(Optional)_ Optional notes
 
 </td><td>
 
-[ITaskData](./ts-chocolate.tasks.itaskdata.md)
+ITaskData
 
 
 </td><td>

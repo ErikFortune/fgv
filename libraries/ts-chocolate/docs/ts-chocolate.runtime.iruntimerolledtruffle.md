@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-[ICoatings](./ts-chocolate.confections.icoatings.md)
+ICoatings
 
 
 </td><td>
@@ -90,7 +90,7 @@ Type is always 'rolled-truffle' for this confection
 
 </td><td>
 
-[IChocolateSpec](./ts-chocolate.confections.ichocolatespec.md)
+IChocolateSpec
 
 
 </td><td>
@@ -111,7 +111,7 @@ _(Optional)_ Enrobing chocolate from the golden version
 
 </td><td>
 
-[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)
+IRolledTruffleVersion
 
 
 </td><td>
@@ -132,7 +132,7 @@ Golden version typed as IRolledTruffleVersion
 
 </td><td>
 
-[IRolledTruffle](./ts-chocolate.confections.irolledtruffle.md)
+IRolledTruffle
 
 
 </td><td>
@@ -153,7 +153,7 @@ Raw data typed to IRolledTruffle
 
 </td><td>
 
-ReadonlyArray&lt;[IRolledTruffleVersion](./ts-chocolate.confections.irolledtruffleversion.md)<!-- -->&gt;
+ReadonlyArray&lt;IRolledTruffleVersion&gt;
 
 
 </td><td>

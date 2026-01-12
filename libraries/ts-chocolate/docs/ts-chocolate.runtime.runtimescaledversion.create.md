@@ -53,7 +53,7 @@ scaled
 
 </td><td>
 
-[IComputedScaledFillingRecipe](./ts-chocolate.fillings.icomputedscaledfillingrecipe.md)
+IComputedScaledFillingRecipe
 
 
 </td><td>

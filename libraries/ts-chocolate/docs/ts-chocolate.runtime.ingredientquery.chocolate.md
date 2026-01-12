@@ -13,5 +13,5 @@ chocolate(): IngredientQuery;
 ```
 **Returns:**
 
-[IngredientQuery](./ts-chocolate.runtime.ingredientquery.md)
+[IngredientQuery](./ts-chocolate.ingredientquery.md)
 

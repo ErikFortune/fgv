@@ -69,7 +69,7 @@ confection
 
 </td><td>
 
-[IMoldedBonBon](./ts-chocolate.confections.imoldedbonbon.md)
+IMoldedBonBon
 
 
 </td><td>

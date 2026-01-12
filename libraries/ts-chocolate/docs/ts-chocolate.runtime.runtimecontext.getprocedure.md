@@ -50,7 +50,7 @@ The procedure ID (composite format: sourceId.baseProcedureId)
 
 **Returns:**
 
-Result&lt;[IProcedure](./ts-chocolate.procedures.iprocedure.md)<!-- -->&gt;
+Result&lt;IProcedure&gt;
 
 Success with IProcedure, or Failure if not found
 

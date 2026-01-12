@@ -50,7 +50,7 @@ _(Optional)_ Optional notes to include in the journal record
 
 **Returns:**
 
-Result&lt;[IConfectionJournalRecord](./ts-chocolate.journal.iconfectionjournalrecord.md)<!-- -->&gt;
+Result&lt;IConfectionJournalRecord&gt;
 
 Success with journal record, or Failure with error message
 

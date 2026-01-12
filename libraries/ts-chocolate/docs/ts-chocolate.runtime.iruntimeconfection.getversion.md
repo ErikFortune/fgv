@@ -50,7 +50,7 @@ The version specifier to find
 
 **Returns:**
 
-Result&lt;[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)<!-- -->&gt;
+Result&lt;AnyConfectionVersion&gt;
 
 Success with version, or Failure if not found
 

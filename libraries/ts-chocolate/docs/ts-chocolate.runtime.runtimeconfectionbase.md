@@ -75,7 +75,7 @@ Description
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.confections.confectiondata.md)
+ConfectionData
 
 
 </td><td>
@@ -117,7 +117,7 @@ IConfectionContext
 
 </td><td>
 
-[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)
+AnyConfectionVersion
 
 
 </td><td>
@@ -222,7 +222,7 @@ Confection type - must be overridden by subclasses
 
 </td><td>
 
-ReadonlyArray&lt;[IConfectionDecoration](./ts-chocolate.confections.iconfectiondecoration.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IConfectionDecoration&gt; \| undefined
 
 
 </td><td>
@@ -306,7 +306,7 @@ Gets effective URLs for the golden version (base URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;[IFillingSlot](./ts-chocolate.confections.ifillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;IFillingSlot&gt; \| undefined
 
 
 </td><td>
@@ -327,7 +327,7 @@ Optional filling slots from the golden version
 
 </td><td>
 
-[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)
+AnyConfectionVersion
 
 
 </td><td>
@@ -411,7 +411,7 @@ Human-readable name
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IProcedureRef](./ts-chocolate.fillings.iprocedureref.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;IProcedureRef, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -434,7 +434,7 @@ Optional procedures with preferred selection from the golden version
 
 </td><td>
 
-[ConfectionData](./ts-chocolate.confections.confectiondata.md)
+ConfectionData
 
 
 </td><td>
@@ -518,7 +518,7 @@ Base URLs (version may add more via additionalUrls)
 
 </td><td>
 
-ReadonlyArray&lt;[AnyConfectionVersion](./ts-chocolate.confections.anyconfectionversion.md)<!-- -->&gt;
+ReadonlyArray&lt;AnyConfectionVersion&gt;
 
 
 </td><td>
@@ -539,7 +539,7 @@ All versions
 
 </td><td>
 
-[IConfectionYield](./ts-chocolate.confections.iconfectionyield.md)
+IConfectionYield
 
 
 </td><td>

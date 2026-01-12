@@ -4,7 +4,7 @@
 
 ## Runtime.ChocolateLibrary.molds property
 
-The [molds library](./ts-chocolate.molds.moldslibrary.md)<!-- -->.
+The [molds library](./ts-chocolate.entities.molds.moldslibrary.md)<!-- -->.
 
 **Signature:**
 
