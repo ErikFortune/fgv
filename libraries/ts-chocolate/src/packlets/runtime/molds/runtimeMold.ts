@@ -183,7 +183,7 @@ export class RuntimeMold implements IRuntimeMold {
   }
 
   // ============================================================================
-  // Computed Properties (delegate to Mold)
+  // Computed Properties
   // ============================================================================
 
   /**
@@ -191,7 +191,10 @@ export class RuntimeMold implements IRuntimeMold {
    * Returns undefined if cavityWeight is not defined.
    */
   public get totalCapacity(): Measurement | undefined {
-    return this._mold.totalCapacity;
+    if (this._mold.cavityWeight === undefined) {
+      return undefined;
+    }
+    return (this._mold.cavityWeight * this._mold.cavityCount) as Measurement;
   }
 
   /**
@@ -199,7 +202,7 @@ export class RuntimeMold implements IRuntimeMold {
    * Example: "Chocolate World CW 2227"
    */
   public get displayName(): string {
-    return this._mold.displayName;
+    return `${this._mold.manufacturer} ${this._mold.productNumber}`;
   }
 
   // ============================================================================

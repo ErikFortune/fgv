@@ -28,7 +28,8 @@ import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
 import { FillingCategory } from '../../fillings';
 import { IProcedure, IProcedureStep, Procedure } from '../../procedures';
-import { isInlineTask, isTaskRef, Task } from '../../tasks';
+import { isInlineTask, isTaskRef } from '../../tasks';
+import { RuntimeTask } from '../tasks';
 import {
   IProcedureContext,
   IRuntimeProcedure,
@@ -265,17 +266,21 @@ export class RuntimeProcedure implements IRuntimeProcedure {
         .onFailure((msg) => fail(`${invocation.taskId}: ${msg}`));
     }
 
+    // TODO: can we lazy initialize and cache this task
     if (isInlineTask(invocation)) {
-      // For inline tasks, instantiate a Task and use its render method
-      return Task.create(invocation.task).onSuccess((task) => {
-        return task.render(invocation.params).onSuccess((renderedDescription) => {
-          return succeed({
-            ...step,
-            renderedDescription
-            // No resolvedTask for inline tasks
+      // For inline tasks, create a RuntimeTask with a synthetic ID
+      const syntheticId = `${this._id}.inline-${step.order}` as TaskId;
+      return RuntimeTask.create(renderContext.context, syntheticId, invocation.task).onSuccess(
+        (runtimeTask) => {
+          return runtimeTask.render(invocation.params).onSuccess((renderedDescription) => {
+            return succeed({
+              ...step,
+              renderedDescription
+              // No resolvedTask for inline tasks
+            });
           });
-        });
-      });
+        }
+      );
     }
     /* c8 ignore next 2 - defensive code: type system prevents this path */
     return fail('Step has invalid task structure');

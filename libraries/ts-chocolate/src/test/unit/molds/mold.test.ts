@@ -26,6 +26,9 @@ import { Mold } from '../../../packlets/molds/mold';
 import { IMold, ICavityDimensions } from '../../../packlets/molds/model';
 import { BaseMoldId, Measurement, Millimeters, MoldFormat } from '../../../packlets/common';
 
+/**
+ * Tests for Mold - pure data layer class.
+ */
 describe('Mold', () => {
   // ============================================================================
   // Test Data
@@ -98,58 +101,6 @@ describe('Mold', () => {
       };
       expect(Mold.create(moldData)).toSucceedAndSatisfy((mold) => {
         expect(mold.notes).toBe('Great for pralines');
-      });
-    });
-  });
-
-  // ============================================================================
-  // totalCapacity
-  // ============================================================================
-
-  describe('totalCapacity', () => {
-    test('returns total capacity when cavityWeight is defined', () => {
-      expect(Mold.create(validMoldData)).toSucceedAndSatisfy((mold) => {
-        expect(mold.totalCapacity).toBe(320); // 32 * 10
-      });
-    });
-
-    test('returns undefined when cavityWeight is not defined', () => {
-      expect(Mold.create(minimalMoldData)).toSucceedAndSatisfy((mold) => {
-        expect(mold.totalCapacity).toBeUndefined();
-      });
-    });
-
-    test('calculates correctly for different values', () => {
-      const moldData: IMold = {
-        ...minimalMoldData,
-        cavityCount: 10,
-        cavityWeight: 15 as Measurement
-      };
-      expect(Mold.create(moldData)).toSucceedAndSatisfy((mold) => {
-        expect(mold.totalCapacity).toBe(150);
-      });
-    });
-  });
-
-  // ============================================================================
-  // displayName
-  // ============================================================================
-
-  describe('displayName', () => {
-    test('returns manufacturer and product number', () => {
-      expect(Mold.create(validMoldData)).toSucceedAndSatisfy((mold) => {
-        expect(mold.displayName).toBe('Chocolate World CW 2227');
-      });
-    });
-
-    test('works with different manufacturers', () => {
-      const moldData: IMold = {
-        ...minimalMoldData,
-        manufacturer: 'Pavoni',
-        productNumber: 'PC5000'
-      };
-      expect(Mold.create(moldData)).toSucceedAndSatisfy((mold) => {
-        expect(mold.displayName).toBe('Pavoni PC5000');
       });
     });
   });

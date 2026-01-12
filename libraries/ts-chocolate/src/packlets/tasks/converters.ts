@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result, fail, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, Result, succeed } from '@fgv/ts-utils';
 import { Converters as CommonConverters, BaseTaskId, TaskId } from '../common';
 import {
   IInlineTask,
@@ -41,18 +41,17 @@ import { Task } from './task';
 // ============================================================================
 
 /**
- * Converter for params objects (Record with string keys and unknown values).
- * Validates that input is an object and passes through the values.
+ * Identity converter for unknown values - passes through any value.
  * @internal
  */
-const params: Converter<Record<string, unknown>> = Converters.generic<Record<string, unknown>>(
-  (from: unknown): Result<Record<string, unknown>> => {
-    if (typeof from !== 'object' || from === null || Array.isArray(from)) {
-      return fail('Params must be an object');
-    }
-    return succeed(from as Record<string, unknown>);
-  }
-);
+const unknownValue: Converter<unknown> = Converters.generic<unknown>((from: unknown) => succeed(from));
+
+/**
+ * Converter for params objects (Record with string keys and unknown values).
+ * Uses Converters.recordOf for proper type-safe validation instead of manual checks.
+ * @internal
+ */
+const params: Converter<Record<string, unknown>> = Converters.recordOf<unknown>(unknownValue);
 
 // ============================================================================
 // Task Data Converters
@@ -169,7 +168,7 @@ export const renderOptions: Converter<IRenderOptions> = Converters.object<IRende
 
 /**
  * Converter that creates Task instances from YAML/JSON data.
- * Parses the Mustache template and validates the task structure.
+ * Template parsing and validation occurs in RuntimeTask, not here.
  * @public
  */
 export const task: Converter<Task> = Converters.generic<Task>((from: unknown): Result<Task> => {

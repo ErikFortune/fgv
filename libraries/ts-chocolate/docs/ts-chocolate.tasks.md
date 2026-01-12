@@ -24,7 +24,9 @@ Description
 
 </td><td>
 
-Task class with pre-parsed Mustache template for efficient rendering. Accepts ITaskData (persisted format) and computes requiredVariables from template.
+Task class - pure data representation of a task definition.
+
+This is a data-layer class that holds task configuration without business logic. Template parsing, validation, and rendering are handled by RuntimeTask in the runtime layer.
 
 
 </td></tr>
@@ -123,6 +125,8 @@ Options for rendering procedure steps.
 </td><td>
 
 A reusable task template with runtime-computed properties. Extends ITaskData with requiredVariables extracted from the template.
+
+Note: The data-layer Task class implements ITaskData only. ITask (with requiredVariables) is implemented by RuntimeTask in the runtime layer, as template parsing is a runtime operation.
 
 
 </td></tr>

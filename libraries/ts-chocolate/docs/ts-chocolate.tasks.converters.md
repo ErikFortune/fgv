@@ -55,7 +55,7 @@ Converter for IRenderOptions
 
 </td><td>
 
-Converter that creates Task instances from YAML/JSON data. Parses the Mustache template and validates the task structure.
+Converter that creates Task instances from YAML/JSON data. Template parsing and validation occurs in RuntimeTask, not here.
 
 
 </td></tr>

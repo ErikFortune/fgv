@@ -4,7 +4,7 @@
 
 ## Tasks.Task.toData() method
 
-Converts the Task back to its persisted data representation. Note: requiredVariables is not included as it's computed from the template.
+Converts the Task back to its persisted data representation.
 
 **Signature:**
 

@@ -4,7 +4,9 @@
 
 ## Molds.Mold class
 
-Mold class with helper methods
+Mold class - pure data representation of a mold.
+
+This is a data-layer class that holds mold configuration without business logic. Computed properties like totalCapacity and displayName are provided by RuntimeMold.
 
 **Signature:**
 
@@ -139,27 +141,6 @@ _(Optional)_
 </td></tr>
 <tr><td>
 
-[displayName](./ts-chocolate.molds.mold.displayname.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-string
-
-
-</td><td>
-
-Gets a display string for this mold (manufacturer + product number)
-
-
-</td></tr>
-<tr><td>
-
 [format](./ts-chocolate.molds.mold.format.md)
 
 
@@ -254,27 +235,6 @@ ReadonlyArray&lt;string&gt;
 </td><td>
 
 _(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[totalCapacity](./ts-chocolate.molds.mold.totalcapacity.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Measurement](./ts-chocolate.measurement.md) \| undefined
-
-
-</td><td>
-
-Gets the total capacity of the mold (all cavities) in grams
 
 
 </td></tr>

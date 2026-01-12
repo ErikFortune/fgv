@@ -4,7 +4,7 @@
 
 ## Runtime.RuntimeTask.requiredVariables property
 
-Required variables extracted from the template
+Required variables extracted from the template. This is computed at RuntimeTask creation, not stored in the data layer.
 
 **Signature:**
 

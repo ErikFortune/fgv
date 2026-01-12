@@ -154,7 +154,7 @@ describe('TaskConverters', () => {
         defaults: 'not-an-object'
       };
 
-      expect(taskData.convert(data)).toFailWith(/params must be an object/i);
+      expect(taskData.convert(data)).toFailWith(/not a string-keyed object/i);
     });
 
     test('fails for defaults that is an array', () => {
@@ -165,7 +165,7 @@ describe('TaskConverters', () => {
         defaults: ['not', 'an', 'object']
       };
 
-      expect(taskData.convert(data)).toFailWith(/params must be an object/i);
+      expect(taskData.convert(data)).toFailWith(/not a string-keyed object/i);
     });
   });
 
@@ -218,11 +218,11 @@ describe('TaskConverters', () => {
     });
 
     test('fails for invalid params (array)', () => {
-      expect(taskRef.convert({ taskId: 'test', params: [1, 2, 3] })).toFailWith(/params must be an object/i);
+      expect(taskRef.convert({ taskId: 'test', params: [1, 2, 3] })).toFailWith(/not a string-keyed object/i);
     });
 
     test('fails for invalid params (null)', () => {
-      expect(taskRef.convert({ taskId: 'test', params: null })).toFailWith(/params must be an object/i);
+      expect(taskRef.convert({ taskId: 'test', params: null })).toFailWith(/not a string-keyed object/i);
     });
   });
 
@@ -433,9 +433,10 @@ describe('TaskConverters', () => {
 
   // ============================================================================
   // task (Task class converter)
+  // Task is now a pure data class - template parsing/validation occurs in RuntimeTask
   // ============================================================================
   describe('task', () => {
-    test('converts valid task data to Task instance with variables extracted from template', () => {
+    test('converts valid task data to Task instance', () => {
       const data = {
         baseId: 'test-task',
         name: 'Test Task',
@@ -447,13 +448,11 @@ describe('TaskConverters', () => {
         expect(result.baseId).toBe('test-task');
         expect(result.name).toBe('Test Task');
         expect(result.template).toBe('Do {{action}}');
-        // requiredVariables is extracted from template at runtime
-        expect(result.requiredVariables).toEqual(['action']);
         expect(result.defaultActiveTime).toBe(5);
       });
     });
 
-    test('extracts multiple variables from template', () => {
+    test('converts task with template containing variables', () => {
       const data = {
         baseId: 'multi-var-task',
         name: 'Multi Variable Task',
@@ -461,11 +460,11 @@ describe('TaskConverters', () => {
       };
 
       expect(task.convert(data)).toSucceedAndSatisfy((result) => {
-        expect(result.requiredVariables).toEqual(['ingredient', 'temp']);
+        expect(result.template).toBe('Heat {{ingredient}} to {{temp}}C');
       });
     });
 
-    test('extracts no variables from template without placeholders', () => {
+    test('converts task with plain template', () => {
       const data = {
         baseId: 'no-var-task',
         name: 'No Variable Task',
@@ -473,21 +472,12 @@ describe('TaskConverters', () => {
       };
 
       expect(task.convert(data)).toSucceedAndSatisfy((result) => {
-        expect(result.requiredVariables).toEqual([]);
+        expect(result.template).toBe('Do something simple');
       });
     });
 
     test('fails for invalid data', () => {
       expect(task.convert({ baseId: 'test' })).toFail();
-    });
-
-    test('fails for invalid template', () => {
-      const data = {
-        baseId: 'test-task',
-        name: 'Test Task',
-        template: 'Unclosed {{bracket'
-      };
-      expect(task.convert(data)).toFail();
     });
 
     test('converts task with defaults', () => {
@@ -501,8 +491,6 @@ describe('TaskConverters', () => {
       expect(task.convert(data)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('task-with-defaults');
         expect(result.defaults).toEqual({ ingredient: 'chocolate', temp: '40C' });
-        // Validation with defaults
-        expect(result.validateAndRender({})).toSucceedWith('Melt chocolate to 40C');
       });
     });
   });

@@ -124,6 +124,21 @@ describe('RuntimeTask', () => {
         expect(validation.missingVariables).toEqual([]);
       });
     });
+
+    test('should report extra variables provided', () => {
+      const task = Task.create(simpleTaskData).orThrow();
+      const taskId = 'common.melt-chocolate' as TaskId;
+      const runtimeTask = RuntimeTask.create(mockContext, taskId, task).orThrow();
+
+      // Provide required variables plus an extra one
+      expect(
+        runtimeTask.validateParams({ amount: 200, type: 'dark', temp: 45, extra: 'not-needed' })
+      ).toSucceedAndSatisfy((validation) => {
+        expect(validation.isValid).toBe(true);
+        expect(validation.extraVariables).toContain('extra');
+        expect(validation.messages.some((m) => m.match(/extra variables provided/i))).toBe(true);
+      });
+    });
   });
 
   describe('render', () => {

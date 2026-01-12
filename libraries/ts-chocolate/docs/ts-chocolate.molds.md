@@ -24,7 +24,9 @@ Description
 
 </td><td>
 
-Mold class with helper methods
+Mold class - pure data representation of a mold.
+
+This is a data-layer class that holds mold configuration without business logic. Computed properties like totalCapacity and displayName are provided by RuntimeMold.
 
 
 </td></tr>

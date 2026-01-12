@@ -4,7 +4,7 @@
 
 ## Tasks.Task.create() method
 
-Creates a Task instance from persisted data, pre-parsing the Mustache template. Required variables are extracted from the template automatically.
+Creates a Task instance from persisted data. This is a pure data class - template parsing happens in RuntimeTask.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ data
 
 </td><td>
 
-The persisted task data to create from
+The persisted task data
 
 
 </td></tr>
@@ -52,5 +52,5 @@ The persisted task data to create from
 
 Result&lt;[Task](./ts-chocolate.tasks.task.md)<!-- -->&gt;
 
-Success with Task instance, or Failure if template parsing fails
+Success with Task instance
 

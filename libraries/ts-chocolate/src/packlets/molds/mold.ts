@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 /**
- * Mold class implementation
+ * Mold class - pure data layer representation
  * @packageDocumentation
  */
 
@@ -33,7 +33,7 @@ import { ICavityDimensions, IMold } from './model';
 // ============================================================================
 
 /**
- * Mold class with helper methods
+ * Mold class - pure data representation of a mold.
  * @public
  */
 export class Mold implements IMold {
@@ -68,24 +68,5 @@ export class Mold implements IMold {
    */
   public static create(data: IMold): Result<Mold> {
     return Success.with(new Mold(data));
-  }
-
-  /**
-   * Gets the total capacity of the mold (all cavities) in grams
-   * @returns Total capacity if cavityWeight is defined, undefined otherwise
-   */
-  public get totalCapacity(): Measurement | undefined {
-    if (this.cavityWeight === undefined) {
-      return undefined;
-    }
-    return (this.cavityWeight * this.cavityCount) as Measurement;
-  }
-
-  /**
-   * Gets a display string for this mold (manufacturer + product number)
-   * @returns Display string like "Chocolate World CW 2227"
-   */
-  public get displayName(): string {
-    return `${this.manufacturer} ${this.productNumber}`;
   }
 }

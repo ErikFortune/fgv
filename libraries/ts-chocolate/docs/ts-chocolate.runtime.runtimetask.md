@@ -6,7 +6,9 @@
 
 A resolved view of a task with rendering capabilities.
 
-RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Parameter validation - Template rendering - Context access for resolving task references (future use)
+RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Template parsing and required variable extraction - Parameter validation - Template rendering - Context access for resolving task references (future use)
+
+This is the runtime-layer class that contains all template business logic. The data-layer Task class is a pure data holder.
 
 **Signature:**
 
@@ -265,7 +267,7 @@ ReadonlyArray&lt;string&gt;
 
 </td><td>
 
-Required variables extracted from the template
+Required variables extracted from the template. This is computed at RuntimeTask creation, not stored in the data layer.
 
 
 </td></tr>
@@ -343,7 +345,7 @@ Description
 
 </td><td>
 
-Factory method for creating a RuntimeTask.
+Factory method for creating a RuntimeTask. Parses the Mustache template and extracts required variables.
 
 
 </td></tr>

@@ -4,12 +4,12 @@
 
 ## Runtime.RuntimeTask.create() method
 
-Factory method for creating a RuntimeTask.
+Factory method for creating a RuntimeTask. Parses the Mustache template and extracts required variables.
 
 **Signature:**
 
 ```typescript
-static create(context: ITaskContext, id: TaskId, task: Task): Result<RuntimeTask>;
+static create(context: ITaskContext, id: TaskId, task: Task | ITaskData): Result<RuntimeTask>;
 ```
 
 ## Parameters
@@ -69,12 +69,12 @@ task
 
 </td><td>
 
-[Task](./ts-chocolate.tasks.task.md)
+[Task](./ts-chocolate.tasks.task.md) \| [ITaskData](./ts-chocolate.tasks.itaskdata.md)
 
 
 </td><td>
 
-The raw task data
+The raw task data (Task or ITaskData)
 
 
 </td></tr>
@@ -84,5 +84,5 @@ The raw task data
 
 Result&lt;[RuntimeTask](./ts-chocolate.runtime.runtimetask.md)<!-- -->&gt;
 
-Success with RuntimeTask
+Success with RuntimeTask, or Failure if template parsing fails
 

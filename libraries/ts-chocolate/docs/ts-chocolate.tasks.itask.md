@@ -6,6 +6,8 @@
 
 A reusable task template with runtime-computed properties. Extends ITaskData with requiredVariables extracted from the template.
 
+Note: The data-layer Task class implements ITaskData only. ITask (with requiredVariables) is implemented by RuntimeTask in the runtime layer, as template parsing is a runtime operation.
+
 **Signature:**
 
 ```typescript
@@ -53,7 +55,7 @@ ReadonlyArray&lt;string&gt;
 
 </td><td>
 
-Required variables extracted from the template at runtime. This is computed from parsing the Mustache template, not persisted.
+Required variables extracted from the template at runtime. This is computed from parsing the Mustache template, not persisted. Only available on RuntimeTask, not on the data-layer Task class.
 
 
 </td></tr>

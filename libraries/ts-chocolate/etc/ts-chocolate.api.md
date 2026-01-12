@@ -3695,7 +3695,6 @@ class Mold implements IMold {
     static create(data: IMold): Result<Mold>;
     // (undocumented)
     readonly description?: string;
-    get displayName(): string;
     // (undocumented)
     readonly format: MoldFormat;
     // (undocumented)
@@ -3706,7 +3705,6 @@ class Mold implements IMold {
     readonly productNumber: string;
     // (undocumented)
     readonly tags?: ReadonlyArray<string>;
-    get totalCapacity(): Measurement | undefined;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -4729,7 +4727,7 @@ class RuntimeTask implements IRuntimeTask {
     protected get context(): ITaskContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-    static create(context: ITaskContext, id: TaskId, task: Task): Result<RuntimeTask>;
+    static create(context: ITaskContext, id: TaskId, task: Task | ITaskData): Result<RuntimeTask>;
     get defaultActiveTime(): Minutes | undefined;
     get defaultHoldTime(): Minutes | undefined;
     get defaults(): Readonly<Record<string, unknown>> | undefined;
@@ -4965,7 +4963,7 @@ const sugarIngredient: Converter<ISugarIngredient>;
 function supportsScaling(unit: MeasurementUnit): boolean;
 
 // @public
-class Task implements ITask {
+class Task implements ITaskData {
     readonly baseId: BaseTaskId;
     static create(data: ITaskData): Result<Task>;
     readonly defaultActiveTime?: Minutes;
@@ -4973,16 +4971,11 @@ class Task implements ITask {
     readonly defaults?: Readonly<Record<string, unknown>>;
     readonly defaultTemperature?: Celsius;
     readonly defaultWaitTime?: Minutes;
-    getTemplateVariables(): readonly string[];
     readonly name: string;
     readonly notes?: string;
-    render(params: Record<string, unknown>): Result<string>;
-    readonly requiredVariables: ReadonlyArray<string>;
     readonly tags?: ReadonlyArray<string>;
     readonly template: string;
     toData(): ITaskData;
-    validateAndRender(params: Record<string, unknown>): Result<string>;
-    validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
 }
 
 // @public

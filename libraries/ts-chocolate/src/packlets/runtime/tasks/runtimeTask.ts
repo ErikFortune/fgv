@@ -23,10 +23,11 @@
  * @packageDocumentation
  */
 
-import { Result, Success } from '@fgv/ts-utils';
+import { Result, succeed } from '@fgv/ts-utils';
+import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
 import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
-import { Task, ITaskRefValidation } from '../../tasks';
+import { Task, ITaskData, ITaskRefValidation } from '../../tasks';
 import { ITaskContext, IRuntimeTask } from './model';
 
 // ============================================================================
@@ -38,6 +39,7 @@ import { ITaskContext, IRuntimeTask } from './model';
  *
  * RuntimeTask wraps a data-layer Task and provides:
  * - Composite identity (TaskId) for cross-source references
+ * - Template parsing and required variable extraction
  * - Parameter validation
  * - Template rendering
  * - Context access for resolving task references (future use)
@@ -48,22 +50,36 @@ export class RuntimeTask implements IRuntimeTask {
   private readonly _context: ITaskContext;
   private readonly _id: TaskId;
   private readonly _task: Task;
+  private readonly _parsedTemplate: MustacheModule.MustacheTemplate;
+  private readonly _requiredVariables: ReadonlyArray<string>;
 
-  private constructor(context: ITaskContext, id: TaskId, task: Task) {
+  private constructor(
+    context: ITaskContext,
+    id: TaskId,
+    task: Task,
+    parsedTemplate: MustacheModule.MustacheTemplate
+  ) {
     this._context = context;
     this._id = id;
     this._task = task;
+    this._parsedTemplate = parsedTemplate;
+    this._requiredVariables = parsedTemplate.extractVariableNames();
   }
 
   /**
    * Factory method for creating a RuntimeTask.
+   * Parses the Mustache template and extracts required variables.
    * @param context - The runtime context for task resolution
    * @param id - The composite task ID
-   * @param task - The raw task data
-   * @returns Success with RuntimeTask
+   * @param task - The raw task data (Task or ITaskData)
+   * @returns Success with RuntimeTask, or Failure if template parsing fails
    */
-  public static create(context: ITaskContext, id: TaskId, task: Task): Result<RuntimeTask> {
-    return Success.with(new RuntimeTask(context, id, task));
+  public static create(context: ITaskContext, id: TaskId, task: Task | ITaskData): Result<RuntimeTask> {
+    // Normalize to Task class if needed
+    const taskInstance = task instanceof Task ? task : Task.create(task).orThrow();
+    return MustacheModule.MustacheTemplate.create(taskInstance.template).onSuccess((parsedTemplate) => {
+      return succeed(new RuntimeTask(context, id, taskInstance, parsedTemplate));
+    });
   }
 
   // ============================================================================
@@ -103,10 +119,11 @@ export class RuntimeTask implements IRuntimeTask {
   }
 
   /**
-   * Required variables extracted from the template
+   * Required variables extracted from the template.
+   * This is computed at RuntimeTask creation, not stored in the data layer.
    */
   public get requiredVariables(): ReadonlyArray<string> {
-    return this._task.requiredVariables;
+    return this._requiredVariables;
   }
 
   /**
@@ -119,7 +136,7 @@ export class RuntimeTask implements IRuntimeTask {
   /**
    * Optional default wait time
    */
-  /* c8 ignore next 3 - simple getter, tested via Task class */
+  /* c8 ignore next 3 - simple getter */
   public get defaultWaitTime(): Minutes | undefined {
     return this._task.defaultWaitTime;
   }
@@ -127,7 +144,7 @@ export class RuntimeTask implements IRuntimeTask {
   /**
    * Optional default hold time
    */
-  /* c8 ignore next 3 - simple getter, tested via Task class */
+  /* c8 ignore next 3 - simple getter */
   public get defaultHoldTime(): Minutes | undefined {
     return this._task.defaultHoldTime;
   }
@@ -161,8 +178,20 @@ export class RuntimeTask implements IRuntimeTask {
   }
 
   // ============================================================================
-  // Operations (delegate to Task - business logic that belongs in runtime layer)
+  // Operations
   // ============================================================================
+
+  /**
+   * Merges defaults with provided params. Params override defaults.
+   * @param params - The parameter values provided by the caller
+   * @returns Merged context with defaults filled in
+   */
+  private _mergeContext(params: Record<string, unknown>): Record<string, unknown> {
+    if (!this._task.defaults) {
+      return params;
+    }
+    return { ...this._task.defaults, ...params };
+  }
 
   /**
    * Validates that params (combined with defaults) satisfy required variables.
@@ -170,7 +199,35 @@ export class RuntimeTask implements IRuntimeTask {
    * @returns Validation result with details about present/missing variables
    */
   public validateParams(params: Record<string, unknown>): Result<ITaskRefValidation> {
-    return this._task.validateParams(params);
+    const mergedParams = this._mergeContext(params);
+    return this._parsedTemplate.validateContext(mergedParams).onSuccess((validation) => {
+      // Find extra variables (params provided but not in template)
+      const templateVars = new Set(this._requiredVariables);
+      const extraVariables: string[] = [];
+
+      for (const key of Object.keys(params)) {
+        if (!templateVars.has(key)) {
+          extraVariables.push(key);
+        }
+      }
+
+      // Build messages
+      const messages: string[] = [];
+      if (validation.missingVariables.length > 0) {
+        messages.push(`Missing required variables: ${validation.missingVariables.join(', ')}`);
+      }
+      if (extraVariables.length > 0) {
+        messages.push(`Extra variables provided: ${extraVariables.join(', ')}`);
+      }
+
+      return succeed({
+        isValid: validation.isValid,
+        taskFound: true,
+        missingVariables: validation.missingVariables,
+        extraVariables,
+        messages
+      });
+    });
   }
 
   /**
@@ -179,7 +236,7 @@ export class RuntimeTask implements IRuntimeTask {
    * @returns Success with rendered string, or Failure if rendering fails
    */
   public render(params: Record<string, unknown>): Result<string> {
-    return this._task.render(params);
+    return this._parsedTemplate.render(this._mergeContext(params));
   }
 
   /**
@@ -188,7 +245,7 @@ export class RuntimeTask implements IRuntimeTask {
    * @returns Success with rendered string, or Failure with validation or render errors
    */
   public validateAndRender(params: Record<string, unknown>): Result<string> {
-    return this._task.validateAndRender(params);
+    return this._parsedTemplate.validateAndRender(this._mergeContext(params));
   }
 
   // ============================================================================

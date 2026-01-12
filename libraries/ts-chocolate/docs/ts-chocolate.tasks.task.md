@@ -4,14 +4,16 @@
 
 ## Tasks.Task class
 
-Task class with pre-parsed Mustache template for efficient rendering. Accepts ITaskData (persisted format) and computes requiredVariables from template.
+Task class - pure data representation of a task definition.
+
+This is a data-layer class that holds task configuration without business logic. Template parsing, validation, and rendering are handled by RuntimeTask in the runtime layer.
 
 **Signature:**
 
 ```typescript
-export declare class Task implements ITask 
+export declare class Task implements ITaskData 
 ```
-**Implements:** [ITask](./ts-chocolate.tasks.itask.md)
+**Implements:** [ITaskData](./ts-chocolate.tasks.itaskdata.md)
 
 ## Properties
 
@@ -206,27 +208,6 @@ _(Optional)_ Optional notes about the task
 </td></tr>
 <tr><td>
 
-[requiredVariables](./ts-chocolate.tasks.task.requiredvariables.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ReadonlyArray&lt;string&gt;
-
-
-</td><td>
-
-Required variables extracted from the template (runtime-computed, not persisted)
-
-
-</td></tr>
-<tr><td>
-
 [tags?](./ts-chocolate.tasks.task.tags.md)
 
 
@@ -263,7 +244,7 @@ string
 
 </td><td>
 
-The original Mustache template string
+The Mustache template string (unparsed)
 
 
 </td></tr>
@@ -299,35 +280,7 @@ Description
 
 </td><td>
 
-Creates a Task instance from persisted data, pre-parsing the Mustache template. Required variables are extracted from the template automatically.
-
-
-</td></tr>
-<tr><td>
-
-[getTemplateVariables()](./ts-chocolate.tasks.task.gettemplatevariables.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Gets the variable names extracted from the template.
-
-
-</td></tr>
-<tr><td>
-
-[render(params)](./ts-chocolate.tasks.task.render.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Renders the task template with the given params (merged with defaults).
+Creates a Task instance from persisted data. This is a pure data class - template parsing happens in RuntimeTask.
 
 
 </td></tr>
@@ -341,35 +294,7 @@ Renders the task template with the given params (merged with defaults).
 
 </td><td>
 
-Converts the Task back to its persisted data representation. Note: requiredVariables is not included as it's computed from the template.
-
-
-</td></tr>
-<tr><td>
-
-[validateAndRender(params)](./ts-chocolate.tasks.task.validateandrender.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Validates params (merged with defaults) and renders the template if validation passes.
-
-
-</td></tr>
-<tr><td>
-
-[validateParams(params)](./ts-chocolate.tasks.task.validateparams.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Validates that params (combined with defaults) satisfy required variables.
+Converts the Task back to its persisted data representation.
 
 
 </td></tr>

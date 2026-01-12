@@ -4,7 +4,7 @@
 
 ## Tasks.Task.template property
 
-The original Mustache template string
+The Mustache template string (unparsed)
 
 **Signature:**
 
