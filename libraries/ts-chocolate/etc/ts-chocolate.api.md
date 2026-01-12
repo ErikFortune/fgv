@@ -2546,13 +2546,6 @@ type IProcedureFileTreeSource = SubLibraryFileTreeSource;
 type IProcedureRef = IRefWithNotes<ProcedureId>;
 
 // @public
-interface IProcedureRenderContext {
-    readonly library: unknown;
-    readonly mold?: IMold;
-    readonly recipe: IComputedScaledFillingRecipe;
-}
-
-// @public
 type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<ProceduresLibrary, ProcedureCollectionEntryInit>;
 
 // @public
@@ -2643,21 +2636,6 @@ interface IRecipesByTagConfig {
 export interface IRefWithNotes<TId extends string> extends IHasId<TId> {
     readonly id: TId;
     readonly notes?: string;
-}
-
-// @public
-interface IRenderedProcedure {
-    readonly description?: string;
-    readonly name: string;
-    readonly steps: ReadonlyArray<IRenderedProcedureStep>;
-    readonly totalActiveTime?: number;
-    readonly totalHoldTime?: number;
-    readonly totalWaitTime?: number;
-}
-
-// @public
-interface IRenderedProcedureStep extends IProcedureStep {
-    readonly renderedDescription: string;
 }
 
 // @public
@@ -3932,7 +3910,6 @@ class Procedure implements IProcedure {
     readonly name: string;
     // (undocumented)
     readonly notes?: string;
-    render(context: IProcedureRenderContext): Result<IRenderedProcedure>;
     get stepCount(): number;
     // (undocumented)
     readonly steps: ReadonlyArray<IProcedureStep>;
@@ -3996,10 +3973,7 @@ declare namespace Procedures {
         ProceduresMergeSource,
         IProceduresLibraryParams,
         IProceduresLibraryAsyncParams,
-        ProceduresLibrary,
-        IProcedureRenderContext,
-        IRenderedProcedureStep,
-        IRenderedProcedure
+        ProceduresLibrary
     }
 }
 export { Procedures }

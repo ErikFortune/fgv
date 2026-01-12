@@ -69,17 +69,6 @@ Represents a procedure for making chocolate confections
 </td></tr>
 <tr><td>
 
-[IProcedureRenderContext](./ts-chocolate.procedures.iprocedurerendercontext.md)
-
-
-</td><td>
-
-Context for rendering a procedure with templating. Designed for future templating support - the interface is defined but the actual templating implementation is deferred.
-
-
-</td></tr>
-<tr><td>
-
 [IProcedureStep](./ts-chocolate.procedures.iprocedurestep.md)
 
 
@@ -97,28 +86,6 @@ A single step in a procedure (persisted data model). Does not include validation
 </td><td>
 
 Runtime validation state for a procedure step. This is computed at render/use time based on which TasksLibrary is available.
-
-
-</td></tr>
-<tr><td>
-
-[IRenderedProcedure](./ts-chocolate.procedures.irenderedprocedure.md)
-
-
-</td><td>
-
-A rendered procedure with all template values resolved
-
-
-</td></tr>
-<tr><td>
-
-[IRenderedProcedureStep](./ts-chocolate.procedures.irenderedprocedurestep.md)
-
-
-</td><td>
-
-A rendered procedure step with resolved template values
 
 
 </td></tr>

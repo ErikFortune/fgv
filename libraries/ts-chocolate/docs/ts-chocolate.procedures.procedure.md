@@ -339,19 +339,5 @@ Creates a Procedure instance from procedure data
 
 
 </td></tr>
-<tr><td>
-
-[render(context)](./ts-chocolate.procedures.procedure.render.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Renders the procedure with the given context. Renders task templates for each step using the task's params.
-
-
-</td></tr>
 </tbody></table>
 

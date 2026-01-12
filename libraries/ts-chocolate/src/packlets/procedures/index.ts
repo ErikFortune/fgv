@@ -22,7 +22,6 @@ export * from './model';
 export * from './procedure';
 export * from './proceduresCollection';
 export * from './proceduresLibrary';
-export * from './renderContext';
 
 import * as Converters from './converters';
 

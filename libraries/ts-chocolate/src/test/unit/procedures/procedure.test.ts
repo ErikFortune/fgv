@@ -24,10 +24,7 @@ import '@fgv/ts-utils-jest';
 import { Procedure } from '../../../packlets/procedures/procedure';
 // eslint-disable-next-line @rushstack/packlets/mechanics
 import { IProcedure, IProcedureStep } from '../../../packlets/procedures/model';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { IProcedureRenderContext } from '../../../packlets/procedures/renderContext';
-import { BaseProcedureId, BaseTaskId, Celsius, Minutes, TaskId } from '../../../packlets/common';
-import { IComputedScaledFillingRecipe } from '../../../packlets/fillings';
+import { BaseProcedureId, BaseTaskId, Celsius, Minutes } from '../../../packlets/common';
 import { ITaskInvocation } from '../../../packlets/tasks';
 
 /**
@@ -44,13 +41,6 @@ function inlineTask(template: string, params: Record<string, unknown> = {}): ITa
     },
     params
   };
-}
-
-/**
- * Helper to create a task reference
- */
-function taskRef(taskId: TaskId | BaseTaskId, params: Record<string, unknown> = {}): ITaskInvocation {
-  return { taskId, params };
 }
 
 describe('Procedure', () => {
@@ -271,112 +261,6 @@ describe('Procedure', () => {
     test('returns false when category is undefined', () => {
       expect(Procedure.create(minimalProcedureData)).toSucceedAndSatisfy((procedure) => {
         expect(procedure.isCategorySpecific).toBe(false);
-      });
-    });
-  });
-
-  // ============================================================================
-  // render()
-  // ============================================================================
-
-  describe('render()', () => {
-    // Create a minimal render context for testing
-    const mockContext: IProcedureRenderContext = {
-      library: {},
-      recipe: {
-        scaledFrom: {
-          sourceVersionId: 'test.recipe@2026-01-01-01',
-          scaleFactor: 1,
-          targetWeight: 100
-        },
-        createdDate: '2026-01-01',
-        ingredients: [],
-        baseWeight: 100
-      } as unknown as IComputedScaledFillingRecipe
-    };
-
-    test('renders procedure with steps', () => {
-      expect(Procedure.create(validProcedureData)).toSucceedAndSatisfy((procedure) => {
-        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          expect(rendered.name).toBe('Ganache (Cold Method)');
-          expect(rendered.description).toBe('A cold method for making ganache');
-          expect(rendered.steps).toHaveLength(4);
-        });
-      });
-    });
-
-    test('rendered steps have renderedDescription matching template', () => {
-      expect(Procedure.create(validProcedureData)).toSucceedAndSatisfy((procedure) => {
-        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          // Each step's renderedDescription should match its inline task template
-          expect(rendered.steps[0].renderedDescription).toBe('Melt chocolate to 45C');
-          expect(rendered.steps[1].renderedDescription).toBe('Warm cream to 35C');
-          expect(rendered.steps[2].renderedDescription).toBe('Combine and emulsify');
-          expect(rendered.steps[3].renderedDescription).toBe('Rest at room temperature');
-        });
-      });
-    });
-
-    test('rendered procedure includes timing totals', () => {
-      expect(Procedure.create(validProcedureData)).toSucceedAndSatisfy((procedure) => {
-        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          expect(rendered.totalActiveTime).toBe(13);
-          expect(rendered.totalWaitTime).toBe(30);
-          expect(rendered.totalHoldTime).toBeUndefined();
-        });
-      });
-    });
-
-    test('rendered steps preserve all original step properties', () => {
-      expect(Procedure.create(validProcedureData)).toSucceedAndSatisfy((procedure) => {
-        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          const firstStep = rendered.steps[0];
-          expect(firstStep.order).toBe(1);
-          expect(firstStep.renderedDescription).toBe('Melt chocolate to 45C');
-          expect(firstStep.activeTime).toBe(5);
-          expect(firstStep.temperature).toBe(45);
-        });
-      });
-    });
-
-    test('renders inline task with params substitution', () => {
-      const procedureWithParams: IProcedure = {
-        baseId: 'params-test' as BaseProcedureId,
-        name: 'Params Test',
-        steps: [
-          {
-            order: 1,
-            task: inlineTask('Heat {{ingredient}} to {{temp}}C', { ingredient: 'cream', temp: 35 }),
-            activeTime: 5 as Minutes
-          }
-        ]
-      };
-
-      expect(Procedure.create(procedureWithParams)).toSucceedAndSatisfy((procedure) => {
-        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          expect(rendered.steps[0].renderedDescription).toBe('Heat cream to 35C');
-        });
-      });
-    });
-
-    test('renders task references with placeholder', () => {
-      const procedureWithRef: IProcedure = {
-        baseId: 'ref-test' as BaseProcedureId,
-        name: 'Ref Test',
-        steps: [
-          {
-            order: 1,
-            task: taskRef('common.melt-chocolate' as TaskId, { temp: 45 }),
-            activeTime: 5 as Minutes
-          }
-        ]
-      };
-
-      expect(Procedure.create(procedureWithRef)).toSucceedAndSatisfy((procedure) => {
-        expect(procedure.render(mockContext)).toSucceedAndSatisfy((rendered) => {
-          // For now, task refs render as placeholders
-          expect(rendered.steps[0].renderedDescription).toBe('[Task: common.melt-chocolate]');
-        });
       });
     });
   });
