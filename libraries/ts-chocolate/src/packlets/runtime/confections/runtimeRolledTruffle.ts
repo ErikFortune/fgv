@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionId } from '../../common';
-import { IChocolateSpec, ICoatings, IRolledTruffle, IRolledTruffleVersion } from '../../confections';
+import { IChocolateSpec, ICoatings, IRolledTruffle, IRolledTruffleVersion } from '../../entities';
 import { IConfectionContext, IRuntimeRolledTruffle } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 

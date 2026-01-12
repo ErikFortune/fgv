@@ -41,7 +41,7 @@ import {
   ConfectionJournalEventType,
   IConfectionJournalEntry,
   IConfectionJournalRecord
-} from '../../journal';
+} from '../../entities';
 import { IRuntimeConfection } from '../model';
 import {
   ConfectionSelectionStatus,

@@ -20,18 +20,20 @@
 
 import '@fgv/ts-utils-jest';
 import {
-  scaleConfection,
-  scaleConfectionByFactor,
-  scaleConfectionToCount,
-  scaleMoldedBonBonByFrames,
-  canScaleByFrames,
   IMoldedBonBon,
   IMoldedBonBonVersion,
   IBarTruffle,
   IBarTruffleVersion,
   IRolledTruffle,
   IRolledTruffleVersion
-} from '../../../packlets/confections';
+} from '../../../packlets/entities';
+import {
+  scaleConfection,
+  scaleConfectionByFactor,
+  scaleConfectionToCount,
+  scaleMoldedBonBonByFrames,
+  canScaleByFrames
+} from '../../../packlets/calculations';
 import {
   BaseConfectionId,
   ConfectionName,

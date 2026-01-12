@@ -24,7 +24,7 @@
  */
 
 import { ChocolateType, Helpers, IngredientId, FillingId } from '../common';
-import { isChocolateIngredient } from '../ingredients';
+import { isChocolateIngredient } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 import { IIngredientUsageInfo } from './model';
 

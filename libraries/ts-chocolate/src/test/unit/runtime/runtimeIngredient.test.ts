@@ -41,8 +41,8 @@ import {
   IFatIngredient,
   IAlcoholIngredient,
   IngredientsLibrary
-} from '../../../packlets/ingredients';
-import { IFillingRecipe, FillingsLibrary } from '../../../packlets/fillings';
+} from '../../../packlets/entities';
+import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
 import {
   ChocolateLibrary,
   RuntimeContext,

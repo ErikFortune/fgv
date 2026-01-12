@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseTaskId, Minutes, SourceId, TaskId } from '../../../packlets/common';
-import { TasksLibrary, ITaskData, ITaskFileTreeSource } from '../../../packlets/tasks';
+import { TasksLibrary, ITaskData, ITaskFileTreeSource } from '../../../packlets/entities';
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 
 describe('TasksLibrary', () => {

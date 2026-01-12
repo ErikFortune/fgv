@@ -35,7 +35,7 @@ import {
   isFatIngredient,
   isSugarIngredient,
   isAlcoholIngredient
-} from '../../../packlets/ingredients';
+} from '../../../packlets/entities';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 

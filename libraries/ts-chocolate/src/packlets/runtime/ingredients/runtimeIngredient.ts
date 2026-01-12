@@ -33,7 +33,7 @@ import {
   IFatIngredient,
   Ingredient,
   ISugarIngredient
-} from '../../ingredients';
+} from '../../entities';
 import { IIngredientContext } from '../model';
 import { RuntimeChocolateIngredient } from './runtimeChocolateIngredient';
 import { RuntimeDairyIngredient } from './runtimeDairyIngredient';

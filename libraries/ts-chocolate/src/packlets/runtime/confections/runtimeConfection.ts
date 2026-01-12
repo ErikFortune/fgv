@@ -26,7 +26,7 @@
 import { Failure, Result } from '@fgv/ts-utils';
 
 import { ConfectionId } from '../../common';
-import { ConfectionData } from '../../confections';
+import { ConfectionData } from '../../entities';
 import { IConfectionContext } from '../model';
 import { RuntimeMoldedBonBon } from './runtimeMoldedBonBon';
 import { RuntimeBarTruffle } from './runtimeBarTruffle';

@@ -22,9 +22,9 @@ import '@fgv/ts-utils-jest';
 import { fail, succeed } from '@fgv/ts-utils';
 
 import { BaseProcedureId, BaseTaskId, Minutes, ProcedureId, TaskId } from '../../../packlets/common';
-import { IProcedure } from '../../../packlets/procedures';
-import { ITaskData } from '../../../packlets/tasks';
-import { IComputedScaledFillingRecipe, FillingCategory } from '../../../packlets/fillings';
+import { IProcedure } from '../../../packlets/entities';
+import { ITaskData } from '../../../packlets/entities';
+import { IComputedScaledFillingRecipe, FillingCategory } from '../../../packlets/entities';
 import {
   RuntimeProcedure,
   IProcedureContext,

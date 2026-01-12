@@ -19,3 +19,7 @@
 // SOFTWARE.
 
 export * from './ganacheCalculator';
+export * from './fillingScaler';
+export * from './fillingUnitScaler';
+export * from './fillingWeightCalculator';
+export * from './confectionScaler';

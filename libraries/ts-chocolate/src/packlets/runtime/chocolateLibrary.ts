@@ -37,13 +37,13 @@ import {
   SourceId,
   TaskId
 } from '../common';
-import { ConfectionData, ConfectionsLibrary } from '../confections';
-import { Ingredient, IngredientsLibrary } from '../ingredients';
-import { IFillingRecipe, FillingsLibrary } from '../fillings';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
-import { IMold, MoldsLibrary } from '../molds';
-import { IProcedure, ProceduresLibrary } from '../procedures';
-import { ITaskData, TasksLibrary } from '../tasks';
+import { ConfectionData, ConfectionsLibrary } from '../entities';
+import { Ingredient, IngredientsLibrary } from '../entities';
+import { IFillingRecipe, FillingsLibrary } from '../entities';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
+import { IMold, MoldsLibrary } from '../entities';
+import { IProcedure, ProceduresLibrary } from '../entities';
+import { ITaskData, TasksLibrary } from '../entities';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,

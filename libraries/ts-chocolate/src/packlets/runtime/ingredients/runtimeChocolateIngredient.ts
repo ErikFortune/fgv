@@ -34,7 +34,7 @@ import {
   IngredientId,
   Percentage
 } from '../../common';
-import { IChocolateIngredient, ITemperatureCurve } from '../../ingredients';
+import { IChocolateIngredient, ITemperatureCurve } from '../../entities';
 import { IIngredientContext, IRuntimeChocolateIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 

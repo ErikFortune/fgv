@@ -34,7 +34,7 @@ import {
   MoldId,
   SourceId
 } from '../../common';
-import { ICavityDimensions, IMold } from '../../molds';
+import { ICavityDimensions, IMold } from '../../entities';
 import { IMoldContext, IRuntimeMold } from './model';
 
 // ============================================================================

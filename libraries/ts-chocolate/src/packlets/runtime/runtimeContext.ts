@@ -36,10 +36,11 @@ import {
   TaskId,
   Validation
 } from '../common';
-import { ConfectionData, ConfectionsLibrary } from '../confections';
-import { IComputedScaledFillingRecipe, IWeightCalculationContext } from '../fillings';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
-import { IProcedure } from '../procedures';
+import { ConfectionData, ConfectionsLibrary } from '../entities';
+import { IComputedScaledFillingRecipe } from '../entities';
+import { IWeightCalculationContext } from '../calculations';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
+import { IProcedure } from '../entities';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
@@ -63,7 +64,7 @@ import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibra
 import { ITaskContext, RuntimeTask } from './tasks';
 import { IProcedureContext, RuntimeProcedure } from './procedures';
 import { IMoldContext, RuntimeMold } from './molds';
-import { ITaskData } from '../tasks';
+import { ITaskData } from '../entities';
 
 // ============================================================================
 // RuntimeContext Parameters

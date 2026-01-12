@@ -25,7 +25,7 @@ import {
   isBarTruffle,
   isRolledTruffle,
   ConfectionCollectionEntryInit
-} from '../../../packlets/confections';
+} from '../../../packlets/entities';
 import { ConfectionId, SourceId } from '../../../packlets/common';
 
 describe('ConfectionsLibrary', () => {
@@ -445,7 +445,7 @@ describe('ConfectionsLibrary', () => {
 
 import { FileTree, JsonObject } from '@fgv/ts-json-base';
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
-import { IConfectionFileTreeSource } from '../../../packlets/confections';
+import { IConfectionFileTreeSource } from '../../../packlets/entities';
 
 describe('ConfectionsLibrary.createAsync', () => {
   const TEST_SECRET_NAME = 'test-secret';

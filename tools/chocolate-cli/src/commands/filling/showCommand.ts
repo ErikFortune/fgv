@@ -20,7 +20,14 @@
 
 import { Command } from 'commander';
 import { fail, Result, succeed } from '@fgv/ts-utils';
-import { Converters, FillingId, FillingVersionSpec, Fillings, Measurement } from '@fgv/ts-chocolate';
+import {
+  Calculations,
+  Converters,
+  FillingId,
+  FillingVersionSpec,
+  Fillings,
+  Measurement
+} from '@fgv/ts-chocolate';
 
 import {
   IFillingShowOptions,
@@ -150,7 +157,7 @@ export function createShowSubcommand(): Command {
 
           // Build scale options
           const precision = localOptions.precision ? parseInt(localOptions.precision, 10) : undefined;
-          const scaleOptions: Fillings.IFillingRecipeScaleOptions = {
+          const scaleOptions: Calculations.IFillingRecipeScaleOptions = {
             versionSpec,
             precision
           };
@@ -158,14 +165,14 @@ export function createShowSubcommand(): Command {
           // Scale the filling
           let scaledResult: Result<Fillings.IComputedScaledFillingRecipe>;
           if (target.type === 'factor') {
-            scaledResult = Fillings.scaleFillingRecipeByFactor(
+            scaledResult = Calculations.scaleFillingRecipeByFactor(
               filling,
               fillingId,
               target.value,
               scaleOptions
             );
           } else {
-            scaledResult = Fillings.scaleFillingRecipe(
+            scaledResult = Calculations.scaleFillingRecipe(
               filling,
               fillingId,
               target.value as Measurement,

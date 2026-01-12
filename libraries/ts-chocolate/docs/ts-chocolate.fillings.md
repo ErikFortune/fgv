@@ -30,50 +30,6 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "user.classic
 
 
 </td></tr>
-<tr><td>
-
-[LinearScaler](./ts-chocolate.fillings.linearscaler.md)
-
-
-</td><td>
-
-Generic linear scaler for units like grams and milliliters. Used as the default fallback for unknown units.
-
-
-</td></tr>
-<tr><td>
-
-[PinchScaler](./ts-chocolate.fillings.pinchscaler.md)
-
-
-</td><td>
-
-Scaler for pinch measurements - always returns the original amount. Pinch is an imprecise measurement that doesn't scale linearly.
-
-
-</td></tr>
-<tr><td>
-
-[SpoonScaler](./ts-chocolate.fillings.spoonscaler.md)
-
-
-</td><td>
-
-Scaler for spoon measurements (tsp/Tbsp) with fractional support. Handles conversion between tsp and Tbsp (1 Tbsp = 3 tsp).
-
-
-</td></tr>
-<tr><td>
-
-[UnitScalerRegistry](./ts-chocolate.fillings.unitscalerregistry.md)
-
-
-</td><td>
-
-Registry of unit scalers. Maps measurement units to their appropriate scalers. Falls back to a default linear scaler for unknown units.
-
-
-</td></tr>
 </tbody></table>
 
 ## Functions
@@ -90,65 +46,6 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
-
-[calculateBaseWeight(version)](./ts-chocolate.fillings.calculatebaseweight.md)
-
-
-</td><td>
-
-Calculates the base weight from filling recipe version (sum of ingredient amounts)
-
-
-</td></tr>
-<tr><td>
-
-[calculateIngredientWeight(ingredient, context)](./ts-chocolate.fillings.calculateingredientweight.md)
-
-
-</td><td>
-
-Calculate the weight contribution for a single ingredient.
-
-Weight rules: - 'g': Added directly (amount in grams) - 'mL': Converted to grams via density (amount \* density) - 'tsp', 'Tbsp', 'pinch': Excluded (returns 0)
-
-
-</td></tr>
-<tr><td>
-
-[calculateTotalWeight(ingredients, context)](./ts-chocolate.fillings.calculatetotalweight.md)
-
-
-</td><td>
-
-Calculate the total weight from all ingredients with unit conversion.
-
-This function handles mixed-unit filling recipes by: - Adding grams directly - Converting milliliters to grams via ingredient density - Excluding tsp, Tbsp, and pinch measurements
-
-
-</td></tr>
-<tr><td>
-
-[calculateWeightContributions(ingredients, context)](./ts-chocolate.fillings.calculateweightcontributions.md)
-
-
-</td><td>
-
-Calculate weight contributions for all ingredients. Returns detailed breakdown of how each ingredient contributes to total weight.
-
-
-</td></tr>
-<tr><td>
-
-[contributesToWeight(unit)](./ts-chocolate.fillings.contributestoweight.md)
-
-
-</td><td>
-
-Check if a unit contributes to weight calculations.
-
-
-</td></tr>
-<tr><td>
 
 [isFillingRecipeVersion(version)](./ts-chocolate.fillings.isfillingrecipeversion.md)
 
@@ -167,87 +64,6 @@ Type guard to check if a version is a regular (unscaled) filling recipe version
 </td><td>
 
 Type guard to check if a version is a scaled filling recipe version
-
-
-</td></tr>
-<tr><td>
-
-[isWeightExcluded(unit)](./ts-chocolate.fillings.isweightexcluded.md)
-
-
-</td><td>
-
-Check if a unit is excluded from weight calculations.
-
-
-</td></tr>
-<tr><td>
-
-[recalculateFillingRecipeVersion(version)](./ts-chocolate.fillings.recalculatefillingrecipeversion.md)
-
-
-</td><td>
-
-Recalculates base weight for filling recipe version and returns updated version
-
-
-</td></tr>
-<tr><td>
-
-[scaleAmount(amount, unit, factor)](./ts-chocolate.fillings.scaleamount.md)
-
-
-</td><td>
-
-Scale an ingredient amount using the appropriate scaler for the unit
-
-
-</td></tr>
-<tr><td>
-
-[scaleFillingRecipe(fillingRecipe, fillingId, targetWeight, options)](./ts-chocolate.fillings.scalefillingrecipe.md)
-
-
-</td><td>
-
-Scales a filling recipe to a target weight.
-
-This function looks up a version by spec and delegates to [scaleVersion](./ts-chocolate.fillings.scaleversion.md)<!-- -->. Use this when you have a filling recipe and want to scale a specific version by spec.
-
-
-</td></tr>
-<tr><td>
-
-[scaleFillingRecipeByFactor(fillingRecipe, fillingId, factor, options)](./ts-chocolate.fillings.scalefillingrecipebyfactor.md)
-
-
-</td><td>
-
-Scales a [filling recipe](./ts-chocolate.fillings.ifillingrecipe.md) by a supplied multiplier.
-
-
-</td></tr>
-<tr><td>
-
-[scaleVersion(version, sourceVersionId, targetWeight, options)](./ts-chocolate.fillings.scaleversion.md)
-
-
-</td><td>
-
-Scales a filling recipe version to a target weight.
-
-This is the core scaling function that operates directly on a version. Use this when you already have the version object and its ID.
-
-
-</td></tr>
-<tr><td>
-
-[supportsScaling(unit)](./ts-chocolate.fillings.supportsscaling.md)
-
-
-</td><td>
-
-Check if a unit supports scaling
 
 
 </td></tr>
@@ -323,17 +139,6 @@ Complete filling recipe with version history
 </td></tr>
 <tr><td>
 
-[IFillingRecipeScaleOptions](./ts-chocolate.fillings.ifillingrecipescaleoptions.md)
-
-
-</td><td>
-
-Options for filling recipe scaling (extends version options with version selection)
-
-
-</td></tr>
-<tr><td>
-
 [IFillingRecipeVersion](./ts-chocolate.fillings.ifillingrecipeversion.md)
 
 
@@ -356,17 +161,6 @@ Record of a filling recipe being used (for production tracking)
 </td></tr>
 <tr><td>
 
-[IFraction](./ts-chocolate.fillings.ifraction.md)
-
-
-</td><td>
-
-Represents a fraction for display purposes
-
-
-</td></tr>
-<tr><td>
-
 [IIngredientModifiers](./ts-chocolate.fillings.iingredientmodifiers.md)
 
 
@@ -384,28 +178,6 @@ Modifiers that qualify how an ingredient is measured or added. Groups measuremen
 </td><td>
 
 Optional ingredient snapshot for archival purposes. Used when the source filling recipe might become unavailable.
-
-
-</td></tr>
-<tr><td>
-
-[ILinearScalerOptions](./ts-chocolate.fillings.ilinearscaleroptions.md)
-
-
-</td><td>
-
-Options for linear scaling
-
-
-</td></tr>
-<tr><td>
-
-[IScaledAmount](./ts-chocolate.fillings.iscaledamount.md)
-
-
-</td><td>
-
-Result of scaling an amount in a specific unit. Contains both the raw scaled value and display-friendly representation.
 
 
 </td></tr>
@@ -450,61 +222,6 @@ Lightweight scaling reference - the default storage format for scaled filling re
 </td><td>
 
 Information about the source of a scaled filling recipe. Used at runtime for computed scaled versions.
-
-
-</td></tr>
-<tr><td>
-
-[ISpoonScalerOptions](./ts-chocolate.fillings.ispoonscaleroptions.md)
-
-
-</td><td>
-
-Options for spoon scaling
-
-
-</td></tr>
-<tr><td>
-
-[IUnitScaler](./ts-chocolate.fillings.iunitscaler.md)
-
-
-</td><td>
-
-Interface for unit-specific scalers
-
-
-</td></tr>
-<tr><td>
-
-[IVersionScaleOptions](./ts-chocolate.fillings.iversionscaleoptions.md)
-
-
-</td><td>
-
-Options for version scaling (precision and minimum amount only)
-
-
-</td></tr>
-<tr><td>
-
-[IWeightCalculationContext](./ts-chocolate.fillings.iweightcalculationcontext.md)
-
-
-</td><td>
-
-Context for weight calculations that provides ingredient density lookup. Implementations should resolve ingredient IDs to their density values.
-
-
-</td></tr>
-<tr><td>
-
-[IWeightContribution](./ts-chocolate.fillings.iweightcontribution.md)
-
-
-</td><td>
-
-Result of calculating weight contribution for a single ingredient.
 
 
 </td></tr>
@@ -566,39 +283,6 @@ All possible filling categories
 </td><td>
 
 All possible rating categories
-
-
-</td></tr>
-<tr><td>
-
-[defaultScalerRegistry](./ts-chocolate.fillings.defaultscalerregistry.md)
-
-
-</td><td>
-
-Default scaler registry instance
-
-
-</td></tr>
-<tr><td>
-
-[defaultWeightContext](./ts-chocolate.fillings.defaultweightcontext.md)
-
-
-</td><td>
-
-Default weight calculation context that returns 1.0 density for all ingredients. Use this when ingredient density data is not available.
-
-
-</td></tr>
-<tr><td>
-
-[STANDARD\_FRACTIONS](./ts-chocolate.fillings.standard_fractions.md)
-
-
-</td><td>
-
-Standard fractions supported for tsp/Tbsp display. Ordered by decimal value for efficient searching.
 
 
 </td></tr>

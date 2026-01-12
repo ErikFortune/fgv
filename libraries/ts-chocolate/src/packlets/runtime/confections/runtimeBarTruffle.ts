@@ -32,7 +32,7 @@ import {
   IBonBonDimensions,
   IChocolateSpec,
   IFrameDimensions
-} from '../../confections';
+} from '../../entities';
 import { IConfectionContext, IRuntimeBarTruffle } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 

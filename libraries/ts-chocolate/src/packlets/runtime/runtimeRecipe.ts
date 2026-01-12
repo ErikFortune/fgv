@@ -35,7 +35,7 @@ import {
   FillingVersionSpec,
   SourceId
 } from '../common';
-import { IFillingRecipe } from '../fillings';
+import { IFillingRecipe } from '../entities';
 import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';

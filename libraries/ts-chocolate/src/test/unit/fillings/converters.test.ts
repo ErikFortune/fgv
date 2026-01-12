@@ -30,7 +30,7 @@ import {
   scaledFillingRecipeVersion,
   procedureRef,
   procedures
-} from '../../../packlets/fillings/converters';
+} from '../../../packlets/entities/fillings/converters';
 
 describe('Recipe Converters', () => {
   // ============================================================================

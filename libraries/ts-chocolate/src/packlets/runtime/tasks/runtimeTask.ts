@@ -27,7 +27,7 @@ import { Result, succeed } from '@fgv/ts-utils';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
 import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
-import { ITaskData, ITaskRefValidation } from '../../tasks';
+import { ITaskData, ITaskRefValidation } from '../../entities';
 import { ITaskContext, IRuntimeTask } from './model';
 
 // ============================================================================

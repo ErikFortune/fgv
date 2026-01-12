@@ -23,7 +23,7 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import { BaseMoldId, Measurement, Millimeters, MoldId, SourceId } from '../../../packlets/common';
 
-import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/molds';
+import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/entities';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 

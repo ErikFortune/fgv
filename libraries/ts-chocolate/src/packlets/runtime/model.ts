@@ -68,7 +68,7 @@ import {
   Ingredient,
   ISugarIngredient,
   ITemperatureCurve
-} from '../ingredients';
+} from '../entities';
 import {
   IComputedScaledFillingRecipe,
   IFillingIngredient,
@@ -76,9 +76,9 @@ import {
   IFillingRecipe,
   IFillingRecipeVersion,
   IProcedureRef,
-  IScaledFillingIngredient,
-  IVersionScaleOptions
-} from '../fillings';
+  IScaledFillingIngredient
+} from '../entities';
+import { IVersionScaleOptions } from '../calculations';
 import {
   AnyConfectionVersion,
   ConfectionData,
@@ -97,11 +97,11 @@ import {
   IMoldedBonBonVersion,
   IRolledTruffle,
   IRolledTruffleVersion
-} from '../confections';
+} from '../entities';
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
 import { IGanacheCalculation } from '../calculations';
-import { IProcedure } from '../procedures';
+import { IProcedure } from '../entities';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================

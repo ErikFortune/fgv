@@ -35,7 +35,7 @@ import {
   ID_SEPARATOR,
   SourceId
 } from '../../common';
-import { IProcedureRef } from '../../fillings';
+import { IProcedureRef } from '../../entities';
 import {
   AnyConfectionVersion,
   ConfectionData,
@@ -45,7 +45,7 @@ import {
   isMoldedBonBon,
   isBarTruffle,
   isRolledTruffle
-} from '../../confections';
+} from '../../entities';
 import { IOptionsWithPreferred, ProcedureId } from '../../common';
 import { IConfectionContext, IRuntimeConfection } from '../model';
 

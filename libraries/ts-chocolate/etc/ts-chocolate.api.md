@@ -319,7 +319,47 @@ declare namespace Calculations {
         IGanacheValidation,
         IGanacheCalculation,
         IResolvedIngredient,
-        IngredientResolver
+        IngredientResolver,
+        scaleVersion,
+        scaleFillingRecipe,
+        scaleFillingRecipeByFactor,
+        calculateBaseWeight,
+        recalculateFillingRecipeVersion,
+        IVersionScaleOptions,
+        IFillingRecipeScaleOptions,
+        supportsScaling,
+        scaleAmount,
+        IFraction,
+        STANDARD_FRACTIONS,
+        IScaledAmount,
+        IUnitScaler,
+        ILinearScalerOptions,
+        LinearScaler,
+        PinchScaler,
+        ISpoonScalerOptions,
+        SpoonScaler,
+        UnitScalerRegistry,
+        defaultScalerRegistry,
+        contributesToWeight,
+        isWeightExcluded,
+        calculateIngredientWeight,
+        calculateTotalWeight,
+        calculateWeightContributions,
+        IWeightCalculationContext,
+        IWeightContribution,
+        defaultWeightContext,
+        scaleConfectionVersionByFactor,
+        scaleConfectionByFactor,
+        scaleConfectionVersionToCount,
+        scaleConfectionToCount,
+        scaleMoldedBonBonVersionByFrames,
+        scaleMoldedBonBonByFrames,
+        scaleConfection,
+        canScaleByFrames,
+        IScaledConfectionYield,
+        IScaledConfection,
+        IConfectionScaleOptions,
+        IFrameScaleOptions
     }
 }
 export { Calculations }
@@ -636,19 +676,7 @@ declare namespace Confections {
         ConfectionsMergeSource,
         IConfectionsLibraryParams,
         IConfectionsLibraryAsyncParams,
-        ConfectionsLibrary,
-        scaleConfectionVersionByFactor,
-        scaleConfectionByFactor,
-        scaleConfectionVersionToCount,
-        scaleConfectionToCount,
-        scaleMoldedBonBonVersionByFrames,
-        scaleMoldedBonBonByFrames,
-        scaleConfection,
-        canScaleByFrames,
-        IScaledConfectionYield,
-        IScaledConfection,
-        IConfectionScaleOptions,
-        IFrameScaleOptions
+        ConfectionsLibrary
     }
 }
 export { Confections }
@@ -1157,35 +1185,7 @@ declare namespace Fillings {
         FillingsMergeSource,
         IFillingsLibraryParams,
         IFillingsLibraryAsyncParams,
-        FillingsLibrary,
-        scaleVersion,
-        scaleFillingRecipe,
-        scaleFillingRecipeByFactor,
-        calculateBaseWeight,
-        recalculateFillingRecipeVersion,
-        IVersionScaleOptions,
-        IFillingRecipeScaleOptions,
-        supportsScaling,
-        scaleAmount,
-        IFraction,
-        STANDARD_FRACTIONS,
-        IScaledAmount,
-        IUnitScaler,
-        ILinearScalerOptions,
-        LinearScaler,
-        PinchScaler,
-        ISpoonScalerOptions,
-        SpoonScaler,
-        UnitScalerRegistry,
-        defaultScalerRegistry,
-        contributesToWeight,
-        isWeightExcluded,
-        calculateIngredientWeight,
-        calculateTotalWeight,
-        calculateWeightContributions,
-        IWeightCalculationContext,
-        IWeightContribution,
-        defaultWeightContext
+        FillingsLibrary
     }
 }
 export { Fillings }
@@ -3400,9 +3400,6 @@ interface IWeightContribution {
 
 declare namespace Journal {
     export {
-        JournalLibrary,
-        IJournalLibraryParams,
-        IJournalImportResult,
         Converters_6 as Converters,
         isFillingRecipeJournalRecord,
         isConfectionJournalRecord,
@@ -3418,7 +3415,10 @@ declare namespace Journal {
         allJournalTypes,
         IFillingRecipeJournalRecord,
         IConfectionJournalRecord,
-        AnyJournalRecord
+        AnyJournalRecord,
+        IJournalImportResult,
+        IJournalLibraryParams,
+        JournalLibrary
     }
 }
 export { Journal }
@@ -5114,6 +5114,6 @@ const weightUnit: Converter<WeightUnit>;
 
 // Warnings were encountered during analysis:
 //
-// src/packlets/journal/journalLibrary.ts:98:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// src/packlets/entities/journal/library.ts:98:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

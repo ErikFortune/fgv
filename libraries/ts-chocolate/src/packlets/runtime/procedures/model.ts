@@ -28,10 +28,10 @@
 import { Result } from '@fgv/ts-utils';
 
 import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
-import { FillingCategory, IComputedScaledFillingRecipe } from '../../fillings';
-import { IMold } from '../../molds';
-import { IProcedure, IProcedureStep } from '../../procedures';
-import { ITaskData } from '../../tasks';
+import { FillingCategory, IComputedScaledFillingRecipe } from '../../entities';
+import { IMold } from '../../entities';
+import { IProcedure, IProcedureStep } from '../../entities';
+import { ITaskData } from '../../entities';
 import { RuntimeTask } from '../tasks';
 
 // ============================================================================

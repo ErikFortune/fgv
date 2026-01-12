@@ -21,10 +21,10 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { procedureStep, procedureData } from '../../../packlets/procedures/converters';
+import { procedureStep, procedureData } from '../../../packlets/entities/procedures/converters';
 
 import { BaseTaskId } from '../../../packlets/common';
-import { ITaskInvocation } from '../../../packlets/tasks';
+import { ITaskInvocation } from '../../../packlets/entities';
 
 /**
  * Helper to create an inline task for test data.

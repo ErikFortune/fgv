@@ -33,7 +33,7 @@ import {
   isMoldedBonBonVersion,
   isRolledTruffle,
   isRolledTruffleVersion
-} from '../../../packlets/confections';
+} from '../../../packlets/entities';
 import {
   BaseConfectionId,
   ConfectionName,

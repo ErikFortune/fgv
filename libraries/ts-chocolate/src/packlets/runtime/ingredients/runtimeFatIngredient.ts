@@ -26,7 +26,7 @@
 import { Result, Success } from '@fgv/ts-utils';
 
 import { Celsius, IngredientId } from '../../common';
-import { IFatIngredient } from '../../ingredients';
+import { IFatIngredient } from '../../entities';
 import { IIngredientContext, IRuntimeFatIngredient } from '../model';
 import { RuntimeIngredientBase } from './runtimeIngredientBase';
 

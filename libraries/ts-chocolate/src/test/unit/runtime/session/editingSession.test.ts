@@ -36,8 +36,8 @@ import {
   IChocolateIngredient,
   IIngredient,
   IngredientsLibrary
-} from '../../../../packlets/ingredients';
-import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/fillings';
+} from '../../../../packlets/entities';
+import { IFillingRecipe, FillingsLibrary } from '../../../../packlets/entities';
 import { ChocolateLibrary, RuntimeContext, Session } from '../../../../packlets/runtime';
 
 describe('EditingSession', () => {

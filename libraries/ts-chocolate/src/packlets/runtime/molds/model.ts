@@ -26,7 +26,7 @@
  */
 
 import { BaseMoldId, ICategorizedUrl, Measurement, MoldFormat, MoldId, SourceId } from '../../common';
-import { ICavityDimensions, IMold } from '../../molds';
+import { ICavityDimensions, IMold } from '../../entities';
 
 // ============================================================================
 // Runtime Mold Context

@@ -27,16 +27,23 @@ export * from './packlets/common';
 
 import * as BuiltIn from './packlets/built-in';
 import * as Calculations from './packlets/calculations';
-import * as Confections from './packlets/confections';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Confections from './packlets/entities/confections';
 import * as Crypto from './packlets/crypto';
-import * as Fillings from './packlets/fillings';
-import * as Ingredients from './packlets/ingredients';
-import * as Journal from './packlets/journal';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Fillings from './packlets/entities/fillings';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Ingredients from './packlets/entities/ingredients';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Journal from './packlets/entities/journal';
 import * as LibraryData from './packlets/library-data';
-import * as Molds from './packlets/molds';
-import * as Procedures from './packlets/procedures';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Molds from './packlets/entities/molds';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Procedures from './packlets/entities/procedures';
 import * as Runtime from './packlets/runtime';
-import * as Tasks from './packlets/tasks';
+// eslint-disable-next-line @rushstack/packlets/mechanics -- Library entry point exports sub-entities as separate namespaces
+import * as Tasks from './packlets/entities/tasks';
 
 export {
   BuiltIn,

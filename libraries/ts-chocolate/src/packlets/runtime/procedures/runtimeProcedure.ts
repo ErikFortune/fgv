@@ -26,9 +26,9 @@
 import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
 import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
-import { FillingCategory } from '../../fillings';
-import { IProcedure, IProcedureStep } from '../../procedures';
-import { isInlineTask, isTaskRef } from '../../tasks';
+import { FillingCategory } from '../../entities';
+import { IProcedure, IProcedureStep } from '../../entities';
+import { isInlineTask, isTaskRef } from '../../entities';
 import { RuntimeTask } from '../tasks';
 import {
   IProcedureContext,

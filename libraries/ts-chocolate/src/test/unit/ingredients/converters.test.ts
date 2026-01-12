@@ -31,7 +31,7 @@ import {
   fatIngredient,
   alcoholIngredient,
   ingredient
-} from '../../../packlets/ingredients/converters';
+} from '../../../packlets/entities/ingredients/converters';
 
 describe('Ingredient Converters', () => {
   // ============================================================================

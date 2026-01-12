@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 import { fail } from '@fgv/ts-utils';
 
 import { BaseTaskId, TaskId, Minutes, Celsius } from '../../../packlets/common';
-import { ITaskData } from '../../../packlets/tasks';
+import { ITaskData } from '../../../packlets/entities';
 import { RuntimeTask, ITaskContext } from '../../../packlets/runtime';
 
 describe('RuntimeTask', () => {

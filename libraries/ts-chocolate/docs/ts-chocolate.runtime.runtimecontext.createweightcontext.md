@@ -13,7 +13,7 @@ createWeightContext(): IWeightCalculationContext;
 ```
 **Returns:**
 
-[IWeightCalculationContext](./ts-chocolate.fillings.iweightcalculationcontext.md)
+[IWeightCalculationContext](./ts-chocolate.calculations.iweightcalculationcontext.md)
 
 A weight calculation context bound to this runtime's library
 

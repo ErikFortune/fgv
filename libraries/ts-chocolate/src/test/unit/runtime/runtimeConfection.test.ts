@@ -33,7 +33,7 @@ import {
   SlotId,
   UrlCategory
 } from '../../../packlets/common';
-import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../packlets/confections';
+import { IMoldedBonBon, IBarTruffle, IRolledTruffle } from '../../../packlets/entities';
 import {
   RuntimeConfection,
   RuntimeMoldedBonBon,

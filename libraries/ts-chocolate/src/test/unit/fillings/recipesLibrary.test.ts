@@ -36,13 +36,15 @@ import {
   IFillingFileTreeSource,
   IFillingRecipeVersion,
   FillingsLibrary,
+  isScaledFillingRecipeVersion,
+  isFillingRecipeVersion
+} from '../../../packlets/entities';
+import {
   scaleFillingRecipe,
   scaleFillingRecipeByFactor,
   calculateBaseWeight,
-  recalculateFillingRecipeVersion,
-  isScaledFillingRecipeVersion,
-  isFillingRecipeVersion
-} from '../../../packlets/fillings';
+  recalculateFillingRecipeVersion
+} from '../../../packlets/calculations';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 
@@ -1135,7 +1137,7 @@ describe('Recipe scaling', () => {
 
     test('isScaledFillingRecipeVersion returns true for persistence-format scaled versions', () => {
       // IScaledFillingRecipeVersion is the reference-based persistence format
-      const scaledVersion: import('../../../packlets/fillings').IScaledFillingRecipeVersion = {
+      const scaledVersion: import('../../../packlets/entities').IScaledFillingRecipeVersion = {
         scalingRef: {
           sourceVersionId: 'source.test@2026-01-01-01' as import('../../../packlets/common').FillingVersionId,
           scaleFactor: 2,

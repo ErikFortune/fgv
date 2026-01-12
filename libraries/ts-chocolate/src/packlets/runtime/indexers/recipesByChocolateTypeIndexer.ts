@@ -25,7 +25,7 @@
 
 import { Converter, Converters, Result, Success } from '@fgv/ts-utils';
 import { ChocolateType, Converters as ChocolateConverters, FillingId, Helpers } from '../../common';
-import { isChocolateIngredient } from '../../ingredients';
+import { isChocolateIngredient } from '../../entities';
 import { ChocolateLibrary } from '../chocolateLibrary';
 import { IRuntimeFillingRecipe } from '../model';
 import { BaseIndexer } from './baseIndexer';

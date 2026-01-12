@@ -39,21 +39,21 @@ import {
   SourceId
 } from '../../../packlets/common';
 
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/entities';
 
-import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/ingredients';
+import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../../packlets/entities';
 
-import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
+import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
 
-import { IMold, MoldsLibrary } from '../../../packlets/molds';
+import { IMold, MoldsLibrary } from '../../../packlets/entities';
 
-import { IProcedure, ProceduresLibrary } from '../../../packlets/procedures';
+import { IProcedure, ProceduresLibrary } from '../../../packlets/entities';
 
 import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
 import { ChocolateLibrary } from '../../../packlets/runtime';
 
-import { ITaskInvocation } from '../../../packlets/tasks';
+import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 
 /**

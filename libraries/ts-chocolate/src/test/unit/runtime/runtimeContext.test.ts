@@ -37,18 +37,18 @@ import {
   FillingVersionSpec,
   SourceId
 } from '../../../packlets/common';
-import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/journal';
+import { IFillingRecipeJournalRecord, JournalLibrary } from '../../../packlets/entities';
 
 import {
   IGanacheCharacteristics,
   IChocolateIngredient,
   IIngredient,
   IngredientsLibrary
-} from '../../../packlets/ingredients';
-import { IProcedure, ProceduresLibrary } from '../../../packlets/procedures';
-import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
+} from '../../../packlets/entities';
+import { IProcedure, ProceduresLibrary } from '../../../packlets/entities';
+import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
-import { ITaskInvocation } from '../../../packlets/tasks';
+import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 
 /**

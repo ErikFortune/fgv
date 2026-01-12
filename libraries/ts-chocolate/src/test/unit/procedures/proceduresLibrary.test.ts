@@ -23,10 +23,10 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import { BaseProcedureId, Minutes, ProcedureId, SourceId } from '../../../packlets/common';
 
-import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/procedures';
+import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/entities';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
-import { ITaskInvocation } from '../../../packlets/tasks';
+import { ITaskInvocation } from '../../../packlets/entities';
 import { BaseTaskId } from '../../../packlets/common';
 
 /**

@@ -19,12 +19,9 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import {
-  Converters as ConfectionConverters,
-  isMoldedBonBon,
-  isBarTruffle,
-  isRolledTruffle
-} from '../../../packlets/confections';
+import { Converters, isMoldedBonBon, isBarTruffle, isRolledTruffle } from '../../../packlets/entities';
+
+const ConfectionConverters = Converters.Confections;
 
 describe('Confections converters', () => {
   // ============================================================================

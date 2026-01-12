@@ -26,7 +26,7 @@ import {
   IConfectionJournalRecord,
   isFillingRecipeJournalRecord,
   isConfectionJournalRecord
-} from '../../../packlets/journal';
+} from '../../../packlets/entities';
 import {
   ConfectionId,
   ConfectionVersionId,

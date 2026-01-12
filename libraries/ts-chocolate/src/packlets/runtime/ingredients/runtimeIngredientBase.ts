@@ -40,7 +40,7 @@ import {
   isSugarIngredient,
   isFatIngredient,
   isAlcoholIngredient
-} from '../../ingredients';
+} from '../../entities';
 import { IIngredientContext, IRuntimeIngredient, IRuntimeFillingRecipe } from '../model';
 
 // Forward declarations to avoid circular imports

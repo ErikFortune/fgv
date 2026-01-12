@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { journalEventType, journalEntry } from '../../../packlets/journal/converters';
+import { journalEventType, journalEntry } from '../../../packlets/entities/journal/converters';
 
 describe('Journal Converters', () => {
   // ============================================================================

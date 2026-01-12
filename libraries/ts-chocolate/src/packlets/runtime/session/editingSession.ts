@@ -26,8 +26,8 @@
 import { captureResult, Failure, Logging, Result, Success } from '@fgv/ts-utils';
 
 import { Measurement, IngredientId, SessionId, FillingVersionSpec } from '../../common';
-import { IJournalEntry, IFillingRecipeJournalRecord, JournalEventType } from '../../journal';
-import { IFillingIngredient, IFillingRecipeVersion } from '../../fillings';
+import { IJournalEntry, IFillingRecipeJournalRecord, JournalEventType } from '../../entities';
+import { IFillingIngredient, IFillingRecipeVersion } from '../../entities';
 import { IRuntimeFillingRecipeVersion } from '../model';
 import {
   IEditingSessionParams,

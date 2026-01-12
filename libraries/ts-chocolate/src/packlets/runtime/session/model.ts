@@ -41,7 +41,7 @@ import {
   IConfectionJournalRecord,
   IJournalEntry,
   IFillingRecipeJournalRecord
-} from '../../journal';
+} from '../../entities';
 import { IRuntimeConfection, IRuntimeFillingRecipeVersion } from '../model';
 
 // ============================================================================

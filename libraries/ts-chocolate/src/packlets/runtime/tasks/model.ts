@@ -28,7 +28,7 @@
 import { Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
-import { ITaskData, ITaskRefValidation } from '../../tasks';
+import { ITaskData, ITaskRefValidation } from '../../entities';
 
 // ============================================================================
 // Runtime Task Context

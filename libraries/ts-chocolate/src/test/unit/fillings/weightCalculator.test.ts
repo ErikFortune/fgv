@@ -21,8 +21,8 @@
 import '@fgv/ts-utils-jest';
 
 import { IngredientId, Measurement } from '../../../packlets/common';
+import { IFillingIngredient } from '../../../packlets/entities';
 import {
-  IFillingIngredient,
   IWeightCalculationContext,
   IWeightContribution,
   calculateIngredientWeight,
@@ -31,7 +31,7 @@ import {
   contributesToWeight,
   defaultWeightContext,
   isWeightExcluded
-} from '../../../packlets/fillings';
+} from '../../../packlets/calculations';
 
 describe('WeightCalculator', () => {
   // ============================================================================

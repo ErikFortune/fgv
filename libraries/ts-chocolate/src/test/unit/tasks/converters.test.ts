@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { Converters as TaskConverters } from '../../../packlets/tasks';
+import { Converters } from '../../../packlets/entities';
 import { BaseTaskId, TaskId } from '../../../packlets/common';
 
 const {
@@ -32,7 +32,7 @@ const {
   validationBehavior,
   renderOptions,
   taskIdOrBaseTaskId
-} = TaskConverters;
+} = Converters.Tasks;
 
 describe('TaskConverters', () => {
   // ============================================================================

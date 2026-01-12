@@ -34,7 +34,7 @@ import {
   AnyJournalRecord,
   IFillingRecipeJournalRecord,
   IConfectionJournalRecord
-} from '../../../packlets/journal';
+} from '../../../packlets/entities';
 
 describe('Journal Model', () => {
   describe('allJournalEventTypes', () => {

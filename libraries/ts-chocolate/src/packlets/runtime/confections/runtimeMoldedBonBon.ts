@@ -32,7 +32,7 @@ import {
   IConfectionMoldRef,
   IMoldedBonBon,
   IMoldedBonBonVersion
-} from '../../confections';
+} from '../../entities';
 import { IConfectionContext, IRuntimeMoldedBonBon } from '../model';
 import { RuntimeConfectionBase } from './runtimeConfectionBase';
 

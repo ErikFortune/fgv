@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { cavityDimensions, moldData } from '../../../packlets/molds/converters';
+import { cavityDimensions, moldData } from '../../../packlets/entities/molds/converters';
 
 describe('Mold Converters', () => {
   // ============================================================================

@@ -26,8 +26,8 @@
 import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers, IngredientId, Percentage, FillingVersionSpec } from '../common';
-import { IGanacheCharacteristics, Ingredient } from '../ingredients';
-import { IFillingRecipe, IFillingIngredient } from '../fillings';
+import { IGanacheCharacteristics, Ingredient } from '../entities';
+import { IFillingRecipe, IFillingIngredient } from '../entities';
 
 // ============================================================================
 // Analysis Result Types

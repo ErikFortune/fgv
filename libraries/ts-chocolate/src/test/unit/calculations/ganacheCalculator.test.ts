@@ -31,9 +31,9 @@ import {
   FillingVersionSpec
 } from '../../../packlets/common';
 
-import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/ingredients';
+import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/entities';
 
-import { IFillingRecipe, IFillingRecipeVersion, IFillingIngredient } from '../../../packlets/fillings';
+import { IFillingRecipe, IFillingRecipeVersion, IFillingIngredient } from '../../../packlets/entities';
 
 import {
   calculateFromIngredients,
