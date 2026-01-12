@@ -9,7 +9,7 @@ Validator type for FillingsLibrary collections.
 **Signature:**
 
 ```typescript
-export type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, FillingRecipe>;
+export type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipe>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)
 

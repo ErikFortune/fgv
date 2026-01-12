@@ -51,8 +51,6 @@ import {
   IRolledTruffle,
   IRolledTruffleVersion
 } from './model';
-import { Confection } from './confection';
-
 import { Converters as RecipeConverters } from '../fillings';
 
 // ============================================================================
@@ -385,17 +383,5 @@ export const confection: Converter<ConfectionData> = Converters.generic<Confecti
 
       return Success.with(data);
     });
-  }
-);
-
-/**
- * Converter for Confection class instance.
- * Validates that goldenVersionSpec exists in versions and returns a class instance
- * with helper methods for version management.
- * @public
- */
-export const confectionClass: Converter<Confection> = Converters.generic<Confection>(
-  (from: unknown): Result<Confection> => {
-    return confection.convert(from).onSuccess((data) => Confection.create(data));
   }
 );

@@ -210,27 +210,6 @@ Gets the underlying raw recipe data
 </td></tr>
 <tr><td>
 
-[rawAsFillingRecipe](./ts-chocolate.runtime.runtimerecipe.rawasfillingrecipe.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md) \| undefined
-
-
-</td><td>
-
-Gets the underlying FillingRecipe class instance if available. Returns undefined if the raw data is a plain IFillingRecipe. Useful for accessing FillingRecipe-specific methods not available on IFillingRecipe.
-
-
-</td></tr>
-<tr><td>
-
 [sourceId](./ts-chocolate.runtime.runtimerecipe.sourceid.md)
 
 

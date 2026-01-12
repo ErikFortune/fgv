@@ -35,7 +35,6 @@ import {
   IFillingRecipe,
   IFillingFileTreeSource,
   IFillingRecipeVersion,
-  FillingRecipe,
   FillingsLibrary,
   scaleFillingRecipe,
   scaleFillingRecipeByFactor,
@@ -73,7 +72,7 @@ describe('FillingsLibrary', () => {
     goldenVersionSpec: '2026-01-01-01' as FillingVersionSpec
   };
 
-  const testRecipe = FillingRecipe.create(testRecipeData).orThrow();
+  const testRecipe = testRecipeData;
 
   // ============================================================================
   // Creation Tests
@@ -245,7 +244,7 @@ describe('FillingsLibrary', () => {
       const id = 'user.updateTest' as FillingId;
       library.add(id, testRecipe).orThrow();
       const updatedData: IFillingRecipe = { ...testRecipeData, description: 'Updated' };
-      const updated = FillingRecipe.create(updatedData).orThrow();
+      const updated = updatedData;
       expect(library.update(id, updated)).toSucceed();
     });
 

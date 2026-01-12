@@ -140,7 +140,9 @@ describe('Recipe Converters', () => {
         expect(result.baseId).toBe('test-recipe');
         expect(result.name).toBe('Test Recipe');
         expect(result.goldenVersionSpec).toBe('2026-01-01-01');
-        expect(result.goldenVersion).toBe(result.versions[0]);
+        // Golden version can be found in versions array
+        const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
+        expect(goldenVersion).toBe(result.versions[0]);
       });
     });
 
@@ -179,11 +181,12 @@ describe('Recipe Converters', () => {
         goldenVersionSpec: '2026-01-01-01'
       };
       expect(fillingRecipe.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.goldenVersion.procedures).toBeDefined();
-        expect(result.goldenVersion.procedures!.options.length).toBe(2);
-        expect(result.goldenVersion.procedures!.options[0].id).toBe('common.ganache-cold-method');
-        expect(result.goldenVersion.procedures!.options[0].notes).toBe('Preferred');
-        expect(result.goldenVersion.procedures!.preferredId).toBe('common.ganache-cold-method');
+        const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
+        expect(goldenVersion?.procedures).toBeDefined();
+        expect(goldenVersion?.procedures!.options.length).toBe(2);
+        expect(goldenVersion?.procedures!.options[0].id).toBe('common.ganache-cold-method');
+        expect(goldenVersion?.procedures!.options[0].notes).toBe('Preferred');
+        expect(goldenVersion?.procedures!.preferredId).toBe('common.ganache-cold-method');
       });
     });
 
@@ -196,7 +199,8 @@ describe('Recipe Converters', () => {
         goldenVersionSpec: '2026-01-01-01'
       };
       expect(fillingRecipe.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.goldenVersion.procedures).toBeUndefined();
+        const goldenVersion = result.versions.find((v) => v.versionSpec === result.goldenVersionSpec);
+        expect(goldenVersion?.procedures).toBeUndefined();
       });
     });
 
@@ -509,10 +513,10 @@ describe('Recipe Converters', () => {
   });
 
   // ============================================================================
-  // Recipe Class Tests
+  // Recipe Version Access Tests
   // ============================================================================
 
-  describe('Recipe class', () => {
+  describe('Recipe versions access', () => {
     const version1 = {
       versionSpec: '2026-01-01-01',
       createdDate: '2026-01-01',
@@ -527,7 +531,7 @@ describe('Recipe Converters', () => {
       baseWeight: 150
     };
 
-    test('getVersion returns requested version', () => {
+    test('can find version by versionSpec', () => {
       const recipeData = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
@@ -537,32 +541,26 @@ describe('Recipe Converters', () => {
       };
 
       expect(fillingRecipe.convert(recipeData)).toSucceedAndSatisfy((result) => {
-        expect(
-          result.getVersion(
-            '2026-01-02-01' as unknown as import('../../../packlets/common').FillingVersionSpec
-          )
-        ).toSucceedAndSatisfy((v) => {
-          expect(v.versionSpec).toBe('2026-01-02-01');
-          expect(v.baseWeight).toBe(150);
-        });
+        const foundVersion = result.versions.find((v) => v.versionSpec === '2026-01-02-01');
+        expect(foundVersion).toBeDefined();
+        expect(foundVersion?.versionSpec).toBe('2026-01-02-01');
+        expect(foundVersion?.baseWeight).toBe(150);
       });
     });
 
-    test('getVersion fails for non-existent version', () => {
+    test('versions array contains all versions', () => {
       const recipeData = {
         baseId: 'test-recipe',
         name: 'Test Recipe',
         category: 'ganache',
-        versions: [version1],
+        versions: [version1, version2],
         goldenVersionSpec: '2026-01-01-01'
       };
 
       expect(fillingRecipe.convert(recipeData)).toSucceedAndSatisfy((result) => {
-        expect(
-          result.getVersion(
-            '2026-12-31-99' as unknown as import('../../../packlets/common').FillingVersionSpec
-          )
-        ).toFailWith(/not found/);
+        expect(result.versions.length).toBe(2);
+        expect(result.versions[0].versionSpec).toBe('2026-01-01-01');
+        expect(result.versions[1].versionSpec).toBe('2026-01-02-01');
       });
     });
   });

@@ -356,14 +356,6 @@ describe('RuntimeRecipe and RuntimeVersion', () => {
         const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
         expect(recipe.raw.name).toBe('Dark Ganache');
       });
-
-      test('rawAsFillingRecipe returns Recipe instance when underlying data is Recipe', () => {
-        const recipe = ctx.fillings.get('test.dark-ganache' as FillingId).orThrow();
-        // FillingsLibrary converts IFillingRecipe data to Recipe class instances
-        // So rawAsFillingRecipe should return the Recipe instance
-        expect(recipe.rawAsFillingRecipe).toBeDefined();
-        expect(recipe.rawAsFillingRecipe).toBe(recipe.raw);
-      });
     });
 
     describe('create factory', () => {

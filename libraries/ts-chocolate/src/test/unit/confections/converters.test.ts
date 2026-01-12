@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 import '@fgv/ts-utils-jest';
-import { ConfectionVersionSpec } from '../../../packlets/common';
 import {
   Converters as ConfectionConverters,
   isMoldedBonBon,
@@ -794,53 +793,6 @@ describe('Confections converters', () => {
       expect(ConfectionConverters.coatings.convert(input)).toFailWith(
         /coatings: preferredId 'common.nonexistent-coating' not found in ids/
       );
-    });
-  });
-
-  // ============================================================================
-  // confectionClass converter
-  // ============================================================================
-
-  describe('confectionClass', () => {
-    test('converts valid molded bonbon to Confection class instance', () => {
-      expect(ConfectionConverters.confectionClass.convert(validMoldedBonBon)).toSucceedAndSatisfy(
-        (result) => {
-          expect(result.baseId).toBe('dark-dome-bonbon');
-          expect(result.confectionType).toBe('molded-bonbon');
-          expect(result.goldenVersionSpec).toBe('2026-01-01-01');
-          expect(result.goldenVersion).toBeDefined();
-          expect(result.goldenVersion.versionSpec).toBe('2026-01-01-01');
-        }
-      );
-    });
-
-    test('converts valid bar truffle to Confection class instance', () => {
-      expect(ConfectionConverters.confectionClass.convert(validBarTruffle)).toSucceedAndSatisfy((result) => {
-        expect(result.baseId).toBe('dark-bar-truffle');
-        expect(result.confectionType).toBe('bar-truffle');
-      });
-    });
-
-    test('provides getVersion method on Confection instance', () => {
-      const input = {
-        ...validMoldedBonBon,
-        versions: [
-          { ...validMoldedBonBon.versions[0], versionSpec: '2026-01-01-01', createdDate: '2026-01-01' },
-          { ...validMoldedBonBon.versions[0], versionSpec: '2026-02-01-01', createdDate: '2026-02-01' }
-        ],
-        goldenVersionSpec: '2026-01-01-01'
-      };
-      expect(ConfectionConverters.confectionClass.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.getVersion('2026-02-01-01' as ConfectionVersionSpec)).toSucceedAndSatisfy((version) => {
-          expect(version.versionSpec).toBe('2026-02-01-01');
-        });
-        expect(result.getVersion('9999-99-99-99' as ConfectionVersionSpec)).toFailWith(/not found/i);
-      });
-    });
-
-    test('fails with invalid confection data', () => {
-      const invalid = { baseId: 'test' }; // Missing required fields
-      expect(ConfectionConverters.confectionClass.convert(invalid)).toFail();
     });
   });
 });

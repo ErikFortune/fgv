@@ -391,7 +391,7 @@ Gets a [procedure](./ts-chocolate.procedures.iprocedure.md) by its [composite ID
 
 </td><td>
 
-Gets a [recipe](./ts-chocolate.fillings.fillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
+Gets a [recipe](./ts-chocolate.fillings.ifillingrecipe.md) by its [composite ID](./ts-chocolate.fillingid.md)
 
 
 </td></tr>

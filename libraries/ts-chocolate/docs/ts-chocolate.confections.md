@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Confection](./ts-chocolate.confections.confection.md)
-
-
-</td><td>
-
-Confection class with helper methods for version management. Provides computed properties for effective tags/urls (merged base + version).
-
-
-</td></tr>
-<tr><td>
-
 [ConfectionsLibrary](./ts-chocolate.confections.confectionslibrary.md)
 
 

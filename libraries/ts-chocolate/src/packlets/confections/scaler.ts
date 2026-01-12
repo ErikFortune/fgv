@@ -26,7 +26,6 @@
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
 import { ConfectionVersionSpec, Measurement } from '../common';
-import { Confection } from './confection';
 import {
   AnyConfectionVersion,
   ConfectionData,
@@ -164,6 +163,21 @@ function getVersionYield(version: AnyConfectionVersion): IConfectionYield {
 }
 
 /**
+ * Gets the golden version from a confection data object.
+ * @internal
+ */
+function getGoldenVersion<T extends ConfectionData>(confection: T): Result<AnyConfectionVersion> {
+  const version = confection.versions.find((v) => v.versionSpec === confection.goldenVersionSpec);
+  /* c8 ignore next 5 - defensive coding: converter validates golden version exists */
+  if (!version) {
+    return Failure.with(
+      `Golden version ${confection.goldenVersionSpec} not found in confection ${confection.baseId}`
+    );
+  }
+  return Success.with(version);
+}
+
+/**
  * Scales a confection version by a factor.
  *
  * This function applies a linear scale factor to the version's yield.
@@ -212,8 +226,8 @@ export function scaleConfectionByFactor<T extends ConfectionData>(
   factor: number,
   options: IConfectionScaleOptions = {}
 ): Result<IScaledConfection<T>> {
-  return Confection.create(confection).onSuccess((conf) => {
-    return scaleConfectionVersionByFactor(confection, conf.goldenVersion, factor, options);
+  return getGoldenVersion(confection).onSuccess((goldenVersion) => {
+    return scaleConfectionVersionByFactor(confection, goldenVersion, factor, options);
   });
 }
 
@@ -260,8 +274,8 @@ export function scaleConfectionToCount<T extends ConfectionData>(
   targetCount: number,
   options: IConfectionScaleOptions = {}
 ): Result<IScaledConfection<T>> {
-  return Confection.create(confection).onSuccess((conf) => {
-    return scaleConfectionVersionToCount(confection, conf.goldenVersion, targetCount, options);
+  return getGoldenVersion(confection).onSuccess((goldenVersion) => {
+    return scaleConfectionVersionToCount(confection, goldenVersion, targetCount, options);
   });
 }
 
@@ -326,8 +340,8 @@ export function scaleMoldedBonBonByFrames(
   cavitiesPerMold: number,
   options: IFrameScaleOptions = {}
 ): Result<IScaledConfection<IMoldedBonBon>> {
-  return Confection.create(confection).onSuccess((conf) => {
-    const version = conf.goldenVersion as IMoldedBonBonVersion;
+  return getGoldenVersion(confection).onSuccess((goldenVersion) => {
+    const version = goldenVersion as IMoldedBonBonVersion;
     return scaleMoldedBonBonVersionByFrames(confection, version, frameCount, cavitiesPerMold, options);
   });
 }

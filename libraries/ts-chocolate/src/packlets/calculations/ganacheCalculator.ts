@@ -27,7 +27,7 @@ import { Failure, Result, mapResults, Success } from '@fgv/ts-utils';
 
 import { Measurement, Helpers, IngredientId, Percentage, FillingVersionSpec } from '../common';
 import { IGanacheCharacteristics, Ingredient } from '../ingredients';
-import { IFillingRecipe, IFillingIngredient, FillingRecipe } from '../fillings';
+import { IFillingRecipe, IFillingIngredient } from '../fillings';
 
 // ============================================================================
 // Analysis Result Types
@@ -293,13 +293,6 @@ export function calculateForRecipe(
   resolver: IngredientResolver,
   versionSpec?: FillingVersionSpec
 ): Result<IGanacheAnalysis> {
-  // If a FillingRecipe instance, use helper methods; otherwise find the version manually
-  if (recipe instanceof FillingRecipe) {
-    const version = versionSpec ? recipe.getVersion(versionSpec) : Success.with(recipe.goldenVersion);
-    return version.onSuccess((v) => calculateFromRecipeIngredients(v.ingredients, resolver));
-  }
-
-  // For plain IRecipe objects
   const targetVersionSpec = versionSpec ?? recipe.goldenVersionSpec;
   const version = recipe.versions.find((v) => v.versionSpec === targetVersionSpec);
 

@@ -346,8 +346,8 @@ describe('ChocolateLibrary', () => {
     beforeEach(() => {
       const procedures = ProceduresLibrary.create({
         builtin: false,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         collections: [
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           { id: 'test' as SourceId, isMutable: true, items: { 'test-procedure': testProcedureData } }
         ]
       }).orThrow();

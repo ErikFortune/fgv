@@ -9,7 +9,7 @@ Type for the collections in a FillingsLibrary.
 **Signature:**
 
 ```typescript
-export type FillingCollection = SubLibraryCollection<BaseFillingId, FillingRecipe>;
+export type FillingCollection = SubLibraryCollection<BaseFillingId, IFillingRecipe>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseFillingId](./ts-chocolate.basefillingid.md)<!-- -->, [IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md)
 

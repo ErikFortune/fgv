@@ -35,7 +35,7 @@ import {
   FillingVersionSpec,
   SourceId
 } from '../common';
-import { IFillingRecipe, FillingRecipe } from '../fillings';
+import { IFillingRecipe } from '../fillings';
 import { IIngredientQueryOptions, IRuntimeFillingRecipe, IVersionContext } from './model';
 import { RuntimeVersion } from './runtimeVersion';
 import { AnyRuntimeIngredient } from './ingredients';
@@ -55,7 +55,7 @@ type RecipeContext = IVersionContext<AnyRuntimeIngredient>;
 export class RuntimeRecipe implements IRuntimeFillingRecipe {
   private readonly _context: RecipeContext;
   private readonly _id: FillingId;
-  private readonly _recipe: FillingRecipe | IFillingRecipe;
+  private readonly _recipe: IFillingRecipe;
   private readonly _sourceId: SourceId;
   private readonly _baseId: BaseFillingId;
 
@@ -71,7 +71,7 @@ export class RuntimeRecipe implements IRuntimeFillingRecipe {
    * Use RuntimeContext.getRecipe() instead of calling this directly.
    * @internal
    */
-  public constructor(context: RecipeContext, id: FillingId, recipe: FillingRecipe | IFillingRecipe) {
+  public constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe) {
     this._context = context;
     this._id = id;
     this._recipe = recipe;
@@ -89,11 +89,7 @@ export class RuntimeRecipe implements IRuntimeFillingRecipe {
    * @param recipe - The raw recipe data
    * @returns Success with RuntimeRecipe
    */
-  public static create(
-    context: RecipeContext,
-    id: FillingId,
-    recipe: FillingRecipe | IFillingRecipe
-  ): Result<RuntimeRecipe> {
+  public static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipe): Result<RuntimeRecipe> {
     return Success.with(new RuntimeRecipe(context, id, recipe));
   }
 
@@ -303,15 +299,5 @@ export class RuntimeRecipe implements IRuntimeFillingRecipe {
    */
   public get raw(): IFillingRecipe {
     return this._recipe;
-  }
-
-  /**
-   * Gets the underlying FillingRecipe class instance if available.
-   * Returns undefined if the raw data is a plain IFillingRecipe.
-   * Useful for accessing FillingRecipe-specific methods not available on IFillingRecipe.
-   */
-  /* c8 ignore next 3 - rawAsFillingRecipe returns undefined when constructed with plain IFillingRecipe */
-  public get rawAsFillingRecipe(): FillingRecipe | undefined {
-    return this._recipe instanceof FillingRecipe ? this._recipe : undefined;
   }
 }

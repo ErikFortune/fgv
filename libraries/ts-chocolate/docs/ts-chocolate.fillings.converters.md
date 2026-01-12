@@ -68,18 +68,7 @@ Converter for [IFillingRating](./ts-chocolate.fillings.ifillingrating.md)
 
 </td><td>
 
-Converter for [FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md) Validates that goldenVersionSpec exists in versions and creates FillingRecipe instance
-
-
-</td></tr>
-<tr><td>
-
-[fillingRecipeConverter](./ts-chocolate.fillings.converters.fillingrecipeconverter.md)
-
-
-</td><td>
-
-Converter for [FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md) type (currently same as IFillingRecipe, extensible)
+Converter for [IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md) with validation. Validates that goldenVersionSpec exists in versions and returns the plain data object.
 
 
 </td></tr>

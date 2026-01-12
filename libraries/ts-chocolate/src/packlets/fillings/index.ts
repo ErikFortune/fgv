@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 export * from './model';
-export * from './fillingRecipe';
 export * from './fillingsCollection';
 export * from './fillingsLibrary';
 export * from './scaler';

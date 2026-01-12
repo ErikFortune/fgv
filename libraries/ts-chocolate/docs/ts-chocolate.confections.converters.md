@@ -129,17 +129,6 @@ Converter for [ConfectionData](./ts-chocolate.confections.confectiondata.md) wit
 </td></tr>
 <tr><td>
 
-[confectionClass](./ts-chocolate.confections.converters.confectionclass.md)
-
-
-</td><td>
-
-Converter for Confection class instance. Validates that goldenVersionSpec exists in versions and returns a class instance with helper methods for version management.
-
-
-</td></tr>
-<tr><td>
-
 [confectionData](./ts-chocolate.confections.converters.confectiondata.md)
 
 

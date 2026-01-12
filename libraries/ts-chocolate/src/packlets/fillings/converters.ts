@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Failure, Result } from '@fgv/ts-utils';
+import { Converter, Converters, Failure, Result, Success } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters, IOptionsWithPreferred, ProcedureId } from '../common';
 import {
@@ -44,7 +44,6 @@ import {
   IScalingSource,
   RatingCategory
 } from './model';
-import { FillingRecipe } from './fillingRecipe';
 
 /**
  * Converter for {@link Fillings.IIngredientModifiers | IIngredientModifiers}.
@@ -149,12 +148,12 @@ export const fillingRecipeData: Converter<IFillingRecipe> = Converters.object<IF
 });
 
 /**
- * Converter for {@link Fillings.FillingRecipe | FillingRecipe}
- * Validates that goldenVersionSpec exists in versions and creates FillingRecipe instance
+ * Converter for {@link Fillings.IFillingRecipe | IFillingRecipe} with validation.
+ * Validates that goldenVersionSpec exists in versions and returns the plain data object.
  * @public
  */
-export const fillingRecipe: Converter<FillingRecipe> = Converters.generic<FillingRecipe>(
-  (from: unknown): Result<FillingRecipe> => {
+export const fillingRecipe: Converter<IFillingRecipe> = Converters.generic<IFillingRecipe>(
+  (from: unknown): Result<IFillingRecipe> => {
     return fillingRecipeData.convert(from).onSuccess((data) => {
       if (data.versions.length === 0) {
         return Failure.with('Filling recipe must have at least one version');
@@ -168,7 +167,7 @@ export const fillingRecipe: Converter<FillingRecipe> = Converters.generic<Fillin
         );
       }
 
-      return FillingRecipe.create(data);
+      return Success.with(data);
     });
   }
 );
@@ -231,9 +230,3 @@ export const scalingSource: Converter<IScalingSource> = Converters.object<IScali
   scaleFactor: Converters.number,
   targetWeight: CommonConverters.measurement
 });
-
-/**
- * Converter for {@link Fillings.FillingRecipe | FillingRecipe} type (currently same as IFillingRecipe, extensible)
- * @public
- */
-export const fillingRecipeConverter: Converter<FillingRecipe> = fillingRecipe;

@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../library-data';
-import { FillingRecipe } from './fillingRecipe';
+import { IFillingRecipe } from './model';
 
 /**
  * A single entry in a fillings collection.
  * @public
  */
-export type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, FillingRecipe>;
+export type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipe>;
 
 /**
  * Initialization type for a FillingsLibrary collection entry.
  * @public
  */
-export type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, FillingRecipe>;
+export type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipe>;
 
 /**
  * Validator type for FillingsLibrary collections.
  * @public
  */
-export type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, FillingRecipe>;
+export type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipe>;
 
 /**
  * Type for the collections in a FillingsLibrary.
  * @public
  */
-export type FillingCollection = SubLibraryCollection<BaseFillingId, FillingRecipe>;
+export type FillingCollection = SubLibraryCollection<BaseFillingId, IFillingRecipe>;

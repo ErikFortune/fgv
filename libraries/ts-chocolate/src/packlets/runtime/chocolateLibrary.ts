@@ -370,7 +370,7 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Fillings.FillingRecipe | recipe} by its {@link FillingId | composite ID}
+   * Gets a {@link Fillings.IFillingRecipe | recipe} by its {@link FillingId | composite ID}
    * @param id - The {@link FillingId | id} of the recipe to retrieve.
    * @returns `Success` with recipe, or `Failure` if not found
    */

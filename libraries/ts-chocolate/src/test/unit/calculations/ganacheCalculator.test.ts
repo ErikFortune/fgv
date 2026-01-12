@@ -33,12 +33,7 @@ import {
 
 import { IIngredient, IGanacheCharacteristics, Ingredient } from '../../../packlets/ingredients';
 
-import {
-  IFillingRecipe,
-  IFillingRecipeVersion,
-  IFillingIngredient,
-  FillingRecipe
-} from '../../../packlets/fillings';
+import { IFillingRecipe, IFillingRecipeVersion, IFillingIngredient } from '../../../packlets/fillings';
 
 import {
   calculateFromIngredients,
@@ -249,29 +244,6 @@ describe('Ganache Calculator', () => {
 
     test('fails for invalid version ID', () => {
       expect(calculateForRecipe(testRecipe, testResolver, '2026-12-31-99' as FillingVersionSpec)).toFailWith(
-        /not found/
-      );
-    });
-
-    test('calculates for Recipe instance using golden version', () => {
-      const recipe = FillingRecipe.create(testRecipe).orThrow();
-      expect(calculateForRecipe(recipe, testResolver)).toSucceedAndSatisfy((analysis) => {
-        expect(analysis.totalWeight).toBe(150);
-      });
-    });
-
-    test('calculates for Recipe instance with specific version ID', () => {
-      const recipe = FillingRecipe.create(testRecipe).orThrow();
-      expect(
-        calculateForRecipe(recipe, testResolver, '2026-01-01-01' as FillingVersionSpec)
-      ).toSucceedAndSatisfy((analysis) => {
-        expect(analysis.totalWeight).toBe(150);
-      });
-    });
-
-    test('fails for Recipe instance with invalid version ID', () => {
-      const recipe = FillingRecipe.create(testRecipe).orThrow();
-      expect(calculateForRecipe(recipe, testResolver, '2026-12-31-99' as FillingVersionSpec)).toFailWith(
         /not found/
       );
     });

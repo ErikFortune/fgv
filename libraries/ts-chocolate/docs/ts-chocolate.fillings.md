@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md)
-
-
-</td><td>
-
-FillingRecipe class with helper methods for version management
-
-
-</td></tr>
-<tr><td>
-
 [FillingsLibrary](./ts-chocolate.fillings.fillingslibrary.md)
 
 

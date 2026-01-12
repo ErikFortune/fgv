@@ -20,7 +20,6 @@
 
 import '@fgv/ts-utils-jest';
 import {
-  Confection,
   ConfectionData,
   IBarTruffle,
   IBarTruffleVersion,
@@ -42,8 +41,7 @@ import {
   IngredientId,
   MoldId,
   FillingId,
-  SlotId,
-  UrlCategory
+  SlotId
 } from '../../../packlets/common';
 import { Measurement, Millimeters } from '../../../packlets/common';
 
@@ -401,166 +399,6 @@ describe('Confections model', () => {
         expect(version.versionSpec).toBe('2026-01-01-01');
         expect(version.createdDate).toBe('2026-01-01');
         expect(version.notes).toBeDefined();
-      });
-    });
-  });
-
-  // ============================================================================
-  // Confection wrapper class
-  // ============================================================================
-
-  describe('Confection class', () => {
-    const moldedBonBonWithTags: IMoldedBonBon = {
-      baseId: 'tagged-bonbon' as BaseConfectionId,
-      confectionType: 'molded-bonbon',
-      name: 'Tagged Bonbon' as ConfectionName,
-      tags: ['base-tag1', 'base-tag2'],
-      urls: [{ url: 'https://example.com/base', category: 'Reference' as UrlCategory }],
-      goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-      versions: [
-        {
-          versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-          createdDate: '2026-01-01',
-          yield: { count: 24 },
-          molds: { options: [{ id: 'common.dome-25mm' as MoldId }] },
-          shellChocolate: { ids: ['common.chocolate-dark-64' as IngredientId] },
-          additionalTags: ['version-tag1', 'base-tag1'], // duplicate to test deduplication
-          additionalUrls: [{ url: 'https://example.com/v1', category: 'Version' as UrlCategory }]
-        },
-        {
-          versionSpec: '2026-01-02-01' as ConfectionVersionSpec,
-          createdDate: '2026-01-02',
-          yield: { count: 30 },
-          molds: { options: [{ id: 'common.dome-25mm' as MoldId }] },
-          shellChocolate: { ids: ['common.chocolate-dark-64' as IngredientId] }
-          // No additionalTags or additionalUrls
-        }
-      ]
-    };
-
-    describe('create', () => {
-      test('succeeds with valid data', () => {
-        expect(Confection.create(baseMoldedBonBon)).toSucceedAndSatisfy((confection) => {
-          expect(confection.baseId).toBe('dark-dome-bonbon');
-          expect(confection.confectionType).toBe('molded-bonbon');
-        });
-      });
-
-      test('fails when golden version not found', () => {
-        const badData: IMoldedBonBon = {
-          ...baseMoldedBonBon,
-          goldenVersionSpec: 'nonexistent-version' as ConfectionVersionSpec
-        };
-        expect(Confection.create(badData)).toFailWith(/golden version.*not found/i);
-      });
-    });
-
-    describe('getEffectiveTags', () => {
-      test('merges base and version tags with deduplication', () => {
-        expect(Confection.create(moldedBonBonWithTags)).toSucceedAndSatisfy((confection) => {
-          const effectiveTags = confection.getEffectiveTags();
-          expect(effectiveTags).toContain('base-tag1');
-          expect(effectiveTags).toContain('base-tag2');
-          expect(effectiveTags).toContain('version-tag1');
-          // Check deduplication
-          expect(effectiveTags.filter((t) => t === 'base-tag1').length).toBe(1);
-          expect(effectiveTags.length).toBe(3);
-        });
-      });
-
-      test('works with specific version', () => {
-        expect(Confection.create(moldedBonBonWithTags)).toSucceedAndSatisfy((confection) => {
-          const secondVersion = confection.versions[1];
-          const effectiveTags = confection.getEffectiveTags(secondVersion);
-          // Only base tags since second version has no additionalTags
-          expect(effectiveTags).toContain('base-tag1');
-          expect(effectiveTags).toContain('base-tag2');
-          expect(effectiveTags.length).toBe(2);
-        });
-      });
-
-      test('returns empty array when no tags defined', () => {
-        // Create confection without any tags
-        const noTagsData: IMoldedBonBon = {
-          baseId: 'no-tags' as BaseConfectionId,
-          confectionType: 'molded-bonbon',
-          name: 'No Tags Bonbon' as ConfectionName,
-          goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-          versions: [
-            {
-              versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-              createdDate: '2026-01-01',
-              yield: { count: 24 },
-              molds: { options: [{ id: 'common.dome-25mm' as MoldId }] },
-              shellChocolate: { ids: ['common.chocolate-dark-64' as IngredientId] }
-            }
-          ]
-        };
-        expect(Confection.create(noTagsData)).toSucceedAndSatisfy((confection) => {
-          const effectiveTags = confection.getEffectiveTags();
-          expect(effectiveTags).toEqual([]);
-        });
-      });
-    });
-
-    describe('getEffectiveUrls', () => {
-      test('merges base and version urls', () => {
-        expect(Confection.create(moldedBonBonWithTags)).toSucceedAndSatisfy((confection) => {
-          const effectiveUrls = confection.getEffectiveUrls();
-          expect(effectiveUrls).toHaveLength(2);
-          expect(effectiveUrls[0].url).toBe('https://example.com/base');
-          expect(effectiveUrls[1].url).toBe('https://example.com/v1');
-        });
-      });
-
-      test('works with specific version', () => {
-        expect(Confection.create(moldedBonBonWithTags)).toSucceedAndSatisfy((confection) => {
-          const secondVersion = confection.versions[1];
-          const effectiveUrls = confection.getEffectiveUrls(secondVersion);
-          // Only base URLs since second version has no additionalUrls
-          expect(effectiveUrls).toHaveLength(1);
-          expect(effectiveUrls[0].url).toBe('https://example.com/base');
-        });
-      });
-
-      test('returns empty array when no urls defined', () => {
-        // Create confection without any urls
-        const noUrlsData: IMoldedBonBon = {
-          baseId: 'no-urls' as BaseConfectionId,
-          confectionType: 'molded-bonbon',
-          name: 'No URLs Bonbon' as ConfectionName,
-          goldenVersionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-          versions: [
-            {
-              versionSpec: '2026-01-01-01' as ConfectionVersionSpec,
-              createdDate: '2026-01-01',
-              yield: { count: 24 },
-              molds: { options: [{ id: 'common.dome-25mm' as MoldId }] },
-              shellChocolate: { ids: ['common.chocolate-dark-64' as IngredientId] }
-            }
-          ]
-        };
-        expect(Confection.create(noUrlsData)).toSucceedAndSatisfy((confection) => {
-          const effectiveUrls = confection.getEffectiveUrls();
-          expect(effectiveUrls).toEqual([]);
-        });
-      });
-    });
-
-    describe('effectiveTags property', () => {
-      test('returns effective tags for golden version', () => {
-        expect(Confection.create(moldedBonBonWithTags)).toSucceedAndSatisfy((confection) => {
-          expect(confection.effectiveTags).toContain('base-tag1');
-          expect(confection.effectiveTags).toContain('version-tag1');
-        });
-      });
-    });
-
-    describe('effectiveUrls property', () => {
-      test('returns effective urls for golden version', () => {
-        expect(Confection.create(moldedBonBonWithTags)).toSucceedAndSatisfy((confection) => {
-          expect(confection.effectiveUrls).toHaveLength(2);
-        });
       });
     });
   });

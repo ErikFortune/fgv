@@ -486,34 +486,6 @@ type ComparisonOperator = 'eq' | 'ne' | 'lt' | 'le' | 'gt' | 'ge';
 // @public
 export const COMPOSITE_ID_PATTERN: RegExp;
 
-// @public
-class Confection implements IConfectionBase {
-    // (undocumented)
-    readonly baseId: BaseConfectionId;
-    // (undocumented)
-    readonly confectionType: ConfectionType;
-    static create(data: ConfectionData): Result<Confection>;
-    // (undocumented)
-    readonly description?: string;
-    get effectiveTags(): ReadonlyArray<string>;
-    get effectiveUrls(): ReadonlyArray<ICategorizedUrl>;
-    getEffectiveTags(version?: AnyConfectionVersion): ReadonlyArray<string>;
-    getEffectiveUrls(version?: AnyConfectionVersion): ReadonlyArray<ICategorizedUrl>;
-    getVersion(versionSpec: ConfectionVersionSpec): Result<AnyConfectionVersion>;
-    // (undocumented)
-    readonly goldenVersion: AnyConfectionVersion;
-    // (undocumented)
-    readonly goldenVersionSpec: ConfectionVersionSpec;
-    // (undocumented)
-    readonly name: ConfectionName;
-    // (undocumented)
-    readonly tags?: ReadonlyArray<string>;
-    // (undocumented)
-    readonly urls?: ReadonlyArray<ICategorizedUrl>;
-    // (undocumented)
-    readonly versions: ReadonlyArray<AnyConfectionVersion>;
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -524,9 +496,6 @@ export const CONFECTION_VERSION_ID_PATTERN: RegExp;
 
 // @public
 export const CONFECTION_VERSION_SPEC_PATTERN: RegExp;
-
-// @public
-const confectionClass: Converter<Confection>;
 
 // @public
 type ConfectionCollection = SubLibraryCollection<BaseConfectionId, ConfectionData>;
@@ -659,7 +628,6 @@ declare namespace Confections {
         IBarTruffle,
         IRolledTruffle,
         ConfectionData,
-        Confection,
         ConfectionCollectionEntry,
         ConfectionCollectionEntryInit,
         ConfectionCollectionValidator,
@@ -837,8 +805,7 @@ declare namespace Converters_2 {
         barTruffle,
         rolledTruffle,
         confectionData,
-        confection,
-        confectionClass
+        confection
     }
 }
 
@@ -875,8 +842,7 @@ declare namespace Converters_4 {
         scalingRef,
         ingredientSnapshot,
         scaledFillingRecipeVersion,
-        scalingSource,
-        fillingRecipeConverter
+        scalingSource
     }
 }
 
@@ -1092,16 +1058,16 @@ type FillingCategory_2 = 'ganache' | 'caramel' | 'gianduja';
 const fillingCategory_2: Converter<FillingCategory>;
 
 // @public
-type FillingCollection = SubLibraryCollection<BaseFillingId, FillingRecipe>;
+type FillingCollection = SubLibraryCollection<BaseFillingId, IFillingRecipe>;
 
 // @public
-type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, FillingRecipe>;
+type FillingCollectionEntry = SubLibraryCollectionEntry<BaseFillingId, IFillingRecipe>;
 
 // @public
-type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, FillingRecipe>;
+type FillingCollectionEntryInit = SubLibraryEntryInit<BaseFillingId, IFillingRecipe>;
 
 // @public
-type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, FillingRecipe>;
+type FillingCollectionValidator = SubLibraryCollectionValidator<FillingId, IFillingRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1139,39 +1105,10 @@ type FillingOptionType = 'recipe' | 'ingredient';
 // @public
 const fillingRating: Converter<IFillingRating>;
 
-// @public
-class FillingRecipe implements IFillingRecipe {
-    // (undocumented)
-    readonly baseId: BaseFillingId;
-    // (undocumented)
-    readonly category: FillingCategory_2;
-    static create(data: IFillingRecipe): Result<FillingRecipe>;
-    // (undocumented)
-    readonly derivedFrom?: IFillingDerivation;
-    // (undocumented)
-    readonly description?: string;
-    getVersion(versionSpec: FillingVersionSpec): Result<IFillingRecipeVersion>;
-    // (undocumented)
-    readonly goldenVersion: IFillingRecipeVersion;
-    // (undocumented)
-    readonly goldenVersionSpec: FillingVersionSpec;
-    // (undocumented)
-    readonly name: FillingName;
-    // (undocumented)
-    readonly tags?: ReadonlyArray<string>;
-    // (undocumented)
-    readonly versions: ReadonlyArray<IFillingRecipeVersion>;
-}
-
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
-const fillingRecipe: Converter<FillingRecipe>;
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const fillingRecipeConverter: Converter<FillingRecipe>;
+const fillingRecipe: Converter<IFillingRecipe>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -1212,7 +1149,6 @@ declare namespace Fillings {
         IScalingSource,
         IComputedScaledFillingRecipe,
         AnyFillingRecipeVersion,
-        FillingRecipe,
         FillingCollectionEntry,
         FillingCollectionEntryInit,
         FillingCollectionValidator,
@@ -1255,7 +1191,7 @@ declare namespace Fillings {
 export { Fillings }
 
 // @public
-class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, FillingRecipe> {
+class FillingsLibrary extends SubLibraryBase<FillingId, BaseFillingId, IFillingRecipe> {
     static create(params?: IFillingsLibraryParams): Result<FillingsLibrary>;
     static createAsync(params?: IFillingsLibraryAsyncParams): Promise<Result<FillingsLibrary>>;
 }
@@ -4563,9 +4499,9 @@ class RuntimeRecipe implements IRuntimeFillingRecipe {
     // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
     //
     // @internal
-    constructor(context: RecipeContext, id: FillingId, recipe: FillingRecipe | IFillingRecipe);
+    constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe);
     get baseId(): BaseFillingId;
-    static create(context: RecipeContext, id: FillingId, recipe: FillingRecipe | IFillingRecipe): Result<RuntimeRecipe>;
+    static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipe): Result<RuntimeRecipe>;
     get description(): string | undefined;
     getIngredientIds(options?: IIngredientQueryOptions): ReadonlySet<IngredientId>;
     getVersion(versionSpec: FillingVersionSpec): Result<RuntimeVersion>;
@@ -4575,7 +4511,6 @@ class RuntimeRecipe implements IRuntimeFillingRecipe {
     get latestVersion(): RuntimeVersion;
     get name(): FillingName;
     get raw(): IFillingRecipe;
-    get rawAsFillingRecipe(): FillingRecipe | undefined;
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string>;
     usesIngredient(ingredientId: IngredientId, options?: IIngredientQueryOptions): boolean;

@@ -4,10 +4,10 @@
 
 ## Fillings.Converters.fillingRecipe variable
 
-Converter for [FillingRecipe](./ts-chocolate.fillings.fillingrecipe.md) Validates that goldenVersionSpec exists in versions and creates FillingRecipe instance
+Converter for [IFillingRecipe](./ts-chocolate.fillings.ifillingrecipe.md) with validation. Validates that goldenVersionSpec exists in versions and returns the plain data object.
 
 **Signature:**
 
 ```typescript
-fillingRecipe: Converter<FillingRecipe>
+fillingRecipe: Converter<IFillingRecipe>
 ```
