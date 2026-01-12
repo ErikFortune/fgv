@@ -29,9 +29,11 @@ import {
   ConfectionId,
   Helpers,
   IngredientId,
+  MoldId,
   ProcedureId,
   FillingId,
   FillingVersionId,
+  TaskId,
   Validation
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../confections';
@@ -58,6 +60,10 @@ import {
   RecipeIndexerOrchestrator
 } from './indexers';
 import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibrary';
+import { ITaskContext, RuntimeTask } from './tasks';
+import { IProcedureContext, RuntimeProcedure } from './procedures';
+import { IMoldContext, RuntimeMold } from './molds';
+import { Task } from '../tasks';
 
 // ============================================================================
 // RuntimeContext Parameters
@@ -97,7 +103,10 @@ export class RuntimeContext
   implements
     IVersionContext<AnyRuntimeIngredient>,
     IScaledVersionContext<AnyRuntimeIngredient>,
-    IIngredientContext
+    IIngredientContext,
+    ITaskContext,
+    IProcedureContext,
+    IMoldContext
 {
   private readonly _library: ChocolateLibrary;
   private readonly _reverseIndex: RuntimeReverseIndex;
@@ -119,6 +128,11 @@ export class RuntimeContext
   // Extensible indexer orchestrators
   private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
   private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
+
+  // Cached runtime wrappers for tasks, procedures, and molds
+  private readonly _runtimeTasks: Map<TaskId, RuntimeTask> = new Map();
+  private readonly _runtimeProcedures: Map<ProcedureId, RuntimeProcedure> = new Map();
+  private readonly _runtimeMolds: Map<MoldId, RuntimeMold> = new Map();
 
   private constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
@@ -365,6 +379,86 @@ export class RuntimeContext
   }
 
   // ============================================================================
+  // Runtime Task/Procedure/Mold Accessors (ITaskContext, IProcedureContext)
+  // ============================================================================
+
+  /**
+   * Gets a task by its composite ID.
+   * Used internally for task resolution.
+   * @param id - The task ID (composite format: sourceId.baseTaskId)
+   * @returns Success with Task, or Failure if not found
+   */
+  public getTask(id: TaskId): Result<Task> {
+    return this._library.getTask(id);
+  }
+
+  /**
+   * Gets a runtime task by its composite ID (with caching).
+   * Implements ITaskContext interface.
+   * @param id - The task ID (composite format: sourceId.baseTaskId)
+   * @returns Success with RuntimeTask, or Failure if not found
+   */
+  public getRuntimeTask(id: TaskId): Result<RuntimeTask> {
+    // Check cache first
+    const cached = this._runtimeTasks.get(id);
+    if (cached) {
+      return succeed(cached);
+    }
+
+    // Resolve from library and cache
+    return this._library.getTask(id).onSuccess((task) => {
+      return RuntimeTask.create(this, id, task).onSuccess((runtimeTask) => {
+        this._runtimeTasks.set(id, runtimeTask);
+        return succeed(runtimeTask);
+      });
+    });
+  }
+
+  /**
+   * Gets a runtime procedure by its composite ID (with caching).
+   * @param id - The procedure ID (composite format: sourceId.baseProcedureId)
+   * @returns Success with RuntimeProcedure, or Failure if not found
+   */
+  public getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure> {
+    // Check cache first
+    const cached = this._runtimeProcedures.get(id);
+    if (cached) {
+      return succeed(cached);
+    }
+
+    // Resolve from library and cache
+    return this._library.getProcedure(id).onSuccess((procedure) => {
+      return RuntimeProcedure.create(this, id, procedure).onSuccess((runtimeProcedure) => {
+        this._runtimeProcedures.set(id, runtimeProcedure);
+        return succeed(runtimeProcedure);
+      });
+    });
+  }
+
+  /**
+   * Gets a runtime mold by its composite ID (with caching).
+   * @param id - The mold ID (composite format: sourceId.baseMoldId)
+   * @returns Success with RuntimeMold, or Failure if not found
+   */
+  public getRuntimeMold(id: MoldId): Result<RuntimeMold> {
+    // Check cache first
+    const cached = this._runtimeMolds.get(id);
+    /* c8 ignore next 3 - cache hit path tested via integration */
+    if (cached) {
+      return succeed(cached);
+    }
+
+    // Resolve from library and cache
+    return this._library.getMold(id).onSuccess((mold) => {
+      /* c8 ignore next 4 - cache population tested via integration */
+      return RuntimeMold.create(this, id, mold).onSuccess((runtimeMold) => {
+        this._runtimeMolds.set(id, runtimeMold);
+        return succeed(runtimeMold);
+      });
+    });
+  }
+
+  // ============================================================================
   // Reverse Lookups (for RuntimeIngredient navigation)
   // ============================================================================
 
@@ -467,6 +561,9 @@ export class RuntimeContext
   public clearCache(): void {
     this._ingredients = undefined;
     this._recipes = undefined;
+    this._runtimeTasks.clear();
+    this._runtimeProcedures.clear();
+    this._runtimeMolds.clear();
     this._reverseIndex.invalidate();
     this._recipeOrchestrator.invalidate();
     this._ingredientOrchestrator.invalidate();

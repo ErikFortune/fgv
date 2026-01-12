@@ -5,7 +5,10 @@
     "index.browser.js",
     "public.js",
     "internal.js",
-    "builtInData.generated.js"
+    "builtInData.generated.js",
+    "runtime/tasks/model.js",
+    "runtime/procedures/model.js",
+    "runtime/molds/model.js"
   ],
   "coverageThreshold": {
     "global": {

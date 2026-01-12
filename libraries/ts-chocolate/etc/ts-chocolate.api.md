@@ -387,11 +387,14 @@ class ChocolateLibrary {
     getProcedure(id: ProcedureId): Result<Procedure>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: FillingId): Result<IFillingRecipe>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    getTask(id: TaskId): Result<Task>;
     hasConfection(id: ConfectionId): boolean;
     hasIngredient(id: IngredientId): boolean;
     hasMold(id: MoldId): boolean;
     hasProcedure(id: ProcedureId): boolean;
     hasRecipe(id: FillingId): boolean;
+    hasTask(id: TaskId): boolean;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get ingredients(): IngredientsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -401,6 +404,8 @@ class ChocolateLibrary {
     get molds(): MoldsLibrary;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get procedures(): ProceduresLibrary;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    get tasks(): TasksLibrary;
 }
 
 // @public
@@ -2135,6 +2140,7 @@ interface IInstantiatedLibrarySource {
     readonly journals?: JournalLibrary;
     readonly molds?: MoldsLibrary;
     readonly procedures?: ProceduresLibrary;
+    readonly tasks?: TasksLibrary;
 }
 
 // @public
@@ -2231,6 +2237,10 @@ interface IMold {
     readonly productNumber: string;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<ICategorizedUrl>;
+}
+
+// @internal
+interface IMoldContext {
 }
 
 // @public
@@ -2521,6 +2531,12 @@ interface IProcedure {
     readonly notes?: string;
     readonly steps: ReadonlyArray<IProcedureStep>;
     readonly tags?: ReadonlyArray<string>;
+}
+
+// @internal
+interface IProcedureContext {
+    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
+    getTask(id: TaskId): Result<Task>;
 }
 
 // @public
@@ -2888,6 +2904,26 @@ interface IRuntimeIngredient {
 }
 
 // @public
+interface IRuntimeMold {
+    readonly baseId: BaseMoldId;
+    readonly cavityCount: number;
+    readonly cavityDimensions?: ICavityDimensions;
+    readonly cavityWeight?: Measurement;
+    readonly description?: string;
+    readonly displayName: string;
+    readonly format: MoldFormat;
+    readonly id: MoldId;
+    readonly manufacturer: string;
+    readonly notes?: string;
+    readonly productNumber: string;
+    readonly raw: IMold;
+    readonly sourceId: SourceId;
+    readonly tags?: ReadonlyArray<string>;
+    readonly totalCapacity: Measurement | undefined;
+    readonly urls?: ReadonlyArray<ICategorizedUrl>;
+}
+
+// @public
 interface IRuntimeMoldedBonBon extends IRuntimeConfection {
     readonly additionalChocolates?: ReadonlyArray<IAdditionalChocolate>;
     readonly confectionType: 'molded-bonbon';
@@ -2896,6 +2932,51 @@ interface IRuntimeMoldedBonBon extends IRuntimeConfection {
     readonly raw: IMoldedBonBon;
     readonly shellChocolate: IChocolateSpec;
     readonly versions: ReadonlyArray<IMoldedBonBonVersion>;
+}
+
+// @public
+interface IRuntimeProcedure {
+    readonly baseId: BaseProcedureId;
+    readonly category?: FillingCategory_2;
+    readonly description?: string;
+    readonly id: ProcedureId;
+    readonly isCategorySpecific: boolean;
+    readonly name: string;
+    readonly notes?: string;
+    readonly raw: IProcedure;
+    render(context: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
+    readonly stepCount: number;
+    readonly steps: ReadonlyArray<IProcedureStep>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly totalActiveTime: Minutes | undefined;
+    readonly totalHoldTime: Minutes | undefined;
+    readonly totalTime: Minutes | undefined;
+    readonly totalWaitTime: Minutes | undefined;
+}
+
+// @public
+interface IRuntimeProcedureRenderContext {
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "context" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    readonly context: IProcedureContext;
+    readonly mold?: IMold;
+    readonly recipe: IComputedScaledFillingRecipe;
+}
+
+// @public
+interface IRuntimeRenderedProcedure {
+    readonly description?: string;
+    readonly name: string;
+    readonly steps: ReadonlyArray<IRuntimeRenderedStep>;
+    readonly totalActiveTime?: Minutes;
+    readonly totalHoldTime?: Minutes;
+    readonly totalWaitTime?: Minutes;
+}
+
+// @public
+interface IRuntimeRenderedStep extends IProcedureStep {
+    readonly renderedDescription: string;
+    readonly resolvedTask?: RuntimeTask;
 }
 
 // @public
@@ -2939,6 +3020,26 @@ interface IRuntimeSugarIngredient extends IRuntimeIngredient {
     // (undocumented)
     readonly raw: ISugarIngredient;
     readonly sweetnessPotency?: number;
+}
+
+// @public
+interface IRuntimeTask {
+    readonly baseId: BaseTaskId;
+    readonly defaultActiveTime?: Minutes;
+    readonly defaultHoldTime?: Minutes;
+    readonly defaults?: Readonly<Record<string, unknown>>;
+    readonly defaultTemperature?: Celsius;
+    readonly defaultWaitTime?: Minutes;
+    readonly id: TaskId;
+    readonly name: string;
+    readonly notes?: string;
+    readonly raw: Task;
+    render(params: Record<string, unknown>): Result<string>;
+    readonly requiredVariables: ReadonlyArray<string>;
+    readonly tags?: ReadonlyArray<string>;
+    readonly template: string;
+    validateAndRender(params: Record<string, unknown>): Result<string>;
+    validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
 }
 
 // @public
@@ -3291,6 +3392,11 @@ function isWeightExcluded(unit: MeasurementUnit): unit is WeightExcludedUnit;
 // @public
 interface ITask extends ITaskData {
     readonly requiredVariables: ReadonlyArray<string>;
+}
+
+// @internal
+interface ITaskContext {
+    getTask(id: TaskId): Result<Task>;
 }
 
 // @public
@@ -4185,6 +4291,18 @@ declare namespace Runtime {
         AnyRuntimeConfection,
         Indexers,
         Session,
+        ITaskContext,
+        IRuntimeTask,
+        RuntimeTask,
+        IProcedureContext,
+        IRuntimeProcedure,
+        IRuntimeProcedureRenderContext,
+        IRuntimeRenderedProcedure,
+        IRuntimeRenderedStep,
+        RuntimeProcedure,
+        IMoldContext,
+        IRuntimeMold,
+        RuntimeMold,
         IInstantiatedLibrarySource,
         IChocolateLibraryCreateParams,
         ChocolateLibrary,
@@ -4347,12 +4465,18 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IScaledVersionContext" which is marked as @internal
 // Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IIngredientContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+// Warning: (ae-incompatible-release-tags) The symbol "RuntimeContext" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
 //
 // @public
-class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext {
+class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext {
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
@@ -4378,8 +4502,12 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getProcedure(id: string): Result<Procedure>;
     // @internal
     _getRecipe(id: FillingId): Result<RuntimeRecipe>;
+    getRuntimeMold(id: MoldId): Result<RuntimeMold>;
+    getRuntimeProcedure(id: ProcedureId): Result<RuntimeProcedure>;
+    getRuntimeTask(id: TaskId): Result<RuntimeTask>;
     // @internal
     getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
+    getTask(id: TaskId): Result<Task>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
@@ -4466,6 +4594,31 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
 }
 
 // @public
+class RuntimeMold implements IRuntimeMold {
+    get baseId(): BaseMoldId;
+    get cavityCount(): number;
+    get cavityDimensions(): ICavityDimensions | undefined;
+    get cavityWeight(): Measurement | undefined;
+    // @internal
+    protected get context(): IMoldContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
+    static create(context: IMoldContext, id: MoldId, mold: Mold | IMold): Result<RuntimeMold>;
+    get description(): string | undefined;
+    get displayName(): string;
+    get format(): MoldFormat;
+    get id(): MoldId;
+    get manufacturer(): string;
+    get notes(): string | undefined;
+    get productNumber(): string;
+    get raw(): IMold;
+    get sourceId(): SourceId;
+    get tags(): ReadonlyArray<string> | undefined;
+    get totalCapacity(): Measurement | undefined;
+    get urls(): ReadonlyArray<ICategorizedUrl> | undefined;
+}
+
+// @public
 class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMoldedBonBon {
     // @internal
     protected constructor(context: IConfectionContext, id: ConfectionId, confection: IMoldedBonBon);
@@ -4479,6 +4632,31 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
     get raw(): IMoldedBonBon;
     get shellChocolate(): IChocolateSpec;
     get versions(): ReadonlyArray<IMoldedBonBonVersion>;
+}
+
+// @public
+class RuntimeProcedure implements IRuntimeProcedure {
+    get baseId(): BaseProcedureId;
+    get category(): FillingCategory_2 | undefined;
+    // @internal
+    protected get context(): IProcedureContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
+    static create(context: IProcedureContext, id: ProcedureId, procedure: Procedure | IProcedure): Result<RuntimeProcedure>;
+    get description(): string | undefined;
+    get id(): ProcedureId;
+    get isCategorySpecific(): boolean;
+    get name(): string;
+    get notes(): string | undefined;
+    get raw(): IProcedure;
+    render(renderContext: IRuntimeProcedureRenderContext): Result<IRuntimeRenderedProcedure>;
+    get stepCount(): number;
+    get steps(): ReadonlyArray<IProcedureStep>;
+    get tags(): ReadonlyArray<string> | undefined;
+    get totalActiveTime(): Minutes | undefined;
+    get totalHoldTime(): Minutes | undefined;
+    get totalTime(): Minutes | undefined;
+    get totalWaitTime(): Minutes | undefined;
 }
 
 // @public
@@ -4568,6 +4746,31 @@ class RuntimeSugarIngredient extends RuntimeIngredientBase implements IRuntimeSu
     get hydrationNumber(): number | undefined;
     get raw(): ISugarIngredient;
     get sweetnessPotency(): number | undefined;
+}
+
+// @public
+class RuntimeTask implements IRuntimeTask {
+    get baseId(): BaseTaskId;
+    // @internal
+    protected get context(): ITaskContext;
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+    // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
+    static create(context: ITaskContext, id: TaskId, task: Task): Result<RuntimeTask>;
+    get defaultActiveTime(): Minutes | undefined;
+    get defaultHoldTime(): Minutes | undefined;
+    get defaults(): Readonly<Record<string, unknown>> | undefined;
+    get defaultTemperature(): Celsius | undefined;
+    get defaultWaitTime(): Minutes | undefined;
+    get id(): TaskId;
+    get name(): string;
+    get notes(): string | undefined;
+    get raw(): Task;
+    render(params: Record<string, unknown>): Result<string>;
+    get requiredVariables(): ReadonlyArray<string>;
+    get tags(): ReadonlyArray<string> | undefined;
+    get template(): string;
+    validateAndRender(params: Record<string, unknown>): Result<string>;
+    validateParams(params: Record<string, unknown>): Result<ITaskRefValidation>;
 }
 
 // @public

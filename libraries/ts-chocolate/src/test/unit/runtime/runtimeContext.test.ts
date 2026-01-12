@@ -950,6 +950,108 @@ describe('RuntimeContext', () => {
   });
 
   // ============================================================================
+  // Runtime Wrapper Methods Tests
+  // ============================================================================
+
+  describe('runtime wrapper methods', () => {
+    let ctx: RuntimeContext;
+
+    beforeEach(() => {
+      // Create a library with procedures, tasks, and molds using built-in data
+      ctx = RuntimeContext.create({ libraryParams: { builtin: true } }).orThrow();
+    });
+
+    describe('getTask', () => {
+      test('returns task for valid ID', () => {
+        expect(
+          ctx.getTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
+        ).toSucceedAndSatisfy((task) => {
+          expect(task.name).toBe('Melt Chocolate');
+        });
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(ctx.getTask('common.nonexistent' as import('../../../packlets/common').TaskId)).toFail();
+      });
+    });
+
+    describe('getRuntimeTask', () => {
+      test('returns RuntimeTask for valid ID', () => {
+        expect(
+          ctx.getRuntimeTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
+        ).toSucceedAndSatisfy((runtimeTask) => {
+          expect(runtimeTask.id).toBe('common.melt-chocolate');
+          expect(runtimeTask.name).toBe('Melt Chocolate');
+        });
+      });
+
+      test('caches runtime tasks', () => {
+        const result1 = ctx
+          .getRuntimeTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
+          .orThrow();
+        const result2 = ctx
+          .getRuntimeTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
+          .orThrow();
+        expect(result1).toBe(result2); // Same instance
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(
+          ctx.getRuntimeTask('common.nonexistent' as import('../../../packlets/common').TaskId)
+        ).toFail();
+      });
+    });
+
+    describe('getRuntimeProcedure', () => {
+      test('returns RuntimeProcedure for valid ID', () => {
+        expect(ctx.getRuntimeProcedure('common.ganache-cold-method' as ProcedureId)).toSucceedAndSatisfy(
+          (runtimeProcedure) => {
+            expect(runtimeProcedure.id).toBe('common.ganache-cold-method');
+            expect(runtimeProcedure.name).toBe('Ganache (Cold Method)');
+          }
+        );
+      });
+
+      test('caches runtime procedures', () => {
+        const result1 = ctx.getRuntimeProcedure('common.ganache-cold-method' as ProcedureId).orThrow();
+        const result2 = ctx.getRuntimeProcedure('common.ganache-cold-method' as ProcedureId).orThrow();
+        expect(result1).toBe(result2); // Same instance
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(ctx.getRuntimeProcedure('common.nonexistent' as ProcedureId)).toFail();
+      });
+    });
+
+    describe('getRuntimeMold', () => {
+      test('returns RuntimeMold for valid ID', () => {
+        expect(
+          ctx.getRuntimeMold('cw.chocolate-world-cw-2227' as import('../../../packlets/common').MoldId)
+        ).toSucceedAndSatisfy((runtimeMold) => {
+          expect(runtimeMold.id).toBe('cw.chocolate-world-cw-2227');
+          expect(runtimeMold.manufacturer).toBe('Chocolate World');
+        });
+      });
+
+      test('caches runtime molds', () => {
+        const result1 = ctx
+          .getRuntimeMold('cw.chocolate-world-cw-2227' as import('../../../packlets/common').MoldId)
+          .orThrow();
+        const result2 = ctx
+          .getRuntimeMold('cw.chocolate-world-cw-2227' as import('../../../packlets/common').MoldId)
+          .orThrow();
+        expect(result1).toBe(result2); // Same instance
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(
+          ctx.getRuntimeMold('common.nonexistent' as import('../../../packlets/common').MoldId)
+        ).toFail();
+      });
+    });
+  });
+
+  // ============================================================================
   // Weight Context Tests
   // ============================================================================
 

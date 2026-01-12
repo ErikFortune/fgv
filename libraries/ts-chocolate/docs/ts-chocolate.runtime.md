@@ -122,12 +122,40 @@ A resolved view of a fat ingredient with navigation capabilities. Immutable - do
 </td></tr>
 <tr><td>
 
+[RuntimeMold](./ts-chocolate.runtime.runtimemold.md)
+
+
+</td><td>
+
+A resolved view of a mold with computed properties.
+
+RuntimeMold wraps a data-layer Mold and provides: - Composite identity (MoldId) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
+
+
+</td></tr>
+<tr><td>
+
 [RuntimeMoldedBonBon](./ts-chocolate.runtime.runtimemoldedbonbon.md)
 
 
 </td><td>
 
 A resolved view of a molded bonbon confection with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeProcedure](./ts-chocolate.runtime.runtimeprocedure.md)
+
+
+</td><td>
+
+A resolved view of a procedure with proper task resolution.
+
+RuntimeProcedure wraps a data-layer Procedure and provides: - Composite identity (ProcedureId) for cross-source references - Proper task resolution (not placeholders like the data-layer) - Computed timing properties
+
+Unlike the data-layer Procedure.render() which returns `[Task: taskId]` placeholders, RuntimeProcedure.render() actually resolves task references and renders their templates.
 
 
 </td></tr>
@@ -172,6 +200,19 @@ A resolved view of a scaled recipe version with all ingredients resolved.
 </td><td>
 
 A resolved view of a sugar ingredient with navigation capabilities. Immutable - does not allow modification of underlying data.
+
+
+</td></tr>
+<tr><td>
+
+[RuntimeTask](./ts-chocolate.runtime.runtimetask.md)
+
+
+</td><td>
+
+A resolved view of a task with rendering capabilities.
+
+RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Parameter validation - Template rendering - Context access for resolving task references (future use)
 
 
 </td></tr>
@@ -752,12 +793,73 @@ Note: Does not extend `IIngredient` directly because the class implementation pr
 </td></tr>
 <tr><td>
 
+[IRuntimeMold](./ts-chocolate.runtime.iruntimemold.md)
+
+
+</td><td>
+
+A resolved runtime view of a mold with computed properties.
+
+This interface provides runtime-layer access to mold data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Computed properties (totalCapacity, displayName) - Future navigation capabilities
+
+
+</td></tr>
+<tr><td>
+
 [IRuntimeMoldedBonBon](./ts-chocolate.runtime.iruntimemoldedbonbon.md)
 
 
 </td><td>
 
 Runtime confection narrowed to molded bonbon type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeProcedure](./ts-chocolate.runtime.iruntimeprocedure.md)
+
+
+</td><td>
+
+A resolved runtime view of a procedure with rendering capabilities.
+
+This interface provides runtime-layer access to procedure data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Proper task resolution (not placeholders) - Computed timing properties
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeProcedureRenderContext](./ts-chocolate.runtime.iruntimeprocedurerendercontext.md)
+
+
+</td><td>
+
+Context for rendering a procedure with full library access.
+
+Unlike the data-layer IProcedureRenderContext (which uses `unknown` for library), this interface has properly typed library access for task resolution.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeRenderedProcedure](./ts-chocolate.runtime.iruntimerenderedprocedure.md)
+
+
+</td><td>
+
+A rendered procedure with all template values resolved.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeRenderedStep](./ts-chocolate.runtime.iruntimerenderedstep.md)
+
+
+</td><td>
+
+A rendered procedure step with resolved template values.
 
 
 </td></tr>
@@ -806,6 +908,19 @@ Runtime-specific scaling source with resolved version reference. Extends the bas
 </td><td>
 
 Runtime ingredient narrowed to sugar type.
+
+
+</td></tr>
+<tr><td>
+
+[IRuntimeTask](./ts-chocolate.runtime.iruntimetask.md)
+
+
+</td><td>
+
+A resolved runtime view of a task with rendering capabilities.
+
+This interface provides runtime-layer access to task data with: - Composite identity (`id`<!-- -->, `sourceId`<!-- -->) for cross-source references - Rendering with library context - Parameter validation
 
 
 </td></tr>

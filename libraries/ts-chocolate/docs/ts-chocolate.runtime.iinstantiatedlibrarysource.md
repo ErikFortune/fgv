@@ -161,5 +161,26 @@ _(Optional)_ Pre-built procedures library
 
 
 </td></tr>
+<tr><td>
+
+[tasks?](./ts-chocolate.runtime.iinstantiatedlibrarysource.tasks.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[TasksLibrary](./ts-chocolate.tasks.taskslibrary.md)
+
+
+</td><td>
+
+_(Optional)_ Pre-built tasks library
+
+
+</td></tr>
 </tbody></table>
 

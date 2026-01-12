@@ -34,7 +34,8 @@ import {
   FillingId,
   FillingVersionId,
   FillingVersionSpec,
-  SourceId
+  SourceId,
+  TaskId
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
@@ -42,6 +43,7 @@ import { IFillingRecipe, FillingsLibrary } from '../fillings';
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
 import { Mold, MoldsLibrary } from '../molds';
 import { Procedure, ProceduresLibrary } from '../procedures';
+import { Task, TasksLibrary } from '../tasks';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,
@@ -86,6 +88,11 @@ export interface IInstantiatedLibrarySource {
    * Pre-built procedures library
    */
   readonly procedures?: ProceduresLibrary;
+
+  /**
+   * Pre-built tasks library
+   */
+  readonly tasks?: TasksLibrary;
 
   /**
    * Pre-built confections library
@@ -158,6 +165,7 @@ export class ChocolateLibrary {
   private readonly _journals: JournalLibrary;
   private readonly _molds: MoldsLibrary;
   private readonly _procedures: ProceduresLibrary;
+  private readonly _tasks: TasksLibrary;
   private readonly _confections: ConfectionsLibrary;
 
   /**
@@ -171,6 +179,7 @@ export class ChocolateLibrary {
     journals: JournalLibrary,
     molds: MoldsLibrary,
     procedures: ProceduresLibrary,
+    tasks: TasksLibrary,
     confections: ConfectionsLibrary,
     logger?: Logging.ILogger
   ) {
@@ -181,6 +190,7 @@ export class ChocolateLibrary {
     this._journals = journals;
     this._molds = molds;
     this._procedures = procedures;
+    this._tasks = tasks;
     this._confections = confections;
     this.logger = new Logging.LogReporter({ logger });
   }
@@ -234,6 +244,13 @@ export class ChocolateLibrary {
       logger
     }).report(logger);
 
+    const tasksResult = TasksLibrary.create({
+      builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'tasks'),
+      fileSources: ChocolateLibrary._toFileSources(fileSources, 'tasks'),
+      mergeLibraries: params.libraries?.tasks,
+      logger
+    }).report(logger);
+
     const confectionsResult = ConfectionsLibrary.create({
       builtin: resolveBuiltInSpec<SourceId>(builtinSpec, 'confections'),
       fileSources: ChocolateLibrary._toFileSources(fileSources, 'confections'),
@@ -246,21 +263,24 @@ export class ChocolateLibrary {
         journalsResult.onSuccess((journals) =>
           moldsResult.onSuccess((molds) =>
             proceduresResult.onSuccess((procedures) =>
-              confectionsResult.onSuccess((confections) => {
-                const library = new ChocolateLibrary(
-                  ingredients,
-                  recipes,
-                  journals,
-                  molds,
-                  procedures,
-                  confections,
-                  logger.logger
-                );
-                logger.info(
-                  `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${confections.size} confections`
-                );
-                return Success.with(library);
-              })
+              tasksResult.onSuccess((tasks) =>
+                confectionsResult.onSuccess((confections) => {
+                  const library = new ChocolateLibrary(
+                    ingredients,
+                    recipes,
+                    journals,
+                    molds,
+                    procedures,
+                    tasks,
+                    confections,
+                    logger.logger
+                  );
+                  logger.info(
+                    `ChocolateLibrary created: ${ingredients.size} ingredients, ${recipes.size} recipes, ${molds.size} molds, ${procedures.size} procedures, ${tasks.size} tasks, ${confections.size} confections`
+                  );
+                  return Success.with(library);
+                })
+              )
             )
           )
         )
@@ -315,6 +335,13 @@ export class ChocolateLibrary {
    */
   public get procedures(): ProceduresLibrary {
     return this._procedures;
+  }
+
+  /**
+   * The {@link Tasks.TasksLibrary | tasks library}.
+   */
+  public get tasks(): TasksLibrary {
+    return this._tasks;
   }
 
   /**
@@ -394,6 +421,24 @@ export class ChocolateLibrary {
    */
   public hasProcedure(id: ProcedureId): boolean {
     return this._procedures.has(id);
+  }
+
+  /**
+   * Gets a {@link Tasks.Task | task} by its {@link TaskId | composite ID}
+   * @param id - The {@link TaskId | id} of the task to retrieve.
+   * @returns `Success` with task, or `Failure` if not found
+   */
+  public getTask(id: TaskId): Result<Task> {
+    return this._tasks.get(id);
+  }
+
+  /**
+   * Checks if a task exists
+   * @param id - The {@link TaskId | id} of the task to check.
+   * @returns `true` if the task exists
+   */
+  public hasTask(id: TaskId): boolean {
+    return this._tasks.has(id);
   }
 
   /**

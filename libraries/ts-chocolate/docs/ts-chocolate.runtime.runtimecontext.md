@@ -11,9 +11,9 @@ This is the primary entry point for consumers who want resolved views of recipes
 **Signature:**
 
 ```typescript
-export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext 
+export declare class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext 
 ```
-**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext
+**Implements:** IVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IScaledVersionContext&lt;[AnyRuntimeIngredient](./ts-chocolate.runtime.anyruntimeingredient.md)<!-- -->&gt;, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext
 
 ## Properties
 
@@ -380,6 +380,62 @@ Gets all journal records for a specific filling version.
 </td><td>
 
 Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+
+
+</td></tr>
+<tr><td>
+
+[getRuntimeMold(id)](./ts-chocolate.runtime.runtimecontext.getruntimemold.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a runtime mold by its composite ID (with caching).
+
+
+</td></tr>
+<tr><td>
+
+[getRuntimeProcedure(id)](./ts-chocolate.runtime.runtimecontext.getruntimeprocedure.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a runtime procedure by its composite ID (with caching).
+
+
+</td></tr>
+<tr><td>
+
+[getRuntimeTask(id)](./ts-chocolate.runtime.runtimecontext.getruntimetask.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a runtime task by its composite ID (with caching). Implements ITaskContext interface.
+
+
+</td></tr>
+<tr><td>
+
+[getTask(id)](./ts-chocolate.runtime.runtimecontext.gettask.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a task by its composite ID. Used internally for task resolution.
 
 
 </td></tr>

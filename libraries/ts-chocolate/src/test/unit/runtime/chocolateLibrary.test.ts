@@ -516,6 +516,16 @@ describe('ChocolateLibrary', () => {
         }
       }
     };
+
+    const minimalTaskData = {
+      items: {
+        'file-task': {
+          baseId: 'file-task',
+          name: 'File Task',
+          template: 'Do something with {{item}}'
+        }
+      }
+    };
     /* eslint-enable @typescript-eslint/naming-convention */
 
     /**
@@ -531,7 +541,8 @@ describe('ChocolateLibrary', () => {
         { path: '/data/fillings/file-source.json', contents: recipeData },
         { path: '/data/molds/file-source.json', contents: minimalMoldData },
         { path: '/data/procedures/file-source.json', contents: minimalProcedureData },
-        { path: '/data/confections/file-source.json', contents: minimalConfectionData }
+        { path: '/data/confections/file-source.json', contents: minimalConfectionData },
+        { path: '/data/tasks/file-source.json', contents: minimalTaskData }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -584,7 +595,8 @@ describe('ChocolateLibrary', () => {
         { path: '/data/fillings/source2.json', contents: minimalRecipeData },
         { path: '/data/molds/source2.json', contents: minimalMoldData },
         { path: '/data/procedures/source2.json', contents: minimalProcedureData },
-        { path: '/data/confections/source2.json', contents: minimalConfectionData }
+        { path: '/data/confections/source2.json', contents: minimalConfectionData },
+        { path: '/data/tasks/source2.json', contents: minimalTaskData }
       ];
       const tree2 = FileTree.inMemory(files2).orThrow();
       const root2 = tree2.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -643,7 +655,8 @@ describe('ChocolateLibrary', () => {
         { path: '/data/fillings/felchlin.json', contents: minimalRecipeData },
         { path: '/data/molds/felchlin.json', contents: minimalMoldData },
         { path: '/data/procedures/felchlin.json', contents: minimalProcedureData },
-        { path: '/data/confections/felchlin.json', contents: minimalConfectionData }
+        { path: '/data/confections/felchlin.json', contents: minimalConfectionData },
+        { path: '/data/tasks/felchlin.json', contents: minimalTaskData }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -663,7 +676,8 @@ describe('ChocolateLibrary', () => {
         { path: '/data/fillings/readme.txt', contents: 'empty' },
         { path: '/data/molds/readme.txt', contents: 'empty' },
         { path: '/data/procedures/readme.txt', contents: 'empty' },
-        { path: '/data/confections/readme.txt', contents: 'empty' }
+        { path: '/data/confections/readme.txt', contents: 'empty' },
+        { path: '/data/tasks/readme.txt', contents: 'empty' }
       ];
       const tree = FileTree.inMemory(files).orThrow();
       const root = tree.getItem('/').orThrow() as FileTree.IFileTreeDirectoryItem;
@@ -817,6 +831,47 @@ describe('ChocolateLibrary', () => {
         expect(
           lib.hasConfection('common.nonexistent' as import('../../../packlets/common').ConfectionId)
         ).toBe(false);
+      });
+    });
+  });
+
+  // ============================================================================
+  // Task Convenience Methods
+  // ============================================================================
+
+  describe('task convenience methods', () => {
+    test('tasks getter returns tasks library', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(lib.tasks).toBeDefined();
+        expect(lib.tasks.size).toBeGreaterThan(0);
+      });
+    });
+
+    test('getTask returns task for valid ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(
+          lib.getTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)
+        ).toSucceedAndSatisfy((task) => {
+          expect(task.name).toBe('Melt Chocolate');
+        });
+      });
+    });
+
+    test('getTask fails for non-existent ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(lib.getTask('common.nonexistent' as import('../../../packlets/common').TaskId)).toFail();
+      });
+    });
+
+    test('hasTask returns true for existing ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(lib.hasTask('common.melt-chocolate' as import('../../../packlets/common').TaskId)).toBe(true);
+      });
+    });
+
+    test('hasTask returns false for non-existent ID', () => {
+      expect(ChocolateLibrary.create({ builtin: true })).toSucceedAndSatisfy((lib) => {
+        expect(lib.hasTask('common.nonexistent' as import('../../../packlets/common').TaskId)).toBe(false);
       });
     });
   });

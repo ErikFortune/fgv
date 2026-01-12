@@ -85,3 +85,19 @@ export { Indexers };
 // Session infrastructure (as namespace)
 import * as Session from './session';
 export { Session };
+
+// Runtime tasks
+export { ITaskContext, IRuntimeTask, RuntimeTask } from './tasks';
+
+// Runtime procedures
+export {
+  IProcedureContext,
+  IRuntimeProcedure,
+  IRuntimeProcedureRenderContext,
+  IRuntimeRenderedProcedure,
+  IRuntimeRenderedStep,
+  RuntimeProcedure
+} from './procedures';
+
+// Runtime molds
+export { IMoldContext, IRuntimeMold, RuntimeMold } from './molds';

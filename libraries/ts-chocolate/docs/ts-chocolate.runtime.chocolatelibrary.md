@@ -184,6 +184,27 @@ The [procedures library](./ts-chocolate.procedures.procedureslibrary.md)<!-- -->
 
 
 </td></tr>
+<tr><td>
+
+[tasks](./ts-chocolate.runtime.chocolatelibrary.tasks.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[TasksLibrary](./ts-chocolate.tasks.taskslibrary.md)
+
+
+</td><td>
+
+The [tasks library](./ts-chocolate.tasks.taskslibrary.md)<!-- -->.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -376,6 +397,20 @@ Gets a [recipe](./ts-chocolate.fillings.fillingrecipe.md) by its [composite ID](
 </td></tr>
 <tr><td>
 
+[getTask(id)](./ts-chocolate.runtime.chocolatelibrary.gettask.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a [task](./ts-chocolate.tasks.task.md) by its [composite ID](./ts-chocolate.taskid.md)
+
+
+</td></tr>
+<tr><td>
+
 [hasConfection(id)](./ts-chocolate.runtime.chocolatelibrary.hasconfection.md)
 
 
@@ -441,6 +476,20 @@ Checks if a procedure exists
 </td><td>
 
 Checks if a recipe exists
+
+
+</td></tr>
+<tr><td>
+
+[hasTask(id)](./ts-chocolate.runtime.chocolatelibrary.hastask.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Checks if a task exists
 
 
 </td></tr>
