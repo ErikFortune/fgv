@@ -9,5 +9,5 @@ Ganache characteristics to display
 **Signature:**
 
 ```typescript
-characteristics: Ingredients.IGanacheCharacteristics;
+characteristics: Entities.Ingredients.IGanacheCharacteristics;
 ```

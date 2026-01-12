@@ -9,5 +9,5 @@ Ingredient to display
 **Signature:**
 
 ```typescript
-ingredient: Ingredients.Ingredient;
+ingredient: Entities.Ingredients.Ingredient;
 ```

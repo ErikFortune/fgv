@@ -9,5 +9,5 @@ Resolved additional chocolates (from golden version, lazy-loaded)
 **Signature:**
 
 ```typescript
-get additionalChocolates(): ReadonlyArray<import('../model').IResolvedAdditionalChocolate> | undefined;
+get additionalChocolates(): ReadonlyArray<IResolvedAdditionalChocolate> | undefined;
 ```

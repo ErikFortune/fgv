@@ -9,5 +9,5 @@ Filling category to display
 **Signature:**
 
 ```typescript
-category: Fillings.FillingCategory;
+category: Entities.Fillings.FillingCategory;
 ```

@@ -9,5 +9,5 @@ Temperature curve to display
 **Signature:**
 
 ```typescript
-curve: Ingredients.ITemperatureCurve;
+curve: Entities.Ingredients.ITemperatureCurve;
 ```

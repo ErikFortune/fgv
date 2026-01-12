@@ -9,5 +9,5 @@ Resolved shell chocolate specification (from golden version, lazy-loaded)
 **Signature:**
 
 ```typescript
-get shellChocolate(): import('../model').IResolvedChocolateSpec;
+get shellChocolate(): IResolvedChocolateSpec;
 ```

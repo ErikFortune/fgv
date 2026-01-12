@@ -54,7 +54,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;import('../model').[IResolvedAdditionalChocolate](./ts-chocolate.runtime.iresolvedadditionalchocolate.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[IResolvedAdditionalChocolate](./ts-chocolate.runtime.iresolvedadditionalchocolate.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -96,7 +96,7 @@ Confection type is always 'molded-bonbon' for this type
 
 </td><td>
 
-ReadonlyArray&lt;import('../model').[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -138,7 +138,7 @@ Golden version typed as IMoldedBonBonVersion
 
 </td><td>
 
-import('../../common').[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;import('../model').[IResolvedConfectionMoldRef](./ts-chocolate.runtime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionMoldRef](./ts-chocolate.runtime.iresolvedconfectionmoldref.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
 
 
 </td><td>
@@ -159,7 +159,7 @@ Resolved molds with preferred selection (from golden version, lazy-loaded)
 
 </td><td>
 
-import('../../common').[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;import('../model').[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, import('../../common').[ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -201,7 +201,7 @@ Gets the underlying raw molded bonbon data
 
 </td><td>
 
-import('../model').[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
+[IResolvedChocolateSpec](./ts-chocolate.runtime.iresolvedchocolatespec.md)
 
 
 </td><td>

@@ -64,7 +64,7 @@ _(Optional)_ Optional additional CSS classes
 
 </td><td>
 
-Ingredients.ITemperatureCurve
+Entities.Ingredients.ITemperatureCurve
 
 
 </td><td>

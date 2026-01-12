@@ -9,5 +9,5 @@ Resolved molds with preferred selection (from golden version, lazy-loaded)
 **Signature:**
 
 ```typescript
-get molds(): import('../../common').IOptionsWithPreferred<import('../model').IResolvedConfectionMoldRef, MoldId>;
+get molds(): IOptionsWithPreferred<IResolvedConfectionMoldRef, MoldId>;
 ```

@@ -308,7 +308,7 @@ Gets effective URLs for the golden version (base URLs + version's additional URL
 
 </td><td>
 
-ReadonlyArray&lt;import('../model').[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
+ReadonlyArray&lt;[IResolvedFillingSlot](./ts-chocolate.runtime.iresolvedfillingslot.md)<!-- -->&gt; \| undefined
 
 
 </td><td>
@@ -415,7 +415,7 @@ Human-readable name
 
 </td><td>
 
-[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;import('../model').[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
+[IOptionsWithPreferred](./ts-chocolate.ioptionswithpreferred.md)<!-- -->&lt;[IResolvedConfectionProcedure](./ts-chocolate.runtime.iresolvedconfectionprocedure.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->&gt; \| undefined
 
 
 </td><td>

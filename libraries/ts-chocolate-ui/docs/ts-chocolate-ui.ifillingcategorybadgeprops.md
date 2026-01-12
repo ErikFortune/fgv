@@ -45,7 +45,7 @@ Description
 
 </td><td>
 
-Fillings.FillingCategory
+Entities.Fillings.FillingCategory
 
 
 </td><td>

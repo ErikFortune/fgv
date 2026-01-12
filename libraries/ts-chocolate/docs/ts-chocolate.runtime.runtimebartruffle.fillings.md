@@ -9,5 +9,5 @@ Resolved filling slots from the golden version (lazy-loaded)
 **Signature:**
 
 ```typescript
-get fillings(): ReadonlyArray<import('../model').IResolvedFillingSlot> | undefined;
+get fillings(): ReadonlyArray<IResolvedFillingSlot> | undefined;
 ```

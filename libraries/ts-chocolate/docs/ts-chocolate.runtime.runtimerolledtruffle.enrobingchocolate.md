@@ -9,5 +9,5 @@ Resolved enrobing chocolate specification (from golden version, optional, lazy-l
 **Signature:**
 
 ```typescript
-get enrobingChocolate(): import('../model').IResolvedChocolateSpec | undefined;
+get enrobingChocolate(): IResolvedChocolateSpec | undefined;
 ```

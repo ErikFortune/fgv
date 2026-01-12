@@ -9,5 +9,5 @@ Resolved procedures from the golden version (lazy-loaded)
 **Signature:**
 
 ```typescript
-get procedures(): import('../../common').IOptionsWithPreferred<import('../model').IResolvedConfectionProcedure, import('../../common').ProcedureId> | undefined;
+get procedures(): IOptionsWithPreferred<IResolvedConfectionProcedure, ProcedureId> | undefined;
 ```

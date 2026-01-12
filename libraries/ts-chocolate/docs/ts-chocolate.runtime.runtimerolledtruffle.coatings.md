@@ -9,5 +9,5 @@ Resolved coating specification (from golden version, optional, lazy-loaded)
 **Signature:**
 
 ```typescript
-get coatings(): import('../model').IResolvedCoatings | undefined;
+get coatings(): IResolvedCoatings | undefined;
 ```
