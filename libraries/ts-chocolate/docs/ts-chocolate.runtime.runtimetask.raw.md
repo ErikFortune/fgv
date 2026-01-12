@@ -9,5 +9,5 @@ Gets the underlying raw task data
 **Signature:**
 
 ```typescript
-get raw(): Task;
+get raw(): ITaskData;
 ```

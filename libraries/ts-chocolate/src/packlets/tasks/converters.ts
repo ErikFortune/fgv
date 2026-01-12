@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Converter, Converters, Result, succeed } from '@fgv/ts-utils';
+import { Converter, Converters, succeed } from '@fgv/ts-utils';
 import { Converters as CommonConverters, BaseTaskId, TaskId } from '../common';
 import {
   IInlineTask,
@@ -34,7 +34,6 @@ import {
   TaskRefStatus,
   ValidationBehavior
 } from './model';
-import { Task } from './task';
 
 // ============================================================================
 // Helper Converters
@@ -160,17 +159,4 @@ export const renderOptions: Converter<IRenderOptions> = Converters.object<IRende
   onInvalidTaskRef: validationBehavior.optional(),
   onMissingVariables: validationBehavior.optional(),
   additionalContext: params.optional()
-});
-
-// ============================================================================
-// Task Class Converter
-// ============================================================================
-
-/**
- * Converter that creates Task instances from YAML/JSON data.
- * Template parsing and validation occurs in RuntimeTask, not here.
- * @public
- */
-export const task: Converter<Task> = Converters.generic<Task>((from: unknown): Result<Task> => {
-  return taskData.convert(from).onSuccess((data) => Task.create(data));
 });

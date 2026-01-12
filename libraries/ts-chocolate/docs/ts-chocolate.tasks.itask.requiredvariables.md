@@ -4,7 +4,7 @@
 
 ## Tasks.ITask.requiredVariables property
 
-Required variables extracted from the template at runtime. This is computed from parsing the Mustache template, not persisted. Only available on RuntimeTask, not on the data-layer Task class.
+Required variables extracted from the template at runtime. This is computed from parsing the Mustache template, not persisted.
 
 **Signature:**
 

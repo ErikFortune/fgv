@@ -19,28 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[procedure](./ts-chocolate.procedures.converters.procedure.md)
-
-
-</td><td>
-
-Converter for [Procedure](./ts-chocolate.procedures.procedure.md) class instances.
-
-
-</td></tr>
-<tr><td>
-
-[procedureConverter](./ts-chocolate.procedures.converters.procedureconverter.md)
-
-
-</td><td>
-
-Convenience alias for the procedure converter.
-
-
-</td></tr>
-<tr><td>
-
 [procedureData](./ts-chocolate.procedures.converters.proceduredata.md)
 
 

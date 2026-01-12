@@ -9,5 +9,5 @@ The fully resolved procedure object.
 **Signature:**
 
 ```typescript
-readonly procedure: Procedure;
+readonly procedure: IProcedure;
 ```

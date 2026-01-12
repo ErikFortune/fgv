@@ -9,7 +9,7 @@ Gets a procedure by its composite ID. Used internally by RuntimeRecipe for proce
 **Signature:**
 
 ```typescript
-getProcedure(id: string): Result<Procedure>;
+getProcedure(id: string): Result<IProcedure>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The procedure ID (composite format: sourceId.baseProcedureId)
 
 **Returns:**
 
-Result&lt;[Procedure](./ts-chocolate.procedures.procedure.md)<!-- -->&gt;
+Result&lt;[IProcedure](./ts-chocolate.procedures.iprocedure.md)<!-- -->&gt;
 
-Success with Procedure, or Failure if not found
+Success with IProcedure, or Failure if not found
 

@@ -34,7 +34,7 @@ import {
   MoldId,
   SourceId
 } from '../../common';
-import { ICavityDimensions, IMold, Mold } from '../../molds';
+import { ICavityDimensions, IMold } from '../../molds';
 import { IMoldContext, IRuntimeMold } from './model';
 
 // ============================================================================
@@ -54,10 +54,10 @@ import { IMoldContext, IRuntimeMold } from './model';
 export class RuntimeMold implements IRuntimeMold {
   private readonly _context: IMoldContext;
   private readonly _id: MoldId;
-  private readonly _mold: Mold;
+  private readonly _mold: IMold;
   private readonly _sourceId: SourceId;
 
-  private constructor(context: IMoldContext, id: MoldId, mold: Mold) {
+  private constructor(context: IMoldContext, id: MoldId, mold: IMold) {
     this._context = context;
     this._id = id;
     this._mold = mold;
@@ -71,15 +71,11 @@ export class RuntimeMold implements IRuntimeMold {
    * Factory method for creating a RuntimeMold.
    * @param context - The runtime context (reserved for future use)
    * @param id - The composite mold ID
-   * @param mold - The mold data (can be Mold or IMold)
+   * @param mold - The mold data
    * @returns Success with RuntimeMold
    */
-  public static create(context: IMoldContext, id: MoldId, mold: Mold | IMold): Result<RuntimeMold> {
-    // Normalize to Mold class if needed
-    if (mold instanceof Mold) {
-      return Success.with(new RuntimeMold(context, id, mold));
-    }
-    return Mold.create(mold).onSuccess((m) => Success.with(new RuntimeMold(context, id, m)));
+  public static create(context: IMoldContext, id: MoldId, mold: IMold): Result<RuntimeMold> {
+    return Success.with(new RuntimeMold(context, id, mold));
   }
 
   // ============================================================================

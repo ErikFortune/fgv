@@ -23,12 +23,7 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import { BaseProcedureId, Minutes, ProcedureId, SourceId } from '../../../packlets/common';
 
-import {
-  ProceduresLibrary,
-  IProcedure,
-  IProcedureFileTreeSource,
-  Procedure
-} from '../../../packlets/procedures';
+import { ProceduresLibrary, IProcedure, IProcedureFileTreeSource } from '../../../packlets/procedures';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 import { ITaskInvocation } from '../../../packlets/tasks';
@@ -67,8 +62,8 @@ describe('ProceduresLibrary', () => {
     notes: 'Test notes'
   };
 
-  // Create a Procedure instance for mutation tests
-  const createTestProcedure = (): Procedure => Procedure.create(testProcedureData).orThrow();
+  // Create a procedure for mutation tests
+  const createTestProcedure = (): IProcedure => testProcedureData;
 
   // ============================================================================
   // Creation Tests
@@ -231,8 +226,7 @@ describe('ProceduresLibrary', () => {
       expect(library.has(id)).toBe(true);
 
       const updatedData: IProcedure = { ...testProcedureData, description: 'Updated Description' };
-      const updatedProcedure = Procedure.create(updatedData).orThrow();
-      expect(library.set(id, updatedProcedure)).toSucceed();
+      expect(library.set(id, updatedData)).toSucceed();
       expect(library.get(id)).toSucceedAndSatisfy((procedure) => {
         expect(procedure.description).toBe('Updated Description');
       });

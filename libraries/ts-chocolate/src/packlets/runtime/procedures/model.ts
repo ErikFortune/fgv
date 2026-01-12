@@ -31,7 +31,7 @@ import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
 import { FillingCategory, IComputedScaledFillingRecipe } from '../../fillings';
 import { IMold } from '../../molds';
 import { IProcedure, IProcedureStep } from '../../procedures';
-import { Task } from '../../tasks';
+import { ITaskData } from '../../tasks';
 import { RuntimeTask } from '../tasks';
 
 // ============================================================================
@@ -47,9 +47,9 @@ export interface IProcedureContext {
   /**
    * Gets a task by its composite ID.
    * @param id - The task ID (composite format: sourceId.baseTaskId)
-   * @returns Success with Task, or Failure if not found
+   * @returns Success with ITaskData, or Failure if not found
    */
-  getTask(id: TaskId): Result<Task>;
+  getTask(id: TaskId): Result<ITaskData>;
 
   /**
    * Gets a runtime task by its composite ID.

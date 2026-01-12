@@ -9,7 +9,7 @@ A single entry in a molds collection.
 **Signature:**
 
 ```typescript
-export type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, Mold>;
+export type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, IMold>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [Mold](./ts-chocolate.molds.mold.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseMoldId](./ts-chocolate.basemoldid.md)<!-- -->, [IMold](./ts-chocolate.molds.imold.md)
 

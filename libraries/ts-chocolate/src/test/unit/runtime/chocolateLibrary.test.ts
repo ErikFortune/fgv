@@ -45,9 +45,9 @@ import { IGanacheCharacteristics, IIngredient, IngredientsLibrary } from '../../
 
 import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
 
-import { IMold, Mold, MoldsLibrary } from '../../../packlets/molds';
+import { IMold, MoldsLibrary } from '../../../packlets/molds';
 
-import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
+import { IProcedure, ProceduresLibrary } from '../../../packlets/procedures';
 
 import { ILibraryFileTreeSource } from '../../../packlets/library-data';
 
@@ -292,11 +292,10 @@ describe('ChocolateLibrary', () => {
     let library: ChocolateLibrary;
 
     beforeEach(() => {
-      const testMold = Mold.create(testMoldData).orThrow();
       const molds = MoldsLibrary.create({
         builtin: false,
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { 'test-mold': testMold } }]
+        collections: [{ id: 'test' as SourceId, isMutable: true, items: { 'test-mold': testMoldData } }]
       }).orThrow();
 
       library = ChocolateLibrary.create({ builtin: false, libraries: { molds } }).orThrow();
@@ -345,11 +344,12 @@ describe('ChocolateLibrary', () => {
     let library: ChocolateLibrary;
 
     beforeEach(() => {
-      const testProcedure = Procedure.create(testProcedureData).orThrow();
       const procedures = ProceduresLibrary.create({
         builtin: false,
         // eslint-disable-next-line @typescript-eslint/naming-convention
-        collections: [{ id: 'test' as SourceId, isMutable: true, items: { 'test-procedure': testProcedure } }]
+        collections: [
+          { id: 'test' as SourceId, isMutable: true, items: { 'test-procedure': testProcedureData } }
+        ]
       }).orThrow();
 
       library = ChocolateLibrary.create({ builtin: false, libraries: { procedures } }).orThrow();

@@ -101,7 +101,7 @@ import {
 import { ICategorizedUrl, IOptionsWithPreferred, MoldId, ProcedureId } from '../common';
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
 import { IGanacheCalculation } from '../calculations';
-import { Procedure } from '../procedures';
+import { IProcedure } from '../procedures';
 import { ChocolateLibrary } from './chocolateLibrary';
 
 // ============================================================================
@@ -681,7 +681,7 @@ export interface IResolvedFillingRecipeProcedure {
   /**
    * The fully resolved procedure object.
    */
-  readonly procedure: Procedure;
+  readonly procedure: IProcedure;
 
   /**
    * Optional notes specific to using this procedure with the recipe.
@@ -708,7 +708,7 @@ export interface IResolvedProcedures {
    * The recommended/default procedure - fully resolved.
    * Undefined if no recommended procedure is specified.
    */
-  readonly recommendedProcedure?: Procedure;
+  readonly recommendedProcedure?: IProcedure;
 }
 
 // ============================================================================
@@ -1080,7 +1080,7 @@ export interface IVersionContext<TIngredient extends IRuntimeIngredient = IRunti
   /** Map of all fillings, keyed by composite ID. */
   readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
   /** Gets a procedure by its composite ID. */
-  getProcedure(id: string): Result<Procedure>;
+  getProcedure(id: string): Result<IProcedure>;
 }
 
 /**

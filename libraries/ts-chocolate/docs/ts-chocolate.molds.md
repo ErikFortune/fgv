@@ -19,19 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Mold](./ts-chocolate.molds.mold.md)
-
-
-</td><td>
-
-Mold class - pure data representation of a mold.
-
-This is a data-layer class that holds mold configuration without business logic. Computed properties like totalCapacity and displayName are provided by RuntimeMold.
-
-
-</td></tr>
-<tr><td>
-
 [MoldsLibrary](./ts-chocolate.molds.moldslibrary.md)
 
 

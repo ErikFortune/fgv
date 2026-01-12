@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 export * from './model';
-export * from './task';
 export * from './tasksCollection';
 export * from './tasksLibrary';
 

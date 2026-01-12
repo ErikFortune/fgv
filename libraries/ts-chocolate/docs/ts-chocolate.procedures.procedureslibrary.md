@@ -11,9 +11,9 @@ Wraps AggregatedResultMap to provide: - Composite ID access (e.g., "common.ganac
 **Signature:**
 
 ```typescript
-export declare class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, Procedure> 
+export declare class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, IProcedure> 
 ```
-**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[ProcedureId](./ts-chocolate.procedureid.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [Procedure](./ts-chocolate.procedures.procedure.md)<!-- -->&gt;
+**Extends:** [SubLibraryBase](./ts-chocolate.librarydata.sublibrarybase.md)<!-- -->&lt;[ProcedureId](./ts-chocolate.procedureid.md)<!-- -->, [BaseProcedureId](./ts-chocolate.baseprocedureid.md)<!-- -->, [IProcedure](./ts-chocolate.procedures.iprocedure.md)<!-- -->&gt;
 
 ## Methods
 

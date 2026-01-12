@@ -363,7 +363,7 @@ Gets all [journal records](./ts-chocolate.journal.ifillingrecipejournalrecord.md
 
 </td><td>
 
-Gets a [mold](./ts-chocolate.molds.mold.md) by its [composite ID](./ts-chocolate.moldid.md)
+Gets a [mold](./ts-chocolate.molds.imold.md) by its [composite ID](./ts-chocolate.moldid.md)
 
 
 </td></tr>
@@ -377,7 +377,7 @@ Gets a [mold](./ts-chocolate.molds.mold.md) by its [composite ID](./ts-chocolate
 
 </td><td>
 
-Gets a [procedure](./ts-chocolate.procedures.procedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
+Gets a [procedure](./ts-chocolate.procedures.iprocedure.md) by its [composite ID](./ts-chocolate.procedureid.md)
 
 
 </td></tr>
@@ -405,7 +405,7 @@ Gets a [recipe](./ts-chocolate.fillings.fillingrecipe.md) by its [composite ID](
 
 </td><td>
 
-Gets a [task](./ts-chocolate.tasks.task.md) by its [composite ID](./ts-chocolate.taskid.md)
+Gets a [task](./ts-chocolate.tasks.itaskdata.md) by its [composite ID](./ts-chocolate.taskid.md)
 
 
 </td></tr>

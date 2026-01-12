@@ -41,9 +41,9 @@ import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { Ingredient, IngredientsLibrary } from '../ingredients';
 import { IFillingRecipe, FillingsLibrary } from '../fillings';
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
-import { Mold, MoldsLibrary } from '../molds';
-import { Procedure, ProceduresLibrary } from '../procedures';
-import { Task, TasksLibrary } from '../tasks';
+import { IMold, MoldsLibrary } from '../molds';
+import { IProcedure, ProceduresLibrary } from '../procedures';
+import { ITaskData, TasksLibrary } from '../tasks';
 import { IGanacheCalculation, IngredientResolver, calculateGanache } from '../calculations';
 import {
   FullLibraryLoadSpec,
@@ -388,11 +388,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Molds.Mold | mold} by its {@link MoldId | composite ID}
+   * Gets a {@link Molds.IMold | mold} by its {@link MoldId | composite ID}
    * @param id - The {@link MoldId | id} of the mold to retrieve.
-   * @returns `Success` with mold, or `Failure` if not found
+   * @returns `Success` with mold data, or `Failure` if not found
    */
-  public getMold(id: MoldId): Result<Mold> {
+  public getMold(id: MoldId): Result<IMold> {
     return this._molds.get(id);
   }
 
@@ -406,11 +406,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Procedures.Procedure | procedure} by its {@link ProcedureId | composite ID}
+   * Gets a {@link Procedures.IProcedure | procedure} by its {@link ProcedureId | composite ID}
    * @param id - The {@link ProcedureId | id} of the procedure to retrieve.
    * @returns `Success` with procedure, or `Failure` if not found
    */
-  public getProcedure(id: ProcedureId): Result<Procedure> {
+  public getProcedure(id: ProcedureId): Result<IProcedure> {
     return this._procedures.get(id);
   }
 
@@ -424,11 +424,11 @@ export class ChocolateLibrary {
   }
 
   /**
-   * Gets a {@link Tasks.Task | task} by its {@link TaskId | composite ID}
+   * Gets a {@link Tasks.ITaskData | task} by its {@link TaskId | composite ID}
    * @param id - The {@link TaskId | id} of the task to retrieve.
-   * @returns `Success` with task, or `Failure` if not found
+   * @returns `Success` with task data, or `Failure` if not found
    */
-  public getTask(id: TaskId): Result<Task> {
+  public getTask(id: TaskId): Result<ITaskData> {
     return this._tasks.get(id);
   }
 

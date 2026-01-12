@@ -9,7 +9,7 @@ Validator type for ProceduresLibrary collections.
 **Signature:**
 
 ```typescript
-export type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, Procedure>;
+export type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedure>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->, [Procedure](./ts-chocolate.procedures.procedure.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [ProcedureId](./ts-chocolate.procedureid.md)<!-- -->, [IProcedure](./ts-chocolate.procedures.iprocedure.md)
 

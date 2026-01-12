@@ -27,8 +27,8 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseProcedureId, ProcedureId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { Procedure } from './procedure';
-import { procedure as procedureConverter } from './converters';
+import { IProcedure } from './model';
+import { procedureData as procedureConverter } from './converters';
 import { ProcedureCollectionEntryInit } from './proceduresCollection';
 import {
   getProceduresDirectory,
@@ -90,7 +90,7 @@ export type IProceduresLibraryAsyncParams = ISubLibraryAsyncParams<
  *
  * @public
  */
-export class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, Procedure> {
+export class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, IProcedure> {
   private constructor(params?: IProceduresLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseProcedureId,
@@ -127,7 +127,7 @@ export class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedure
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<ProceduresLibrary, BaseProcedureId, Procedure> = {
+    const createParams: ISubLibraryCreateParams<ProceduresLibrary, BaseProcedureId, IProcedure> = {
       itemIdConverter: CommonConverters.baseProcedureId,
       itemConverter: procedureConverter,
       directoryNavigator: getProceduresDirectory,

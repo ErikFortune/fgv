@@ -29,7 +29,6 @@ import { Converters as CommonConverters } from '../common';
 import { Converters as RecipeConverters } from '../fillings';
 import { Converters as TaskConverters } from '../tasks';
 import { IProcedure, IProcedureStep } from './model';
-import { Procedure } from './procedure';
 
 /**
  * Converter for {@link Procedures.IProcedureStep | IProcedureStep}.
@@ -58,17 +57,3 @@ export const procedureData: Converter<IProcedure> = Converters.object<IProcedure
   tags: Converters.arrayOf(Converters.string).optional(),
   notes: Converters.string.optional()
 });
-
-/**
- * Converter for {@link Procedures.Procedure | Procedure} class instances.
- * @public
- */
-export const procedure: Converter<Procedure> = Converters.generic<Procedure>((from: unknown) => {
-  return procedureData.convert(from).onSuccess((data) => Procedure.create(data));
-});
-
-/**
- * Convenience alias for the procedure converter.
- * @public
- */
-export const procedureConverter: Converter<Procedure> = procedure;

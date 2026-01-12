@@ -28,7 +28,7 @@
 import { Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
-import { Task, ITaskRefValidation } from '../../tasks';
+import { ITaskData, ITaskRefValidation } from '../../tasks';
 
 // ============================================================================
 // Runtime Task Context
@@ -43,9 +43,9 @@ export interface ITaskContext {
   /**
    * Gets a task by its composite ID.
    * @param id - The task ID (composite format: sourceId.baseTaskId)
-   * @returns Success with Task, or Failure if not found
+   * @returns Success with ITaskData, or Failure if not found
    */
-  getTask(id: TaskId): Result<Task>;
+  getTask(id: TaskId): Result<ITaskData>;
 }
 
 // ============================================================================
@@ -136,5 +136,5 @@ export interface IRuntimeTask {
   /**
    * Gets the underlying raw task data.
    */
-  readonly raw: Task;
+  readonly raw: ITaskData;
 }

@@ -31,7 +31,6 @@ const {
   procedureStepTask,
   validationBehavior,
   renderOptions,
-  task,
   taskIdOrBaseTaskId
 } = TaskConverters;
 
@@ -427,70 +426,6 @@ describe('TaskConverters', () => {
         expect(result.onInvalidTaskRef).toBeUndefined();
         expect(result.onMissingVariables).toBeUndefined();
         expect(result.additionalContext).toBeUndefined();
-      });
-    });
-  });
-
-  // ============================================================================
-  // task (Task class converter)
-  // Task is now a pure data class - template parsing/validation occurs in RuntimeTask
-  // ============================================================================
-  describe('task', () => {
-    test('converts valid task data to Task instance', () => {
-      const data = {
-        baseId: 'test-task',
-        name: 'Test Task',
-        template: 'Do {{action}}',
-        defaultActiveTime: 5
-      };
-
-      expect(task.convert(data)).toSucceedAndSatisfy((result) => {
-        expect(result.baseId).toBe('test-task');
-        expect(result.name).toBe('Test Task');
-        expect(result.template).toBe('Do {{action}}');
-        expect(result.defaultActiveTime).toBe(5);
-      });
-    });
-
-    test('converts task with template containing variables', () => {
-      const data = {
-        baseId: 'multi-var-task',
-        name: 'Multi Variable Task',
-        template: 'Heat {{ingredient}} to {{temp}}C'
-      };
-
-      expect(task.convert(data)).toSucceedAndSatisfy((result) => {
-        expect(result.template).toBe('Heat {{ingredient}} to {{temp}}C');
-      });
-    });
-
-    test('converts task with plain template', () => {
-      const data = {
-        baseId: 'no-var-task',
-        name: 'No Variable Task',
-        template: 'Do something simple'
-      };
-
-      expect(task.convert(data)).toSucceedAndSatisfy((result) => {
-        expect(result.template).toBe('Do something simple');
-      });
-    });
-
-    test('fails for invalid data', () => {
-      expect(task.convert({ baseId: 'test' })).toFail();
-    });
-
-    test('converts task with defaults', () => {
-      const data = {
-        baseId: 'task-with-defaults',
-        name: 'Task With Defaults',
-        template: 'Melt {{ingredient}} to {{temp}}',
-        defaults: { ingredient: 'chocolate', temp: '40C' }
-      };
-
-      expect(task.convert(data)).toSucceedAndSatisfy((result) => {
-        expect(result.baseId).toBe('task-with-defaults');
-        expect(result.defaults).toEqual({ ingredient: 'chocolate', temp: '40C' });
       });
     });
   });

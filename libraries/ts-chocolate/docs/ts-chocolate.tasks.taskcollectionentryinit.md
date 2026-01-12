@@ -9,7 +9,7 @@ Initialization type for a TasksLibrary collection entry.
 **Signature:**
 
 ```typescript
-export type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, Task>;
+export type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, ITaskData>;
 ```
-**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [Task](./ts-chocolate.tasks.task.md)
+**References:** [SubLibraryEntryInit](./ts-chocolate.librarydata.sublibraryentryinit.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.tasks.itaskdata.md)
 

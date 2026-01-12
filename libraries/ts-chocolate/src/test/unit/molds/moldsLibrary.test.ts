@@ -23,7 +23,7 @@ import { FileTree, JsonObject } from '@fgv/ts-json-base';
 
 import { BaseMoldId, Measurement, Millimeters, MoldId, SourceId } from '../../../packlets/common';
 
-import { MoldsLibrary, IMold, IMoldFileTreeSource, Mold } from '../../../packlets/molds';
+import { MoldsLibrary, IMold, IMoldFileTreeSource } from '../../../packlets/molds';
 
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 
@@ -49,8 +49,8 @@ describe('MoldsLibrary', () => {
     notes: 'Test notes'
   };
 
-  // Create a Mold instance for mutation tests
-  const createTestMold = (): Mold => Mold.create(testMoldData).orThrow();
+  // Create an IMold for mutation tests
+  const createTestMold = (): IMold => testMoldData;
 
   // ============================================================================
   // Creation Tests
@@ -212,8 +212,7 @@ describe('MoldsLibrary', () => {
       expect(library.set(id, createTestMold())).toSucceed();
       expect(library.has(id)).toBe(true);
 
-      const updatedData: IMold = { ...testMoldData, description: 'Updated Description' };
-      const updatedMold = Mold.create(updatedData).orThrow();
+      const updatedMold: IMold = { ...testMoldData, description: 'Updated Description' };
       expect(library.set(id, updatedMold)).toSucceed();
       expect(library.get(id)).toSucceedAndSatisfy((mold) => {
         expect(mold.description).toBe('Updated Description');

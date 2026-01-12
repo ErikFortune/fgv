@@ -21,9 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import { cavityDimensions, moldData, mold, moldConverter } from '../../../packlets/molds/converters';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { Mold } from '../../../packlets/molds/mold';
+import { cavityDimensions, moldData } from '../../../packlets/molds/converters';
 
 describe('Mold Converters', () => {
   // ============================================================================
@@ -275,50 +273,6 @@ describe('Mold Converters', () => {
       };
       expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.format).toBe('series-1000');
-      });
-    });
-  });
-
-  // ============================================================================
-  // mold Converter
-  // ============================================================================
-
-  describe('mold', () => {
-    test('converts valid mold data to Mold instance', () => {
-      expect(mold.convert(validMoldData)).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Mold);
-        expect(result.baseId).toBe('chocolate-world-cw-2227');
-        expect(result.manufacturer).toBe('Chocolate World');
-        expect(result.productNumber).toBe('CW 2227');
-      });
-    });
-
-    test('fails for invalid mold data', () => {
-      const input = {
-        baseId: 'invalid.id',
-        manufacturer: 'Test',
-        productNumber: 'T1',
-        cavityCount: 1,
-        format: 'series-1000'
-      };
-      expect(mold.convert(input)).toFail();
-    });
-
-    test('fails for non-object input', () => {
-      expect(mold.convert('not an object')).toFail();
-      expect(mold.convert(null)).toFail();
-      expect(mold.convert(123)).toFail();
-    });
-  });
-
-  // ============================================================================
-  // moldConverter (alias)
-  // ============================================================================
-
-  describe('moldConverter', () => {
-    test('is an alias for mold converter', () => {
-      expect(moldConverter.convert(validMoldData)).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Mold);
       });
     });
   });

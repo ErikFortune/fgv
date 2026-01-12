@@ -27,7 +27,6 @@ import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../common';
 import { ICavityDimensions, IMold } from './model';
-import { Mold } from './mold';
 
 /**
  * Converter for {@link Molds.ICavityDimensions | ICavityDimensions}.
@@ -56,17 +55,3 @@ export const moldData: Converter<IMold> = Converters.object<IMold>({
   notes: Converters.string.optional(),
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 });
-
-/**
- * Converter for {@link Molds.Mold | Mold} class instances.
- * @public
- */
-export const mold: Converter<Mold> = Converters.generic<Mold>((from: unknown) => {
-  return moldData.convert(from).onSuccess((data) => Mold.create(data));
-});
-
-/**
- * Convenience alias for the mold converter.
- * @public
- */
-export const moldConverter: Converter<Mold> = mold;

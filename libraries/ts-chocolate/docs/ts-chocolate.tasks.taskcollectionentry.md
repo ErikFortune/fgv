@@ -9,7 +9,7 @@ A single entry in a tasks collection.
 **Signature:**
 
 ```typescript
-export type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, Task>;
+export type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, ITaskData>;
 ```
-**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [Task](./ts-chocolate.tasks.task.md)
+**References:** [SubLibraryCollectionEntry](./ts-chocolate.librarydata.sublibrarycollectionentry.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.tasks.itaskdata.md)
 

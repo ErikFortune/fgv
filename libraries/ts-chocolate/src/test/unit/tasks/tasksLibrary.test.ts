@@ -22,7 +22,7 @@ import '@fgv/ts-utils-jest';
 import { FileTree } from '@fgv/ts-json-base';
 
 import { BaseTaskId, Minutes, SourceId, TaskId } from '../../../packlets/common';
-import { TasksLibrary, Task, ITaskData, ITaskFileTreeSource } from '../../../packlets/tasks';
+import { TasksLibrary, ITaskData, ITaskFileTreeSource } from '../../../packlets/tasks';
 import { createEncryptedCollectionFile, nodeCryptoProvider } from '../../../packlets/crypto';
 
 describe('TasksLibrary', () => {
@@ -38,7 +38,7 @@ describe('TasksLibrary', () => {
     defaultActiveTime: 5 as Minutes
   };
 
-  const createTestTask = (): Task => Task.create(testTaskData).orThrow();
+  const createTestTask = (): ITaskData => testTaskData;
 
   // ============================================================================
   // Creation Tests
@@ -122,11 +122,11 @@ describe('TasksLibrary', () => {
             isMutable: false,
             items: {
               // eslint-disable-next-line @typescript-eslint/naming-convention
-              'melt-chocolate': Task.create({
+              'melt-chocolate': {
                 baseId: 'melt-chocolate' as BaseTaskId,
                 name: 'Melt Chocolate',
                 template: 'Melt {{ingredient}} to {{temp}}C'
-              }).orThrow()
+              }
             }
           }
         ]
@@ -171,11 +171,11 @@ describe('TasksLibrary', () => {
             items: {
               /* eslint-disable @typescript-eslint/naming-convention */
               'task-1': createTestTask(),
-              'task-2': Task.create({
+              'task-2': {
                 baseId: 'task-2' as BaseTaskId,
                 name: 'Task 2',
                 template: 'Second task'
-              }).orThrow()
+              }
               /* eslint-enable @typescript-eslint/naming-convention */
             }
           }
@@ -240,10 +240,10 @@ describe('TasksLibrary', () => {
       expect(library.set(id, createTestTask())).toSucceed();
       expect(library.has(id)).toBe(true);
 
-      const updatedTask = Task.create({
+      const updatedTask: ITaskData = {
         ...testTaskData,
         name: 'Updated Task'
-      }).orThrow();
+      };
       expect(library.set(id, updatedTask)).toSucceed();
       expect(library.get(id)).toSucceedAndSatisfy((task) => {
         expect(task.name).toBe('Updated Task');

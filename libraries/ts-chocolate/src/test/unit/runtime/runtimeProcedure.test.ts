@@ -22,8 +22,8 @@ import '@fgv/ts-utils-jest';
 import { fail, succeed } from '@fgv/ts-utils';
 
 import { BaseProcedureId, BaseTaskId, Minutes, ProcedureId, TaskId } from '../../../packlets/common';
-import { IProcedure, Procedure } from '../../../packlets/procedures';
-import { ITaskData, Task } from '../../../packlets/tasks';
+import { IProcedure } from '../../../packlets/procedures';
+import { ITaskData } from '../../../packlets/tasks';
 import { IComputedScaledFillingRecipe, FillingCategory } from '../../../packlets/fillings';
 import {
   RuntimeProcedure,
@@ -33,26 +33,24 @@ import {
 } from '../../../packlets/runtime';
 
 describe('RuntimeProcedure', () => {
-  // Sample task for testing
+  // Sample task for testing (now just ITaskData, no Task class)
   const meltChocolateTaskData: ITaskData = {
     baseId: 'melt-chocolate' as BaseTaskId,
     name: 'Melt Chocolate',
     template: 'Melt {{amount}}g of chocolate at {{temp}}°C'
   };
 
-  const meltChocolateTask = Task.create(meltChocolateTaskData).orThrow();
-
   // Mock procedure context that can resolve tasks
   const mockContext: IProcedureContext = {
     getTask: (id: TaskId) => {
       if (id === ('common.melt-chocolate' as TaskId)) {
-        return succeed(meltChocolateTask);
+        return succeed(meltChocolateTaskData);
       }
       return fail(`Task not found: ${id}`);
     },
     getRuntimeTask: (id: TaskId) => {
       if (id === ('common.melt-chocolate' as TaskId)) {
-        return RuntimeTask.create(mockContext, id, meltChocolateTask);
+        return RuntimeTask.create(mockContext, id, meltChocolateTaskData);
       }
       return fail(`Task not found: ${id}`);
     }
@@ -149,20 +147,49 @@ describe('RuntimeProcedure', () => {
     notes: 'Test notes'
   };
 
-  describe('create', () => {
-    test('should create RuntimeProcedure from Procedure', () => {
-      const procedure = Procedure.create(inlineTaskProcedure).orThrow();
-      const procedureId = 'test.test-inline' as ProcedureId;
+  // Procedure with all timing types (wait and hold)
+  const allTimingProcedure: IProcedure = {
+    baseId: 'all-timing' as BaseProcedureId,
+    name: 'All Timing Procedure',
+    steps: [
+      {
+        order: 1,
+        task: {
+          task: {
+            baseId: 'wait-task' as BaseTaskId,
+            name: 'Wait Task',
+            template: 'Wait for cooling'
+          },
+          params: {}
+        },
+        activeTime: 5 as Minutes,
+        waitTime: 10 as Minutes,
+        holdTime: 2 as Minutes
+      }
+    ]
+  };
 
-      expect(RuntimeProcedure.create(mockContext, procedureId, procedure)).toSucceedAndSatisfy(
-        (runtimeProcedure) => {
-          expect(runtimeProcedure.id).toBe(procedureId);
-          expect(runtimeProcedure.baseId).toBe('test-inline');
-          expect(runtimeProcedure.name).toBe('Test Inline Procedure');
+  // Procedure with no timing data at all
+  const noTimingProcedure: IProcedure = {
+    baseId: 'no-timing' as BaseProcedureId,
+    name: 'No Timing Procedure',
+    steps: [
+      {
+        order: 1,
+        task: {
+          task: {
+            baseId: 'simple-task' as BaseTaskId,
+            name: 'Simple Task',
+            template: 'Do something'
+          },
+          params: {}
         }
-      );
-    });
+        // No activeTime, waitTime, or holdTime
+      }
+    ]
+  };
 
+  describe('create', () => {
     test('should create RuntimeProcedure from IProcedure', () => {
       const procedureId = 'test.test-inline' as ProcedureId;
 
@@ -170,6 +197,7 @@ describe('RuntimeProcedure', () => {
         (runtimeProcedure) => {
           expect(runtimeProcedure.id).toBe(procedureId);
           expect(runtimeProcedure.baseId).toBe('test-inline');
+          expect(runtimeProcedure.name).toBe('Test Inline Procedure');
         }
       );
     });
@@ -199,6 +227,32 @@ describe('RuntimeProcedure', () => {
           expect(runtimeProcedure.totalWaitTime).toBeUndefined();
           expect(runtimeProcedure.totalHoldTime).toBeUndefined();
           expect(runtimeProcedure.totalTime).toBe(15);
+        }
+      );
+    });
+
+    test('should compute all timing types (active, wait, hold)', () => {
+      const procedureId = 'test.all-timing' as ProcedureId;
+
+      expect(RuntimeProcedure.create(mockContext, procedureId, allTimingProcedure)).toSucceedAndSatisfy(
+        (runtimeProcedure) => {
+          expect(runtimeProcedure.totalActiveTime).toBe(5);
+          expect(runtimeProcedure.totalWaitTime).toBe(10);
+          expect(runtimeProcedure.totalHoldTime).toBe(2);
+          expect(runtimeProcedure.totalTime).toBe(17); // 5 + 10 + 2
+        }
+      );
+    });
+
+    test('should return undefined for all times when no timing data', () => {
+      const procedureId = 'test.no-timing' as ProcedureId;
+
+      expect(RuntimeProcedure.create(mockContext, procedureId, noTimingProcedure)).toSucceedAndSatisfy(
+        (runtimeProcedure) => {
+          expect(runtimeProcedure.totalActiveTime).toBeUndefined();
+          expect(runtimeProcedure.totalWaitTime).toBeUndefined();
+          expect(runtimeProcedure.totalHoldTime).toBeUndefined();
+          expect(runtimeProcedure.totalTime).toBeUndefined();
         }
       );
     });
@@ -289,12 +343,15 @@ describe('RuntimeProcedure', () => {
   });
 
   describe('raw', () => {
-    test('should expose underlying Procedure', () => {
-      const procedure = Procedure.create(inlineTaskProcedure).orThrow();
+    test('should expose underlying IProcedure', () => {
       const procedureId = 'test.test-inline' as ProcedureId;
-      const runtimeProcedure = RuntimeProcedure.create(mockContext, procedureId, procedure).orThrow();
+      const runtimeProcedure = RuntimeProcedure.create(
+        mockContext,
+        procedureId,
+        inlineTaskProcedure
+      ).orThrow();
 
-      expect(runtimeProcedure.raw).toBe(procedure);
+      expect(runtimeProcedure.raw).toBe(inlineTaskProcedure);
     });
   });
 });

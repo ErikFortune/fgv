@@ -21,7 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import { BaseMoldId, Measurement, Millimeters, MoldFormat, MoldId } from '../../../packlets/common';
-import { IMold, Mold } from '../../../packlets/molds';
+import { IMold } from '../../../packlets/molds';
 import { RuntimeMold, IMoldContext } from '../../../packlets/runtime';
 
 describe('RuntimeMold', () => {
@@ -55,25 +55,15 @@ describe('RuntimeMold', () => {
   };
 
   describe('create', () => {
-    test('should create RuntimeMold from Mold', () => {
-      const mold = Mold.create(simpleMold).orThrow();
-      const moldId = 'cw.cw-2227' as MoldId;
-
-      expect(RuntimeMold.create(mockContext, moldId, mold)).toSucceedAndSatisfy((runtimeMold) => {
-        expect(runtimeMold.id).toBe(moldId);
-        expect(runtimeMold.sourceId).toBe('cw');
-        expect(runtimeMold.baseId).toBe('cw-2227');
-        expect(runtimeMold.manufacturer).toBe('Chocolate World');
-        expect(runtimeMold.productNumber).toBe('CW 2227');
-      });
-    });
-
     test('should create RuntimeMold from IMold', () => {
       const moldId = 'cw.cw-2227' as MoldId;
 
       expect(RuntimeMold.create(mockContext, moldId, simpleMold)).toSucceedAndSatisfy((runtimeMold) => {
         expect(runtimeMold.id).toBe(moldId);
+        expect(runtimeMold.sourceId).toBe('cw');
         expect(runtimeMold.baseId).toBe('cw-2227');
+        expect(runtimeMold.manufacturer).toBe('Chocolate World');
+        expect(runtimeMold.productNumber).toBe('CW 2227');
       });
     });
 
@@ -125,12 +115,11 @@ describe('RuntimeMold', () => {
   });
 
   describe('raw', () => {
-    test('should expose underlying Mold', () => {
-      const mold = Mold.create(simpleMold).orThrow();
+    test('should expose underlying IMold', () => {
       const moldId = 'cw.cw-2227' as MoldId;
-      const runtimeMold = RuntimeMold.create(mockContext, moldId, mold).orThrow();
+      const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
 
-      expect(runtimeMold.raw).toBe(mold);
+      expect(runtimeMold.raw).toBe(simpleMold);
     });
   });
 

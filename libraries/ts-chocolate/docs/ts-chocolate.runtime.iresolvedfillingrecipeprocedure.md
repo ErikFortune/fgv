@@ -68,7 +68,7 @@ _(Optional)_ Optional notes specific to using this procedure with the recipe.
 
 </td><td>
 
-[Procedure](./ts-chocolate.procedures.procedure.md)
+[IProcedure](./ts-chocolate.procedures.iprocedure.md)
 
 
 </td><td>

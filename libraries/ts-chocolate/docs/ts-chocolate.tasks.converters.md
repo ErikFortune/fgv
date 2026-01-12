@@ -50,17 +50,6 @@ Converter for IRenderOptions
 </td></tr>
 <tr><td>
 
-[task](./ts-chocolate.tasks.converters.task.md)
-
-
-</td><td>
-
-Converter that creates Task instances from YAML/JSON data. Template parsing and validation occurs in RuntimeTask, not here.
-
-
-</td></tr>
-<tr><td>
-
 [taskData](./ts-chocolate.tasks.converters.taskdata.md)
 
 

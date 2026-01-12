@@ -30,28 +30,6 @@ Converter for [ICavityDimensions](./ts-chocolate.molds.icavitydimensions.md)<!--
 </td></tr>
 <tr><td>
 
-[mold](./ts-chocolate.molds.converters.mold.md)
-
-
-</td><td>
-
-Converter for [Mold](./ts-chocolate.molds.mold.md) class instances.
-
-
-</td></tr>
-<tr><td>
-
-[moldConverter](./ts-chocolate.molds.converters.moldconverter.md)
-
-
-</td><td>
-
-Convenience alias for the mold converter.
-
-
-</td></tr>
-<tr><td>
-
 [moldData](./ts-chocolate.molds.converters.molddata.md)
 
 

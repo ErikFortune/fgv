@@ -382,13 +382,13 @@ class ChocolateLibrary {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getMold(id: MoldId): Result<Mold>;
+    getMold(id: MoldId): Result<IMold>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getProcedure(id: ProcedureId): Result<Procedure>;
+    getProcedure(id: ProcedureId): Result<IProcedure>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     getRecipe(id: FillingId): Result<IFillingRecipe>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-    getTask(id: TaskId): Result<Task>;
+    getTask(id: TaskId): Result<ITaskData>;
     hasConfection(id: ConfectionId): boolean;
     hasIngredient(id: IngredientId): boolean;
     hasMold(id: MoldId): boolean;
@@ -808,8 +808,7 @@ declare namespace Converters_10 {
         taskInvocation,
         procedureStepTask,
         validationBehavior,
-        renderOptions,
-        task
+        renderOptions
     }
 }
 
@@ -923,18 +922,14 @@ declare namespace Converters_7 {
 declare namespace Converters_8 {
     export {
         cavityDimensions,
-        moldData,
-        mold,
-        moldConverter
+        moldData
     }
 }
 
 declare namespace Converters_9 {
     export {
         procedureStep,
-        procedureData,
-        procedure,
-        procedureConverter
+        procedureData
     }
 }
 
@@ -2536,7 +2531,7 @@ interface IProcedure {
 // @internal
 interface IProcedureContext {
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
-    getTask(id: TaskId): Result<Task>;
+    getTask(id: TaskId): Result<ITaskData>;
 }
 
 // @public
@@ -2657,7 +2652,7 @@ interface IResolvedFillingIngredient<TIngredient extends IRuntimeIngredient = IR
 // @public
 interface IResolvedFillingRecipeProcedure {
     readonly notes?: string;
-    readonly procedure: Procedure;
+    readonly procedure: IProcedure;
     readonly raw: IProcedureRef;
 }
 
@@ -2672,7 +2667,7 @@ interface IResolvedIngredient {
 // @public
 interface IResolvedProcedures {
     readonly procedures: ReadonlyArray<IResolvedFillingRecipeProcedure>;
-    readonly recommendedProcedure?: Procedure;
+    readonly recommendedProcedure?: IProcedure;
 }
 
 // @public
@@ -3011,7 +3006,7 @@ interface IRuntimeTask {
     readonly id: TaskId;
     readonly name: string;
     readonly notes?: string;
-    readonly raw: Task;
+    readonly raw: ITaskData;
     render(params: Record<string, unknown>): Result<string>;
     readonly requiredVariables: ReadonlyArray<string>;
     readonly tags?: ReadonlyArray<string>;
@@ -3374,7 +3369,7 @@ interface ITask extends ITaskData {
 
 // @internal
 interface ITaskContext {
-    getTask(id: TaskId): Result<Task>;
+    getTask(id: TaskId): Result<ITaskData>;
 }
 
 // @public
@@ -3444,7 +3439,7 @@ interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = T
 // @internal
 interface IVersionContext<TIngredient extends IRuntimeIngredient = IRuntimeIngredient> extends IScaledVersionContext<TIngredient> {
     readonly fillings: Collections.IReadOnlyValidatingResultMap<FillingId, IRuntimeFillingRecipe>;
-    getProcedure(id: string): Result<Procedure>;
+    getProcedure(id: string): Result<IProcedure>;
 }
 
 // @public
@@ -3683,49 +3678,16 @@ export type Minutes = Brand<number, 'Minutes'>;
 const minutes: Converter<Minutes>;
 
 // @public
-class Mold implements IMold {
-    // (undocumented)
-    readonly baseId: BaseMoldId;
-    // (undocumented)
-    readonly cavityCount: number;
-    // (undocumented)
-    readonly cavityDimensions?: ICavityDimensions;
-    // (undocumented)
-    readonly cavityWeight?: Measurement;
-    static create(data: IMold): Result<Mold>;
-    // (undocumented)
-    readonly description?: string;
-    // (undocumented)
-    readonly format: MoldFormat;
-    // (undocumented)
-    readonly manufacturer: string;
-    // (undocumented)
-    readonly notes?: string;
-    // (undocumented)
-    readonly productNumber: string;
-    // (undocumented)
-    readonly tags?: ReadonlyArray<string>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const mold: Converter<Mold>;
+type MoldCollection = SubLibraryCollection<BaseMoldId, IMold>;
 
 // @public
-type MoldCollection = SubLibraryCollection<BaseMoldId, Mold>;
+type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, IMold>;
 
 // @public
-type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, Mold>;
+type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMold>;
 
 // @public
-type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, Mold>;
-
-// @public
-type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, Mold>;
-
-// @public
-const moldConverter: Converter<Mold>;
+type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMold>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3755,7 +3717,6 @@ declare namespace Molds {
         Converters_8 as Converters,
         ICavityDimensions,
         IMold,
-        Mold,
         MoldCollectionEntry,
         MoldCollectionEntryInit,
         MoldCollectionValidator,
@@ -3770,7 +3731,7 @@ declare namespace Molds {
 export { Molds }
 
 // @public
-class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, Mold> {
+class MoldsLibrary extends SubLibraryBase<MoldId, BaseMoldId, IMold> {
     static create(params?: IMoldsLibraryParams): Result<MoldsLibrary>;
     static createAsync(params?: IMoldsLibraryAsyncParams): Promise<Result<MoldsLibrary>>;
 }
@@ -3895,49 +3856,16 @@ class PinchScaler implements IUnitScaler {
 }
 
 // @public
-class Procedure implements IProcedure {
-    // (undocumented)
-    readonly baseId: BaseProcedureId;
-    // (undocumented)
-    readonly category?: FillingCategory_2;
-    static create(data: IProcedure): Result<Procedure>;
-    // (undocumented)
-    readonly description?: string;
-    get isCategorySpecific(): boolean;
-    // (undocumented)
-    readonly name: string;
-    // (undocumented)
-    readonly notes?: string;
-    get stepCount(): number;
-    // (undocumented)
-    readonly steps: ReadonlyArray<IProcedureStep>;
-    // (undocumented)
-    readonly tags?: ReadonlyArray<string>;
-    get totalActiveTime(): Minutes | undefined;
-    get totalHoldTime(): Minutes | undefined;
-    get totalTime(): Minutes | undefined;
-    get totalWaitTime(): Minutes | undefined;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-const procedure: Converter<Procedure>;
+type ProcedureCollection = SubLibraryCollection<BaseProcedureId, IProcedure>;
 
 // @public
-type ProcedureCollection = SubLibraryCollection<BaseProcedureId, Procedure>;
+type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, IProcedure>;
 
 // @public
-type ProcedureCollectionEntry = SubLibraryCollectionEntry<BaseProcedureId, Procedure>;
+type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, IProcedure>;
 
 // @public
-type ProcedureCollectionEntryInit = SubLibraryEntryInit<BaseProcedureId, Procedure>;
-
-// @public
-type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, Procedure>;
-
-// @public
-const procedureConverter: Converter<Procedure>;
+type ProcedureCollectionValidator = SubLibraryCollectionValidator<ProcedureId, IProcedure>;
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
@@ -3962,7 +3890,6 @@ declare namespace Procedures {
         IProcedureStepValidation,
         IValidatedProcedureStep,
         IProcedure,
-        Procedure,
         ProcedureCollectionEntry,
         ProcedureCollectionEntryInit,
         ProcedureCollectionValidator,
@@ -3980,7 +3907,7 @@ export { Procedures }
 const procedures: Converter<IOptionsWithPreferred<IProcedureRef, ProcedureId>>;
 
 // @public
-class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, Procedure> {
+class ProceduresLibrary extends SubLibraryBase<ProcedureId, BaseProcedureId, IProcedure> {
     static create(params?: IProceduresLibraryParams): Result<ProceduresLibrary>;
     static createAsync(params?: IProceduresLibraryAsyncParams): Promise<Result<ProceduresLibrary>>;
 }
@@ -4471,7 +4398,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getIngredientUsage(ingredientId: IngredientId): Result<ReadonlyArray<IIngredientUsageInfo>>;
     getJournalsForFilling(fillingId: FillingId): ReadonlyArray<IFillingRecipeJournalRecord>;
     getJournalsForFillingVersion(versionId: FillingVersionId): ReadonlyArray<IFillingRecipeJournalRecord>;
-    getProcedure(id: string): Result<Procedure>;
+    getProcedure(id: string): Result<IProcedure>;
     // @internal
     _getRecipe(id: FillingId): Result<RuntimeRecipe>;
     getRuntimeMold(id: MoldId): Result<RuntimeMold>;
@@ -4479,7 +4406,7 @@ class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVe
     getRuntimeTask(id: TaskId): Result<RuntimeTask>;
     // @internal
     getSourceVersion(scaled: IComputedScaledFillingRecipe): Result<IRuntimeFillingRecipeVersion>;
-    getTask(id: TaskId): Result<Task>;
+    getTask(id: TaskId): Result<ITaskData>;
     hasConfection(id: ConfectionId): boolean;
     get ingredients(): IReadOnlyValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec>;
     invalidateIndexers(): void;
@@ -4575,7 +4502,7 @@ class RuntimeMold implements IRuntimeMold {
     protected get context(): IMoldContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IMoldContext" which is marked as @internal
-    static create(context: IMoldContext, id: MoldId, mold: Mold | IMold): Result<RuntimeMold>;
+    static create(context: IMoldContext, id: MoldId, mold: IMold): Result<RuntimeMold>;
     get description(): string | undefined;
     get displayName(): string;
     get format(): MoldFormat;
@@ -4614,7 +4541,7 @@ class RuntimeProcedure implements IRuntimeProcedure {
     protected get context(): IProcedureContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
-    static create(context: IProcedureContext, id: ProcedureId, procedure: Procedure | IProcedure): Result<RuntimeProcedure>;
+    static create(context: IProcedureContext, id: ProcedureId, procedure: IProcedure): Result<RuntimeProcedure>;
     get description(): string | undefined;
     get id(): ProcedureId;
     get isCategorySpecific(): boolean;
@@ -4727,7 +4654,7 @@ class RuntimeTask implements IRuntimeTask {
     protected get context(): ITaskContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "ITaskContext" which is marked as @internal
-    static create(context: ITaskContext, id: TaskId, task: Task | ITaskData): Result<RuntimeTask>;
+    static create(context: ITaskContext, id: TaskId, task: ITaskData): Result<RuntimeTask>;
     get defaultActiveTime(): Minutes | undefined;
     get defaultHoldTime(): Minutes | undefined;
     get defaults(): Readonly<Record<string, unknown>> | undefined;
@@ -4736,7 +4663,7 @@ class RuntimeTask implements IRuntimeTask {
     get id(): TaskId;
     get name(): string;
     get notes(): string | undefined;
-    get raw(): Task;
+    get raw(): ITaskData;
     render(params: Record<string, unknown>): Result<string>;
     get requiredVariables(): ReadonlyArray<string>;
     get tags(): ReadonlyArray<string> | undefined;
@@ -4963,38 +4890,19 @@ const sugarIngredient: Converter<ISugarIngredient>;
 function supportsScaling(unit: MeasurementUnit): boolean;
 
 // @public
-class Task implements ITaskData {
-    readonly baseId: BaseTaskId;
-    static create(data: ITaskData): Result<Task>;
-    readonly defaultActiveTime?: Minutes;
-    readonly defaultHoldTime?: Minutes;
-    readonly defaults?: Readonly<Record<string, unknown>>;
-    readonly defaultTemperature?: Celsius;
-    readonly defaultWaitTime?: Minutes;
-    readonly name: string;
-    readonly notes?: string;
-    readonly tags?: ReadonlyArray<string>;
-    readonly template: string;
-    toData(): ITaskData;
-}
+type TaskCollection = SubLibraryCollection<BaseTaskId, ITaskData>;
 
 // @public
-const task: Converter<Task>;
+type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, ITaskData>;
 
 // @public
-type TaskCollection = SubLibraryCollection<BaseTaskId, Task>;
-
-// @public
-type TaskCollectionEntry = SubLibraryCollectionEntry<BaseTaskId, Task>;
-
-// @public
-type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, Task>;
+type TaskCollectionEntryInit = SubLibraryEntryInit<BaseTaskId, ITaskData>;
 
 // @public
 const taskCollections: Record<string, JsonObject>;
 
 // @public
-type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, Task>;
+type TaskCollectionValidator = SubLibraryCollectionValidator<TaskId, ITaskData>;
 
 // @public
 const taskData: Converter<ITaskData>;
@@ -5035,7 +4943,6 @@ declare namespace Tasks {
         ValidationBehavior,
         IRenderOptions,
         defaultRenderOptions,
-        Task,
         TaskCollectionEntry,
         TaskCollectionEntryInit,
         TaskCollectionValidator,
@@ -5050,7 +4957,7 @@ declare namespace Tasks {
 export { Tasks }
 
 // @public
-class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, Task> {
+class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> {
     static create(params?: ITasksLibraryParams): Result<TasksLibrary>;
     static createAsync(params?: ITasksLibraryAsyncParams): Promise<Result<TasksLibrary>>;
 }

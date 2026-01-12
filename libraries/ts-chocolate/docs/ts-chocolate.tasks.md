@@ -19,19 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Task](./ts-chocolate.tasks.task.md)
-
-
-</td><td>
-
-Task class - pure data representation of a task definition.
-
-This is a data-layer class that holds task configuration without business logic. Template parsing, validation, and rendering are handled by RuntimeTask in the runtime layer.
-
-
-</td></tr>
-<tr><td>
-
 [TasksLibrary](./ts-chocolate.tasks.taskslibrary.md)
 
 
@@ -125,8 +112,6 @@ Options for rendering procedure steps.
 </td><td>
 
 A reusable task template with runtime-computed properties. Extends ITaskData with requiredVariables extracted from the template.
-
-Note: The data-layer Task class implements ITaskData only. ITask (with requiredVariables) is implemented by RuntimeTask in the runtime layer, as template parsing is a runtime operation.
 
 
 </td></tr>

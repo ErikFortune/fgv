@@ -9,7 +9,7 @@ Validator type for MoldsLibrary collections.
 **Signature:**
 
 ```typescript
-export type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, Mold>;
+export type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMold>;
 ```
-**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->, [Mold](./ts-chocolate.molds.mold.md)
+**References:** [SubLibraryCollectionValidator](./ts-chocolate.librarydata.sublibrarycollectionvalidator.md)<!-- -->, [MoldId](./ts-chocolate.moldid.md)<!-- -->, [IMold](./ts-chocolate.molds.imold.md)
 

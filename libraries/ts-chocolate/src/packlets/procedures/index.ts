@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 export * from './model';
-export * from './procedure';
 export * from './proceduresCollection';
 export * from './proceduresLibrary';
 

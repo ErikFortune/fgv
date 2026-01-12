@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 export * from './model';
-export * from './mold';
 export * from './moldsCollection';
 export * from './moldsLibrary';
 

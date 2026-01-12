@@ -27,7 +27,7 @@ import { Result, succeed } from '@fgv/ts-utils';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 
 import { BaseTaskId, Celsius, Minutes, TaskId } from '../../common';
-import { Task, ITaskData, ITaskRefValidation } from '../../tasks';
+import { ITaskData, ITaskRefValidation } from '../../tasks';
 import { ITaskContext, IRuntimeTask } from './model';
 
 // ============================================================================
@@ -49,14 +49,14 @@ import { ITaskContext, IRuntimeTask } from './model';
 export class RuntimeTask implements IRuntimeTask {
   private readonly _context: ITaskContext;
   private readonly _id: TaskId;
-  private readonly _task: Task;
+  private readonly _task: ITaskData;
   private readonly _parsedTemplate: MustacheModule.MustacheTemplate;
   private readonly _requiredVariables: ReadonlyArray<string>;
 
   private constructor(
     context: ITaskContext,
     id: TaskId,
-    task: Task,
+    task: ITaskData,
     parsedTemplate: MustacheModule.MustacheTemplate
   ) {
     this._context = context;
@@ -71,14 +71,12 @@ export class RuntimeTask implements IRuntimeTask {
    * Parses the Mustache template and extracts required variables.
    * @param context - The runtime context for task resolution
    * @param id - The composite task ID
-   * @param task - The raw task data (Task or ITaskData)
+   * @param task - The raw task data
    * @returns Success with RuntimeTask, or Failure if template parsing fails
    */
-  public static create(context: ITaskContext, id: TaskId, task: Task | ITaskData): Result<RuntimeTask> {
-    // Normalize to Task class if needed
-    const taskInstance = task instanceof Task ? task : Task.create(task).orThrow();
-    return MustacheModule.MustacheTemplate.create(taskInstance.template).onSuccess((parsedTemplate) => {
-      return succeed(new RuntimeTask(context, id, taskInstance, parsedTemplate));
+  public static create(context: ITaskContext, id: TaskId, task: ITaskData): Result<RuntimeTask> {
+    return MustacheModule.MustacheTemplate.create(task.template).onSuccess((parsedTemplate) => {
+      return succeed(new RuntimeTask(context, id, task, parsedTemplate));
     });
   }
 
@@ -255,7 +253,7 @@ export class RuntimeTask implements IRuntimeTask {
   /**
    * Gets the underlying raw task data
    */
-  public get raw(): Task {
+  public get raw(): ITaskData {
     return this._task;
   }
 

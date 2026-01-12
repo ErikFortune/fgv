@@ -68,7 +68,7 @@ Available procedures for this recipe - fully resolved.
 
 </td><td>
 
-[Procedure](./ts-chocolate.procedures.procedure.md)
+[IProcedure](./ts-chocolate.procedures.iprocedure.md)
 
 
 </td><td>

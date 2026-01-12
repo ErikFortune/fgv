@@ -19,17 +19,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[Procedure](./ts-chocolate.procedures.procedure.md)
-
-
-</td><td>
-
-Procedure class with helper methods
-
-
-</td></tr>
-<tr><td>
-
 [ProceduresLibrary](./ts-chocolate.procedures.procedureslibrary.md)
 
 

@@ -27,8 +27,8 @@ import { captureResult, fail, Logging, Result } from '@fgv/ts-utils';
 
 import { BaseTaskId, TaskId } from '../common';
 import { Converters as CommonConverters } from '../common';
-import { Task } from './task';
-import { task as taskConverter } from './converters';
+import { ITaskData } from './model';
+import { taskData as taskConverter } from './converters';
 import { TaskCollectionEntryInit } from './tasksCollection';
 import {
   getTasksDirectory,
@@ -87,7 +87,7 @@ export type ITasksLibraryAsyncParams = ISubLibraryAsyncParams<TasksLibrary, Task
  *
  * @public
  */
-export class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, Task> {
+export class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, ITaskData> {
   private constructor(params?: ITasksLibraryParams) {
     super({
       itemIdConverter: CommonConverters.baseTaskId,
@@ -122,7 +122,7 @@ export class TasksLibrary extends SubLibraryBase<TaskId, BaseTaskId, Task> {
     /* c8 ignore next - default logger branch tested implicitly */
     const logger = params?.logger ?? new Logging.LogReporter<unknown>();
 
-    const createParams: ISubLibraryCreateParams<TasksLibrary, BaseTaskId, Task> = {
+    const createParams: ISubLibraryCreateParams<TasksLibrary, BaseTaskId, ITaskData> = {
       itemIdConverter: CommonConverters.baseTaskId,
       itemConverter: taskConverter,
       directoryNavigator: getTasksDirectory,

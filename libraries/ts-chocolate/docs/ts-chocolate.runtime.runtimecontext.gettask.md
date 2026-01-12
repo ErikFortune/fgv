@@ -9,7 +9,7 @@ Gets a task by its composite ID. Used internally for task resolution.
 **Signature:**
 
 ```typescript
-getTask(id: TaskId): Result<Task>;
+getTask(id: TaskId): Result<ITaskData>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ The task ID (composite format: sourceId.baseTaskId)
 
 **Returns:**
 
-Result&lt;[Task](./ts-chocolate.tasks.task.md)<!-- -->&gt;
+Result&lt;[ITaskData](./ts-chocolate.tasks.itaskdata.md)<!-- -->&gt;
 
-Success with Task, or Failure if not found
+Success with ITaskData, or Failure if not found
 

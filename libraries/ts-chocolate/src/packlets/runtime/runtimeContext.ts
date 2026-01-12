@@ -39,7 +39,7 @@ import {
 import { ConfectionData, ConfectionsLibrary } from '../confections';
 import { IComputedScaledFillingRecipe, IWeightCalculationContext } from '../fillings';
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../journal';
-import { Procedure } from '../procedures';
+import { IProcedure } from '../procedures';
 import { ChocolateLibrary, IChocolateLibraryCreateParams } from './chocolateLibrary';
 import {
   IIngredientContext,
@@ -63,7 +63,7 @@ import { IReadOnlyValidatingLibrary, ValidatingLibrary } from './validatingLibra
 import { ITaskContext, RuntimeTask } from './tasks';
 import { IProcedureContext, RuntimeProcedure } from './procedures';
 import { IMoldContext, RuntimeMold } from './molds';
-import { Task } from '../tasks';
+import { ITaskData } from '../tasks';
 
 // ============================================================================
 // RuntimeContext Parameters
@@ -372,9 +372,9 @@ export class RuntimeContext
    * Gets a procedure by its composite ID.
    * Used internally by RuntimeRecipe for procedure resolution.
    * @param id - The procedure ID (composite format: sourceId.baseProcedureId)
-   * @returns Success with Procedure, or Failure if not found
+   * @returns Success with IProcedure, or Failure if not found
    */
-  public getProcedure(id: string): Result<Procedure> {
+  public getProcedure(id: string): Result<IProcedure> {
     return this._library.getProcedure(id as ProcedureId);
   }
 
@@ -386,9 +386,9 @@ export class RuntimeContext
    * Gets a task by its composite ID.
    * Used internally for task resolution.
    * @param id - The task ID (composite format: sourceId.baseTaskId)
-   * @returns Success with Task, or Failure if not found
+   * @returns Success with ITaskData, or Failure if not found
    */
-  public getTask(id: TaskId): Result<Task> {
+  public getTask(id: TaskId): Result<ITaskData> {
     return this._library.getTask(id);
   }
 

@@ -45,7 +45,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/ingredients';
-import { IProcedure, Procedure, ProceduresLibrary } from '../../../packlets/procedures';
+import { IProcedure, ProceduresLibrary } from '../../../packlets/procedures';
 import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/fillings';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 import { ITaskInvocation } from '../../../packlets/tasks';
@@ -778,8 +778,6 @@ describe('RuntimeContext', () => {
 
     beforeEach(() => {
       // Create procedures library
-      const coldProc = Procedure.create(coldMethodProcedure).orThrow();
-      const hotProc = Procedure.create(hotMethodProcedure).orThrow();
       const procedures = ProceduresLibrary.create({
         builtin: false,
         collections: [
@@ -788,8 +786,8 @@ describe('RuntimeContext', () => {
             isMutable: false,
             items: {
               /* eslint-disable @typescript-eslint/naming-convention */
-              'ganache-cold-method': coldProc,
-              'ganache-hot-method': hotProc
+              'ganache-cold-method': coldMethodProcedure,
+              'ganache-hot-method': hotMethodProcedure
               /* eslint-enable @typescript-eslint/naming-convention */
             }
           }

@@ -27,7 +27,7 @@ import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
 import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
 import { FillingCategory } from '../../fillings';
-import { IProcedure, IProcedureStep, Procedure } from '../../procedures';
+import { IProcedure, IProcedureStep } from '../../procedures';
 import { isInlineTask, isTaskRef } from '../../tasks';
 import { RuntimeTask } from '../tasks';
 import {
@@ -58,9 +58,9 @@ import {
 export class RuntimeProcedure implements IRuntimeProcedure {
   private readonly _context: IProcedureContext;
   private readonly _id: ProcedureId;
-  private readonly _procedure: Procedure;
+  private readonly _procedure: IProcedure;
 
-  private constructor(context: IProcedureContext, id: ProcedureId, procedure: Procedure) {
+  private constructor(context: IProcedureContext, id: ProcedureId, procedure: IProcedure) {
     this._context = context;
     this._id = id;
     this._procedure = procedure;
@@ -70,21 +70,15 @@ export class RuntimeProcedure implements IRuntimeProcedure {
    * Factory method for creating a RuntimeProcedure.
    * @param context - The runtime context for task resolution
    * @param id - The composite procedure ID
-   * @param procedure - The procedure data (can be Procedure or IProcedure)
+   * @param procedure - The procedure data
    * @returns Success with RuntimeProcedure
    */
   public static create(
     context: IProcedureContext,
     id: ProcedureId,
-    procedure: Procedure | IProcedure
+    procedure: IProcedure
   ): Result<RuntimeProcedure> {
-    // Normalize to Procedure class if needed
-    if (procedure instanceof Procedure) {
-      return Success.with(new RuntimeProcedure(context, id, procedure));
-    }
-    return Procedure.create(procedure).onSuccess((proc) =>
-      Success.with(new RuntimeProcedure(context, id, proc))
-    );
+    return Success.with(new RuntimeProcedure(context, id, procedure));
   }
 
   // ============================================================================
@@ -152,49 +146,56 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   }
 
   // ============================================================================
-  // Computed Properties (delegate to Procedure)
+  // Computed Properties
   // ============================================================================
 
   /**
    * Total active time for all steps
    */
   public get totalActiveTime(): Minutes | undefined {
-    return this._procedure.totalActiveTime;
+    const total = this._procedure.steps.reduce((sum, step) => sum + (step.activeTime ?? 0), 0);
+    return total > 0 ? (total as Minutes) : undefined;
   }
 
   /**
    * Total wait time for all steps
    */
   public get totalWaitTime(): Minutes | undefined {
-    return this._procedure.totalWaitTime;
+    const total = this._procedure.steps.reduce((sum, step) => sum + (step.waitTime ?? 0), 0);
+    return total > 0 ? (total as Minutes) : undefined;
   }
 
   /**
    * Total hold time for all steps
    */
   public get totalHoldTime(): Minutes | undefined {
-    return this._procedure.totalHoldTime;
+    const total = this._procedure.steps.reduce((sum, step) => sum + (step.holdTime ?? 0), 0);
+    return total > 0 ? (total as Minutes) : undefined;
   }
 
   /**
    * Total time (active + wait + hold)
    */
   public get totalTime(): Minutes | undefined {
-    return this._procedure.totalTime;
+    const active = this.totalActiveTime ?? 0;
+    const wait = this.totalWaitTime ?? 0;
+    const hold = this.totalHoldTime ?? 0;
+    const total = active + wait + hold;
+    return total > 0 ? (total as Minutes) : undefined;
   }
 
   /**
    * Number of steps
    */
   public get stepCount(): number {
-    return this._procedure.stepCount;
+    return this._procedure.steps.length;
   }
 
   /**
    * Whether this procedure is category-specific
    */
   public get isCategorySpecific(): boolean {
-    return this._procedure.isCategorySpecific;
+    return this._procedure.category !== undefined;
   }
 
   // ============================================================================

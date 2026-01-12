@@ -21,14 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 // eslint-disable-next-line @rushstack/packlets/mechanics
-import {
-  procedureStep,
-  procedureData,
-  procedure,
-  procedureConverter
-} from '../../../packlets/procedures/converters';
-// eslint-disable-next-line @rushstack/packlets/mechanics
-import { Procedure } from '../../../packlets/procedures/procedure';
+import { procedureStep, procedureData } from '../../../packlets/procedures/converters';
 
 import { BaseTaskId } from '../../../packlets/common';
 import { ITaskInvocation } from '../../../packlets/tasks';
@@ -345,48 +338,6 @@ describe('Procedure Converters', () => {
         expect(procedureData.convert(input)).toSucceedAndSatisfy((result) => {
           expect(result.category).toBe(category);
         });
-      });
-    });
-  });
-
-  // ============================================================================
-  // procedure Converter
-  // ============================================================================
-
-  describe('procedure', () => {
-    test('converts valid procedure data to Procedure instance', () => {
-      expect(procedure.convert(validProcedureData)).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Procedure);
-        expect(result.baseId).toBe('ganache-cold-method');
-        expect(result.name).toBe('Ganache (Cold Method)');
-        expect(result.category).toBe('ganache');
-      });
-    });
-
-    test('fails for invalid procedure data', () => {
-      const input = {
-        baseId: 'invalid.id',
-        name: 'Test',
-        steps: [{ order: 1, task: inlineTask('Step') }]
-      };
-      expect(procedure.convert(input)).toFail();
-    });
-
-    test('fails for non-object input', () => {
-      expect(procedure.convert('not an object')).toFail();
-      expect(procedure.convert(null)).toFail();
-      expect(procedure.convert(123)).toFail();
-    });
-  });
-
-  // ============================================================================
-  // procedureConverter (alias)
-  // ============================================================================
-
-  describe('procedureConverter', () => {
-    test('is an alias for procedure converter', () => {
-      expect(procedureConverter.convert(validProcedureData)).toSucceedAndSatisfy((result) => {
-        expect(result).toBeInstanceOf(Procedure);
       });
     });
   });

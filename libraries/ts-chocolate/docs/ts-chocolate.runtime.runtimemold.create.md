@@ -9,7 +9,7 @@ Factory method for creating a RuntimeMold.
 **Signature:**
 
 ```typescript
-static create(context: IMoldContext, id: MoldId, mold: Mold | IMold): Result<RuntimeMold>;
+static create(context: IMoldContext, id: MoldId, mold: IMold): Result<RuntimeMold>;
 ```
 
 ## Parameters
@@ -69,12 +69,12 @@ mold
 
 </td><td>
 
-[Mold](./ts-chocolate.molds.mold.md) \| [IMold](./ts-chocolate.molds.imold.md)
+[IMold](./ts-chocolate.molds.imold.md)
 
 
 </td><td>
 
-The mold data (can be Mold or IMold)
+The mold data
 
 
 </td></tr>

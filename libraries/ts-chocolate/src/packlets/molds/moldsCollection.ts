@@ -29,28 +29,28 @@ import {
   SubLibraryCollectionValidator,
   SubLibraryEntryInit
 } from '../library-data';
-import { Mold } from './mold';
+import { IMold } from './model';
 
 /**
  * A single entry in a molds collection.
  * @public
  */
-export type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, Mold>;
+export type MoldCollectionEntry = SubLibraryCollectionEntry<BaseMoldId, IMold>;
 
 /**
  * Initialization type for a MoldsLibrary collection entry.
  * @public
  */
-export type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, Mold>;
+export type MoldCollectionEntryInit = SubLibraryEntryInit<BaseMoldId, IMold>;
 
 /**
  * Validator type for MoldsLibrary collections.
  * @public
  */
-export type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, Mold>;
+export type MoldCollectionValidator = SubLibraryCollectionValidator<MoldId, IMold>;
 
 /**
  * Type for the collections in a MoldsLibrary.
  * @public
  */
-export type MoldCollection = SubLibraryCollection<BaseMoldId, Mold>;
+export type MoldCollection = SubLibraryCollection<BaseMoldId, IMold>;

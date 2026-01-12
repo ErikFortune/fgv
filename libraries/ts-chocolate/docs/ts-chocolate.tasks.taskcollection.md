@@ -9,7 +9,7 @@ Type for the collections in a TasksLibrary.
 **Signature:**
 
 ```typescript
-export type TaskCollection = SubLibraryCollection<BaseTaskId, Task>;
+export type TaskCollection = SubLibraryCollection<BaseTaskId, ITaskData>;
 ```
-**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [Task](./ts-chocolate.tasks.task.md)
+**References:** [SubLibraryCollection](./ts-chocolate.librarydata.sublibrarycollection.md)<!-- -->, [BaseTaskId](./ts-chocolate.basetaskid.md)<!-- -->, [ITaskData](./ts-chocolate.tasks.itaskdata.md)
 

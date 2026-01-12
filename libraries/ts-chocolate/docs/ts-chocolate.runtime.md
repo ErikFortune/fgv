@@ -214,8 +214,6 @@ A resolved view of a task with rendering capabilities.
 
 RuntimeTask wraps a data-layer Task and provides: - Composite identity (TaskId) for cross-source references - Template parsing and required variable extraction - Parameter validation - Template rendering - Context access for resolving task references (future use)
 
-This is the runtime-layer class that contains all template business logic. The data-layer Task class is a pure data holder.
-
 
 </td></tr>
 <tr><td>
