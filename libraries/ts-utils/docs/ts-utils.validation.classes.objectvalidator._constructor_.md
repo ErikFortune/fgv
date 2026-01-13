@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+ObjectValidatorConstructorParams&lt;T, TC&gt;
 
 
 </td><td>

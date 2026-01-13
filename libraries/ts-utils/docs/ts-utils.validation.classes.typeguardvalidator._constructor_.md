@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+TypeGuardValidatorConstructorParams&lt;T, TC&gt;
 
 
 </td><td>

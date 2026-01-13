@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[CompositeIdValidatorConstructorParams](./ts-utils.validation.classes.compositeidvalidatorconstructorparams.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID, TC&gt;
+CompositeIdValidatorConstructorParams&lt;T, TCOLLECTIONID, TITEMID, TC&gt;
 
 
 </td><td>

@@ -131,6 +131,28 @@ Helper class for converting strongly-typed keys, values, or entries from unknown
 </td></tr>
 <tr><td>
 
+[LazyInstantiator](./ts-utils.collections.lazyinstantiator.md)
+
+
+</td><td>
+
+A helper which supports lazy materialization of values based on a base map.
+
+
+</td></tr>
+<tr><td>
+
+[LazyItem](./ts-utils.collections.lazyitem.md)
+
+
+</td><td>
+
+A lazily-materialized item backed by a base value.
+
+
+</td></tr>
+<tr><td>
+
 [ReadOnlyResultMap](./ts-utils.collections.readonlyresultmap.md)
 
 
@@ -214,6 +236,17 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [C
 </td><td>
 
 A [FactoryResultMap](./ts-utils.collections.factoryresultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingLazyInstantiator](./ts-utils.collections.validatinglazyinstantiator.md)
+
+
+</td><td>
+
+A [LazyInstantiator](./ts-utils.collections.lazyinstantiator.md) with validating views.
 
 
 </td></tr>
@@ -383,6 +416,17 @@ Parameters for creating a [FactoryResultMap](./ts-utils.collections.factoryresul
 </td><td>
 
 Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md) instance.
+
+
+</td></tr>
+<tr><td>
+
+[ILazyInstantiatorCreateParams](./ts-utils.collections.ilazyinstantiatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [LazyInstantiator](./ts-utils.collections.lazyinstantiator.md)<!-- -->.
 
 
 </td></tr>
@@ -564,6 +608,17 @@ Parameters for creating a [ValidatingFactoryResultMap](./ts-utils.collections.va
 </td></tr>
 <tr><td>
 
+[IValidatingLazyInstantiatorCreateParams](./ts-utils.collections.ivalidatinglazyinstantiatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [ValidatingLazyInstantiator](./ts-utils.collections.validatinglazyinstantiator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IValidatingResultMapConstructorParams](./ts-utils.collections.ivalidatingresultmapconstructorparams.md)
 
 
@@ -589,6 +644,15 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[Classes](./ts-utils.collections.classes.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
 
 [Utils](./ts-utils.collections.utils.md)
 

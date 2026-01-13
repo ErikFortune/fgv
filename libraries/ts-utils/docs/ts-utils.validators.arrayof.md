@@ -53,7 +53,7 @@ params
 
 </td><td>
 
-Omit&lt;[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validateElement'&gt;
+Omit&lt;ArrayValidatorConstructorParams&lt;T, TC&gt;, 'validateElement'&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_
 
 **Returns:**
 
-[ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md)<!-- -->&lt;T, TC&gt;
+ArrayValidator&lt;T, TC&gt;
 
 A new [ArrayValidator](./ts-utils.validation.classes.arrayvalidator.md) which validates the desired array in place.
 

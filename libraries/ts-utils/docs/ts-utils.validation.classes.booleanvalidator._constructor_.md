@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[BooleanValidatorConstructorParams](./ts-utils.validation.classes.booleanvalidatorconstructorparams.md)<!-- -->&lt;TC&gt;
+BooleanValidatorConstructorParams&lt;TC&gt;
 
 
 </td><td>

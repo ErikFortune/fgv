@@ -53,7 +53,7 @@ params
 
 </td><td>
 
-Omit&lt;[OneOfValidatorConstructorParams](./ts-utils.validation.classes.oneofvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'validators'&gt;
+Omit&lt;OneOfValidatorConstructorParams&lt;T, TC&gt;, 'validators'&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional [params](./ts-utils.validation.classes.oneofvalidatorconst
 
 **Returns:**
 
-[OneOfValidator](./ts-utils.validation.classes.oneofvalidator.md)<!-- -->&lt;T, TC&gt;
+OneOfValidator&lt;T, TC&gt;
 
 A new [Validator](./ts-utils.validator.md) which validates values that match any of the supplied validators.
 

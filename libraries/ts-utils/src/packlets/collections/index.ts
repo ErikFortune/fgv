@@ -20,6 +20,7 @@
  * SOFTWARE.
  */
 
+import * as Classes from './classes';
 import * as Utils from './utils';
 
 export * from './collectible';
@@ -31,6 +32,7 @@ export * from './validatingConvertingCollector';
 export * from './common';
 export * from './keyValueConverters';
 export * from './factoryResultMap';
+export * from './lazyInstantiator';
 export * from './readonlyResultMap';
 export * from './resultMap';
 export * from './resultMapValidator';
@@ -38,4 +40,4 @@ export * from './validatingCollector';
 export * from './validatingResultMap';
 export * from './aggregatedResultMap';
 
-export { Utils };
+export { Classes, Utils };

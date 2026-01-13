@@ -37,7 +37,7 @@ fields
 
 </td><td>
 
-[FieldValidators](./ts-utils.validation.classes.fieldvalidators.md)<!-- -->&lt;T, TC&gt;
+FieldValidators&lt;T, TC&gt;
 
 
 </td><td>
@@ -53,7 +53,7 @@ params
 
 </td><td>
 
-Omit&lt;[ObjectValidatorConstructorParams](./ts-utils.validation.classes.objectvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'fields'&gt;
+Omit&lt;ObjectValidatorConstructorParams&lt;T, TC&gt;, 'fields'&gt;
 
 
 </td><td>
@@ -66,7 +66,7 @@ _(Optional)_ Optional [parameters](./ts-utils.validation.classes.objectvalidator
 
 **Returns:**
 
-[ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->&lt;T, TC&gt;
+ObjectValidator&lt;T, TC&gt;
 
 A new [Validator](./ts-utils.validation.validator.md) which validates the desired object in place.
 

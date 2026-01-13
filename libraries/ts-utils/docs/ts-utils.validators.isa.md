@@ -69,7 +69,7 @@ params
 
 </td><td>
 
-Omit&lt;[TypeGuardValidatorConstructorParams](./ts-utils.validation.classes.typeguardvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;, 'description' \| 'guard'&gt;
+Omit&lt;TypeGuardValidatorConstructorParams&lt;T, TC&gt;, 'description' \| 'guard'&gt;
 
 
 </td><td>
@@ -82,7 +82,7 @@ _(Optional)_
 
 **Returns:**
 
-[TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md)<!-- -->&lt;T, TC&gt;
+TypeGuardValidator&lt;T, TC&gt;
 
 A new [TypeGuardValidator](./ts-utils.validation.classes.typeguardvalidator.md) which validates the values using the supplied type guard.
 

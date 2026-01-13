@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[NumberValidatorConstructorParams](./ts-utils.validation.classes.numbervalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+NumberValidatorConstructorParams&lt;T, TC&gt;
 
 
 </td><td>

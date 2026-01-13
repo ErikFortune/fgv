@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[CompositeIdValidatorConstructorParams](./ts-utils.validation.classes.compositeidvalidatorconstructorparams.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID, TC&gt;
+CompositeIdValidatorConstructorParams&lt;T, TCOLLECTIONID, TITEMID, TC&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ params
 
 **Returns:**
 
-[CompositeIdValidator](./ts-utils.validation.classes.compositeidvalidator.md)<!-- -->&lt;T, TCOLLECTIONID, TITEMID, TC&gt;
+CompositeIdValidator&lt;T, TCOLLECTIONID, TITEMID, TC&gt;
 
 A new [Validator](./ts-utils.validation.validator.md) which validates the desired composite ID in place.
 

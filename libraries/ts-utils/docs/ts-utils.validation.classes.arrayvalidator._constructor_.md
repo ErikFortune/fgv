@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[ArrayValidatorConstructorParams](./ts-utils.validation.classes.arrayvalidatorconstructorparams.md)<!-- -->&lt;T, TC&gt;
+ArrayValidatorConstructorParams&lt;T, TC&gt;
 
 
 </td><td>

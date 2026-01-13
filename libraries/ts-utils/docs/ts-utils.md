@@ -98,6 +98,28 @@ Reports a failed [result](./ts-utils.iresult.md) from some operation, with an er
 </td></tr>
 <tr><td>
 
+[LazyInstantiator](./ts-utils.lazyinstantiator.md)
+
+
+</td><td>
+
+A helper which supports lazy materialization of values based on a base map.
+
+
+</td></tr>
+<tr><td>
+
+[LazyItem](./ts-utils.lazyitem.md)
+
+
+</td><td>
+
+A lazily-materialized item backed by a base value.
+
+
+</td></tr>
+<tr><td>
+
 [MessageAggregator](./ts-utils.messageaggregator.md)
 
 
@@ -192,6 +214,17 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [C
 </td><td>
 
 A [FactoryResultMap](./ts-utils.collections.factoryresultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingLazyInstantiator](./ts-utils.validatinglazyinstantiator.md)
+
+
+</td><td>
+
+A [LazyInstantiator](./ts-utils.collections.lazyinstantiator.md) with validating views.
 
 
 </td></tr>

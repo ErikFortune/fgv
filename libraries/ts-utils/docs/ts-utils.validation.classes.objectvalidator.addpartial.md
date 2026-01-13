@@ -48,7 +48,7 @@ addOptionalFields
 
 **Returns:**
 
-[ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;
+ObjectValidator&lt;Partial&lt;T&gt;, TC&gt;
 
 A new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) with the additional optional source properties.
 

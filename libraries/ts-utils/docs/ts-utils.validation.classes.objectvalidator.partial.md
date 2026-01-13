@@ -37,7 +37,7 @@ options
 
 </td><td>
 
-[ObjectValidatorOptions](./ts-utils.validation.classes.objectvalidatoroptions.md)<!-- -->&lt;T, TC&gt;
+ObjectValidatorOptions&lt;T, TC&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ _(Optional)_ The [options](./ts-utils.validation.classes.objectvalidatoroptions.
 
 **Returns:**
 
-[ObjectValidator](./ts-utils.validation.classes.objectvalidator.md)<!-- -->&lt;Partial&lt;T&gt;, TC&gt;
+ObjectValidator&lt;Partial&lt;T&gt;, TC&gt;
 
 A new [ObjectValidator](./ts-utils.validation.classes.objectvalidator.md) with the additional optional source properties.
 

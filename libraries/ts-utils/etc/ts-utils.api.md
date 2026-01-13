@@ -235,6 +235,15 @@ export function captureResult<T>(func: () => T): Result<T>;
 
 declare namespace Classes {
     export {
+        LazyInstantiatorFactory,
+        LazyItemsResultMapView,
+        MaterializingResultMapView,
+        IReadOnlyLazyInstantiatorValidator
+    }
+}
+
+declare namespace Classes_2 {
+    export {
         ArrayValidator,
         ArrayValidatorConstructorParams,
         BooleanValidator,
@@ -318,6 +327,7 @@ type CollectibleKey<TITEM extends ICollectible> = TITEM extends ICollectible<inf
 
 declare namespace Collections {
     export {
+        Classes,
         Utils,
         ICollectible,
         CollectibleKey,
@@ -348,6 +358,11 @@ declare namespace Collections {
         FactoryResultMap,
         IValidatingFactoryResultMapCreateParams,
         ValidatingFactoryResultMap,
+        ILazyInstantiatorCreateParams,
+        LazyItem,
+        LazyInstantiator,
+        IValidatingLazyInstantiatorCreateParams,
+        ValidatingLazyInstantiator,
         ResultMapResultDetail,
         ResultMapForEachCb,
         IReadOnlyResultMap,
@@ -1343,6 +1358,15 @@ interface IKeyValueConverterConstructorParams<TK extends string = string, TV = u
     value: Validator<TV, unknown> | Converter<TV, unknown> | ConverterFunc<TV, unknown>;
 }
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface ILazyInstantiatorCreateParams<TKey extends string = string, TBase = unknown, TValue = unknown> {
+    base: IReadOnlyResultMap<TKey, TBase>;
+    factory: LazyInstantiatorFactory<TKey, TBase, TValue>;
+    loaded?: IterableIterator<KeyValueEntry<TKey, TValue>>;
+}
+
 // @public
 interface ILogger {
     detail(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
@@ -1458,6 +1482,20 @@ interface IReadOnlyCollectorValidator<TITEM extends ICollectible<any, any>> exte
     //
     // (undocumented)
     readonly map: IReadOnlyResultMap<CollectibleKey<TITEM>, TITEM>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyLazyInstantiatorValidator<TKey extends string = string, TBase = unknown, TValue = unknown> {
+    // (undocumented)
+    readonly base: IReadOnlyResultMapValidator<TKey, TBase>;
+    // (undocumented)
+    readonly items: IReadOnlyResultMapValidator<TKey, LazyItem<TKey, TBase, TValue>>;
+    // (undocumented)
+    readonly loaded: IReadOnlyResultMapValidator<TKey, TValue>;
+    // (undocumented)
+    readonly materializing: IReadOnlyResultMapValidator<TKey, TValue>;
 }
 
 // @public
@@ -1743,6 +1781,16 @@ interface IValidatingFactoryResultMapCreateParams<TKey extends string = string, 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IValidatingLazyInstantiatorCreateParams<TKey extends string = string, TBase = unknown, TValue = unknown> extends ILazyInstantiatorCreateParams<TKey, TBase, TValue> {
+    // (undocumented)
+    baseConverters: KeyValueConverters<TKey, TBase>;
+    // (undocumented)
+    loadedConverters: KeyValueConverters<TKey, TValue>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IValidatingResultMapConstructorParams<TK extends string = string, TV = unknown> {
     // (undocumented)
     converters: KeyValueConverters<TK, TV>;
@@ -1783,6 +1831,61 @@ class KeyValueConverters<TK extends string = string, TV = unknown> {
 
 // @public
 type KeyValueEntry<TK extends string = string, TV = unknown> = [TK, TV];
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class LazyInstantiator<TKey extends string = string, TBase = unknown, TValue = unknown> {
+    constructor(params: ILazyInstantiatorCreateParams<TKey, TBase, TValue>);
+    // (undocumented)
+    readonly base: IReadOnlyResultMap<TKey, TBase>;
+    // (undocumented)
+    readonly items: LazyItemsResultMapView<TKey, TBase, TValue>;
+    // (undocumented)
+    readonly loaded: IReadOnlyResultMap<TKey, TValue>;
+    // @internal (undocumented)
+    _makeItem(key: TKey, base: TBase): LazyItem<TKey, TBase, TValue>;
+    // Warning: (ae-incompatible-release-tags) The symbol "materialize" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "materialize" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    materialize(key: TKey): DetailedResult<TValue, ResultMapResultDetail>;
+    // @internal
+    materialize(key: TKey, base: TBase): DetailedResult<TValue, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    readonly materializing: MaterializingResultMapView<TKey, TValue>;
+}
+
+// @public
+type LazyInstantiatorFactory<TKey extends string, TBase, TValue> = (base: TBase, key: TKey) => Result<TValue>;
+
+// @public
+export class LazyItem<TKey extends string = string, TBase = unknown, TValue = unknown> {
+    // @internal
+    constructor(params: {
+        key: TKey;
+        base: TBase;
+        materialize: () => DetailedResult<TValue, ResultMapResultDetail>;
+        peekLoaded: () => DetailedResult<TValue, ResultMapResultDetail>;
+        isLoaded: () => boolean;
+    });
+    // (undocumented)
+    readonly base: TBase;
+    isLoaded(): boolean;
+    // (undocumented)
+    readonly key: TKey;
+    // Warning: (ae-incompatible-release-tags) The symbol "materialize" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "materialize" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    materialize(): DetailedResult<TValue, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "peekLoaded" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "peekLoaded" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    peekLoaded(): DetailedResult<TValue, ResultMapResultDetail>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type LazyItemsResultMapView<TKey extends string = string, TBase = unknown, TValue = unknown> = IReadOnlyResultMap<TKey, LazyItem<TKey, TBase, TValue>>;
 
 // @public
 function literal<T, TC = unknown>(value: T): Converter<T, TC>;
@@ -1934,6 +2037,9 @@ export function mapSuccess<T>(results: Iterable<Result<T>>, aggregatedErrors?: I
 //
 // @public
 export function mapToRecord<TS, TD, TK extends string = string>(src: ReadonlyMap<TK, TS>, factory: KeyedThingFactory<TS, TD, TK>): Result<Record<TK, TD>>;
+
+// @public
+type MaterializingResultMapView<TKey extends string = string, TValue = unknown> = IReadOnlyResultMap<TKey, TValue>;
 
 // @public
 export class MessageAggregator implements IMessageAggregator {
@@ -2724,6 +2830,15 @@ export class ValidatingFactoryResultMap<TKey extends string = string, TValue = u
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class ValidatingLazyInstantiator<TKey extends string = string, TBase = unknown, TValue = unknown> extends LazyInstantiator<TKey, TBase, TValue> {
+    constructor(params: IValidatingLazyInstantiatorCreateParams<TKey, TBase, TValue>);
+    // (undocumented)
+    readonly validating: IReadOnlyLazyInstantiatorValidator<TKey, TBase, TValue>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
@@ -2740,7 +2855,7 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown> exten
 declare namespace Validation {
     export {
         Base,
-        Classes,
+        Classes_2 as Classes,
         Validators,
         TypeGuardWithContext,
         FunctionConstraintTrait,
