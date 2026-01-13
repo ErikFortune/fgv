@@ -9,7 +9,7 @@ Create a new editable collection.
 **Signature:**
 
 ```typescript
-static createEditable<T, TBaseId extends string = string, TId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId, TId>>;
+static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
 ```
 
 ## Parameters
@@ -50,7 +50,7 @@ Creation parameters
 
 **Returns:**
 
-Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;T, TBaseId, TId&gt;&gt;
+Result&lt;[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;T, TBaseId&gt;&gt;
 
 Result containing the editable collection or failure
 

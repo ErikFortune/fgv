@@ -91,12 +91,7 @@ export interface IEditableCollectionParams<T, TBaseId extends string = string> {
  * @typeParam TId - Composite ID type (e.g., IngredientId)
  * @public
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export class EditableCollection<
-  T,
-  TBaseId extends string = string,
-  TId extends string = string
-> extends ValidatingResultMap<TBaseId, T> {
+export class EditableCollection<T, TBaseId extends string = string> extends ValidatingResultMap<TBaseId, T> {
   /**
    * Collection identifier.
    */
@@ -130,9 +125,9 @@ export class EditableCollection<
    * @param params - Creation parameters
    * @returns Result containing the editable collection or failure
    */
-  public static createEditable<T, TBaseId extends string = string, TId extends string = string>(
+  public static createEditable<T, TBaseId extends string = string>(
     params: IEditableCollectionParams<T, TBaseId>
-  ): Result<EditableCollection<T, TBaseId, TId>> {
+  ): Result<EditableCollection<T, TBaseId>> {
     if (!params.collectionId) {
       return Failure.with('Collection ID is required');
     }
@@ -147,7 +142,7 @@ export class EditableCollection<
     const entries = Array.from(params.initialItems.entries());
 
     return Success.with(
-      new EditableCollection<T, TBaseId, TId>(params.collectionId, params.isMutable, params.metadata, {
+      new EditableCollection<T, TBaseId>(params.collectionId, params.isMutable, params.metadata, {
         entries,
         converters
       })

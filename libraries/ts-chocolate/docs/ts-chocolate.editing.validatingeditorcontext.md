@@ -88,7 +88,7 @@ Description
 
 </td><td>
 
-[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;T, TBaseId, TId&gt;
+[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;T, TBaseId&gt;
 
 
 </td><td>

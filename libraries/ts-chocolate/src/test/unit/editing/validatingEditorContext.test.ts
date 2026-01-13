@@ -54,8 +54,8 @@ describe('ValidatingEditorContext', () => {
   const createTestCollection = (
     items: Map<TestBaseId, TestEntity> = new Map(),
     isMutable: boolean = true
-  ): EditableCollection<TestEntity, TestBaseId, TestEntityId> => {
-    return EditableCollection.createEditable<TestEntity, TestBaseId, TestEntityId>({
+  ): EditableCollection<TestEntity, TestBaseId> => {
+    return EditableCollection.createEditable<TestEntity, TestBaseId>({
       collectionId: TEST_SOURCE_ID,
       metadata: { name: 'Test Collection' },
       isMutable,
@@ -86,7 +86,7 @@ describe('ValidatingEditorContext', () => {
     test('should fail for missing collection', () => {
       expect(
         ValidatingEditorContext.createValidating<TestEntity, TestBaseId, TestEntityId>({
-          collection: null as unknown as EditableCollection<TestEntity, TestBaseId, TestEntityId>,
+          collection: null as unknown as EditableCollection<TestEntity, TestBaseId>,
           entityConverter: testEntityConverter,
           keyConverter: testKeyConverter,
           createId: (c, b) => `${c}.${b}` as TestEntityId,

@@ -9,5 +9,5 @@ Get the underlying mutable collection. Useful for derived classes that need dire
 **Signature:**
 
 ```typescript
-protected get collection(): EditableCollection<T, TBaseId, TId>;
+protected get collection(): EditableCollection<T, TBaseId>;
 ```

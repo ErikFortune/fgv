@@ -9,7 +9,7 @@ Create an ingredient editor context from a collection.
 **Signature:**
 
 ```typescript
-static createFromCollection(collection: EditableCollection<Ingredient, BaseIngredientId, IngredientId>): Result<IngredientEditorContext>;
+static createFromCollection(collection: EditableCollection<Ingredient, BaseIngredientId>): Result<IngredientEditorContext>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ collection
 
 </td><td>
 
-[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;Ingredient, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->, [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;
+[EditableCollection](./ts-chocolate.editing.editablecollection.md)<!-- -->&lt;Ingredient, [BaseIngredientId](./ts-chocolate.baseingredientid.md)<!-- -->&gt;
 
 
 </td><td>

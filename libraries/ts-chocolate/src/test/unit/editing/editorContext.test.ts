@@ -55,8 +55,8 @@ describe('EditorContext', () => {
   const createTestCollection = (
     items: Map<TestBaseId, TestEntity> = new Map(),
     isMutable: boolean = true
-  ): EditableCollection<TestEntity, TestBaseId, TestEntityId> => {
-    return EditableCollection.createEditable<TestEntity, TestBaseId, TestEntityId>({
+  ): EditableCollection<TestEntity, TestBaseId> => {
+    return EditableCollection.createEditable<TestEntity, TestBaseId>({
       collectionId: TEST_SOURCE_ID,
       metadata: { name: 'Test Collection' },
       isMutable,
@@ -67,7 +67,7 @@ describe('EditorContext', () => {
   };
 
   const createTestContext = (
-    collection: EditableCollection<TestEntity, TestBaseId, TestEntityId>,
+    collection: EditableCollection<TestEntity, TestBaseId>,
     semanticValidator?: (entity: TestEntity) => Result<TestEntity>
   ): Result<EditorContext<TestEntity, TestBaseId, TestEntityId>> => {
     return EditorContext.create<TestEntity, TestBaseId, TestEntityId>({
@@ -90,7 +90,7 @@ describe('EditorContext', () => {
     test('should fail for missing collection', () => {
       expect(
         EditorContext.create({
-          collection: null as unknown as EditableCollection<TestEntity, TestBaseId, TestEntityId>,
+          collection: null as unknown as EditableCollection<TestEntity, TestBaseId>,
           createId: (c, b) => `${c}.${b}` as TestEntityId,
           getBaseId: () => 'test' as TestBaseId,
           getName: (e: TestEntity) => e.name
@@ -219,7 +219,7 @@ describe('EditorContext', () => {
 
     test('should fail when collection.set fails via immutable check', () => {
       // Create an immutable collection that will reject set operations
-      const immutableCollection = EditableCollection.createEditable<TestEntity, TestBaseId, TestEntityId>({
+      const immutableCollection = EditableCollection.createEditable<TestEntity, TestBaseId>({
         collectionId: TEST_SOURCE_ID,
         metadata: { name: 'Immutable' },
         isMutable: false,

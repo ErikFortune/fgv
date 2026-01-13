@@ -59,8 +59,8 @@ describe('IngredientEditorContext', () => {
   const createTestCollection = (
     items: Map<BaseIngredientId, Ingredient> = new Map(),
     isMutable: boolean = true
-  ): EditableCollection<Ingredient, BaseIngredientId, IngredientId> => {
-    return EditableCollection.createEditable<Ingredient, BaseIngredientId, IngredientId>({
+  ): EditableCollection<Ingredient, BaseIngredientId> => {
+    return EditableCollection.createEditable<Ingredient, BaseIngredientId>({
       collectionId: TEST_SOURCE_ID,
       metadata: { name: 'Test Ingredients' },
       isMutable,

@@ -9,5 +9,5 @@ The mutable collection to edit.
 **Signature:**
 
 ```typescript
-readonly collection: EditableCollection<T, TBaseId, TId>;
+readonly collection: EditableCollection<T, TBaseId>;
 ```

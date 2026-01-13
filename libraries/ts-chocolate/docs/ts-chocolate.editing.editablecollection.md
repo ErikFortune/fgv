@@ -11,7 +11,7 @@ Inherits all ValidatingResultMap functionality but gates mutation operations beh
 **Signature:**
 
 ```typescript
-export declare class EditableCollection<T, TBaseId extends string = string, TId extends string = string> extends ValidatingResultMap<TBaseId, T> 
+export declare class EditableCollection<T, TBaseId extends string = string> extends ValidatingResultMap<TBaseId, T> 
 ```
 **Extends:** ValidatingResultMap&lt;TBaseId, T&gt;
 

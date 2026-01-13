@@ -942,11 +942,11 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 const degreesMacMichael: Converter<DegreesMacMichael>;
 
 // @public
-class EditableCollection<T, TBaseId extends string = string, TId extends string = string> extends ValidatingResultMap<TBaseId, T> {
+class EditableCollection<T, TBaseId extends string = string> extends ValidatingResultMap<TBaseId, T> {
     add(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
     clear(): Result<boolean>;
     readonly collectionId: SourceId;
-    static createEditable<T, TBaseId extends string = string, TId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId, TId>>;
+    static createEditable<T, TBaseId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId>>;
     delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
     export(): Result<ICollectionSourceFile<T>>;
     readonly isMutable: boolean;
@@ -1010,7 +1010,7 @@ class EditingSessionValidator implements IEditingSessionValidator {
 class EditorContext<T, TBaseId extends string = string, TId extends string = string> implements IEditorContext<T, TBaseId, TId> {
     protected constructor(params: IEditorContextParams<T, TBaseId, TId>);
     clearUnsavedChanges(): void;
-    protected get collection(): EditableCollection<T, TBaseId, TId>;
+    protected get collection(): EditableCollection<T, TBaseId>;
     copyTo(id: TId, targetCollectionId: string): Result<TId>;
     static create<T, TBaseId extends string = string, TId extends string = string>(params: IEditorContextParams<T, TBaseId, TId>): Result<EditorContext<T, TBaseId, TId>>;
     create(baseId: TBaseId | undefined, entity: T): Result<TId>;
@@ -1969,7 +1969,7 @@ interface IEditorContext<T, TBaseId extends string = string, TId extends string 
 
 // @public
 interface IEditorContextParams<T, TBaseId extends string = string, TId extends string = string> {
-    readonly collection: EditableCollection<T, TBaseId, TId>;
+    readonly collection: EditableCollection<T, TBaseId>;
     readonly createId: (collectionId: string, baseId: TBaseId) => TId;
     readonly getBaseId: (entity: T) => TBaseId | undefined;
     readonly getName: (entity: T) => string;
@@ -2577,7 +2577,7 @@ type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId,
 
 // @public
 class IngredientEditorContext extends ValidatingEditorContext<Ingredient, BaseIngredientId, IngredientId> {
-    static createFromCollection(collection: EditableCollection<Ingredient, BaseIngredientId, IngredientId>): Result<IngredientEditorContext>;
+    static createFromCollection(collection: EditableCollection<Ingredient, BaseIngredientId>): Result<IngredientEditorContext>;
     getIngredientCategory(ingredient: Ingredient): string;
     getIngredientName(ingredient: Ingredient): string;
 }
@@ -5586,7 +5586,7 @@ function validateUniqueBaseId<T extends string = string>(baseId: T, existingIds:
 // @public
 class ValidatingEditorContext<T, TBaseId extends string = string, TId extends string = string> extends EditorContext<T, TBaseId, TId> implements IValidatingEditorContext<T, TBaseId, TId> {
     protected constructor(params: IValidatingEditorContextParams<T, TBaseId, TId>);
-    protected get collection(): EditableCollection<T, TBaseId, TId>;
+    protected get collection(): EditableCollection<T, TBaseId>;
     static createValidating<T, TBaseId extends string = string, TId extends string = string>(params: IValidatingEditorContextParams<T, TBaseId, TId>): Result<ValidatingEditorContext<T, TBaseId, TId>>;
     get validating(): IEditorContextValidator<T, TBaseId, TId>;
 }

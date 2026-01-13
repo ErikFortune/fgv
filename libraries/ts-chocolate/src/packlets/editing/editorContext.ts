@@ -42,7 +42,7 @@ export interface IEditorContextParams<T, TBaseId extends string = string, TId ex
   /**
    * The mutable collection to edit.
    */
-  readonly collection: EditableCollection<T, TBaseId, TId>;
+  readonly collection: EditableCollection<T, TBaseId>;
 
   /**
    * Optional semantic validator for cross-field and business rules.
@@ -94,7 +94,7 @@ export interface IEditorContextParams<T, TBaseId extends string = string, TId ex
 export class EditorContext<T, TBaseId extends string = string, TId extends string = string>
   implements IEditorContext<T, TBaseId, TId>
 {
-  private readonly _collection: EditableCollection<T, TBaseId, TId>;
+  private readonly _collection: EditableCollection<T, TBaseId>;
   private readonly _semanticValidator?: (entity: T) => Result<T>;
   private readonly _createId: (collectionId: string, baseId: TBaseId) => TId;
   private readonly _getName: (entity: T) => string;
@@ -288,7 +288,7 @@ export class EditorContext<T, TBaseId extends string = string, TId extends strin
    * @returns The mutable collection
    */
   /* c8 ignore next 3 - accessor tested through derived classes */
-  protected get collection(): EditableCollection<T, TBaseId, TId> {
+  protected get collection(): EditableCollection<T, TBaseId> {
     return this._collection;
   }
 

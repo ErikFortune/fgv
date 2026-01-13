@@ -126,7 +126,7 @@ export class ValidatingEditorContext<T, TBaseId extends string = string, TId ext
    * @returns The mutable collection
    */
   /* c8 ignore next 3 - protected accessor tested through derived classes like IngredientEditorContext */
-  protected override get collection(): EditableCollection<T, TBaseId, TId> {
+  protected override get collection(): EditableCollection<T, TBaseId> {
     return super.collection;
   }
 }

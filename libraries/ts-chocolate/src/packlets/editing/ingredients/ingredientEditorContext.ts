@@ -52,7 +52,7 @@ export class IngredientEditorContext extends ValidatingEditorContext<
    * @public
    */
   public static createFromCollection(
-    collection: EditableCollection<Ingredient, BaseIngredientId, IngredientId>
+    collection: EditableCollection<Ingredient, BaseIngredientId>
   ): Result<IngredientEditorContext> {
     return ValidatingEditorContext.createValidating<Ingredient, BaseIngredientId, IngredientId>({
       collection,
