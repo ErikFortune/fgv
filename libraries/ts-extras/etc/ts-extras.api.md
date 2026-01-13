@@ -133,7 +133,37 @@ declare namespace Hash {
 export { Hash }
 
 // @public
+interface IContextValidationResult {
+    readonly isValid: boolean;
+    readonly missingDetails: readonly IMissingVariableDetail[];
+    readonly missingVariables: readonly string[];
+    readonly presentVariables: readonly string[];
+}
+
+// @public
+interface IMissingVariableDetail {
+    readonly existingPath: readonly string[];
+    readonly failedAtSegment?: string;
+    readonly variable: IVariableRef;
+}
+
+// @public
+interface IMustacheTemplateOptions {
+    readonly includeComments?: boolean;
+    readonly includePartials?: boolean;
+    readonly tags?: readonly [string, string];
+}
+
+// @public
 const isoDate: Converter<Date, unknown>;
+
+// @public
+interface IVariableRef {
+    readonly isSection: boolean;
+    readonly name: string;
+    readonly path: readonly string[];
+    readonly tokenType: MustacheTokenType;
+}
 
 // @public (undocumented)
 type JarFieldPicker<T extends JarRecord = JarRecord> = (record: T) => (keyof T)[];
@@ -155,6 +185,36 @@ class Md5Normalizer extends Hash_2.HashingNormalizer {
     // (undocumented)
     static md5Hash(parts: string[]): string;
 }
+
+declare namespace Mustache {
+    export {
+        IContextValidationResult,
+        IMissingVariableDetail,
+        IMustacheTemplateOptions,
+        IVariableRef,
+        MustacheTokenType,
+        MustacheTemplate
+    }
+}
+export { Mustache }
+
+// @public
+class MustacheTemplate {
+    static create(template: string, options?: IMustacheTemplateOptions): Result<MustacheTemplate>;
+    extractVariableNames(): readonly string[];
+    extractVariables(): readonly IVariableRef[];
+    // Warning: (ae-forgotten-export) The symbol "IRequiredMustacheTemplateOptions" needs to be exported by the entry point index.d.ts
+    readonly options: Readonly<IRequiredMustacheTemplateOptions>;
+    render(context: unknown): Result<string>;
+    readonly template: string;
+    static validate(template: string, options?: IMustacheTemplateOptions): Result<true>;
+    validate(): Result<true>;
+    validateAndRender(context: unknown): Result<string>;
+    validateContext(context: unknown): Result<IContextValidationResult>;
+}
+
+// @public
+type MustacheTokenType = 'text' | 'name' | '&' | '#' | '^' | '!' | '>' | '=';
 
 // @beta
 function parseCsvString(body: string, options?: CsvOptions): Result<unknown>;
