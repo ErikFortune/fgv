@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-readonly entries: KeyValueEntry<string, unknown>[];
+readonly entries: ReadonlyArray<KeyValueEntry<string, unknown>>;
 ```

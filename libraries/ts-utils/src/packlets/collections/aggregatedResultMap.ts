@@ -31,7 +31,7 @@ import {
   Success
 } from '../base';
 import { Converter, Converters } from '../conversion';
-import { Validator } from '../validation';
+import { Validator, Validators } from '../validation';
 import { KeyValueEntry } from './common';
 import { KeyValueConverters } from './keyValueConverters';
 import { IReadOnlyResultMapValidator } from './resultMapValidator';
@@ -82,7 +82,7 @@ export type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID exten
 export interface IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID extends string = string> {
   readonly isMutable: boolean;
   readonly id: TCOLLECTIONID;
-  readonly entries: KeyValueEntry<string, unknown>[];
+  readonly entries: ReadonlyArray<KeyValueEntry<string, unknown>>;
 }
 
 /**
@@ -112,7 +112,7 @@ export type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID e
   | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
 
 /**
- * Options for {@link AggregatedResultMap.addCollectionWithItems}.
+ * Options for {@link Collections.AggregatedResultMapBase.addCollectionWithItems}.
  * @public
  */
 export interface IAddCollectionWithItemsOptions {
@@ -133,12 +133,12 @@ export interface IAggregatedResultMapConstructorParams<
   TITEMID extends string,
   TITEM
 > {
-  readonly compositeIdValidator: Validator<TCOMPOSITEID, unknown>;
+  readonly compositeIdValidator?: Validator<TCOMPOSITEID, unknown>;
   readonly collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>;
   readonly itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
   readonly itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
-  readonly delimiter?: string;
-  readonly collections?: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>[];
+  readonly separator?: string;
+  readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>>;
 }
 
 /**
@@ -216,12 +216,14 @@ function isMutableEntry<TCOLLECTIONID extends string, TITEMID extends string, TI
 }
 
 /**
- * An aggregated result map that wraps a collection of {@link ValidatingResultMap} instances,
+ * Base class for an aggregated result map that wraps a collection of {@link ValidatingResultMap} instances,
  * keyed by collection ID. Items are accessed via composite IDs that combine the collection ID
  * and item ID with a delimiter.
+ * @remarks Consumers should inherit from this class or use {@link AggregatedResultMap | AggregatedResultMap}
+ * for fully generic.
  * @public
  */
-export class AggregatedResultMap<
+export class AggregatedResultMapBase<
   TCOMPOSITEID extends string,
   TCOLLECTIONID extends string,
   TITEMID extends string,
@@ -253,15 +255,17 @@ export class AggregatedResultMap<
    * Use {@link AggregatedResultMap.create} for safe construction with error handling.
    * @param params - Parameters for constructing the map.
    * @throws If initialization fails (e.g., invalid collections).
+   * @public
    */
-  public constructor(
+  protected constructor(
     params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
   ) {
-    this._compositeIdValidator = params.compositeIdValidator;
+    this._compositeIdValidator =
+      params.compositeIdValidator ?? AggregatedResultMapBase._compositeIdValidator(params);
     this._collectionIdConverter = params.collectionIdConverter;
     this._itemIdConverter = params.itemIdConverter;
     this._itemConverter = params.itemConverter;
-    this._delimiter = params.delimiter ?? '.';
+    this._delimiter = params.separator ?? '.';
 
     // Build child key-value converters for item ID/value pairs
     this._childKvConverters = new KeyValueConverters<TITEMID, TITEM>({
@@ -278,12 +282,12 @@ export class AggregatedResultMap<
 
     // Build key-value converters for composite ID/item pairs
     this._kvConverters = new KeyValueConverters<TCOMPOSITEID, TITEM>({
-      key: params.compositeIdValidator,
+      key: this._compositeIdValidator,
       value: params.itemConverter
     });
 
     // Build entry converter for collection entries
-    const entryConverter = AggregatedResultMap._entryConverter(
+    const entryConverter = AggregatedResultMapBase._entryConverter(
       params.collectionIdConverter,
       this._childKvConverters
     );
@@ -317,22 +321,6 @@ export class AggregatedResultMap<
       this,
       this._kvConverters
     );
-  }
-
-  /**
-   * Creates a new {@link AggregatedResultMap}.
-   * @param params - Parameters for constructing the map.
-   * @returns `Success` with the new map if successful, `Failure` otherwise.
-   */
-  public static create<
-    TCOMPOSITEID extends string,
-    TCOLLECTIONID extends string,
-    TITEMID extends string,
-    TITEM
-  >(
-    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
-  ): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>> {
-    return captureResult(() => new AggregatedResultMap(params));
   }
 
   // ==================== IReadOnlyValidatingResultMap implementation ====================
@@ -653,7 +641,7 @@ export class AggregatedResultMap<
   public addCollectionEntry(
     entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>
   ): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail> {
-    return AggregatedResultMap._entryConverter(this._collectionIdConverter, this._childKvConverters)
+    return AggregatedResultMapBase._entryConverter(this._collectionIdConverter, this._childKvConverters)
       .convert(entry)
       .withFailureDetail<ResultMapResultDetail>('invalid-value')
       .onSuccess((c) => this._collections.add(c.id, c));
@@ -768,6 +756,26 @@ export class AggregatedResultMap<
   }
 
   // ==================== Static converter factories ====================
+
+  /**
+   * Constructs a composite id validator using other converters/validators and separator supplied in params.
+   * @param params - Constructor params.
+   * @returns The composite ID validator.
+   */
+  private static _compositeIdValidator<
+    TCOMPOSITEID extends string,
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM
+  >(
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
+  ): Validator<TCOMPOSITEID, unknown> {
+    return Validators.compositeId<TCOMPOSITEID, TCOLLECTIONID, TITEMID>({
+      collectionId: Converters.asValidator(params.collectionIdConverter),
+      separator: params.separator ?? '.',
+      itemId: Converters.asValidator(params.itemIdConverter)
+    });
+  }
 
   /**
    * Creates a converter for pre-instantiated mutable entries.
@@ -907,18 +915,59 @@ export class AggregatedResultMap<
     childKvConverters: KeyValueConverters<TITEMID, TITEM>
   ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown> {
     return Converters.oneOf<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown>([
-      AggregatedResultMap._instantiatedMutableConverter<TCOLLECTIONID, TITEMID, TITEM>(collectionIdConverter),
-      AggregatedResultMap._instantiatedReadonlyConverter<TCOLLECTIONID, TITEMID, TITEM>(
+      AggregatedResultMapBase._instantiatedMutableConverter<TCOLLECTIONID, TITEMID, TITEM>(
         collectionIdConverter
       ),
-      AggregatedResultMap._jsonWithEntriesConverter<TCOLLECTIONID, TITEMID, TITEM>(
+      AggregatedResultMapBase._instantiatedReadonlyConverter<TCOLLECTIONID, TITEMID, TITEM>(
+        collectionIdConverter
+      ),
+      AggregatedResultMapBase._jsonWithEntriesConverter<TCOLLECTIONID, TITEMID, TITEM>(
         collectionIdConverter,
         childKvConverters
       ),
-      AggregatedResultMap._jsonWithItemsConverter<TCOLLECTIONID, TITEMID, TITEM>(
+      AggregatedResultMapBase._jsonWithItemsConverter<TCOLLECTIONID, TITEMID, TITEM>(
         collectionIdConverter,
         childKvConverters
       )
     ]);
+  }
+}
+
+/**
+ * An aggregated result map that wraps a collection of {@link ValidatingResultMap | ValidatingResultMap} instances,
+ * keyed by collection ID. Items are accessed via composite IDs that combine the collection ID
+ * and item ID with a delimiter.
+ * @public
+ */
+export class AggregatedResultMap<
+  TCOMPOSITEID extends string,
+  TCOLLECTIONID extends string,
+  TITEMID extends string,
+  TITEM
+> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM> {
+  /**
+   * Constructs a new {@link AggregatedResultMap | AggregatedResultMap}.
+   * @param params -
+   */
+  public constructor(
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
+  ) {
+    super(params);
+  }
+
+  /**
+   * Creates a new {@link AggregatedResultMap | AggregatedResultMap}.
+   * @param params - Parameters for constructing the map.
+   * @returns `Success` with the new map if successful, `Failure` otherwise.
+   */
+  public static create<
+    TCOMPOSITEID extends string,
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM
+  >(
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
+  ): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>> {
+    return captureResult(() => new AggregatedResultMap(params));
   }
 }

@@ -223,6 +223,28 @@ Wraps a function which might throw to convert exception results to [Failure](./t
 </td></tr>
 <tr><td>
 
+[ensureArray(items)](./ts-utils.ensurearray.md)
+
+
+</td><td>
+
+Ensures the input is an array. If already an array, returns it as-is. If a single item, wraps it in an array. Preserves readonly status of input arrays.
+
+
+</td></tr>
+<tr><td>
+
+[entriesForRecord(obj)](./ts-utils.entriesforrecord.md)
+
+
+</td><td>
+
+Type-safe(ish) entries extractor for typed records.
+
+
+</td></tr>
+<tr><td>
+
 [fail\_2(message)](./ts-utils.fail_2.md)
 
 
@@ -317,6 +339,17 @@ Checks if a result is a deferred result.
 </td><td>
 
 Helper type-guard function to report whether a specified key is present in a supplied object.
+
+
+</td></tr>
+<tr><td>
+
+[keysForRecord(obj)](./ts-utils.keysforrecord.md)
+
+
+</td><td>
+
+Type-safe(ish) key extractor for typed records.
 
 
 </td></tr>
@@ -476,6 +509,17 @@ Propagates a [Success](./ts-utils.success.md) or [Failure](./ts-utils.failure.md
 </td></tr>
 <tr><td>
 
+[recordFromEntries(entries)](./ts-utils.recordfromentries.md)
+
+
+</td><td>
+
+Type-safe(ish) record constructor from an iterable of `[key, value]` tuples.
+
+
+</td></tr>
+<tr><td>
+
 [recordToMap(src, factory)](./ts-utils.recordtomap.md)
 
 
@@ -537,6 +581,17 @@ Returns [DetailedSuccess&lt;T, TD&gt;](./ts-utils.detailedsuccess.md) with a sup
 </td><td>
 
 Uses a value or calls a supplied initializer if the supplied value is undefined.
+
+
+</td></tr>
+<tr><td>
+
+[valuesForRecord(obj)](./ts-utils.valuesforrecord.md)
+
+
+</td><td>
+
+Type-safe(ish) value extractor for typed records.
 
 
 </td></tr>
@@ -821,6 +876,17 @@ Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) enco
 </td><td>
 
 Callback to be called when a [DetailedResult](./ts-utils.detailedresult.md) encounters success.
+
+
+</td></tr>
+<tr><td>
+
+[EnsureArrayResult](./ts-utils.ensurearrayresult.md)
+
+
+</td><td>
+
+Helper type to extract the element type and preserve readonly status.
 
 
 </td></tr>

@@ -47,7 +47,7 @@ Description
 
 </td><td>
 
-[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;string, unknown&gt;\[\]
+ReadonlyArray&lt;[KeyValueEntry](./ts-utils.collections.keyvalueentry.md)<!-- -->&lt;string, unknown&gt;&gt;
 
 
 </td><td>

@@ -4,7 +4,7 @@
 
 ## Collections.IAddCollectionWithItemsOptions interface
 
-Options for [AggregatedResultMap.addCollectionWithItems()](./ts-utils.aggregatedresultmap.addcollectionwithitems.md)<!-- -->.
+Options for [Collections.AggregatedResultMapBase.addCollectionWithItems()](./ts-utils.collections.aggregatedresultmapbase.addcollectionwithitems.md)<!-- -->.
 
 **Signature:**
 

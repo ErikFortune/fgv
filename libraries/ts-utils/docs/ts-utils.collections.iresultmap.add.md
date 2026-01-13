@@ -42,6 +42,8 @@ TK
 
 </td><td>
 
+The key to set.
+
 
 </td></tr>
 <tr><td>
@@ -56,6 +58,8 @@ TV
 
 </td><td>
 
+The value to set.
+
 
 </td></tr>
 </tbody></table>
@@ -63,4 +67,6 @@ TV
 **Returns:**
 
 [DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;TV, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+
+`Success` with the value and detail `added` if the key was added, `Failure` with detail `exists` if the key already exists. Fails with detail 'invalid-key' or 'invalid-value' and an error message if either is invalid.
 

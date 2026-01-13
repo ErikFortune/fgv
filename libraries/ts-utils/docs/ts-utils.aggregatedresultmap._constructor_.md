@@ -4,7 +4,7 @@
 
 ## AggregatedResultMap.(constructor)
 
-Constructs a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->. Use [AggregatedResultMap.create()](./ts-utils.aggregatedresultmap.create.md) for safe construction with error handling.
+Constructs a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 **Signature:**
 
@@ -42,13 +42,7 @@ params
 
 </td><td>
 
-Parameters for constructing the map.
-
 
 </td></tr>
 </tbody></table>
-
-## Exceptions
-
-If initialization fails (e.g., invalid collections).
 
