@@ -109,12 +109,56 @@ A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) wrapper w
 </td></tr>
 <tr><td>
 
+[FactoryResultMap](./ts-utils.collections.factoryresultmap.md)
+
+
+</td><td>
+
+A factory which lazily creates a [ResultMap](./ts-utils.collections.resultmap.md) from either an existing map or an array of entries.
+
+
+</td></tr>
+<tr><td>
+
 [KeyValueConverters](./ts-utils.collections.keyvalueconverters.md)
 
 
 </td><td>
 
 Helper class for converting strongly-typed keys, values, or entries from unknown values.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyResultMap](./ts-utils.collections.readonlyresultmap.md)
+
+
+</td><td>
+
+A wrapper around an [IResultMap](./ts-utils.collections.iresultmap.md) which exposes only the readonly methods defined in the [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md) interface.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyResultMapValidator](./ts-utils.collections.readonlyresultmapvalidator.md)
+
+
+</td><td>
+
+A [read-only ResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md) wrapper around an existing [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmapvalidator.md)<!-- -->, which uses supplied converters to validate keys.
+
+
+</td></tr>
+<tr><td>
+
+[ReadOnlyValidatingResultMap](./ts-utils.collections.readonlyvalidatingresultmap.md)
+
+
+</td><td>
+
+A read-only wrapper around an [IReadOnlyResultMap](./ts-utils.collections.ireadonlyresultmap.md) which exposes a validating interface.
 
 
 </td></tr>
@@ -159,6 +203,17 @@ A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](.
 </td><td>
 
 A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingFactoryResultMap](./ts-utils.collections.validatingfactoryresultmap.md)
+
+
+</td><td>
+
+A [FactoryResultMap](./ts-utils.collections.factoryresultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
@@ -311,6 +366,17 @@ Parameters for constructing a [ConvertingCollectorValidator](./ts-utils.collecti
 </td></tr>
 <tr><td>
 
+[IFactoryResultMapCreateParams](./ts-utils.collections.ifactoryresultmapcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [FactoryResultMap](./ts-utils.collections.factoryresultmap.md) from an array of entries.
+
+
+</td></tr>
+<tr><td>
+
 [IKeyValueConverterConstructorParams](./ts-utils.collections.ikeyvalueconverterconstructorparams.md)
 
 
@@ -388,6 +454,17 @@ A read-only interface exposing non-mutating methods of a [ResultMapValidator](./
 </td></tr>
 <tr><td>
 
+[IReadOnlyResultMapValidatorCreateParams](./ts-utils.collections.ireadonlyresultmapvalidatorcreateparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ResultMapValidator](./ts-utils.collections.resultmapvalidator.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
 [IReadOnlyValidatingCollector](./ts-utils.collections.ireadonlyvalidatingcollector.md)
 
 
@@ -405,6 +482,17 @@ A read-only interface exposing non-mutating methods of a [ValidatingCollector](.
 </td><td>
 
 A read-only interface exposing non-mutating methods of a [ValidatingResultMap](./ts-utils.collections.validatingresultmap.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IReadOnlyValidatingResultMapConstructorParams](./ts-utils.collections.ireadonlyvalidatingresultmapconstructorparams.md)
+
+
+</td><td>
+
+Parameters for constructing a [ReadOnlyValidatingResultMap](./ts-utils.collections.readonlyvalidatingresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -460,6 +548,17 @@ Parameters for constructing a [ValidatingCollector](./ts-utils.collections.valid
 </td><td>
 
 Parameters for constructing a [ValidatingConvertingCollector](./ts-utils.collections.validatingconvertingcollector.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[IValidatingFactoryResultMapCreateParams](./ts-utils.collections.ivalidatingfactoryresultmapcreateparams.md)
+
+
+</td><td>
+
+Parameters for creating a [ValidatingFactoryResultMap](./ts-utils.collections.validatingfactoryresultmap.md)<!-- -->.
 
 
 </td></tr>

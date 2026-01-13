@@ -82,7 +82,7 @@ Description
 
 </td><td>
 
-[ResultMap](./ts-utils.resultmap.md)<!-- -->&lt;TK, TV&gt;
+[IResultMap](./ts-utils.collections.iresultmap.md)<!-- -->&lt;TK, TV&gt;
 
 
 </td><td>

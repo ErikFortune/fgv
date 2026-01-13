@@ -23,9 +23,13 @@
 import { captureResult, Result } from '../base';
 import { KeyValueEntry } from './common';
 import { KeyValueConverters } from './keyValueConverters';
-import { IReadOnlyResultMap } from './readonlyResultMap';
+import { IReadOnlyResultMap, ReadOnlyResultMap } from './readonlyResultMap';
 import { ResultMap } from './resultMap';
-import { IReadOnlyResultMapValidator, ResultMapValidator } from './resultMapValidator';
+import {
+  IReadOnlyResultMapValidator,
+  ReadOnlyResultMapValidator,
+  ResultMapValidator
+} from './resultMapValidator';
 
 /**
  * A read-only interface exposing non-mutating methods of a {@link Collections.ValidatingResultMap | ValidatingResultMap}.
@@ -90,5 +94,36 @@ export class ValidatingResultMap<TK extends string = string, TV = unknown>
    */
   public toReadOnly(): IReadOnlyValidatingResultMap<TK, TV> {
     return this;
+  }
+}
+
+/**
+ * Parameters for constructing a {@link Collections.ReadOnlyValidatingResultMap | ReadOnlyValidatingResultMap}.
+ * @public
+ */
+export interface IReadOnlyValidatingResultMapConstructorParams<TK extends string = string, TV = unknown> {
+  map: IReadOnlyResultMap<TK, TV>;
+  converters: KeyValueConverters<TK, TV>;
+}
+
+/**
+ * A read-only wrapper around an {@link Collections.IReadOnlyResultMap | IReadOnlyResultMap}
+ * which exposes a validating interface.
+ * @public
+ */
+export class ReadOnlyValidatingResultMap<TK extends string = string, TV = unknown>
+  extends ReadOnlyResultMap<TK, TV>
+  implements IReadOnlyValidatingResultMap<TK, TV>
+{
+  /** {@inheritdoc Collections.ReadOnlyValidatingResultMap.validating} */
+  public readonly validating: IReadOnlyResultMapValidator<TK, TV>;
+
+  /**
+   * Constructs a new {@link Collections.ReadOnlyValidatingResultMap | ReadOnlyValidatingResultMap}.
+   * @param params - Required {@link Collections.IReadOnlyValidatingResultMapConstructorParams | parameters} for constructing the map.
+   */
+  public constructor(params: IReadOnlyValidatingResultMapConstructorParams<TK, TV>) {
+    super(params.map);
+    this.validating = new ReadOnlyResultMapValidator<TK, TV>({ map: this, converters: params.converters });
   }
 }

@@ -97,3 +97,66 @@ export interface IReadOnlyResultMap<TK extends string = string, TV = unknown> {
    */
   [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>>;
 }
+
+/**
+ * A wrapper around an {@link Collections.IResultMap | IResultMap} which exposes only the
+ * readonly methods defined in the {@link Collections.IReadOnlyResultMap | IReadOnlyResultMap} interface.
+ *
+ * @public
+ */
+export class ReadOnlyResultMap<TK extends string = string, TV = unknown>
+  implements IReadOnlyResultMap<TK, TV>
+{
+  private readonly _inner: IReadOnlyResultMap<TK, TV>;
+
+  /**
+   * Constructs a {@link Collections.ReadOnlyResultMap | ReadOnlyResultMap} from the given map.
+   * @param inner - The inner map.
+   * @public
+   */
+  public constructor(inner: IReadOnlyResultMap<TK, TV>) {
+    this._inner = inner;
+  }
+
+  /** {@inheritdoc Collections.ResultMap.size} */
+  public get size(): number {
+    return this._inner.size;
+  }
+
+  /** {@inheritdoc Collections.ResultMap.entries} */
+  public entries(): IterableIterator<KeyValueEntry<TK, TV>> {
+    return this._inner.entries();
+  }
+
+  /** {@inheritdoc Collections.ResultMap.forEach} */
+  public forEach(cb: ResultMapForEachCb, arg?: unknown): void {
+    this._inner.forEach(cb, arg);
+  }
+
+  /** {@inheritdoc Collections.ResultMap.get} */
+  public get(key: TK): DetailedResult<TV, ResultMapResultDetail> {
+    return this._inner.get(key);
+  }
+
+  /** {@inheritdoc Collections.ResultMap.has} */
+  public has(key: TK): boolean {
+    return this._inner.has(key);
+  }
+
+  /** {@inheritdoc Collections.ResultMap.keys} */
+  public keys(): IterableIterator<TK> {
+    return this._inner.keys();
+  }
+
+  /** {@inheritdoc Collections.ResultMap.values} */
+  public values(): IterableIterator<TV> {
+    return this._inner.values();
+  }
+
+  /**
+   * Gets an iterator over the map entries.
+   */
+  public [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>> {
+    return this._inner[Symbol.iterator]();
+  }
+}

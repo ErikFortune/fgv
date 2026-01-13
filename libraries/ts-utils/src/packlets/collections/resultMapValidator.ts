@@ -20,9 +20,9 @@
  * SOFTWARE.
  */
 
-import { DetailedResult, failWithDetail, succeedWithDetail } from '../base';
+import { DetailedResult, failWithDetail, succeedWithDetail, Success } from '../base';
 import { IReadOnlyResultMap, ResultMapResultDetail } from './readonlyResultMap';
-import { ResultMap, ResultMapValueFactory } from './resultMap';
+import { IResultMap, ResultMapValueFactory } from './resultMap';
 import { KeyValueConverters } from './keyValueConverters';
 
 /**
@@ -51,7 +51,7 @@ export interface IReadOnlyResultMapValidator<TK extends string = string, TV = un
  * @public
  */
 export interface IResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
-  map: ResultMap<TK, TV>;
+  map: IResultMap<TK, TV>;
   converters: KeyValueConverters<TK, TV>;
 }
 
@@ -68,7 +68,7 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
     return this._map;
   }
 
-  protected _map: ResultMap<TK, TV>;
+  protected _map: IResultMap<TK, TV>;
 
   /**
    * Constructs a new {@link Collections.ResultMapValidator | ResultMapValidator}.
@@ -184,5 +184,59 @@ export class ResultMapValidator<TK extends string = string, TV = unknown>
     value: TV | ResultMapValueFactory<TK, TV>
   ): value is ResultMapValueFactory<TK, TV> {
     return typeof value === 'function';
+  }
+}
+
+/**
+ * Parameters for constructing a {@link Collections.ResultMapValidator | ResultMapValidator}.
+ * @public
+ */
+export interface IReadOnlyResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
+  map: IReadOnlyResultMap<TK, TV>;
+  converters: KeyValueConverters<TK, TV>;
+}
+
+/**
+ * A {@link Collections.IReadOnlyResultMapValidator | read-only ResultMapValidator} wrapper around
+ * an existing {@link Collections.IReadOnlyResultMapValidator | IReadOnlyResultMap}, which uses
+ * supplied converters to validate keys.
+ * @public
+ */
+export class ReadOnlyResultMapValidator<TK extends string = string, TV = unknown>
+  implements IReadOnlyResultMapValidator<TK, TV>
+{
+  public readonly map: IReadOnlyResultMap<TK, TV>;
+  public readonly converters: KeyValueConverters<TK, TV>;
+
+  /**
+   * Constructs a {@link Collections.ReadOnlyResultMapValidator | ReadOnlyResultMapValidator}
+   * from the given validator.
+   * @param inner - The inner validator.
+   * @public
+   */
+  public constructor(params: IReadOnlyResultMapValidatorCreateParams<TK, TV>) {
+    this.map = params.map;
+    this.converters = params.converters;
+  }
+
+  /**
+   * {@inheritdoc Collections.ResultMap.get}
+   */
+  public get(key: string): DetailedResult<TV, ResultMapResultDetail> {
+    return this.converters.convertKey(key).onSuccess((k) => {
+      return this.map.get(k);
+    });
+  }
+
+  /**
+   * {@inheritdoc Collections.ResultMap.has}
+   */
+  public has(key: string): boolean {
+    return this.converters
+      .convertKey(key)
+      .asResult.onSuccess((k) => {
+        return Success.with(this.map.has(k));
+      })
+      .orDefault(false);
   }
 }

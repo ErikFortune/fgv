@@ -30,6 +30,7 @@ export * from './convertingCollectorValidator';
 export * from './validatingConvertingCollector';
 export * from './common';
 export * from './keyValueConverters';
+export * from './factoryResultMap';
 export * from './readonlyResultMap';
 export * from './resultMap';
 export * from './resultMapValidator';

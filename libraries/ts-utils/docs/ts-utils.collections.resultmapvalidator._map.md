@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-protected _map: ResultMap<TK, TV>;
+protected _map: IResultMap<TK, TV>;
 ```

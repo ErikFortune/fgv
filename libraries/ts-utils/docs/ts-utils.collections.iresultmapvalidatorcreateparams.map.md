@@ -7,5 +7,5 @@
 **Signature:**
 
 ```typescript
-map: ResultMap<TK, TV>;
+map: IResultMap<TK, TV>;
 ```

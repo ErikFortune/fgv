@@ -344,9 +344,14 @@ declare namespace Collections {
         KeyValueEntry,
         IKeyValueConverterConstructorParams,
         KeyValueConverters,
+        IFactoryResultMapCreateParams,
+        FactoryResultMap,
+        IValidatingFactoryResultMapCreateParams,
+        ValidatingFactoryResultMap,
         ResultMapResultDetail,
         ResultMapForEachCb,
         IReadOnlyResultMap,
+        ReadOnlyResultMap,
         IResultMapConstructorParams,
         ResultMapValueFactory,
         IResultMap,
@@ -354,12 +359,16 @@ declare namespace Collections {
         IReadOnlyResultMapValidator,
         IResultMapValidatorCreateParams,
         ResultMapValidator,
+        IReadOnlyResultMapValidatorCreateParams,
+        ReadOnlyResultMapValidator,
         IReadOnlyValidatingCollector,
         IValidatingCollectorConstructorParams,
         ValidatingCollector,
         IReadOnlyValidatingResultMap,
         IValidatingResultMapConstructorParams,
         ValidatingResultMap,
+        IReadOnlyValidatingResultMapConstructorParams,
+        ReadOnlyValidatingResultMap,
         IReadonlyAggregatedResultMapEntry,
         IMutableAggregatedResultMapEntry,
         AggregatedResultMapEntry,
@@ -914,6 +923,41 @@ function enumeratedValue_2<T extends string>(values: ReadonlyArray<T>): Validato
 // @public
 export type ErrorFormatter<TD = unknown> = (message: string, detail?: TD) => string;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class FactoryResultMap<TKey extends string = string, TValue = unknown> implements IReadOnlyResultMap<TKey, TValue> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TKey, TValue>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IFactoryResultMapCreateParams<TKey, TValue>);
+    asReadOnly(): IReadOnlyResultMap<TKey, TValue>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    entries(): IterableIterator<KeyValueEntry<TKey, TValue>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    forEach(cb: ResultMapForEachCb, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    get(key: TKey): DetailedResult<TValue, ResultMapResultDetail>;
+    has(key: TKey): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    keys(): IterableIterator<TKey>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get size(): number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    values(): IterableIterator<TValue>;
+}
+
 // @public
 function fail_2<T>(message: string): Failure<T>;
 export { fail_2 as fail }
@@ -1282,6 +1326,16 @@ interface IConvertingCollectorValidatorCreateParams<TITEM extends ICollectible<a
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IFactoryResultMapCreateParams<TKey extends string = string, TValue = unknown> {
+    // (undocumented)
+    entries?: IterableIterator<[TKey, TValue]>;
+    // (undocumented)
+    factory: ResultMapValueFactory<TKey, TValue>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IKeyValueConverterConstructorParams<TK extends string = string, TV = unknown> {
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     key: Validator<TK, unknown> | Converter<TK, unknown> | ConverterFunc<TK, unknown>;
@@ -1464,6 +1518,16 @@ interface IReadOnlyResultMapValidator<TK extends string = string, TV = unknown> 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+interface IReadOnlyResultMapValidatorCreateParams<TK extends string = string, TV = unknown> {
+    // (undocumented)
+    converters: KeyValueConverters<TK, TV>;
+    // (undocumented)
+    map: IReadOnlyResultMap<TK, TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 interface IReadOnlyValidatingCollector<TITEM extends ICollectible<any, any>> extends IReadOnlyValidatingResultMap<CollectibleKey<TITEM>, TITEM> {
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -1487,6 +1551,16 @@ interface IReadOnlyValidatingResultMap<TK extends string = string, TV = unknown>
     //
     // (undocumented)
     readonly validating: IReadOnlyResultMapValidator<TK, TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IReadOnlyValidatingResultMapConstructorParams<TK extends string = string, TV = unknown> {
+    // (undocumented)
+    converters: KeyValueConverters<TK, TV>;
+    // (undocumented)
+    map: IReadOnlyResultMap<TK, TV>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -1578,7 +1652,7 @@ interface IResultMapValidatorCreateParams<TK extends string = string, TV = unkno
     // (undocumented)
     converters: KeyValueConverters<TK, TV>;
     // (undocumented)
-    map: ResultMap<TK, TV>;
+    map: IResultMap<TK, TV>;
 }
 
 // @public
@@ -1656,6 +1730,14 @@ interface IValidatingConvertingCollectorConstructorParams<TITEM extends ICollect
     //
     // (undocumented)
     factory: CollectibleFactory<TITEM, TSRC>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IValidatingFactoryResultMapCreateParams<TKey extends string = string, TValue = unknown> extends IFactoryResultMapCreateParams<TKey, TValue> {
+    // (undocumented)
+    converters: KeyValueConverters<TKey, TValue>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2146,6 +2228,82 @@ export interface PopulateObjectOptions<T> {
 // @public
 export function propagateWithDetail<T, TD>(result: Result<T>, detail: TD, successDetail?: TD): DetailedResult<T, TD>;
 
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ReadOnlyResultMap<TK extends string = string, TV = unknown> implements IReadOnlyResultMap<TK, TV> {
+    [Symbol.iterator](): IterableIterator<KeyValueEntry<TK, TV>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(inner: IReadOnlyResultMap<TK, TV>);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    entries(): IterableIterator<KeyValueEntry<TK, TV>>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    forEach(cb: ResultMapForEachCb, arg?: unknown): void;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: TK): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: TK): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    keys(): IterableIterator<TK>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get size(): number;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    values(): IterableIterator<TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ReadOnlyResultMapValidator<TK extends string = string, TV = unknown> implements IReadOnlyResultMapValidator<TK, TV> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IReadOnlyResultMapValidatorCreateParams<TK, TV>);
+    // (undocumented)
+    readonly converters: KeyValueConverters<TK, TV>;
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    get(key: string): DetailedResult<TV, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    has(key: string): boolean;
+    // (undocumented)
+    readonly map: IReadOnlyResultMap<TK, TV>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+class ReadOnlyValidatingResultMap<TK extends string = string, TV = unknown> extends ReadOnlyResultMap<TK, TV> implements IReadOnlyValidatingResultMap<TK, TV> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    constructor(params: IReadOnlyValidatingResultMapConstructorParams<TK, TV>);
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // (undocumented)
+    readonly validating: IReadOnlyResultMapValidator<TK, TV>;
+}
+
 // @public
 export function recordFromEntries<TK extends string, TV>(entries: Iterable<[TK, TV]>): Record<TK, TV>;
 
@@ -2290,7 +2448,7 @@ class ResultMapValidator<TK extends string = string, TV = unknown> implements IR
     // (undocumented)
     get map(): IReadOnlyResultMap<TK, TV>;
     // (undocumented)
-    protected _map: ResultMap<TK, TV>;
+    protected _map: IResultMap<TK, TV>;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: This type of declaration is not supported yet by the resolver
@@ -2553,6 +2711,16 @@ export class ValidatingConvertingCollector<TITEM extends ICollectible<any, any>,
     toReadOnly(): IReadOnlyValidatingCollector<TITEM>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     readonly validating: ConvertingCollectorValidator<TITEM, TSRC>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+export class ValidatingFactoryResultMap<TKey extends string = string, TValue = unknown> extends FactoryResultMap<TKey, TValue> {
+    constructor(params: IValidatingFactoryResultMapCreateParams<TKey, TValue>);
+    // (undocumented)
+    readonly validating: IReadOnlyResultMapValidator<TKey, TValue>;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

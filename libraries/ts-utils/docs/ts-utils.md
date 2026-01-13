@@ -76,6 +76,17 @@ A [DetailedSuccess](./ts-utils.detailedsuccess.md) extends [Success](./ts-utils.
 </td></tr>
 <tr><td>
 
+[FactoryResultMap](./ts-utils.factoryresultmap.md)
+
+
+</td><td>
+
+A factory which lazily creates a [ResultMap](./ts-utils.collections.resultmap.md) from either an existing map or an array of entries.
+
+
+</td></tr>
+<tr><td>
+
 [Failure](./ts-utils.failure.md)
 
 
@@ -170,6 +181,17 @@ A [Collector](./ts-utils.collections.collector.md) with a [CollectorValidator](.
 </td><td>
 
 A [ConvertingCollector](./ts-utils.collections.convertingcollector.md) with a [ConvertingCollectorValidator](./ts-utils.collections.convertingcollectorvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
+
+
+</td></tr>
+<tr><td>
+
+[ValidatingFactoryResultMap](./ts-utils.validatingfactoryresultmap.md)
+
+
+</td><td>
+
+A [FactoryResultMap](./ts-utils.collections.factoryresultmap.md) with a [validator](./ts-utils.collections.resultmapvalidator.md) property that enables validated use of the underlying map with weakly-typed keys and values.
 
 
 </td></tr>
