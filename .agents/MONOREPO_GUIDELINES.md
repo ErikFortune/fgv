@@ -83,22 +83,26 @@ rush install
 All operations that can fail should use the Result pattern:
 
 ```typescript
-import { Result, succeed, fail } from '@fgv/ts-utils';
+import { Result, Success, Failure } from '@fgv/ts-utils';
 
 // Good: Use Result<T> for fallible operations
 function parseNumber(input: string): Result<number> {
   const parsed = parseInt(input, 10);
   if (isNaN(parsed)) {
-    return fail(`Invalid number: ${input}`);
+    return Failure.with(`Invalid number: ${input}`);
   }
-  return succeed(parsed);
+  return Success.with(parsed);
 }
 
 // Good: Chain operations with Result methods
 const result = parseNumber("42")
-  .onSuccess(num => succeed(num * 2))
-  .onFailure(err => fail(`Parse error: ${err}`));
+  .onSuccess(num => Success.with(num * 2))
+  .onFailure(err => Failure.with(`Parse error: ${err}`));
 ```
+
+Occasional explicit test of some value or early return makes sense but in general a sequence of tests for .isFailure is a code smell that suggests chaining with .onSuccess and .onFailure would be beneficial.
+
+Use .withFormattedError or .aggregateError or .report as appropriate to format or collect errors.
 
 ### Error Handling
 - Use `.onSuccess()`, `.onFailure()`, `.orThrow()` patterns
@@ -115,6 +119,9 @@ const value = riskyOperation()
 // Good: Throw only when appropriate
 const criticalValue = riskyOperation().orThrow();
 ```
+
+Older code may use `success` and `fail` in place of `Succeed.with` and `Failure.with` - that's fine but the `.with` forms are preferred for new
+code.
 
 ### Validation and Conversion
 Use converters and validators from ts-utils:
