@@ -9,7 +9,7 @@ Adds a new collection from a pre-built entry object.
 **Signature:**
 
 ```typescript
-addCollectionEntry(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
+addCollectionEntry(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, ResultMapResultDetail>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ entry
 
 </td><td>
 
-[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;
+[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ The collection entry to add (JSON with items/entries, or pre-instantiated).
 
 **Returns:**
 
-[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;[AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
+[DetailedResult](./ts-utils.detailedresult.md)<!-- -->&lt;[AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;, [ResultMapResultDetail](./ts-utils.collections.resultmapresultdetail.md)<!-- -->&gt;
 
 `Success` with the entry if added, `Failure` otherwise.
 

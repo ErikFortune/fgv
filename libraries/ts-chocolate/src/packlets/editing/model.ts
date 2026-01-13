@@ -18,7 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-import { Result, ValidatingResultMap } from '@fgv/ts-utils';
+import { Collections, Result, ValidatingResultMap } from '@fgv/ts-utils';
 import { ICollectionSourceFile, ICollectionSourceMetadata } from '../library-data';
 import { SourceId } from '../common';
 
@@ -249,6 +249,73 @@ export interface IEditableCollection<T, TBaseId extends string = string, TId ext
    * @returns Result containing collection source file or failure
    */
   readonly export: () => Result<ICollectionSourceFile<T>>;
+}
+
+// ============================================================================
+// Collection Manager Interface
+// ============================================================================
+
+/**
+ * Manager for collection-level CRUD operations.
+ * Provides operations to create, delete, and rename collections within a sub-library.
+ * @public
+ */
+export interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
+  /**
+   * Get all collection IDs in the library.
+   * @returns Array of collection IDs
+   */
+  readonly getAll: () => ReadonlyArray<SourceId>;
+
+  /**
+   * Get metadata for a specific collection by ID.
+   * @param collectionId - Collection identifier
+   * @returns Result containing the collection metadata or failure
+   */
+  readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
+
+  /**
+   * Create a new mutable collection.
+   * @param collectionId - Unique identifier for the new collection
+   * @param metadata - Collection metadata (name, description)
+   * @returns Result indicating success or failure
+   */
+  readonly create: (
+    collectionId: SourceId,
+    metadata: ICollectionSourceMetadata
+  ) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>>;
+
+  /**
+   * Delete a mutable collection.
+   * @param collectionId - Collection to delete
+   * @returns Result indicating success or failure
+   */
+  readonly delete: (collectionId: SourceId) => Result<void>;
+
+  /**
+   * Update collection metadata.
+   * @param collectionId - Collection to update
+   * @param metadata - Partial metadata to update
+   * @returns Result indicating success or failure
+   */
+  readonly updateMetadata: (
+    collectionId: SourceId,
+    metadata: Partial<ICollectionSourceMetadata>
+  ) => Result<void>;
+
+  /**
+   * Check if a collection exists.
+   * @param collectionId - Collection identifier
+   * @returns True if collection exists
+   */
+  readonly exists: (collectionId: SourceId) => boolean;
+
+  /**
+   * Check if a collection is mutable.
+   * @param collectionId - Collection identifier
+   * @returns Result containing true if mutable, failure if not found
+   */
+  readonly isMutable: (collectionId: SourceId) => Result<boolean>;
 }
 
 // ============================================================================

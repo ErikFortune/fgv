@@ -9,7 +9,7 @@ A mutable entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!
 **Signature:**
 
 ```typescript
-export interface IMutableAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown> 
+export interface IMutableAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown, TMETADATA = unknown> 
 ```
 
 ## Properties
@@ -89,6 +89,25 @@ true
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[metadata?](./ts-utils.collections.imutableaggregatedresultmapentry.metadata.md)
+
+
+</td><td>
+
+
+</td><td>
+
+TMETADATA
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

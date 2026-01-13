@@ -40,63 +40,74 @@ import { IResultMap, ResultMapValueFactory } from './resultMap';
 import { IReadOnlyValidatingResultMap, ValidatingResultMap } from './validatingResultMap';
 
 /**
- * A read-only entry in an {@link AggregatedResultMap}.
+ * A read-only collection entry in an {@link AggregatedResultMap | aggregated result map}.
  * @public
  */
 export interface IReadonlyAggregatedResultMapEntry<
   TCOLLECTIONID extends string = string,
   TITEMID extends string = string,
-  TITEM = unknown
+  TITEM = unknown,
+  TMETADATA = unknown
 > {
   readonly isMutable: false;
   readonly id: TCOLLECTIONID;
   readonly items: IReadOnlyValidatingResultMap<TITEMID, TITEM>;
+  readonly metadata?: TMETADATA;
 }
 
 /**
- * A mutable entry in an {@link AggregatedResultMap}.
+ * A mutable collection entry in an {@link AggregatedResultMap | aggregated result map}.
  * @public
  */
 export interface IMutableAggregatedResultMapEntry<
   TCOLLECTIONID extends string = string,
   TITEMID extends string = string,
-  TITEM = unknown
+  TITEM = unknown,
+  TMETADATA = unknown
 > {
   readonly isMutable: true;
   readonly id: TCOLLECTIONID;
   readonly items: ValidatingResultMap<TITEMID, TITEM>;
+  metadata?: TMETADATA;
 }
 
 /**
- * An entry in an {@link AggregatedResultMap}, either mutable or read-only.
+ * A collection entry in an {@link AggregatedResultMap | aggregated result map}, either mutable or read-only.
  * @public
  */
-export type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM> =
-  | IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
-  | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>;
+export type AggregatedResultMapEntry<
+  TCOLLECTIONID extends string,
+  TITEMID extends string,
+  TITEM,
+  TMETADATA = unknown
+> =
+  | IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
+  | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>;
 
 /**
- * JSON format for an aggregated result map entry using an entries array.
+ * JSON format for an {@link AggregatedResultMap | aggregated result map} collection entry using an entries array.
  * @public
  */
 export interface IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID extends string = string> {
   readonly isMutable: boolean;
   readonly id: TCOLLECTIONID;
   readonly entries: ReadonlyArray<KeyValueEntry<string, unknown>>;
+  readonly metadata?: unknown;
 }
 
 /**
- * JSON format for an aggregated result map entry using an items object.
+ * JSON format for an {@link AggregatedResultMap | aggregated result map} collection entry using a string-keyed items object.
  * @public
  */
 export interface IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID extends string = string> {
   readonly isMutable: boolean;
   readonly id: TCOLLECTIONID;
   readonly items: Record<string, unknown>;
+  readonly metadata?: unknown;
 }
 
 /**
- * JSON format for an aggregated result map entry - supports both entries array and items object.
+ * JSON format for an {@link AggregatedResultMap | aggregated result map} collection entry - supports both entries array and items object.
  * @public
  */
 export type AggregatedResultMapJsonEntry<TCOLLECTIONID extends string = string> =
@@ -104,15 +115,20 @@ export type AggregatedResultMapJsonEntry<TCOLLECTIONID extends string = string> 
   | IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID>;
 
 /**
- * Any valid input format for an aggregated result map entry.
+ * Any valid input format for an {@link AggregatedResultMap | aggregated result map} collection entry.
  * @public
  */
-export type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM> =
-  | AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+export type AggregatedResultMapEntryInit<
+  TCOLLECTIONID extends string,
+  TITEMID extends string,
+  TITEM,
+  TMETADATA = unknown
+> =
+  | AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
 
 /**
- * Options for {@link Collections.AggregatedResultMapBase.addCollectionWithItems}.
+ * Options for {@link Collections.AggregatedResultMapBase.addCollectionWithItems | addCollectionWithItems}.
  * @public
  */
 export interface IAddCollectionWithItemsOptions {
@@ -124,55 +140,97 @@ export interface IAddCollectionWithItemsOptions {
 }
 
 /**
- * Parameters for constructing an {@link AggregatedResultMap}.
+ * Parameters for constructing an {@link AggregatedResultMap | aggregated result map}.
  * @public
  */
 export interface IAggregatedResultMapConstructorParams<
   TCOMPOSITEID extends string,
   TCOLLECTIONID extends string,
   TITEMID extends string,
-  TITEM
+  TITEM,
+  TMETADATA = unknown
 > {
+  /**
+   * Validator for composite IDs.
+   */
   readonly compositeIdValidator?: Validator<TCOMPOSITEID, unknown>;
+  /**
+   * Converter or validator for collection IDs.
+   */
   readonly collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>;
+  /**
+   * Converter or validator for item IDs.
+   */
   readonly itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
+  /**
+   * Converter or validator for individual items in each collection.
+   */
   readonly itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
+  /**
+   * Optional converter or validator for collection metadata.  If not provided, a metadata field
+   * in the input will cause a validation failure.
+   */
+  readonly metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>;
+
+  /**
+   * Optional separator string for composite IDs.  Defaults to `.`.
+   */
   readonly separator?: string;
-  readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>>;
+
+  /**
+   * Initial collections to populate the map.
+   * @remarks Each entry may be mutable or read-only.
+   */
+  readonly collections?: ReadonlyArray<
+    AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
+  >;
 }
 
 /**
- * A validator for weakly-typed access to an {@link AggregatedResultMap}.
+ * A validator for weakly-typed access to an {@link AggregatedResultMap | aggregated result map}.
  * @public
  */
 export class AggregatedResultMapValidator<
   TCOMPOSITEID extends string,
   TCOLLECTIONID extends string,
   TITEMID extends string,
-  TITEM
+  TITEM,
+  TMETADATA = unknown
 > implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM>
 {
-  private readonly _map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>;
+  private readonly _map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>;
+
+  /**
+   * The key-value converters used for validating weakly-typed access.
+   */
   public readonly converters: KeyValueConverters<TCOMPOSITEID, TITEM>;
 
+  /**
+   * Constructs a new {@link AggregatedResultMapValidator | aggregated result map validator}.
+   * @param map - The {@link AggregatedResultMap | aggregated result map} being validated.
+   * @param converters - The key-value converters for weakly-typed access.
+   */
   public constructor(
-    map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>,
+    map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>,
     converters: KeyValueConverters<TCOMPOSITEID, TITEM>
   ) {
     this._map = map;
     this.converters = converters;
   }
 
+  /** {@inheritdoc IResultMapValidator.map} */
   public get map(): IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
     return this._map;
   }
 
+  /** {@inheritdoc IResultMapValidator.get} */
   public get(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
       return this._map.get(k);
     });
   }
 
+  /** {@inheritdoc IResultMapValidator.has} */
   public has(key: string): boolean {
     const result = this.converters.convertKey(key);
     if (result.isFailure()) {
@@ -181,24 +239,28 @@ export class AggregatedResultMapValidator<
     return this._map.has(result.value);
   }
 
+  /** {@inheritdoc IResultMapValidator.add} */
   public add(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
       return this._map.add(vk, vv);
     });
   }
 
+  /** {@inheritdoc IResultMapValidator.set} */
   public set(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
       return this._map.set(vk, vv);
     });
   }
 
+  /** {@inheritdoc IResultMapValidator.update} */
   public update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertEntry([key, value]).onSuccess(([vk, vv]) => {
       return this._map.update(vk, vv);
     });
   }
 
+  /** {@inheritdoc IResultMapValidator.delete} */
   public delete(key: string): DetailedResult<TITEM, ResultMapResultDetail> {
     return this.converters.convertKey(key).onSuccess((k) => {
       return this._map.delete(k);
@@ -207,11 +269,11 @@ export class AggregatedResultMapValidator<
 }
 
 /**
- * Type guard to check if an entry is mutable.
+ * Type guard to check if an {@link AggregatedResultMapEntry | aggregated result map entry} is mutable.
  */
-function isMutableEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
-  entry: AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
-): entry is IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> {
+function isMutableEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA>(
+  entry: AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
+): entry is IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> {
   return entry.isMutable === true;
 }
 
@@ -227,17 +289,18 @@ export class AggregatedResultMapBase<
   TCOMPOSITEID extends string,
   TCOLLECTIONID extends string,
   TITEMID extends string,
-  TITEM
+  TITEM,
+  TMETADATA = unknown
 > implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>
 {
   private readonly _childKvConverters: KeyValueConverters<TITEMID, TITEM>;
   private readonly _collections: ValidatingResultMap<
     TCOLLECTIONID,
-    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   >;
   private readonly _collectionKvConverters: KeyValueConverters<
     TCOLLECTIONID,
-    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   >;
   private readonly _compositeIdValidator: Validator<TCOMPOSITEID, unknown>;
   private readonly _collectionIdConverter:
@@ -245,26 +308,34 @@ export class AggregatedResultMapBase<
     | Validator<TCOLLECTIONID, unknown>;
   private readonly _itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
   private readonly _itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
+  private readonly _metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>;
   private readonly _delimiter: string;
   private readonly _compositeIdConverter: Converter<Converters.ICompositeId<TCOLLECTIONID, TITEMID>, unknown>;
   private readonly _kvConverters: KeyValueConverters<TCOMPOSITEID, TITEM>;
-  private readonly _validating: AggregatedResultMapValidator<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>;
+  private readonly _validating: AggregatedResultMapValidator<
+    TCOMPOSITEID,
+    TCOLLECTIONID,
+    TITEMID,
+    TITEM,
+    TMETADATA
+  >;
 
   /**
-   * Constructs a new {@link AggregatedResultMap}.
-   * Use {@link AggregatedResultMap.create} for safe construction with error handling.
-   * @param params - Parameters for constructing the map.
+   * Protected constructor for derived classes.
+   * Use the {@link AggregatedResultMap.create | create static method} for safe construction with error handling.
+   * @param params - {@link IAggregatedResultMapConstructorParams | Parameters} for constructing the map.
    * @throws If initialization fails (e.g., invalid collections).
    * @public
    */
   protected constructor(
-    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   ) {
     this._compositeIdValidator =
       params.compositeIdValidator ?? AggregatedResultMapBase._compositeIdValidator(params);
     this._collectionIdConverter = params.collectionIdConverter;
     this._itemIdConverter = params.itemIdConverter;
     this._itemConverter = params.itemConverter;
+    this._metadataConverter = params.metadataConverter;
     this._delimiter = params.separator ?? '.';
 
     // Build child key-value converters for item ID/value pairs
@@ -287,15 +358,16 @@ export class AggregatedResultMapBase<
     });
 
     // Build entry converter for collection entries
-    const entryConverter = AggregatedResultMapBase._entryConverter(
+    const entryConverter = AggregatedResultMapBase._entryConverter<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>(
       params.collectionIdConverter,
-      this._childKvConverters
+      this._childKvConverters,
+      params.metadataConverter
     );
 
     // Build key-value converters for the collections map
     this._collectionKvConverters = new KeyValueConverters<
       TCOLLECTIONID,
-      AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+      AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
     >({
       key: params.collectionIdConverter,
       value: entryConverter
@@ -310,17 +382,20 @@ export class AggregatedResultMapBase<
     // Build the inner ValidatingResultMap - throws on error
     this._collections = new ValidatingResultMap<
       TCOLLECTIONID,
-      AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+      AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
     >({
       converters: this._collectionKvConverters,
       entries: initEntries
     });
 
     // Build the validator
-    this._validating = new AggregatedResultMapValidator<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>(
-      this,
-      this._kvConverters
-    );
+    this._validating = new AggregatedResultMapValidator<
+      TCOMPOSITEID,
+      TCOLLECTIONID,
+      TITEMID,
+      TITEM,
+      TMETADATA
+    >(this, this._kvConverters);
   }
 
   // ==================== IReadOnlyValidatingResultMap implementation ====================
@@ -621,7 +696,7 @@ export class AggregatedResultMapBase<
    */
   public get collections(): IReadOnlyValidatingResultMap<
     TCOLLECTIONID,
-    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   > {
     return this._collections;
   }
@@ -634,14 +709,48 @@ export class AggregatedResultMapBase<
   }
 
   /**
+   * Gets the metadata for a specific collection.
+   * @param collectionId - The collection ID.
+   * @returns `Success` with the metadata if found, `Failure` otherwise.
+   */
+  public getCollectionMetadata(collectionId: TCOLLECTIONID): Result<TMETADATA | undefined> {
+    return this._collections.get(collectionId).asResult.onSuccess((entry) => {
+      return succeed(entry.metadata);
+    });
+  }
+
+  /**
+   * Sets the metadata for a mutable collection.
+   * @param collectionId - The collection ID.
+   * @param metadata - The metadata to set.
+   * @returns `Success` if set, `Failure` otherwise.
+   */
+  public setCollectionMetadata(collectionId: TCOLLECTIONID, metadata: TMETADATA): Result<TMETADATA> {
+    return this._collections.get(collectionId).asResult.onSuccess((entry) => {
+      if (!isMutableEntry(entry)) {
+        return fail(`Cannot modify metadata of immutable collection '${collectionId}'`);
+      }
+      entry.metadata = metadata;
+      return succeed(metadata);
+    });
+  }
+
+  /**
    * Adds a new collection from a pre-built entry object.
    * @param entry - The collection entry to add (JSON with items/entries, or pre-instantiated).
    * @returns `Success` with the entry if added, `Failure` otherwise.
    */
   public addCollectionEntry(
-    entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>
-  ): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail> {
-    return AggregatedResultMapBase._entryConverter(this._collectionIdConverter, this._childKvConverters)
+    entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
+  ): DetailedResult<
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>,
+    ResultMapResultDetail
+  > {
+    return AggregatedResultMapBase._entryConverter<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>(
+      this._collectionIdConverter,
+      this._childKvConverters,
+      this._metadataConverter
+    )
       .convert(entry)
       .withFailureDetail<ResultMapResultDetail>('invalid-value')
       .onSuccess((c) => this._collections.add(c.id, c));
@@ -688,7 +797,7 @@ export class AggregatedResultMapBase<
   private _splitAndLookup(
     key: TCOMPOSITEID
   ): DetailedResult<
-    { entry: AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>; itemId: TITEMID },
+    { entry: AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>; itemId: TITEMID },
     ResultMapResultDetail
   > {
     return this._splitCompositeId(key).onSuccess(({ collectionId, itemId }) => {
@@ -701,7 +810,7 @@ export class AggregatedResultMapBase<
   private _splitAndLookupMutable(
     key: TCOMPOSITEID
   ): DetailedResult<
-    { entry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>; itemId: TITEMID },
+    { entry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>; itemId: TITEMID },
     ResultMapResultDetail
   > {
     return this._splitAndLookup(key).onSuccess(({ entry, itemId }) => {
@@ -745,7 +854,7 @@ export class AggregatedResultMapBase<
     const newItems = new ValidatingResultMap<TITEMID, TITEM>({
       converters: this._childKvConverters
     });
-    const newEntry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> = {
+    const newEntry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> = {
       isMutable: true,
       id: collectionId,
       items: newItems
@@ -766,9 +875,10 @@ export class AggregatedResultMapBase<
     TCOMPOSITEID extends string,
     TCOLLECTIONID extends string,
     TITEMID extends string,
-    TITEM
+    TITEM,
+    TMETADATA = unknown
   >(
-    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   ): Validator<TCOMPOSITEID, unknown> {
     return Validators.compositeId<TCOMPOSITEID, TCOLLECTIONID, TITEMID>({
       collectionId: Converters.asValidator(params.collectionIdConverter),
@@ -778,13 +888,49 @@ export class AggregatedResultMapBase<
   }
 
   /**
+   * Converts metadata from source, failing fast if metadata is present but no converter is configured.
+   * @param sourceMetadata - The metadata from the source (may be undefined).
+   * @param metadataConverter - Optional converter for metadata.
+   * @returns Success with converted metadata (or undefined), or Failure if metadata is present but disallowed.
+   */
+  private static _convertMetadata<TMETADATA>(
+    sourceMetadata: unknown,
+    metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>
+  ): Result<TMETADATA | undefined> {
+    if (sourceMetadata === undefined) {
+      return succeed(undefined);
+    }
+    if (!metadataConverter) {
+      return fail('metadata is not allowed when no metadataConverter is configured');
+    }
+    return metadataConverter.convert(sourceMetadata);
+  }
+
+  /**
+   * Extracts metadata from a source object if present.
+   */
+  private static _extractSourceMetadata(from: unknown): unknown {
+    return typeof from === 'object' && from !== null && 'metadata' in from ? from.metadata : undefined;
+  }
+
+  /**
    * Creates a converter for pre-instantiated mutable entries.
    * These are entries that already have a ValidatingResultMap as their items property.
    */
-  private static _instantiatedMutableConverter<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
-    collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>
-  ): Converter<IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown> {
-    return Converters.strictObject<IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>({
+  private static _instantiatedMutableConverter<
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM,
+    TMETADATA = unknown
+  >(
+    collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>,
+    metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>
+  ): Converter<IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, unknown> {
+    const baseConverter = Converters.strictObject<{
+      isMutable: true;
+      id: TCOLLECTIONID;
+      items: ValidatingResultMap<TITEMID, TITEM>;
+    }>({
       isMutable: Converters.literal(true),
       id: collectionIdConverter,
       items: Converters.isA<ValidatingResultMap<TITEMID, TITEM>>(
@@ -792,16 +938,46 @@ export class AggregatedResultMapBase<
         (t) => t instanceof ValidatingResultMap
       )
     });
+
+    return Converters.generic<
+      IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>,
+      unknown
+    >((from) => {
+      return baseConverter.convert(from).onSuccess((base) => {
+        const sourceMetadata = AggregatedResultMapBase._extractSourceMetadata(from);
+        return AggregatedResultMapBase._convertMetadata(sourceMetadata, metadataConverter).onSuccess(
+          (metadata) => {
+            const entry: IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> = {
+              isMutable: true,
+              id: base.id,
+              items: base.items,
+              metadata
+            };
+            return succeed(entry);
+          }
+        );
+      });
+    });
   }
 
   /**
    * Creates a converter for pre-instantiated read-only entries.
    * These are entries that already have an IReadOnlyValidatingResultMap as their items property.
    */
-  private static _instantiatedReadonlyConverter<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
-    collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>
-  ): Converter<IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown> {
-    return Converters.strictObject<IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>({
+  private static _instantiatedReadonlyConverter<
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM,
+    TMETADATA = unknown
+  >(
+    collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>,
+    metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>
+  ): Converter<IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, unknown> {
+    const baseConverter = Converters.strictObject<{
+      isMutable: false;
+      id: TCOLLECTIONID;
+      items: IReadOnlyValidatingResultMap<TITEMID, TITEM>;
+    }>({
       isMutable: Converters.literal(false),
       id: collectionIdConverter,
       items: Converters.isA<IReadOnlyValidatingResultMap<TITEMID, TITEM>>(
@@ -809,24 +985,49 @@ export class AggregatedResultMapBase<
         (t) => t instanceof ValidatingResultMap
       )
     });
+
+    return Converters.generic<
+      IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>,
+      unknown
+    >((from) => {
+      return baseConverter.convert(from).onSuccess((base) => {
+        const sourceMetadata = AggregatedResultMapBase._extractSourceMetadata(from);
+        return AggregatedResultMapBase._convertMetadata(sourceMetadata, metadataConverter).onSuccess(
+          (metadata) => {
+            const entry: IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> = {
+              isMutable: false,
+              id: base.id,
+              items: base.items,
+              metadata
+            };
+            return succeed(entry);
+          }
+        );
+      });
+    });
   }
 
   /**
    * Creates a converter for JSON entries with an entries array.
    * Converts the entries array to a ValidatingResultMap.
    */
-  private static _jsonWithEntriesConverter<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
+  private static _jsonWithEntriesConverter<
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM,
+    TMETADATA = unknown
+  >(
     collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>,
-    childKvConverters: KeyValueConverters<TITEMID, TITEM>
-  ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown> {
-    // Converter for an array of [key, value] tuples
+    childKvConverters: KeyValueConverters<TITEMID, TITEM>,
+    metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>
+  ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, unknown> {
     const entriesArrayConverter = Converters.isA<KeyValueEntry<string, unknown>[]>(
       'entries array',
       (t): t is KeyValueEntry<string, unknown>[] =>
         Array.isArray(t) && t.every((item) => Array.isArray(item) && item.length === 2)
     );
 
-    return Converters.object<{
+    const baseConverter = Converters.object<{
       isMutable: boolean;
       id: TCOLLECTIONID;
       entries: KeyValueEntry<string, unknown>[];
@@ -834,26 +1035,36 @@ export class AggregatedResultMapBase<
       isMutable: Converters.boolean,
       id: collectionIdConverter,
       entries: entriesArrayConverter
-    }).map<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>((json) => {
-      const entriesResult = childKvConverters.convertEntries(json.entries);
-      if (entriesResult.isFailure()) {
-        return fail(entriesResult.message);
-      }
-      const items = new ValidatingResultMap<TITEMID, TITEM>({
-        converters: childKvConverters,
-        entries: entriesResult.value
-      });
-      if (json.isMutable) {
-        return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>({
-          isMutable: true,
-          id: json.id,
-          items
+    });
+
+    return Converters.generic<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>((from) => {
+      return baseConverter.convert(from).onSuccess((json) => {
+        const sourceMetadata = AggregatedResultMapBase._extractSourceMetadata(from);
+
+        return childKvConverters.convertEntries(json.entries).onSuccess((convertedEntries) => {
+          const items = new ValidatingResultMap<TITEMID, TITEM>({
+            converters: childKvConverters,
+            entries: convertedEntries
+          });
+          return AggregatedResultMapBase._convertMetadata(sourceMetadata, metadataConverter).onSuccess(
+            (metadata) => {
+              if (json.isMutable) {
+                return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>({
+                  isMutable: true,
+                  id: json.id,
+                  items,
+                  metadata
+                });
+              }
+              return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>({
+                isMutable: false,
+                id: json.id,
+                items: items.toReadOnly(),
+                metadata
+              });
+            }
+          );
         });
-      }
-      return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>({
-        isMutable: false,
-        id: json.id,
-        items: items.toReadOnly()
       });
     });
   }
@@ -862,11 +1073,17 @@ export class AggregatedResultMapBase<
    * Creates a converter for JSON entries with an items object.
    * Converts the items object to a ValidatingResultMap.
    */
-  private static _jsonWithItemsConverter<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
+  private static _jsonWithItemsConverter<
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM,
+    TMETADATA = unknown
+  >(
     collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>,
-    childKvConverters: KeyValueConverters<TITEMID, TITEM>
-  ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown> {
-    return Converters.object<{
+    childKvConverters: KeyValueConverters<TITEMID, TITEM>,
+    metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>
+  ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, unknown> {
+    const baseConverter = Converters.object<{
       isMutable: boolean;
       id: TCOLLECTIONID;
       items: Record<string, unknown>;
@@ -879,28 +1096,37 @@ export class AggregatedResultMapBase<
         }
         return fail('expected an object');
       })
-    }).map<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>((json) => {
-      // Convert Record to entries array
-      const entries = Object.entries(json.items) as KeyValueEntry<string, unknown>[];
-      const entriesResult = childKvConverters.convertEntries(entries);
-      if (entriesResult.isFailure()) {
-        return fail(entriesResult.message);
-      }
-      const items = new ValidatingResultMap<TITEMID, TITEM>({
-        converters: childKvConverters,
-        entries: entriesResult.value
-      });
-      if (json.isMutable) {
-        return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>({
-          isMutable: true,
-          id: json.id,
-          items
+    });
+
+    return Converters.generic<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>((from) => {
+      return baseConverter.convert(from).onSuccess((json) => {
+        const sourceMetadata = AggregatedResultMapBase._extractSourceMetadata(from);
+        const entries = Object.entries(json.items) as KeyValueEntry<string, unknown>[];
+
+        return childKvConverters.convertEntries(entries).onSuccess((convertedEntries) => {
+          const items = new ValidatingResultMap<TITEMID, TITEM>({
+            converters: childKvConverters,
+            entries: convertedEntries
+          });
+          return AggregatedResultMapBase._convertMetadata(sourceMetadata, metadataConverter).onSuccess(
+            (metadata) => {
+              if (json.isMutable) {
+                return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>({
+                  isMutable: true,
+                  id: json.id,
+                  items,
+                  metadata
+                });
+              }
+              return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>({
+                isMutable: false,
+                id: json.id,
+                items: items.toReadOnly(),
+                metadata
+              });
+            }
+          );
         });
-      }
-      return succeed<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>({
-        isMutable: false,
-        id: json.id,
-        items: items.toReadOnly()
       });
     });
   }
@@ -910,24 +1136,34 @@ export class AggregatedResultMapBase<
    * Tries each format in order: instantiated mutable, instantiated readonly,
    * JSON with entries array, JSON with items object.
    */
-  private static _entryConverter<TCOLLECTIONID extends string, TITEMID extends string, TITEM>(
+  private static _entryConverter<
+    TCOLLECTIONID extends string,
+    TITEMID extends string,
+    TITEM,
+    TMETADATA = unknown
+  >(
     collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>,
-    childKvConverters: KeyValueConverters<TITEMID, TITEM>
-  ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown> {
-    return Converters.oneOf<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, unknown>([
-      AggregatedResultMapBase._instantiatedMutableConverter<TCOLLECTIONID, TITEMID, TITEM>(
-        collectionIdConverter
-      ),
-      AggregatedResultMapBase._instantiatedReadonlyConverter<TCOLLECTIONID, TITEMID, TITEM>(
-        collectionIdConverter
-      ),
-      AggregatedResultMapBase._jsonWithEntriesConverter<TCOLLECTIONID, TITEMID, TITEM>(
+    childKvConverters: KeyValueConverters<TITEMID, TITEM>,
+    metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>
+  ): Converter<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, unknown> {
+    return Converters.oneOf<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, unknown>([
+      AggregatedResultMapBase._instantiatedMutableConverter<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>(
         collectionIdConverter,
-        childKvConverters
+        metadataConverter
       ),
-      AggregatedResultMapBase._jsonWithItemsConverter<TCOLLECTIONID, TITEMID, TITEM>(
+      AggregatedResultMapBase._instantiatedReadonlyConverter<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>(
         collectionIdConverter,
-        childKvConverters
+        metadataConverter
+      ),
+      AggregatedResultMapBase._jsonWithEntriesConverter<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>(
+        collectionIdConverter,
+        childKvConverters,
+        metadataConverter
+      ),
+      AggregatedResultMapBase._jsonWithItemsConverter<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>(
+        collectionIdConverter,
+        childKvConverters,
+        metadataConverter
       )
     ]);
   }
@@ -943,14 +1179,15 @@ export class AggregatedResultMap<
   TCOMPOSITEID extends string,
   TCOLLECTIONID extends string,
   TITEMID extends string,
-  TITEM
-> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM> {
+  TITEM,
+  TMETADATA = unknown
+> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA> {
   /**
    * Constructs a new {@link AggregatedResultMap | AggregatedResultMap}.
    * @param params -
    */
   public constructor(
-    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
   ) {
     super(params);
   }
@@ -964,10 +1201,11 @@ export class AggregatedResultMap<
     TCOMPOSITEID extends string,
     TCOLLECTIONID extends string,
     TITEMID extends string,
-    TITEM
+    TITEM,
+    TMETADATA = unknown
   >(
-    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>
-  ): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>> {
+    params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>
+  ): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>> {
     return captureResult(() => new AggregatedResultMap(params));
   }
 }

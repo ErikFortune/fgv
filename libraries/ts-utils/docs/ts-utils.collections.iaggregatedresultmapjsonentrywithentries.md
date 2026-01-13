@@ -92,5 +92,26 @@ boolean
 
 
 </td></tr>
+<tr><td>
+
+[metadata?](./ts-utils.collections.iaggregatedresultmapjsonentrywithentries.metadata.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
 </tbody></table>
 

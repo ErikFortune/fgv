@@ -9,7 +9,7 @@ Constructs a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- --
 **Signature:**
 
 ```typescript
-constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>);
+constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IAggregatedResultMapConstructorParams](./ts-utils.collections.iaggregatedresultmapconstructorparams.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM&gt;
+[IAggregatedResultMapConstructorParams](./ts-utils.collections.iaggregatedresultmapconstructorparams.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;
 
 
 </td><td>

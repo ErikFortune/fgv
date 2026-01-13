@@ -9,7 +9,7 @@ Base class for an aggregated result map that wraps a collection of [ValidatingRe
 **Signature:**
 
 ```typescript
-export declare class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> 
+export declare class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> 
 ```
 **Implements:** [IResultMap](./ts-utils.collections.iresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;, [IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;
 
@@ -109,7 +109,7 @@ The number of collections.
 
 </td><td>
 
-[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOLLECTIONID, [AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;&gt;
+[IReadOnlyValidatingResultMap](./ts-utils.collections.ireadonlyvalidatingresultmap.md)<!-- -->&lt;TCOLLECTIONID, [AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;&gt;
 
 
 </td><td>
@@ -350,6 +350,20 @@ Gets an item by its composite ID.
 </td></tr>
 <tr><td>
 
+[getCollectionMetadata(collectionId)](./ts-utils.collections.aggregatedresultmapbase.getcollectionmetadata.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets the metadata for a specific collection.
+
+
+</td></tr>
+<tr><td>
+
 [getOrAdd(key, value)](./ts-utils.collections.aggregatedresultmapbase.getoradd.md)
 
 
@@ -415,6 +429,20 @@ Iterates over all composite keys.
 </td><td>
 
 Sets an item by its composite ID. Creates the collection if it doesn't exist and is mutable.
+
+
+</td></tr>
+<tr><td>
+
+[setCollectionMetadata(collectionId, metadata)](./ts-utils.collections.aggregatedresultmapbase.setcollectionmetadata.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Sets the metadata for a mutable collection.
 
 
 </td></tr>

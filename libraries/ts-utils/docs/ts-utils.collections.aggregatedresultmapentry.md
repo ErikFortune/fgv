@@ -9,7 +9,7 @@ An entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->,
 **Signature:**
 
 ```typescript
-export type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM> = IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>;
+export type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> = IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>;
 ```
 **References:** [IReadonlyAggregatedResultMapEntry](./ts-utils.collections.ireadonlyaggregatedresultmapentry.md)<!-- -->, [IMutableAggregatedResultMapEntry](./ts-utils.collections.imutableaggregatedresultmapentry.md)
 

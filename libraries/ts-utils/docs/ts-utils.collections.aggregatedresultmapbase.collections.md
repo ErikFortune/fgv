@@ -9,5 +9,5 @@ Provides read-only access to the underlying collections map. Use `collections.ha
 **Signature:**
 
 ```typescript
-get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
+get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
 ```

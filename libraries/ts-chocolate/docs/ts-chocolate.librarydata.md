@@ -754,7 +754,7 @@ Type for the collections map in a sub-library. Maps SourceId to collection entri
 
 </td><td>
 
-A single entry in a sub-library collection. Fixes the collection ID type to SourceId.
+A single entry in a sub-library collection. Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
 
 
 </td></tr>
@@ -787,7 +787,7 @@ Function that navigates from library root to the appropriate data directory.
 
 </td><td>
 
-Initialization type for a sub-library collection entry. Fixes the collection ID type to SourceId.
+Initialization type for a sub-library collection entry. Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
 
 
 </td></tr>

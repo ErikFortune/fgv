@@ -4,12 +4,12 @@
 
 ## LibraryData.SubLibraryEntryInit type
 
-Initialization type for a sub-library collection entry. Fixes the collection ID type to SourceId.
+Initialization type for a sub-library collection entry. Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
 
 **Signature:**
 
 ```typescript
-export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem>;
+export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)
+**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
 

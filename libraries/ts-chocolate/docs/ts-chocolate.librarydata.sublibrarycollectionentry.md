@@ -4,12 +4,12 @@
 
 ## LibraryData.SubLibraryCollectionEntry type
 
-A single entry in a sub-library collection. Fixes the collection ID type to SourceId.
+A single entry in a sub-library collection. Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
 
 **Signature:**
 
 ```typescript
-export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>;
+export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
 ```
-**References:** [SourceId](./ts-chocolate.sourceid.md)
+**References:** [SourceId](./ts-chocolate.sourceid.md)<!-- -->, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)
 

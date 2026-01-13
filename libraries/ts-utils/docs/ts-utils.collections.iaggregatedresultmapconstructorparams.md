@@ -9,7 +9,7 @@ Parameters for constructing an [AggregatedResultMap](./ts-utils.aggregatedresult
 **Signature:**
 
 ```typescript
-export interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> 
+export interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> 
 ```
 
 ## Properties
@@ -66,7 +66,7 @@ Description
 
 </td><td>
 
-ReadonlyArray&lt;[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM&gt;&gt;
+ReadonlyArray&lt;[AggregatedResultMapEntryInit](./ts-utils.collections.aggregatedresultmapentryinit.md)<!-- -->&lt;TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;&gt;
 
 
 </td><td>
@@ -131,6 +131,27 @@ _(Optional)_
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[metadataConverter?](./ts-utils.collections.iaggregatedresultmapconstructorparams.metadataconverter.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+[Converter](./ts-utils.converter.md)<!-- -->&lt;TMETADATA, unknown&gt; \| [Validator](./ts-utils.validator.md)<!-- -->&lt;TMETADATA, unknown&gt;
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

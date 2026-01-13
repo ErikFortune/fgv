@@ -9,7 +9,7 @@ Any valid input format for an aggregated result map entry.
 **Signature:**
 
 ```typescript
-export type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM> = AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
+export type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> = AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
 ```
 **References:** [AggregatedResultMapEntry](./ts-utils.collections.aggregatedresultmapentry.md)<!-- -->, [AggregatedResultMapJsonEntry](./ts-utils.collections.aggregatedresultmapjsonentry.md)
 

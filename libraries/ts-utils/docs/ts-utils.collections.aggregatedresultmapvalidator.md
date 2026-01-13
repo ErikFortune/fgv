@@ -9,7 +9,7 @@ A validator for weakly-typed access to an [AggregatedResultMap](./ts-utils.aggre
 **Signature:**
 
 ```typescript
-export declare class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM> 
+export declare class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM> 
 ```
 **Implements:** [IReadOnlyResultMapValidator](./ts-utils.collections.ireadonlyresultmapvalidator.md)<!-- -->&lt;TCOMPOSITEID, TITEM&gt;
 

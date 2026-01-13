@@ -9,9 +9,9 @@ An aggregated result map that wraps a collection of [ValidatingResultMap](./ts-u
 **Signature:**
 
 ```typescript
-export declare class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM> 
+export declare class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA> 
 ```
-**Extends:** [AggregatedResultMapBase](./ts-utils.collections.aggregatedresultmapbase.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM&gt;
+**Extends:** [AggregatedResultMapBase](./ts-utils.collections.aggregatedresultmapbase.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;
 
 ## Constructors
 

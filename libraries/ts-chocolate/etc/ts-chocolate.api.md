@@ -519,6 +519,18 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 }
 
 // @public
+class CollectionManager<TCompositeId extends string, TBaseId extends string, TItem> implements ICollectionManager {
+    constructor(library: SubLibraryBase<TCompositeId, TBaseId, TItem>);
+    create(collectionId: SourceId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
+    delete(collectionId: SourceId): Result<void>;
+    exists(collectionId: SourceId): boolean;
+    get(collectionId: SourceId): Result<ICollectionSourceMetadata>;
+    getAll(): ReadonlyArray<SourceId>;
+    isMutable(collectionId: SourceId): Result<boolean>;
+    updateMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<void>;
+}
+
+// @public
 function collectionSourceFile<T>(itemConverter: Converter<T> | Validator<T>): Converter<ICollectionSourceFile<T>>;
 
 // @public
@@ -965,6 +977,7 @@ declare namespace Editing {
         IValidatingEditorContext,
         IValidationReport,
         IEditableCollection,
+        ICollectionManager,
         IExportOptions,
         IImportOptions,
         isValidationSuccess,
@@ -972,6 +985,7 @@ declare namespace Editing {
         ValidationReportBuilder,
         IEditableCollectionParams,
         EditableCollection,
+        CollectionManager,
         serializeToYaml,
         serializeToJson,
         serializeCollection,
@@ -1700,6 +1714,17 @@ interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = s
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
     // Warning: (ae-incompatible-release-tags) The symbol "protectedCollections" is marked as @public, but its signature references "IProtectedCollectionInternal" which is marked as @internal
     readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<TCollectionId>>;
+}
+
+// @public
+interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
+    readonly create: (collectionId: SourceId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>>;
+    readonly delete: (collectionId: SourceId) => Result<void>;
+    readonly exists: (collectionId: SourceId) => boolean;
+    readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
+    readonly getAll: () => ReadonlyArray<SourceId>;
+    readonly isMutable: (collectionId: SourceId) => Result<boolean>;
+    readonly updateMetadata: (collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>) => Result<void>;
 }
 
 // @public
@@ -5279,13 +5304,23 @@ export type SpoonUnit = 'tsp' | 'Tbsp';
 const STANDARD_FRACTIONS: ReadonlyArray<IFraction>;
 
 // @public
-abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
+abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem, ICollectionSourceMetadata> {
     protected constructor(params: ISubLibraryCreateParams<SubLibraryBase<TCompositeId, TBaseId, TItem>, TBaseId, TItem>);
     protected static loadAllCollectionsAsync<TLibrary extends SubLibraryBase<string, TBaseId, TItem>, TBaseId extends string, TItem>(params: ISubLibraryCreateParams<TLibrary, TBaseId, TItem>): Promise<Result<ISubLibraryAsyncLoadResult<TBaseId, TItem>>>;
     loadFromFileTreeSource(source: SubLibraryFileTreeSource): Result<number>;
     loadProtectedCollectionAsync(encryption: IEncryptionConfig, filter?: ReadonlyArray<string | RegExp>): Promise<Result<ReadonlyArray<SourceId>>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     get protectedCollections(): ReadonlyArray<IProtectedCollectionInfo<SourceId>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    removeCollection(collectionId: SourceId): Result<void>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+    //
+    // @internal
+    updateCollectionMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<void>;
 }
 
 // @public
@@ -5295,7 +5330,7 @@ type SubLibraryBuiltInTreeProvider = () => Result<FileTree.IFileTreeDirectoryIte
 type SubLibraryCollection<TBaseId extends string, TItem> = Collections.IReadOnlyValidatingResultMap<SourceId, SubLibraryCollectionEntry<TBaseId, TItem>>;
 
 // @public
-type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>;
+type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
 
 // @public
 type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collections.IReadOnlyResultMapValidator<TCompositeId, TItem>;
@@ -5304,7 +5339,7 @@ type SubLibraryCollectionValidator<TCompositeId extends string, TItem> = Collect
 type SubLibraryDirectoryNavigator = (tree: FileTree.FileTreeItem) => Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
-type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem>;
+type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<SourceId, TBaseId, TItem, ICollectionSourceMetadata>;
 
 // @public
 type SubLibraryFileTreeSource = IFileTreeSource<SourceId>;

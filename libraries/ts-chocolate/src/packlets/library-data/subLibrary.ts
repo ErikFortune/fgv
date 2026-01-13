@@ -42,10 +42,12 @@ import { FileTree } from '@fgv/ts-json-base';
 
 import { SourceId } from '../common';
 import { Converters as CommonConverters } from '../common';
+import { collectionSourceMetadata as collectionSourceMetadataConverter } from './converters';
 import { decryptCollectionFile } from '../crypto';
 import { CollectionLoader, EncryptedFileHandling } from './collectionLoader';
 import { createFilterFromSpec } from './collectionFilter';
 import {
+  ICollectionSourceMetadata,
   IEncryptionConfig,
   IFileTreeSource,
   IMergeLibrarySource,
@@ -67,7 +69,7 @@ import {
 
 /**
  * A single entry in a sub-library collection.
- * Fixes the collection ID type to SourceId.
+ * Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
  *
  * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
  * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
@@ -76,12 +78,13 @@ import {
 export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntry<
   SourceId,
   TBaseId,
-  TItem
+  TItem,
+  ICollectionSourceMetadata
 >;
 
 /**
  * Initialization type for a sub-library collection entry.
- * Fixes the collection ID type to SourceId.
+ * Fixes the collection ID type to SourceId and metadata type to ICollectionSourceMetadata.
  *
  * @typeParam TBaseId - The base item ID type (e.g., `BaseIngredientId`)
  * @typeParam TItem - The item type stored in the collection (e.g., `Ingredient`)
@@ -90,7 +93,8 @@ export type SubLibraryCollectionEntry<TBaseId extends string, TItem> = Collectio
 export type SubLibraryEntryInit<TBaseId extends string, TItem> = Collections.AggregatedResultMapEntryInit<
   SourceId,
   TBaseId,
-  TItem
+  TItem,
+  ICollectionSourceMetadata
 >;
 
 /**
@@ -351,7 +355,13 @@ export abstract class SubLibraryBase<
   TCompositeId extends string,
   TBaseId extends string,
   TItem
-> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> {
+> extends Collections.AggregatedResultMapBase<
+  TCompositeId,
+  SourceId,
+  TBaseId,
+  TItem,
+  ICollectionSourceMetadata
+> {
   /**
    * The item ID converter for creating loaders.
    * Used by loadFromFileTreeSource instance method.
@@ -463,6 +473,7 @@ export abstract class SubLibraryBase<
       separator: '.',
       itemIdConverter: params.itemIdConverter,
       itemConverter: params.itemConverter,
+      metadataConverter: collectionSourceMetadataConverter,
       collections: allCollections
     });
 
@@ -1120,6 +1131,124 @@ export abstract class SubLibraryBase<
       `Successfully added collection ${internal.ref.collectionId} with ${convertedCount} items`
     );
     return succeed(true);
+  }
+
+  // ============================================================================
+  // Collection Manipulation Methods (for use by CollectionManager)
+  // ============================================================================
+
+  /**
+   * Remove a collection from the library.
+   *
+   * @remarks
+   * This method is public but intended for internal use by {@link Editing.CollectionManager}.
+   * Direct use is discouraged - use {@link Editing.CollectionManager.delete} instead.
+   *
+   * @param collectionId - Collection to remove
+   * @returns Result indicating success or failure
+   * @throws Never throws - returns Failure instead
+   * @internal
+   */
+  public removeCollection(collectionId: SourceId): Result<void> {
+    return this.collections
+      .get(collectionId)
+      .asResult.withErrorFormat((msg) => `Collection "${collectionId}" not found: ${msg}`)
+      .onSuccess((collection) => {
+        if (!collection.isMutable) {
+          return Failure.with(`Cannot delete immutable collection "${collectionId}"`);
+        }
+        // The underlying collections property is a ValidatingResultMap
+        // which extends Map<K, V>. We need to access the internal map.
+        // Cast to access delete method
+        const mutableMap = this.collections as unknown as Map<
+          SourceId,
+          SubLibraryCollectionEntry<TBaseId, TItem>
+        >;
+        mutableMap.delete(collectionId);
+        return succeed(undefined);
+      });
+  }
+
+  /**
+   * Update collection metadata.
+   *
+   * @remarks
+   * This method is public but intended for internal use by {@link Editing.CollectionManager}.
+   * Direct use is discouraged - use {@link Editing.CollectionManager.updateMetadata} instead.
+   *
+   * @param collectionId - Collection to update
+   * @param metadata - Partial metadata to update
+   * @returns Result indicating success or failure
+   * @throws Never throws - returns Failure instead
+   * @internal
+   */
+  public updateCollectionMetadata(
+    collectionId: SourceId,
+    metadata: Partial<ICollectionSourceMetadata>
+  ): Result<void> {
+    // Validation - collections.get returns a DetailedResult, use .asResult to convert
+    const collectionResult = this.collections.get(collectionId).asResult;
+    if (collectionResult.isFailure()) {
+      return fail(`Collection "${collectionId}" not found`);
+    }
+
+    const collection = collectionResult.value;
+    if (!collection.isMutable) {
+      return fail(`Cannot update metadata of immutable collection "${collectionId}"`);
+    }
+
+    // Validate metadata
+    return this._validateMetadataUpdate(metadata).onSuccess(() => {
+      // Merge new metadata with existing metadata
+      const existingMetadata = collection.metadata ?? {};
+      const mergedMetadata: ICollectionSourceMetadata = {
+        ...existingMetadata,
+        ...metadata
+      };
+
+      // Use parent's setCollectionMetadata to persist the metadata
+      return this.setCollectionMetadata(collectionId, mergedMetadata).onSuccess(() => succeed(undefined));
+    });
+  }
+
+  /**
+   * Validate metadata update fields.
+   * @param metadata - Partial metadata to validate
+   * @returns Result indicating validation success or specific error
+   */
+  private _validateMetadataUpdate(metadata: Partial<ICollectionSourceMetadata>): Result<void> {
+    const aggregator = new MessageAggregator();
+
+    // Validate name if provided
+    if (metadata.name !== undefined) {
+      if (metadata.name.trim() === '') {
+        aggregator.addMessage('Collection name cannot be empty');
+      } else if (metadata.name.length > 200) {
+        aggregator.addMessage('Collection name exceeds 200 characters');
+      } else if (metadata.name !== metadata.name.trim()) {
+        aggregator.addMessage('Collection name cannot have leading or trailing whitespace');
+      }
+    }
+
+    // Validate description if provided
+    if (metadata.description !== undefined && metadata.description.length > 2000) {
+      aggregator.addMessage('Collection description exceeds 2000 characters');
+    }
+
+    // Validate secretName if provided
+    if (metadata.secretName !== undefined) {
+      if (metadata.secretName.trim() === '') {
+        aggregator.addMessage('Secret name cannot be empty');
+      } else if (metadata.secretName.length > 100) {
+        aggregator.addMessage('Secret name exceeds 100 characters');
+      }
+    }
+
+    if (aggregator.hasMessages) {
+      return fail(`Invalid metadata: ${aggregator.toString('; ')}`);
+    }
+
+    return succeed(undefined);
   }
 
   /**

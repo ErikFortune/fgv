@@ -13,9 +13,9 @@ This reduces the type parameter count from 4 to 3 and eliminates boilerplate in 
 **Signature:**
 
 ```typescript
-export declare abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem> 
+export declare abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends string, TItem> extends Collections.AggregatedResultMapBase<TCompositeId, SourceId, TBaseId, TItem, ICollectionSourceMetadata> 
 ```
-**Extends:** Collections.AggregatedResultMapBase&lt;TCompositeId, [SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem&gt;
+**Extends:** Collections.AggregatedResultMapBase&lt;TCompositeId, [SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
 
 ## Constructors
 

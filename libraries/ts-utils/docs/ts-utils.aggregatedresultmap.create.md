@@ -9,7 +9,7 @@ Creates a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
 **Signature:**
 
 ```typescript
-static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
+static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ params
 
 </td><td>
 
-[IAggregatedResultMapConstructorParams](./ts-utils.collections.iaggregatedresultmapconstructorparams.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM&gt;
+[IAggregatedResultMapConstructorParams](./ts-utils.collections.iaggregatedresultmapconstructorparams.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;
 
 
 </td><td>
@@ -50,7 +50,7 @@ Parameters for constructing the map.
 
 **Returns:**
 
-[Result](./ts-utils.result.md)<!-- -->&lt;[AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM&gt;&gt;
+[Result](./ts-utils.result.md)<!-- -->&lt;[AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;&gt;
 
 `Success` with the new map if successful, `Failure` otherwise.
 

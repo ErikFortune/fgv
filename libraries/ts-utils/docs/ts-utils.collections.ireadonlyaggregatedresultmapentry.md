@@ -9,7 +9,7 @@ A read-only entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)
 **Signature:**
 
 ```typescript
-export interface IReadonlyAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown> 
+export interface IReadonlyAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown, TMETADATA = unknown> 
 ```
 
 ## Properties
@@ -89,6 +89,27 @@ false
 
 
 </td><td>
+
+
+</td></tr>
+<tr><td>
+
+[metadata?](./ts-utils.collections.ireadonlyaggregatedresultmapentry.metadata.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+TMETADATA
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>

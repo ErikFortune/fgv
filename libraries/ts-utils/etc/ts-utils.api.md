@@ -5,28 +5,28 @@
 ```ts
 
 // @public
-export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM> {
-    constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>);
-    static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>>;
+export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> extends AggregatedResultMapBase<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA> {
+    constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>);
+    static create<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown>(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>): Result<AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
 }
 
 // @public
-class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
+class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
     [Symbol.iterator](): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
-    protected constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>);
+    protected constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     add(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "addCollectionEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addCollectionEntry" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
-    addCollectionEntry(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>, ResultMapResultDetail>;
+    addCollectionEntry(entry: AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, ResultMapResultDetail>;
     addCollectionWithItems(collectionId: string, items?: Iterable<KeyValueEntry<string, unknown>>, options?: IAddCollectionWithItemsOptions): Result<TCOLLECTIONID>;
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "addToCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     addToCollection(collectionId: TCOLLECTIONID, itemId: TITEMID, value: TITEM): DetailedResult<TCOMPOSITEID, ResultMapResultDetail>;
     clear(): void;
     get collectionCount(): number;
-    get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>>;
+    get collections(): IReadOnlyValidatingResultMap<TCOLLECTIONID, AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
     composeId(collectionId: TCOLLECTIONID, itemId: TITEMID): Result<TCOMPOSITEID>;
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -39,6 +39,7 @@ class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     get(key: TCOMPOSITEID): DetailedResult<TITEM, ResultMapResultDetail>;
+    getCollectionMetadata(collectionId: TCOLLECTIONID): Result<TMETADATA | undefined>;
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "getOrAdd" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     getOrAdd(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -50,6 +51,7 @@ class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     set(key: TCOMPOSITEID, value: TITEM): DetailedResult<TITEM, ResultMapResultDetail>;
+    setCollectionMetadata(collectionId: TCOLLECTIONID, metadata: TMETADATA): Result<TMETADATA>;
     // Warning: (ae-incompatible-release-tags) The symbol "setInCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "setInCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     setInCollection(collectionId: TCOLLECTIONID, itemId: TITEMID, value: TITEM): DetailedResult<TCOMPOSITEID, ResultMapResultDetail>;
@@ -66,17 +68,17 @@ class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends
 }
 
 // @public
-type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM> = IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM>;
+type AggregatedResultMapEntry<TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> = IReadonlyAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> | IMutableAggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>;
 
 // @public
-type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM> = AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM> | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
+type AggregatedResultMapEntryInit<TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> = AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA> | AggregatedResultMapJsonEntry<TCOLLECTIONID>;
 
 // @public
 type AggregatedResultMapJsonEntry<TCOLLECTIONID extends string = string> = IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID> | IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID>;
 
 // @public
-class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM> {
-    constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
+class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM> {
+    constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     //
@@ -1160,17 +1162,19 @@ interface IAddCollectionWithItemsOptions {
 }
 
 // @public
-interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM> {
+interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> {
     // (undocumented)
     readonly collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>;
     // (undocumented)
-    readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM>>;
+    readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
     // (undocumented)
     readonly compositeIdValidator?: Validator<TCOMPOSITEID, unknown>;
     // (undocumented)
     readonly itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
     // (undocumented)
     readonly itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
+    // (undocumented)
+    readonly metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>;
     // (undocumented)
     readonly separator?: string;
 }
@@ -1183,6 +1187,8 @@ interface IAggregatedResultMapJsonEntryWithEntries<TCOLLECTIONID extends string 
     readonly id: TCOLLECTIONID;
     // (undocumented)
     readonly isMutable: boolean;
+    // (undocumented)
+    readonly metadata?: unknown;
 }
 
 // @public
@@ -1193,6 +1199,8 @@ interface IAggregatedResultMapJsonEntryWithItems<TCOLLECTIONID extends string = 
     readonly isMutable: boolean;
     // (undocumented)
     readonly items: Record<string, unknown>;
+    // (undocumented)
+    readonly metadata?: unknown;
 }
 
 // @public
@@ -1332,13 +1340,15 @@ export interface IMessageReportDetail<TD = unknown> {
 }
 
 // @public
-interface IMutableAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown> {
+interface IMutableAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown, TMETADATA = unknown> {
     // (undocumented)
     readonly id: TCOLLECTIONID;
     // (undocumented)
     readonly isMutable: true;
     // (undocumented)
     readonly items: ValidatingResultMap<TITEMID, TITEM>;
+    // (undocumented)
+    metadata?: TMETADATA;
 }
 
 // Warning: (ae-forgotten-export) The symbol "InnerInferredType" needs to be exported by the entry point index.d.ts
@@ -1363,13 +1373,15 @@ class InMemoryLogger extends LoggerBase {
 }
 
 // @public
-interface IReadonlyAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown> {
+interface IReadonlyAggregatedResultMapEntry<TCOLLECTIONID extends string = string, TITEMID extends string = string, TITEM = unknown, TMETADATA = unknown> {
     // (undocumented)
     readonly id: TCOLLECTIONID;
     // (undocumented)
     readonly isMutable: false;
     // (undocumented)
     readonly items: IReadOnlyValidatingResultMap<TITEMID, TITEM>;
+    // (undocumented)
+    readonly metadata?: TMETADATA;
 }
 
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver

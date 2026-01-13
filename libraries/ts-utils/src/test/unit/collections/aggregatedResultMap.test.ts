@@ -1348,4 +1348,187 @@ describe('AggregatedResultMap', () => {
       expect(result).toFailWith(/item ID must be numeric/i);
     });
   });
+
+  // ============================================================================
+  // Metadata Tests
+  // ============================================================================
+
+  describe('metadata', () => {
+    interface ITestMetadata {
+      name: string;
+      version: number;
+    }
+
+    const metadataConverter = Converters.object<ITestMetadata>({
+      name: Converters.string,
+      version: Converters.number
+    });
+
+    const paramsWithMetadata = {
+      ...defaultParams,
+      metadataConverter
+    };
+
+    describe('getCollectionMetadata', () => {
+      test('returns undefined when collection has no metadata', () => {
+        const map = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {}
+            }
+          ]
+        }).orThrow();
+
+        expect(map.getCollectionMetadata('alpha' as CollectionId)).toSucceedWith(undefined);
+      });
+
+      test('returns metadata when collection has metadata', () => {
+        const metadata: ITestMetadata = { name: 'Test', version: 1 };
+        const map = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {},
+              metadata
+            }
+          ]
+        }).orThrow();
+
+        expect(map.getCollectionMetadata('alpha' as CollectionId)).toSucceedWith(metadata);
+      });
+
+      test('fails for non-existent collection', () => {
+        const map = AggregatedResultMap.create(paramsWithMetadata).orThrow();
+        expect(map.getCollectionMetadata('nonexistent' as CollectionId)).toFail();
+      });
+    });
+
+    describe('setCollectionMetadata', () => {
+      test('sets metadata on mutable collection', () => {
+        const map = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {}
+            }
+          ]
+        }).orThrow();
+
+        const metadata: ITestMetadata = { name: 'Updated', version: 2 };
+        expect(map.setCollectionMetadata('alpha' as CollectionId, metadata)).toSucceedWith(metadata);
+        expect(map.getCollectionMetadata('alpha' as CollectionId)).toSucceedWith(metadata);
+      });
+
+      test('fails to set metadata on immutable collection', () => {
+        const map = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: false,
+              id: 'readonly' as CollectionId,
+              items: {}
+            }
+          ]
+        }).orThrow();
+
+        const metadata: ITestMetadata = { name: 'Attempt', version: 1 };
+        expect(map.setCollectionMetadata('readonly' as CollectionId, metadata)).toFailWith(
+          /cannot modify metadata.*immutable/i
+        );
+      });
+
+      test('fails for non-existent collection', () => {
+        const map = AggregatedResultMap.create(paramsWithMetadata).orThrow();
+        expect(
+          map.setCollectionMetadata('nonexistent' as CollectionId, { name: 'Test', version: 1 })
+        ).toFail();
+      });
+    });
+
+    describe('metadata converter enforcement', () => {
+      test('fails fast when metadata is present but no converter is configured', () => {
+        // Using defaultParams which has no metadataConverter
+        const result = AggregatedResultMap.create({
+          ...defaultParams,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {},
+              metadata: { name: 'Test', version: 1 }
+            }
+          ]
+        });
+        expect(result).toFailWith(/metadata is not allowed when no metadataConverter is configured/i);
+      });
+
+      test('succeeds when metadata is present and converter is configured', () => {
+        const metadata: ITestMetadata = { name: 'Test', version: 1 };
+        const result = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {},
+              metadata
+            }
+          ]
+        });
+        expect(result).toSucceedAndSatisfy((map) => {
+          expect(map.getCollectionMetadata('alpha' as CollectionId)).toSucceedWith(metadata);
+        });
+      });
+
+      test('succeeds when no metadata is present regardless of converter', () => {
+        // Without converter
+        const result1 = AggregatedResultMap.create({
+          ...defaultParams,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {}
+            }
+          ]
+        });
+        expect(result1).toSucceed();
+
+        // With converter
+        const result2 = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: true,
+              id: 'beta' as CollectionId,
+              items: {}
+            }
+          ]
+        });
+        expect(result2).toSucceed();
+      });
+
+      test('fails when metadata conversion fails', () => {
+        const result = AggregatedResultMap.create({
+          ...paramsWithMetadata,
+          collections: [
+            {
+              isMutable: true,
+              id: 'alpha' as CollectionId,
+              items: {},
+              metadata: { name: 123, version: 'not a number' } // Invalid types
+            }
+          ]
+        });
+        expect(result).toFail();
+      });
+    });
+  });
 });

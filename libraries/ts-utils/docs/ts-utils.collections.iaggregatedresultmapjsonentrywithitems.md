@@ -92,5 +92,26 @@ Record&lt;string, unknown&gt;
 
 
 </td></tr>
+<tr><td>
+
+[metadata?](./ts-utils.collections.iaggregatedresultmapjsonentrywithitems.metadata.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+unknown
+
+
+</td><td>
+
+_(Optional)_
+
+
+</td></tr>
 </tbody></table>
 

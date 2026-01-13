@@ -19,6 +19,17 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[CollectionManager](./ts-chocolate.editing.collectionmanager.md)
+
+
+</td><td>
+
+Implementation of collection management operations. Wraps a SubLibraryBase instance to provide collection-level CRUD.
+
+
+</td></tr>
+<tr><td>
+
 [EditableCollection](./ts-chocolate.editing.editablecollection.md)
 
 
@@ -226,6 +237,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ICollectionManager](./ts-chocolate.editing.icollectionmanager.md)
+
+
+</td><td>
+
+Manager for collection-level CRUD operations. Provides operations to create, delete, and rename collections within a sub-library.
+
+
+</td></tr>
+<tr><td>
 
 [IEditableCollection](./ts-chocolate.editing.ieditablecollection.md)
 

@@ -33,6 +33,9 @@ export * from './validation';
 // Editable collection wrapper (thin wrapper around ValidatingResultMap)
 export * from './editableCollection';
 
+// Collection manager (collection-level CRUD operations)
+export * from './collectionManager';
+
 // Export/import utilities
 export * from './exportImport';
 

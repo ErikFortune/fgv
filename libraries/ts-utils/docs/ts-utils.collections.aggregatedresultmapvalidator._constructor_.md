@@ -9,7 +9,7 @@ Constructs a new instance of the `AggregatedResultMapValidator` class
 **Signature:**
 
 ```typescript
-constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
+constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
 ```
 
 ## Parameters
@@ -37,7 +37,7 @@ map
 
 </td><td>
 
-[AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM&gt;
+[AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->&lt;TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA&gt;
 
 
 </td><td>
