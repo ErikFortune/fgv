@@ -356,6 +356,9 @@ importers:
       '@fgv/ts-utils':
         specifier: workspace:*
         version: link:../ts-utils
+      js-yaml:
+        specifier: ~4.1.1
+        version: 4.1.1
     devDependencies:
       '@fgv/heft-dual-rig':
         specifier: workspace:*
@@ -387,6 +390,9 @@ importers:
       '@types/jest':
         specifier: ^29.5.14
         version: 29.5.14
+      '@types/js-yaml':
+        specifier: ~4.0.9
+        version: 4.0.9
       '@types/node':
         specifier: ^20.14.9
         version: 20.19.28
@@ -5586,6 +5592,10 @@ packages:
     dependencies:
       expect: 29.7.0
       pretty-format: 29.7.0
+
+  /@types/js-yaml@4.0.9:
+    resolution: {integrity: sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg==}
+    dev: true
 
   /@types/jsdom@20.0.1:
     resolution: {integrity: sha512-d0r18sZPmMQr1eG35u12FZfhIXNrnsPU/g5wvRKCUf/tOGilKKwYMYGqh33BNR6ba+2gkHw1EUiHoN3mn7E5IQ==}

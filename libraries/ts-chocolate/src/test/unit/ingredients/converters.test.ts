@@ -203,14 +203,12 @@ describe('Ingredient Converters', () => {
       expect(baseIngredient.convert(input)).toFail();
     });
 
-    test('converts with empty name (no validation on empty strings)', () => {
+    test('fails with empty name', () => {
       const input = {
         ...validBaseIngredient,
         name: ''
       };
-      expect(baseIngredient.convert(input)).toSucceedAndSatisfy((result) => {
-        expect(result.name).toBe('');
-      });
+      expect(baseIngredient.convert(input)).toFail();
     });
 
     test('fails for invalid category', () => {

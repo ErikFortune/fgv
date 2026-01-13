@@ -76,16 +76,24 @@ export const temperatureCurve: Converter<ITemperatureCurve> = Converters.object<
 
 const commonIngredientFields: Conversion.FieldConverters<Omit<IIngredient, 'category'>> = {
   baseId: IngredientConverters.baseIngredientId,
-  name: Converters.string,
+  name: Converters.string.withConstraint((s) => s.length >= 1 && s.length <= 200, {
+    description: 'must be 1-200 characters'
+  }),
   ganacheCharacteristics,
-  description: Converters.string.optional(),
-  manufacturer: Converters.string.optional(),
+  description: Converters.string
+    .withConstraint((s) => s.length <= 2000, { description: 'must be at most 2000 characters' })
+    .optional(),
+  manufacturer: Converters.string
+    .withConstraint((s) => s.length <= 200, { description: 'must be at most 200 characters' })
+    .optional(),
   allergens: Converters.arrayOf(IngredientConverters.allergen).optional(),
   traceAllergens: Converters.arrayOf(IngredientConverters.allergen).optional(),
   certifications: Converters.arrayOf(IngredientConverters.certification).optional(),
   vegan: Converters.boolean.optional(),
   tags: Converters.arrayOf(Converters.string).optional(),
-  density: Converters.number.optional(),
+  density: Converters.number
+    .withConstraint((n) => n >= 0.1 && n <= 5.0, { description: 'must be between 0.1 and 5.0' })
+    .optional(),
   phase: IngredientConverters.ingredientPhase.optional(),
   measurementUnits: IngredientConverters.optionsWithPreferred(
     IngredientConverters.measurementUnitOption,

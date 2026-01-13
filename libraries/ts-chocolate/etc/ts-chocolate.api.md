@@ -8,6 +8,7 @@ import { Brand } from '@fgv/ts-utils';
 import { Collections } from '@fgv/ts-utils';
 import { Converter } from '@fgv/ts-utils';
 import { Converters as Converters_5 } from '@fgv/ts-utils';
+import { DetailedResult } from '@fgv/ts-utils';
 import { FileTree } from '@fgv/ts-json-base';
 import { JsonObject } from '@fgv/ts-json-base';
 import { JsonValue } from '@fgv/ts-json-base';
@@ -178,6 +179,9 @@ export type BaseFillingId = Brand<string, 'BaseFillingId'>;
 
 // @public
 const baseFillingId: Converter<BaseFillingId>;
+
+// @public
+function baseIdExists(baseId: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>): boolean;
 
 // @public
 abstract class BaseIndexer<TEntity, TId, TConfig> implements IIndexer<TEntity, TId, TConfig> {
@@ -938,6 +942,60 @@ export type DegreesMacMichael = Brand<number, 'DegreesMacMichael'>;
 const degreesMacMichael: Converter<DegreesMacMichael>;
 
 // @public
+class EditableCollection<T, TBaseId extends string = string, TId extends string = string> extends ValidatingResultMap<TBaseId, T> {
+    add(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
+    clear(): Result<boolean>;
+    readonly collectionId: SourceId;
+    static createEditable<T, TBaseId extends string = string, TId extends string = string>(params: IEditableCollectionParams<T, TBaseId>): Result<EditableCollection<T, TBaseId, TId>>;
+    delete(key: TBaseId): DetailedResult<T, Collections.ResultMapResultDetail>;
+    export(): Result<ICollectionSourceFile<T>>;
+    readonly isMutable: boolean;
+    get metadata(): ICollectionSourceMetadata;
+    set(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
+    update(key: TBaseId, value: T): DetailedResult<T, Collections.ResultMapResultDetail>;
+    updateMetadata(metadata: Partial<ICollectionSourceMetadata>): Result<void>;
+}
+
+declare namespace Editing {
+    export {
+        Helpers_2 as Helpers,
+        Ingredients_3 as Ingredients,
+        IEditorContext,
+        IEditorContextValidator,
+        IValidatingEditorContext,
+        IValidationReport,
+        IFieldValidator,
+        FieldValidators,
+        IEditableCollection,
+        IExportOptions,
+        IImportOptions,
+        validateEntity,
+        isValidationSuccess,
+        ValidationReport,
+        ValidationReportBuilder,
+        FieldValidator,
+        IEditableCollectionParams,
+        EditableCollection,
+        serializeToYaml,
+        serializeToJson,
+        serializeCollection,
+        parseYaml,
+        parseJson,
+        parseCollection,
+        parseCollectionWithFormat,
+        validateCollectionStructure,
+        validateAndParseCollection,
+        IEditorContextParams,
+        EditorContext,
+        IEditorContextValidatorParams,
+        EditorContextValidator,
+        IValidatingEditorContextParams,
+        ValidatingEditorContext
+    }
+}
+export { Editing }
+
+// @public
 class EditingSessionValidator implements IEditingSessionValidator {
     constructor(session: RecipeEditingSession);
     addIngredient(id: string, amount: number): Result<void>;
@@ -950,6 +1008,31 @@ class EditingSessionValidator implements IEditingSessionValidator {
     setTargetWeight(weight: number): Result<void>;
     substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
+}
+
+// @public
+class EditorContext<T, TBaseId extends string = string, TId extends string = string> implements IEditorContext<T, TBaseId, TId> {
+    protected constructor(params: IEditorContextParams<T, TBaseId, TId>);
+    clearUnsavedChanges(): void;
+    protected get collection(): EditableCollection<T, TBaseId, TId>;
+    copyTo(id: TId, targetCollectionId: string): Result<TId>;
+    static create<T, TBaseId extends string = string, TId extends string = string>(params: IEditorContextParams<T, TBaseId, TId>): Result<EditorContext<T, TBaseId, TId>>;
+    create(baseId: TBaseId | undefined, entity: T): Result<TId>;
+    delete(id: TId): Result<T>;
+    exists(id: TId): boolean;
+    get(id: TId): Result<T>;
+    getAll(): ReadonlyArray<[TId, T]>;
+    hasUnsavedChanges(): boolean;
+    update(id: TId, entity: T): Result<T>;
+    validate(entity: T): Result<IValidationReport>;
+}
+
+// @public
+class EditorContextValidator<T, TBaseId extends string = string, TId extends string = string> implements IEditorContextValidator<T, TBaseId, TId> {
+    constructor(params: IEditorContextValidatorParams<T, TBaseId, TId>);
+    create(baseId: string, rawEntity: unknown): Result<TId>;
+    update(id: TId, rawEntity: unknown): Result<T>;
+    validate(rawEntity: unknown): Result<IValidationReport>;
 }
 
 // @public
@@ -1169,6 +1252,32 @@ function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPr
 const fatIngredient: Converter<IFatIngredient>;
 
 // @public
+class FieldValidator<T, K extends keyof T> implements IFieldValidator<T, K> {
+    constructor(fieldName: K, errorMessage: string, validatorFn: (value: T[K] | undefined, context?: Partial<T>) => Result<T[K]>);
+    readonly errorMessage: string;
+    readonly fieldName: K;
+    static number<T, K extends keyof T>(fieldName: K, options?: {
+        min?: number;
+        max?: number;
+        positive?: boolean;
+    }): FieldValidator<T, K>;
+    static percentage<T, K extends keyof T>(fieldName: K): FieldValidator<T, K>;
+    static required<T, K extends keyof T>(fieldName: K): FieldValidator<T, K>;
+    static string<T, K extends keyof T>(fieldName: K, options?: {
+        maxLength?: number;
+        minLength?: number;
+    }): FieldValidator<T, K>;
+    validate(value: T[K] | undefined, context?: Partial<T>): Result<T[K]>;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+type FieldValidators<T> = {
+    [key in keyof T]: IFieldValidator<T, key>;
+};
+
+// @public
 export const FILLING_VERSION_ID_PATTERN: RegExp;
 
 // @public
@@ -1371,6 +1480,12 @@ function generateJournalId(): Result<JournalId>;
 function generateSessionId(): Result<SessionId>;
 
 // @public
+function generateUniqueBaseId(baseId: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
+
+// @public
+function generateUniqueBaseIdFromName(name: string, existingIds: ReadonlySet<string> | ReadonlyArray<string>, maxAttempts?: number): Result<string>;
+
+// @public
 function getConfectionsDirectory(tree: FileTree.FileTreeItem): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -1460,6 +1575,23 @@ declare namespace Helpers {
     }
 }
 export { Helpers }
+
+declare namespace Helpers_2 {
+    export {
+        toKebabCase,
+        validateKebabCase,
+        nameToBaseId,
+        generateUniqueBaseId,
+        generateUniqueBaseIdFromName,
+        validateNonEmptyString,
+        validateStringLength,
+        validatePositiveNumber,
+        validateNumberRange,
+        validatePercentage,
+        baseIdExists,
+        validateUniqueBaseId
+    }
+}
 
 // @public
 interface IAdditionalChocolate {
@@ -1809,6 +1941,27 @@ interface IDairyIngredient extends IIngredient {
 function idsWithPreferred<TId extends string>(idConverter: Converter<TId>, context?: string): Converter<IIdsWithPreferred<TId>>;
 
 // @public
+interface IEditableCollection<T, TBaseId extends string = string, TId extends string = string> extends ValidatingResultMap<TBaseId, T> {
+    readonly collectionId: SourceId;
+    readonly export: () => Result<ICollectionSourceFile<T>>;
+    readonly isMutable: boolean;
+    readonly items: ReadonlyMap<TBaseId, T>;
+    readonly metadata: ICollectionSourceMetadata;
+    readonly remove: (baseId: TBaseId) => Result<T>;
+    readonly updateMetadata: (metadata: Partial<ICollectionSourceMetadata>) => Result<void>;
+}
+
+// @public
+interface IEditableCollectionParams<T, TBaseId extends string = string> {
+    readonly collectionId: SourceId;
+    readonly initialItems: ReadonlyMap<TBaseId, T>;
+    readonly isMutable: boolean;
+    readonly keyConverter: Converter<TBaseId, unknown>;
+    readonly metadata: ICollectionSourceMetadata;
+    readonly valueConverter: Converter<T, unknown>;
+}
+
+// @public
 interface IEditingSessionParams {
     readonly enableJournal?: boolean;
     readonly logger?: Logging.LogReporter<unknown>;
@@ -1826,6 +1979,45 @@ interface IEditingSessionValidator extends IReadOnlyEditingSessionValidator {
     setTargetWeight(weight: number): Result<void>;
     substituteIngredient(originalId: string, substituteId: string, amount?: number): Result<void>;
     toReadOnly(): IReadOnlyEditingSessionValidator;
+}
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+interface IEditorContext<T, TBaseId extends string = string, TId extends string = string> {
+    readonly clearUnsavedChanges: () => void;
+    readonly copyTo: (id: TId, targetCollectionId: string) => Result<TId>;
+    readonly create: (baseId: TBaseId | undefined, entity: T) => Result<TId>;
+    readonly delete: (id: TId) => Result<T>;
+    readonly exists: (id: TId) => boolean;
+    readonly get: (id: TId) => Result<T>;
+    readonly getAll: () => ReadonlyArray<[TId, T]>;
+    readonly hasUnsavedChanges: () => boolean;
+    readonly update: (id: TId, entity: T) => Result<T>;
+    readonly validate: (entity: T) => Result<IValidationReport>;
+}
+
+// @public
+interface IEditorContextParams<T, TBaseId extends string = string, TId extends string = string> {
+    readonly collection: EditableCollection<T, TBaseId, TId>;
+    readonly createId: (collectionId: string, baseId: TBaseId) => TId;
+    readonly getBaseId: (entity: T) => TBaseId | undefined;
+    readonly getName: (entity: T) => string;
+    readonly semanticValidator?: (entity: T) => Result<T>;
+}
+
+// @public
+interface IEditorContextValidator<T, TBaseId extends string = string, TId extends string = string> {
+    readonly create: (baseId: string, rawEntity: unknown) => Result<TId>;
+    readonly update: (id: TId, rawEntity: unknown) => Result<T>;
+    readonly validate: (rawEntity: unknown) => Result<IValidationReport>;
+}
+
+// @public
+interface IEditorContextValidatorParams<T, TBaseId extends string = string, TId extends string = string> {
+    readonly context: EditorContext<T, TBaseId, TId>;
+    readonly entityConverter: Converter<T>;
+    readonly keyConverter: Converter<TBaseId>;
 }
 
 // @public
@@ -1879,9 +2071,22 @@ interface IEntityResolver<TEntity, TId> {
 }
 
 // @public
+interface IExportOptions {
+    readonly format: 'yaml' | 'json';
+    readonly prettyPrint?: boolean;
+}
+
+// @public
 interface IFatIngredient extends IIngredient {
     readonly category: 'fat';
     readonly meltingPoint?: Celsius;
+}
+
+// @public
+interface IFieldValidator<T, K extends keyof T> {
+    readonly errorMessage: string;
+    readonly fieldName: K;
+    readonly validate: (value: T[K] | undefined, context?: Partial<T>) => Result<T[K]>;
 }
 
 // @public
@@ -2088,6 +2293,12 @@ export interface IHasId<TId extends string> {
 export interface IIdsWithPreferred<TId extends string> {
     readonly ids: ReadonlyArray<TId>;
     readonly preferredId?: TId;
+}
+
+// @public
+interface IImportOptions {
+    readonly newCollectionId?: SourceId;
+    readonly onCollisionMode: 'replace' | 'create-new' | 'fail';
 }
 
 // @public
@@ -2402,6 +2613,13 @@ const ingredientCollections: Record<string, JsonObject>;
 type IngredientCollectionValidator = SubLibraryCollectionValidator<IngredientId, Ingredient>;
 
 // @public
+class IngredientEditorContext extends ValidatingEditorContext<Ingredient, BaseIngredientId, IngredientId> {
+    static createFromCollection(collection: EditableCollection<Ingredient, BaseIngredientId, IngredientId>): Result<IngredientEditorContext>;
+    getIngredientCategory(ingredient: Ingredient): string;
+    getIngredientName(ingredient: Ingredient): string;
+}
+
+// @public
 const ingredientFillingOption: Converter<IIngredientFillingOption>;
 
 // @public
@@ -2525,6 +2743,13 @@ declare namespace Ingredients_2 {
         IIngredientsLibraryParams,
         IIngredientsLibraryAsyncParams,
         IngredientsLibrary
+    }
+}
+
+declare namespace Ingredients_3 {
+    export {
+        Validators,
+        IngredientEditorContext
     }
 }
 
@@ -3415,6 +3640,9 @@ interface ISugarIngredient extends IIngredient {
 }
 
 // @public
+function isValidationSuccess(report: IValidationReport): boolean;
+
+// @public
 function isValidBaseConfectionId(from: unknown): from is BaseConfectionId;
 
 // @public
@@ -3579,8 +3807,26 @@ interface IValidatedProcedureStep extends IProcedureStep {
 }
 
 // @public
+interface IValidatingEditorContext<T, TBaseId extends string = string, TId extends string = string> extends IEditorContext<T, TBaseId, TId> {
+    readonly validating: IEditorContextValidator<T, TBaseId, TId>;
+}
+
+// @public
+interface IValidatingEditorContextParams<T, TBaseId extends string = string, TId extends string = string> extends IEditorContextParams<T, TBaseId, TId> {
+    readonly entityConverter: Converter<T>;
+    readonly keyConverter: Converter<TBaseId>;
+}
+
+// @public
 interface IValidatingLibraryParams<TK extends string, TV, TSpec, TOrchEntity = TV> extends Collections.IValidatingResultMapConstructorParams<TK, TV> {
     orchestrator: IFindOrchestrator<TOrchEntity, TSpec>;
+}
+
+// @public
+interface IValidationReport {
+    readonly fieldErrors: ReadonlyMap<string, string>;
+    readonly generalErrors: ReadonlyArray<string>;
+    readonly isValid: boolean;
 }
 
 // @internal
@@ -3914,6 +4160,9 @@ type MutabilitySpec = boolean | ReadonlyArray<string> | {
 const namedSecret: Converter<INamedSecret>;
 
 // @public
+function nameToBaseId(name: string): Result<string>;
+
+// @public
 function navigateToDirectory(tree: FileTree.FileTreeItem, path: string): Result<FileTree.IFileTreeDirectoryItem>;
 
 // @public
@@ -3949,6 +4198,12 @@ function optionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(o
 
 // @public
 function orFilters<T>(...filters: FilterPredicate<T>[]): FilterPredicate<T>;
+
+// @public
+function parseCollection<T>(content: string): Result<ICollectionSourceFile<T>>;
+
+// @public
+function parseCollectionWithFormat<T>(content: string, format: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
 
 // @public
 type ParsedConfectionId = Converters_5.ICompositeId<SourceId, BaseConfectionId>;
@@ -4006,6 +4261,12 @@ function parseFillingVersionId(id: FillingVersionId): Result<ParsedFillingVersio
 
 // @public
 function parseIngredientId(id: IngredientId): Result<ParsedIngredientId>;
+
+// @public
+function parseJson<T>(content: string): Result<ICollectionSourceFile<T>>;
+
+// @public
+function parseYaml<T>(content: string): Result<ICollectionSourceFile<T>>;
 
 // @public
 export type Percentage = Brand<number, 'Percentage'>;
@@ -4966,6 +5227,15 @@ type SecretProvider = (secretName: string) => Promise<Result<Uint8Array>>;
 // @public
 type SecretProvider_2 = (secretName: string) => Promise<Result<Uint8Array>>;
 
+// @public
+function serializeCollection<T>(collection: ICollectionSourceFile<T>, format: 'yaml' | 'json', options?: IExportOptions): Result<string>;
+
+// @public
+function serializeToJson<T>(collection: ICollectionSourceFile<T>, options?: IExportOptions): Result<string>;
+
+// @public
+function serializeToYaml<T>(collection: ICollectionSourceFile<T>, options?: IExportOptions): Result<string>;
+
 declare namespace Session {
     export {
         RecipeEditingSession,
@@ -5235,6 +5505,9 @@ function toIngredientId(from: unknown): Result<IngredientId>;
 function toJournalId(from: unknown): Result<JournalId>;
 
 // @public
+function toKebabCase(input: string): string;
+
+// @public
 function toMeasurement(from: unknown): Result<Measurement>;
 
 // @public
@@ -5291,13 +5564,72 @@ export type UrlCategory = Brand<string, 'UrlCategory'>;
 const urlCategory: Converter<UrlCategory>;
 
 // @public
+function validateAlcoholFields(entity: Ingredient): Result<true>;
+
+// @public
+function validateAndParseCollection<T>(content: string, format?: 'yaml' | 'json'): Result<ICollectionSourceFile<T>>;
+
+// @public
+function validateChocolateFields(entity: Ingredient): Result<true>;
+
+// @public
+function validateCollectionStructure(data: unknown): Result<true>;
+
+// @public
+function validateDairyFields(entity: Ingredient): Result<true>;
+
+// @public
+function validateEntity<T>(entity: Partial<T>, validators: FieldValidators<T>, field?: keyof T): Result<ValidationReport>;
+
+// @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;
+
+// @public
+function validateGanacheCharacteristics(entity: Ingredient): Result<true>;
 
 // @public
 function validateIdsWithPreferred<TId extends string>(collection: IIdsWithPreferred<TId>, context?: string): Result<IIdsWithPreferred<TId>>;
 
 // @public
+function validateIngredientEntity(entity: Ingredient): Result<Ingredient>;
+
+// @public
+function validateKebabCase(input: string): Result<string>;
+
+// @public
+function validateNonEmptyString<T extends string = string>(value: T, fieldName: string): Result<T>;
+
+// @public
+function validateNumberRange(value: unknown, fieldName: string, min: number, max: number): Result<number>;
+
+// @public
 function validateOptionsWithPreferred<TOption extends IHasId<TId>, TId extends string>(collection: IOptionsWithPreferred<TOption, TId>, context?: string): Result<IOptionsWithPreferred<TOption, TId>>;
+
+// @public
+function validatePercentage(value: unknown, fieldName: string): Result<Percentage>;
+
+// @public
+function validatePositiveNumber(value: unknown, fieldName: string): Result<number>;
+
+// @public
+function validateStringLength<T extends string = string>(value: T, fieldName: string, options: {
+    minLength?: number;
+    maxLength?: number;
+}): Result<T>;
+
+// @public
+function validateTemperatureCurve(entity: Ingredient): Result<true>;
+
+// @public
+function validateUniqueBaseId<T extends string = string>(baseId: T, existingIds: ReadonlySet<T> | ReadonlyArray<T>, fieldName?: string): Result<T>;
+
+// @public
+class ValidatingEditorContext<T, TBaseId extends string = string, TId extends string = string> extends EditorContext<T, TBaseId, TId> implements IValidatingEditorContext<T, TBaseId, TId> {
+    protected constructor(params: IValidatingEditorContextParams<T, TBaseId, TId>);
+    protected get collection(): EditableCollection<T, TBaseId, TId>;
+    static createValidating<T, TBaseId extends string = string, TId extends string = string>(params: IValidatingEditorContextParams<T, TBaseId, TId>): Result<ValidatingEditorContext<T, TBaseId, TId>>;
+    get validating(): IEditorContextValidator<T, TBaseId, TId>;
+}
 
 // @public
 class ValidatingLibrary<TK extends string, TV, TSpec, TOrchEntity = TV> extends ValidatingResultMap<TK, TV> implements IReadOnlyValidatingLibrary<TK, TV, TSpec> {
@@ -5379,6 +5711,39 @@ type ValidationBehavior = 'ignore' | 'warn' | 'fail';
 
 // @public
 const validationBehavior: Converter<ValidationBehavior>;
+
+// @public
+class ValidationReport implements IValidationReport {
+    constructor(fieldErrors: ReadonlyMap<string, string>, generalErrors: ReadonlyArray<string>);
+    readonly fieldErrors: ReadonlyMap<string, string>;
+    readonly generalErrors: ReadonlyArray<string>;
+    get isValid(): boolean;
+    static success(): ValidationReport;
+    static withErrors(fieldErrors: Map<string, string>, generalErrors: string[]): ValidationReport;
+    static withFieldErrors(errors: Map<string, string>): ValidationReport;
+    static withGeneralErrors(errors: string[]): ValidationReport;
+}
+
+// @public
+class ValidationReportBuilder {
+    addFieldError(fieldPath: string, errorMessage: string): this;
+    addGeneralError(errorMessage: string): this;
+    addValidationResult(fieldPath: string, result: Result<unknown>): this;
+    build(): ValidationReport;
+    buildResult(): Result<ValidationReport>;
+    hasErrors(): boolean;
+}
+
+declare namespace Validators {
+    export {
+        validateGanacheCharacteristics,
+        validateTemperatureCurve,
+        validateChocolateFields,
+        validateDairyFields,
+        validateAlcoholFields,
+        validateIngredientEntity
+    }
+}
 
 // @public
 export const VERSION_ID_SEPARATOR: string;

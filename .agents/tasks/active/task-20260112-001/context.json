@@ -1,0 +1,19 @@
+{
+  "task": {
+    "id": "task-20260112-001",
+    "description": "Implement complete CRUD operations for ingredients view in chocolate-lab-web application",
+    "type": "feature",
+    "priority": "high",
+    "complexity": "moderate",
+    "created": "2026-01-12T00:00:00Z"
+  },
+  "state": {
+    "currentPhase": "requirements_confirmation",
+    "completedPhases": [],
+    "iterations": 0,
+    "blockers": [],
+    "decisions": []
+  },
+  "artifacts": {},
+  "feedback": {}
+}

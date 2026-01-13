@@ -47,7 +47,8 @@
     "@fgv/ts-utils": "workspace:*",
     "@fgv/ts-json": "workspace:*",
     "@fgv/ts-json-base": "workspace:*",
-    "@fgv/ts-extras": "workspace:*"
+    "@fgv/ts-extras": "workspace:*",
+    "js-yaml": "~4.1.1"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",
@@ -71,7 +72,8 @@
     "@types/heft-jest": "1.0.6",
     "@rushstack/heft-jest-plugin": "1.1.7",
     "eslint-plugin-tsdoc": "~0.4.0",
-    "yaml": "~2.8.2"
+    "yaml": "~2.8.2",
+    "@types/js-yaml": "~4.0.9"
   },
   "repository": {
     "type": "git",

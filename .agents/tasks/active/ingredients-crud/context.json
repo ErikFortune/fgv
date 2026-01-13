@@ -1,0 +1,46 @@
+{
+  "task": {
+    "id": "ingredients-crud",
+    "description": "Implement complete CRUD operations for ingredients with generic extensible editing framework",
+    "type": "feature",
+    "priority": "high",
+    "complexity": "complex"
+  },
+  "status": {
+    "currentPhase": "implementation",
+    "completedPhases": ["requirements", "exit_criteria", "design", "plan_review"],
+    "startTime": "2026-01-12T22:00:00Z",
+    "lastUpdate": "2026-01-12T23:00:00Z"
+  },
+  "artifacts": {
+    "requirements": ".agents/tasks/active/ingredients-crud/requirements.md",
+    "exitCriteria": ".agents/tasks/active/ingredients-crud/exit-criteria.md",
+    "design": ".agents/tasks/active/ingredients-crud/technical-design.md"
+  },
+  "approvals": {
+    "requirements": {
+      "status": "approved",
+      "date": "2026-01-12T22:22:00Z"
+    },
+    "design": {
+      "status": "approved",
+      "date": "2026-01-12T23:00:00Z",
+      "feedback": [
+        "Overall design approved",
+        "Component locations defined: FormField/ValidationMessage/ExportDialog/ImportDialog → ts-chocolate-ui",
+        "EntityEditor/CollectionManager/UnsavedChangesPrompt → chocolate-lab-web",
+        "CollectionManager may be promoted to reusable if generic enough",
+        "CRITICAL: Use FileTree from ts-web-extras for import functionality",
+        "Proceed to Phase 1: Core editing framework in ts-chocolate library"
+      ]
+    }
+  },
+  "technicalGuidance": {
+    "fileTreeUsage": "Use FileTree from ts-web-extras for reading imported files",
+    "componentLocations": {
+      "reusable": ["FormField", "ValidationMessage", "ExportDialog", "ImportDialog"],
+      "appSpecific": ["EntityEditor", "CollectionManager", "UnsavedChangesPrompt"],
+      "considerations": "CollectionManager may become reusable during implementation"
+    }
+  }
+}

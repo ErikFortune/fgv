@@ -201,6 +201,15 @@ Description
 </td></tr>
 <tr><td>
 
+[Editing](./ts-chocolate.editing.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
 [Entities](./ts-chocolate.entities.md)
 
 
