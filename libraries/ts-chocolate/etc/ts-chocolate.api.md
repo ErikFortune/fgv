@@ -964,16 +964,12 @@ declare namespace Editing {
         IEditorContextValidator,
         IValidatingEditorContext,
         IValidationReport,
-        IFieldValidator,
-        FieldValidators,
         IEditableCollection,
         IExportOptions,
         IImportOptions,
-        validateEntity,
         isValidationSuccess,
         ValidationReport,
         ValidationReportBuilder,
-        FieldValidator,
         IEditableCollectionParams,
         EditableCollection,
         serializeToYaml,
@@ -1250,32 +1246,6 @@ function equals<T, V>(expected: V, getter: (item: T) => V | undefined): FilterPr
 
 // @public
 const fatIngredient: Converter<IFatIngredient>;
-
-// @public
-class FieldValidator<T, K extends keyof T> implements IFieldValidator<T, K> {
-    constructor(fieldName: K, errorMessage: string, validatorFn: (value: T[K] | undefined, context?: Partial<T>) => Result<T[K]>);
-    readonly errorMessage: string;
-    readonly fieldName: K;
-    static number<T, K extends keyof T>(fieldName: K, options?: {
-        min?: number;
-        max?: number;
-        positive?: boolean;
-    }): FieldValidator<T, K>;
-    static percentage<T, K extends keyof T>(fieldName: K): FieldValidator<T, K>;
-    static required<T, K extends keyof T>(fieldName: K): FieldValidator<T, K>;
-    static string<T, K extends keyof T>(fieldName: K, options?: {
-        maxLength?: number;
-        minLength?: number;
-    }): FieldValidator<T, K>;
-    validate(value: T[K] | undefined, context?: Partial<T>): Result<T[K]>;
-}
-
-// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
-//
-// @public
-type FieldValidators<T> = {
-    [key in keyof T]: IFieldValidator<T, key>;
-};
 
 // @public
 export const FILLING_VERSION_ID_PATTERN: RegExp;
@@ -2080,13 +2050,6 @@ interface IExportOptions {
 interface IFatIngredient extends IIngredient {
     readonly category: 'fat';
     readonly meltingPoint?: Celsius;
-}
-
-// @public
-interface IFieldValidator<T, K extends keyof T> {
-    readonly errorMessage: string;
-    readonly fieldName: K;
-    readonly validate: (value: T[K] | undefined, context?: Partial<T>) => Result<T[K]>;
 }
 
 // @public
@@ -5577,9 +5540,6 @@ function validateCollectionStructure(data: unknown): Result<true>;
 
 // @public
 function validateDairyFields(entity: Ingredient): Result<true>;
-
-// @public
-function validateEntity<T>(entity: Partial<T>, validators: FieldValidators<T>, field?: keyof T): Result<ValidationReport>;
 
 // @public
 function validateGanache(analysis: IGanacheAnalysis): IGanacheValidation;

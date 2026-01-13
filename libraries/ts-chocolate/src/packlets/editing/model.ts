@@ -191,40 +191,6 @@ export interface IValidationReport {
   readonly generalErrors: ReadonlyArray<string>;
 }
 
-/**
- * Generic validator for entity fields.
- * Encapsulates validation logic for a specific field.
- *
- * @typeParam T - Entity type
- * @public
- */
-export interface IFieldValidator<T, K extends keyof T> {
-  /**
-   * Field name this validator applies to.
-   */
-  readonly fieldName: K;
-
-  /**
-   * Validate field value.
-   * @param value - Field value to validate
-   * @param context - Optional partial entity for cross-field validation
-   * @returns Result of true if valid, or failure with error message
-   */
-  readonly validate: (value: T[K] | undefined, context?: Partial<T>) => Result<T[K]>;
-
-  /**
-   * Error message template for validation failures.
-   * Can include placeholders for dynamic values.
-   */
-  readonly errorMessage: string;
-}
-
-/**
- * Map of {@link Editing.IFieldValidator | field validators} for an entity type.
- * @public
- */
-export type FieldValidators<T> = { [key in keyof T]: IFieldValidator<T, key> };
-
 // ============================================================================
 // Editable Collection Interface
 // ============================================================================
