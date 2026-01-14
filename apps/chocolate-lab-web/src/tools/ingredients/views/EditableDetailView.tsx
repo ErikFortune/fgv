@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { ArrowLeftIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useIngredientEditor, useEditing } from '../../../contexts/EditingContext';
 import { LoadingSpinner } from '../../../components/common';
@@ -48,11 +48,18 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
   const { isCollectionMutable, commitCollection } = useEditing();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const sourceId = getIngredientSourceId(ingredientId);
 
-  // Get editor for the collection (only when editing)
-  const { editor, error: editorError, markDirty } = useIngredientEditor(isEditing ? sourceId : null);
+  // Get editor for the collection (only when editing or deleting)
+  const {
+    editor,
+    error: editorError,
+    markDirty
+  } = useIngredientEditor(isEditing || showDeleteConfirm ? sourceId : null);
 
   // Check if collection is editable
   const canEdit = useMemo(() => {
@@ -110,6 +117,41 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false);
   }, []);
+
+  const handleDelete = useCallback(() => {
+    if (!editor) {
+      setDeleteError('Editor not available');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const deleteResult = editor.delete(ingredientId);
+      if (deleteResult.isFailure()) {
+        setIsDeleting(false);
+        setDeleteError(deleteResult.message);
+        return;
+      }
+
+      markDirty();
+
+      const commitResult = commitCollection(sourceId);
+      if (commitResult.isFailure()) {
+        setIsDeleting(false);
+        setDeleteError(commitResult.message);
+        return;
+      }
+
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+      onBack();
+    } catch (e) {
+      setIsDeleting(false);
+      setDeleteError(`Delete failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }, [commitCollection, editor, ingredientId, markDirty, onBack, sourceId]);
 
   // Loading state
   if (loadingState === 'loading' || !runtime) {
@@ -221,6 +263,20 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
                 Edit
               </button>
             )}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteError(null);
+                  setShowDeleteConfirm(true);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 focus:outline-none focus:ring-2 focus:ring-red-500"
+                title="Delete ingredient"
+              >
+                <TrashIcon className="w-4 h-4" />
+                Delete
+              </button>
+            )}
           </div>
         </div>
 
@@ -245,6 +301,50 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
           </div>
         )}
       </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">Delete ingredient</h3>
+
+            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+              Delete <span className="font-semibold">{runtimeIngredient.name}</span> from collection{' '}
+              <span className="font-semibold">{sourceId}</span>?
+            </p>
+
+            {editorError && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                <p className="text-sm text-red-600 dark:text-red-400">Failed to load editor: {editorError}</p>
+              </div>
+            )}
+
+            {deleteError && (
+              <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{deleteError}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting || !!editorError}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50"
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Ganache Characteristics */}
       {runtimeIngredient.ganacheCharacteristics && (

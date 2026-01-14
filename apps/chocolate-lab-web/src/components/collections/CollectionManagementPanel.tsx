@@ -734,6 +734,43 @@ function ganacheToApi(fields: GanacheFields): {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function toNumberString(value: unknown): string {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? value : '';
+  }
+  return '';
+}
+
+function ganacheFromApi(value: unknown): GanacheFields | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const cacaoFat = toNumberString(value.cacaoFat);
+  const sugar = toNumberString(value.sugar);
+  const milkFat = toNumberString(value.milkFat);
+  const water = toNumberString(value.water);
+  const solids = toNumberString(value.solids);
+  const otherFats = toNumberString(value.otherFats);
+
+  return {
+    cacaoFat,
+    sugar,
+    milkFat,
+    water,
+    solids,
+    otherFats
+  };
+}
+
 /**
  * Calculate total of ganache fields (for display)
  */
@@ -816,6 +853,12 @@ export function AddIngredientDialog({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showCommonAdvanced, setShowCommonAdvanced] = useState(false);
 
+  const [agentJsonError, setAgentJsonError] = useState<string | null>(null);
+  const [agentJsonInfo, setAgentJsonInfo] = useState<string | null>(null);
+
+  const [showCopyInstructionsDialog, setShowCopyInstructionsDialog] = useState(false);
+  const [copyInstructionsQuery, setCopyInstructionsQuery] = useState('');
+
   // Update ganache defaults when category changes
   const handleCategoryChange = (newCategory: IngredientCategory): void => {
     setCategory(newCategory);
@@ -847,6 +890,211 @@ export function AddIngredientDialog({
     const deriveResult = Editing.Helpers.generateUniqueBaseIdFromName(name, existingBaseIds);
     return deriveResult.isSuccess() ? deriveResult.value : '';
   }, [existingBaseIds, name]);
+
+  const applyIngredientJson = useCallback(
+    (json: unknown): void => {
+      setAgentJsonError(null);
+      setAgentJsonInfo(null);
+
+      const obj = isRecord(json) && isRecord(json.ingredient) ? json.ingredient : json;
+      if (!isRecord(obj)) {
+        setAgentJsonError('Expected a JSON object.');
+        return;
+      }
+
+      const requestedCollectionId = obj.collectionId;
+      if (
+        typeof requestedCollectionId === 'string' &&
+        mutableCollectionIds.includes(requestedCollectionId as SourceId)
+      ) {
+        setTargetCollectionId(requestedCollectionId as SourceId);
+      }
+
+      const nextCategoryRaw = obj.category;
+      const nextCategory: IngredientCategory | null =
+        typeof nextCategoryRaw === 'string' &&
+        (allIngredientCategories as ReadonlyArray<string>).includes(nextCategoryRaw)
+          ? (nextCategoryRaw as IngredientCategory)
+          : null;
+
+      if (nextCategory) {
+        setCategory(nextCategory);
+        setGanache(getDefaultGanacheCharacteristics(nextCategory));
+      }
+
+      if (typeof obj.name === 'string') {
+        setName(obj.name);
+      }
+      if (typeof obj.description === 'string') {
+        setDescription(obj.description);
+      }
+      if (typeof obj.manufacturer === 'string') {
+        setManufacturer(obj.manufacturer);
+      }
+      if (typeof obj.density === 'number' && Number.isFinite(obj.density)) {
+        setDensity(String(obj.density));
+      }
+
+      const baseIdRaw = obj.baseId;
+      if (typeof baseIdRaw === 'string' && baseIdRaw.trim().length > 0) {
+        setIngredientId(baseIdRaw.trim().toLowerCase());
+        setIsIdManuallyEdited(true);
+      } else {
+        setIsIdManuallyEdited(false);
+      }
+
+      if (typeof obj.vegan === 'boolean') {
+        setVegan(obj.vegan);
+      }
+
+      const tagsRaw = obj.tags;
+      if (Array.isArray(tagsRaw) && tagsRaw.every((t) => typeof t === 'string')) {
+        setTags(tagsRaw.join(', '));
+      } else if (typeof tagsRaw === 'string') {
+        setTags(tagsRaw);
+      }
+
+      const ganacheRaw = obj.ganacheCharacteristics;
+      const ganacheFromJson = ganacheFromApi(ganacheRaw);
+      if (ganacheFromJson) {
+        setGanache(ganacheFromJson);
+      }
+
+      const certsRaw = obj.certifications;
+      if (Array.isArray(certsRaw)) {
+        const normalized = certsRaw.filter((c) => typeof c === 'string') as string[];
+        const allowed = new Set(allCertifications as ReadonlyArray<string>);
+        const filtered = normalized.filter((c) => allowed.has(c)) as Certification[];
+        setCertifications(filtered);
+      }
+
+      const allergensRaw = obj.allergens;
+      if (Array.isArray(allergensRaw)) {
+        const normalized = allergensRaw.filter((a) => typeof a === 'string') as string[];
+        const allowed = new Set(allAllergens as ReadonlyArray<string>);
+        const filtered = normalized.filter((a) => allowed.has(a)) as Allergen[];
+        setAllergens(filtered);
+      }
+
+      const traceAllergensRaw = obj.traceAllergens;
+      if (Array.isArray(traceAllergensRaw)) {
+        const normalized = traceAllergensRaw.filter((a) => typeof a === 'string') as string[];
+        const allowed = new Set(allAllergens as ReadonlyArray<string>);
+        const filtered = normalized.filter((a) => allowed.has(a)) as Allergen[];
+        setTraceAllergens(filtered);
+      }
+
+      const urlsRaw = obj.urls;
+      if (Array.isArray(urlsRaw)) {
+        const normalized = urlsRaw
+          .map((u) => {
+            if (!isRecord(u)) {
+              return null;
+            }
+            const category = typeof u.category === 'string' ? u.category : '';
+            const url = typeof u.url === 'string' ? u.url : '';
+            return { category, url };
+          })
+          .filter((u): u is { category: string; url: string } => u !== null);
+        setUrls(normalized);
+      }
+
+      if (typeof obj.alcoholByVolume === 'number' && Number.isFinite(obj.alcoholByVolume)) {
+        setAlcoholByVolume(String(obj.alcoholByVolume));
+      }
+      if (typeof obj.flavorProfile === 'string') {
+        setFlavorProfile(obj.flavorProfile);
+      }
+      if (typeof obj.fatContent === 'number' && Number.isFinite(obj.fatContent)) {
+        setFatContent(String(obj.fatContent));
+      }
+      if (typeof obj.waterContent === 'number' && Number.isFinite(obj.waterContent)) {
+        setWaterContent(String(obj.waterContent));
+      }
+      if (typeof obj.meltingPoint === 'number' && Number.isFinite(obj.meltingPoint)) {
+        setMeltingPoint(String(obj.meltingPoint));
+      }
+      if (typeof obj.hydrationNumber === 'number' && Number.isFinite(obj.hydrationNumber)) {
+        setHydrationNumber(String(obj.hydrationNumber));
+      }
+      if (typeof obj.sweetnessPotency === 'number' && Number.isFinite(obj.sweetnessPotency)) {
+        setSweetnessPotency(String(obj.sweetnessPotency));
+      }
+
+      setAgentJsonInfo('Applied ingredient JSON to the form.');
+    },
+    [mutableCollectionIds]
+  );
+
+  const applyIngredientJsonText = useCallback(
+    (text: string): void => {
+      const trimmed = text.trim();
+      if (trimmed.length === 0) {
+        setAgentJsonError('No JSON provided.');
+        setAgentJsonInfo(null);
+        return;
+      }
+      try {
+        const parsed: unknown = JSON.parse(trimmed);
+        applyIngredientJson(parsed);
+      } catch (e) {
+        setAgentJsonError(`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`);
+        setAgentJsonInfo(null);
+      }
+    },
+    [applyIngredientJson]
+  );
+
+  const copyAgentInstructions = useCallback(async (searchTerm: string): Promise<void> => {
+    setAgentJsonError(null);
+    setAgentJsonInfo(null);
+
+    const template = {
+      name: 'Example Ingredient',
+      category: 'other',
+      description: 'Optional',
+      manufacturer: 'Optional',
+      density: 1.0,
+      tags: ['optional', 'comma-or-array'],
+      vegan: false,
+      certifications: ['optional'],
+      allergens: ['optional'],
+      traceAllergens: ['optional'],
+      urls: [{ category: 'datasheet', url: 'https://example.com' }],
+      ganacheCharacteristics: {
+        cacaoFat: 0,
+        sugar: 0,
+        milkFat: 0,
+        water: 0,
+        solids: 0,
+        otherFats: 0
+      },
+      alcoholByVolume: 0,
+      flavorProfile: 'Optional',
+      fatContent: 0,
+      waterContent: 0,
+      meltingPoint: 0,
+      hydrationNumber: 0,
+      sweetnessPotency: 0
+    };
+
+    const instructions =
+      `Ingredient to search for: ${searchTerm.length > 0 ? `"${searchTerm}"` : '(not specified)'}\n` +
+      `Return a single JSON object for one ingredient.\n` +
+      `Required: name, category, ganacheCharacteristics (all fields).\n` +
+      `Optional: baseId (kebab-case), description, manufacturer, density, tags, vegan, certifications, allergens, traceAllergens, urls, and category-specific fields.\n` +
+      `Allowed categories: ${allIngredientCategories.join(', ')}\n` +
+      `Allowed certifications: ${allCertifications.join(', ')}\n` +
+      `Allowed allergens: ${allAllergens.join(', ')}\n\n` +
+      JSON.stringify(template, null, 2);
+
+    try {
+      await navigator.clipboard.writeText(instructions);
+      setAgentJsonInfo('Copied JSON instructions to clipboard.');
+    } catch (e) {
+      setAgentJsonError(`Failed to copy to clipboard: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }, []);
 
   useEffect(() => {
     if (isIdManuallyEdited) {
@@ -1036,9 +1284,110 @@ export function AddIngredientDialog({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Add Ingredient</h3>
 
+        <div className="mb-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Agent-assisted entry</div>
+            <button
+              type="button"
+              onClick={() => {
+                setCopyInstructionsQuery(name.trim());
+                setShowCopyInstructionsDialog(true);
+              }}
+              disabled={isSaving}
+              className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+            >
+              Copy instructions
+            </button>
+          </div>
+
+          <textarea
+            rows={4}
+            placeholder="Paste ingredient JSON here (or drop a .json file / JSON text)"
+            disabled={isSaving}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData('text');
+              if (text.trim().length > 0) {
+                e.preventDefault();
+                applyIngredientJsonText(text);
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const text = e.dataTransfer.getData('text/plain');
+              if (text.trim().length > 0) {
+                applyIngredientJsonText(text);
+                return;
+              }
+              const file = e.dataTransfer.files?.[0];
+              if (file) {
+                void file.text().then((t) => applyIngredientJsonText(t));
+              }
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            className="w-full px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+          />
+
+          {agentJsonError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+              <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{agentJsonError}</p>
+            </div>
+          )}
+
+          {agentJsonInfo && (
+            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+              <p className="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap">
+                {agentJsonInfo}
+              </p>
+            </div>
+          )}
+        </div>
+
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
             <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{saveError}</p>
+          </div>
+        )}
+
+        {showCopyInstructionsDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+              <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                Copy agent instructions
+              </h4>
+
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Ingredient name / search term
+              </label>
+              <input
+                type="text"
+                value={copyInstructionsQuery}
+                onChange={(e) => setCopyInstructionsQuery(e.target.value)}
+                placeholder="e.g. Valrhona Guanaja 70%"
+                disabled={isSaving}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+              />
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCopyInstructionsDialog(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCopyInstructionsDialog(false);
+                    void copyAgentInstructions(copyInstructionsQuery.trim());
+                  }}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
