@@ -32,7 +32,9 @@
     "react-dom": "~19.2.3",
     "@heroicons/react": "~2.2.0",
     "@rushstack/heft-web-rig": "1.2.0",
-    "@rushstack/heft": "1.1.7"
+    "@rushstack/heft": "1.1.7",
+    "@fgv/ts-json-base": "workspace:*",
+    "@fgv/ts-web-extras": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "~19.2.8",

@@ -17,6 +17,28 @@ import type { Result } from '@fgv/ts-utils';
 import { fail, recordFromEntries, succeed } from '@fgv/ts-utils';
 import { useChocolate } from './ChocolateContext';
 
+const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
+
+function readLocalIngredientCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_INGREDIENT_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalIngredientCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_INGREDIENT_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
 // Type alias for Ingredient from Entities
 type Ingredient = Entities.Ingredients.Ingredient;
 
@@ -87,12 +109,17 @@ export interface IEditingContext {
   // Dirty state tracking
   /** Check if any editor has unsaved changes */
   hasUnsavedChanges: boolean;
-  /** Get collections with unsaved changes */
+  /** List of dirty collection IDs */
   dirtyCollections: ReadonlyArray<SourceId>;
   /** Mark a collection as dirty */
   markDirty: (collectionId: SourceId) => void;
-  /** Mark a collection as clean (after save/export) */
+  /** Mark a collection as clean */
   markClean: (collectionId: SourceId) => void;
+
+  /** Collections that have locally persisted overrides */
+  localCollections: ReadonlyArray<SourceId>;
+  /** Whether any local overrides exist */
+  hasLocalChanges: boolean;
 
   // Collection management
   /** Create a new mutable collection */
@@ -123,12 +150,14 @@ export interface IEditingContext {
 const defaultEditingContext: IEditingContext = {
   getIngredientEditor: () => fail('No EditingProvider'),
   hasEditor: () => false,
-  closeEditor: () => {},
+  closeEditor: () => undefined,
   activeEditors: [],
   hasUnsavedChanges: false,
   dirtyCollections: [],
-  markDirty: () => {},
-  markClean: () => {},
+  markDirty: () => undefined,
+  markClean: () => undefined,
+  localCollections: [],
+  hasLocalChanges: false,
   createCollection: () => fail('No EditingProvider'),
   deleteCollection: () => fail('No EditingProvider'),
   renameCollection: () => fail('No EditingProvider'),
@@ -165,6 +194,9 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
   const editorsRef = useRef<Map<SourceId, IEditorState>>(new Map());
   const [activeEditorIds, setActiveEditorIds] = useState<SourceId[]>([]);
   const [dirtyCollections, setDirtyCollections] = useState<SourceId[]>([]);
+  const [localCollections, setLocalCollections] = useState<SourceId[]>(() => {
+    return Object.keys(readLocalIngredientCollections()) as SourceId[];
+  });
   const [editingVersion, setEditingVersion] = useState(0);
 
   // Increment version to trigger re-renders
@@ -203,6 +235,30 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           );
         }
       }
+
+      // Persist to localStorage
+      try {
+        const items: Record<BaseIngredientId, Ingredient> = recordFromEntries(
+          collectionEntry.items.entries()
+        );
+        const sourceFile: LibraryData.ICollectionSourceFile<Ingredient> = {
+          metadata: collectionEntry.metadata ?? { name: collectionId },
+          items
+        };
+
+        const existing = readLocalIngredientCollections();
+        existing[collectionId] = sourceFile as unknown;
+        writeLocalIngredientCollections(existing);
+        setLocalCollections(Object.keys(existing) as SourceId[]);
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      // Auto-persist means there are no unsaved changes after commit
+      editorState.isDirty = false;
+      setDirtyCollections((prev) => prev.filter((id) => id !== collectionId));
 
       return notifyLibraryChanged();
     },
@@ -332,6 +388,20 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           : { name: params.name };
 
       return manager.create(params.collectionId, metadata).onSuccess(() => {
+        // Persist empty collection file immediately so it survives reload
+        try {
+          const existing = readLocalIngredientCollections();
+          const sourceFile: LibraryData.ICollectionSourceFile<Ingredient> = {
+            metadata,
+            items: {}
+          };
+          existing[params.collectionId] = sourceFile as unknown;
+          writeLocalIngredientCollections(existing);
+          setLocalCollections(Object.keys(existing) as SourceId[]);
+        } catch {
+          // ignore persistence errors here; collection still exists in runtime
+        }
+
         incrementVersion();
         return notifyLibraryChanged();
       });
@@ -356,6 +426,18 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       const result = manager.delete(collectionId);
 
       return result.onSuccess(() => {
+        // Remove local persisted override (if any)
+        try {
+          const existing = readLocalIngredientCollections();
+          if (collectionId in existing) {
+            delete existing[collectionId];
+            writeLocalIngredientCollections(existing);
+            setLocalCollections(Object.keys(existing) as SourceId[]);
+          }
+        } catch {
+          // ignore
+        }
+
         incrementVersion();
         return notifyLibraryChanged();
       });
@@ -378,6 +460,20 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
 
       return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
+        // If locally persisted, update stored metadata
+        try {
+          const existing = readLocalIngredientCollections();
+          const stored = existing[collectionId];
+          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
+            (stored as Record<string, unknown>).metadata = metadata;
+            existing[collectionId] = stored;
+            writeLocalIngredientCollections(existing);
+            setLocalCollections(Object.keys(existing) as SourceId[]);
+          }
+        } catch {
+          // ignore
+        }
+
         incrementVersion();
         return notifyLibraryChanged();
       });
@@ -476,6 +572,19 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         return fail(`Failed to create collection: ${createResult.message}`);
       }
 
+      // Persist imported content
+      try {
+        const existing = readLocalIngredientCollections();
+        existing[params.collectionId] = {
+          metadata: sourceFile.metadata,
+          items: sourceFile.items
+        } as unknown;
+        writeLocalIngredientCollections(existing);
+        setLocalCollections(Object.keys(existing) as SourceId[]);
+      } catch {
+        // ignore
+      }
+
       // Close any existing editor (it's now stale)
       closeEditor(params.collectionId);
       incrementVersion();
@@ -487,6 +596,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
   // Compute hasUnsavedChanges
   const hasUnsavedChanges = dirtyCollections.length > 0;
+  const hasLocalChanges = localCollections.length > 0;
 
   const value = useMemo(
     (): IEditingContext => ({
@@ -498,6 +608,8 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       dirtyCollections,
       markDirty,
       markClean,
+      localCollections,
+      hasLocalChanges,
       createCollection,
       deleteCollection,
       renameCollection,
@@ -516,6 +628,8 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       dirtyCollections,
       markDirty,
       markClean,
+      localCollections,
+      hasLocalChanges,
       createCollection,
       deleteCollection,
       renameCollection,

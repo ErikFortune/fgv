@@ -4,12 +4,14 @@
  */
 
 import * as React from 'react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { LoadingSpinner } from '../../../components/common';
 import { IngredientCard } from '@fgv/ts-chocolate-ui';
-import type { IngredientId } from '@fgv/ts-chocolate';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import type { IngredientId, SourceId } from '@fgv/ts-chocolate';
 import type { IIngredientFilters } from '../IngredientsToolSidebar';
+import { AddIngredientDialog } from '../../../components/collections/CollectionManagementPanel';
 
 /**
  * Props for the BrowseView component
@@ -28,6 +30,32 @@ export interface IBrowseViewProps {
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
   const { runtime, loadingState, ingredientCount, dataVersion } = useChocolate();
+
+  const [showAddIngredient, setShowAddIngredient] = useState(false);
+
+  const defaultCollectionId = useMemo((): SourceId | null => {
+    if (!runtime) {
+      return null;
+    }
+
+    const isMutable = (id: SourceId): boolean => {
+      const collectionResult = runtime.library.ingredients.collections.get(id);
+      return collectionResult.isSuccess() && !!collectionResult.value && collectionResult.value.isMutable;
+    };
+
+    // If exactly one collection is selected in the filter and it is mutable, use it.
+    if (filters.collections.length === 1) {
+      const filteredId = filters.collections[0] as SourceId;
+      if (isMutable(filteredId)) {
+        return filteredId;
+      }
+    }
+
+    // Otherwise pick the first mutable collection in the library.
+    const ids = Array.from(runtime.library.ingredients.collections.keys()) as SourceId[];
+    const firstMutable = ids.find((id) => isMutable(id));
+    return firstMutable ?? null;
+  }, [filters.collections, runtime]);
 
   // Filter and sort ingredients
   const filteredIngredients = useMemo(() => {
@@ -112,7 +140,21 @@ export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps):
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {filteredIngredients.length} of {ingredientCount} ingredients
         </p>
+
+        <button
+          type="button"
+          onClick={() => setShowAddIngredient(true)}
+          disabled={!defaultCollectionId}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Add Ingredient
+        </button>
       </div>
+
+      {showAddIngredient && defaultCollectionId && (
+        <AddIngredientDialog collectionId={defaultCollectionId} onClose={() => setShowAddIngredient(false)} />
+      )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredIngredients.map(([id, ingredient]) => {

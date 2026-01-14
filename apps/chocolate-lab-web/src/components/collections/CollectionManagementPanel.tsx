@@ -3,7 +3,7 @@
  * Copyright (c) 2025 Erik Fortune
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   PlusIcon,
   TrashIcon,
@@ -24,8 +24,13 @@ import {
 import {
   type SourceId,
   type IngredientCategory,
+  type Allergen,
+  type Certification,
+  allAllergens,
+  allCertifications,
   allIngredientCategories,
-  Converters as ChocolateConverters
+  Converters as ChocolateConverters,
+  Editing
 } from '@fgv/ts-chocolate';
 
 /**
@@ -740,23 +745,58 @@ function ganacheTotal(fields: GanacheFields): number {
 /**
  * Dialog for adding a new ingredient to a collection
  */
-function AddIngredientDialog({
+export function AddIngredientDialog({
   collectionId,
   onClose
 }: {
   collectionId: SourceId;
   onClose: () => void;
 }): React.ReactElement {
+  const { runtime } = useChocolate();
   const { markDirty, commitCollection } = useEditing();
-  const { editor, error: editorError } = useIngredientEditor(collectionId);
+
+  const [targetCollectionId, setTargetCollectionId] = useState<SourceId>(collectionId);
+  const { editor, error: editorError } = useIngredientEditor(targetCollectionId);
+
+  const mutableCollectionIds = useMemo((): ReadonlyArray<SourceId> => {
+    if (!runtime) {
+      return [];
+    }
+
+    const ids = Array.from(runtime.library.ingredients.collections.keys()) as SourceId[];
+    return ids.filter((id) => {
+      const result = runtime.library.ingredients.collections.get(id);
+      return result.isSuccess() && !!result.value && result.value.isMutable;
+    });
+  }, [runtime]);
+
+  useEffect(() => {
+    if (mutableCollectionIds.length === 0) {
+      return;
+    }
+
+    // Ensure we never point at an immutable collection (which would cause editor load failures)
+    if (!mutableCollectionIds.includes(targetCollectionId)) {
+      setTargetCollectionId(mutableCollectionIds[0]);
+    }
+  }, [mutableCollectionIds, targetCollectionId]);
 
   // Basic info
   const [ingredientId, setIngredientId] = useState('');
+  const [isIdManuallyEdited, setIsIdManuallyEdited] = useState(false);
   const [name, setName] = useState('');
   const [category, setCategory] = useState<IngredientCategory>('other');
   const [description, setDescription] = useState('');
   const [manufacturer, setManufacturer] = useState('');
   const [density, setDensity] = useState('');
+
+  const [tags, setTags] = useState('');
+  const [vegan, setVegan] = useState(false);
+  const [certifications, setCertifications] = useState<ReadonlyArray<Certification>>([]);
+  const [allergens, setAllergens] = useState<ReadonlyArray<Allergen>>([]);
+  const [traceAllergens, setTraceAllergens] = useState<ReadonlyArray<Allergen>>([]);
+
+  const [urls, setUrls] = useState<ReadonlyArray<{ category: string; url: string }>>([]);
 
   // Ganache characteristics (required for all ingredients)
   const [ganache, setGanache] = useState(() => getDefaultGanacheCharacteristics('other'));
@@ -774,6 +814,7 @@ function AddIngredientDialog({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showCommonAdvanced, setShowCommonAdvanced] = useState(false);
 
   // Update ganache defaults when category changes
   const handleCategoryChange = (newCategory: IngredientCategory): void => {
@@ -785,6 +826,35 @@ function AddIngredientDialog({
     const numValue = value === '' ? 0 : parseFloat(value);
     setGanache((prev) => ({ ...prev, [field]: isNaN(numValue) ? 0 : numValue }));
   };
+
+  const existingBaseIds = useMemo((): ReadonlyArray<string> => {
+    if (!runtime) {
+      return [];
+    }
+
+    const collectionResult = runtime.library.ingredients.collections.get(targetCollectionId);
+    if (!collectionResult.isSuccess() || !collectionResult.value) {
+      return [];
+    }
+
+    return Array.from(collectionResult.value.items.keys());
+  }, [runtime, targetCollectionId]);
+
+  const derivedBaseId = useMemo((): string => {
+    if (name.trim().length === 0) {
+      return '';
+    }
+    const deriveResult = Editing.Helpers.generateUniqueBaseIdFromName(name, existingBaseIds);
+    return deriveResult.isSuccess() ? deriveResult.value : '';
+  }, [existingBaseIds, name]);
+
+  useEffect(() => {
+    if (isIdManuallyEdited) {
+      return;
+    }
+
+    setIngredientId(derivedBaseId);
+  }, [derivedBaseId, isIdManuallyEdited]);
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
@@ -818,6 +888,37 @@ function AddIngredientDialog({
       density: density && parseFloat(density) >= 0.1 ? parseFloat(density) : undefined
     };
 
+    const normalizedTags = tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+    if (normalizedTags.length > 0) {
+      newIngredient.tags = normalizedTags;
+    }
+
+    if (vegan) {
+      newIngredient.vegan = true;
+    }
+
+    if (certifications.length > 0) {
+      newIngredient.certifications = certifications;
+    }
+
+    if (allergens.length > 0) {
+      newIngredient.allergens = allergens;
+    }
+
+    if (traceAllergens.length > 0) {
+      newIngredient.traceAllergens = traceAllergens;
+    }
+
+    const normalizedUrls = urls
+      .map((u) => ({ category: u.category.trim(), url: u.url.trim() }))
+      .filter((u) => u.category.length > 0 && u.url.length > 0);
+    if (normalizedUrls.length > 0) {
+      newIngredient.urls = normalizedUrls;
+    }
+
     // Add category-specific fields
     switch (category) {
       case 'alcohol':
@@ -846,9 +947,9 @@ function AddIngredientDialog({
       return;
     }
 
-    markDirty(collectionId);
+    markDirty(targetCollectionId);
 
-    const commitResult = commitCollection(collectionId);
+    const commitResult = commitCollection(targetCollectionId);
     if (commitResult.isFailure()) {
       setSaveError(commitResult.message);
       setIsSaving(false);
@@ -867,6 +968,48 @@ function AddIngredientDialog({
     name.trim().length <= 200 &&
     ganacheTotalValue >= 0 &&
     ganacheTotalValue <= 100;
+
+  if (!runtime) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Add Ingredient</h3>
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md mb-4">
+            <p className="text-sm text-red-600 dark:text-red-400">Runtime not loaded</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mutableCollectionIds.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Add Ingredient</h3>
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md mb-4">
+            <p className="text-sm text-red-600 dark:text-red-400">
+              No editable ingredient collections available. Create or import a mutable collection first.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (editorError) {
     return (
@@ -891,9 +1034,7 @@ function AddIngredientDialog({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-          Add Ingredient to {collectionId}
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Add Ingredient</h3>
 
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
@@ -909,19 +1050,26 @@ function AddIngredientDialog({
             </h4>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Ingredient ID */}
+              {/* Collection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Ingredient ID <span className="text-red-500">*</span>
+                  Collection <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={ingredientId}
-                  onChange={(e) => setIngredientId(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                  placeholder="my-ingredient"
+                <select
+                  value={targetCollectionId}
+                  onChange={(e) => {
+                    setTargetCollectionId(e.target.value as SourceId);
+                    setSaveError(null);
+                  }}
                   disabled={isSaving}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
-                />
+                >
+                  {mutableCollectionIds.map((id) => (
+                    <option key={id} value={id}>
+                      {id}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Category */}
@@ -960,55 +1108,6 @@ function AddIngredientDialog({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Manufacturer */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Manufacturer
-                </label>
-                <input
-                  type="text"
-                  value={manufacturer}
-                  onChange={(e) => setManufacturer(e.target.value)}
-                  placeholder="Optional"
-                  maxLength={200}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
-                />
-              </div>
-
-              {/* Density */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Density (g/mL)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    value={density}
-                    onChange={(e) => setDensity(e.target.value)}
-                    placeholder="0.1 - 5.0"
-                    min="0.1"
-                    max="5.0"
-                    step="0.01"
-                    disabled={isSaving}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
-                  />
-                  {density && (
-                    <button
-                      type="button"
-                      onClick={() => setDensity('')}
-                      disabled={isSaving}
-                      className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                      title="Clear"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -1017,12 +1116,281 @@ function AddIngredientDialog({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description..."
-                rows={2}
-                maxLength={2000}
+                placeholder="Optional description"
+                rows={3}
                 disabled={isSaving}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
               />
+            </div>
+
+            {/* Ingredient ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Ingredient ID <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={ingredientId}
+                  onChange={(e) => {
+                    const next = e.target.value.toLowerCase().replace(/\s+/g, '-');
+                    setIngredientId(next);
+                    setIsIdManuallyEdited(next.trim().length > 0);
+                  }}
+                  placeholder="derived-from-name"
+                  disabled={isSaving}
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsIdManuallyEdited(false);
+                    setIngredientId(derivedBaseId);
+                    setSaveError(null);
+                  }}
+                  disabled={isSaving || derivedBaseId.length === 0}
+                  title="Reset to derived value"
+                  className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  X
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <button
+                type="button"
+                onClick={() => setShowCommonAdvanced(!showCommonAdvanced)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide hover:text-gray-700 dark:hover:text-gray-200"
+              >
+                <span>{showCommonAdvanced ? '▼' : '▶'}</span>
+                Additional Properties
+              </button>
+
+              {showCommonAdvanced && (
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Manufacturer
+                      </label>
+                      <input
+                        type="text"
+                        value={manufacturer}
+                        onChange={(e) => setManufacturer(e.target.value)}
+                        placeholder="Optional"
+                        maxLength={200}
+                        disabled={isSaving}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Density (g/mL)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={density}
+                          onChange={(e) => setDensity(e.target.value)}
+                          placeholder="0.1 - 5.0"
+                          min="0.1"
+                          max="5.0"
+                          step="0.01"
+                          disabled={isSaving}
+                          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                        />
+                        {density && (
+                          <button
+                            type="button"
+                            onClick={() => setDensity('')}
+                            disabled={isSaving}
+                            className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            title="Clear"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Additional Tags
+                    </label>
+                    <input
+                      type="text"
+                      value={tags}
+                      onChange={(e) => setTags(e.target.value)}
+                      placeholder="comma-separated"
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={vegan}
+                      onChange={(e) => setVegan(e.target.checked)}
+                      disabled={isSaving}
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-chocolate-600 focus:ring-chocolate-500"
+                    />
+                    <label className="text-sm text-gray-700 dark:text-gray-300">Vegan</label>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                        Certifications
+                      </h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        {allCertifications.map((c) => (
+                          <label
+                            key={c}
+                            className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={certifications.includes(c)}
+                              onChange={() =>
+                                setCertifications((prev) =>
+                                  prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
+                                )
+                              }
+                              disabled={isSaving}
+                              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-chocolate-600 focus:ring-chocolate-500"
+                            />
+                            <span className="truncate" title={c}>
+                              {c}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                        Allergens
+                      </h5>
+                      <div className="grid grid-cols-2 gap-2">
+                        {allAllergens.map((a) => (
+                          <label
+                            key={a}
+                            className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={allergens.includes(a)}
+                              onChange={() =>
+                                setAllergens((prev) =>
+                                  prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
+                                )
+                              }
+                              disabled={isSaving}
+                              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-chocolate-600 focus:ring-chocolate-500"
+                            />
+                            <span className="truncate" title={a}>
+                              {a}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                      Trace Allergens
+                    </h5>
+                    <div className="grid grid-cols-3 gap-2">
+                      {allAllergens.map((a) => (
+                        <label
+                          key={a}
+                          className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={traceAllergens.includes(a)}
+                            onChange={() =>
+                              setTraceAllergens((prev) =>
+                                prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]
+                              )
+                            }
+                            disabled={isSaving}
+                            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-chocolate-600 focus:ring-chocolate-500"
+                          />
+                          <span className="truncate" title={a}>
+                            {a}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                        URLs
+                      </h5>
+                      <button
+                        type="button"
+                        onClick={() => setUrls((prev) => [...prev, { category: '', url: '' }])}
+                        disabled={isSaving}
+                        className="text-xs font-medium text-chocolate-600 dark:text-chocolate-400 hover:underline disabled:opacity-50"
+                      >
+                        Add URL
+                      </button>
+                    </div>
+
+                    {urls.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No URLs</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {urls.map((row, idx) => (
+                          <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                            <input
+                              type="text"
+                              value={row.category}
+                              onChange={(e) => {
+                                const next = e.target.value;
+                                setUrls((prev) =>
+                                  prev.map((u, i) => (i === idx ? { ...u, category: next } : u))
+                                );
+                              }}
+                              placeholder="category (e.g., manufacturer)"
+                              disabled={isSaving}
+                              className="col-span-4 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                            />
+                            <input
+                              type="url"
+                              value={row.url}
+                              onChange={(e) => {
+                                const next = e.target.value;
+                                setUrls((prev) => prev.map((u, i) => (i === idx ? { ...u, url: next } : u)));
+                              }}
+                              placeholder="https://..."
+                              disabled={isSaving}
+                              className="col-span-7 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setUrls((prev) => prev.filter((_, i) => i !== idx))}
+                              disabled={isSaving}
+                              className="col-span-1 px-2 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+                              title="Remove"
+                            >
+                              X
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

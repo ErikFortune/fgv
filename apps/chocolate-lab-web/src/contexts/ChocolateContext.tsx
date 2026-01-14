@@ -20,6 +20,7 @@ import {
   type FillingId,
   type LibraryData
 } from '@fgv/ts-chocolate';
+import { FileTree, type JsonObject } from '@fgv/ts-json-base';
 
 // Aliases for cleaner code
 type ChocolateRuntimeContext = Runtime.RuntimeContext;
@@ -31,6 +32,40 @@ import { useObservability } from '@fgv/ts-chocolate-ui';
 
 // Default PBKDF2 iterations for password derivation (used only if keyDerivation is missing)
 const DEFAULT_PBKDF2_ITERATIONS = 100000;
+
+const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readLocalIngredientCollectionFiles(): FileTree.IInMemoryFile[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_INGREDIENT_COLLECTIONS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isJsonObject(parsed)) {
+      return [];
+    }
+
+    const files: FileTree.IInMemoryFile[] = [];
+    for (const [collectionId, contents] of Object.entries(parsed)) {
+      if (!isJsonObject(contents)) {
+        continue;
+      }
+      files.push({
+        path: `/data/ingredients/${collectionId}.json`,
+        contents
+      });
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Sub-library type for tracking which libraries a collection belongs to
@@ -182,13 +217,37 @@ export function ChocolateProvider({
         throw new Error(`Failed to get library tree: ${treeResult.message}`);
       }
 
+      const localFiles = readLocalIngredientCollectionFiles();
+
+      const localTreeResult = localFiles.length > 0 ? FileTree.inMemory(localFiles) : undefined;
+      let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
+      if (localTreeResult?.isSuccess() === true) {
+        const rootResult = localTreeResult.value.getItem('/');
+        if (rootResult.isSuccess() && rootResult.value.type === 'directory') {
+          localRootDir = rootResult.value;
+        }
+      }
+
+      const fileSources: ReadonlyArray<LibraryData.ILibraryFileTreeSource> = [
+        {
+          directory: treeResult.value
+        },
+        ...(localRootDir
+          ? [
+              {
+                directory: localRootDir,
+                load: { ingredients: true, fillings: false },
+                mutable: true
+              }
+            ]
+          : [])
+      ];
+
       // Create RuntimeContext with built-in data
       const runtimeResult = Runtime.RuntimeContext.create({
         libraryParams: {
           builtin: false,
-          fileSources: {
-            directory: treeResult.value
-          }
+          fileSources
         },
         preWarm
       });
