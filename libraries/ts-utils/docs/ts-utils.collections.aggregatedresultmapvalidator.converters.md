@@ -4,6 +4,8 @@
 
 ## Collections.AggregatedResultMapValidator.converters property
 
+The key-value converters used for validating weakly-typed access.
+
 **Signature:**
 
 ```typescript

@@ -4,7 +4,7 @@
 
 ## Collections.AggregatedResultMapBase.(constructor)
 
-Constructs a new [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->. Use [AggregatedResultMap.create()](./ts-utils.aggregatedresultmap.create.md) for safe construction with error handling.
+Protected constructor for derived classes. Use the [create static method](./ts-utils.aggregatedresultmap.create.md) for safe construction with error handling.
 
 **Signature:**
 
@@ -42,7 +42,7 @@ params
 
 </td><td>
 
-Parameters for constructing the map.
+ for constructing the map.
 
 
 </td></tr>

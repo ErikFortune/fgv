@@ -13,6 +13,7 @@ export class AggregatedResultMap<TCOMPOSITEID extends string, TCOLLECTIONID exte
 // @public
 class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> implements IResultMap<TCOMPOSITEID, TITEM>, IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM> {
     [Symbol.iterator](): IterableIterator<KeyValueEntry<TCOMPOSITEID, TITEM>>;
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IAggregatedResultMapConstructorParams"
     protected constructor(params: IAggregatedResultMapConstructorParams<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
@@ -78,35 +79,44 @@ type AggregatedResultMapJsonEntry<TCOLLECTIONID extends string = string> = IAggr
 
 // @public
 class AggregatedResultMapValidator<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> implements IReadOnlyResultMapValidator<TCOMPOSITEID, TITEM> {
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-utils" does not have an export "AggregatedResultMapValidator"
     constructor(map: AggregatedResultMap<TCOMPOSITEID, TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, converters: KeyValueConverters<TCOMPOSITEID, TITEM>);
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "add" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
     //
     // (undocumented)
     add(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
-    // (undocumented)
     readonly converters: KeyValueConverters<TCOMPOSITEID, TITEM>;
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
     //
     // (undocumented)
     delete(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "get" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
     //
     // (undocumented)
     get(key: string): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    //
     // (undocumented)
     has(key: string): boolean;
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
+    //
     // (undocumented)
     get map(): IReadOnlyValidatingResultMap<TCOMPOSITEID, TITEM>;
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "set" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
     //
     // (undocumented)
     set(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "update" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-unresolved-inheritdoc-reference) The @inheritDoc reference could not be resolved: The package "@fgv/ts-utils" does not have an export "IResultMapValidator"
     //
     // (undocumented)
     update(key: string, value: unknown): DetailedResult<TITEM, ResultMapResultDetail>;
@@ -1163,19 +1173,12 @@ interface IAddCollectionWithItemsOptions {
 
 // @public
 interface IAggregatedResultMapConstructorParams<TCOMPOSITEID extends string, TCOLLECTIONID extends string, TITEMID extends string, TITEM, TMETADATA = unknown> {
-    // (undocumented)
     readonly collectionIdConverter: Converter<TCOLLECTIONID, unknown> | Validator<TCOLLECTIONID, unknown>;
-    // (undocumented)
     readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
-    // (undocumented)
     readonly compositeIdValidator?: Validator<TCOMPOSITEID, unknown>;
-    // (undocumented)
     readonly itemConverter: Converter<TITEM, unknown> | Validator<TITEM, unknown>;
-    // (undocumented)
     readonly itemIdConverter: Converter<TITEMID, unknown> | Validator<TITEMID, unknown>;
-    // (undocumented)
     readonly metadataConverter?: Converter<TMETADATA, unknown> | Validator<TMETADATA, unknown>;
-    // (undocumented)
     readonly separator?: string;
 }
 

@@ -4,7 +4,7 @@
 
 ## Collections.AggregatedResultMapEntryInit type
 
-Any valid input format for an aggregated result map entry.
+Any valid input format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry.
 
 **Signature:**
 

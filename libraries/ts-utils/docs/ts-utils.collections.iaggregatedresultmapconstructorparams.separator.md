@@ -4,6 +4,8 @@
 
 ## Collections.IAggregatedResultMapConstructorParams.separator property
 
+Optional separator string for composite IDs. Defaults to `.`<!-- -->.
+
 **Signature:**
 
 ```typescript

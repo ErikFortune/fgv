@@ -67,5 +67,6 @@ export { Calculations };
 import * as Crypto from './packlets/crypto/index.browser';
 import * as LibraryData from './packlets/library-data';
 import * as BuiltIn from './packlets/built-in';
+import * as Editing from './packlets/editing';
 
-export { Crypto, LibraryData, BuiltIn };
+export { Crypto, LibraryData, BuiltIn, Editing };

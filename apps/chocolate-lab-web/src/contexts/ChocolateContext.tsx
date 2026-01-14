@@ -24,7 +24,7 @@ import {
 // Aliases for cleaner code
 type ChocolateRuntimeContext = Runtime.RuntimeContext;
 type AnyRuntimeIngredient = Runtime.AnyRuntimeIngredient;
-type RuntimeFillingRecipe = Runtime.RuntimeFillingRecipe;
+type RuntimeFillingRecipe = Runtime.RuntimeRecipe;
 import type { Result } from '@fgv/ts-utils';
 import { fail, succeed } from '@fgv/ts-utils';
 import { useObservability } from '@fgv/ts-chocolate-ui';
@@ -92,6 +92,8 @@ export interface IChocolateContext {
   unlockCollection: (collectionId: string, options: IUnlockOptions) => Promise<Result<void>>;
   /** Reload the library */
   reload: () => Promise<void>;
+  /** Notify that library data has changed (clears runtime cache and updates collection metadata / counts) */
+  notifyLibraryChanged: () => Result<void>;
   /** Count of loaded ingredients */
   ingredientCount: number;
   /** Count of loaded fillings */
@@ -113,6 +115,7 @@ const defaultChocolateContext: IChocolateContext = {
   collections: [],
   unlockCollection: async () => fail('No ChocolateProvider'),
   reload: async () => Promise.resolve(),
+  notifyLibraryChanged: () => fail('No ChocolateProvider'),
   ingredientCount: 0,
   fillingCount: 0,
   moldCount: 0,
@@ -182,7 +185,10 @@ export function ChocolateProvider({
       // Create RuntimeContext with built-in data
       const runtimeResult = Runtime.RuntimeContext.create({
         libraryParams: {
-          libraryRoot: treeResult.value
+          builtin: false,
+          fileSources: {
+            directory: treeResult.value
+          }
         },
         preWarm
       });
@@ -214,12 +220,22 @@ export function ChocolateProvider({
         }
       }
 
+      // Include empty ingredient collections
+      for (const collectionId of ctx.library.ingredients.collections.keys()) {
+        addSubLibrary(collectionId, 'ingredients');
+      }
+
       // Get source IDs from loaded fillings
       for (const [id] of ctx.fillings.entries()) {
         const sourceId = id.split('.')[0];
         if (sourceId) {
           addSubLibrary(sourceId, 'fillings');
         }
+      }
+
+      // Include empty filling collections
+      for (const collectionId of ctx.library.fillings.collections.keys()) {
+        addSubLibrary(collectionId, 'fillings');
       }
 
       // Track which collections are protected (per sub-library)
@@ -282,6 +298,96 @@ export function ChocolateProvider({
       diag.error('Library load failed:', e);
     }
   }, [preWarm, user, diag]);
+
+  // Rebuild collections list from current runtime (for editing updates)
+  const rebuildCollectionsList = useCallback(() => {
+    if (!runtime) return;
+
+    // Similar logic to loadLibrary but without recreating runtime
+    const collectionSubLibraries = new Map<string, Set<SubLibraryType>>();
+
+    const addSubLibrary = (collectionId: string, subLib: SubLibraryType): void => {
+      if (!collectionSubLibraries.has(collectionId)) {
+        collectionSubLibraries.set(collectionId, new Set());
+      }
+      collectionSubLibraries.get(collectionId)!.add(subLib);
+    };
+
+    // Get source IDs from loaded ingredients
+    for (const [id] of runtime.ingredients.entries()) {
+      const sourceId = id.split('.')[0];
+      if (sourceId) {
+        addSubLibrary(sourceId, 'ingredients');
+      }
+    }
+
+    for (const collectionId of runtime.library.ingredients.collections.keys()) {
+      addSubLibrary(collectionId, 'ingredients');
+    }
+
+    // Get source IDs from loaded fillings
+    for (const [id] of runtime.fillings.entries()) {
+      const sourceId = id.split('.')[0];
+      if (sourceId) {
+        addSubLibrary(sourceId, 'fillings');
+      }
+    }
+
+    for (const collectionId of runtime.library.fillings.collections.keys()) {
+      addSubLibrary(collectionId, 'fillings');
+    }
+
+    // Track protected collections
+    const protectedIngredientIds = new Set<string>(
+      runtime.library.ingredients.protectedCollections.map((pc) => pc.collectionId as string)
+    );
+    const protectedFillingIds = new Set<string>(
+      runtime.library.fillings.protectedCollections.map((pc) => pc.collectionId as string)
+    );
+
+    // Add protected collections
+    for (const collectionId of protectedIngredientIds) {
+      addSubLibrary(collectionId, 'ingredients');
+    }
+
+    for (const collectionId of protectedFillingIds) {
+      addSubLibrary(collectionId, 'fillings');
+    }
+
+    // Build collection metadata
+    const collectionMeta: ICollectionMetadata[] = [];
+    for (const [collectionId, subLibs] of collectionSubLibraries) {
+      const isProtectedIngredients = protectedIngredientIds.has(collectionId);
+      const isProtectedFillings = protectedFillingIds.has(collectionId);
+      const isProtected = isProtectedIngredients || isProtectedFillings;
+
+      const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
+      const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
+      const isLoaded = hasLoadedIngredients || hasLoadedFillings;
+
+      collectionMeta.push({
+        id: collectionId,
+        name: formatCollectionName(collectionId),
+        isProtected,
+        isUnlocked: !isProtected || isLoaded,
+        isLoaded,
+        subLibraries: Array.from(subLibs)
+      });
+    }
+
+    setCollections(collectionMeta);
+    setDataVersion((prev) => prev + 1);
+  }, [runtime]);
+
+  const notifyLibraryChanged = useCallback((): Result<void> => {
+    if (!runtime) {
+      return fail('Runtime not loaded');
+    }
+
+    runtime.clearCache();
+    rebuildCollectionsList();
+    return succeed(undefined);
+  }, [rebuildCollectionsList, runtime]);
 
   // Load on mount
   useEffect(() => {
@@ -465,6 +571,7 @@ export function ChocolateProvider({
       collections,
       unlockCollection,
       reload: loadLibrary,
+      notifyLibraryChanged,
       ingredientCount,
       fillingCount,
       moldCount,
@@ -478,6 +585,7 @@ export function ChocolateProvider({
       collections,
       unlockCollection,
       loadLibrary,
+      notifyLibraryChanged,
       ingredientCount,
       fillingCount,
       moldCount,
@@ -500,19 +608,32 @@ export function useChocolate(): IChocolateContext {
  * Hook for ingredient-specific operations
  */
 export function useIngredients(): {
-  ingredients: ReadonlyMap<IngredientId, AnyRuntimeIngredient> | undefined;
+  ingredients:
+    | Runtime.IReadOnlyValidatingLibrary<
+        IngredientId,
+        AnyRuntimeIngredient,
+        Runtime.Indexers.IIngredientQuerySpec
+      >
+    | undefined;
   getIngredient: (id: IngredientId) => Result<AnyRuntimeIngredient> | undefined;
   isLoading: boolean;
 } {
   const { runtime, loadingState } = useChocolate();
 
+  const getIngredient = useCallback(
+    (id: IngredientId): Result<AnyRuntimeIngredient> | undefined => {
+      return runtime ? runtime.ingredients.get(id).asResult : undefined;
+    },
+    [runtime]
+  );
+
   return useMemo(
     () => ({
-      ingredients: runtime?.ingredients as ReadonlyMap<IngredientId, AnyRuntimeIngredient> | undefined,
-      getIngredient: runtime ? (id: IngredientId) => runtime.ingredients.get(id).asResult : undefined,
+      ingredients: runtime?.ingredients,
+      getIngredient,
       isLoading: loadingState === 'loading'
     }),
-    [runtime, loadingState]
+    [getIngredient, loadingState, runtime]
   );
 }
 
@@ -520,19 +641,32 @@ export function useIngredients(): {
  * Hook for filling-specific operations
  */
 export function useFillings(): {
-  fillings: ReadonlyMap<FillingId, RuntimeFillingRecipe> | undefined;
+  fillings:
+    | Runtime.IReadOnlyValidatingLibrary<
+        FillingId,
+        RuntimeFillingRecipe,
+        Runtime.Indexers.IFillingRecipeQuerySpec
+      >
+    | undefined;
   getFilling: (id: FillingId) => Result<RuntimeFillingRecipe> | undefined;
   isLoading: boolean;
 } {
   const { runtime, loadingState } = useChocolate();
 
+  const getFilling = useCallback(
+    (id: FillingId): Result<RuntimeFillingRecipe> | undefined => {
+      return runtime ? runtime.fillings.get(id).asResult : undefined;
+    },
+    [runtime]
+  );
+
   return useMemo(
     () => ({
-      fillings: runtime?.fillings as ReadonlyMap<FillingId, RuntimeFillingRecipe> | undefined,
-      getFilling: runtime ? (id: FillingId) => runtime.fillings.get(id).asResult : undefined,
+      fillings: runtime?.fillings,
+      getFilling,
       isLoading: loadingState === 'loading'
     }),
-    [runtime, loadingState]
+    [getFilling, loadingState, runtime]
   );
 }
 

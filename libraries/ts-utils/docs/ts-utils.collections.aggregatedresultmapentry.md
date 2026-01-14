@@ -4,7 +4,7 @@
 
 ## Collections.AggregatedResultMapEntry type
 
-An entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->, either mutable or read-only.
+A collection entry in an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->, either mutable or read-only.
 
 **Signature:**
 

@@ -4,7 +4,7 @@
 
 ## Collections.AggregatedResultMapJsonEntry type
 
-JSON format for an aggregated result map entry - supports both entries array and items object.
+JSON format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry - supports both entries array and items object.
 
 **Signature:**
 

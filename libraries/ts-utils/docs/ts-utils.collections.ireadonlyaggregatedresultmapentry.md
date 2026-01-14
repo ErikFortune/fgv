@@ -4,7 +4,7 @@
 
 ## Collections.IReadonlyAggregatedResultMapEntry interface
 
-A read-only entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+A read-only collection entry in an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 **Signature:**
 

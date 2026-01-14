@@ -4,8 +4,15 @@
 
 ## Collections.IAggregatedResultMapConstructorParams.collections property
 
+Initial collections to populate the map.
+
 **Signature:**
 
 ```typescript
 readonly collections?: ReadonlyArray<AggregatedResultMapEntryInit<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>>;
 ```
+
+## Remarks
+
+Each entry may be mutable or read-only.
+

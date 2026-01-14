@@ -5,9 +5,16 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { LockClosedIcon } from '@heroicons/react/24/outline';
+import {
+  LockClosedIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  Cog6ToothIcon
+} from '@heroicons/react/24/outline';
 import { SearchInput, UnlockCollectionModal } from '../../components/common';
+import { CollectionManagementPanel } from '../../components/collections';
 import { useChocolate } from '../../contexts/ChocolateContext';
+import { useEditing } from '../../contexts/EditingContext';
 import { TagBadge, CollectionBadge } from '@fgv/ts-chocolate-ui';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
 
@@ -50,8 +57,10 @@ export function IngredientsToolSidebar({
   onFiltersChange
 }: IIngredientsToolSidebarProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
+  const { hasUnsavedChanges, dirtyCollections } = useEditing();
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
+  const [showManagement, setShowManagement] = useState(false);
 
   // Get all unique tags from ingredients
   const allTags = useMemo(() => {
@@ -220,6 +229,35 @@ export function IngredientsToolSidebar({
           Clear all filters
         </button>
       )}
+
+      {/* Divider */}
+      <div className="border-t border-gray-200 dark:border-gray-700" />
+
+      {/* Collection Management */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setShowManagement(!showManagement)}
+          className="w-full flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 hover:text-gray-700 dark:hover:text-gray-200"
+        >
+          <span className="flex items-center gap-2">
+            <Cog6ToothIcon className="w-4 h-4" />
+            Manage Collections
+            {hasUnsavedChanges && (
+              <span className="flex items-center gap-1 text-amber-500 normal-case text-xs font-normal">
+                ({dirtyCollections.length} unsaved)
+              </span>
+            )}
+          </span>
+          {showManagement ? (
+            <ChevronDownIcon className="w-4 h-4" />
+          ) : (
+            <ChevronRightIcon className="w-4 h-4" />
+          )}
+        </button>
+
+        {showManagement && <CollectionManagementPanel />}
+      </div>
 
       {/* Unlock Modal */}
       {collectionToUnlock && (

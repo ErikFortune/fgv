@@ -8,13 +8,14 @@ import { ObservabilityProvider } from '@fgv/ts-chocolate-ui';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ChocolateProvider } from './contexts/ChocolateContext';
+import { EditingProvider } from './contexts/EditingContext';
 import { AppShell } from './components/layout';
 import type { ToolId } from './types/navigation';
 
 // Tool components
 import { IngredientsToolSidebar, type IIngredientFilters } from './tools/ingredients';
 import { BrowseView } from './tools/ingredients/views/BrowseView';
-import { DetailView } from './tools/ingredients/views/DetailView';
+import { EditableDetailView } from './tools/ingredients/views/EditableDetailView';
 import { FillingsTool, FillingsToolSidebar, type IFillingFilters } from './tools/fillings';
 import { ProceduresTool } from './tools/procedures';
 import { MoldsTool } from './tools/molds/MoldsTool';
@@ -101,7 +102,7 @@ function IngredientsToolContent({ filters }: { filters: IIngredientFilters }): R
   };
 
   if (viewMode === 'detail' && selectedId) {
-    return <DetailView ingredientId={selectedId} onBack={handleBack} />;
+    return <EditableDetailView ingredientId={selectedId} onBack={handleBack} />;
   }
 
   return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
@@ -116,7 +117,9 @@ function App(): React.ReactElement {
       <SettingsProvider>
         <ObservabilityProvider>
           <ChocolateProvider>
-            <AppContent />
+            <EditingProvider>
+              <AppContent />
+            </EditingProvider>
           </ChocolateProvider>
         </ObservabilityProvider>
       </SettingsProvider>

@@ -4,7 +4,7 @@
 
 ## Collections.IAggregatedResultMapConstructorParams interface
 
-Parameters for constructing an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+Parameters for constructing an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 **Signature:**
 
@@ -52,6 +52,8 @@ Description
 
 </td><td>
 
+Converter or validator for collection IDs.
+
 
 </td></tr>
 <tr><td>
@@ -71,7 +73,7 @@ ReadonlyArray&lt;[AggregatedResultMapEntryInit](./ts-utils.collections.aggregate
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Initial collections to populate the map.
 
 
 </td></tr>
@@ -92,7 +94,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Validator for composite IDs.
 
 
 </td></tr>
@@ -113,6 +115,8 @@ _(Optional)_
 
 </td><td>
 
+Converter or validator for individual items in each collection.
+
 
 </td></tr>
 <tr><td>
@@ -131,6 +135,8 @@ _(Optional)_
 
 
 </td><td>
+
+Converter or validator for item IDs.
 
 
 </td></tr>
@@ -151,7 +157,7 @@ _(Optional)_
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Optional converter or validator for collection metadata. If not provided, a metadata field in the input will cause a validation failure.
 
 
 </td></tr>
@@ -172,7 +178,7 @@ string
 
 </td><td>
 
-_(Optional)_
+_(Optional)_ Optional separator string for composite IDs. Defaults to `.`<!-- -->.
 
 
 </td></tr>

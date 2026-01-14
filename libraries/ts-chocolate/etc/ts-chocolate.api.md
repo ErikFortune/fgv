@@ -247,6 +247,12 @@ export type BaseTaskId = Brand<string, 'BaseTaskId'>;
 const baseTaskId: Converter<BaseTaskId>;
 
 // @public
+class BatchExecutor {
+    static execute<T>(operations: ReadonlyArray<IBatchOperation<T>>): Result<IBatchResult<T>>;
+    static executeOrFail<T>(operations: ReadonlyArray<IBatchOperation<T>>): Result<void>;
+}
+
+// @public
 const bonBonDimensions: Converter<IBonBonDimensions>;
 
 // @public
@@ -881,6 +887,9 @@ declare namespace Converters_4 {
 function createBrowserCryptoProvider(): Result<BrowserCryptoProvider>;
 
 // @public
+function createCommand(description: string, execute: () => Result<void>, undo: () => Result<void>, redo?: () => Result<void>): ICommand;
+
+// @public
 function createEncryptedCollectionFile(params: ICreateEncryptedFileParams): Promise<Result<IEncryptedCollectionFile>>;
 
 // @public
@@ -894,6 +903,9 @@ function createFilterFromSpec<TCollectionId extends string>(filterSpec: LibraryL
 
 // @public
 function createIngredientId(sourceId: SourceId, baseId: BaseIngredientId): IngredientId;
+
+// @public
+function createOperation<T>(description: string, execute: () => Result<T>, rollback: () => Result<void>): IBatchOperation<T>;
 
 declare namespace Crypto_2 {
     export {
@@ -1000,7 +1012,15 @@ declare namespace Editing {
         IEditorContextValidatorParams,
         EditorContextValidator,
         IValidatingEditorContextParams,
-        ValidatingEditorContext
+        ValidatingEditorContext,
+        createCommand,
+        ICommand,
+        UndoManager,
+        createOperation,
+        noOpRollback,
+        IBatchOperation,
+        IBatchResult,
+        BatchExecutor
     }
 }
 export { Editing }
@@ -1604,6 +1624,24 @@ interface IBarTruffleVersion extends IConfectionVersionBase {
 }
 
 // @public
+interface IBatchOperation<T = void> {
+    readonly description: string;
+    readonly execute: () => Result<T>;
+    readonly rollback: () => Result<void>;
+}
+
+// @public
+interface IBatchResult<T = void> {
+    readonly errors: ReadonlyArray<string>;
+    readonly failureCount: number;
+    readonly results: ReadonlyArray<T>;
+    readonly rollbackErrors: ReadonlyArray<string>;
+    readonly rolledBack: boolean;
+    readonly success: boolean;
+    readonly successCount: number;
+}
+
+// @public
 interface IBonBonDimensions {
     readonly height: Millimeters;
     readonly width: Millimeters;
@@ -1748,6 +1786,14 @@ interface ICollectionSourceMetadata {
     readonly secretName?: string;
     readonly tags?: ReadonlyArray<string>;
     readonly version?: string;
+}
+
+// @public
+interface ICommand {
+    readonly description: string;
+    readonly execute: () => Result<void>;
+    readonly redo?: () => Result<void>;
+    readonly undo: () => Result<void>;
 }
 
 // @public
@@ -4168,6 +4214,9 @@ class NodeCryptoProvider implements ICryptoProvider {
 const nodeCryptoProvider: NodeCryptoProvider;
 
 // @public
+function noOpRollback(): () => Result<void>;
+
+// @public
 function normalizeFileSources<T extends {
     readonly directory: FileTree.IFileTreeDirectoryItem;
 }>(sources: T | ReadonlyArray<T> | undefined): ReadonlyArray<T>;
@@ -5546,6 +5595,24 @@ function tryDecryptCollectionFile(json: JsonObject, key: Uint8Array, cryptoProvi
 
 // @public
 const uint8ArrayFromBase64: Converter<Uint8Array>;
+
+// @public
+class UndoManager {
+    constructor(maxHistorySize?: number);
+    get canRedo(): boolean;
+    get canUndo(): boolean;
+    clear(): void;
+    execute(command: ICommand): Result<void>;
+    getRedoHistory(): ReadonlyArray<string>;
+    getUndoHistory(): ReadonlyArray<string>;
+    get maxHistorySize(): number;
+    peekRedo(): string | undefined;
+    peekUndo(): string | undefined;
+    redo(): Result<void>;
+    get redoCount(): number;
+    undo(): Result<void>;
+    get undoCount(): number;
+}
 
 // @public
 class UnitScalerRegistry {

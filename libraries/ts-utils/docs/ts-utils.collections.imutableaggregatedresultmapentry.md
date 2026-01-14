@@ -4,7 +4,7 @@
 
 ## Collections.IMutableAggregatedResultMapEntry interface
 
-A mutable entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+A mutable collection entry in an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 **Signature:**
 

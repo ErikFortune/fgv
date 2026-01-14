@@ -4,7 +4,7 @@
 
 ## Collections.AggregatedResultMapValidator class
 
-A validator for weakly-typed access to an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+A validator for weakly-typed access to an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 **Signature:**
 
@@ -41,7 +41,7 @@ Description
 
 </td><td>
 
-Constructs a new instance of the `AggregatedResultMapValidator` class
+Constructs a new .
 
 
 </td></tr>
@@ -87,6 +87,8 @@ Description
 
 </td><td>
 
+The key-value converters used for validating weakly-typed access.
+
 
 </td></tr>
 <tr><td>
@@ -105,6 +107,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -139,6 +142,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -149,6 +153,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -163,6 +168,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -173,6 +179,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>
@@ -187,6 +194,7 @@ Description
 </td><td>
 
 
+
 </td></tr>
 <tr><td>
 
@@ -197,6 +205,7 @@ Description
 
 
 </td><td>
+
 
 
 </td></tr>

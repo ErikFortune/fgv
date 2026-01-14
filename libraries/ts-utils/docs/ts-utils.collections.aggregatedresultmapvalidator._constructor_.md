@@ -4,7 +4,7 @@
 
 ## Collections.AggregatedResultMapValidator.(constructor)
 
-Constructs a new instance of the `AggregatedResultMapValidator` class
+Constructs a new .
 
 **Signature:**
 
@@ -42,6 +42,8 @@ map
 
 </td><td>
 
+The [aggregated result map](./ts-utils.aggregatedresultmap.md) being validated.
+
 
 </td></tr>
 <tr><td>
@@ -55,6 +57,8 @@ converters
 
 
 </td><td>
+
+The key-value converters for weakly-typed access.
 
 
 </td></tr>

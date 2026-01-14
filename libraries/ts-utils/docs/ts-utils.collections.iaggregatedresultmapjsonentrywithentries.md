@@ -4,7 +4,7 @@
 
 ## Collections.IAggregatedResultMapJsonEntryWithEntries interface
 
-JSON format for an aggregated result map entry using an entries array.
+JSON format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry using an entries array.
 
 **Signature:**
 

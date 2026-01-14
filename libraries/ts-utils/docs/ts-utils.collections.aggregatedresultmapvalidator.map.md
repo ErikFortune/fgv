@@ -4,6 +4,7 @@
 
 ## Collections.AggregatedResultMapValidator.map property
 
+
 **Signature:**
 
 ```typescript

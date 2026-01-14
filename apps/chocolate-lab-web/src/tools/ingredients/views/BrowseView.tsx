@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { LoadingSpinner } from '../../../components/common';
 import { IngredientCard } from '@fgv/ts-chocolate-ui';
-import type { IngredientId, Helpers } from '@fgv/ts-chocolate';
+import type { IngredientId } from '@fgv/ts-chocolate';
 import type { IIngredientFilters } from '../IngredientsToolSidebar';
 
 /**
@@ -27,7 +27,7 @@ export interface IBrowseViewProps {
  * Browse view for ingredients
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
-  const { runtime, loadingState, ingredientCount } = useChocolate();
+  const { runtime, loadingState, ingredientCount, dataVersion } = useChocolate();
 
   // Filter and sort ingredients
   const filteredIngredients = useMemo(() => {
@@ -75,7 +75,7 @@ export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps):
         return true;
       })
       .sort((a, b) => a[1].name.localeCompare(b[1].name));
-  }, [runtime, filters]);
+  }, [runtime, filters, dataVersion]);
 
   if (loadingState === 'loading') {
     return (
@@ -116,7 +116,6 @@ export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps):
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredIngredients.map(([id, ingredient]) => {
-          const sourceId = id.split('.')[0];
           return (
             <IngredientCard
               key={id}

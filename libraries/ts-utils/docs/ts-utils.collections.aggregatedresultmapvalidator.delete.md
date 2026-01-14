@@ -4,6 +4,7 @@
 
 ## Collections.AggregatedResultMapValidator.delete() method
 
+
 **Signature:**
 
 ```typescript

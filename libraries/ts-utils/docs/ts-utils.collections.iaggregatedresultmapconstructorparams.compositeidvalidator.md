@@ -4,6 +4,8 @@
 
 ## Collections.IAggregatedResultMapConstructorParams.compositeIdValidator property
 
+Validator for composite IDs.
+
 **Signature:**
 
 ```typescript

@@ -4,6 +4,8 @@
 
 ## Collections.IAggregatedResultMapConstructorParams.collectionIdConverter property
 
+Converter or validator for collection IDs.
+
 **Signature:**
 
 ```typescript

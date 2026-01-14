@@ -4,6 +4,8 @@
 
 ## Collections.IAggregatedResultMapConstructorParams.metadataConverter property
 
+Optional converter or validator for collection metadata. If not provided, a metadata field in the input will cause a validation failure.
+
 **Signature:**
 
 ```typescript

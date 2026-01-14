@@ -46,7 +46,7 @@ Base class for an aggregated result map that wraps a collection of [ValidatingRe
 
 </td><td>
 
-A validator for weakly-typed access to an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+A validator for weakly-typed access to an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -195,7 +195,7 @@ Description
 
 </td><td>
 
-Options for [Collections.AggregatedResultMapBase.addCollectionWithItems()](./ts-utils.collections.aggregatedresultmapbase.addcollectionwithitems.md)<!-- -->.
+Options for [addCollectionWithItems](./ts-utils.collections.aggregatedresultmapbase.addcollectionwithitems.md)<!-- -->.
 
 
 </td></tr>
@@ -206,7 +206,7 @@ Options for [Collections.AggregatedResultMapBase.addCollectionWithItems()](./ts-
 
 </td><td>
 
-Parameters for constructing an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+Parameters for constructing an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -217,7 +217,7 @@ Parameters for constructing an [AggregatedResultMap](./ts-utils.aggregatedresult
 
 </td><td>
 
-JSON format for an aggregated result map entry using an entries array.
+JSON format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry using an entries array.
 
 
 </td></tr>
@@ -228,7 +228,7 @@ JSON format for an aggregated result map entry using an entries array.
 
 </td><td>
 
-JSON format for an aggregated result map entry using an items object.
+JSON format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry using a string-keyed items object.
 
 
 </td></tr>
@@ -327,7 +327,7 @@ Parameters for constructing a [KeyValueConverters](./ts-utils.collections.keyval
 
 </td><td>
 
-A mutable entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+A mutable collection entry in an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -338,7 +338,7 @@ A mutable entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!
 
 </td><td>
 
-A read-only entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->.
+A read-only collection entry in an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->.
 
 
 </td></tr>
@@ -520,7 +520,7 @@ Description
 
 </td><td>
 
-An entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->, either mutable or read-only.
+A collection entry in an [aggregated result map](./ts-utils.aggregatedresultmap.md)<!-- -->, either mutable or read-only.
 
 
 </td></tr>
@@ -531,7 +531,7 @@ An entry in an [AggregatedResultMap](./ts-utils.aggregatedresultmap.md)<!-- -->,
 
 </td><td>
 
-Any valid input format for an aggregated result map entry.
+Any valid input format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry.
 
 
 </td></tr>
@@ -542,7 +542,7 @@ Any valid input format for an aggregated result map entry.
 
 </td><td>
 
-JSON format for an aggregated result map entry - supports both entries array and items object.
+JSON format for an [aggregated result map](./ts-utils.aggregatedresultmap.md) collection entry - supports both entries array and items object.
 
 
 </td></tr>

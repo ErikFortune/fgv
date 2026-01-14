@@ -4,6 +4,7 @@
 
 ## Collections.AggregatedResultMapValidator.has() method
 
+
 **Signature:**
 
 ```typescript
