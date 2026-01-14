@@ -17,11 +17,8 @@ import {
   DetailSection
 } from '@fgv/ts-chocolate-ui';
 import { IngredientEditForm, type IIngredientFormData } from '../components/IngredientEditForm';
-import { Helpers, type IngredientId, type SourceId, type Entities } from '@fgv/ts-chocolate';
+import { Entities, Helpers, type IngredientId, type SourceId } from '@fgv/ts-chocolate';
 import { succeed, fail } from '@fgv/ts-utils';
-
-// Type alias
-type Ingredient = Entities.Ingredients.Ingredient;
 
 /**
  * Extract source ID from composite ingredient ID
@@ -73,18 +70,110 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
         return fail<void>('Editor not available');
       }
 
+      if (!runtime) {
+        return fail<void>('Runtime not available');
+      }
+
       setIsSaving(true);
 
       try {
-        // Build updated ingredient object
-        const updatedIngredient: Partial<Ingredient> = {
-          name: formData.name,
-          description: formData.description || undefined,
-          manufacturer: formData.manufacturer || undefined,
+        const ingredientResult = runtime.ingredients.get(ingredientId);
+        if (!ingredientResult.isSuccess) {
+          setIsSaving(false);
+          return fail<void>('Ingredient not found');
+        }
+
+        const runtimeIngredient = ingredientResult.value;
+        if (!runtimeIngredient) {
+          setIsSaving(false);
+          return fail<void>('Ingredient not found');
+        }
+
+        const currentRaw = runtimeIngredient.raw as unknown as Record<string, unknown>;
+
+        const tags = formData.tagsText
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+
+        const origins = formData.originsText
+          .split(',')
+          .map((t) => t.trim())
+          .filter((t) => t.length > 0);
+
+        const urls = formData.urls
+          .map((u) => ({ category: u.category.trim(), url: u.url.trim() }))
+          .filter((u) => u.category.length > 0 && u.url.length > 0);
+
+        const baseIngredient: Record<string, unknown> = {
+          ...currentRaw,
+          name: formData.name.trim(),
           category: formData.category,
+          ganacheCharacteristics: formData.ganacheCharacteristics,
+          description: formData.description.trim() || undefined,
+          manufacturer: formData.manufacturer.trim() || undefined,
           density: formData.density,
-          tags: formData.tags.length > 0 ? formData.tags : undefined
+          phase: formData.phase === '' ? undefined : formData.phase,
+          vegan: formData.vegan ? true : undefined,
+          certifications: formData.certifications.length > 0 ? formData.certifications : undefined,
+          allergens: formData.allergens.length > 0 ? formData.allergens : undefined,
+          traceAllergens: formData.traceAllergens.length > 0 ? formData.traceAllergens : undefined,
+          tags: tags.length > 0 ? tags : undefined,
+          urls: urls.length > 0 ? urls : undefined
         };
+
+        let updatedIngredient: unknown = baseIngredient;
+
+        if (formData.category === 'chocolate') {
+          updatedIngredient = {
+            ...baseIngredient,
+            category: 'chocolate',
+            chocolateType: formData.chocolateType,
+            cacaoPercentage: formData.cacaoPercentage,
+            fluidityStars: formData.fluidityStars === '' ? undefined : formData.fluidityStars,
+            viscosityMcM: formData.viscosityMcM,
+            temperatureCurve:
+              formData.temperatureCurveMelt !== undefined &&
+              formData.temperatureCurveCool !== undefined &&
+              formData.temperatureCurveWorking !== undefined
+                ? {
+                    melt: formData.temperatureCurveMelt,
+                    cool: formData.temperatureCurveCool,
+                    working: formData.temperatureCurveWorking
+                  }
+                : undefined,
+            beanVarieties: formData.beanVarieties.length > 0 ? formData.beanVarieties : undefined,
+            applications: formData.applications.length > 0 ? formData.applications : undefined,
+            origins: origins.length > 0 ? origins : undefined
+          };
+        } else if (formData.category === 'sugar') {
+          updatedIngredient = {
+            ...baseIngredient,
+            category: 'sugar',
+            hydrationNumber: formData.hydrationNumber,
+            sweetnessPotency: formData.sweetnessPotency
+          };
+        } else if (formData.category === 'dairy') {
+          updatedIngredient = {
+            ...baseIngredient,
+            category: 'dairy',
+            fatContent: formData.fatContent,
+            waterContent: formData.waterContent
+          };
+        } else if (formData.category === 'fat') {
+          updatedIngredient = {
+            ...baseIngredient,
+            category: 'fat',
+            meltingPoint: formData.meltingPoint
+          };
+        } else if (formData.category === 'alcohol') {
+          updatedIngredient = {
+            ...baseIngredient,
+            category: 'alcohol',
+            alcoholByVolume: formData.alcoholByVolume,
+            flavorProfile: formData.flavorProfile.trim() || undefined
+          };
+        }
 
         // Use editor's validating method to update the ingredient (takes full IngredientId)
         const result = editor.validating.update(ingredientId, updatedIngredient);
@@ -110,7 +199,7 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
         return fail<void>(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
       }
     },
-    [editor, ingredientId, markDirty]
+    [editor, ingredientId, runtime, markDirty, commitCollection, sourceId]
   );
 
   // Handle cancel edit
@@ -346,6 +435,74 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
         </div>
       )}
 
+      <DetailSection title="Diet & Safety" defaultCollapsed={true} className="mb-6">
+        <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <dt className="text-sm text-gray-500 dark:text-gray-400">Vegan</dt>
+            <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {rawIngredient.vegan ? 'Yes' : 'No'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-gray-500 dark:text-gray-400">Certifications</dt>
+            <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {rawIngredient.certifications && rawIngredient.certifications.length > 0
+                ? rawIngredient.certifications.join(', ')
+                : '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-gray-500 dark:text-gray-400">Allergens</dt>
+            <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {rawIngredient.allergens && rawIngredient.allergens.length > 0
+                ? rawIngredient.allergens.join(', ')
+                : '—'}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-gray-500 dark:text-gray-400">Trace allergens</dt>
+            <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {rawIngredient.traceAllergens && rawIngredient.traceAllergens.length > 0
+                ? rawIngredient.traceAllergens.join(', ')
+                : '—'}
+            </dd>
+          </div>
+        </dl>
+      </DetailSection>
+
+      {(rawIngredient.phase !== undefined || rawIngredient.measurementUnits !== undefined) && (
+        <DetailSection title="Usage Defaults" defaultCollapsed={true} className="mb-6">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {rawIngredient.phase !== undefined && (
+              <div>
+                <dt className="text-sm text-gray-500 dark:text-gray-400">Phase</dt>
+                <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  {rawIngredient.phase}
+                </dd>
+              </div>
+            )}
+            {rawIngredient.measurementUnits !== undefined && (
+              <div>
+                <dt className="text-sm text-gray-500 dark:text-gray-400">Preferred unit</dt>
+                <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  {rawIngredient.measurementUnits.preferredId ?? '—'}
+                </dd>
+              </div>
+            )}
+            {rawIngredient.measurementUnits !== undefined && (
+              <div className="md:col-span-2">
+                <dt className="text-sm text-gray-500 dark:text-gray-400">Allowed units</dt>
+                <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                  {rawIngredient.measurementUnits.options && rawIngredient.measurementUnits.options.length > 0
+                    ? rawIngredient.measurementUnits.options.map((o) => o.id).join(', ')
+                    : '—'}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </DetailSection>
+      )}
+
       {/* Ganache Characteristics */}
       {runtimeIngredient.ganacheCharacteristics && (
         <DetailSection title="Ganache Characteristics" defaultCollapsed={false} className="mb-6">
@@ -365,6 +522,131 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
             showFahrenheit={true}
             mode="vertical"
           />
+        </DetailSection>
+      )}
+
+      {Entities.Ingredients.isChocolateIngredient(rawIngredient) && (
+        <DetailSection title="Chocolate Details" defaultCollapsed={true} className="mb-6">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Chocolate type</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.chocolateType}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Cacao percentage</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.cacaoPercentage}%
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Fluidity stars</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.fluidityStars ?? '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Viscosity (McM)</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.viscosityMcM ?? '—'}
+              </dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Origins</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.origins && rawIngredient.origins.length > 0
+                  ? rawIngredient.origins.join(', ')
+                  : '—'}
+              </dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Bean varieties</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.beanVarieties && rawIngredient.beanVarieties.length > 0
+                  ? rawIngredient.beanVarieties.join(', ')
+                  : '—'}
+              </dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Applications</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.applications && rawIngredient.applications.length > 0
+                  ? rawIngredient.applications.join(', ')
+                  : '—'}
+              </dd>
+            </div>
+          </dl>
+        </DetailSection>
+      )}
+
+      {Entities.Ingredients.isSugarIngredient(rawIngredient) && (
+        <DetailSection title="Sugar Details" defaultCollapsed={true} className="mb-6">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Hydration number</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.hydrationNumber ?? '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Sweetness potency</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.sweetnessPotency ?? '—'}
+              </dd>
+            </div>
+          </dl>
+        </DetailSection>
+      )}
+
+      {Entities.Ingredients.isDairyIngredient(rawIngredient) && (
+        <DetailSection title="Dairy Details" defaultCollapsed={true} className="mb-6">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Fat content</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.fatContent !== undefined ? `${rawIngredient.fatContent}%` : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Water content</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.waterContent !== undefined ? `${rawIngredient.waterContent}%` : '—'}
+              </dd>
+            </div>
+          </dl>
+        </DetailSection>
+      )}
+
+      {Entities.Ingredients.isFatIngredient(rawIngredient) && (
+        <DetailSection title="Fat Details" defaultCollapsed={true} className="mb-6">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Melting point</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.meltingPoint !== undefined ? `${rawIngredient.meltingPoint} °C` : '—'}
+              </dd>
+            </div>
+          </dl>
+        </DetailSection>
+      )}
+
+      {Entities.Ingredients.isAlcoholIngredient(rawIngredient) && (
+        <DetailSection title="Alcohol Details" defaultCollapsed={true} className="mb-6">
+          <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Alcohol by volume</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.alcoholByVolume !== undefined ? `${rawIngredient.alcoholByVolume}%` : '—'}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Flavor profile</dt>
+              <dd className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {rawIngredient.flavorProfile ?? '—'}
+              </dd>
+            </div>
+          </dl>
         </DetailSection>
       )}
 
