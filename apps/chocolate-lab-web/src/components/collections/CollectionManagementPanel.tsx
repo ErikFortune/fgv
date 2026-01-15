@@ -3,7 +3,7 @@
  * Copyright (c) 2025 Erik Fortune
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useChocolate } from '../../contexts/ChocolateContext';
 import { useEditing, useCollectionManager, useIngredientEditor } from '../../contexts/EditingContext';
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
@@ -318,6 +318,21 @@ export function AddIngredientDialog({
 
   const [showCopyInstructionsDialog, setShowCopyInstructionsDialog] = useState(false);
   const [copyInstructionsQuery, setCopyInstructionsQuery] = useState('');
+
+  const [showAgentAssistedEntry, setShowAgentAssistedEntry] = useState(false);
+  const agentTextAreaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    if (showAgentAssistedEntry) {
+      agentTextAreaRef.current?.focus();
+    }
+  }, [showAgentAssistedEntry]);
+
+  useEffect(() => {
+    if ((agentJsonError || agentJsonInfo) && !showAgentAssistedEntry) {
+      setShowAgentAssistedEntry(true);
+    }
+  }, [agentJsonError, agentJsonInfo, showAgentAssistedEntry]);
 
   // Update ganache defaults when category changes
   const handleCategoryChange = (newCategory: IngredientCategory): void => {
@@ -743,64 +758,6 @@ export function AddIngredientDialog({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Add Ingredient</h3>
-
-        <div className="mb-4 space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Agent-assisted entry</div>
-            <button
-              type="button"
-              onClick={() => {
-                setCopyInstructionsQuery(name.trim());
-                setShowCopyInstructionsDialog(true);
-              }}
-              disabled={isSaving}
-              className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
-            >
-              Copy instructions
-            </button>
-          </div>
-
-          <textarea
-            rows={4}
-            placeholder="Paste ingredient JSON here (or drop a .json file / JSON text)"
-            disabled={isSaving}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData('text');
-              if (text.trim().length > 0) {
-                e.preventDefault();
-                applyIngredientJsonText(text);
-              }
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              const text = e.dataTransfer.getData('text/plain');
-              if (text.trim().length > 0) {
-                applyIngredientJsonText(text);
-                return;
-              }
-              const file = e.dataTransfer.files?.[0];
-              if (file) {
-                void file.text().then((t) => applyIngredientJsonText(t));
-              }
-            }}
-            onDragOver={(e) => e.preventDefault()}
-            className="w-full px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
-          />
-
-          {agentJsonError && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-              <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{agentJsonError}</p>
-            </div>
-          )}
-
-          {agentJsonInfo && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-              <p className="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap">
-                {agentJsonInfo}
-              </p>
-            </div>
-          )}
-        </div>
 
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
@@ -1479,7 +1436,90 @@ export function AddIngredientDialog({
             )}
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShowAgentAssistedEntry(!showAgentAssistedEntry)}
+                className="flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide hover:text-gray-700 dark:hover:text-gray-200"
+              >
+                <span>{showAgentAssistedEntry ? '▼' : '▶'}</span>
+                Agent-assisted entry
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCopyInstructionsQuery(name.trim());
+                    setShowCopyInstructionsDialog(true);
+                  }}
+                  disabled={isSaving}
+                  className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Copy instructions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAgentAssistedEntry(true)}
+                  disabled={isSaving}
+                  className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50"
+                >
+                  Paste JSON
+                </button>
+              </div>
+            </div>
+
+            {showAgentAssistedEntry && (
+              <>
+                <textarea
+                  ref={agentTextAreaRef}
+                  rows={4}
+                  placeholder="Paste ingredient JSON here (or drop a .json file / JSON text)"
+                  disabled={isSaving}
+                  onPaste={(e) => {
+                    const text = e.clipboardData.getData('text');
+                    if (text.trim().length > 0) {
+                      e.preventDefault();
+                      applyIngredientJsonText(text);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const text = e.dataTransfer.getData('text/plain');
+                    if (text.trim().length > 0) {
+                      applyIngredientJsonText(text);
+                      return;
+                    }
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      void file.text().then((t) => applyIngredientJsonText(t));
+                    }
+                  }}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="w-full px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500 disabled:opacity-50 text-sm"
+                />
+
+                {agentJsonError && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                    <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">
+                      {agentJsonError}
+                    </p>
+                  </div>
+                )}
+
+                {agentJsonInfo && (
+                  <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                    <p className="text-sm text-green-700 dark:text-green-300 whitespace-pre-wrap">
+                      {agentJsonInfo}
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
