@@ -6,7 +6,14 @@
 /**
  * Tool identifiers for top-level navigation
  */
-export type ToolId = 'ingredients' | 'fillings' | 'procedures' | 'molds' | 'confections' | 'settings';
+export type ToolId =
+  | 'ingredients'
+  | 'fillings'
+  | 'tasks'
+  | 'procedures'
+  | 'molds'
+  | 'confections'
+  | 'settings';
 
 /**
  * Tool definition for navigation
@@ -29,6 +36,7 @@ export const TOOLS: ITool[] = [
   { id: 'ingredients', name: 'Ingredients', enabled: true },
   { id: 'fillings', name: 'Fillings', enabled: true },
   { id: 'procedures', name: 'Procedures', enabled: true },
+  { id: 'tasks', name: 'Tasks', enabled: true },
   { id: 'molds', name: 'Molds', enabled: true },
   { id: 'confections', name: 'Confections', enabled: true },
   { id: 'settings', name: 'Settings', enabled: true }

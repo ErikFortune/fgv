@@ -68,12 +68,12 @@ Parameter values to pass to the task template. Keys are variable names, values c
 
 </td><td>
 
-[TaskId](./ts-chocolate.taskid.md) \| [BaseTaskId](./ts-chocolate.basetaskid.md)
+[TaskId](./ts-chocolate.taskid.md)
 
 
 </td><td>
 
-Full task ID (sourceId.baseTaskId) or just baseTaskId for same-source references
+Full task ID (sourceId.baseTaskId)
 
 
 </td></tr>

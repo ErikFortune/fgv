@@ -4,10 +4,10 @@
 
 ## Entities.ITaskRef.taskId property
 
-Full task ID (sourceId.baseTaskId) or just baseTaskId for same-source references
+Full task ID (sourceId.baseTaskId)
 
 **Signature:**
 
 ```typescript
-readonly taskId: TaskId | BaseTaskId;
+readonly taskId: TaskId;
 ```

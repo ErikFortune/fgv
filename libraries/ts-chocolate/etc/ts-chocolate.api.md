@@ -3839,7 +3839,7 @@ type ITaskInvocation = IInlineTask | ITaskRef;
 // @public
 interface ITaskRef {
     readonly params: Record<string, unknown>;
-    readonly taskId: TaskId | BaseTaskId;
+    readonly taskId: TaskId;
 }
 
 // @public
@@ -5472,9 +5472,6 @@ export type TaskId = Brand<string, 'TaskId'>;
 const taskId: Converter<TaskId>;
 
 // @public
-const taskIdOrBaseTaskId: Converter<TaskId | BaseTaskId>;
-
-// @public
 const taskInvocation: Converter<ITaskInvocation>;
 
 // @public
@@ -5489,7 +5486,6 @@ const taskRefStatus: Converter<TaskRefStatus>;
 declare namespace Tasks {
     export {
         taskData,
-        taskIdOrBaseTaskId,
         taskRef,
         taskRefStatus,
         inlineTask,

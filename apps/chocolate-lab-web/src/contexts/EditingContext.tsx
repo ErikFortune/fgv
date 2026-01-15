@@ -10,6 +10,8 @@ import {
   Converters as ChocolateConverters,
   type BaseIngredientId,
   type IngredientId,
+  type BaseTaskId,
+  type TaskId,
   type BaseMoldId,
   type MoldId,
   type SourceId,
@@ -21,6 +23,7 @@ import { useChocolate } from './ChocolateContext';
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
+const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 
 function readLocalIngredientCollections(): Record<string, unknown> {
   try {
@@ -62,9 +65,32 @@ function writeLocalMoldCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_MOLD_COLLECTIONS_KEY, JSON.stringify(next));
 }
 
+function readLocalTaskCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_TASK_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalTaskCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_TASK_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
 function getAllLocalCollectionIds(): SourceId[] {
   const ids = new Set<string>();
   for (const k of Object.keys(readLocalIngredientCollections())) {
+    ids.add(k);
+  }
+  for (const k of Object.keys(readLocalTaskCollections())) {
     ids.add(k);
   }
   for (const k of Object.keys(readLocalMoldCollections())) {
@@ -75,6 +101,7 @@ function getAllLocalCollectionIds(): SourceId[] {
 
 // Type alias for Ingredient from Entities
 type Ingredient = Entities.Ingredients.Ingredient;
+type Task = Entities.Tasks.ITaskData;
 type Mold = Entities.Molds.IMold;
 
 // ============================================================================
@@ -179,11 +206,21 @@ export interface IEditingContext {
   exportMoldCollection: (params: IExportParams) => Result<string>;
   importMoldCollection: (params: IImportParams) => Result<void>;
 
+  // Task collection management
+  createTaskCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteTaskCollection: (collectionId: SourceId) => Result<void>;
+  renameTaskCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportTaskCollection: (params: IExportParams) => Result<string>;
+  importTaskCollection: (params: IImportParams) => Result<void>;
+
   /** Commit current editor state back into the runtime library and refresh runtime caches */
   commitCollection: (collectionId: SourceId) => Result<void>;
 
   /** Persist a mutable mold collection to localStorage and refresh runtime caches */
   commitMoldCollection: (collectionId: SourceId) => Result<void>;
+
+  /** Persist a mutable task collection to localStorage and refresh runtime caches */
+  commitTaskCollection: (collectionId: SourceId) => Result<void>;
 
   // Data version - increments when editing operations complete
   editingVersion: number;
@@ -214,8 +251,14 @@ const defaultEditingContext: IEditingContext = {
   renameMoldCollection: () => fail('No EditingProvider'),
   exportMoldCollection: () => fail('No EditingProvider'),
   importMoldCollection: () => fail('No EditingProvider'),
+  createTaskCollection: () => fail('No EditingProvider'),
+  deleteTaskCollection: () => fail('No EditingProvider'),
+  renameTaskCollection: () => fail('No EditingProvider'),
+  exportTaskCollection: () => fail('No EditingProvider'),
+  importTaskCollection: () => fail('No EditingProvider'),
   commitCollection: () => fail('No EditingProvider'),
   commitMoldCollection: () => fail('No EditingProvider'),
+  commitTaskCollection: () => fail('No EditingProvider'),
   editingVersion: 0
 };
 
@@ -342,6 +385,45 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         const existing = readLocalMoldCollections();
         existing[collectionId] = sourceFile as unknown;
         writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const commitTaskCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.tasks.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+
+      const collectionEntry = collectionResult.value;
+      if (!collectionEntry.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+
+      try {
+        const items: Record<BaseTaskId, Task> = recordFromEntries(collectionEntry.items.entries());
+        const sourceFile: LibraryData.ICollectionSourceFile<Task> = {
+          metadata: collectionEntry.metadata ?? { name: collectionId },
+          items
+        };
+
+        const existing = readLocalTaskCollections();
+        existing[collectionId] = sourceFile as unknown;
+        writeLocalTaskCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
         return fail(
@@ -532,6 +614,194 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items: sourceFile.items
         } as unknown;
         writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch {
+        // ignore
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const createTaskCollection = useCallback(
+    (params: ICreateCollectionParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
+      const metadata: LibraryData.ICollectionSourceMetadata =
+        params.description !== undefined
+          ? { name: params.name, description: params.description }
+          : { name: params.name };
+
+      return manager.create(params.collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalTaskCollections();
+          const sourceFile: LibraryData.ICollectionSourceFile<Task> = {
+            metadata,
+            items: {}
+          };
+          existing[params.collectionId] = sourceFile as unknown;
+          writeLocalTaskCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const deleteTaskCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
+      const result = manager.delete(collectionId);
+
+      return result.onSuccess(() => {
+        try {
+          const existing = readLocalTaskCollections();
+          if (collectionId in existing) {
+            delete existing[collectionId];
+            writeLocalTaskCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const renameTaskCollection = useCallback(
+    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
+        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+
+      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalTaskCollections();
+          const stored = existing[collectionId];
+          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
+            const record = stored as Record<string, unknown>;
+            const existingMetadata = record.metadata;
+            const mergedMetadata =
+              typeof existingMetadata === 'object' &&
+              existingMetadata !== null &&
+              !Array.isArray(existingMetadata)
+                ? {
+                    ...(existingMetadata as Record<string, unknown>),
+                    ...(metadata as Record<string, unknown>)
+                  }
+                : (metadata as unknown);
+            record.metadata = mergedMetadata;
+            existing[collectionId] = stored;
+            writeLocalTaskCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const exportTaskCollection = useCallback(
+    (params: IExportParams): Result<string> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.tasks.collections.get(params.collectionId);
+      if (!collectionResult.isSuccess() || !collectionResult.value) {
+        return fail(`Collection "${params.collectionId}" not found`);
+      }
+
+      const collection = collectionResult.value;
+      const items: Record<BaseTaskId, Task> = recordFromEntries(collection.items.entries());
+
+      const sourceFile: LibraryData.ICollectionSourceFile<Task> = {
+        metadata: collection.metadata ?? { name: params.collectionId },
+        items
+      };
+
+      return Editing.serializeCollection(sourceFile, params.format);
+    },
+    [runtime]
+  );
+
+  const importTaskCollection = useCallback(
+    (params: IImportParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const parseResult = Editing.validateAndParseCollection<Task>(params.content);
+      if (parseResult.isFailure()) {
+        return fail(`Invalid import file: ${parseResult.message}`);
+      }
+
+      const sourceFile = parseResult.value;
+      const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
+
+      if (params.mode === 'replace') {
+        if (!manager.exists(params.collectionId)) {
+          return fail(`Collection "${params.collectionId}" does not exist`);
+        }
+
+        const mutableResult = manager.isMutable(params.collectionId);
+        if (mutableResult.isFailure() || !mutableResult.value) {
+          return fail(`Collection "${params.collectionId}" is not mutable`);
+        }
+
+        const deleteResult = manager.delete(params.collectionId);
+        if (deleteResult.isFailure()) {
+          return fail(`Failed to delete existing collection: ${deleteResult.message}`);
+        }
+      } else if (manager.exists(params.collectionId)) {
+        return fail(`Collection "${params.collectionId}" already exists`);
+      }
+
+      const createResult = runtime.library.tasks.addCollectionEntry({
+        id: params.collectionId,
+        isMutable: true,
+        items: sourceFile.items,
+        metadata: sourceFile.metadata
+      });
+
+      if (createResult.isFailure()) {
+        return fail(`Failed to create collection: ${createResult.message}`);
+      }
+
+      try {
+        const existing = readLocalTaskCollections();
+        existing[params.collectionId] = {
+          metadata: sourceFile.metadata,
+          items: sourceFile.items
+        } as unknown;
+        writeLocalTaskCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch {
         // ignore
@@ -910,8 +1180,14 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       renameMoldCollection,
       exportMoldCollection,
       importMoldCollection,
+      createTaskCollection,
+      deleteTaskCollection,
+      renameTaskCollection,
+      exportTaskCollection,
+      importTaskCollection,
       commitCollection,
       commitMoldCollection,
+      commitTaskCollection,
       editingVersion
     }),
     [
@@ -936,8 +1212,14 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       renameMoldCollection,
       exportMoldCollection,
       importMoldCollection,
+      createTaskCollection,
+      deleteTaskCollection,
+      renameTaskCollection,
+      exportTaskCollection,
+      importTaskCollection,
       commitCollection,
       commitMoldCollection,
+      commitTaskCollection,
       editingVersion
     ]
   );
@@ -1051,6 +1333,30 @@ export function useMoldCollectionManager(): {
     renameCollection: renameMoldCollection,
     exportCollection: exportMoldCollection,
     importCollection: importMoldCollection
+  };
+}
+
+export function useTaskCollectionManager(): {
+  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteCollection: (collectionId: SourceId) => Result<void>;
+  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportCollection: (params: IExportParams) => Result<string>;
+  importCollection: (params: IImportParams) => Result<void>;
+} {
+  const {
+    createTaskCollection,
+    deleteTaskCollection,
+    renameTaskCollection,
+    exportTaskCollection,
+    importTaskCollection
+  } = useEditing();
+
+  return {
+    createCollection: createTaskCollection,
+    deleteCollection: deleteTaskCollection,
+    renameCollection: renameTaskCollection,
+    exportCollection: exportTaskCollection,
+    importCollection: importTaskCollection
   };
 }
 

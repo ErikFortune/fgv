@@ -24,7 +24,7 @@
  */
 
 import { Converter, Converters, succeed } from '@fgv/ts-utils';
-import { Converters as CommonConverters, BaseTaskId, TaskId } from '../../common';
+import { Converters as CommonConverters } from '../../common';
 import {
   IInlineTask,
   IRenderOptions,
@@ -79,20 +79,11 @@ export const taskData: Converter<ITaskData> = Converters.object<ITaskData>({
 // ============================================================================
 
 /**
- * Converter for task ID that accepts either TaskId (composite) or BaseTaskId (local)
- * @public
- */
-export const taskIdOrBaseTaskId: Converter<TaskId | BaseTaskId> = Converters.oneOf<TaskId | BaseTaskId>([
-  CommonConverters.taskId,
-  CommonConverters.baseTaskId
-]);
-
-/**
  * Converter for ITaskRef (reference to a public task)
  * @public
  */
 export const taskRef: Converter<ITaskRef> = Converters.object<ITaskRef>({
-  taskId: taskIdOrBaseTaskId,
+  taskId: CommonConverters.taskId,
   params: params
 });
 

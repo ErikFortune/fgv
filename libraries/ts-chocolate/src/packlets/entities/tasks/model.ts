@@ -112,9 +112,9 @@ export interface ITask extends ITaskData {
  */
 export interface ITaskRef {
   /**
-   * Full task ID (sourceId.baseTaskId) or just baseTaskId for same-source references
+   * Full task ID (sourceId.baseTaskId)
    */
-  readonly taskId: TaskId | BaseTaskId;
+  readonly taskId: TaskId;
 
   /**
    * Parameter values to pass to the task template.

@@ -8,3 +8,4 @@ export * from './Modal';
 export * from './SearchInput';
 export * from './CollapsibleSection';
 export * from './UnlockCollectionModal';
+export * from './KeyValueTableEditor';

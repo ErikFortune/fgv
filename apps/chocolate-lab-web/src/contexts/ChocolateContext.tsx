@@ -35,6 +35,7 @@ const DEFAULT_PBKDF2_ITERATIONS = 100000;
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
+const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -66,6 +67,41 @@ function readLocalIngredientCollectionFiles(): FileTree.IInMemoryFile[] {
       }
       files.push({
         path: `/data/ingredients/${collectionId}.json`,
+        contents
+      });
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
+
+function readLocalTaskCollectionFiles(): FileTree.IInMemoryFile[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_TASK_COLLECTIONS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isJsonObject(parsed)) {
+      return [];
+    }
+
+    const files: FileTree.IInMemoryFile[] = [];
+    for (const [collectionId, contents] of Object.entries(parsed)) {
+      if (!isJsonObject(contents)) {
+        continue;
+      }
+
+      if (!('items' in contents) || !isJsonObject(contents.items)) {
+        continue;
+      }
+      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+        continue;
+      }
+      files.push({
+        path: `/data/tasks/${collectionId}.json`,
         contents
       });
     }
@@ -113,7 +149,7 @@ function readLocalMoldCollectionFiles(): FileTree.IInMemoryFile[] {
 /**
  * Sub-library type for tracking which libraries a collection belongs to
  */
-export type SubLibraryType = 'ingredients' | 'fillings' | 'molds' | 'confections';
+export type SubLibraryType = 'ingredients' | 'fillings' | 'tasks' | 'molds' | 'confections';
 
 /**
  * Collection metadata for UI display
@@ -178,6 +214,8 @@ export interface IChocolateContext {
   fillingCount: number;
   /** Count of loaded molds */
   moldCount: number;
+  /** Count of loaded tasks */
+  taskCount: number;
   /** Count of loaded confections */
   confectionCount: number;
   /** Data version - changes when library data is modified (e.g., after unlock) */
@@ -197,6 +235,7 @@ const defaultChocolateContext: IChocolateContext = {
   ingredientCount: 0,
   fillingCount: 0,
   moldCount: 0,
+  taskCount: 0,
   confectionCount: 0,
   dataVersion: 0
 };
@@ -260,12 +299,17 @@ export function ChocolateProvider({
         throw new Error(`Failed to get library tree: ${treeResult.message}`);
       }
 
-      const localFiles = [...readLocalIngredientCollectionFiles(), ...readLocalMoldCollectionFiles()];
+      const localFiles = [
+        ...readLocalIngredientCollectionFiles(),
+        ...readLocalMoldCollectionFiles(),
+        ...readLocalTaskCollectionFiles()
+      ];
 
       const localTreeResult = localFiles.length > 0 ? FileTree.inMemory(localFiles) : undefined;
       let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
       let localHasIngredients = false;
       let localHasMolds = false;
+      let localHasTasks = false;
       if (localTreeResult?.isSuccess() === true) {
         const ingredientsDirResult = localTreeResult.value.getItem('/data/ingredients');
         localHasIngredients =
@@ -273,6 +317,9 @@ export function ChocolateProvider({
 
         const moldsDirResult = localTreeResult.value.getItem('/data/molds');
         localHasMolds = moldsDirResult.isSuccess() && moldsDirResult.value.type === 'directory';
+
+        const tasksDirResult = localTreeResult.value.getItem('/data/tasks');
+        localHasTasks = tasksDirResult.isSuccess() && tasksDirResult.value.type === 'directory';
 
         const rootResult = localTreeResult.value.getItem('/');
         if (rootResult.isSuccess() && rootResult.value.type === 'directory') {
@@ -284,11 +331,16 @@ export function ChocolateProvider({
         {
           directory: treeResult.value
         },
-        ...(localRootDir && (localHasIngredients || localHasMolds)
+        ...(localRootDir && (localHasIngredients || localHasMolds || localHasTasks)
           ? [
               {
                 directory: localRootDir,
-                load: { default: false, ingredients: localHasIngredients, molds: localHasMolds },
+                load: {
+                  default: false,
+                  ingredients: localHasIngredients,
+                  molds: localHasMolds,
+                  tasks: localHasTasks
+                },
                 mutable: true
               }
             ]
@@ -354,6 +406,11 @@ export function ChocolateProvider({
         addSubLibrary(collectionId, 'molds');
       }
 
+      // Include empty task collections
+      for (const collectionId of ctx.library.tasks.collections.keys()) {
+        addSubLibrary(collectionId, 'tasks');
+      }
+
       // Track which collections are protected (per sub-library)
       // The library now properly captures protected collection metadata during synchronous loading
       const protectedIngredientIds = new Set<string>(
@@ -364,6 +421,10 @@ export function ChocolateProvider({
       );
       const protectedMoldIds = new Set<string>(
         ctx.library.molds.protectedCollections.map((pc) => pc.collectionId as string)
+      );
+
+      const protectedTaskIds = new Set<string>(
+        ctx.library.tasks.protectedCollections.map((pc) => pc.collectionId as string)
       );
 
       // Debug: log protected collections found
@@ -385,19 +446,27 @@ export function ChocolateProvider({
         addSubLibrary(collectionId, 'molds');
       }
 
+      // Add protected task collections (not yet loaded)
+      for (const collectionId of protectedTaskIds) {
+        addSubLibrary(collectionId, 'tasks');
+      }
+
       // Build collection metadata from the map
       const collectionMeta: ICollectionMetadata[] = [];
       for (const [collectionId, subLibs] of collectionSubLibraries) {
         const isProtectedIngredients = protectedIngredientIds.has(collectionId);
         const isProtectedFillings = protectedFillingIds.has(collectionId);
         const isProtectedMolds = protectedMoldIds.has(collectionId);
-        const isProtected = isProtectedIngredients || isProtectedFillings || isProtectedMolds;
+        const isProtectedTasks = protectedTaskIds.has(collectionId);
+        const isProtected =
+          isProtectedIngredients || isProtectedFillings || isProtectedMolds || isProtectedTasks;
 
         // A collection is loaded if it has items in the runtime (not just protected entries)
         const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
         const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
         const hasLoadedMolds = !isProtectedMolds && subLibs.has('molds');
-        const isLoaded = hasLoadedIngredients || hasLoadedFillings || hasLoadedMolds;
+        const hasLoadedTasks = !isProtectedTasks && subLibs.has('tasks');
+        const isLoaded = hasLoadedIngredients || hasLoadedFillings || hasLoadedMolds || hasLoadedTasks;
 
         collectionMeta.push({
           id: collectionId,
@@ -467,6 +536,10 @@ export function ChocolateProvider({
       addSubLibrary(collectionId, 'molds');
     }
 
+    for (const collectionId of runtime.library.tasks.collections.keys()) {
+      addSubLibrary(collectionId, 'tasks');
+    }
+
     // Track protected collections
     const protectedIngredientIds = new Set<string>(
       runtime.library.ingredients.protectedCollections.map((pc) => pc.collectionId as string)
@@ -476,6 +549,10 @@ export function ChocolateProvider({
     );
     const protectedMoldIds = new Set<string>(
       runtime.library.molds.protectedCollections.map((pc) => pc.collectionId as string)
+    );
+
+    const protectedTaskIds = new Set<string>(
+      runtime.library.tasks.protectedCollections.map((pc) => pc.collectionId as string)
     );
 
     // Add protected collections
@@ -491,18 +568,25 @@ export function ChocolateProvider({
       addSubLibrary(collectionId, 'molds');
     }
 
+    for (const collectionId of protectedTaskIds) {
+      addSubLibrary(collectionId, 'tasks');
+    }
+
     // Build collection metadata
     const collectionMeta: ICollectionMetadata[] = [];
     for (const [collectionId, subLibs] of collectionSubLibraries) {
       const isProtectedIngredients = protectedIngredientIds.has(collectionId);
       const isProtectedFillings = protectedFillingIds.has(collectionId);
       const isProtectedMolds = protectedMoldIds.has(collectionId);
-      const isProtected = isProtectedIngredients || isProtectedFillings || isProtectedMolds;
+      const isProtectedTasks = protectedTaskIds.has(collectionId);
+      const isProtected =
+        isProtectedIngredients || isProtectedFillings || isProtectedMolds || isProtectedTasks;
 
       const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
       const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
       const hasLoadedMolds = !isProtectedMolds && subLibs.has('molds');
-      const isLoaded = hasLoadedIngredients || hasLoadedFillings || hasLoadedMolds;
+      const hasLoadedTasks = !isProtectedTasks && subLibs.has('tasks');
+      const isLoaded = hasLoadedIngredients || hasLoadedFillings || hasLoadedMolds || hasLoadedTasks;
 
       collectionMeta.push({
         id: collectionId,
@@ -574,28 +658,30 @@ export function ChocolateProvider({
           return fail('Password is required when mode is "password"');
         }
 
+        const password = options.password;
+
         // Look for keyDerivation params from the protected collection metadata
-        // Check both ingredients and fillings libraries for this collection
+        // Check all libraries for this collection
         const ingredientProtected = runtime.library.ingredients.protectedCollections.find(
           (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
         );
         const fillingProtected = runtime.library.fillings.protectedCollections.find(
           (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
         );
-
         const moldProtected = runtime.library.molds.protectedCollections.find(
+          (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
+        );
+        const taskProtected = runtime.library.tasks.protectedCollections.find(
           (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
         );
 
         const keyDerivation =
           ingredientProtected?.keyDerivation ??
           fillingProtected?.keyDerivation ??
-          moldProtected?.keyDerivation;
+          moldProtected?.keyDerivation ??
+          taskProtected?.keyDerivation;
 
-        // Require keyDerivation params for password-based decryption
-        // Files encrypted with a raw key (no keyDerivation) must use key mode instead
-        const saltBase64 = keyDerivation?.salt ?? options.salt;
-        if (!saltBase64) {
+        if (!keyDerivation || keyDerivation.kdf !== 'pbkdf2' || !keyDerivation.salt) {
           return fail(
             'This collection was not encrypted with a password. ' +
               'Use "Enter Key" mode with the raw encryption key instead.'
@@ -605,6 +691,8 @@ export function ChocolateProvider({
         const iterations = keyDerivation?.iterations ?? options.iterations ?? DEFAULT_PBKDF2_ITERATIONS;
         diag.info(`Using keyDerivation: kdf=${keyDerivation?.kdf ?? 'pbkdf2'}, iterations=${iterations}`);
 
+        const saltBase64 = options.salt ?? keyDerivation.salt;
+
         let salt: Uint8Array;
         try {
           salt = Uint8Array.from(atob(saltBase64), (c) => c.charCodeAt(0));
@@ -613,7 +701,7 @@ export function ChocolateProvider({
         }
 
         user.info(`Deriving key for ${collectionId}...`);
-        const keyResult = await cryptoProvider.deriveKey(options.password, salt, iterations);
+        const keyResult = await cryptoProvider.deriveKey(password, salt, iterations);
         if (keyResult.isFailure()) {
           const msg = `Key derivation failed: ${keyResult.message}`;
           user.error(msg);
@@ -646,10 +734,16 @@ export function ChocolateProvider({
         collectionId
       ]);
 
+      // Try to unlock in tasks library
+      const tasksResult = await runtime.library.tasks.loadProtectedCollectionAsync(encryptionConfig, [
+        collectionId
+      ]);
+
       // Check results and get counts
       const ingredientCount = ingredientsResult.isSuccess() ? ingredientsResult.value.length : 0;
       const fillingCount = fillingsResult.isSuccess() ? fillingsResult.value.length : 0;
       const moldCount = moldsResult.isSuccess() ? moldsResult.value.length : 0;
+      const taskCount = tasksResult.isSuccess() ? tasksResult.value.length : 0;
 
       // Log results
       if (ingredientsResult.isFailure()) {
@@ -669,8 +763,14 @@ export function ChocolateProvider({
         diag.info(`Unlock ${collectionId} molds: loaded ${moldCount} collection(s)`);
       }
 
+      if (tasksResult.isFailure()) {
+        diag.info(`Unlock ${collectionId} tasks: ${tasksResult.message}`);
+      } else {
+        diag.info(`Unlock ${collectionId} tasks: loaded ${taskCount} collection(s)`);
+      }
+
       // Check for errors - report if both failed or neither loaded anything
-      if (ingredientCount === 0 && fillingCount === 0 && moldCount === 0) {
+      if (ingredientCount === 0 && fillingCount === 0 && moldCount === 0 && taskCount === 0) {
         // Build error message from failures
         const errors: string[] = [];
         if (ingredientsResult.isFailure()) {
@@ -681,6 +781,9 @@ export function ChocolateProvider({
         }
         if (moldsResult.isFailure()) {
           errors.push(`molds: ${moldsResult.message}`);
+        }
+        if (tasksResult.isFailure()) {
+          errors.push(`tasks: ${tasksResult.message}`);
         }
         if (errors.length === 0) {
           errors.push('no matching collections found');
@@ -706,6 +809,7 @@ export function ChocolateProvider({
       if (ingredientCount > 0) parts.push(`${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''}`);
       if (fillingCount > 0) parts.push(`${fillingCount} filling${fillingCount !== 1 ? 's' : ''}`);
       if (moldCount > 0) parts.push(`${moldCount} mold${moldCount !== 1 ? 's' : ''}`);
+      if (taskCount > 0) parts.push(`${taskCount} task${taskCount !== 1 ? 's' : ''}`);
       user.success(`Unlocked ${collectionId}: ${parts.join(', ')}`);
 
       return succeed(undefined);
@@ -714,13 +818,14 @@ export function ChocolateProvider({
   );
 
   // Calculate counts - dataVersion dependency ensures recalculation after unlock
-  const { ingredientCount, fillingCount, moldCount, confectionCount } = useMemo(() => {
+  const { ingredientCount, fillingCount, moldCount, taskCount, confectionCount } = useMemo(() => {
     // dataVersion is used to trigger recalculation when library data changes
     void dataVersion;
     return {
       ingredientCount: runtime?.ingredients.size ?? 0,
       fillingCount: runtime?.fillings.size ?? 0,
       moldCount: runtime?.library.molds.size ?? 0,
+      taskCount: runtime?.library.tasks.size ?? 0,
       confectionCount: runtime?.confections.size ?? 0
     };
   }, [runtime, dataVersion]);
@@ -737,6 +842,7 @@ export function ChocolateProvider({
       ingredientCount,
       fillingCount,
       moldCount,
+      taskCount,
       confectionCount,
       dataVersion
     }),
@@ -751,6 +857,7 @@ export function ChocolateProvider({
       ingredientCount,
       fillingCount,
       moldCount,
+      taskCount,
       confectionCount,
       dataVersion
     ]

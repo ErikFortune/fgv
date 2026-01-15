@@ -17,6 +17,7 @@ import { IngredientsToolSidebar, type IIngredientFilters } from './tools/ingredi
 import { BrowseView } from './tools/ingredients/views/BrowseView';
 import { EditableDetailView } from './tools/ingredients/views/EditableDetailView';
 import { FillingsTool, FillingsToolSidebar, type IFillingFilters } from './tools/fillings';
+import { TasksTool, TasksToolSidebar, type ITaskFilters } from './tools/tasks';
 import { ProceduresTool } from './tools/procedures';
 import { MoldsTool, MoldsToolSidebar, type IMoldFilters } from './tools/molds';
 import { ConfectionsTool } from './tools/confections/ConfectionsTool';
@@ -56,6 +57,12 @@ function AppContent(): React.ReactElement {
     cavityWeightMax: null
   });
 
+  const [taskFilters, setTaskFilters] = useState<ITaskFilters>({
+    search: '',
+    collections: [],
+    tags: []
+  });
+
   // Render the active tool's sidebar
   const sidebar = useMemo(() => {
     switch (activeTool) {
@@ -63,12 +70,14 @@ function AppContent(): React.ReactElement {
         return <IngredientsToolSidebar filters={ingredientFilters} onFiltersChange={setIngredientFilters} />;
       case 'fillings':
         return <FillingsToolSidebar filters={fillingFilters} onFiltersChange={setFillingFilters} />;
+      case 'tasks':
+        return <TasksToolSidebar filters={taskFilters} onFiltersChange={setTaskFilters} />;
       case 'molds':
         return <MoldsToolSidebar filters={moldFilters} onFiltersChange={setMoldFilters} />;
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters, fillingFilters, moldFilters]);
+  }, [activeTool, ingredientFilters, fillingFilters, moldFilters, taskFilters]);
 
   // Render the active tool content
   const content = useMemo(() => {
@@ -77,6 +86,8 @@ function AppContent(): React.ReactElement {
         return <IngredientsToolContent filters={ingredientFilters} />;
       case 'fillings':
         return <FillingsTool filters={fillingFilters} />;
+      case 'tasks':
+        return <TasksTool filters={taskFilters} />;
       case 'procedures':
         return <ProceduresTool />;
       case 'molds':
@@ -88,7 +99,7 @@ function AppContent(): React.ReactElement {
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters, fillingFilters, moldFilters]);
+  }, [activeTool, ingredientFilters, fillingFilters, moldFilters, taskFilters]);
 
   return (
     <AppShell activeTool={activeTool} onToolChange={setActiveTool} sidebar={sidebar}>

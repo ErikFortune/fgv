@@ -20,7 +20,6 @@
 
 import '@fgv/ts-utils-jest';
 import { Converters } from '../../../packlets/entities';
-import { BaseTaskId, TaskId } from '../../../packlets/common';
 
 const {
   taskData,
@@ -30,34 +29,10 @@ const {
   taskInvocation,
   procedureStepTask,
   validationBehavior,
-  renderOptions,
-  taskIdOrBaseTaskId
+  renderOptions
 } = Converters.Tasks;
 
 describe('TaskConverters', () => {
-  // ============================================================================
-  // taskIdOrBaseTaskId
-  // ============================================================================
-  describe('taskIdOrBaseTaskId', () => {
-    test('converts composite TaskId with dot', () => {
-      expect(taskIdOrBaseTaskId.convert('common.melt-chocolate')).toSucceedWith(
-        'common.melt-chocolate' as TaskId
-      );
-    });
-
-    test('converts local BaseTaskId without dot', () => {
-      expect(taskIdOrBaseTaskId.convert('melt-chocolate')).toSucceedWith('melt-chocolate' as BaseTaskId);
-    });
-
-    test('fails for non-string input', () => {
-      expect(taskIdOrBaseTaskId.convert(123)).toFailWith(/invalid taskid/i);
-    });
-
-    test('fails for null', () => {
-      expect(taskIdOrBaseTaskId.convert(null)).toFailWith(/invalid taskid/i);
-    });
-  });
-
   // ============================================================================
   // taskData
   // ============================================================================
@@ -172,38 +147,39 @@ describe('TaskConverters', () => {
   // taskRef
   // ============================================================================
   describe('taskRef', () => {
-    test('converts valid task reference with composite ID', () => {
+    test('converts valid task ref', () => {
       const ref = {
         taskId: 'common.melt-chocolate',
-        params: { ingredient: 'chocolate', temp: 45 }
+        params: {
+          ingredient: 'dark chocolate',
+          temp: 45
+        }
       };
 
       expect(taskRef.convert(ref)).toSucceedAndSatisfy((result) => {
         expect(result.taskId).toBe('common.melt-chocolate');
-        expect(result.params).toEqual({ ingredient: 'chocolate', temp: 45 });
+        expect(result.params.ingredient).toBe('dark chocolate');
+        expect(result.params.temp).toBe(45);
       });
     });
 
-    test('converts valid task reference with local BaseTaskId', () => {
+    test('fails for base-only task id', () => {
       const ref = {
         taskId: 'melt-chocolate',
         params: { ingredient: 'dark chocolate' }
       };
 
-      expect(taskRef.convert(ref)).toSucceedAndSatisfy((result) => {
-        expect(result.taskId).toBe('melt-chocolate');
-        expect(result.params).toEqual({ ingredient: 'dark chocolate' });
-      });
+      expect(taskRef.convert(ref)).toFail();
     });
 
     test('converts task reference with empty params', () => {
       const ref = {
-        taskId: 'simple-task',
+        taskId: 'common.simple-task',
         params: {}
       };
 
       expect(taskRef.convert(ref)).toSucceedAndSatisfy((result) => {
-        expect(result.taskId).toBe('simple-task');
+        expect(result.taskId).toBe('common.simple-task');
         expect(result.params).toEqual({});
       });
     });
@@ -213,15 +189,19 @@ describe('TaskConverters', () => {
     });
 
     test('fails for missing params', () => {
-      expect(taskRef.convert({ taskId: 'test' })).toFail();
+      expect(taskRef.convert({ taskId: 'common.test' })).toFail();
     });
 
     test('fails for invalid params (array)', () => {
-      expect(taskRef.convert({ taskId: 'test', params: [1, 2, 3] })).toFailWith(/not a string-keyed object/i);
+      expect(taskRef.convert({ taskId: 'common.test', params: [1, 2, 3] })).toFailWith(
+        /not a string-keyed object/i
+      );
     });
 
     test('fails for invalid params (null)', () => {
-      expect(taskRef.convert({ taskId: 'test', params: null })).toFailWith(/not a string-keyed object/i);
+      expect(taskRef.convert({ taskId: 'common.test', params: null })).toFailWith(
+        /not a string-keyed object/i
+      );
     });
   });
 

@@ -4,9 +4,16 @@
  */
 
 import * as React from 'react';
-import type { ToolId, ITool } from '../../types/navigation';
+import type { ToolId } from '../../types/navigation';
 import { TOOLS } from '../../types/navigation';
-import { BeakerIcon, BookOpenIcon, CubeIcon, SparklesIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import {
+  BeakerIcon,
+  BookOpenIcon,
+  ClipboardDocumentListIcon,
+  CubeIcon,
+  SparklesIcon,
+  Cog6ToothIcon
+} from '@heroicons/react/24/outline';
 
 /**
  * Props for the TopNavTabs component
@@ -28,7 +35,11 @@ function getToolIcon(toolId: ToolId): React.ReactNode {
   switch (toolId) {
     case 'ingredients':
       return <BeakerIcon className={iconClass} />;
-    case 'recipes':
+    case 'fillings':
+      return <BookOpenIcon className={iconClass} />;
+    case 'tasks':
+      return <ClipboardDocumentListIcon className={iconClass} />;
+    case 'procedures':
       return <BookOpenIcon className={iconClass} />;
     case 'molds':
       return <CubeIcon className={iconClass} />;

@@ -61,17 +61,6 @@ Converter for ITaskData (persisted format from YAML/JSON). Does not include requ
 </td></tr>
 <tr><td>
 
-[taskIdOrBaseTaskId](./ts-chocolate.entities.converters.tasks.taskidorbasetaskid.md)
-
-
-</td><td>
-
-Converter for task ID that accepts either TaskId (composite) or BaseTaskId (local)
-
-
-</td></tr>
-<tr><td>
-
 [taskInvocation](./ts-chocolate.entities.converters.tasks.taskinvocation.md)
 
 
