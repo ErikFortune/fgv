@@ -42,6 +42,7 @@ export interface IAppSettings {
   collections: Record<string, ICollectionSettings>;
   /** Sidebar collapsed state per tool */
   sidebarCollapsed: Record<string, boolean>;
+  defaultCollections: Record<string, string | null>;
 }
 
 /**
@@ -53,7 +54,8 @@ const defaultSettings: IAppSettings = {
   showCollectionBadges: true,
   showMessagesPane: true,
   collections: {},
-  sidebarCollapsed: {}
+  sidebarCollapsed: {},
+  defaultCollections: {}
 };
 
 /**
@@ -68,6 +70,7 @@ export interface ISettingsContext {
   updateCollectionSettings: (collectionId: string, settings: Partial<ICollectionSettings>) => void;
   /** Toggle sidebar collapsed state for a tool */
   toggleSidebarCollapsed: (toolId: string) => void;
+  setDefaultCollection: (toolId: string, collectionId: string | null) => void;
   /** Reset all settings to defaults */
   resetSettings: () => void;
 }
@@ -82,6 +85,7 @@ const defaultSettingsContext: ISettingsContext = {
   updateSetting: () => {},
   updateCollectionSettings: () => {},
   toggleSidebarCollapsed: () => {},
+  setDefaultCollection: () => {},
   resetSettings: () => {}
 };
 
@@ -146,6 +150,19 @@ export function SettingsProvider({ children }: ISettingsProviderProps): React.Re
     [setSettings]
   );
 
+  const setDefaultCollection = useCallback(
+    (toolId: string, collectionId: string | null) => {
+      setSettings((prev) => ({
+        ...prev,
+        defaultCollections: {
+          ...prev.defaultCollections,
+          [toolId]: collectionId
+        }
+      }));
+    },
+    [setSettings]
+  );
+
   // Reset to defaults
   const resetSettings = useCallback(() => {
     resetStorage();
@@ -157,9 +174,17 @@ export function SettingsProvider({ children }: ISettingsProviderProps): React.Re
       updateSetting,
       updateCollectionSettings,
       toggleSidebarCollapsed,
+      setDefaultCollection,
       resetSettings
     }),
-    [settings, updateSetting, updateCollectionSettings, toggleSidebarCollapsed, resetSettings]
+    [
+      settings,
+      updateSetting,
+      updateCollectionSettings,
+      toggleSidebarCollapsed,
+      setDefaultCollection,
+      resetSettings
+    ]
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

@@ -12,6 +12,7 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import type { IngredientId, SourceId } from '@fgv/ts-chocolate';
 import type { IIngredientFilters } from '../IngredientsToolSidebar';
 import { AddIngredientDialog } from '../../../components/collections/CollectionManagementPanel';
+import { useSettings } from '../../../contexts/SettingsContext';
 
 /**
  * Props for the BrowseView component
@@ -30,6 +31,7 @@ export interface IBrowseViewProps {
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
   const { runtime, loadingState, ingredientCount, dataVersion } = useChocolate();
+  const { settings } = useSettings();
 
   const [showAddIngredient, setShowAddIngredient] = useState(false);
 
@@ -43,6 +45,19 @@ export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps):
       return collectionResult.isSuccess() && !!collectionResult.value && collectionResult.value.isMutable;
     };
 
+    const isUnlocked = (id: SourceId): boolean => {
+      const meta = settings.collections[id];
+      return meta?.unlocked !== false;
+    };
+
+    const preferred = settings.defaultCollections?.ingredients;
+    if (preferred) {
+      const preferredId = preferred as SourceId;
+      if (isMutable(preferredId) && isUnlocked(preferredId)) {
+        return preferredId;
+      }
+    }
+
     // If exactly one collection is selected in the filter and it is mutable, use it.
     if (filters.collections.length === 1) {
       const filteredId = filters.collections[0] as SourceId;
@@ -53,9 +68,9 @@ export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps):
 
     // Otherwise pick the first mutable collection in the library.
     const ids = Array.from(runtime.library.ingredients.collections.keys()) as SourceId[];
-    const firstMutable = ids.find((id) => isMutable(id));
+    const firstMutable = ids.find((id) => isMutable(id) && isUnlocked(id));
     return firstMutable ?? null;
-  }, [filters.collections, runtime]);
+  }, [filters.collections, runtime, settings.collections, settings.defaultCollections]);
 
   // Filter and sort ingredients
   const filteredIngredients = useMemo(() => {

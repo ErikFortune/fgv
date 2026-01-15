@@ -12,8 +12,11 @@ import {
   ExclamationTriangleIcon,
   LockClosedIcon,
   LockOpenIcon,
-  DocumentPlusIcon
+  DocumentPlusIcon,
+  KeyIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
+import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { useChocolate } from '../../contexts/ChocolateContext';
 import {
   useEditing,
@@ -21,6 +24,8 @@ import {
   useIngredientEditor,
   type ICreateCollectionParams
 } from '../../contexts/EditingContext';
+import { useSettings } from '../../contexts/SettingsContext';
+import { UnlockCollectionModal } from '../common';
 import {
   type SourceId,
   type IngredientCategory,
@@ -42,6 +47,8 @@ interface ICollectionInfo {
   description?: string;
   isMutable: boolean;
   isProtected: boolean;
+  isLocked: boolean;
+  isLoaded: boolean;
   isDirty: boolean;
   itemCount: number;
 }
@@ -52,17 +59,28 @@ interface ICollectionInfo {
 export interface ICollectionManagementPanelProps {
   /** Optional class name */
   className?: string;
+  toolId?: string;
+  selectedCollectionIds?: ReadonlyArray<string>;
+  onToggleSelected?: (collectionId: string) => void;
+  showHeader?: boolean;
+  headerTitle?: string | null;
 }
 
 /**
  * Panel for managing ingredient collections
  */
 export function CollectionManagementPanel({
-  className = ''
+  className = '',
+  toolId = 'ingredients',
+  selectedCollectionIds,
+  onToggleSelected,
+  showHeader = true,
+  headerTitle = toolId === 'ingredients' ? 'Ingredient Collections' : 'Collections'
 }: ICollectionManagementPanelProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
   const { dirtyCollections, editingVersion } = useEditing();
   const { createCollection, deleteCollection, exportCollection, importCollection } = useCollectionManager();
+  const { settings, setDefaultCollection } = useSettings();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<SourceId | null>(null);
@@ -70,6 +88,8 @@ export function CollectionManagementPanel({
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showAddIngredient, setShowAddIngredient] = useState<SourceId | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
 
   // Get collection info directly from the runtime library
   // This ensures newly created collections are visible immediately
@@ -78,30 +98,37 @@ export function CollectionManagementPanel({
 
     const infos: ICollectionInfo[] = [];
 
-    // Get all collection IDs directly from the library
-    const collectionIds = Array.from(runtime.library.ingredients.collections.keys());
+    const ctxCollections = collections.filter((c) => c.subLibraries.includes('ingredients'));
+    const allIds = new Set<string>();
+    for (const c of ctxCollections) {
+      allIds.add(c.id);
+    }
+    for (const id of runtime.library.ingredients.collections.keys()) {
+      allIds.add(id as string);
+    }
 
-    for (const collectionId of collectionIds) {
+    for (const id of allIds) {
+      const collectionId = id as SourceId;
+      const collectionCtx = ctxCollections.find((c) => c.id === id);
+      const isProtected = collectionCtx?.isProtected ?? false;
+      const isUnlocked = collectionCtx?.isUnlocked ?? true;
+      const isLocked = isProtected && !isUnlocked;
+
       const collectionResult = runtime.library.ingredients.collections.get(collectionId);
-
-      if (!collectionResult.isSuccess() || !collectionResult.value) {
-        continue;
-      }
-
-      const collection = collectionResult.value;
-      const metadata = collection.metadata;
-
-      // Check if this collection is in the context's collection list (for protected status)
-      const collectionCtx = collections.find((c) => c.id === collectionId);
+      const runtimeCollection = collectionResult.isSuccess() ? collectionResult.value : undefined;
+      const isLoaded = !!runtimeCollection;
+      const metadata = runtimeCollection?.metadata;
 
       infos.push({
         id: collectionId,
-        name: metadata?.name ?? collectionId,
+        name: metadata?.name ?? collectionCtx?.name ?? collectionId,
         description: metadata?.description,
-        isMutable: collection.isMutable,
-        isProtected: collectionCtx?.isProtected ?? false,
+        isMutable: runtimeCollection?.isMutable ?? false,
+        isProtected,
+        isLocked,
+        isLoaded,
         isDirty: dirtyCollections.includes(collectionId),
-        itemCount: collection.items.size
+        itemCount: runtimeCollection?.items.size ?? 0
       });
     }
 
@@ -155,27 +182,31 @@ export function CollectionManagementPanel({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Ingredient Collections</h3>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setShowImportDialog(true)}
-            className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            title="Import collection"
-          >
-            <ArrowUpTrayIcon className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowCreateDialog(true)}
-            className="p-1.5 text-chocolate-600 hover:text-chocolate-700 dark:text-chocolate-400 dark:hover:text-chocolate-300"
-            title="Create new collection"
-          >
-            <PlusIcon className="w-4 h-4" />
-          </button>
+      {showHeader && (
+        <div className={`flex items-center ${headerTitle ? 'justify-between' : 'justify-end'}`}>
+          {headerTitle ? (
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{headerTitle}</h3>
+          ) : null}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setShowImportDialog(true)}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              title="Import collection"
+            >
+              <ArrowUpTrayIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCreateDialog(true)}
+              className="p-1.5 text-chocolate-600 hover:text-chocolate-700 dark:text-chocolate-400 dark:hover:text-chocolate-300"
+              title="Create new collection"
+            >
+              <PlusIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Error display */}
       {error && (
@@ -193,6 +224,30 @@ export function CollectionManagementPanel({
             <CollectionListItem
               key={info.id}
               info={info}
+              isSelected={selectedCollectionIds ? selectedCollectionIds.includes(info.id as string) : false}
+              isDefault={
+                info.isMutable &&
+                !info.isLocked &&
+                settings.defaultCollections?.[toolId] === (info.id as string)
+              }
+              onToggleSelected={() => {
+                if (!onToggleSelected) {
+                  return;
+                }
+                if (info.isLocked) {
+                  setCollectionToUnlock(info.id as string);
+                  setUnlockModalOpen(true);
+                  return;
+                }
+                onToggleSelected(info.id as string);
+              }}
+              onSetDefault={() => {
+                if (info.isLocked || !info.isMutable) {
+                  return;
+                }
+                const current = settings.defaultCollections?.[toolId] ?? null;
+                setDefaultCollection(toolId, current === (info.id as string) ? null : (info.id as string));
+              }}
               onDelete={() => setShowDeleteConfirm(info.id)}
               onExport={() => setShowExportDialog(info.id)}
               onAddIngredient={() => setShowAddIngredient(info.id)}
@@ -255,6 +310,17 @@ export function CollectionManagementPanel({
       {showAddIngredient && (
         <AddIngredientDialog collectionId={showAddIngredient} onClose={() => setShowAddIngredient(null)} />
       )}
+
+      {collectionToUnlock && (
+        <UnlockCollectionModal
+          isOpen={unlockModalOpen}
+          onClose={() => {
+            setUnlockModalOpen(false);
+            setCollectionToUnlock(null);
+          }}
+          collectionId={collectionToUnlock}
+        />
+      )}
     </div>
   );
 }
@@ -264,23 +330,51 @@ export function CollectionManagementPanel({
  */
 function CollectionListItem({
   info,
+  isSelected,
+  isDefault,
+  onToggleSelected,
+  onSetDefault,
   onDelete,
   onExport,
   onAddIngredient
 }: {
   info: ICollectionInfo;
+  isSelected: boolean;
+  isDefault: boolean;
+  onToggleSelected: () => void;
+  onSetDefault: () => void;
   onDelete: () => void;
   onExport: () => void;
   onAddIngredient: () => void;
 }): React.ReactElement {
   return (
-    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
+    <button
+      type="button"
+      onClick={onToggleSelected}
+      className={`w-full flex items-center justify-between p-2 rounded-lg border text-left transition-colors ${
+        info.isLocked
+          ? 'opacity-60 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
+          : isSelected
+          ? 'border-chocolate-400 bg-chocolate-50 dark:border-chocolate-600 dark:bg-chocolate-900/20'
+          : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800'
+      }`}
+      title={info.isLocked ? `Click to unlock ${info.name}` : info.name}
+    >
       <div className="flex items-center gap-2 min-w-0">
         {/* Mutable indicator */}
-        {info.isMutable ? (
+        {info.isLocked ? (
+          <LockClosedIcon className="w-4 h-4 text-gray-400 flex-shrink-0" title="Locked" />
+        ) : info.isMutable ? (
           <LockOpenIcon className="w-4 h-4 text-green-500 flex-shrink-0" title="Editable" />
         ) : (
           <LockClosedIcon className="w-4 h-4 text-gray-400 flex-shrink-0" title="Read-only" />
+        )}
+
+        {info.isProtected && (
+          <KeyIcon
+            className="w-4 h-4 flex-shrink-0 text-gray-400 dark:text-gray-500"
+            title="Protected collection"
+          />
         )}
 
         {/* Collection info */}
@@ -289,11 +383,6 @@ function CollectionListItem({
             <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{info.name}</span>
             {info.isDirty && (
               <span className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full" title="Unsaved changes" />
-            )}
-            {info.isProtected && (
-              <span className="text-xs text-amber-600 dark:text-amber-400" title="Protected collection">
-                *
-              </span>
             )}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -304,10 +393,31 @@ function CollectionListItem({
 
       {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">
-        {info.isMutable && (
+        {info.isMutable && !info.isLocked && (
           <button
             type="button"
-            onClick={onAddIngredient}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSetDefault();
+            }}
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+            title={isDefault ? 'Default collection' : 'Set as default collection'}
+          >
+            {isDefault ? (
+              <StarIconSolid className="w-4 h-4 text-chocolate-600 dark:text-chocolate-400" />
+            ) : (
+              <StarIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+            )}
+          </button>
+        )}
+
+        {info.isMutable && !info.isLocked && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddIngredient();
+            }}
             className="p-1 text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-300"
             title="Add ingredient"
           >
@@ -316,16 +426,23 @@ function CollectionListItem({
         )}
         <button
           type="button"
-          onClick={onExport}
-          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExport();
+          }}
+          disabled={!info.isLoaded || info.isLocked}
+          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
           title="Export"
         >
           <ArrowDownTrayIcon className="w-4 h-4" />
         </button>
-        {info.isMutable && (
+        {info.isMutable && !info.isLocked && (
           <button
             type="button"
-            onClick={onDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             className="p-1 text-gray-400 hover:text-red-500"
             title="Delete collection"
           >
@@ -333,7 +450,7 @@ function CollectionListItem({
           </button>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 

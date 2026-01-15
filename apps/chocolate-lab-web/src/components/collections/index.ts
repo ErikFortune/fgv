@@ -4,3 +4,4 @@
  */
 
 export * from './CollectionManagementPanel';
+export * from './CollectionSelectionPanel';

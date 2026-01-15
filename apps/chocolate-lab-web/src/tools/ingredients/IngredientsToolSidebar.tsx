@@ -5,17 +5,10 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import {
-  LockClosedIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline';
-import { SearchInput, UnlockCollectionModal } from '../../components/common';
+import { SearchInput, CollapsibleSection } from '../../components/common';
 import { CollectionManagementPanel } from '../../components/collections';
 import { useChocolate } from '../../contexts/ChocolateContext';
-import { useEditing } from '../../contexts/EditingContext';
-import { TagBadge, CollectionBadge } from '@fgv/ts-chocolate-ui';
+import { TagBadge } from '@fgv/ts-chocolate-ui';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
 
 /**
@@ -56,32 +49,16 @@ export function IngredientsToolSidebar({
   filters,
   onFiltersChange
 }: IIngredientsToolSidebarProps): React.ReactElement {
-  const { runtime, collections } = useChocolate();
-  const { hasUnsavedChanges, dirtyCollections } = useEditing();
-  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
-  const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
-  const [showManagement, setShowManagement] = useState(false);
+  const { runtime } = useChocolate();
+  const [showFilters, setShowFilters] = useState(true);
+  const [showTags, setShowTags] = useState(false);
+  const [showCollections, setShowCollections] = useState(true);
 
   // Get all unique tags from ingredients
   const allTags = useMemo(() => {
     if (!runtime) return [];
     return runtime.getAllIngredientTags();
   }, [runtime]);
-
-  // Filter collections to only show those with ingredients
-  const ingredientCollections = useMemo(() => {
-    return collections.filter((c) => c.subLibraries.includes('ingredients'));
-  }, [collections]);
-
-  // Handle clicking on a locked collection
-  const handleCollectionClick = (collectionId: string, isLocked: boolean): void => {
-    if (isLocked) {
-      setCollectionToUnlock(collectionId);
-      setUnlockModalOpen(true);
-    } else {
-      toggleCollection(collectionId);
-    }
-  };
 
   // Handle category toggle
   const toggleCategory = (category: IngredientCategory): void => {
@@ -137,139 +114,71 @@ export function IngredientsToolSidebar({
         />
       </div>
 
-      {/* Categories */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-          Categories
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => toggleCategory(value)}
-              className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                filters.categories.includes(value)
-                  ? 'bg-chocolate-600 text-white dark:bg-chocolate-500'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Collections */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-          Collections
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {ingredientCollections.map((collection) => {
-            const isLocked = collection.isProtected && !collection.isUnlocked;
-            return (
-              <button
-                key={collection.id}
-                type="button"
-                onClick={() => handleCollectionClick(collection.id, isLocked)}
-                className={`transition-opacity ${
-                  isLocked
-                    ? 'opacity-50 hover:opacity-75'
-                    : filters.collections.includes(collection.id)
-                    ? 'opacity-100'
-                    : 'opacity-60 hover:opacity-100'
-                }`}
-                title={isLocked ? `Click to unlock ${collection.name}` : collection.name}
-              >
-                {isLocked ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-md bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                    <LockClosedIcon className="w-3 h-3" />
-                    {collection.name}
-                  </span>
-                ) : (
-                  <CollectionBadge name={collection.name} isProtected={collection.isProtected} size="sm" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tags */}
-      {allTags.length > 0 && (
-        <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            Tags
-          </label>
-          <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-            {allTags.slice(0, 20).map((tag) => (
-              <TagBadge
-                key={tag}
-                tag={tag}
-                size="sm"
-                isActive={filters.tags.includes(tag)}
-                onClick={() => toggleTag(tag)}
-              />
-            ))}
-            {allTags.length > 20 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">+{allTags.length - 20} more</span>
-            )}
+      <CollapsibleSection title="Filters" isOpen={showFilters} onToggle={() => setShowFilters(!showFilters)}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Categories
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => toggleCategory(value)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    filters.categories.includes(value)
+                      ? 'bg-chocolate-600 text-white dark:bg-chocolate-500'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Clear Filters */}
-      {hasActiveFilters && (
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="w-full py-2 text-sm text-chocolate-600 dark:text-chocolate-400 hover:text-chocolate-700 dark:hover:text-chocolate-300"
-        >
-          Clear all filters
-        </button>
-      )}
-
-      {/* Divider */}
-      <div className="border-t border-gray-200 dark:border-gray-700" />
-
-      {/* Collection Management */}
-      <div>
-        <button
-          type="button"
-          onClick={() => setShowManagement(!showManagement)}
-          className="w-full flex items-center justify-between text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2 hover:text-gray-700 dark:hover:text-gray-200"
-        >
-          <span className="flex items-center gap-2">
-            <Cog6ToothIcon className="w-4 h-4" />
-            Manage Collections
-            {hasUnsavedChanges && (
-              <span className="flex items-center gap-1 text-amber-500 normal-case text-xs font-normal">
-                ({dirtyCollections.length} unsaved)
-              </span>
-            )}
-          </span>
-          {showManagement ? (
-            <ChevronDownIcon className="w-4 h-4" />
-          ) : (
-            <ChevronRightIcon className="w-4 h-4" />
+          {allTags.length > 0 && (
+            <CollapsibleSection title="Tags" isOpen={showTags} onToggle={() => setShowTags(!showTags)}>
+              <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
+                {allTags.map((tag) => (
+                  <TagBadge
+                    key={tag}
+                    tag={tag}
+                    size="sm"
+                    isActive={filters.tags.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                  />
+                ))}
+              </div>
+            </CollapsibleSection>
           )}
-        </button>
 
-        {showManagement && <CollectionManagementPanel />}
-      </div>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="w-full py-2 text-sm text-chocolate-600 dark:text-chocolate-400 hover:text-chocolate-700 dark:hover:text-chocolate-300"
+            >
+              Clear all filters
+            </button>
+          )}
+        </div>
+      </CollapsibleSection>
 
-      {/* Unlock Modal */}
-      {collectionToUnlock && (
-        <UnlockCollectionModal
-          isOpen={unlockModalOpen}
-          onClose={() => {
-            setUnlockModalOpen(false);
-            setCollectionToUnlock(null);
-          }}
-          collectionId={collectionToUnlock}
+      <CollapsibleSection
+        title="Collections"
+        isOpen={showCollections}
+        onToggle={() => setShowCollections(!showCollections)}
+      >
+        <CollectionManagementPanel
+          toolId="ingredients"
+          selectedCollectionIds={filters.collections}
+          onToggleSelected={toggleCollection}
+          showHeader={true}
+          headerTitle={null}
         />
-      )}
+      </CollapsibleSection>
     </div>
   );
 }

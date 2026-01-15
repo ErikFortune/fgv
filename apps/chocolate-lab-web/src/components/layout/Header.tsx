@@ -25,13 +25,13 @@ export function Header({ onSettingsClick, className = '' }: IHeaderProps): React
 
   return (
     <header
-      className={`flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${className}`}
+      className={`flex items-center justify-between px-4 py-6 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 ${className}`}
     >
       {/* Logo and Title */}
       <div className="flex items-center gap-3">
         {/* Logo placeholder */}
-        <div className="w-10 h-10 rounded-lg bg-chocolate-600 dark:bg-chocolate-500 flex items-center justify-center">
-          <span className="text-white text-xl font-bold">C</span>
+        <div className="w-14 h-14 rounded-lg bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+          <img src="/chocolate-lab-logo.png" alt="Chocolate Lab" className="w-14 h-14 object-contain" />
         </div>
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Chocolate Lab</h1>

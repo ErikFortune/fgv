@@ -5,11 +5,11 @@
 
 import * as React from 'react';
 import { useState, useMemo } from 'react';
-import { LockClosedIcon } from '@heroicons/react/24/outline';
-import { SearchInput, UnlockCollectionModal } from '../../components/common';
+import { SearchInput, CollapsibleSection } from '../../components/common';
 import { useChocolate } from '../../contexts/ChocolateContext';
-import { TagBadge, CollectionBadge } from '@fgv/ts-chocolate-ui';
-import type { Fillings } from '@fgv/ts-chocolate';
+import { CollectionSelectionPanel } from '../../components/collections';
+import { TagBadge } from '@fgv/ts-chocolate-ui';
+import type { FillingCategory } from '@fgv/ts-chocolate';
 
 /**
  * Filling filter state
@@ -18,7 +18,7 @@ export interface IFillingFilters {
   /** Search text */
   search: string;
   /** Selected categories */
-  categories: Fillings.FillingCategory[];
+  categories: FillingCategory[];
   /** Selected collections */
   collections: string[];
   /** Selected tags */
@@ -38,7 +38,7 @@ export interface IFillingsToolSidebarProps {
 /**
  * Filling categories for filtering
  */
-const CATEGORIES: { value: Fillings.FillingCategory; label: string }[] = [
+const CATEGORIES: { value: FillingCategory; label: string }[] = [
   { value: 'ganache', label: 'Ganache' },
   { value: 'caramel', label: 'Caramel' },
   { value: 'gianduja', label: 'Gianduja' }
@@ -51,9 +51,10 @@ export function FillingsToolSidebar({
   filters,
   onFiltersChange
 }: IFillingsToolSidebarProps): React.ReactElement {
-  const { runtime, collections } = useChocolate();
-  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
-  const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
+  const { runtime } = useChocolate();
+  const [showFilters, setShowFilters] = useState(true);
+  const [showTags, setShowTags] = useState(false);
+  const [showCollections, setShowCollections] = useState(true);
 
   // Get all unique tags from fillings
   const allTags = useMemo(() => {
@@ -61,23 +62,8 @@ export function FillingsToolSidebar({
     return runtime.getAllFillingTags();
   }, [runtime]);
 
-  // Filter collections to only show those with fillings
-  const fillingCollections = useMemo(() => {
-    return collections.filter((c) => c.subLibraries.includes('fillings'));
-  }, [collections]);
-
-  // Handle clicking on a locked collection
-  const handleCollectionClick = (collectionId: string, isLocked: boolean): void => {
-    if (isLocked) {
-      setCollectionToUnlock(collectionId);
-      setUnlockModalOpen(true);
-    } else {
-      toggleCollection(collectionId);
-    }
-  };
-
   // Handle category toggle
-  const toggleCategory = (category: Fillings.FillingCategory): void => {
+  const toggleCategory = (category: FillingCategory): void => {
     const newCategories = filters.categories.includes(category)
       ? filters.categories.filter((c) => c !== category)
       : [...filters.categories, category];
@@ -130,87 +116,70 @@ export function FillingsToolSidebar({
         />
       </div>
 
-      {/* Categories */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-          Categories
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => toggleCategory(value)}
-              className={`px-2 py-1 text-xs rounded-md transition-colors ${
-                filters.categories.includes(value)
-                  ? 'bg-chocolate-600 text-white dark:bg-chocolate-500'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Collections */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-          Collections
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {fillingCollections.map((collection) => {
-            const isLocked = collection.isProtected && !collection.isUnlocked;
-            return (
-              <button
-                key={collection.id}
-                type="button"
-                onClick={() => handleCollectionClick(collection.id, isLocked)}
-                className={`transition-opacity ${
-                  isLocked
-                    ? 'opacity-50 hover:opacity-75'
-                    : filters.collections.includes(collection.id)
-                    ? 'opacity-100'
-                    : 'opacity-60 hover:opacity-100'
-                }`}
-                title={isLocked ? `Click to unlock ${collection.name}` : collection.name}
-              >
-                {isLocked ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-md bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                    <LockClosedIcon className="w-3 h-3" />
-                    {collection.name}
-                  </span>
-                ) : (
-                  <CollectionBadge name={collection.name} isProtected={collection.isProtected} size="sm" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Tags */}
-      {allTags.length > 0 && (
-        <div>
-          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-            Tags
-          </label>
-          <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-            {allTags.slice(0, 20).map((tag) => (
-              <TagBadge
-                key={tag}
-                tag={tag}
-                size="sm"
-                isActive={filters.tags.includes(tag)}
-                onClick={() => toggleTag(tag)}
-              />
-            ))}
-            {allTags.length > 20 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">+{allTags.length - 20} more</span>
-            )}
+      <CollapsibleSection title="Filters" isOpen={showFilters} onToggle={() => setShowFilters(!showFilters)}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+              Categories
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map(({ value, label }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => toggleCategory(value)}
+                  className={`px-2 py-1 text-xs rounded-md transition-colors ${
+                    filters.categories.includes(value)
+                      ? 'bg-chocolate-600 text-white dark:bg-chocolate-500'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {allTags.length > 0 && (
+            <CollapsibleSection title="Tags" isOpen={showTags} onToggle={() => setShowTags(!showTags)}>
+              <div className="flex flex-wrap gap-1 max-h-48 overflow-y-auto">
+                {allTags.map((tag) => (
+                  <TagBadge
+                    key={tag}
+                    tag={tag}
+                    size="sm"
+                    isActive={filters.tags.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                  />
+                ))}
+              </div>
+            </CollapsibleSection>
+          )}
+
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="w-full py-2 text-sm text-chocolate-600 dark:text-chocolate-400 hover:text-chocolate-700 dark:hover:text-chocolate-300"
+            >
+              Clear all filters
+            </button>
+          )}
         </div>
-      )}
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        title="Collections"
+        isOpen={showCollections}
+        onToggle={() => setShowCollections(!showCollections)}
+      >
+        <CollectionSelectionPanel
+          toolId="fillings"
+          subLibrary="fillings"
+          selectedCollectionIds={filters.collections}
+          onToggleSelected={toggleCollection}
+        />
+      </CollapsibleSection>
 
       {/* Clear Filters */}
       {hasActiveFilters && (
@@ -221,18 +190,6 @@ export function FillingsToolSidebar({
         >
           Clear all filters
         </button>
-      )}
-
-      {/* Unlock Modal */}
-      {collectionToUnlock && (
-        <UnlockCollectionModal
-          isOpen={unlockModalOpen}
-          onClose={() => {
-            setUnlockModalOpen(false);
-            setCollectionToUnlock(null);
-          }}
-          collectionId={collectionToUnlock}
-        />
       )}
     </div>
   );
