@@ -19,12 +19,34 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[cavities](./ts-chocolate.entities.molds.converters.cavities.md)
+
+
+</td><td>
+
+Converter for [ICavities](./ts-chocolate.entities.molds.icavities.md) data structure.
+
+
+</td></tr>
+<tr><td>
+
 [cavityDimensions](./ts-chocolate.entities.molds.converters.cavitydimensions.md)
 
 
 </td><td>
 
 Converter for [ICavityDimensions](./ts-chocolate.entities.molds.icavitydimensions.md)<!-- -->.
+
+
+</td></tr>
+<tr><td>
+
+[cavityInfo](./ts-chocolate.entities.molds.converters.cavityinfo.md)
+
+
+</td><td>
+
+Converter for [ICavityInfo](./ts-chocolate.entities.molds.icavityinfo.md)<!-- -->.
 
 
 </td></tr>

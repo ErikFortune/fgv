@@ -37,12 +37,17 @@ describe('MoldsLibrary', () => {
     manufacturer: 'Test Manufacturer',
     productNumber: 'TM-001',
     description: 'Test Mold',
-    cavityCount: 24,
-    cavityWeight: 10 as Measurement,
-    cavityDimensions: {
-      width: 30 as Millimeters,
-      length: 30 as Millimeters,
-      depth: 15 as Millimeters
+    cavities: {
+      kind: 'count',
+      count: 24,
+      info: {
+        weight: 10 as Measurement,
+        dimensions: {
+          width: 30 as Millimeters,
+          length: 30 as Millimeters,
+          depth: 15 as Millimeters
+        }
+      }
     },
     format: 'series-2000',
     tags: ['test', 'sample'],
@@ -265,7 +270,7 @@ describe('MoldsLibrary.createAsync', () => {
               baseId: 'external-mold',
               manufacturer: 'External Manufacturer',
               productNumber: 'EXT-001',
-              cavityCount: 20,
+              cavities: { kind: 'count', count: 20 },
               format: 'series-1000'
             }
           }
@@ -298,7 +303,7 @@ describe('MoldsLibrary.createAsync', () => {
         baseId: 'secret-mold',
         manufacturer: 'Secret Manufacturer',
         productNumber: 'SEC-001',
-        cavityCount: 16,
+        cavities: { kind: 'count', count: 16 },
         format: 'series-2000'
       }
     };
@@ -350,7 +355,7 @@ describe('MoldsLibrary.createAsync', () => {
         baseId: 'secret-mold',
         manufacturer: 'Secret Manufacturer',
         productNumber: 'SEC-001',
-        cavityCount: 16,
+        cavities: { kind: 'count', count: 16 },
         format: 'series-2000'
       }
     };

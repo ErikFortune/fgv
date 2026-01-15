@@ -178,8 +178,13 @@ describe('ConfectionEditingSession', () => {
     manufacturer: 'Mock Manufacturer',
     productNumber: 'MOCK-001',
     description: name,
+    cavities: { kind: 'count', count: 24 },
     cavityCount: 24,
+    cavityWeight: undefined,
+    cavityDimensions: undefined,
     format: 'standard' as unknown as MoldFormat,
+    tags: undefined,
+    related: undefined,
     totalCapacity: undefined,
     displayName: name,
     raw: {} as unknown as IMold

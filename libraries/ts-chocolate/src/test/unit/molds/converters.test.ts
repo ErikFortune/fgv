@@ -39,9 +39,14 @@ describe('Mold Converters', () => {
     manufacturer: 'Chocolate World',
     productNumber: 'CW 2227',
     description: 'Hex Swirl',
-    cavityCount: 32,
-    cavityWeight: 10,
-    cavityDimensions: validCavityDimensions,
+    cavities: {
+      kind: 'count',
+      count: 32,
+      info: {
+        weight: 10,
+        dimensions: validCavityDimensions
+      }
+    },
     format: 'series-2000',
     tags: ['hex-swirl', 'praline']
   };
@@ -120,9 +125,12 @@ describe('Mold Converters', () => {
         expect(result.manufacturer).toBe('Chocolate World');
         expect(result.productNumber).toBe('CW 2227');
         expect(result.description).toBe('Hex Swirl');
-        expect(result.cavityCount).toBe(32);
-        expect(result.cavityWeight).toBe(10);
-        expect(result.cavityDimensions).toBeDefined();
+        expect(result.cavities.kind).toBe('count');
+        if (result.cavities.kind === 'count') {
+          expect(result.cavities.count).toBe(32);
+        }
+        expect(result.cavities.info?.weight).toBe(10);
+        expect(result.cavities.info?.dimensions).toBeDefined();
         expect(result.format).toBe('series-2000');
         expect(result.tags).toEqual(['hex-swirl', 'praline']);
       });
@@ -133,18 +141,21 @@ describe('Mold Converters', () => {
         baseId: 'test-mold',
         manufacturer: 'Test Maker',
         productNumber: 'TM-001',
-        cavityCount: 24,
+        cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
       expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.baseId).toBe('test-mold');
         expect(result.manufacturer).toBe('Test Maker');
         expect(result.productNumber).toBe('TM-001');
-        expect(result.cavityCount).toBe(24);
+        expect(result.cavities.kind).toBe('count');
+        if (result.cavities.kind === 'count') {
+          expect(result.cavities.count).toBe(24);
+        }
         expect(result.format).toBe('series-1000');
         expect(result.description).toBeUndefined();
-        expect(result.cavityWeight).toBeUndefined();
-        expect(result.cavityDimensions).toBeUndefined();
+        expect(result.cavities.info?.weight).toBeUndefined();
+        expect(result.cavities.info?.dimensions).toBeUndefined();
         expect(result.tags).toBeUndefined();
         expect(result.notes).toBeUndefined();
       });
@@ -164,7 +175,7 @@ describe('Mold Converters', () => {
       const input = {
         manufacturer: 'Chocolate World',
         productNumber: 'CW 2227',
-        cavityCount: 32,
+        cavities: { kind: 'count', count: 32 },
         format: 'series-2000'
       };
       expect(moldData.convert(input)).toFail();
@@ -182,7 +193,7 @@ describe('Mold Converters', () => {
       const input = {
         baseId: 'test-mold',
         productNumber: 'TM-001',
-        cavityCount: 24,
+        cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
       expect(moldData.convert(input)).toFail();
@@ -192,13 +203,13 @@ describe('Mold Converters', () => {
       const input = {
         baseId: 'test-mold',
         manufacturer: 'Test Maker',
-        cavityCount: 24,
+        cavities: { kind: 'count', count: 24 },
         format: 'series-1000'
       };
       expect(moldData.convert(input)).toFail();
     });
 
-    test('fails for missing cavityCount', () => {
+    test('fails for missing cavities', () => {
       const input = {
         baseId: 'test-mold',
         manufacturer: 'Test Maker',
@@ -213,7 +224,7 @@ describe('Mold Converters', () => {
         baseId: 'test-mold',
         manufacturer: 'Test Maker',
         productNumber: 'TM-001',
-        cavityCount: 24
+        cavities: { kind: 'count', count: 24 }
       };
       expect(moldData.convert(input)).toFail();
     });
@@ -226,26 +237,41 @@ describe('Mold Converters', () => {
       expect(moldData.convert(input)).toFail();
     });
 
-    test('fails for non-numeric cavityCount', () => {
+    test('fails for non-numeric cavities.count', () => {
       const input = {
         ...validMoldData,
-        cavityCount: 'thirty-two'
+        cavities: {
+          kind: 'count',
+          count: 'thirty-two'
+        }
       };
       expect(moldData.convert(input)).toFail();
     });
 
-    test('fails for non-numeric cavityWeight', () => {
+    test('fails for non-numeric cavities.info.weight', () => {
       const input = {
         ...validMoldData,
-        cavityWeight: 'ten'
+        cavities: {
+          kind: 'count',
+          count: 32,
+          info: {
+            weight: 'ten'
+          }
+        }
       };
       expect(moldData.convert(input)).toFail();
     });
 
-    test('fails for invalid cavityDimensions', () => {
+    test('fails for invalid cavities.info.dimensions', () => {
       const input = {
         ...validMoldData,
-        cavityDimensions: { width: 30 } // missing length and depth
+        cavities: {
+          kind: 'count',
+          count: 32,
+          info: {
+            dimensions: { width: 30 } // missing length and depth
+          }
+        }
       };
       expect(moldData.convert(input)).toFail();
     });
@@ -273,6 +299,16 @@ describe('Mold Converters', () => {
       };
       expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
         expect(result.format).toBe('series-1000');
+      });
+    });
+
+    test('converts with other format', () => {
+      const input = {
+        ...validMoldData,
+        format: 'other'
+      };
+      expect(moldData.convert(input)).toSucceedAndSatisfy((result) => {
+        expect(result.format).toBe('other');
       });
     });
   });

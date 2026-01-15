@@ -10,11 +10,14 @@ items:
     manufacturer: Chocolate World
     productNumber: CW 2227
     description: Hex Swirl
-    cavityCount: 32
-    cavityWeight: 10
-    cavityDimensions:
-      width: 30
-      length: 30
-      depth: 16
+    cavities:
+      kind: count
+      count: 32
+      info:
+        weight: 10
+        dimensions:
+          width: 30
+          length: 30
+          depth: 16
     format: series-2000
     tags: [hex-swirl, praline]

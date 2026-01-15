@@ -34,12 +34,17 @@ describe('RuntimeMold', () => {
     manufacturer: 'Chocolate World',
     productNumber: 'CW 2227',
     description: 'Rectangle bar mold',
-    cavityCount: 8,
-    cavityWeight: 10 as Measurement,
-    cavityDimensions: {
-      width: 30 as Millimeters,
-      length: 50 as Millimeters,
-      depth: 10 as Millimeters
+    cavities: {
+      kind: 'count',
+      count: 8,
+      info: {
+        weight: 10 as Measurement,
+        dimensions: {
+          width: 30 as Millimeters,
+          length: 50 as Millimeters,
+          depth: 10 as Millimeters
+        }
+      }
     },
     format: 'chocolate-world-275x135' as MoldFormat,
     tags: ['bar', 'rectangle'],
@@ -50,7 +55,7 @@ describe('RuntimeMold', () => {
     baseId: 'custom-mold' as BaseMoldId,
     manufacturer: 'Custom',
     productNumber: 'CUSTOM-001',
-    cavityCount: 12,
+    cavities: { kind: 'count', count: 12 },
     format: 'custom' as MoldFormat
   };
 

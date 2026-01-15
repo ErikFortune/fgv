@@ -58,6 +58,17 @@ Dimensions of a mold cavity in millimeters
 </td></tr>
 <tr><td>
 
+[ICavityInfo](./ts-chocolate.entities.molds.icavityinfo.md)
+
+
+</td><td>
+
+Information about a mold cavity
+
+
+</td></tr>
+<tr><td>
+
 [IMold](./ts-chocolate.entities.molds.imold.md)
 
 
@@ -107,6 +118,17 @@ Description
 
 </th></tr></thead>
 <tbody><tr><td>
+
+[ICavities](./ts-chocolate.entities.molds.icavities.md)
+
+
+</td><td>
+
+Represents the cavities in a mold
+
+
+</td></tr>
+<tr><td>
 
 [IMoldFileTreeSource](./ts-chocolate.entities.molds.imoldfiletreesource.md)
 

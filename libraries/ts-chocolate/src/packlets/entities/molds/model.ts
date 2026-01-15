@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseMoldId, ICategorizedUrl, Measurement, Millimeters, MoldFormat } from '../../common';
+import { BaseMoldId, ICategorizedUrl, Measurement, Millimeters, MoldFormat, MoldId } from '../../common';
 
 /**
  * Dimensions of a mold cavity in millimeters
@@ -45,6 +45,32 @@ export interface ICavityDimensions {
    */
   readonly depth: Millimeters;
 }
+
+/**
+ * Information about a mold cavity
+ * @public
+ */
+export interface ICavityInfo {
+  readonly weight?: Measurement;
+  readonly dimensions?: ICavityDimensions;
+}
+
+/**
+ * Represents the cavities in a mold
+ * @public
+ */
+export type ICavities =
+  | {
+      readonly kind: 'grid';
+      readonly columns: number;
+      readonly rows: number;
+      readonly info?: ICavityInfo;
+    }
+  | {
+      readonly kind: 'count';
+      readonly count: number;
+      readonly info?: ICavityInfo;
+    };
 
 /**
  * Represents a chocolate mold
@@ -71,20 +97,7 @@ export interface IMold {
    */
   readonly description?: string;
 
-  /**
-   * Number of cavities in the mold
-   */
-  readonly cavityCount: number;
-
-  /**
-   * Weight capacity per cavity in grams
-   */
-  readonly cavityWeight?: Measurement;
-
-  /**
-   * Physical dimensions of each cavity
-   */
-  readonly cavityDimensions?: ICavityDimensions;
+  readonly cavities: ICavities;
 
   /**
    * Mold format/series (determines frame dimensions)
@@ -95,6 +108,8 @@ export interface IMold {
    * Optional tags for categorization and search
    */
   readonly tags?: ReadonlyArray<string>;
+
+  readonly related?: ReadonlyArray<MoldId>;
 
   /**
    * Optional notes about the mold

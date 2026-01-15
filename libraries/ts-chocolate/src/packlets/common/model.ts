@@ -536,13 +536,13 @@ export const allBuiltInSources: BuiltInSource[] = ['built-in'];
  * - series-2000: 275x175mm
  * @public
  */
-export type MoldFormat = 'series-1000' | 'series-2000';
+export type MoldFormat = 'series-1000' | 'series-2000' | 'other';
 
 /**
  * All possible mold formats
  * @public
  */
-export const allMoldFormats: MoldFormat[] = ['series-1000', 'series-2000'];
+export const allMoldFormats: MoldFormat[] = ['series-1000', 'series-2000', 'other'];
 
 /**
  * Types of confections (discriminator for confection union)

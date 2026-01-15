@@ -18,7 +18,7 @@ import { BrowseView } from './tools/ingredients/views/BrowseView';
 import { EditableDetailView } from './tools/ingredients/views/EditableDetailView';
 import { FillingsTool, FillingsToolSidebar, type IFillingFilters } from './tools/fillings';
 import { ProceduresTool } from './tools/procedures';
-import { MoldsTool } from './tools/molds/MoldsTool';
+import { MoldsTool, MoldsToolSidebar, type IMoldFilters } from './tools/molds';
 import { ConfectionsTool } from './tools/confections/ConfectionsTool';
 import { SettingsTool } from './tools/settings/SettingsTool';
 import type { IngredientId } from '@fgv/ts-chocolate';
@@ -45,6 +45,17 @@ function AppContent(): React.ReactElement {
     tags: []
   });
 
+  const [moldFilters, setMoldFilters] = useState<IMoldFilters>({
+    search: '',
+    collections: [],
+    tags: [],
+    formats: [],
+    cavityCountMin: null,
+    cavityCountMax: null,
+    cavityWeightMin: null,
+    cavityWeightMax: null
+  });
+
   // Render the active tool's sidebar
   const sidebar = useMemo(() => {
     switch (activeTool) {
@@ -52,10 +63,12 @@ function AppContent(): React.ReactElement {
         return <IngredientsToolSidebar filters={ingredientFilters} onFiltersChange={setIngredientFilters} />;
       case 'fillings':
         return <FillingsToolSidebar filters={fillingFilters} onFiltersChange={setFillingFilters} />;
+      case 'molds':
+        return <MoldsToolSidebar filters={moldFilters} onFiltersChange={setMoldFilters} />;
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters, fillingFilters]);
+  }, [activeTool, ingredientFilters, fillingFilters, moldFilters]);
 
   // Render the active tool content
   const content = useMemo(() => {
@@ -67,7 +80,7 @@ function AppContent(): React.ReactElement {
       case 'procedures':
         return <ProceduresTool />;
       case 'molds':
-        return <MoldsTool />;
+        return <MoldsTool filters={moldFilters} />;
       case 'confections':
         return <ConfectionsTool />;
       case 'settings':
@@ -75,7 +88,7 @@ function AppContent(): React.ReactElement {
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters, fillingFilters]);
+  }, [activeTool, ingredientFilters, fillingFilters, moldFilters]);
 
   return (
     <AppShell activeTool={activeTool} onToolChange={setActiveTool} sidebar={sidebar}>

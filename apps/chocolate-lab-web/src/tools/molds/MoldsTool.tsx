@@ -4,19 +4,33 @@
  */
 
 import * as React from 'react';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useState } from 'react';
+import type { MoldId } from '@fgv/ts-chocolate';
+import { BrowseView } from './views/BrowseView';
+import { DetailView } from './views/DetailView';
+import type { IMoldFilters } from './MoldsToolSidebar';
 
-/**
- * Placeholder molds tool
- */
-export function MoldsTool(): React.ReactElement {
-  const { moldCount } = useChocolate();
+export interface IMoldsToolProps {
+  filters: IMoldFilters;
+}
 
-  return (
-    <div className="flex flex-col items-center justify-center h-64 text-center">
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Molds</h2>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">{moldCount} molds loaded</p>
-      <p className="text-sm text-gray-400 dark:text-gray-500">Mold catalog and management coming soon</p>
-    </div>
-  );
+export function MoldsTool({ filters }: IMoldsToolProps): React.ReactElement {
+  const [selectedId, setSelectedId] = useState<MoldId | null>(null);
+  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+
+  const handleSelect = (id: MoldId): void => {
+    setSelectedId(id);
+    setViewMode('detail');
+  };
+
+  const handleBack = (): void => {
+    setViewMode('browse');
+    setSelectedId(null);
+  };
+
+  if (viewMode === 'detail' && selectedId) {
+    return <DetailView moldId={selectedId} onBack={handleBack} />;
+  }
+
+  return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
 }

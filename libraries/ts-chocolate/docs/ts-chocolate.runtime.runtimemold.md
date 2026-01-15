@@ -61,6 +61,27 @@ The base mold ID within the source
 </td></tr>
 <tr><td>
 
+[cavities](./ts-chocolate.runtime.runtimemold.cavities.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ICavities
+
+
+</td><td>
+
+Cavities definition (grid or count)
+
+
+</td></tr>
+<tr><td>
+
 [cavityCount](./ts-chocolate.runtime.runtimemold.cavitycount.md)
 
 
@@ -287,6 +308,25 @@ IMold
 </td><td>
 
 Gets the underlying raw mold data
+
+
+</td></tr>
+<tr><td>
+
+[related](./ts-chocolate.runtime.runtimemold.related.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[MoldId](./ts-chocolate.moldid.md)<!-- -->&gt; \| undefined
+
+
+</td><td>
 
 
 </td></tr>

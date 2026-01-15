@@ -393,6 +393,17 @@ Dimensions of a mold cavity in millimeters
 </td></tr>
 <tr><td>
 
+[ICavityInfo](./ts-chocolate.entities.icavityinfo.md)
+
+
+</td><td>
+
+Information about a mold cavity
+
+
+</td></tr>
+<tr><td>
+
 [IChocolateIngredient](./ts-chocolate.entities.ichocolateingredient.md)
 
 
@@ -1341,6 +1352,17 @@ Discriminator for filling option types
 </td><td>
 
 Specifies a fillings library to merge into a new library.
+
+
+</td></tr>
+<tr><td>
+
+[ICavities](./ts-chocolate.entities.icavities.md)
+
+
+</td><td>
+
+Represents the cavities in a mold
 
 
 </td></tr>

@@ -26,7 +26,7 @@
 import { Converter, Converters } from '@fgv/ts-utils';
 
 import { Converters as CommonConverters } from '../../common';
-import { ICavityDimensions, IMold } from './model';
+import { ICavities, ICavityDimensions, ICavityInfo, IMold } from './model';
 
 /**
  * Converter for {@link Entities.Molds.ICavityDimensions | ICavityDimensions}.
@@ -39,6 +39,46 @@ export const cavityDimensions: Converter<ICavityDimensions> = Converters.object<
 });
 
 /**
+ * Converter for {@link Entities.Molds.ICavityInfo | ICavityInfo}.
+ * @public
+ */
+export const cavityInfo: Converter<ICavityInfo> = Converters.object<ICavityInfo>({
+  weight: CommonConverters.measurement.optional(),
+  dimensions: cavityDimensions.optional()
+});
+
+/**
+ * Converter for {@link Entities.Molds.ICavities | ICavities} data structure.
+ * @public
+ */
+const cavitiesGrid: Converter<Extract<ICavities, { kind: 'grid' }>> = Converters.object<
+  Extract<ICavities, { kind: 'grid' }>
+>({
+  kind: Converters.literal('grid'),
+  columns: Converters.number,
+  rows: Converters.number,
+  info: cavityInfo.optional()
+});
+
+/**
+ * Converter for {@link Entities.Molds.ICavities | ICavities} data structure.
+ * @public
+ */
+const cavitiesCount: Converter<Extract<ICavities, { kind: 'count' }>> = Converters.object<
+  Extract<ICavities, { kind: 'count' }>
+>({
+  kind: Converters.literal('count'),
+  count: Converters.number,
+  info: cavityInfo.optional()
+});
+
+/**
+ * Converter for {@link Entities.Molds.ICavities | ICavities} data structure.
+ * @public
+ */
+export const cavities: Converter<ICavities> = Converters.oneOf<ICavities>([cavitiesGrid, cavitiesCount]);
+
+/**
  * Converter for {@link Entities.Molds.IMold | IMold} data structure.
  * @public
  */
@@ -47,11 +87,10 @@ export const moldData: Converter<IMold> = Converters.object<IMold>({
   manufacturer: Converters.string,
   productNumber: Converters.string,
   description: Converters.string.optional(),
-  cavityCount: Converters.number,
-  cavityWeight: CommonConverters.measurement.optional(),
-  cavityDimensions: cavityDimensions.optional(),
+  cavities,
   format: CommonConverters.moldFormat,
   tags: Converters.arrayOf(Converters.string).optional(),
+  related: Converters.arrayOf(CommonConverters.moldId).optional(),
   notes: Converters.string.optional(),
   urls: Converters.arrayOf(CommonConverters.categorizedUrl).optional()
 });

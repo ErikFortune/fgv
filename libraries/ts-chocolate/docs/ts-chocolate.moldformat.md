@@ -9,5 +9,5 @@ Chocolate World mold format series. Each series corresponds to a specific frame 
 **Signature:**
 
 ```typescript
-export type MoldFormat = 'series-1000' | 'series-2000';
+export type MoldFormat = 'series-1000' | 'series-2000' | 'other';
 ```

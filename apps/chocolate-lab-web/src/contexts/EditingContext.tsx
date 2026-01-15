@@ -10,6 +10,8 @@ import {
   Converters as ChocolateConverters,
   type BaseIngredientId,
   type IngredientId,
+  type BaseMoldId,
+  type MoldId,
   type SourceId,
   type LibraryData
 } from '@fgv/ts-chocolate';
@@ -18,6 +20,7 @@ import { fail, recordFromEntries, succeed } from '@fgv/ts-utils';
 import { useChocolate } from './ChocolateContext';
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
+const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 
 function readLocalIngredientCollections(): Record<string, unknown> {
   try {
@@ -39,8 +42,40 @@ function writeLocalIngredientCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_INGREDIENT_COLLECTIONS_KEY, JSON.stringify(next));
 }
 
+function readLocalMoldCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_MOLD_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalMoldCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_MOLD_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
+function getAllLocalCollectionIds(): SourceId[] {
+  const ids = new Set<string>();
+  for (const k of Object.keys(readLocalIngredientCollections())) {
+    ids.add(k);
+  }
+  for (const k of Object.keys(readLocalMoldCollections())) {
+    ids.add(k);
+  }
+  return Array.from(ids) as SourceId[];
+}
+
 // Type alias for Ingredient from Entities
 type Ingredient = Entities.Ingredients.Ingredient;
+type Mold = Entities.Molds.IMold;
 
 // ============================================================================
 // Types
@@ -137,8 +172,18 @@ export interface IEditingContext {
   /** Import a collection from string */
   importCollection: (params: IImportParams) => Result<void>;
 
+  // Mold collection management
+  createMoldCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteMoldCollection: (collectionId: SourceId) => Result<void>;
+  renameMoldCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportMoldCollection: (params: IExportParams) => Result<string>;
+  importMoldCollection: (params: IImportParams) => Result<void>;
+
   /** Commit current editor state back into the runtime library and refresh runtime caches */
   commitCollection: (collectionId: SourceId) => Result<void>;
+
+  /** Persist a mutable mold collection to localStorage and refresh runtime caches */
+  commitMoldCollection: (collectionId: SourceId) => Result<void>;
 
   // Data version - increments when editing operations complete
   editingVersion: number;
@@ -164,7 +209,13 @@ const defaultEditingContext: IEditingContext = {
   isCollectionMutable: () => false,
   exportCollection: () => fail('No EditingProvider'),
   importCollection: () => fail('No EditingProvider'),
+  createMoldCollection: () => fail('No EditingProvider'),
+  deleteMoldCollection: () => fail('No EditingProvider'),
+  renameMoldCollection: () => fail('No EditingProvider'),
+  exportMoldCollection: () => fail('No EditingProvider'),
+  importMoldCollection: () => fail('No EditingProvider'),
   commitCollection: () => fail('No EditingProvider'),
+  commitMoldCollection: () => fail('No EditingProvider'),
   editingVersion: 0
 };
 
@@ -195,7 +246,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
   const [activeEditorIds, setActiveEditorIds] = useState<SourceId[]>([]);
   const [dirtyCollections, setDirtyCollections] = useState<SourceId[]>([]);
   const [localCollections, setLocalCollections] = useState<SourceId[]>(() => {
-    return Object.keys(readLocalIngredientCollections()) as SourceId[];
+    return getAllLocalCollectionIds();
   });
   const [editingVersion, setEditingVersion] = useState(0);
 
@@ -249,7 +300,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         const existing = readLocalIngredientCollections();
         existing[collectionId] = sourceFile as unknown;
         writeLocalIngredientCollections(existing);
-        setLocalCollections(Object.keys(existing) as SourceId[]);
+        setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
         return fail(
           `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
@@ -263,6 +314,233 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       return notifyLibraryChanged();
     },
     [notifyLibraryChanged, runtime]
+  );
+
+  const commitMoldCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.molds.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+
+      const collectionEntry = collectionResult.value;
+      if (!collectionEntry.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+
+      try {
+        const items: Record<BaseMoldId, Mold> = recordFromEntries(collectionEntry.items.entries());
+        const sourceFile: LibraryData.ICollectionSourceFile<Mold> = {
+          metadata: collectionEntry.metadata ?? { name: collectionId },
+          items
+        };
+
+        const existing = readLocalMoldCollections();
+        existing[collectionId] = sourceFile as unknown;
+        writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const createMoldCollection = useCallback(
+    (params: ICreateCollectionParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
+      const metadata: LibraryData.ICollectionSourceMetadata =
+        params.description !== undefined
+          ? { name: params.name, description: params.description }
+          : { name: params.name };
+
+      return manager.create(params.collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalMoldCollections();
+          const sourceFile: LibraryData.ICollectionSourceFile<Mold> = {
+            metadata,
+            items: {}
+          };
+          existing[params.collectionId] = sourceFile as unknown;
+          writeLocalMoldCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const deleteMoldCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
+      const result = manager.delete(collectionId);
+
+      return result.onSuccess(() => {
+        try {
+          const existing = readLocalMoldCollections();
+          if (collectionId in existing) {
+            delete existing[collectionId];
+            writeLocalMoldCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const renameMoldCollection = useCallback(
+    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
+        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+
+      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalMoldCollections();
+          const stored = existing[collectionId];
+          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
+            const record = stored as Record<string, unknown>;
+            const existingMetadata = record.metadata;
+            const mergedMetadata =
+              typeof existingMetadata === 'object' &&
+              existingMetadata !== null &&
+              !Array.isArray(existingMetadata)
+                ? {
+                    ...(existingMetadata as Record<string, unknown>),
+                    ...(metadata as Record<string, unknown>)
+                  }
+                : (metadata as unknown);
+            record.metadata = mergedMetadata;
+            existing[collectionId] = stored;
+            writeLocalMoldCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const exportMoldCollection = useCallback(
+    (params: IExportParams): Result<string> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.molds.collections.get(params.collectionId);
+      if (!collectionResult.isSuccess() || !collectionResult.value) {
+        return fail(`Collection "${params.collectionId}" not found`);
+      }
+
+      const collection = collectionResult.value;
+      const items: Record<BaseMoldId, Mold> = recordFromEntries(collection.items.entries());
+
+      const sourceFile: LibraryData.ICollectionSourceFile<Mold> = {
+        metadata: collection.metadata ?? { name: params.collectionId },
+        items
+      };
+
+      return Editing.serializeCollection(sourceFile, params.format);
+    },
+    [runtime]
+  );
+
+  const importMoldCollection = useCallback(
+    (params: IImportParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const parseResult = Editing.validateAndParseCollection<Mold>(params.content);
+      if (parseResult.isFailure()) {
+        return fail(`Invalid import file: ${parseResult.message}`);
+      }
+
+      const sourceFile = parseResult.value;
+      const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
+
+      if (params.mode === 'replace') {
+        if (!manager.exists(params.collectionId)) {
+          return fail(`Collection "${params.collectionId}" does not exist`);
+        }
+
+        const mutableResult = manager.isMutable(params.collectionId);
+        if (mutableResult.isFailure() || !mutableResult.value) {
+          return fail(`Collection "${params.collectionId}" is not mutable`);
+        }
+
+        const deleteResult = manager.delete(params.collectionId);
+        if (deleteResult.isFailure()) {
+          return fail(`Failed to delete existing collection: ${deleteResult.message}`);
+        }
+      } else if (manager.exists(params.collectionId)) {
+        return fail(`Collection "${params.collectionId}" already exists`);
+      }
+
+      const createResult = runtime.library.molds.addCollectionEntry({
+        id: params.collectionId,
+        isMutable: true,
+        items: sourceFile.items,
+        metadata: sourceFile.metadata
+      });
+
+      if (createResult.isFailure()) {
+        return fail(`Failed to create collection: ${createResult.message}`);
+      }
+
+      try {
+        const existing = readLocalMoldCollections();
+        existing[params.collectionId] = {
+          metadata: sourceFile.metadata,
+          items: sourceFile.items
+        } as unknown;
+        writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch {
+        // ignore
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
   );
 
   // Get or create an ingredient editor
@@ -397,7 +675,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           };
           existing[params.collectionId] = sourceFile as unknown;
           writeLocalIngredientCollections(existing);
-          setLocalCollections(Object.keys(existing) as SourceId[]);
+          setLocalCollections(getAllLocalCollectionIds());
         } catch {
           // ignore persistence errors here; collection still exists in runtime
         }
@@ -432,7 +710,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           if (collectionId in existing) {
             delete existing[collectionId];
             writeLocalIngredientCollections(existing);
-            setLocalCollections(Object.keys(existing) as SourceId[]);
+            setLocalCollections(getAllLocalCollectionIds());
           }
         } catch {
           // ignore
@@ -465,10 +743,21 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           const existing = readLocalIngredientCollections();
           const stored = existing[collectionId];
           if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
-            (stored as Record<string, unknown>).metadata = metadata;
+            const record = stored as Record<string, unknown>;
+            const existingMetadata = record.metadata;
+            const mergedMetadata =
+              typeof existingMetadata === 'object' &&
+              existingMetadata !== null &&
+              !Array.isArray(existingMetadata)
+                ? {
+                    ...(existingMetadata as Record<string, unknown>),
+                    ...(metadata as Record<string, unknown>)
+                  }
+                : (metadata as unknown);
+            record.metadata = mergedMetadata;
             existing[collectionId] = stored;
             writeLocalIngredientCollections(existing);
-            setLocalCollections(Object.keys(existing) as SourceId[]);
+            setLocalCollections(getAllLocalCollectionIds());
           }
         } catch {
           // ignore
@@ -580,7 +869,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items: sourceFile.items
         } as unknown;
         writeLocalIngredientCollections(existing);
-        setLocalCollections(Object.keys(existing) as SourceId[]);
+        setLocalCollections(getAllLocalCollectionIds());
       } catch {
         // ignore
       }
@@ -616,7 +905,13 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       isCollectionMutable,
       exportCollection,
       importCollection,
+      createMoldCollection,
+      deleteMoldCollection,
+      renameMoldCollection,
+      exportMoldCollection,
+      importMoldCollection,
       commitCollection,
+      commitMoldCollection,
       editingVersion
     }),
     [
@@ -636,7 +931,13 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       isCollectionMutable,
       exportCollection,
       importCollection,
+      createMoldCollection,
+      deleteMoldCollection,
+      renameMoldCollection,
+      exportMoldCollection,
+      importMoldCollection,
       commitCollection,
+      commitMoldCollection,
       editingVersion
     ]
   );
@@ -726,6 +1027,30 @@ export function useCollectionManager(): {
     isCollectionMutable,
     exportCollection,
     importCollection
+  };
+}
+
+export function useMoldCollectionManager(): {
+  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteCollection: (collectionId: SourceId) => Result<void>;
+  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportCollection: (params: IExportParams) => Result<string>;
+  importCollection: (params: IImportParams) => Result<void>;
+} {
+  const {
+    createMoldCollection,
+    deleteMoldCollection,
+    renameMoldCollection,
+    exportMoldCollection,
+    importMoldCollection
+  } = useEditing();
+
+  return {
+    createCollection: createMoldCollection,
+    deleteCollection: deleteMoldCollection,
+    renameCollection: renameMoldCollection,
+    exportCollection: exportMoldCollection,
+    importCollection: importMoldCollection
   };
 }
 

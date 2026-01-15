@@ -26,7 +26,7 @@
  */
 
 import { BaseMoldId, ICategorizedUrl, Measurement, MoldFormat, MoldId, SourceId } from '../../common';
-import { ICavityDimensions, IMold } from '../../entities';
+import { ICavities, ICavityDimensions, IMold } from '../../entities';
 
 // ============================================================================
 // Runtime Mold Context
@@ -85,6 +85,9 @@ export interface IRuntimeMold {
   /** Human-readable description */
   readonly description?: string;
 
+  /** Cavities definition (grid or count) */
+  readonly cavities: ICavities;
+
   /** Number of cavities in the mold */
   readonly cavityCount: number;
 
@@ -99,6 +102,9 @@ export interface IRuntimeMold {
 
   /** Optional tags */
   readonly tags?: ReadonlyArray<string>;
+
+  /** Optional related molds (cross-catalog via composite IDs) */
+  readonly related?: ReadonlyArray<MoldId>;
 
   /** Optional notes */
   readonly notes?: string;

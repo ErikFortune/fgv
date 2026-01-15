@@ -281,12 +281,17 @@ describe('ChocolateLibrary', () => {
       manufacturer: 'Test Manufacturer',
       productNumber: 'TM-001',
       description: 'Test Mold',
-      cavityCount: 24,
-      cavityWeight: 10 as Measurement,
-      cavityDimensions: {
-        width: 30 as Millimeters,
-        length: 30 as Millimeters,
-        depth: 15 as Millimeters
+      cavities: {
+        kind: 'count',
+        count: 24,
+        info: {
+          weight: 10 as Measurement,
+          dimensions: {
+            width: 30 as Millimeters,
+            length: 30 as Millimeters,
+            depth: 15 as Millimeters
+          }
+        }
       },
       format: 'series-2000',
       tags: ['test'],
@@ -485,7 +490,7 @@ describe('ChocolateLibrary', () => {
           baseId: 'file-mold',
           manufacturer: 'Test',
           productNumber: 'T-001',
-          cavityCount: 24,
+          cavities: { kind: 'count', count: 24 },
           format: 'series-2000'
         }
       }

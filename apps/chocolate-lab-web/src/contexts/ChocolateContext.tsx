@@ -34,6 +34,7 @@ import { useObservability } from '@fgv/ts-chocolate-ui';
 const DEFAULT_PBKDF2_ITERATIONS = 100000;
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
+const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -56,8 +57,50 @@ function readLocalIngredientCollectionFiles(): FileTree.IInMemoryFile[] {
       if (!isJsonObject(contents)) {
         continue;
       }
+
+      if (!('items' in contents) || !isJsonObject(contents.items)) {
+        continue;
+      }
+      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+        continue;
+      }
       files.push({
         path: `/data/ingredients/${collectionId}.json`,
+        contents
+      });
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
+
+function readLocalMoldCollectionFiles(): FileTree.IInMemoryFile[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_MOLD_COLLECTIONS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isJsonObject(parsed)) {
+      return [];
+    }
+
+    const files: FileTree.IInMemoryFile[] = [];
+    for (const [collectionId, contents] of Object.entries(parsed)) {
+      if (!isJsonObject(contents)) {
+        continue;
+      }
+
+      if (!('items' in contents) || !isJsonObject(contents.items)) {
+        continue;
+      }
+      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+        continue;
+      }
+      files.push({
+        path: `/data/molds/${collectionId}.json`,
         contents
       });
     }
@@ -217,11 +260,20 @@ export function ChocolateProvider({
         throw new Error(`Failed to get library tree: ${treeResult.message}`);
       }
 
-      const localFiles = readLocalIngredientCollectionFiles();
+      const localFiles = [...readLocalIngredientCollectionFiles(), ...readLocalMoldCollectionFiles()];
 
       const localTreeResult = localFiles.length > 0 ? FileTree.inMemory(localFiles) : undefined;
       let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
+      let localHasIngredients = false;
+      let localHasMolds = false;
       if (localTreeResult?.isSuccess() === true) {
+        const ingredientsDirResult = localTreeResult.value.getItem('/data/ingredients');
+        localHasIngredients =
+          ingredientsDirResult.isSuccess() && ingredientsDirResult.value.type === 'directory';
+
+        const moldsDirResult = localTreeResult.value.getItem('/data/molds');
+        localHasMolds = moldsDirResult.isSuccess() && moldsDirResult.value.type === 'directory';
+
         const rootResult = localTreeResult.value.getItem('/');
         if (rootResult.isSuccess() && rootResult.value.type === 'directory') {
           localRootDir = rootResult.value;
@@ -232,11 +284,11 @@ export function ChocolateProvider({
         {
           directory: treeResult.value
         },
-        ...(localRootDir
+        ...(localRootDir && (localHasIngredients || localHasMolds)
           ? [
               {
                 directory: localRootDir,
-                load: { ingredients: true, fillings: false },
+                load: { default: false, ingredients: localHasIngredients, molds: localHasMolds },
                 mutable: true
               }
             ]
@@ -297,6 +349,11 @@ export function ChocolateProvider({
         addSubLibrary(collectionId, 'fillings');
       }
 
+      // Include empty mold collections
+      for (const collectionId of ctx.library.molds.collections.keys()) {
+        addSubLibrary(collectionId, 'molds');
+      }
+
       // Track which collections are protected (per sub-library)
       // The library now properly captures protected collection metadata during synchronous loading
       const protectedIngredientIds = new Set<string>(
@@ -304,6 +361,9 @@ export function ChocolateProvider({
       );
       const protectedFillingIds = new Set<string>(
         ctx.library.fillings.protectedCollections.map((pc) => pc.collectionId as string)
+      );
+      const protectedMoldIds = new Set<string>(
+        ctx.library.molds.protectedCollections.map((pc) => pc.collectionId as string)
       );
 
       // Debug: log protected collections found
@@ -320,17 +380,24 @@ export function ChocolateProvider({
         addSubLibrary(collectionId, 'fillings');
       }
 
+      // Add protected mold collections (not yet loaded)
+      for (const collectionId of protectedMoldIds) {
+        addSubLibrary(collectionId, 'molds');
+      }
+
       // Build collection metadata from the map
       const collectionMeta: ICollectionMetadata[] = [];
       for (const [collectionId, subLibs] of collectionSubLibraries) {
         const isProtectedIngredients = protectedIngredientIds.has(collectionId);
         const isProtectedFillings = protectedFillingIds.has(collectionId);
-        const isProtected = isProtectedIngredients || isProtectedFillings;
+        const isProtectedMolds = protectedMoldIds.has(collectionId);
+        const isProtected = isProtectedIngredients || isProtectedFillings || isProtectedMolds;
 
         // A collection is loaded if it has items in the runtime (not just protected entries)
         const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
         const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
-        const isLoaded = hasLoadedIngredients || hasLoadedFillings;
+        const hasLoadedMolds = !isProtectedMolds && subLibs.has('molds');
+        const isLoaded = hasLoadedIngredients || hasLoadedFillings || hasLoadedMolds;
 
         collectionMeta.push({
           id: collectionId,
@@ -396,12 +463,19 @@ export function ChocolateProvider({
       addSubLibrary(collectionId, 'fillings');
     }
 
+    for (const collectionId of runtime.library.molds.collections.keys()) {
+      addSubLibrary(collectionId, 'molds');
+    }
+
     // Track protected collections
     const protectedIngredientIds = new Set<string>(
       runtime.library.ingredients.protectedCollections.map((pc) => pc.collectionId as string)
     );
     const protectedFillingIds = new Set<string>(
       runtime.library.fillings.protectedCollections.map((pc) => pc.collectionId as string)
+    );
+    const protectedMoldIds = new Set<string>(
+      runtime.library.molds.protectedCollections.map((pc) => pc.collectionId as string)
     );
 
     // Add protected collections
@@ -413,16 +487,22 @@ export function ChocolateProvider({
       addSubLibrary(collectionId, 'fillings');
     }
 
+    for (const collectionId of protectedMoldIds) {
+      addSubLibrary(collectionId, 'molds');
+    }
+
     // Build collection metadata
     const collectionMeta: ICollectionMetadata[] = [];
     for (const [collectionId, subLibs] of collectionSubLibraries) {
       const isProtectedIngredients = protectedIngredientIds.has(collectionId);
       const isProtectedFillings = protectedFillingIds.has(collectionId);
-      const isProtected = isProtectedIngredients || isProtectedFillings;
+      const isProtectedMolds = protectedMoldIds.has(collectionId);
+      const isProtected = isProtectedIngredients || isProtectedFillings || isProtectedMolds;
 
       const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
       const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
-      const isLoaded = hasLoadedIngredients || hasLoadedFillings;
+      const hasLoadedMolds = !isProtectedMolds && subLibs.has('molds');
+      const isLoaded = hasLoadedIngredients || hasLoadedFillings || hasLoadedMolds;
 
       collectionMeta.push({
         id: collectionId,
@@ -503,7 +583,14 @@ export function ChocolateProvider({
           (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
         );
 
-        const keyDerivation = ingredientProtected?.keyDerivation ?? fillingProtected?.keyDerivation;
+        const moldProtected = runtime.library.molds.protectedCollections.find(
+          (pc) => pc.collectionId === collectionId || pc.secretName === collectionId
+        );
+
+        const keyDerivation =
+          ingredientProtected?.keyDerivation ??
+          fillingProtected?.keyDerivation ??
+          moldProtected?.keyDerivation;
 
         // Require keyDerivation params for password-based decryption
         // Files encrypted with a raw key (no keyDerivation) must use key mode instead
@@ -554,9 +641,15 @@ export function ChocolateProvider({
         collectionId
       ]);
 
+      // Try to unlock in molds library
+      const moldsResult = await runtime.library.molds.loadProtectedCollectionAsync(encryptionConfig, [
+        collectionId
+      ]);
+
       // Check results and get counts
       const ingredientCount = ingredientsResult.isSuccess() ? ingredientsResult.value.length : 0;
       const fillingCount = fillingsResult.isSuccess() ? fillingsResult.value.length : 0;
+      const moldCount = moldsResult.isSuccess() ? moldsResult.value.length : 0;
 
       // Log results
       if (ingredientsResult.isFailure()) {
@@ -570,8 +663,14 @@ export function ChocolateProvider({
         diag.info(`Unlock ${collectionId} fillings: loaded ${fillingCount} collection(s)`);
       }
 
+      if (moldsResult.isFailure()) {
+        diag.info(`Unlock ${collectionId} molds: ${moldsResult.message}`);
+      } else {
+        diag.info(`Unlock ${collectionId} molds: loaded ${moldCount} collection(s)`);
+      }
+
       // Check for errors - report if both failed or neither loaded anything
-      if (ingredientCount === 0 && fillingCount === 0) {
+      if (ingredientCount === 0 && fillingCount === 0 && moldCount === 0) {
         // Build error message from failures
         const errors: string[] = [];
         if (ingredientsResult.isFailure()) {
@@ -579,6 +678,9 @@ export function ChocolateProvider({
         }
         if (fillingsResult.isFailure()) {
           errors.push(`fillings: ${fillingsResult.message}`);
+        }
+        if (moldsResult.isFailure()) {
+          errors.push(`molds: ${moldsResult.message}`);
         }
         if (errors.length === 0) {
           errors.push('no matching collections found');
@@ -603,6 +705,7 @@ export function ChocolateProvider({
       const parts: string[] = [];
       if (ingredientCount > 0) parts.push(`${ingredientCount} ingredient${ingredientCount !== 1 ? 's' : ''}`);
       if (fillingCount > 0) parts.push(`${fillingCount} filling${fillingCount !== 1 ? 's' : ''}`);
+      if (moldCount > 0) parts.push(`${moldCount} mold${moldCount !== 1 ? 's' : ''}`);
       user.success(`Unlocked ${collectionId}: ${parts.join(', ')}`);
 
       return succeed(undefined);

@@ -34,7 +34,7 @@ import {
   MoldId,
   SourceId
 } from '../../common';
-import { ICavityDimensions, IMold } from '../../entities';
+import { ICavities, ICavityDimensions, IMold } from '../../entities';
 import { IMoldContext, IRuntimeMold } from './model';
 
 // ============================================================================
@@ -129,24 +129,34 @@ export class RuntimeMold implements IRuntimeMold {
   }
 
   /**
+   * Cavities definition (grid or count)
+   */
+  public get cavities(): ICavities {
+    return this._mold.cavities;
+  }
+
+  /**
    * Number of cavities in the mold
    */
   public get cavityCount(): number {
-    return this._mold.cavityCount;
+    if (this._mold.cavities.kind === 'grid') {
+      return this._mold.cavities.columns * this._mold.cavities.rows;
+    }
+    return this._mold.cavities.count;
   }
 
   /**
    * Weight capacity per cavity in grams
    */
   public get cavityWeight(): Measurement | undefined {
-    return this._mold.cavityWeight;
+    return this._mold.cavities.info?.weight;
   }
 
   /**
    * Physical dimensions of each cavity
    */
   public get cavityDimensions(): ICavityDimensions | undefined {
-    return this._mold.cavityDimensions;
+    return this._mold.cavities.info?.dimensions;
   }
 
   /**
@@ -161,6 +171,10 @@ export class RuntimeMold implements IRuntimeMold {
    */
   public get tags(): ReadonlyArray<string> | undefined {
     return this._mold.tags;
+  }
+
+  public get related(): ReadonlyArray<MoldId> | undefined {
+    return this._mold.related;
   }
 
   /**
@@ -187,10 +201,11 @@ export class RuntimeMold implements IRuntimeMold {
    * Returns undefined if cavityWeight is not defined.
    */
   public get totalCapacity(): Measurement | undefined {
-    if (this._mold.cavityWeight === undefined) {
+    const weight = this._mold.cavities.info?.weight;
+    if (weight === undefined) {
       return undefined;
     }
-    return (this._mold.cavityWeight * this._mold.cavityCount) as Measurement;
+    return (weight * this.cavityCount) as Measurement;
   }
 
   /**

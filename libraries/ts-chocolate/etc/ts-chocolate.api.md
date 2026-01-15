@@ -383,7 +383,17 @@ const categorizedUrl: Converter<ICategorizedUrl>;
 // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 //
 // @public
+const cavities: Converter<ICavities>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
 const cavityDimensions: Converter<ICavityDimensions>;
+
+// Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
+//
+// @public
+const cavityInfo: Converter<ICavityInfo>;
 
 // @public
 export type Celsius = Brand<number, 'Celsius'>;
@@ -1227,6 +1237,8 @@ declare namespace Entities {
         IJournalLibraryParams,
         JournalLibrary,
         ICavityDimensions,
+        ICavityInfo,
+        ICavities,
         IMold,
         MoldCollectionEntry,
         MoldCollectionEntryInit,
@@ -1659,10 +1671,30 @@ interface ICategoryFilter {
 }
 
 // @public
+type ICavities = {
+    readonly kind: 'grid';
+    readonly columns: number;
+    readonly rows: number;
+    readonly info?: ICavityInfo;
+} | {
+    readonly kind: 'count';
+    readonly count: number;
+    readonly info?: ICavityInfo;
+};
+
+// @public
 interface ICavityDimensions {
     readonly depth: Millimeters;
     readonly length: Millimeters;
     readonly width: Millimeters;
+}
+
+// @public
+interface ICavityInfo {
+    // (undocumented)
+    readonly dimensions?: ICavityDimensions;
+    // (undocumented)
+    readonly weight?: Measurement;
 }
 
 // @public
@@ -2530,14 +2562,15 @@ interface IMergeLibrarySource<TLibrary, TCollectionId extends string = string> {
 // @public
 interface IMold {
     readonly baseId: BaseMoldId;
-    readonly cavityCount: number;
-    readonly cavityDimensions?: ICavityDimensions;
-    readonly cavityWeight?: Measurement;
+    // (undocumented)
+    readonly cavities: ICavities;
     readonly description?: string;
     readonly format: MoldFormat;
     readonly manufacturer: string;
     readonly notes?: string;
     readonly productNumber: string;
+    // (undocumented)
+    readonly related?: ReadonlyArray<MoldId>;
     readonly tags?: ReadonlyArray<string>;
     readonly urls?: ReadonlyArray<ICategorizedUrl>;
 }
@@ -3285,6 +3318,7 @@ interface IRuntimeIngredient {
 // @public
 interface IRuntimeMold {
     readonly baseId: BaseMoldId;
+    readonly cavities: ICavities;
     readonly cavityCount: number;
     readonly cavityDimensions?: ICavityDimensions;
     readonly cavityWeight?: Measurement;
@@ -3296,6 +3330,7 @@ interface IRuntimeMold {
     readonly notes?: string;
     readonly productNumber: string;
     readonly raw: IMold;
+    readonly related?: ReadonlyArray<MoldId>;
     readonly sourceId: SourceId;
     readonly tags?: ReadonlyArray<string>;
     readonly totalCapacity: Measurement | undefined;
@@ -4141,7 +4176,7 @@ const moldedBonBon: Converter<IMoldedBonBon>;
 const moldedBonBonVersion: Converter<IMoldedBonBonVersion>;
 
 // @public
-export type MoldFormat = 'series-1000' | 'series-2000';
+export type MoldFormat = 'series-1000' | 'series-2000' | 'other';
 
 // @public
 const moldFormat: Converter<MoldFormat>;
@@ -4155,6 +4190,8 @@ const moldId: Converter<MoldId>;
 declare namespace Molds {
     export {
         cavityDimensions,
+        cavityInfo,
+        cavities,
         moldData
     }
 }
@@ -4163,6 +4200,8 @@ declare namespace Molds_2 {
     export {
         Molds as Converters,
         ICavityDimensions,
+        ICavityInfo,
+        ICavities,
         IMold,
         MoldCollectionEntry,
         MoldCollectionEntryInit,
@@ -4989,6 +5028,7 @@ abstract class RuntimeIngredientBase implements IRuntimeIngredient {
 // @public
 class RuntimeMold implements IRuntimeMold {
     get baseId(): BaseMoldId;
+    get cavities(): ICavities;
     get cavityCount(): number;
     get cavityDimensions(): ICavityDimensions | undefined;
     get cavityWeight(): Measurement | undefined;
@@ -5005,6 +5045,8 @@ class RuntimeMold implements IRuntimeMold {
     get notes(): string | undefined;
     get productNumber(): string;
     get raw(): IMold;
+    // (undocumented)
+    get related(): ReadonlyArray<MoldId> | undefined;
     get sourceId(): SourceId;
     get tags(): ReadonlyArray<string> | undefined;
     get totalCapacity(): Measurement | undefined;

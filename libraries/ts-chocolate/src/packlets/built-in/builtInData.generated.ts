@@ -1417,12 +1417,17 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Generic',
         productNumber: 'DOME-25',
         description: '25mm hemisphere dome',
-        cavityCount: 24,
-        cavityWeight: 8,
-        cavityDimensions: {
-          width: 25,
-          length: 25,
-          depth: 12
+        cavities: {
+          kind: 'count',
+          count: 24,
+          info: {
+            weight: 8,
+            dimensions: {
+              width: 25,
+              length: 25,
+              depth: 12
+            }
+          }
         },
         format: 'series-2000',
         tags: ['dome', 'hemisphere', 'truffle'],
@@ -1433,12 +1438,17 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Generic',
         productNumber: 'DOME-30',
         description: '30mm hemisphere dome',
-        cavityCount: 15,
-        cavityWeight: 14,
-        cavityDimensions: {
-          width: 30,
-          length: 30,
-          depth: 15
+        cavities: {
+          kind: 'count',
+          count: 15,
+          info: {
+            weight: 14,
+            dimensions: {
+              width: 30,
+              length: 30,
+              depth: 15
+            }
+          }
         },
         format: 'series-2000',
         tags: ['dome', 'hemisphere', 'truffle'],
@@ -1449,12 +1459,17 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Generic',
         productNumber: 'BULLET-28',
         description: '28mm bullet/ogive shape',
-        cavityCount: 21,
-        cavityWeight: 10,
-        cavityDimensions: {
-          width: 28,
-          length: 28,
-          depth: 18
+        cavities: {
+          kind: 'count',
+          count: 21,
+          info: {
+            weight: 10,
+            dimensions: {
+              width: 28,
+              length: 28,
+              depth: 18
+            }
+          }
         },
         format: 'series-2000',
         tags: ['bullet', 'ogive', 'praline'],
@@ -1465,12 +1480,17 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Generic',
         productNumber: 'SQ-25',
         description: '25mm square',
-        cavityCount: 24,
-        cavityWeight: 10,
-        cavityDimensions: {
-          width: 25,
-          length: 25,
-          depth: 16
+        cavities: {
+          kind: 'count',
+          count: 24,
+          info: {
+            weight: 10,
+            dimensions: {
+              width: 25,
+              length: 25,
+              depth: 16
+            }
+          }
         },
         format: 'series-2000',
         tags: ['square', 'geometric'],
@@ -1489,12 +1509,17 @@ export const moldCollections: Record<string, JsonObject> = {
         manufacturer: 'Chocolate World',
         productNumber: 'CW 2227',
         description: 'Hex Swirl',
-        cavityCount: 32,
-        cavityWeight: 10,
-        cavityDimensions: {
-          width: 30,
-          length: 30,
-          depth: 16
+        cavities: {
+          kind: 'count',
+          count: 32,
+          info: {
+            weight: 10,
+            dimensions: {
+              width: 30,
+              length: 30,
+              depth: 16
+            }
+          }
         },
         format: 'series-2000',
         tags: ['hex-swirl', 'praline']
@@ -1754,7 +1779,11 @@ export const taskCollections: Record<string, JsonObject> = {
       'melt-chocolate': {
         baseId: 'melt-chocolate',
         name: 'Melt Chocolate',
-        template: 'Melt {{ingredient}} to {{temp}}C',
+        template: 'Melt {{ingredient}} to {{temp}}',
+        defaults: {
+          ingredient: 'chocolate',
+          temp: '40C'
+        },
         defaultActiveTime: 5,
         tags: ['chocolate', 'melting', 'heating']
       },

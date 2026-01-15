@@ -58,7 +58,7 @@ Base mold identifier (unique within source)
 </td></tr>
 <tr><td>
 
-[cavityCount](./ts-chocolate.entities.molds.imold.cavitycount.md)
+[cavities](./ts-chocolate.entities.molds.imold.cavities.md)
 
 
 </td><td>
@@ -68,54 +68,10 @@ Base mold identifier (unique within source)
 
 </td><td>
 
-number
+ICavities
 
 
 </td><td>
-
-Number of cavities in the mold
-
-
-</td></tr>
-<tr><td>
-
-[cavityDimensions?](./ts-chocolate.entities.molds.imold.cavitydimensions.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-ICavityDimensions
-
-
-</td><td>
-
-_(Optional)_ Physical dimensions of each cavity
-
-
-</td></tr>
-<tr><td>
-
-[cavityWeight?](./ts-chocolate.entities.molds.imold.cavityweight.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[Measurement](./ts-chocolate.measurement.md)
-
-
-</td><td>
-
-_(Optional)_ Weight capacity per cavity in grams
 
 
 </td></tr>
@@ -221,6 +177,27 @@ string
 </td><td>
 
 Product number from the manufacturer
+
+
+</td></tr>
+<tr><td>
+
+[related?](./ts-chocolate.entities.molds.imold.related.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyArray&lt;[MoldId](./ts-chocolate.moldid.md)<!-- -->&gt;
+
+
+</td><td>
+
+_(Optional)_
 
 
 </td></tr>
