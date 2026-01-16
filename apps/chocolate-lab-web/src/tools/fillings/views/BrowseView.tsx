@@ -8,8 +8,11 @@ import { useMemo } from 'react';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { LoadingSpinner } from '../../../components/common';
 import { FillingCard } from '@fgv/ts-chocolate-ui';
-import type { FillingId } from '@fgv/ts-chocolate';
+import type { FillingId, SourceId } from '@fgv/ts-chocolate';
 import type { IFillingFilters } from '../FillingsToolSidebar';
+import { PlusIcon } from '@heroicons/react/24/outline';
+import { useSettings } from '../../../contexts/SettingsContext';
+import { AddFillingDialog } from '../../../components/collections/FillingCollectionManagementPanel';
 
 /**
  * Props for the BrowseView component
@@ -28,6 +31,43 @@ export interface IBrowseViewProps {
  */
 export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps): React.ReactElement {
   const { runtime, loadingState, fillingCount, dataVersion } = useChocolate();
+  const { settings } = useSettings();
+  const [showAddFilling, setShowAddFilling] = React.useState(false);
+
+  const defaultCollectionId = useMemo((): SourceId | null => {
+    if (!runtime) {
+      return null;
+    }
+
+    const isMutable = (id: SourceId): boolean => {
+      const collectionResult = runtime.library.fillings.collections.get(id);
+      return collectionResult.isSuccess() && !!collectionResult.value && collectionResult.value.isMutable;
+    };
+
+    const isUnlocked = (id: SourceId): boolean => {
+      const meta = settings.collections[id];
+      return meta?.unlocked !== false;
+    };
+
+    const preferred = settings.defaultCollections?.fillings;
+    if (preferred) {
+      const preferredId = preferred as SourceId;
+      if (isMutable(preferredId) && isUnlocked(preferredId)) {
+        return preferredId;
+      }
+    }
+
+    if (filters.collections.length === 1) {
+      const filteredId = filters.collections[0] as SourceId;
+      if (isMutable(filteredId) && isUnlocked(filteredId)) {
+        return filteredId;
+      }
+    }
+
+    const ids = Array.from(runtime.library.fillings.collections.keys()) as SourceId[];
+    const firstMutable = ids.find((id) => isMutable(id) && isUnlocked(id));
+    return firstMutable ?? null;
+  }, [filters.collections, runtime, settings.collections, settings.defaultCollections]);
 
   // Filter and sort fillings - dataVersion triggers recalculation when library data changes
   const filteredFillings = useMemo(() => {
@@ -111,7 +151,21 @@ export function BrowseView({ filters, selectedId, onSelect }: IBrowseViewProps):
         <p className="text-sm text-gray-500 dark:text-gray-400">
           {filteredFillings.length} of {fillingCount} fillings
         </p>
+
+        <button
+          type="button"
+          onClick={() => setShowAddFilling(true)}
+          disabled={!defaultCollectionId}
+          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Add Filling
+        </button>
       </div>
+
+      {showAddFilling && defaultCollectionId && (
+        <AddFillingDialog collectionId={defaultCollectionId} onClose={() => setShowAddFilling(false)} />
+      )}
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredFillings.map(([id, filling]) => (

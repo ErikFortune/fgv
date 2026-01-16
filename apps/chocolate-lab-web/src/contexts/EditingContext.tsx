@@ -10,6 +10,8 @@ import {
   Converters as ChocolateConverters,
   type BaseIngredientId,
   type IngredientId,
+  type BaseFillingId,
+  type FillingId,
   type BaseProcedureId,
   type ProcedureId,
   type BaseTaskId,
@@ -24,6 +26,7 @@ import { fail, recordFromEntries, succeed } from '@fgv/ts-utils';
 import { useChocolate } from './ChocolateContext';
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
+const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1';
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
@@ -46,6 +49,26 @@ function readLocalIngredientCollections(): Record<string, unknown> {
 
 function writeLocalIngredientCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_INGREDIENT_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
+function readLocalFillingCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_FILLING_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalFillingCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_FILLING_COLLECTIONS_KEY, JSON.stringify(next));
 }
 
 function readLocalMoldCollections(): Record<string, unknown> {
@@ -113,6 +136,9 @@ function getAllLocalCollectionIds(): SourceId[] {
   for (const k of Object.keys(readLocalIngredientCollections())) {
     ids.add(k);
   }
+  for (const k of Object.keys(readLocalFillingCollections())) {
+    ids.add(k);
+  }
   for (const k of Object.keys(readLocalProcedureCollections())) {
     ids.add(k);
   }
@@ -127,6 +153,7 @@ function getAllLocalCollectionIds(): SourceId[] {
 
 // Type alias for Ingredient from Entities
 type Ingredient = Entities.Ingredients.Ingredient;
+type Filling = Entities.Fillings.IFillingRecipe;
 type Procedure = Entities.Procedures.IProcedure;
 type Task = Entities.Tasks.ITaskData;
 type Mold = Entities.Molds.IMold;
@@ -233,6 +260,13 @@ export interface IEditingContext {
   exportMoldCollection: (params: IExportParams) => Result<string>;
   importMoldCollection: (params: IImportParams) => Result<void>;
 
+  // Filling collection management
+  createFillingCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteFillingCollection: (collectionId: SourceId) => Result<void>;
+  renameFillingCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportFillingCollection: (params: IExportParams) => Result<string>;
+  importFillingCollection: (params: IImportParams) => Result<void>;
+
   // Procedure collection management
   createProcedureCollection: (params: ICreateCollectionParams) => Result<void>;
   deleteProcedureCollection: (collectionId: SourceId) => Result<void>;
@@ -256,6 +290,9 @@ export interface IEditingContext {
 
   /** Persist a mutable mold collection to localStorage and refresh runtime caches */
   commitMoldCollection: (collectionId: SourceId) => Result<void>;
+
+  /** Persist a mutable filling collection to localStorage and refresh runtime caches */
+  commitFillingCollection: (collectionId: SourceId) => Result<void>;
 
   /** Persist a mutable procedure collection to localStorage and refresh runtime caches */
   commitProcedureCollection: (collectionId: SourceId) => Result<void>;
@@ -292,6 +329,11 @@ const defaultEditingContext: IEditingContext = {
   renameMoldCollection: () => fail('No EditingProvider'),
   exportMoldCollection: () => fail('No EditingProvider'),
   importMoldCollection: () => fail('No EditingProvider'),
+  createFillingCollection: () => fail('No EditingProvider'),
+  deleteFillingCollection: () => fail('No EditingProvider'),
+  renameFillingCollection: () => fail('No EditingProvider'),
+  exportFillingCollection: () => fail('No EditingProvider'),
+  importFillingCollection: () => fail('No EditingProvider'),
   createProcedureCollection: () => fail('No EditingProvider'),
   deleteProcedureCollection: () => fail('No EditingProvider'),
   renameProcedureCollection: () => fail('No EditingProvider'),
@@ -304,6 +346,7 @@ const defaultEditingContext: IEditingContext = {
   importTaskCollection: () => fail('No EditingProvider'),
   commitCollection: () => fail('No EditingProvider'),
   commitMoldCollection: () => fail('No EditingProvider'),
+  commitFillingCollection: () => fail('No EditingProvider'),
   commitProcedureCollection: () => fail('No EditingProvider'),
   commitTaskCollection: () => fail('No EditingProvider'),
   editingVersion: 0
@@ -432,6 +475,241 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         const existing = readLocalMoldCollections();
         existing[collectionId] = sourceFile as unknown;
         writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const createFillingCollection = useCallback(
+    (params: ICreateCollectionParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
+        runtime.library.fillings
+      );
+      const metadata: LibraryData.ICollectionSourceMetadata =
+        params.description !== undefined
+          ? { name: params.name, description: params.description }
+          : { name: params.name };
+
+      return manager.create(params.collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalFillingCollections();
+          const sourceFile: LibraryData.ICollectionSourceFile<Filling> = {
+            metadata,
+            items: {}
+          };
+          existing[params.collectionId] = sourceFile as unknown;
+          writeLocalFillingCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const deleteFillingCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
+        runtime.library.fillings
+      );
+      const result = manager.delete(collectionId);
+
+      return result.onSuccess(() => {
+        try {
+          const existing = readLocalFillingCollections();
+          if (collectionId in existing) {
+            delete existing[collectionId];
+            writeLocalFillingCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const renameFillingCollection = useCallback(
+    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
+        runtime.library.fillings
+      );
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
+        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+
+      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalFillingCollections();
+          const stored = existing[collectionId];
+          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
+            const record = stored as Record<string, unknown>;
+            const existingMetadata = record.metadata;
+            const mergedMetadata =
+              typeof existingMetadata === 'object' &&
+              existingMetadata !== null &&
+              !Array.isArray(existingMetadata)
+                ? {
+                    ...(existingMetadata as Record<string, unknown>),
+                    ...(metadata as Record<string, unknown>)
+                  }
+                : (metadata as unknown);
+            record.metadata = mergedMetadata;
+            existing[collectionId] = stored;
+            writeLocalFillingCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const exportFillingCollection = useCallback(
+    (params: IExportParams): Result<string> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.fillings.collections.get(params.collectionId);
+      if (!collectionResult.isSuccess() || !collectionResult.value) {
+        return fail(`Collection "${params.collectionId}" not found`);
+      }
+
+      const collection = collectionResult.value;
+      const items: Record<BaseFillingId, Filling> = recordFromEntries(collection.items.entries());
+
+      const sourceFile: LibraryData.ICollectionSourceFile<Filling> = {
+        metadata: collection.metadata ?? { name: params.collectionId },
+        items
+      };
+
+      return Editing.serializeCollection(sourceFile, params.format);
+    },
+    [runtime]
+  );
+
+  const importFillingCollection = useCallback(
+    (params: IImportParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const parseResult = Editing.validateAndParseCollection<Filling>(params.content);
+      if (parseResult.isFailure()) {
+        return fail(`Invalid import file: ${parseResult.message}`);
+      }
+
+      const sourceFile = parseResult.value;
+      const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
+        runtime.library.fillings
+      );
+
+      if (params.mode === 'replace') {
+        if (!manager.exists(params.collectionId)) {
+          return fail(`Collection "${params.collectionId}" does not exist`);
+        }
+
+        const mutableResult = manager.isMutable(params.collectionId);
+        if (mutableResult.isFailure() || !mutableResult.value) {
+          return fail(`Collection "${params.collectionId}" is not mutable`);
+        }
+
+        const deleteResult = manager.delete(params.collectionId);
+        if (deleteResult.isFailure()) {
+          return fail(`Failed to delete existing collection: ${deleteResult.message}`);
+        }
+      } else if (manager.exists(params.collectionId)) {
+        return fail(`Collection "${params.collectionId}" already exists`);
+      }
+
+      const createResult = runtime.library.fillings.addCollectionEntry({
+        id: params.collectionId,
+        isMutable: true,
+        items: sourceFile.items,
+        metadata: sourceFile.metadata
+      });
+
+      if (createResult.isFailure()) {
+        return fail(`Failed to create collection: ${createResult.message}`);
+      }
+
+      try {
+        const existing = readLocalFillingCollections();
+        existing[params.collectionId] = {
+          metadata: sourceFile.metadata,
+          items: sourceFile.items
+        } as unknown;
+        writeLocalFillingCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch {
+        // ignore
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const commitFillingCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.fillings.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+
+      const collectionEntry = collectionResult.value;
+      if (!collectionEntry.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+
+      try {
+        const items: Record<BaseFillingId, Filling> = recordFromEntries(collectionEntry.items.entries());
+        const sourceFile: LibraryData.ICollectionSourceFile<Filling> = {
+          metadata: collectionEntry.metadata ?? { name: collectionId },
+          items
+        };
+
+        const existing = readLocalFillingCollections();
+        existing[collectionId] = sourceFile as unknown;
+        writeLocalFillingCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
         return fail(
@@ -1462,6 +1740,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       renameMoldCollection,
       exportMoldCollection,
       importMoldCollection,
+      createFillingCollection,
+      deleteFillingCollection,
+      renameFillingCollection,
+      exportFillingCollection,
+      importFillingCollection,
       createProcedureCollection,
       deleteProcedureCollection,
       renameProcedureCollection,
@@ -1474,6 +1757,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       importTaskCollection,
       commitCollection,
       commitMoldCollection,
+      commitFillingCollection,
       commitProcedureCollection,
       commitTaskCollection,
       editingVersion
@@ -1500,6 +1784,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       renameMoldCollection,
       exportMoldCollection,
       importMoldCollection,
+      createFillingCollection,
+      deleteFillingCollection,
+      renameFillingCollection,
+      exportFillingCollection,
+      importFillingCollection,
       createProcedureCollection,
       deleteProcedureCollection,
       renameProcedureCollection,
@@ -1512,6 +1801,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       importTaskCollection,
       commitCollection,
       commitMoldCollection,
+      commitFillingCollection,
       commitProcedureCollection,
       commitTaskCollection,
       editingVersion
@@ -1651,6 +1941,30 @@ export function useTaskCollectionManager(): {
     renameCollection: renameTaskCollection,
     exportCollection: exportTaskCollection,
     importCollection: importTaskCollection
+  };
+}
+
+export function useFillingCollectionManager(): {
+  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteCollection: (collectionId: SourceId) => Result<void>;
+  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportCollection: (params: IExportParams) => Result<string>;
+  importCollection: (params: IImportParams) => Result<void>;
+} {
+  const {
+    createFillingCollection,
+    deleteFillingCollection,
+    renameFillingCollection,
+    exportFillingCollection,
+    importFillingCollection
+  } = useEditing();
+
+  return {
+    createCollection: createFillingCollection,
+    deleteCollection: deleteFillingCollection,
+    renameCollection: renameFillingCollection,
+    exportCollection: exportFillingCollection,
+    importCollection: importFillingCollection
   };
 }
 

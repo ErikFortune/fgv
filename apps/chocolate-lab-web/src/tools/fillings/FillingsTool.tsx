@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FillingId } from '@fgv/ts-chocolate';
 import { BrowseView } from './views/BrowseView';
 import { DetailView } from './views/DetailView';
@@ -24,6 +24,25 @@ export interface IFillingsToolProps {
 export function FillingsTool({ filters }: IFillingsToolProps): React.ReactElement {
   const [selectedId, setSelectedId] = useState<FillingId | null>(null);
   const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+
+  useEffect(() => {
+    const applyHashSelection = (): void => {
+      const hash = window.location.hash;
+      if (!hash.startsWith('#fillings/')) {
+        return;
+      }
+      const rawId = hash.slice('#fillings/'.length);
+      if (rawId.length === 0) {
+        return;
+      }
+      setSelectedId(rawId as FillingId);
+      setViewMode('detail');
+    };
+
+    applyHashSelection();
+    window.addEventListener('hashchange', applyHashSelection);
+    return () => window.removeEventListener('hashchange', applyHashSelection);
+  }, [filters]);
 
   const handleSelect = (id: string): void => {
     setSelectedId(id as FillingId);

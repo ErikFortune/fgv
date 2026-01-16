@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useState, useMemo } from 'react';
 import { SearchInput, CollapsibleSection } from '../../components/common';
 import { useChocolate } from '../../contexts/ChocolateContext';
-import { CollectionSelectionPanel } from '../../components/collections';
+import { FillingCollectionManagementPanel } from '../../components/collections';
 import { TagBadge } from '@fgv/ts-chocolate-ui';
 import type { FillingCategory } from '@fgv/ts-chocolate';
 
@@ -173,11 +173,12 @@ export function FillingsToolSidebar({
         isOpen={showCollections}
         onToggle={() => setShowCollections(!showCollections)}
       >
-        <CollectionSelectionPanel
+        <FillingCollectionManagementPanel
           toolId="fillings"
-          subLibrary="fillings"
           selectedCollectionIds={filters.collections}
           onToggleSelected={toggleCollection}
+          showHeader={true}
+          headerTitle={null}
         />
       </CollapsibleSection>
 

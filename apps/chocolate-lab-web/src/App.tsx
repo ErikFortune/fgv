@@ -3,7 +3,7 @@
  * Copyright (c) 2025 Erik Fortune
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ObservabilityProvider } from '@fgv/ts-chocolate-ui';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
@@ -17,7 +17,8 @@ import { IngredientsToolSidebar, type IIngredientFilters } from './tools/ingredi
 import { BrowseView } from './tools/ingredients/views/BrowseView';
 import { EditableDetailView } from './tools/ingredients/views/EditableDetailView';
 import { FillingsTool, FillingsToolSidebar, type IFillingFilters } from './tools/fillings';
-import { TasksTool, TasksToolSidebar, type ITaskFilters } from './tools/tasks';
+import { TasksTool } from './tools/tasks/TasksTool';
+import { TasksToolSidebar, type ITaskFilters } from './tools/tasks/TasksToolSidebar';
 import { ProceduresTool, ProceduresToolSidebar, type IProcedureFilters } from './tools/procedures';
 import { MoldsTool, MoldsToolSidebar, type IMoldFilters } from './tools/molds';
 import { ConfectionsTool } from './tools/confections/ConfectionsTool';
@@ -29,6 +30,22 @@ import type { IngredientId } from '@fgv/ts-chocolate';
  */
 function AppContent(): React.ReactElement {
   const [activeTool, setActiveTool] = useState<ToolId>('ingredients');
+
+  useEffect(() => {
+    const applyHashNavigation = (): void => {
+      const hash = window.location.hash;
+      if (hash === '#procedures' || hash.startsWith('#procedures/')) {
+        setActiveTool('procedures');
+      }
+      if (hash === '#fillings' || hash.startsWith('#fillings/')) {
+        setActiveTool('fillings');
+      }
+    };
+
+    applyHashNavigation();
+    window.addEventListener('hashchange', applyHashNavigation);
+    return () => window.removeEventListener('hashchange', applyHashNavigation);
+  }, []);
 
   // Ingredient filters state (lifted here for sidebar sync)
   const [ingredientFilters, setIngredientFilters] = useState<IIngredientFilters>({

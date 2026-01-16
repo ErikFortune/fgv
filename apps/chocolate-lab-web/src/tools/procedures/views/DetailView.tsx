@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeftIcon, PencilIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import {
+  Editing,
   Converters as ChocolateConverters,
   Entities,
   type BaseProcedureId,
@@ -28,9 +29,7 @@ function isTaskRef(invocation: unknown): invocation is { taskId: TaskId; params:
   return isRecord(invocation) && 'taskId' in invocation;
 }
 
-function isInlineTask(
-  invocation: unknown
-): invocation is {
+function isInlineTask(invocation: unknown): invocation is {
   task: { template: string; defaults?: Record<string, unknown> };
   params: Record<string, unknown>;
 } {
@@ -122,7 +121,7 @@ function omitEmptyStringValues(input: Record<string, unknown>): Record<string, u
 
 export function DetailView({ procedureId, onBack }: IDetailViewProps): React.ReactElement {
   const { runtime, loadingState, dataVersion } = useChocolate();
-  const { commitProcedureCollection } = useEditing();
+  const { commitProcedureCollection, commitTaskCollection } = useEditing();
   const { settings } = useSettings();
 
   const [showRendered, setShowRendered] = useState(true);
@@ -136,6 +135,24 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
 
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const [addStepSearch, setAddStepSearch] = useState('');
+
+  const [showPromoteTaskModal, setShowPromoteTaskModal] = useState(false);
+  const [promoteTaskTargetCollectionId, setPromoteTaskTargetCollectionId] = useState<SourceId | null>(null);
+  const [promoteTaskName, setPromoteTaskName] = useState('');
+  const [promoteTaskBaseId, setPromoteTaskBaseId] = useState('');
+  const [isPromoteTaskIdManuallyEdited, setIsPromoteTaskIdManuallyEdited] = useState(false);
+  const [isPromotingTask, setIsPromotingTask] = useState(false);
+  const [promoteTaskError, setPromoteTaskError] = useState<string | null>(null);
+
+  const [showPromoteInlineModal, setShowPromoteInlineModal] = useState(false);
+  const [promoteInlineTargetCollectionId, setPromoteInlineTargetCollectionId] = useState<SourceId | null>(
+    null
+  );
+  const [promoteInlineName, setPromoteInlineName] = useState('');
+  const [promoteInlineBaseId, setPromoteInlineBaseId] = useState('');
+  const [isPromoteInlineIdManuallyEdited, setIsPromoteInlineIdManuallyEdited] = useState(false);
+  const [isPromotingInline, setIsPromotingInline] = useState(false);
+  const [promoteInlineError, setPromoteInlineError] = useState<string | null>(null);
 
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [cloneTargetCollectionId, setCloneTargetCollectionId] = useState<SourceId | null>(null);
@@ -155,11 +172,12 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
   const [stepTemplate, setStepTemplate] = useState('');
 
   const runtimeProcedureResult = useMemo(() => {
+    void dataVersion;
     if (!runtime) {
       return null;
     }
     return runtime.getRuntimeProcedure(procedureId);
-  }, [procedureId, runtime]);
+  }, [dataVersion, procedureId, runtime]);
 
   const runtimeProcedure = runtimeProcedureResult?.isSuccess() ? runtimeProcedureResult.value : null;
 
@@ -190,6 +208,19 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
     return ids
       .filter((id) => {
         const result = runtime.library.procedures.collections.get(id);
+        return result.isSuccess() && !!result.value && result.value.isMutable;
+      })
+      .filter((id) => settings.collections[id]?.unlocked !== false);
+  }, [runtime, settings.collections]);
+
+  const mutableTaskCollectionIds = useMemo((): ReadonlyArray<SourceId> => {
+    if (!runtime) {
+      return [];
+    }
+    const ids = Array.from(runtime.library.tasks.collections.keys()) as SourceId[];
+    return ids
+      .filter((id) => {
+        const result = runtime.library.tasks.collections.get(id);
         return result.isSuccess() && !!result.value && result.value.isMutable;
       })
       .filter((id) => settings.collections[id]?.unlocked !== false);
@@ -666,6 +697,30 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
     return (selectedStep as { task: unknown }).task;
   }, [selectedStep]);
 
+  const selectedTaskId = useMemo((): TaskId | null => {
+    if (!selectedInvocation || !isTaskRef(selectedInvocation)) {
+      return null;
+    }
+    return (selectedInvocation as { taskId: TaskId }).taskId;
+  }, [selectedInvocation]);
+
+  const selectedInlineTask = useMemo((): Record<string, unknown> | null => {
+    if (!selectedInvocation || !isInlineTask(selectedInvocation)) {
+      return null;
+    }
+    const task = (selectedInvocation as { task: unknown }).task;
+    return isRecord(task) ? (task as Record<string, unknown>) : null;
+  }, [selectedInvocation]);
+
+  const selectedTaskTemplate = useMemo((): string => {
+    if (!runtime || !selectedInvocation || !isTaskRef(selectedInvocation)) {
+      return '';
+    }
+    const taskId = (selectedInvocation as { taskId: TaskId }).taskId;
+    const taskResult = runtime.getRuntimeTask(taskId);
+    return taskResult.isSuccess() ? taskResult.value.template : '';
+  }, [runtime, selectedInvocation]);
+
   const requiredStepVars = useMemo((): ReadonlyArray<string> => {
     if (!selectedInvocation || !runtime) {
       return [];
@@ -815,6 +870,409 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
     setStepTaskId('');
     setStepTemplate(template);
   }, [isEditing, procedureId, runtime, selectedInvocation, selectedStepOrder, updateDraftStep]);
+
+  useEffect(() => {
+    if (!showPromoteTaskModal) {
+      return;
+    }
+    if (mutableTaskCollectionIds.length === 0) {
+      return;
+    }
+    if (promoteTaskTargetCollectionId && mutableTaskCollectionIds.includes(promoteTaskTargetCollectionId)) {
+      return;
+    }
+    setPromoteTaskTargetCollectionId(mutableTaskCollectionIds[0]);
+  }, [mutableTaskCollectionIds, promoteTaskTargetCollectionId, showPromoteTaskModal]);
+
+  useEffect(() => {
+    if (!showPromoteTaskModal) {
+      return;
+    }
+    if (!runtime || !selectedTaskId) {
+      setPromoteTaskName('');
+      setIsPromoteTaskIdManuallyEdited(false);
+      return;
+    }
+    const taskResult = runtime.getRuntimeTask(selectedTaskId);
+    if (taskResult.isFailure()) {
+      setPromoteTaskName('');
+      setIsPromoteTaskIdManuallyEdited(false);
+      return;
+    }
+    setPromoteTaskName(taskResult.value.name);
+    setIsPromoteTaskIdManuallyEdited(false);
+  }, [runtime, selectedTaskId, showPromoteTaskModal]);
+
+  const existingPromoteTaskBaseIds = useMemo((): ReadonlySet<string> => {
+    if (!runtime || !promoteTaskTargetCollectionId) {
+      return new Set();
+    }
+    const collectionResult = runtime.library.tasks.collections.get(promoteTaskTargetCollectionId).asResult;
+    if (collectionResult.isFailure()) {
+      return new Set();
+    }
+    return new Set(Array.from(collectionResult.value.items.keys()) as string[]);
+  }, [promoteTaskTargetCollectionId, runtime]);
+
+  const derivedPromoteTaskBaseId = useMemo((): string => {
+    if (isPromoteTaskIdManuallyEdited) {
+      return promoteTaskBaseId;
+    }
+    const trimmedName = promoteTaskName.trim();
+    if (trimmedName.length === 0) {
+      return '';
+    }
+    const deriveResult = Editing.Helpers.generateUniqueBaseIdFromName(
+      trimmedName,
+      Array.from(existingPromoteTaskBaseIds)
+    );
+    return deriveResult.isSuccess() ? (deriveResult.value as string) : '';
+  }, [existingPromoteTaskBaseIds, isPromoteTaskIdManuallyEdited, promoteTaskBaseId, promoteTaskName]);
+
+  useEffect(() => {
+    if (!showPromoteTaskModal) {
+      return;
+    }
+    if (!isPromoteTaskIdManuallyEdited) {
+      setPromoteTaskBaseId(derivedPromoteTaskBaseId);
+    }
+  }, [derivedPromoteTaskBaseId, isPromoteTaskIdManuallyEdited, showPromoteTaskModal]);
+
+  useEffect(() => {
+    if (!showPromoteInlineModal) {
+      return;
+    }
+    if (mutableTaskCollectionIds.length === 0) {
+      return;
+    }
+    if (
+      promoteInlineTargetCollectionId &&
+      mutableTaskCollectionIds.includes(promoteInlineTargetCollectionId)
+    ) {
+      return;
+    }
+    setPromoteInlineTargetCollectionId(mutableTaskCollectionIds[0]);
+  }, [mutableTaskCollectionIds, promoteInlineTargetCollectionId, showPromoteInlineModal]);
+
+  useEffect(() => {
+    if (!showPromoteInlineModal) {
+      return;
+    }
+    if (!selectedInlineTask || selectedStepOrder === null) {
+      setPromoteInlineName('');
+      setIsPromoteInlineIdManuallyEdited(false);
+      return;
+    }
+    setPromoteInlineName(String(selectedInlineTask.name ?? `Step ${selectedStepOrder}`));
+    setIsPromoteInlineIdManuallyEdited(false);
+  }, [selectedInlineTask, selectedStepOrder, showPromoteInlineModal]);
+
+  const existingPromoteInlineBaseIds = useMemo((): ReadonlySet<string> => {
+    if (!runtime || !promoteInlineTargetCollectionId) {
+      return new Set();
+    }
+    const collectionResult = runtime.library.tasks.collections.get(promoteInlineTargetCollectionId).asResult;
+    if (collectionResult.isFailure()) {
+      return new Set();
+    }
+    return new Set(Array.from(collectionResult.value.items.keys()) as string[]);
+  }, [promoteInlineTargetCollectionId, runtime]);
+
+  const derivedPromoteInlineBaseId = useMemo((): string => {
+    if (isPromoteInlineIdManuallyEdited) {
+      return promoteInlineBaseId;
+    }
+    const trimmedName = promoteInlineName.trim();
+    if (trimmedName.length === 0) {
+      return '';
+    }
+    const deriveResult = Editing.Helpers.generateUniqueBaseIdFromName(
+      trimmedName,
+      Array.from(existingPromoteInlineBaseIds)
+    );
+    return deriveResult.isSuccess() ? (deriveResult.value as string) : '';
+  }, [existingPromoteInlineBaseIds, isPromoteInlineIdManuallyEdited, promoteInlineBaseId, promoteInlineName]);
+
+  useEffect(() => {
+    if (!showPromoteInlineModal) {
+      return;
+    }
+    if (!isPromoteInlineIdManuallyEdited) {
+      setPromoteInlineBaseId(derivedPromoteInlineBaseId);
+    }
+  }, [derivedPromoteInlineBaseId, isPromoteInlineIdManuallyEdited, showPromoteInlineModal]);
+
+  const handlePromoteTask = useCallback(() => {
+    if (!runtime || !isEditing || selectedStepOrder === null) {
+      return;
+    }
+    if (!selectedTaskId) {
+      setPromoteTaskError('No task selected');
+      return;
+    }
+    if (!promoteTaskTargetCollectionId) {
+      setPromoteTaskError('Select a target collection');
+      return;
+    }
+    if (promoteTaskName.trim().length === 0) {
+      setPromoteTaskError('Enter a task name');
+      return;
+    }
+
+    setIsPromotingTask(true);
+    setPromoteTaskError(null);
+
+    try {
+      const idResult = ChocolateConverters.baseTaskId.convert(promoteTaskBaseId);
+      if (idResult.isFailure()) {
+        setPromoteTaskError(`Invalid task ID: ${idResult.message}`);
+        setIsPromotingTask(false);
+        return;
+      }
+      const validatedBaseId = idResult.value;
+
+      const collectionResult = runtime.library.tasks.collections.get(promoteTaskTargetCollectionId).asResult;
+      if (collectionResult.isFailure()) {
+        setPromoteTaskError(`Collection "${promoteTaskTargetCollectionId}" not found`);
+        setIsPromotingTask(false);
+        return;
+      }
+      const entry = collectionResult.value;
+      if (!entry.isMutable) {
+        setPromoteTaskError(`Collection "${promoteTaskTargetCollectionId}" is not mutable`);
+        setIsPromotingTask(false);
+        return;
+      }
+      if (settings.collections[promoteTaskTargetCollectionId]?.unlocked === false) {
+        setPromoteTaskError(`Collection "${promoteTaskTargetCollectionId}" is locked`);
+        setIsPromotingTask(false);
+        return;
+      }
+
+      const taskResult = runtime.getRuntimeTask(selectedTaskId);
+      if (taskResult.isFailure()) {
+        setPromoteTaskError(taskResult.message);
+        setIsPromotingTask(false);
+        return;
+      }
+
+      const contextDefaults = rowsToRenderParams(contextRows);
+      const stepDefaults = rowsToRenderParams(stepParamsRows);
+      const mergedDefaults = {
+        ...((taskResult.value.defaults ?? {}) as unknown as Record<string, unknown>),
+        ...(contextDefaults as Record<string, unknown>),
+        ...(stepDefaults as Record<string, unknown>)
+      };
+      const defaults = Object.keys(mergedDefaults).length > 0 ? mergedDefaults : undefined;
+
+      const newTask: Record<string, unknown> = {
+        baseId: validatedBaseId,
+        name: promoteTaskName.trim(),
+        template: taskResult.value.template,
+        defaults,
+        defaultActiveTime: taskResult.value.defaultActiveTime,
+        defaultWaitTime: taskResult.value.defaultWaitTime,
+        defaultHoldTime: taskResult.value.defaultHoldTime,
+        defaultTemperature: taskResult.value.defaultTemperature,
+        notes: taskResult.value.notes,
+        tags: taskResult.value.tags
+      };
+
+      const validateResult = Entities.Tasks.Converters.taskData.convert(newTask);
+      if (validateResult.isFailure()) {
+        setPromoteTaskError(validateResult.message);
+        setIsPromotingTask(false);
+        return;
+      }
+
+      const addResult = entry.items.validating.add(
+        validatedBaseId as unknown as string,
+        validateResult.value
+      ).asResult;
+      if (addResult.isFailure()) {
+        setPromoteTaskError(addResult.message);
+        setIsPromotingTask(false);
+        return;
+      }
+
+      const commitResult = commitTaskCollection(promoteTaskTargetCollectionId);
+      if (commitResult.isFailure()) {
+        setPromoteTaskError(commitResult.message);
+        setIsPromotingTask(false);
+        return;
+      }
+
+      const newTaskId = `${promoteTaskTargetCollectionId}.${validatedBaseId as unknown as string}` as TaskId;
+      updateDraftStep(selectedStepOrder, (prev) => {
+        const invocation = (prev.task as unknown) ?? {};
+        const invocationRecord = isRecord(invocation) ? (invocation as Record<string, unknown>) : {};
+        const params = (invocationRecord.params as Record<string, unknown>) ?? {};
+        return {
+          ...prev,
+          task: {
+            ...invocationRecord,
+            taskId: newTaskId,
+            params
+          }
+        };
+      });
+      setStepTaskId(newTaskId as unknown as string);
+
+      setIsPromotingTask(false);
+      setShowPromoteTaskModal(false);
+    } catch (e) {
+      setPromoteTaskError(`Promotion failed: ${e instanceof Error ? e.message : String(e)}`);
+      setIsPromotingTask(false);
+    }
+  }, [
+    commitTaskCollection,
+    isEditing,
+    promoteTaskBaseId,
+    promoteTaskTargetCollectionId,
+    runtime,
+    promoteTaskName,
+    contextRows,
+    stepParamsRows,
+    selectedStepOrder,
+    selectedTaskId,
+    settings.collections,
+    updateDraftStep
+  ]);
+
+  const handlePromoteInlineTask = useCallback(() => {
+    if (!runtime || !isEditing || selectedStepOrder === null) {
+      return;
+    }
+    if (!selectedInlineTask) {
+      setPromoteInlineError('No inline task selected');
+      return;
+    }
+    if (!promoteInlineTargetCollectionId) {
+      setPromoteInlineError('Select a target collection');
+      return;
+    }
+    if (promoteInlineName.trim().length === 0) {
+      setPromoteInlineError('Enter a task name');
+      return;
+    }
+
+    setIsPromotingInline(true);
+    setPromoteInlineError(null);
+
+    try {
+      const idResult = ChocolateConverters.baseTaskId.convert(promoteInlineBaseId);
+      if (idResult.isFailure()) {
+        setPromoteInlineError(`Invalid task ID: ${idResult.message}`);
+        setIsPromotingInline(false);
+        return;
+      }
+      const validatedBaseId = idResult.value;
+
+      const collectionResult = runtime.library.tasks.collections.get(
+        promoteInlineTargetCollectionId
+      ).asResult;
+      if (collectionResult.isFailure()) {
+        setPromoteInlineError(`Collection "${promoteInlineTargetCollectionId}" not found`);
+        setIsPromotingInline(false);
+        return;
+      }
+      const entry = collectionResult.value;
+      if (!entry.isMutable) {
+        setPromoteInlineError(`Collection "${promoteInlineTargetCollectionId}" is not mutable`);
+        setIsPromotingInline(false);
+        return;
+      }
+      if (settings.collections[promoteInlineTargetCollectionId]?.unlocked === false) {
+        setPromoteInlineError(`Collection "${promoteInlineTargetCollectionId}" is locked`);
+        setIsPromotingInline(false);
+        return;
+      }
+
+      const contextDefaults = rowsToRenderParams(contextRows);
+      const stepDefaults = rowsToRenderParams(stepParamsRows);
+      const mergedDefaults = {
+        ...((selectedInlineTask.defaults ?? {}) as unknown as Record<string, unknown>),
+        ...(contextDefaults as Record<string, unknown>),
+        ...(stepDefaults as Record<string, unknown>)
+      };
+      const defaults = Object.keys(mergedDefaults).length > 0 ? mergedDefaults : undefined;
+
+      const newTask: Record<string, unknown> = {
+        baseId: validatedBaseId,
+        name: promoteInlineName.trim(),
+        template: String(selectedInlineTask.template ?? ''),
+        defaults,
+        defaultActiveTime: selectedInlineTask.defaultActiveTime,
+        defaultWaitTime: selectedInlineTask.defaultWaitTime,
+        defaultHoldTime: selectedInlineTask.defaultHoldTime,
+        defaultTemperature: selectedInlineTask.defaultTemperature,
+        notes: selectedInlineTask.notes,
+        tags: selectedInlineTask.tags
+      };
+
+      const validateResult = Entities.Tasks.Converters.taskData.convert(newTask);
+      if (validateResult.isFailure()) {
+        setPromoteInlineError(validateResult.message);
+        setIsPromotingInline(false);
+        return;
+      }
+
+      const addResult = entry.items.validating.add(
+        validatedBaseId as unknown as string,
+        validateResult.value
+      ).asResult;
+      if (addResult.isFailure()) {
+        setPromoteInlineError(addResult.message);
+        setIsPromotingInline(false);
+        return;
+      }
+
+      const commitResult = commitTaskCollection(promoteInlineTargetCollectionId);
+      if (commitResult.isFailure()) {
+        setPromoteInlineError(commitResult.message);
+        setIsPromotingInline(false);
+        return;
+      }
+
+      const newTaskId = `${promoteInlineTargetCollectionId}.${
+        validatedBaseId as unknown as string
+      }` as TaskId;
+      updateDraftStep(selectedStepOrder, (prev) => {
+        const invocation = (prev.task as unknown) ?? {};
+        const invocationRecord = isRecord(invocation) ? (invocation as Record<string, unknown>) : {};
+        const params = (invocationRecord.params as Record<string, unknown>) ?? {};
+        return {
+          ...prev,
+          task: {
+            taskId: newTaskId,
+            params
+          }
+        };
+      });
+
+      setStepTaskId(newTaskId as unknown as string);
+      setStepTemplate('');
+
+      setIsPromotingInline(false);
+      setShowPromoteInlineModal(false);
+    } catch (e) {
+      setPromoteInlineError(`Promotion failed: ${e instanceof Error ? e.message : String(e)}`);
+      setIsPromotingInline(false);
+    }
+  }, [
+    commitTaskCollection,
+    isEditing,
+    promoteInlineBaseId,
+    promoteInlineTargetCollectionId,
+    runtime,
+    promoteInlineName,
+    contextRows,
+    stepParamsRows,
+    selectedInlineTask,
+    selectedStepOrder,
+    settings.collections,
+    updateDraftStep
+  ]);
 
   const renderedSteps = useMemo(() => {
     if (!runtimeProcedure || !runtime) {
@@ -1179,6 +1637,33 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
                         </button>
                       </div>
                     ) : null}
+
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Template
+                      </label>
+                      <textarea
+                        value={selectedTaskTemplate}
+                        readOnly
+                        rows={4}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+
+                    {canEdit && isEditing ? (
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPromoteTaskError(null);
+                            setShowPromoteTaskModal(true);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        >
+                          Promote to...
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : selectedInvocation && isInlineTask(selectedInvocation) ? (
                   <div>
@@ -1222,6 +1707,21 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
                       disabled={!canEdit || !isEditing}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 disabled:opacity-60"
                     />
+
+                    {canEdit && isEditing ? (
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPromoteInlineError(null);
+                            setShowPromoteInlineModal(true);
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                        >
+                          Promote to...
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -1510,6 +2010,196 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
             editing.
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={showPromoteTaskModal}
+        onClose={() => {
+          setShowPromoteTaskModal(false);
+          setPromoteTaskError(null);
+        }}
+        title="Promote Task"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPromoteTaskModal(false);
+                setPromoteTaskError(null);
+              }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handlePromoteTask}
+              disabled={
+                isPromotingTask ||
+                mutableTaskCollectionIds.length === 0 ||
+                promoteTaskTargetCollectionId === null ||
+                !selectedTaskId ||
+                promoteTaskName.trim().length === 0
+              }
+              className="px-4 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+            >
+              Promote
+            </button>
+          </>
+        }
+      >
+        {mutableTaskCollectionIds.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No writable task collections available.
+          </div>
+        ) : !selectedTaskId ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400">No task selected.</div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Target collection
+              </label>
+              <select
+                value={promoteTaskTargetCollectionId ?? ''}
+                onChange={(e) => setPromoteTaskTargetCollectionId(e.target.value as SourceId)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              >
+                {mutableTaskCollectionIds.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <input
+                value={promoteTaskName}
+                onChange={(e) => setPromoteTaskName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Task ID
+              </label>
+              <input
+                value={promoteTaskBaseId}
+                onChange={(e) => {
+                  setPromoteTaskBaseId(e.target.value);
+                  setIsPromoteTaskIdManuallyEdited(true);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Source task: {selectedTaskId as string}
+              </div>
+            </div>
+            {promoteTaskError ? (
+              <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
+                <div className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
+                  {promoteTaskError}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        isOpen={showPromoteInlineModal}
+        onClose={() => {
+          setShowPromoteInlineModal(false);
+          setPromoteInlineError(null);
+        }}
+        title="Promote Inline Task"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setShowPromoteInlineModal(false);
+                setPromoteInlineError(null);
+              }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handlePromoteInlineTask}
+              disabled={
+                isPromotingInline ||
+                mutableTaskCollectionIds.length === 0 ||
+                promoteInlineTargetCollectionId === null ||
+                !selectedInlineTask ||
+                promoteInlineName.trim().length === 0
+              }
+              className="px-4 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+            >
+              Promote
+            </button>
+          </>
+        }
+      >
+        {mutableTaskCollectionIds.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            No writable task collections available.
+          </div>
+        ) : !selectedInlineTask ? (
+          <div className="text-sm text-gray-500 dark:text-gray-400">No inline task selected.</div>
+        ) : (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Target collection
+              </label>
+              <select
+                value={promoteInlineTargetCollectionId ?? ''}
+                onChange={(e) => setPromoteInlineTargetCollectionId(e.target.value as SourceId)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              >
+                {mutableTaskCollectionIds.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+              <input
+                value={promoteInlineName}
+                onChange={(e) => setPromoteInlineName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Task ID
+              </label>
+              <input
+                value={promoteInlineBaseId}
+                onChange={(e) => {
+                  setPromoteInlineBaseId(e.target.value);
+                  setIsPromoteInlineIdManuallyEdited(true);
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              This will create a library task and replace the step with a task reference.
+            </div>
+            {promoteInlineError ? (
+              <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-3">
+                <div className="text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
+                  {promoteInlineError}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        )}
       </Modal>
     </div>
   );

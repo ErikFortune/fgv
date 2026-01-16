@@ -34,6 +34,7 @@ import { useObservability } from '@fgv/ts-chocolate-ui';
 const DEFAULT_PBKDF2_ITERATIONS = 100000;
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
+const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1';
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
@@ -68,6 +69,41 @@ function readLocalIngredientCollectionFiles(): FileTree.IInMemoryFile[] {
       }
       files.push({
         path: `/data/ingredients/${collectionId}.json`,
+        contents
+      });
+    }
+    return files;
+  } catch {
+    return [];
+  }
+}
+
+function readLocalFillingCollectionFiles(): FileTree.IInMemoryFile[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_FILLING_COLLECTIONS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isJsonObject(parsed)) {
+      return [];
+    }
+
+    const files: FileTree.IInMemoryFile[] = [];
+    for (const [collectionId, contents] of Object.entries(parsed)) {
+      if (!isJsonObject(contents)) {
+        continue;
+      }
+
+      if (!('items' in contents) || !isJsonObject(contents.items)) {
+        continue;
+      }
+      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+        continue;
+      }
+      files.push({
+        path: `/data/fillings/${collectionId}.json`,
         contents
       });
     }
@@ -340,6 +376,7 @@ export function ChocolateProvider({
 
       const localFiles = [
         ...readLocalIngredientCollectionFiles(),
+        ...readLocalFillingCollectionFiles(),
         ...readLocalMoldCollectionFiles(),
         ...readLocalTaskCollectionFiles(),
         ...readLocalProcedureCollectionFiles()
@@ -348,6 +385,7 @@ export function ChocolateProvider({
       const localTreeResult = localFiles.length > 0 ? FileTree.inMemory(localFiles) : undefined;
       let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
       let localHasIngredients = false;
+      let localHasFillings = false;
       let localHasMolds = false;
       let localHasTasks = false;
       let localHasProcedures = false;
@@ -355,6 +393,9 @@ export function ChocolateProvider({
         const ingredientsDirResult = localTreeResult.value.getItem('/data/ingredients');
         localHasIngredients =
           ingredientsDirResult.isSuccess() && ingredientsDirResult.value.type === 'directory';
+
+        const fillingsDirResult = localTreeResult.value.getItem('/data/fillings');
+        localHasFillings = fillingsDirResult.isSuccess() && fillingsDirResult.value.type === 'directory';
 
         const moldsDirResult = localTreeResult.value.getItem('/data/molds');
         localHasMolds = moldsDirResult.isSuccess() && moldsDirResult.value.type === 'directory';
@@ -376,13 +417,15 @@ export function ChocolateProvider({
         {
           directory: treeResult.value
         },
-        ...(localRootDir && (localHasIngredients || localHasMolds || localHasTasks || localHasProcedures)
+        ...(localRootDir &&
+        (localHasIngredients || localHasFillings || localHasMolds || localHasTasks || localHasProcedures)
           ? [
               {
                 directory: localRootDir,
                 load: {
                   default: false,
                   ingredients: localHasIngredients,
+                  fillings: localHasFillings,
                   molds: localHasMolds,
                   procedures: localHasProcedures,
                   tasks: localHasTasks
