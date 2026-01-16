@@ -4,3 +4,4 @@
  */
 
 export * from './ProceduresTool';
+export * from './ProceduresToolSidebar';

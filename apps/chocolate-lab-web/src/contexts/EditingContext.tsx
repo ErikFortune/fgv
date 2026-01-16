@@ -10,6 +10,8 @@ import {
   Converters as ChocolateConverters,
   type BaseIngredientId,
   type IngredientId,
+  type BaseProcedureId,
+  type ProcedureId,
   type BaseTaskId,
   type TaskId,
   type BaseMoldId,
@@ -23,6 +25,7 @@ import { useChocolate } from './ChocolateContext';
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
+const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 
 function readLocalIngredientCollections(): Record<string, unknown> {
@@ -65,6 +68,26 @@ function writeLocalMoldCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_MOLD_COLLECTIONS_KEY, JSON.stringify(next));
 }
 
+function readLocalProcedureCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_PROCEDURE_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalProcedureCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_PROCEDURE_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
 function readLocalTaskCollections(): Record<string, unknown> {
   try {
     const raw = window.localStorage.getItem(LOCAL_TASK_COLLECTIONS_KEY);
@@ -90,6 +113,9 @@ function getAllLocalCollectionIds(): SourceId[] {
   for (const k of Object.keys(readLocalIngredientCollections())) {
     ids.add(k);
   }
+  for (const k of Object.keys(readLocalProcedureCollections())) {
+    ids.add(k);
+  }
   for (const k of Object.keys(readLocalTaskCollections())) {
     ids.add(k);
   }
@@ -101,6 +127,7 @@ function getAllLocalCollectionIds(): SourceId[] {
 
 // Type alias for Ingredient from Entities
 type Ingredient = Entities.Ingredients.Ingredient;
+type Procedure = Entities.Procedures.IProcedure;
 type Task = Entities.Tasks.ITaskData;
 type Mold = Entities.Molds.IMold;
 
@@ -206,6 +233,17 @@ export interface IEditingContext {
   exportMoldCollection: (params: IExportParams) => Result<string>;
   importMoldCollection: (params: IImportParams) => Result<void>;
 
+  // Procedure collection management
+  createProcedureCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteProcedureCollection: (collectionId: SourceId) => Result<void>;
+  renameProcedureCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string
+  ) => Result<void>;
+  exportProcedureCollection: (params: IExportParams) => Result<string>;
+  importProcedureCollection: (params: IImportParams) => Result<void>;
+
   // Task collection management
   createTaskCollection: (params: ICreateCollectionParams) => Result<void>;
   deleteTaskCollection: (collectionId: SourceId) => Result<void>;
@@ -218,6 +256,9 @@ export interface IEditingContext {
 
   /** Persist a mutable mold collection to localStorage and refresh runtime caches */
   commitMoldCollection: (collectionId: SourceId) => Result<void>;
+
+  /** Persist a mutable procedure collection to localStorage and refresh runtime caches */
+  commitProcedureCollection: (collectionId: SourceId) => Result<void>;
 
   /** Persist a mutable task collection to localStorage and refresh runtime caches */
   commitTaskCollection: (collectionId: SourceId) => Result<void>;
@@ -251,6 +292,11 @@ const defaultEditingContext: IEditingContext = {
   renameMoldCollection: () => fail('No EditingProvider'),
   exportMoldCollection: () => fail('No EditingProvider'),
   importMoldCollection: () => fail('No EditingProvider'),
+  createProcedureCollection: () => fail('No EditingProvider'),
+  deleteProcedureCollection: () => fail('No EditingProvider'),
+  renameProcedureCollection: () => fail('No EditingProvider'),
+  exportProcedureCollection: () => fail('No EditingProvider'),
+  importProcedureCollection: () => fail('No EditingProvider'),
   createTaskCollection: () => fail('No EditingProvider'),
   deleteTaskCollection: () => fail('No EditingProvider'),
   renameTaskCollection: () => fail('No EditingProvider'),
@@ -258,6 +304,7 @@ const defaultEditingContext: IEditingContext = {
   importTaskCollection: () => fail('No EditingProvider'),
   commitCollection: () => fail('No EditingProvider'),
   commitMoldCollection: () => fail('No EditingProvider'),
+  commitProcedureCollection: () => fail('No EditingProvider'),
   commitTaskCollection: () => fail('No EditingProvider'),
   editingVersion: 0
 };
@@ -385,6 +432,45 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         const existing = readLocalMoldCollections();
         existing[collectionId] = sourceFile as unknown;
         writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const commitProcedureCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.procedures.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+
+      const collectionEntry = collectionResult.value;
+      if (!collectionEntry.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+
+      try {
+        const items: Record<BaseProcedureId, Procedure> = recordFromEntries(collectionEntry.items.entries());
+        const sourceFile: LibraryData.ICollectionSourceFile<Procedure> = {
+          metadata: collectionEntry.metadata ?? { name: collectionId },
+          items
+        };
+
+        const existing = readLocalProcedureCollections();
+        existing[collectionId] = sourceFile as unknown;
+        writeLocalProcedureCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
         return fail(
@@ -614,6 +700,202 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items: sourceFile.items
         } as unknown;
         writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch {
+        // ignore
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const createProcedureCollection = useCallback(
+    (params: ICreateCollectionParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<ProcedureId, BaseProcedureId, Procedure>(
+        runtime.library.procedures
+      );
+      const metadata: LibraryData.ICollectionSourceMetadata =
+        params.description !== undefined
+          ? { name: params.name, description: params.description }
+          : { name: params.name };
+
+      return manager.create(params.collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalProcedureCollections();
+          const sourceFile: LibraryData.ICollectionSourceFile<Procedure> = {
+            metadata,
+            items: {}
+          };
+          existing[params.collectionId] = sourceFile as unknown;
+          writeLocalProcedureCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const deleteProcedureCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<ProcedureId, BaseProcedureId, Procedure>(
+        runtime.library.procedures
+      );
+      const result = manager.delete(collectionId);
+
+      return result.onSuccess(() => {
+        try {
+          const existing = readLocalProcedureCollections();
+          if (collectionId in existing) {
+            delete existing[collectionId];
+            writeLocalProcedureCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const renameProcedureCollection = useCallback(
+    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<ProcedureId, BaseProcedureId, Procedure>(
+        runtime.library.procedures
+      );
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
+        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+
+      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
+        try {
+          const existing = readLocalProcedureCollections();
+          const stored = existing[collectionId];
+          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
+            const record = stored as Record<string, unknown>;
+            const existingMetadata = record.metadata;
+            const mergedMetadata =
+              typeof existingMetadata === 'object' &&
+              existingMetadata !== null &&
+              !Array.isArray(existingMetadata)
+                ? {
+                    ...(existingMetadata as Record<string, unknown>),
+                    ...(metadata as Record<string, unknown>)
+                  }
+                : (metadata as unknown);
+            record.metadata = mergedMetadata;
+            existing[collectionId] = stored;
+            writeLocalProcedureCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      });
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const exportProcedureCollection = useCallback(
+    (params: IExportParams): Result<string> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.procedures.collections.get(params.collectionId);
+      if (!collectionResult.isSuccess() || !collectionResult.value) {
+        return fail(`Collection "${params.collectionId}" not found`);
+      }
+
+      const collection = collectionResult.value;
+      const items: Record<BaseProcedureId, Procedure> = recordFromEntries(collection.items.entries());
+
+      const sourceFile: LibraryData.ICollectionSourceFile<Procedure> = {
+        metadata: collection.metadata ?? { name: params.collectionId },
+        items
+      };
+
+      return Editing.serializeCollection(sourceFile, params.format);
+    },
+    [runtime]
+  );
+
+  const importProcedureCollection = useCallback(
+    (params: IImportParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const parseResult = Editing.validateAndParseCollection<Procedure>(params.content);
+      if (parseResult.isFailure()) {
+        return fail(`Invalid import file: ${parseResult.message}`);
+      }
+
+      const sourceFile = parseResult.value;
+      const manager = new Editing.CollectionManager<ProcedureId, BaseProcedureId, Procedure>(
+        runtime.library.procedures
+      );
+
+      if (params.mode === 'replace') {
+        if (!manager.exists(params.collectionId)) {
+          return fail(`Collection "${params.collectionId}" does not exist`);
+        }
+
+        const mutableResult = manager.isMutable(params.collectionId);
+        if (mutableResult.isFailure() || !mutableResult.value) {
+          return fail(`Collection "${params.collectionId}" is not mutable`);
+        }
+
+        const deleteResult = manager.delete(params.collectionId);
+        if (deleteResult.isFailure()) {
+          return fail(`Failed to delete existing collection: ${deleteResult.message}`);
+        }
+      } else if (manager.exists(params.collectionId)) {
+        return fail(`Collection "${params.collectionId}" already exists`);
+      }
+
+      const createResult = runtime.library.procedures.addCollectionEntry({
+        id: params.collectionId,
+        isMutable: true,
+        items: sourceFile.items,
+        metadata: sourceFile.metadata
+      });
+
+      if (createResult.isFailure()) {
+        return fail(`Failed to create collection: ${createResult.message}`);
+      }
+
+      try {
+        const existing = readLocalProcedureCollections();
+        existing[params.collectionId] = {
+          metadata: sourceFile.metadata,
+          items: sourceFile.items
+        } as unknown;
+        writeLocalProcedureCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch {
         // ignore
@@ -1180,6 +1462,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       renameMoldCollection,
       exportMoldCollection,
       importMoldCollection,
+      createProcedureCollection,
+      deleteProcedureCollection,
+      renameProcedureCollection,
+      exportProcedureCollection,
+      importProcedureCollection,
       createTaskCollection,
       deleteTaskCollection,
       renameTaskCollection,
@@ -1187,6 +1474,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       importTaskCollection,
       commitCollection,
       commitMoldCollection,
+      commitProcedureCollection,
       commitTaskCollection,
       editingVersion
     }),
@@ -1212,6 +1500,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       renameMoldCollection,
       exportMoldCollection,
       importMoldCollection,
+      createProcedureCollection,
+      deleteProcedureCollection,
+      renameProcedureCollection,
+      exportProcedureCollection,
+      importProcedureCollection,
       createTaskCollection,
       deleteTaskCollection,
       renameTaskCollection,
@@ -1219,6 +1512,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       importTaskCollection,
       commitCollection,
       commitMoldCollection,
+      commitProcedureCollection,
       commitTaskCollection,
       editingVersion
     ]
@@ -1357,6 +1651,30 @@ export function useTaskCollectionManager(): {
     renameCollection: renameTaskCollection,
     exportCollection: exportTaskCollection,
     importCollection: importTaskCollection
+  };
+}
+
+export function useProcedureCollectionManager(): {
+  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  deleteCollection: (collectionId: SourceId) => Result<void>;
+  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  exportCollection: (params: IExportParams) => Result<string>;
+  importCollection: (params: IImportParams) => Result<void>;
+} {
+  const {
+    createProcedureCollection,
+    deleteProcedureCollection,
+    renameProcedureCollection,
+    exportProcedureCollection,
+    importProcedureCollection
+  } = useEditing();
+
+  return {
+    createCollection: createProcedureCollection,
+    deleteCollection: deleteProcedureCollection,
+    renameCollection: renameProcedureCollection,
+    exportCollection: exportProcedureCollection,
+    importCollection: importProcedureCollection
   };
 }
 
