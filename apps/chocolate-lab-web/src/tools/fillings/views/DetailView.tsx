@@ -23,7 +23,9 @@ import { CollectionBadge, TagBadge, DetailSection, FillingCategoryBadge } from '
 import {
   Calculations,
   Entities,
+  Helpers,
   allMeasurementUnits,
+  type FillingVersionSpec,
   type Measurement,
   type ProcedureId,
   type FillingCategory,
@@ -282,10 +284,6 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
   const goldenVersion = filling.goldenVersion;
 
   const scaledPreview = React.useMemo(() => {
-    if (isEditing) {
-      return { scaledVersion: null as any, error: null as string | null };
-    }
-
     if (scaleMode === 'target') {
       const text = scaleTargetWeightText.trim();
       if (text.length === 0) return { scaledVersion: null as any, error: null as string | null };
@@ -317,7 +315,54 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
       return { scaledVersion: null as any, error: scaledResult.message };
     }
     return { scaledVersion: scaledResult.value, error: null as string | null };
-  }, [goldenVersion, isEditing, scaleFactorText, scaleMode, scaleTargetWeightText]);
+  }, [goldenVersion, scaleFactorText, scaleMode, scaleTargetWeightText]);
+
+  const preferredProcedureId = React.useMemo(() => {
+    return (
+      (goldenVersion.raw.procedures?.preferredId as unknown as string | undefined) ??
+      (goldenVersion.raw.procedures?.options?.[0]?.id as unknown as string | undefined) ??
+      undefined
+    );
+  }, [goldenVersion]);
+
+  const previewRecipeForRender = React.useMemo((): Entities.IComputedScaledFillingRecipe | null => {
+    if (scaledPreview.scaledVersion) {
+      return scaledPreview.scaledVersion.raw as unknown as Entities.IComputedScaledFillingRecipe;
+    }
+
+    const sourceVersionId = Helpers.createFillingVersionId(
+      fillingId,
+      goldenVersion.versionSpec as unknown as FillingVersionSpec
+    );
+    const scaledResult = Calculations.scaleVersion(
+      goldenVersion.raw,
+      sourceVersionId,
+      goldenVersion.baseWeight as Measurement,
+      {
+        precision: 1,
+        minimumAmount: 0.1 as Measurement
+      }
+    );
+    if (scaledResult.isFailure()) {
+      return null;
+    }
+    return scaledResult.value as unknown as Entities.IComputedScaledFillingRecipe;
+  }, [fillingId, goldenVersion, scaledPreview.scaledVersion]);
+
+  const renderedPreviewProcedure = React.useMemo(() => {
+    if (!preferredProcedureId || !previewRecipeForRender) {
+      return { rendered: null as any, error: null as string | null };
+    }
+    const procResult = runtime.getRuntimeProcedure(preferredProcedureId as unknown as ProcedureId);
+    if (procResult.isFailure()) {
+      return { rendered: null as any, error: procResult.message };
+    }
+    const renderResult = procResult.value.render({ context: runtime, recipe: previewRecipeForRender });
+    if (renderResult.isFailure()) {
+      return { rendered: null as any, error: renderResult.message };
+    }
+    return { rendered: renderResult.value, error: null as string | null };
+  }, [preferredProcedureId, previewRecipeForRender, runtime]);
 
   const canEdit = (() => {
     if (!runtime) return false;
@@ -599,7 +644,7 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
   };
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full max-w-6xl">
       {/* Back button */}
       <button
         type="button"
@@ -610,748 +655,891 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
         Back to browse
       </button>
 
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{filling.name}</h1>
-            {filling.description && <p className="text-gray-600 dark:text-gray-400">{filling.description}</p>}
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <FillingCategoryBadge category={filling.raw.category} size="lg" />
-            {canEdit ? (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={beginNewVersion}
-                  disabled={isEditing}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                  New Version
-                </button>
-                <button
-                  type="button"
-                  onClick={beginEditGolden}
-                  disabled={isEditing}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
-                  title="Advanced: editing the golden version is discouraged; prefer creating a new version"
-                >
-                  <PencilIcon className="w-4 h-4" />
-                  Edit Golden
-                </button>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div>
+          {/* Header */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">{filling.name}</h1>
+                {filling.description && (
+                  <p className="text-gray-600 dark:text-gray-400">{filling.description}</p>
+                )}
               </div>
-            ) : (
-              <div className="text-xs text-gray-400 dark:text-gray-500">Read-only</div>
+              <div className="flex flex-col items-end gap-2">
+                <FillingCategoryBadge category={filling.raw.category} size="lg" />
+                {canEdit ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={beginNewVersion}
+                      disabled={isEditing}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      New Version
+                    </button>
+                    <button
+                      type="button"
+                      onClick={beginEditGolden}
+                      disabled={isEditing}
+                      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
+                      title="Advanced: editing the golden version is discouraged; prefer creating a new version"
+                    >
+                      <PencilIcon className="w-4 h-4" />
+                      Edit Golden
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-gray-400 dark:text-gray-500">Read-only</div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <CollectionBadge name={sourceId} size="md" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Version: {goldenVersion.versionSpec}
+              </span>
+              {filling.versionCount > 1 && (
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  ({filling.versionCount} versions)
+                </span>
+              )}
+            </div>
+
+            {/* Tags */}
+            {filling.tags && filling.tags.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2">
+                {filling.tags.map((tag: string) => (
+                  <TagBadge key={tag} tag={tag} size="md" />
+                ))}
+              </div>
             )}
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <CollectionBadge name={sourceId} size="md" />
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            Version: {goldenVersion.versionSpec}
-          </span>
-          {filling.versionCount > 1 && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              ({filling.versionCount} versions)
-            </span>
-          )}
-        </div>
+          {isEditing && (
+            <div className="mb-6">
+              {saveError && (
+                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{saveError}</p>
+                </div>
+              )}
 
-        {/* Tags */}
-        {filling.tags && filling.tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {filling.tags.map((tag: string) => (
-              <TagBadge key={tag} tag={tag} size="md" />
-            ))}
-          </div>
-        )}
-      </div>
+              <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                    <PencilIcon className="w-5 h-5" />
+                    Draft Version
+                  </h2>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setSaveError(null);
+                      }}
+                      disabled={isSaving}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveDraft(false)}
+                      disabled={isSaving}
+                      className="px-3 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-md disabled:opacity-50"
+                    >
+                      Save Draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => saveDraft(true)}
+                      disabled={isSaving}
+                      className="px-3 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
+                    >
+                      Save + Set Golden
+                    </button>
+                  </div>
+                </div>
 
-      {isEditing && (
-        <div className="mb-6">
-          {saveError && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-              <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{saveError}</p>
-            </div>
-          )}
-
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                <PencilIcon className="w-5 h-5" />
-                Draft Version
-              </h2>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setSaveError(null);
-                  }}
-                  disabled={isSaving}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => saveDraft(false)}
-                  disabled={isSaving}
-                  className="px-3 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-md disabled:opacity-50"
-                >
-                  Save Draft
-                </button>
-                <button
-                  type="button"
-                  onClick={() => saveDraft(true)}
-                  disabled={isSaving}
-                  className="px-3 py-2 text-sm font-medium text-white bg-chocolate-600 hover:bg-chocolate-700 rounded-md disabled:opacity-50"
-                >
-                  Save + Set Golden
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={draftName}
-                  onChange={(e) => setDraftName(e.target.value)}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Category
-                </label>
-                <select
-                  value={draftCategory}
-                  onChange={(e) => setDraftCategory(e.target.value as FillingCategory)}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="ganache">Ganache</option>
-                  <option value="caramel">Caramel</option>
-                  <option value="gianduja">Gianduja</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={draftDescription}
-                  onChange={(e) => setDraftDescription(e.target.value)}
-                  rows={2}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  value={draftTagsText}
-                  onChange={(e) => setDraftTagsText(e.target.value)}
-                  placeholder="comma-separated"
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Version Spec
-                </label>
-                <input
-                  type="text"
-                  value={draftVersionSpec}
-                  onChange={(e) => setDraftVersionSpec(e.target.value)}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Created
-                </label>
-                <input
-                  type="text"
-                  value={draftCreatedDate}
-                  onChange={(e) => setDraftCreatedDate(e.target.value)}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Yield
-                </label>
-                <input
-                  type="text"
-                  value={draftYield}
-                  onChange={(e) => setDraftYield(e.target.value)}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Base Weight
-                </label>
-                <input
-                  type="text"
-                  value={(() => {
-                    const asCandidate = draftIngredients
-                      .map((row) => {
-                        const ids = row.preferredId.trim().length > 0 ? [row.preferredId.trim()] : [];
-                        return {
-                          ingredient: { ids, preferredId: ids[0] },
-                          amount: Number(row.amountText),
-                          unit: row.unit.trim().length > 0 ? row.unit.trim() : 'g'
-                        } as unknown;
-                      })
-                      .filter((x) => {
-                        if (typeof x !== 'object' || x === null) return false;
-                        const r = x as Record<string, unknown>;
-                        return (
-                          Number.isFinite(r.amount) && (r.amount as number) > 0 && typeof r.unit === 'string'
-                        );
-                      }) as unknown as ReadonlyArray<Entities.Fillings.IFillingIngredient>;
-
-                    const bw = Calculations.calculateTotalWeight(asCandidate, {
-                      getIngredientDensity: (id) => {
-                        const ingredientResult = runtime.ingredients.get(id);
-                        if (ingredientResult.isSuccess() && ingredientResult.value) {
-                          return ingredientResult.value.raw.density ?? 1.0;
-                        }
-                        return 1.0;
-                      }
-                    });
-                    return Number.isFinite(bw) ? String(bw) : '';
-                  })()}
-                  readOnly={true}
-                  disabled={isSaving}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
-              <textarea
-                value={draftNotes}
-                onChange={(e) => setDraftNotes(e.target.value)}
-                rows={3}
-                disabled={isSaving}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Preferred Procedure
-              </label>
-              <select
-                value={draftPreferredProcedureId}
-                onChange={(e) => setDraftPreferredProcedureId(e.target.value)}
-                disabled={isSaving}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-              >
-                <option value="">(none)</option>
-                {runtime
-                  ? (
-                      Array.from(runtime.library.procedures.entries()) as Array<
-                        [ProcedureId, { name: string }]
-                      >
-                    )
-                      .sort((a, b) => a[1].name.localeCompare(b[1].name))
-                      .map(([id, proc]) => (
-                        <option key={id as unknown as string} value={id as unknown as string}>
-                          {proc.name} ({id as unknown as string})
-                        </option>
-                      ))
-                  : null}
-              </select>
-            </div>
-
-            <div className="border border-gray-200 dark:border-gray-700 rounded-md">
-              <button
-                type="button"
-                onClick={() => setShowAdvancedOptions((v) => !v)}
-                className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
-              >
-                Advanced options
-              </button>
-              {showAdvancedOptions && (
-                <div className="px-3 pb-3 pt-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Derived From (sourceVersionId)
+                      Name
                     </label>
                     <input
                       type="text"
-                      value={draftDerivedSourceVersionId}
-                      onChange={(e) => setDraftDerivedSourceVersionId(e.target.value)}
+                      value={draftName}
+                      onChange={(e) => setDraftName(e.target.value)}
                       disabled={isSaving}
-                      placeholder="sourceId.fillingId@YYYY-MM-DD-NN"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Derived Date
+                      Category
                     </label>
-                    <input
-                      type="text"
-                      value={draftDerivedDate}
-                      onChange={(e) => setDraftDerivedDate(e.target.value)}
+                    <select
+                      value={draftCategory}
+                      onChange={(e) => setDraftCategory(e.target.value as FillingCategory)}
                       disabled={isSaving}
-                      placeholder="YYYY-MM-DD"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                    />
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="ganache">Ganache</option>
+                      <option value="caramel">Caramel</option>
+                      <option value="gianduja">Gianduja</option>
+                    </select>
                   </div>
+
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Derivation Notes
+                      Description
                     </label>
                     <textarea
-                      value={draftDerivedNotes}
-                      onChange={(e) => setDraftDerivedNotes(e.target.value)}
+                      value={draftDescription}
+                      onChange={(e) => setDraftDescription(e.target.value)}
                       rows={2}
                       disabled={isSaving}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                     />
                   </div>
-                </div>
-              )}
-            </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Ingredients</h3>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraftIngredients((prev) => [
-                      ...prev,
-                      { preferredId: '', alternateIdsText: '', amountText: '', unit: '', notes: '' }
-                    ])
-                  }
-                  disabled={isSaving}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
-                >
-                  Add ingredient
-                </button>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                      <th className="py-2 pr-2">Preferred</th>
-                      <th className="py-2 pr-2">Alternates</th>
-                      <th className="py-2 pr-2">Amount</th>
-                      <th className="py-2 pr-2">Unit</th>
-                      <th className="py-2 pr-2">Notes</th>
-                      <th className="py-2 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {draftIngredients.map((row, idx) => (
-                      <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
-                        <td className="py-2 pr-2">
-                          <IngredientAutocompleteInput
-                            value={row.preferredId}
-                            onChange={(next) =>
-                              setDraftIngredients((prev) =>
-                                prev.map((r, i) => (i === idx ? { ...r, preferredId: next } : r))
-                              )
-                            }
-                            disabled={isSaving}
-                            className="w-56 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                          />
-                        </td>
-                        <td className="py-2 pr-2">
-                          <input
-                            value={row.alternateIdsText}
-                            onChange={(e) =>
-                              setDraftIngredients((prev) =>
-                                prev.map((r, i) =>
-                                  i === idx ? { ...r, alternateIdsText: e.target.value } : r
-                                )
-                              )
-                            }
-                            disabled={isSaving}
-                            placeholder="comma-separated"
-                            className="w-64 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                          />
-                        </td>
-                        <td className="py-2 pr-2">
-                          <input
-                            value={row.amountText}
-                            onChange={(e) =>
-                              setDraftIngredients((prev) =>
-                                prev.map((r, i) => (i === idx ? { ...r, amountText: e.target.value } : r))
-                              )
-                            }
-                            disabled={isSaving}
-                            className="w-24 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                          />
-                        </td>
-                        <td className="py-2 pr-2">
-                          <select
-                            value={row.unit}
-                            onChange={(e) =>
-                              setDraftIngredients((prev) =>
-                                prev.map((r, i) => (i === idx ? { ...r, unit: e.target.value } : r))
-                              )
-                            }
-                            disabled={isSaving}
-                            className="w-24 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                          >
-                            <option value="">g</option>
-                            {allMeasurementUnits
-                              .filter((u) => u !== 'g')
-                              .map((u) => (
-                                <option key={u} value={u as unknown as MeasurementUnit}>
-                                  {u}
-                                </option>
-                              ))}
-                          </select>
-                        </td>
-                        <td className="py-2 pr-2">
-                          <input
-                            value={row.notes}
-                            onChange={(e) =>
-                              setDraftIngredients((prev) =>
-                                prev.map((r, i) => (i === idx ? { ...r, notes: e.target.value } : r))
-                              )
-                            }
-                            disabled={isSaving}
-                            className="w-64 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                          />
-                        </td>
-                        <td className="py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setDraftIngredients((prev) => prev.filter((_, i) => i !== idx))}
-                            disabled={isSaving}
-                            className="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filling Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          icon={<BeakerIcon className="w-5 h-5" />}
-          label="Ingredients"
-          value={goldenVersion.raw.ingredients.length.toString()}
-        />
-        <StatCard
-          icon={<ScaleIcon className="w-5 h-5" />}
-          label="Base Weight"
-          value={`${goldenVersion.baseWeight}g`}
-        />
-        {goldenVersion.yield && <StatCard label="Yield" value={goldenVersion.yield} />}
-        {goldenVersion.createdDate && (
-          <StatCard
-            label="Created"
-            value={goldenVersion.createdDate.split('T')[0] ?? goldenVersion.createdDate}
-          />
-        )}
-      </div>
-
-      {/* Procedures */}
-      {!isEditing && (
-        <DetailSection title="Procedures" defaultCollapsed={true} className="mb-6">
-          {(() => {
-            const preferredId =
-              (goldenVersion.raw.procedures?.preferredId as unknown as string | undefined) ??
-              (goldenVersion.raw.procedures?.options?.[0]?.id as unknown as string | undefined);
-
-            if (goldenVersion.procedures?.recommendedProcedure && preferredId) {
-              return (
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {goldenVersion.procedures.recommendedProcedure.name}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
-                      {preferredId}
-                    </p>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tags
+                    </label>
+                    <input
+                      type="text"
+                      value={draftTagsText}
+                      onChange={(e) => setDraftTagsText(e.target.value)}
+                      placeholder="comma-separated"
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Version Spec
+                    </label>
+                    <input
+                      type="text"
+                      value={draftVersionSpec}
+                      onChange={(e) => setDraftVersionSpec(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Created
+                    </label>
+                    <input
+                      type="text"
+                      value={draftCreatedDate}
+                      onChange={(e) => setDraftCreatedDate(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Yield
+                    </label>
+                    <input
+                      type="text"
+                      value={draftYield}
+                      onChange={(e) => setDraftYield(e.target.value)}
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Base Weight
+                    </label>
+                    <input
+                      type="text"
+                      value={(() => {
+                        const asCandidate = draftIngredients
+                          .map((row) => {
+                            const ids = row.preferredId.trim().length > 0 ? [row.preferredId.trim()] : [];
+                            return {
+                              ingredient: { ids, preferredId: ids[0] },
+                              amount: Number(row.amountText),
+                              unit: row.unit.trim().length > 0 ? row.unit.trim() : 'g'
+                            } as unknown;
+                          })
+                          .filter((x) => {
+                            if (typeof x !== 'object' || x === null) return false;
+                            const r = x as Record<string, unknown>;
+                            return (
+                              Number.isFinite(r.amount) &&
+                              (r.amount as number) > 0 &&
+                              typeof r.unit === 'string'
+                            );
+                          }) as unknown as ReadonlyArray<Entities.Fillings.IFillingIngredient>;
+
+                        const bw = Calculations.calculateTotalWeight(asCandidate, {
+                          getIngredientDensity: (id) => {
+                            const ingredientResult = runtime.ingredients.get(id);
+                            if (ingredientResult.isSuccess() && ingredientResult.value) {
+                              return ingredientResult.value.raw.density ?? 1.0;
+                            }
+                            return 1.0;
+                          }
+                        });
+                        return Number.isFinite(bw) ? String(bw) : '';
+                      })()}
+                      readOnly={true}
+                      disabled={isSaving}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Notes
+                  </label>
+                  <textarea
+                    value={draftNotes}
+                    onChange={(e) => setDraftNotes(e.target.value)}
+                    rows={3}
+                    disabled={isSaving}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Preferred Procedure
+                  </label>
+                  <select
+                    value={draftPreferredProcedureId}
+                    onChange={(e) => setDraftPreferredProcedureId(e.target.value)}
+                    disabled={isSaving}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="">(none)</option>
+                    {runtime
+                      ? (
+                          Array.from(runtime.library.procedures.entries()) as Array<
+                            [ProcedureId, { name: string }]
+                          >
+                        )
+                          .sort((a, b) => a[1].name.localeCompare(b[1].name))
+                          .map(([id, proc]) => (
+                            <option key={id as unknown as string} value={id as unknown as string}>
+                              {proc.name} ({id as unknown as string})
+                            </option>
+                          ))
+                      : null}
+                  </select>
+                </div>
+
+                <div className="border border-gray-200 dark:border-gray-700 rounded-md">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvancedOptions((v) => !v)}
+                    className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md"
+                  >
+                    Advanced options
+                  </button>
+                  {showAdvancedOptions && (
+                    <div className="px-3 pb-3 pt-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Derived From (sourceVersionId)
+                        </label>
+                        <input
+                          type="text"
+                          value={draftDerivedSourceVersionId}
+                          onChange={(e) => setDraftDerivedSourceVersionId(e.target.value)}
+                          disabled={isSaving}
+                          placeholder="sourceId.fillingId@YYYY-MM-DD-NN"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Derived Date
+                        </label>
+                        <input
+                          type="text"
+                          value={draftDerivedDate}
+                          onChange={(e) => setDraftDerivedDate(e.target.value)}
+                          disabled={isSaving}
+                          placeholder="YYYY-MM-DD"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Derivation Notes
+                        </label>
+                        <textarea
+                          value={draftDerivedNotes}
+                          onChange={(e) => setDraftDerivedNotes(e.target.value)}
+                          rows={2}
+                          disabled={isSaving}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Ingredients</h3>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDraftIngredients((prev) => [
+                          ...prev,
+                          { preferredId: '', alternateIdsText: '', amountText: '', unit: '', notes: '' }
+                        ])
+                      }
+                      disabled={isSaving}
+                      className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md disabled:opacity-50"
+                    >
+                      Add ingredient
+                    </button>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                          <th className="py-2 pr-2">Preferred</th>
+                          <th className="py-2 pr-2">Alternates</th>
+                          <th className="py-2 pr-2">Amount</th>
+                          <th className="py-2 pr-2">Unit</th>
+                          <th className="py-2 pr-2">Notes</th>
+                          <th className="py-2 w-16"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {draftIngredients.map((row, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
+                            <td className="py-2 pr-2">
+                              <IngredientAutocompleteInput
+                                value={row.preferredId}
+                                onChange={(next) =>
+                                  setDraftIngredients((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, preferredId: next } : r))
+                                  )
+                                }
+                                disabled={isSaving}
+                                className="w-56 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                              />
+                            </td>
+                            <td className="py-2 pr-2">
+                              <input
+                                value={row.alternateIdsText}
+                                onChange={(e) =>
+                                  setDraftIngredients((prev) =>
+                                    prev.map((r, i) =>
+                                      i === idx ? { ...r, alternateIdsText: e.target.value } : r
+                                    )
+                                  )
+                                }
+                                disabled={isSaving}
+                                placeholder="comma-separated"
+                                className="w-64 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                              />
+                            </td>
+                            <td className="py-2 pr-2">
+                              <input
+                                value={row.amountText}
+                                onChange={(e) =>
+                                  setDraftIngredients((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, amountText: e.target.value } : r))
+                                  )
+                                }
+                                disabled={isSaving}
+                                className="w-24 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                              />
+                            </td>
+                            <td className="py-2 pr-2">
+                              <select
+                                value={row.unit}
+                                onChange={(e) =>
+                                  setDraftIngredients((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, unit: e.target.value } : r))
+                                  )
+                                }
+                                disabled={isSaving}
+                                className="w-24 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                              >
+                                <option value="">g</option>
+                                {allMeasurementUnits
+                                  .filter((u) => u !== 'g')
+                                  .map((u) => (
+                                    <option key={u} value={u as unknown as MeasurementUnit}>
+                                      {u}
+                                    </option>
+                                  ))}
+                              </select>
+                            </td>
+                            <td className="py-2 pr-2">
+                              <input
+                                value={row.notes}
+                                onChange={(e) =>
+                                  setDraftIngredients((prev) =>
+                                    prev.map((r, i) => (i === idx ? { ...r, notes: e.target.value } : r))
+                                  )
+                                }
+                                disabled={isSaving}
+                                className="w-64 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                              />
+                            </td>
+                            <td className="py-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDraftIngredients((prev) => prev.filter((_, i) => i !== idx))
+                                }
+                                disabled={isSaving}
+                                className="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Filling Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <StatCard
+              icon={<BeakerIcon className="w-5 h-5" />}
+              label="Ingredients"
+              value={goldenVersion.raw.ingredients.length.toString()}
+            />
+            <StatCard
+              icon={<ScaleIcon className="w-5 h-5" />}
+              label="Base Weight"
+              value={`${goldenVersion.baseWeight}g`}
+            />
+            {goldenVersion.yield && <StatCard label="Yield" value={goldenVersion.yield} />}
+            {goldenVersion.createdDate && (
+              <StatCard
+                label="Created"
+                value={goldenVersion.createdDate.split('T')[0] ?? goldenVersion.createdDate}
+              />
+            )}
+          </div>
+
+          {/* Procedures */}
+          {!isEditing && (
+            <DetailSection title="Procedures" defaultCollapsed={true} className="mb-6">
+              {(() => {
+                const preferredId =
+                  (goldenVersion.raw.procedures?.preferredId as unknown as string | undefined) ??
+                  (goldenVersion.raw.procedures?.options?.[0]?.id as unknown as string | undefined);
+
+                if (goldenVersion.procedures?.recommendedProcedure && preferredId) {
+                  return (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {goldenVersion.procedures.recommendedProcedure.name}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono truncate">
+                          {preferredId}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.hash = `#procedures/${preferredId}`;
+                        }}
+                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                      >
+                        <ArrowTopRightOnSquareIcon className="w-4 h-4" />
+                        Open
+                      </button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No procedure linked for this version.
+                  </p>
+                );
+              })()}
+            </DetailSection>
+          )}
+
+          {/* Derived From */}
+          {!isEditing && filling.raw.derivedFrom && (
+            <DetailSection title="Derived From" defaultCollapsed={true} className="mb-6">
+              <div className="space-y-2">
+                <div className="text-sm text-gray-700 dark:text-gray-300 font-mono break-all">
+                  {filling.raw.derivedFrom.sourceVersionId as unknown as string}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {filling.raw.derivedFrom.derivedDate as unknown as string}
+                </div>
+                {filling.raw.derivedFrom.notes && (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {filling.raw.derivedFrom.notes}
+                  </div>
+                )}
+                <div>
                   <button
                     type="button"
                     onClick={() => {
-                      window.location.hash = `#procedures/${preferredId}`;
+                      const sourceVersionId = filling.raw.derivedFrom?.sourceVersionId as unknown as string;
+                      const atIdx = sourceVersionId.indexOf('@');
+                      const fillingOnly = atIdx >= 0 ? sourceVersionId.slice(0, atIdx) : sourceVersionId;
+                      if (fillingOnly.length > 0) {
+                        window.location.hash = `#fillings/${fillingOnly}`;
+                      } else {
+                        window.location.hash = '#fillings';
+                      }
                     }}
                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                   >
                     <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                    Open
+                    Open source filling
                   </button>
                 </div>
-              );
-            }
-
-            return (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                No procedure linked for this version.
-              </p>
-            );
-          })()}
-        </DetailSection>
-      )}
-
-      {/* Derived From */}
-      {!isEditing && filling.raw.derivedFrom && (
-        <DetailSection title="Derived From" defaultCollapsed={true} className="mb-6">
-          <div className="space-y-2">
-            <div className="text-sm text-gray-700 dark:text-gray-300 font-mono break-all">
-              {filling.raw.derivedFrom.sourceVersionId as unknown as string}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {filling.raw.derivedFrom.derivedDate as unknown as string}
-            </div>
-            {filling.raw.derivedFrom.notes && (
-              <div className="text-sm text-gray-600 dark:text-gray-400">{filling.raw.derivedFrom.notes}</div>
-            )}
-            <div>
-              <button
-                type="button"
-                onClick={() => {
-                  const sourceVersionId = filling.raw.derivedFrom?.sourceVersionId as unknown as string;
-                  const atIdx = sourceVersionId.indexOf('@');
-                  const fillingOnly = atIdx >= 0 ? sourceVersionId.slice(0, atIdx) : sourceVersionId;
-                  if (fillingOnly.length > 0) {
-                    window.location.hash = `#fillings/${fillingOnly}`;
-                  } else {
-                    window.location.hash = '#fillings';
-                  }
-                }}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-              >
-                <ArrowTopRightOnSquareIcon className="w-4 h-4" />
-                Open source filling
-              </button>
-            </div>
-          </div>
-        </DetailSection>
-      )}
-
-      {/* Scaling */}
-      {!isEditing && (
-        <DetailSection title="Scaling" defaultCollapsed={true} className="mb-6">
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="radio"
-                  name="scaleMode"
-                  checked={scaleMode === 'target'}
-                  onChange={() => setScaleMode('target')}
-                />
-                Target weight
-              </label>
-              <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="radio"
-                  name="scaleMode"
-                  checked={scaleMode === 'factor'}
-                  onChange={() => setScaleMode('factor')}
-                />
-                Factor
-              </label>
-            </div>
-
-            {scaleMode === 'target' ? (
-              <div className="flex items-center gap-2">
-                <input
-                  value={scaleTargetWeightText}
-                  onChange={(e) => setScaleTargetWeightText(e.target.value)}
-                  placeholder="grams"
-                  className="w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                />
-                <span className="text-sm text-gray-500 dark:text-gray-400">g</span>
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <input
-                  value={scaleFactorText}
-                  onChange={(e) => setScaleFactorText(e.target.value)}
-                  placeholder="e.g. 2"
-                  className="w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
-                />
-                <span className="text-sm text-gray-500 dark:text-gray-400">×</span>
-              </div>
-            )}
+            </DetailSection>
+          )}
 
-            {scaledPreview.error && (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">
-                  {scaledPreview.error}
-                </p>
-              </div>
-            )}
-
-            {scaledPreview.scaledVersion ? (
-              <div className="space-y-3">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  <span className="font-medium">Scale factor:</span>{' '}
-                  {scaledPreview.scaledVersion.scaledFrom.scaleFactor} |{' '}
-                  <span className="font-medium">Target:</span>{' '}
-                  {scaledPreview.scaledVersion.scaledFrom.targetWeight}g
+          {/* Scaling */}
+          {!isEditing && (
+            <DetailSection title="Scaling" defaultCollapsed={true} className="mb-6">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="scaleMode"
+                      checked={scaleMode === 'target'}
+                      onChange={() => setScaleMode('target')}
+                    />
+                    Target weight
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="scaleMode"
+                      checked={scaleMode === 'factor'}
+                      onChange={() => setScaleMode('factor')}
+                    />
+                    Factor
+                  </label>
                 </div>
 
+                {scaleMode === 'target' ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={scaleTargetWeightText}
+                      onChange={(e) => setScaleTargetWeightText(e.target.value)}
+                      placeholder="grams"
+                      className="w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                    />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">g</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={scaleFactorText}
+                      onChange={(e) => setScaleFactorText(e.target.value)}
+                      placeholder="e.g. 2"
+                      className="w-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono"
+                    />
+                    <span className="text-sm text-gray-500 dark:text-gray-400">×</span>
+                  </div>
+                )}
+
+                {scaledPreview.error && (
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                    <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">
+                      {scaledPreview.error}
+                    </p>
+                  </div>
+                )}
+
+                {scaledPreview.scaledVersion ? (
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Scale factor:</span>{' '}
+                      {scaledPreview.scaledVersion.scaledFrom.scaleFactor} |{' '}
+                      <span className="font-medium">Target:</span>{' '}
+                      {scaledPreview.scaledVersion.scaledFrom.targetWeight}g
+                    </div>
+
+                    {(() => {
+                      const ingredientsResult = scaledPreview.scaledVersion.getIngredients();
+                      if (ingredientsResult.isFailure()) {
+                        return (
+                          <p className="text-sm text-red-600 dark:text-red-400">
+                            {ingredientsResult.message}
+                          </p>
+                        );
+                      }
+                      const ingredients = [...ingredientsResult.value];
+                      return (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-sm">
+                            <thead>
+                              <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                <th className="py-2 pr-2">Ingredient</th>
+                                <th className="py-2 pr-2">Original</th>
+                                <th className="py-2 pr-2">Scaled</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {ingredients.map((ing, idx) => {
+                                const unit = (ing.raw.unit ?? 'g') as MeasurementUnit;
+                                const scaledAmountResult = Calculations.scaleAmount(
+                                  ing.raw.originalAmount,
+                                  unit,
+                                  ing.raw.scaleFactor
+                                );
+                                const scaledDisplay = scaledAmountResult.isSuccess()
+                                  ? scaledAmountResult.value.displayValue
+                                  : `${ing.raw.amount}${unit === 'g' ? 'g' : ' ' + unit}`;
+                                const originalDisplay = `${ing.raw.originalAmount}${
+                                  unit === 'g' ? 'g' : ' ' + unit
+                                }`;
+
+                                return (
+                                  <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
+                                    <td className="py-2 pr-2 text-gray-700 dark:text-gray-300">
+                                      {ing.ingredient.name}
+                                    </td>
+                                    <td className="py-2 pr-2 text-gray-500 dark:text-gray-400 font-mono">
+                                      {originalDisplay}
+                                    </td>
+                                    <td className="py-2 pr-2 text-gray-700 dark:text-gray-300 font-mono">
+                                      {scaledDisplay}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Enter a target weight or factor to preview scaling.
+                  </p>
+                )}
+              </div>
+            </DetailSection>
+          )}
+
+          {/* Ingredients List */}
+          {!isEditing && (
+            <DetailSection title="Ingredients" defaultCollapsed={false} className="mb-6">
+              <IngredientsList fillingId={fillingId} />
+            </DetailSection>
+          )}
+
+          {/* Version Notes */}
+          {!isEditing && goldenVersion.notes && (
+            <DetailSection title="Notes" defaultCollapsed={false} className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300">{goldenVersion.notes}</p>
+            </DetailSection>
+          )}
+
+          {/* Version History */}
+          {!isEditing && filling.versionCount > 1 && (
+            <DetailSection title="Version History" defaultCollapsed={true} className="mb-6">
+              <ul className="space-y-2">
+                {filling.versions.map((version) => (
+                  <li
+                    key={version.versionSpec}
+                    className={`flex items-center justify-between p-2 rounded ${
+                      version.versionSpec === goldenVersion.versionSpec
+                        ? 'bg-chocolate-50 dark:bg-chocolate-900/20 border border-chocolate-200 dark:border-chocolate-800'
+                        : 'bg-gray-50 dark:bg-gray-800'
+                    }`}
+                  >
+                    <span className="text-gray-700 dark:text-gray-300">{version.versionSpec}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {version.createdDate.split('T')[0]}
+                    </span>
+                    {version.versionSpec === goldenVersion.versionSpec && (
+                      <span className="text-xs px-2 py-0.5 bg-chocolate-100 dark:bg-chocolate-900/40 text-chocolate-700 dark:text-chocolate-300 rounded">
+                        Golden
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </DetailSection>
+          )}
+
+          {/* URLs */}
+          {!isEditing && filling.raw.urls && filling.raw.urls.length > 0 && (
+            <DetailSection title="Links" defaultCollapsed={true} className="mb-6">
+              <ul className="space-y-2">
+                {filling.raw.urls.map((url, idx) => (
+                  <li key={idx}>
+                    <a
+                      href={url.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-chocolate-600 dark:text-chocolate-400 hover:underline"
+                    >
+                      {url.category}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </DetailSection>
+          )}
+        </div>
+
+        <div className="xl:sticky xl:top-4 self-start">
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  {filling.name}
+                </h2>
+                <div className="text-sm text-gray-500 dark:text-gray-400 font-mono break-all">
+                  {fillingId as unknown as string}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+              >
+                Print
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <div>
+                  <span className="font-medium">Source:</span> {sourceId}
+                </div>
+                <div>
+                  <span className="font-medium">Version:</span> {goldenVersion.versionSpec}
+                </div>
+                {goldenVersion.createdDate && (
+                  <div>
+                    <span className="font-medium">Created:</span> {goldenVersion.createdDate.split('T')[0]}
+                  </div>
+                )}
+                {previewRecipeForRender && (
+                  <div>
+                    <span className="font-medium">Batch:</span> {previewRecipeForRender.baseWeight}g
+                  </div>
+                )}
+                {scaledPreview.scaledVersion && (
+                  <div>
+                    <span className="font-medium">Scale:</span>{' '}
+                    {scaledPreview.scaledVersion.scaledFrom.scaleFactor}
+                  </div>
+                )}
+                {filling.raw.derivedFrom && (
+                  <div className="mt-2">
+                    <span className="font-medium">Provenance:</span>{' '}
+                    <span className="font-mono break-all">
+                      {filling.raw.derivedFrom.sourceVersionId as unknown as string}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Ingredients</h3>
                 {(() => {
-                  const ingredientsResult = scaledPreview.scaledVersion.getIngredients();
+                  const versionForIngredients = scaledPreview.scaledVersion ?? null;
+                  const ingredientsResult = versionForIngredients
+                    ? versionForIngredients.getIngredients()
+                    : goldenVersion.getIngredients();
                   if (ingredientsResult.isFailure()) {
                     return (
-                      <p className="text-sm text-red-600 dark:text-red-400">{ingredientsResult.message}</p>
+                      <div className="text-sm text-red-600 dark:text-red-400">
+                        {ingredientsResult.message}
+                      </div>
                     );
                   }
                   const ingredients = [...ingredientsResult.value];
-                  return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-left text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                            <th className="py-2 pr-2">Ingredient</th>
-                            <th className="py-2 pr-2">Original</th>
-                            <th className="py-2 pr-2">Scaled</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ingredients.map((ing, idx) => {
-                            const unit = (ing.raw.unit ?? 'g') as MeasurementUnit;
-                            const scaledAmountResult = Calculations.scaleAmount(
-                              ing.raw.originalAmount,
-                              unit,
-                              ing.raw.scaleFactor
-                            );
-                            const scaledDisplay = scaledAmountResult.isSuccess()
-                              ? scaledAmountResult.value.displayValue
-                              : `${ing.raw.amount}${unit === 'g' ? 'g' : ' ' + unit}`;
-                            const originalDisplay = `${ing.raw.originalAmount}${
-                              unit === 'g' ? 'g' : ' ' + unit
-                            }`;
 
-                            return (
-                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-700">
-                                <td className="py-2 pr-2 text-gray-700 dark:text-gray-300">
-                                  {ing.ingredient.name}
-                                </td>
-                                <td className="py-2 pr-2 text-gray-500 dark:text-gray-400 font-mono">
-                                  {originalDisplay}
-                                </td>
-                                <td className="py-2 pr-2 text-gray-700 dark:text-gray-300 font-mono">
-                                  {scaledDisplay}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                  return (
+                    <ul className="space-y-1">
+                      {ingredients.map((ing, idx) => {
+                        const raw = ing.raw as any;
+                        const unit = (raw.unit ?? 'g') as MeasurementUnit;
+                        const amountText = (() => {
+                          if (!versionForIngredients) {
+                            return `${raw.amount}${unit === 'g' ? 'g' : ' ' + unit}`;
+                          }
+                          const scaledAmountResult = Calculations.scaleAmount(
+                            raw.originalAmount,
+                            unit,
+                            raw.scaleFactor
+                          );
+                          return scaledAmountResult.isSuccess()
+                            ? scaledAmountResult.value.displayValue
+                            : `${raw.amount}${unit === 'g' ? 'g' : ' ' + unit}`;
+                        })();
+                        return (
+                          <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">
+                            <span className="font-mono text-gray-700 dark:text-gray-200">{amountText}</span>{' '}
+                            <span>{ing.ingredient.name}</span>
+                            {raw.notes ? (
+                              <span className="text-gray-500 dark:text-gray-400"> — {raw.notes}</span>
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
                   );
                 })()}
               </div>
-            ) : (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Enter a target weight or factor to preview scaling.
-              </p>
-            )}
-          </div>
-        </DetailSection>
-      )}
 
-      {/* Ingredients List */}
-      {!isEditing && (
-        <DetailSection title="Ingredients" defaultCollapsed={false} className="mb-6">
-          <IngredientsList fillingId={fillingId} />
-        </DetailSection>
-      )}
-
-      {/* Version Notes */}
-      {!isEditing && goldenVersion.notes && (
-        <DetailSection title="Notes" defaultCollapsed={false} className="mb-6">
-          <p className="text-gray-700 dark:text-gray-300">{goldenVersion.notes}</p>
-        </DetailSection>
-      )}
-
-      {/* Version History */}
-      {!isEditing && filling.versionCount > 1 && (
-        <DetailSection title="Version History" defaultCollapsed={true} className="mb-6">
-          <ul className="space-y-2">
-            {filling.versions.map((version) => (
-              <li
-                key={version.versionSpec}
-                className={`flex items-center justify-between p-2 rounded ${
-                  version.versionSpec === goldenVersion.versionSpec
-                    ? 'bg-chocolate-50 dark:bg-chocolate-900/20 border border-chocolate-200 dark:border-chocolate-800'
-                    : 'bg-gray-50 dark:bg-gray-800'
-                }`}
-              >
-                <span className="text-gray-700 dark:text-gray-300">{version.versionSpec}</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {version.createdDate.split('T')[0]}
-                </span>
-                {version.versionSpec === goldenVersion.versionSpec && (
-                  <span className="text-xs px-2 py-0.5 bg-chocolate-100 dark:bg-chocolate-900/40 text-chocolate-700 dark:text-chocolate-300 rounded">
-                    Golden
-                  </span>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Instructions</h3>
+                {!preferredProcedureId ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No procedure linked.</div>
+                ) : renderedPreviewProcedure.error ? (
+                  <div className="text-sm text-red-600 dark:text-red-400">
+                    {renderedPreviewProcedure.error}
+                  </div>
+                ) : renderedPreviewProcedure.rendered ? (
+                  <ol className="list-decimal ml-5 space-y-2">
+                    {renderedPreviewProcedure.rendered.steps.map((step: any, idx: number) => (
+                      <li key={idx} className="text-sm text-gray-700 dark:text-gray-300">
+                        {step.renderedDescription}
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Loading…</div>
                 )}
-              </li>
-            ))}
-          </ul>
-        </DetailSection>
-      )}
-
-      {/* URLs */}
-      {!isEditing && filling.raw.urls && filling.raw.urls.length > 0 && (
-        <DetailSection title="Links" defaultCollapsed={true} className="mb-6">
-          <ul className="space-y-2">
-            {filling.raw.urls.map((url, idx) => (
-              <li key={idx}>
-                <a
-                  href={url.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-chocolate-600 dark:text-chocolate-400 hover:underline"
-                >
-                  {url.category}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </DetailSection>
-      )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
