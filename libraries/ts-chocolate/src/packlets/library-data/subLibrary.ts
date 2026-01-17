@@ -1150,7 +1150,9 @@ export abstract class SubLibraryBase<
    * @throws Never throws - returns Failure instead
    * @internal
    */
-  public removeCollection(collectionId: SourceId): Result<void> {
+  public removeCollection(
+    collectionId: SourceId
+  ): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>> {
     return this.collections
       .get(collectionId)
       .asResult.withErrorFormat((msg) => `Collection "${collectionId}" not found: ${msg}`)
@@ -1158,15 +1160,8 @@ export abstract class SubLibraryBase<
         if (!collection.isMutable) {
           return Failure.with(`Cannot delete immutable collection "${collectionId}"`);
         }
-        // The underlying collections property is a ValidatingResultMap
-        // which extends Map<K, V>. We need to access the internal map.
-        // Cast to access delete method
-        const mutableMap = this.collections as unknown as Map<
-          SourceId,
-          SubLibraryCollectionEntry<TBaseId, TItem>
-        >;
-        mutableMap.delete(collectionId);
-        return succeed(undefined);
+        // Use the protected method from AggregatedResultMapBase
+        return this._deleteCollection(collectionId).asResult;
       });
   }
 

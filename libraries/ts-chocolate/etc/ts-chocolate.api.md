@@ -538,7 +538,7 @@ class CollectionLoader<T = JsonObject, TCOLLECTIONID extends string = string, TI
 class CollectionManager<TCompositeId extends string, TBaseId extends string, TItem> implements ICollectionManager {
     constructor(library: SubLibraryBase<TCompositeId, TBaseId, TItem>);
     create(collectionId: SourceId, metadata: ICollectionSourceMetadata): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
-    delete(collectionId: SourceId): Result<void>;
+    delete(collectionId: SourceId): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
     exists(collectionId: SourceId): boolean;
     get(collectionId: SourceId): Result<ICollectionSourceMetadata>;
     getAll(): ReadonlyArray<SourceId>;
@@ -1789,7 +1789,7 @@ interface ICollectionLoadResult<T = JsonObject, TCollectionId extends string = s
 // @public
 interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
     readonly create: (collectionId: SourceId, metadata: ICollectionSourceMetadata) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem>>;
-    readonly delete: (collectionId: SourceId) => Result<void>;
+    readonly delete: (collectionId: SourceId) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
     readonly exists: (collectionId: SourceId) => boolean;
     readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
     readonly getAll: () => ReadonlyArray<SourceId>;
@@ -5099,9 +5099,10 @@ class RuntimeProcedure implements IRuntimeProcedure {
 // @public
 class RuntimeRecipe implements IRuntimeFillingRecipe {
     // Warning: (ae-forgotten-export) The symbol "RecipeContext" needs to be exported by the entry point index.d.ts
+    // Warning: (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "RuntimeRecipe"
     //
     // @internal
-    constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe);
+    protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe);
     get baseId(): BaseFillingId;
     static create(context: RecipeContext, id: FillingId, recipe: IFillingRecipe): Result<RuntimeRecipe>;
     get description(): string | undefined;
@@ -5406,7 +5407,7 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
-    removeCollection(collectionId: SourceId): Result<void>;
+    removeCollection(collectionId: SourceId): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
@@ -5636,10 +5637,10 @@ const uint8ArrayFromBase64: Converter<Uint8Array>;
 
 // @public
 class UndoManager {
-    constructor(maxHistorySize?: number);
     get canRedo(): boolean;
     get canUndo(): boolean;
     clear(): void;
+    static create(maxHistorySize?: number): Result<UndoManager>;
     execute(command: ICommand): Result<void>;
     getRedoHistory(): ReadonlyArray<string>;
     getUndoHistory(): ReadonlyArray<string>;
@@ -5856,6 +5857,7 @@ const weightUnit: Converter<WeightUnit>;
 
 // Warnings were encountered during analysis:
 //
+// src/packlets/editing/undoRedo.ts:83:3 - (ae-unresolved-link) The @link reference could not be resolved: The package "@fgv/ts-chocolate" does not have an export "UndoManager"
 // src/packlets/entities/journal/library.ts:98:3 - (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
 
 ```

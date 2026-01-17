@@ -9,5 +9,5 @@ Delete a mutable collection.
 **Signature:**
 
 ```typescript
-readonly delete: (collectionId: SourceId) => Result<void>;
+readonly delete: (collectionId: SourceId) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
 ```

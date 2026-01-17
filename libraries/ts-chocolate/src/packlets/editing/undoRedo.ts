@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Result, fail, succeed } from '@fgv/ts-utils';
+import { captureResult, Result, fail, succeed } from '@fgv/ts-utils';
 
 // ============================================================================
 // Command Interface
@@ -76,14 +76,24 @@ export class UndoManager {
   private readonly _maxHistorySize: number;
 
   /**
-   * Create a new undo manager.
-   * @param maxHistorySize - Maximum number of commands to keep in history (default: 100)
+   * Internal constructor - use {@link UndoManager.create} instead.
+   * @param maxHistorySize - Maximum number of commands to keep in history
+   * @internal
    */
-  public constructor(maxHistorySize: number = 100) {
+  private constructor(maxHistorySize: number) {
     if (maxHistorySize < 1) {
       throw new Error('maxHistorySize must be at least 1');
     }
     this._maxHistorySize = maxHistorySize;
+  }
+
+  /**
+   * Create a new undo manager.
+   * @param maxHistorySize - Maximum number of commands to keep in history (default: 100)
+   * @returns Result with UndoManager on success, or Failure if maxHistorySize is invalid
+   */
+  public static create(maxHistorySize: number = 100): Result<UndoManager> {
+    return captureResult(() => new UndoManager(maxHistorySize));
   }
 
   /**

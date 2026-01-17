@@ -32,6 +32,9 @@ class AggregatedResultMapBase<TCOMPOSITEID extends string, TCOLLECTIONID extends
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "delete" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     delete(key: TCOMPOSITEID): DetailedResult<TITEM, ResultMapResultDetail>;
+    // Warning: (ae-incompatible-release-tags) The symbol "_deleteCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    // Warning: (ae-incompatible-release-tags) The symbol "_deleteCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
+    protected _deleteCollection(collectionId: TCOLLECTIONID): DetailedResult<AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>, ResultMapResultDetail>;
     // Warning: (ae-incompatible-release-tags) The symbol "deleteFromCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     // Warning: (ae-incompatible-release-tags) The symbol "deleteFromCollection" is marked as @public, but its signature references "DetailedResult" which is marked as @beta
     deleteFromCollection(collectionId: TCOLLECTIONID, itemId: TITEMID): DetailedResult<TCOMPOSITEID, ResultMapResultDetail>;

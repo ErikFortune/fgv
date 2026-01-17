@@ -9,7 +9,7 @@ Delete a mutable collection.
 **Signature:**
 
 ```typescript
-delete(collectionId: SourceId): Result<void>;
+delete(collectionId: SourceId): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
 ```
 
 ## Parameters
@@ -48,5 +48,5 @@ collectionId
 
 **Returns:**
 
-Result&lt;void&gt;
+Result&lt;Collections.AggregatedResultMapEntry&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;&gt;
 

@@ -12,39 +12,9 @@ Manages command history for undo/redo operations. Maintains separate stacks for 
 export declare class UndoManager 
 ```
 
-## Constructors
+## Remarks
 
-<table><thead><tr><th>
-
-Constructor
-
-
-</th><th>
-
-Modifiers
-
-
-</th><th>
-
-Description
-
-
-</th></tr></thead>
-<tbody><tr><td>
-
-[(constructor)(maxHistorySize)](./ts-chocolate.editing.undomanager._constructor_.md)
-
-
-</td><td>
-
-
-</td><td>
-
-Create a new undo manager.
-
-
-</td></tr>
-</tbody></table>
+The constructor for this class is marked as internal. Third-party code should not call the constructor directly or create subclasses that extend the `UndoManager` class.
 
 ## Properties
 
@@ -205,6 +175,22 @@ Description
 </td><td>
 
 Clear all history.
+
+
+</td></tr>
+<tr><td>
+
+[create(maxHistorySize)](./ts-chocolate.editing.undomanager.create.md)
+
+
+</td><td>
+
+`static`
+
+
+</td><td>
+
+Create a new undo manager.
 
 
 </td></tr>

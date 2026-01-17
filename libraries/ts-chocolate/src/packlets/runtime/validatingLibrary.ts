@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import { Collections, Result, ValidatingResultMap } from '@fgv/ts-utils';
+import { Collections, Result, Success, ValidatingResultMap } from '@fgv/ts-utils';
 import { IFindOptions } from './indexers';
 
 /**
@@ -123,10 +123,13 @@ export class ValidatingLibrary<TK extends string, TV, TSpec, TOrchEntity = TV>
    * @returns Array of matching entities
    */
   public find(spec: TSpec, options?: IFindOptions): Result<ReadonlyArray<TV>> {
-    // The orchestrator returns TOrchEntity which is a supertype of TV.
-    // The actual entities returned are TV (the concrete type stored in the map).
-    // Cast through unknown since TV extends TOrchEntity but TypeScript can't verify the relationship.
-    return this._orchestrator.find(spec, options) as unknown as Result<ReadonlyArray<TV>>;
+    // The orchestrator returns TOrchEntity which may be a supertype of TV.
+    // The actual entities returned are TV (the concrete type stored in this map).
+    // Safe cast: orchestrator finds from this library which only contains TV items.
+    // TypeScript can't verify TV extends TOrchEntity, so cast through unknown.
+    return this._orchestrator.find(spec, options).onSuccess((entities) => {
+      return Success.with(entities as unknown as ReadonlyArray<TV>);
+    });
   }
 
   /**

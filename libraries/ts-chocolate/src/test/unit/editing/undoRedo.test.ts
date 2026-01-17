@@ -25,34 +25,34 @@ import { UndoManager, createCommand, ICommand } from '../../../packlets/editing'
 describe('UndoManager', () => {
   describe('constructor', () => {
     test('creates manager with default history size', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.maxHistorySize).toBe(100);
       expect(manager.canUndo).toBe(false);
       expect(manager.canRedo).toBe(false);
     });
 
     test('creates manager with custom history size', () => {
-      const manager = new UndoManager(50);
+      const manager = UndoManager.create(50).orThrow();
       expect(manager.maxHistorySize).toBe(50);
     });
 
-    test('throws for invalid history size of 0', () => {
-      expect(() => new UndoManager(0)).toThrow('maxHistorySize must be at least 1');
+    test('fails for invalid history size of 0', () => {
+      expect(UndoManager.create(0)).toFailWith(/maxHistorySize must be at least 1/i);
     });
 
-    test('throws for negative history size', () => {
-      expect(() => new UndoManager(-1)).toThrow('maxHistorySize must be at least 1');
+    test('fails for negative history size', () => {
+      expect(UndoManager.create(-1)).toFailWith(/maxHistorySize must be at least 1/i);
     });
 
     test('accepts minimum history size of 1', () => {
-      const manager = new UndoManager(1);
+      const manager = UndoManager.create(1).orThrow();
       expect(manager.maxHistorySize).toBe(1);
     });
   });
 
   describe('execute', () => {
     test('executes command and adds to undo stack', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let executed = false;
 
       const command = createCommand(
@@ -71,7 +71,7 @@ describe('UndoManager', () => {
     });
 
     test('clears redo stack when executing new command', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let value = 0;
 
       const command1 = createCommand(
@@ -115,7 +115,7 @@ describe('UndoManager', () => {
     });
 
     test('limits stack size to maxHistorySize', () => {
-      const manager = new UndoManager(3);
+      const manager = UndoManager.create(3).orThrow();
 
       for (let i = 0; i < 5; i++) {
         const command = createCommand(
@@ -131,7 +131,7 @@ describe('UndoManager', () => {
     });
 
     test('returns failure if command execution fails', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'failing command',
@@ -147,7 +147,7 @@ describe('UndoManager', () => {
 
   describe('undo', () => {
     test('undoes most recent command', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let value = 0;
 
       const command = createCommand(
@@ -172,12 +172,12 @@ describe('UndoManager', () => {
     });
 
     test('returns failure when nothing to undo', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.undo()).toFailWith(/no commands to undo/i);
     });
 
     test('moves command to redo stack', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'test',
@@ -195,7 +195,7 @@ describe('UndoManager', () => {
     });
 
     test('returns failure if undo operation fails', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'test',
@@ -213,7 +213,7 @@ describe('UndoManager', () => {
 
   describe('redo', () => {
     test('redoes most recently undone command', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let value = 0;
 
       const command = createCommand(
@@ -241,12 +241,12 @@ describe('UndoManager', () => {
     });
 
     test('returns failure when nothing to redo', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.redo()).toFailWith(/no commands to redo/i);
     });
 
     test('uses custom redo function if provided', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let value = 0;
       let customRedoCalled = false;
 
@@ -279,7 +279,7 @@ describe('UndoManager', () => {
     });
 
     test('falls back to execute if no redo function provided', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let executeCount = 0;
 
       const command = createCommand(
@@ -301,7 +301,7 @@ describe('UndoManager', () => {
     });
 
     test('returns failure if redo operation fails', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let shouldFail = false;
 
       const command: ICommand = {
@@ -329,7 +329,7 @@ describe('UndoManager', () => {
 
   describe('clear', () => {
     test('clears both undo and redo stacks', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command1 = createCommand(
         'cmd1',
@@ -360,7 +360,7 @@ describe('UndoManager', () => {
 
   describe('getUndoHistory', () => {
     test('returns descriptions in reverse order (most recent first)', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       for (let i = 1; i <= 3; i++) {
         const command = createCommand(
@@ -375,14 +375,14 @@ describe('UndoManager', () => {
     });
 
     test('returns empty array when no commands', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.getUndoHistory()).toEqual([]);
     });
   });
 
   describe('getRedoHistory', () => {
     test('returns descriptions in reverse order (most recent first)', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       for (let i = 1; i <= 3; i++) {
         const command = createCommand(
@@ -402,14 +402,14 @@ describe('UndoManager', () => {
     });
 
     test('returns empty array when no undone commands', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.getRedoHistory()).toEqual([]);
     });
   });
 
   describe('peekUndo', () => {
     test('returns description of most recent command', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'my command',
@@ -422,12 +422,12 @@ describe('UndoManager', () => {
     });
 
     test('returns undefined when no commands', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.peekUndo()).toBeUndefined();
     });
 
     test('does not remove command from stack', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'test',
@@ -444,7 +444,7 @@ describe('UndoManager', () => {
 
   describe('peekRedo', () => {
     test('returns description of most recently undone command', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'my command',
@@ -458,12 +458,12 @@ describe('UndoManager', () => {
     });
 
     test('returns undefined when no undone commands', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       expect(manager.peekRedo()).toBeUndefined();
     });
 
     test('does not remove command from stack', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
 
       const command = createCommand(
         'test',
@@ -481,7 +481,7 @@ describe('UndoManager', () => {
 
   describe('complex scenarios', () => {
     test('handles multiple undo/redo cycles', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       let value = 0;
 
       const incrementCommand = (): ICommand =>
@@ -526,7 +526,7 @@ describe('UndoManager', () => {
     });
 
     test('handles state tracking with different operations', () => {
-      const manager = new UndoManager();
+      const manager = UndoManager.create().orThrow();
       const state: string[] = [];
 
       const addCommand = (item: string): ICommand =>

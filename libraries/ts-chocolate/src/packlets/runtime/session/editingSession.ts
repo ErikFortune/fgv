@@ -510,7 +510,7 @@ export class RecipeEditingSession implements ISessionState {
       const journalResult = this.toJournalRecord(options.journalNotes).report(this._logger);
       /* c8 ignore next 3 - toJournalRecord only constructs an object, cannot fail in practice */
       if (journalResult.isFailure()) {
-        return journalResult as unknown as Result<ISaveResult>;
+        return Failure.with(journalResult.message);
       }
       (result as { journalId: string }).journalId = journalResult.value.journalId;
       (result as { journalRecord: IFillingRecipeJournalRecord }).journalRecord = journalResult.value;

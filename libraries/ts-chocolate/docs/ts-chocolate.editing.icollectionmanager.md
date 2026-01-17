@@ -68,7 +68,7 @@ Create a new mutable collection.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; Result&lt;void&gt;
+(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->) =&gt; Result&lt;Collections.AggregatedResultMapEntry&lt;[SourceId](./ts-chocolate.sourceid.md)<!-- -->, TBaseId, TItem, [ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;&gt;
 
 
 </td><td>

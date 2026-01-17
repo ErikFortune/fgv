@@ -161,7 +161,9 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   /**
    * Delete a mutable collection.
    */
-  public delete(collectionId: SourceId): Result<void> {
+  public delete(
+    collectionId: SourceId
+  ): Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>> {
     // Delegate to public method
     return this._library.removeCollection(collectionId);
   }

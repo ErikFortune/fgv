@@ -258,32 +258,32 @@ export class RuntimeContext
   /**
    * A searchable library of all ingredients, keyed by composite ID.
    * Ingredients are resolved eagerly on first access and cached.
+   * @throws Error if ingredient resolution fails (indicates library corruption)
    */
   public get ingredients(): IReadOnlyValidatingLibrary<
     IngredientId,
     AnyRuntimeIngredient,
     IIngredientQuerySpec
   > {
-    return this._resolveIngredients();
+    return this._resolveIngredients().orThrow();
   }
 
   /**
    * A searchable library of all fillings, keyed by composite ID.
    * Fillings are resolved eagerly on first access and cached.
+   * @throws Error if recipe resolution fails (indicates library corruption)
    */
   public get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeRecipe, IFillingRecipeQuerySpec> {
-    return this._resolveRecipes();
+    return this._resolveRecipes().orThrow();
   }
 
   /**
    * Resolves and caches all ingredients from the library.
+   * @returns Success with the resolved library, or Failure if any ingredient fails to resolve
    * @internal
    */
-  private _resolveIngredients(): ValidatingLibrary<
-    IngredientId,
-    AnyRuntimeIngredient,
-    IIngredientQuerySpec,
-    IRuntimeIngredient
+  private _resolveIngredients(): Result<
+    ValidatingLibrary<IngredientId, AnyRuntimeIngredient, IIngredientQuerySpec, IRuntimeIngredient>
   > {
     if (this._ingredients === undefined) {
       this._ingredients = new ValidatingLibrary({
@@ -297,25 +297,26 @@ export class RuntimeContext
         }),
         orchestrator: this._ingredientOrchestrator
       });
-      // Populate from library - report unexpected creation errors
+      // Populate from library - report and fail on any creation errors
       for (const [id, ingredient] of this._library.ingredients.entries()) {
-        RuntimeIngredient.create(this, id, ingredient)
-          .onSuccess((ri) => this._ingredients!.set(id, ri))
-          .report(this.logger);
+        const createResult = RuntimeIngredient.create(this, id, ingredient).report(this.logger);
+        /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
+        if (createResult.isFailure()) {
+          return Failure.with(`Failed to resolve ingredient ${id}: ${createResult.message}`);
+        }
+        this._ingredients.set(id, createResult.value);
       }
     }
-    return this._ingredients;
+    return Success.with(this._ingredients);
   }
 
   /**
    * Resolves and caches all recipes from the library.
+   * @returns Success with the resolved library, or Failure if any recipe fails to resolve
    * @internal
    */
-  private _resolveRecipes(): ValidatingLibrary<
-    FillingId,
-    RuntimeRecipe,
-    IFillingRecipeQuerySpec,
-    IRuntimeFillingRecipe
+  private _resolveRecipes(): Result<
+    ValidatingLibrary<FillingId, RuntimeRecipe, IFillingRecipeQuerySpec, IRuntimeFillingRecipe>
   > {
     if (this._recipes === undefined) {
       this._recipes = new ValidatingLibrary({
@@ -327,12 +328,17 @@ export class RuntimeContext
         }),
         orchestrator: this._recipeOrchestrator
       });
-      // Populate from library
+      // Populate from library - report and fail on any creation errors
       for (const [id, recipe] of this._library.fillings.entries()) {
-        this._recipes.set(id, new RuntimeRecipe(this, id, recipe));
+        const createResult = RuntimeRecipe.create(this, id, recipe).report(this.logger);
+        /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
+        if (createResult.isFailure()) {
+          return Failure.with(`Failed to resolve recipe ${id}: ${createResult.message}`);
+        }
+        this._recipes.set(id, createResult.value);
       }
     }
-    return this._recipes;
+    return Success.with(this._recipes);
   }
 
   /**
@@ -340,7 +346,7 @@ export class RuntimeContext
    * @internal - for use by orchestrators and internal navigation
    */
   public _getIngredient(id: IngredientId): Result<AnyRuntimeIngredient> {
-    return this._resolveIngredients().get(id).asResult;
+    return this._resolveIngredients().onSuccess((lib) => lib.get(id).asResult);
   }
 
   /**
@@ -348,7 +354,7 @@ export class RuntimeContext
    * @internal - for use by orchestrators and internal navigation
    */
   public _getRecipe(id: FillingId): Result<RuntimeRecipe> {
-    return this._resolveRecipes().get(id).asResult;
+    return this._resolveRecipes().onSuccess((lib) => lib.get(id).asResult);
   }
 
   /**

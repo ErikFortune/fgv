@@ -290,7 +290,9 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
    * @param collectionId - Collection to delete
    * @returns Result indicating success or failure
    */
-  readonly delete: (collectionId: SourceId) => Result<void>;
+  readonly delete: (
+    collectionId: SourceId
+  ) => Result<Collections.AggregatedResultMapEntry<SourceId, TBaseId, TItem, ICollectionSourceMetadata>>;
 
   /**
    * Update collection metadata.

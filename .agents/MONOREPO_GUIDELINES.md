@@ -277,7 +277,10 @@ export * from './packlets/feature-b';
 export { SpecificType } from './packlets/internal';
 ```
 
-### Configuration Objects
+### Configuration Objects and Factory Pattern
+
+**Constructors that might throw should be `protected` or `private` and exposed only via a static `create` method that returns `Result<T>`.**
+
 ```typescript
 // Good: Use Result pattern for configuration
 export interface IConfigParams {
@@ -286,11 +289,29 @@ export interface IConfigParams {
 }
 
 export class MyClass {
+  // Constructor is private or protected - never public if it can throw
+  private constructor(params: IConfigParams) {
+    if (params.optionalParam !== undefined && params.optionalParam < 0) {
+      throw new Error('optionalParam must be non-negative');
+    }
+    // ... initialization
+  }
+
+  // Factory method converts throws to Results
   public static create(params: IConfigParams): Result<MyClass> {
     return captureResult(() => new MyClass(params));
   }
 }
+
+// Usage
+const instance = MyClass.create(params).orThrow(); // In setup/initialization
+const result = MyClass.create(params); // In application code - handle Result
 ```
+
+**Constructor visibility rules:**
+- `private` - Class should never be subclassed
+- `protected` - Subclasses need to call the constructor
+- **Never** expose a throwing constructor as `public` without a `create()` factory
 
 ### Error Messages
 ```typescript

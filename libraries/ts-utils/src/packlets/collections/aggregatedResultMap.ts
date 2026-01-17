@@ -777,6 +777,29 @@ export class AggregatedResultMapBase<
       );
   }
 
+  // ==================== Protected helpers ====================
+
+  /**
+   * Deletes a collection from the internal collections map.
+   * This is a protected method for use by derived classes that need to implement
+   * collection deletion functionality.
+   *
+   * @param collectionId - The collection ID to delete.
+   * @returns `Success` with the deleted entry if found, `Failure` otherwise.
+   * @remarks
+   * - Does NOT check if the collection is mutable - callers should validate this first.
+   * - Use `collections.get(id)` to check if a collection exists and its mutability before calling.
+   */
+  protected _deleteCollection(
+    collectionId: TCOLLECTIONID
+  ): DetailedResult<
+    AggregatedResultMapEntry<TCOLLECTIONID, TITEMID, TITEM, TMETADATA>,
+    ResultMapResultDetail
+  > {
+    // ValidatingResultMap extends ResultMap which has delete method
+    return this._collections.delete(collectionId);
+  }
+
   // ==================== Private helpers ====================
 
   /**

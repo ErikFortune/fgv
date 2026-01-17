@@ -68,10 +68,10 @@ export class RuntimeRecipe implements IRuntimeFillingRecipe {
 
   /**
    * Creates a RuntimeRecipe.
-   * Use RuntimeContext.getRecipe() instead of calling this directly.
+   * Use {@link RuntimeRecipe.create} or RuntimeContext.getRecipe() instead of calling this directly.
    * @internal
    */
-  public constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe) {
+  protected constructor(context: RecipeContext, id: FillingId, recipe: IFillingRecipe) {
     this._context = context;
     this._id = id;
     this._recipe = recipe;

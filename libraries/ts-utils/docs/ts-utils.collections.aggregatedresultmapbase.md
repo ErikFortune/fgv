@@ -182,6 +182,22 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[\_deleteCollection(collectionId)](./ts-utils.collections.aggregatedresultmapbase._deletecollection.md)
+
+
+</td><td>
+
+`protected`
+
+
+</td><td>
+
+Deletes a collection from the internal collections map. This is a protected method for use by derived classes that need to implement collection deletion functionality.
+
+
+</td></tr>
+<tr><td>
+
 [\[Symbol.iterator\]()](./ts-utils.collections.aggregatedresultmapbase._symbol.iterator_.md)
 
 
