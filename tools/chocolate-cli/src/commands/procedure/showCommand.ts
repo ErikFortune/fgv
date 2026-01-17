@@ -23,14 +23,30 @@ import * as yaml from 'yaml';
 import { Mustache } from '@fgv/ts-extras';
 import { Converters, Entities, ProcedureId } from '@fgv/ts-chocolate';
 
-import { IEntityBaseOptions, OutputFormat, loadProceduresLibrary, loadTasksLibrary } from '../shared';
+import {
+  IEntityBaseOptions,
+  ISelectableItem,
+  OutputFormat,
+  loadProceduresLibrary,
+  loadTasksLibrary,
+  interactiveSelect
+} from '../shared';
 
 /**
  * Options for procedure show command
  */
 interface IProcedureShowOptions extends IEntityBaseOptions {
+  interactive?: boolean;
   render?: boolean;
   context?: string;
+}
+
+/**
+ * Procedure selectable item for interactive mode
+ */
+interface IProcedureSelectableItem extends ISelectableItem {
+  id: ProcedureId;
+  procedure: Entities.Procedures.IProcedure;
 }
 
 /**
@@ -118,7 +134,7 @@ function formatStep(
 /**
  * Formats a procedure for human-readable output
  */
-function formatProcedureHuman(
+export function formatProcedureHuman(
   procedure: Entities.Procedures.IProcedure,
   procedureId: ProcedureId,
   tasksLibrary?: Entities.Tasks.TasksLibrary,
@@ -165,80 +181,130 @@ export function createShowSubcommand(): Command {
 
   cmd
     .description('Display details of a specific procedure')
-    .argument('<procedureId>', 'Procedure ID (e.g., "common.make-ganache")')
+    .argument('[procedureId]', 'Procedure ID (e.g., "common.make-ganache")')
+    .option('-i, --interactive', 'Interactively select a procedure')
     .option('--render', 'Render task templates with context')
     .option('--context <json>', 'JSON context for template rendering (requires --render)')
-    .action(async (procedureIdArg: string, localOptions: { render?: boolean; context?: string }) => {
-      // Merge with parent options
-      const parentOptions = cmd.optsWithGlobals() as IProcedureShowOptions;
-      const options: IProcedureShowOptions = {
-        ...parentOptions,
-        ...localOptions
-      };
+    .action(
+      async (
+        procedureIdArg: string | undefined,
+        localOptions: { interactive?: boolean; render?: boolean; context?: string }
+      ) => {
+        // Merge with parent options
+        const parentOptions = cmd.optsWithGlobals() as IProcedureShowOptions;
+        const options: IProcedureShowOptions = {
+          ...parentOptions,
+          ...localOptions
+        };
 
-      // Validate procedure ID
-      const procedureIdResult = Converters.procedureId.convert(procedureIdArg);
-      if (procedureIdResult.isFailure()) {
-        console.error(`Invalid procedure ID "${procedureIdArg}": ${procedureIdResult.message}`);
-        process.exit(1);
-      }
-      const procedureId = procedureIdResult.value;
-
-      // Load the procedures library
-      const libraryResult = await loadProceduresLibrary(options);
-      if (libraryResult.isFailure()) {
-        console.error(`Error loading procedures: ${libraryResult.message}`);
-        process.exit(1);
-      }
-      const library = libraryResult.value;
-
-      // Get the procedure
-      const procedureResult = library.get(procedureId);
-      if (procedureResult.isFailure()) {
-        console.error(`Procedure not found: ${procedureId}`);
-        process.exit(1);
-      }
-      const procedure = procedureResult.value;
-
-      // Load tasks library if rendering
-      let tasksLibrary: Entities.Tasks.TasksLibrary | undefined;
-      if (options.render) {
-        const tasksResult = await loadTasksLibrary(options);
-        if (tasksResult.isSuccess()) {
-          tasksLibrary = tasksResult.value;
-        }
-      }
-
-      // Parse context if provided
-      let context: Record<string, unknown> | undefined;
-      if (options.context) {
-        try {
-          context = JSON.parse(options.context);
-        } catch (e) {
-          console.error(`Invalid JSON context: ${e}`);
+        // Load the procedures library
+        const libraryResult = await loadProceduresLibrary(options);
+        if (libraryResult.isFailure()) {
+          console.error(`Error loading procedures: ${libraryResult.message}`);
           process.exit(1);
         }
-      }
+        const library = libraryResult.value;
 
-      const format = (options.format ?? 'human') as OutputFormat;
+        // Determine procedure ID - either from argument or interactive selection
+        let procedureId: ProcedureId;
+        let procedure: Entities.Procedures.IProcedure;
 
-      // Format and output
-      switch (format) {
-        case 'json':
-          console.log(JSON.stringify(procedure, null, 2));
-          break;
-        case 'yaml':
-          console.log(yaml.stringify(procedure));
-          break;
-        case 'table':
-        case 'human':
-        default:
-          console.log(
-            formatProcedureHuman(procedure, procedureId, options.render ? tasksLibrary : undefined, context)
-          );
-          break;
+        if (localOptions.interactive || !procedureIdArg) {
+          if (!localOptions.interactive && !procedureIdArg) {
+            console.error('Error: Either provide a procedure ID or use --interactive (-i) to select one');
+            process.exit(1);
+          }
+
+          // Build selectable items
+          const selectableItems: IProcedureSelectableItem[] = [];
+          for (const [id, p] of library.entries()) {
+            const categoryInfo = p.category ? `[${p.category}] ` : '';
+            selectableItems.push({
+              id,
+              name: p.name,
+              description: `${categoryInfo}${p.steps.length} steps`,
+              procedure: p
+            });
+          }
+          selectableItems.sort((a, b) => a.id.localeCompare(b.id));
+
+          // Show interactive selector
+          const selectionResult = await interactiveSelect({
+            items: selectableItems,
+            prompt: 'Select a procedure:',
+            formatName: (item) => `${item.id} - ${item.name}`
+          });
+
+          if (selectionResult.isFailure()) {
+            console.error(`Selection error: ${selectionResult.message}`);
+            process.exit(1);
+          }
+
+          if (selectionResult.value === 'cancelled') {
+            process.exit(0);
+          }
+
+          procedureId = selectionResult.value.id;
+          procedure = selectionResult.value.procedure;
+          console.log(''); // Blank line after selection
+        } else {
+          // Validate procedure ID from argument
+          const procedureIdResult = Converters.procedureId.convert(procedureIdArg);
+          if (procedureIdResult.isFailure()) {
+            console.error(`Invalid procedure ID "${procedureIdArg}": ${procedureIdResult.message}`);
+            process.exit(1);
+          }
+          procedureId = procedureIdResult.value;
+
+          // Get the procedure
+          const procedureResult = library.get(procedureId);
+          if (procedureResult.isFailure()) {
+            console.error(`Procedure not found: ${procedureId}`);
+            process.exit(1);
+          }
+          procedure = procedureResult.value;
+        }
+
+        // Load tasks library if rendering
+        let tasksLibrary: Entities.Tasks.TasksLibrary | undefined;
+        if (options.render) {
+          const tasksResult = await loadTasksLibrary(options);
+          if (tasksResult.isSuccess()) {
+            tasksLibrary = tasksResult.value;
+          }
+        }
+
+        // Parse context if provided
+        let context: Record<string, unknown> | undefined;
+        if (options.context) {
+          try {
+            context = JSON.parse(options.context);
+          } catch (e) {
+            console.error(`Invalid JSON context: ${e}`);
+            process.exit(1);
+          }
+        }
+
+        const format = (options.format ?? 'human') as OutputFormat;
+
+        // Format and output
+        switch (format) {
+          case 'json':
+            console.log(JSON.stringify(procedure, null, 2));
+            break;
+          case 'yaml':
+            console.log(yaml.stringify(procedure));
+            break;
+          case 'table':
+          case 'human':
+          default:
+            console.log(
+              formatProcedureHuman(procedure, procedureId, options.render ? tasksLibrary : undefined, context)
+            );
+            break;
+        }
       }
-    });
+    );
 
   return cmd;
 }

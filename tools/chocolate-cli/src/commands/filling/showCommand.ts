@@ -36,6 +36,15 @@ import {
   formatScaledFilling,
   OutputFormat
 } from './shared';
+import { interactiveSelect, ISelectableItem } from '../shared';
+
+/**
+ * Filling selectable item for interactive mode
+ */
+interface IFillingSelectableItem extends ISelectableItem {
+  id: FillingId;
+  filling: Entities.Fillings.IFillingRecipe;
+}
 
 /**
  * Parsed scale target specification
@@ -85,14 +94,15 @@ export function createShowSubcommand(): Command {
 
   cmd
     .description('Display details of a specific filling')
-    .argument('<fillingId>', 'Filling ID (e.g., "common.dark-ganache-classic")')
+    .argument('[fillingId]', 'Filling ID (e.g., "common.dark-ganache-classic")')
+    .option('-i, --interactive', 'Interactively select a filling')
     .option('--version <spec>', 'Show a specific version (default: golden version)')
     .option('--scale <target>', 'Scale filling to target weight or multiplier (e.g., "500g" or "2x")')
     .option('--precision <n>', 'Decimal places for scaled amounts (default: 1)')
     .action(
       async (
-        fillingIdArg: string,
-        localOptions: { version?: string; scale?: string; precision?: string }
+        fillingIdArg: string | undefined,
+        localOptions: { interactive?: boolean; version?: string; scale?: string; precision?: string }
       ) => {
         // Merge with parent options
         const parentOptions = cmd.optsWithGlobals() as IFillingShowOptions;
@@ -100,14 +110,6 @@ export function createShowSubcommand(): Command {
           ...parentOptions,
           ...localOptions
         };
-
-        // Validate filling ID
-        const fillingIdResult = Converters.fillingId.convert(fillingIdArg);
-        if (fillingIdResult.isFailure()) {
-          console.error(`Invalid filling ID "${fillingIdArg}": ${fillingIdResult.message}`);
-          process.exit(1);
-        }
-        const fillingId = fillingIdResult.value as FillingId;
 
         // Load the fillings library
         const libraryResult = await loadFillingsLibrary(options);
@@ -117,13 +119,64 @@ export function createShowSubcommand(): Command {
         }
         const library = libraryResult.value;
 
-        // Get the filling
-        const fillingResult = library.get(fillingId);
-        if (fillingResult.isFailure()) {
-          console.error(`Filling not found: ${fillingId}`);
-          process.exit(1);
+        // Determine filling ID - either from argument or interactive selection
+        let fillingId: FillingId;
+        let filling: Entities.Fillings.IFillingRecipe;
+
+        if (localOptions.interactive || !fillingIdArg) {
+          if (!localOptions.interactive && !fillingIdArg) {
+            console.error('Error: Either provide a filling ID or use --interactive (-i) to select one');
+            process.exit(1);
+          }
+
+          // Build selectable items
+          const selectableItems: IFillingSelectableItem[] = [];
+          for (const [id, f] of library.entries()) {
+            selectableItems.push({
+              id,
+              name: f.name,
+              description: `[${f.category}]`,
+              filling: f
+            });
+          }
+          selectableItems.sort((a, b) => a.id.localeCompare(b.id));
+
+          // Show interactive selector
+          const selectionResult = await interactiveSelect({
+            items: selectableItems,
+            prompt: 'Select a filling:',
+            formatName: (item) => `${item.id} - ${item.name}`
+          });
+
+          if (selectionResult.isFailure()) {
+            console.error(`Selection error: ${selectionResult.message}`);
+            process.exit(1);
+          }
+
+          if (selectionResult.value === 'cancelled') {
+            process.exit(0);
+          }
+
+          fillingId = selectionResult.value.id;
+          filling = selectionResult.value.filling;
+          console.log(''); // Blank line after selection
+        } else {
+          // Validate filling ID from argument
+          const fillingIdResult = Converters.fillingId.convert(fillingIdArg);
+          if (fillingIdResult.isFailure()) {
+            console.error(`Invalid filling ID "${fillingIdArg}": ${fillingIdResult.message}`);
+            process.exit(1);
+          }
+          fillingId = fillingIdResult.value as FillingId;
+
+          // Get the filling
+          const fillingResult = library.get(fillingId);
+          if (fillingResult.isFailure()) {
+            console.error(`Filling not found: ${fillingId}`);
+            process.exit(1);
+          }
+          filling = fillingResult.value;
         }
-        const filling = fillingResult.value;
 
         // Validate version spec if provided
         let versionSpec: FillingVersionSpec | undefined;

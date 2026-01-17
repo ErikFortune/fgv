@@ -23,14 +23,29 @@ import * as yaml from 'yaml';
 import { Mustache } from '@fgv/ts-extras';
 import { Converters, Entities, TaskId } from '@fgv/ts-chocolate';
 
-import { IEntityBaseOptions, OutputFormat, loadTasksLibrary } from '../shared';
+import {
+  IEntityBaseOptions,
+  ISelectableItem,
+  OutputFormat,
+  loadTasksLibrary,
+  interactiveSelect
+} from '../shared';
 
 /**
  * Options for task show command
  */
 interface ITaskShowOptions extends IEntityBaseOptions {
+  interactive?: boolean;
   render?: boolean;
   params?: string;
+}
+
+/**
+ * Task selectable item for interactive mode
+ */
+interface ITaskSelectableItem extends ISelectableItem {
+  id: TaskId;
+  task: Entities.Tasks.ITaskData;
 }
 
 /**
@@ -47,7 +62,7 @@ function getRequiredVariables(template: string): string[] {
 /**
  * Formats a task for human-readable output
  */
-function formatTaskHuman(
+export function formatTaskHuman(
   task: Entities.Tasks.ITaskData,
   taskId: TaskId,
   renderedDescription?: string
@@ -116,87 +131,136 @@ export function createShowSubcommand(): Command {
 
   cmd
     .description('Display details of a specific task')
-    .argument('<taskId>', 'Task ID (e.g., "common.heat-cream")')
+    .argument('[taskId]', 'Task ID (e.g., "common.heat-cream")')
+    .option('-i, --interactive', 'Interactively select a task')
     .option('--render', 'Render the template with provided params')
     .option('--params <json>', 'JSON params for template rendering (requires --render)')
-    .action(async (taskIdArg: string, localOptions: { render?: boolean; params?: string }) => {
-      // Merge with parent options
-      const parentOptions = cmd.optsWithGlobals() as ITaskShowOptions;
-      const options: ITaskShowOptions = {
-        ...parentOptions,
-        ...localOptions
-      };
+    .action(
+      async (
+        taskIdArg: string | undefined,
+        localOptions: { interactive?: boolean; render?: boolean; params?: string }
+      ) => {
+        // Merge with parent options
+        const parentOptions = cmd.optsWithGlobals() as ITaskShowOptions;
+        const options: ITaskShowOptions = {
+          ...parentOptions,
+          ...localOptions
+        };
 
-      // Validate task ID
-      const taskIdResult = Converters.taskId.convert(taskIdArg);
-      if (taskIdResult.isFailure()) {
-        console.error(`Invalid task ID "${taskIdArg}": ${taskIdResult.message}`);
-        process.exit(1);
-      }
-      const taskId = taskIdResult.value;
+        // Load the tasks library
+        const libraryResult = await loadTasksLibrary(options);
+        if (libraryResult.isFailure()) {
+          console.error(`Error loading tasks: ${libraryResult.message}`);
+          process.exit(1);
+        }
+        const library = libraryResult.value;
 
-      // Load the tasks library
-      const libraryResult = await loadTasksLibrary(options);
-      if (libraryResult.isFailure()) {
-        console.error(`Error loading tasks: ${libraryResult.message}`);
-        process.exit(1);
-      }
-      const library = libraryResult.value;
+        // Determine task ID - either from argument or interactive selection
+        let taskId: TaskId;
+        let task: Entities.Tasks.ITaskData;
 
-      // Get the task
-      const taskResult = library.get(taskId);
-      if (taskResult.isFailure()) {
-        console.error(`Task not found: ${taskId}`);
-        process.exit(1);
-      }
-      const task = taskResult.value;
-
-      // Render template if requested
-      let renderedDescription: string | undefined;
-      if (options.render) {
-        let params: Record<string, unknown> = {};
-        if (options.params) {
-          try {
-            params = JSON.parse(options.params);
-          } catch (e) {
-            console.error(`Invalid JSON params: ${e}`);
+        if (localOptions.interactive || !taskIdArg) {
+          if (!localOptions.interactive && !taskIdArg) {
+            console.error('Error: Either provide a task ID or use --interactive (-i) to select one');
             process.exit(1);
           }
+
+          // Build selectable items
+          const selectableItems: ITaskSelectableItem[] = [];
+          for (const [id, t] of library.entries()) {
+            selectableItems.push({
+              id,
+              name: t.name,
+              description: t.notes,
+              task: t
+            });
+          }
+          selectableItems.sort((a, b) => a.id.localeCompare(b.id));
+
+          // Show interactive selector
+          const selectionResult = await interactiveSelect({
+            items: selectableItems,
+            prompt: 'Select a task:',
+            formatName: (item) => `${item.id} - ${item.name}`
+          });
+
+          if (selectionResult.isFailure()) {
+            console.error(`Selection error: ${selectionResult.message}`);
+            process.exit(1);
+          }
+
+          if (selectionResult.value === 'cancelled') {
+            process.exit(0);
+          }
+
+          taskId = selectionResult.value.id;
+          task = selectionResult.value.task;
+          console.log(''); // Blank line after selection
+        } else {
+          // Validate task ID from argument
+          const taskIdResult = Converters.taskId.convert(taskIdArg);
+          if (taskIdResult.isFailure()) {
+            console.error(`Invalid task ID "${taskIdArg}": ${taskIdResult.message}`);
+            process.exit(1);
+          }
+          taskId = taskIdResult.value;
+
+          // Get the task
+          const taskResult = library.get(taskId);
+          if (taskResult.isFailure()) {
+            console.error(`Task not found: ${taskId}`);
+            process.exit(1);
+          }
+          task = taskResult.value;
         }
 
-        // Merge with defaults
-        const mergedParams = { ...task.defaults, ...params };
+        // Render template if requested
+        let renderedDescription: string | undefined;
+        if (options.render) {
+          let params: Record<string, unknown> = {};
+          if (options.params) {
+            try {
+              params = JSON.parse(options.params);
+            } catch (e) {
+              console.error(`Invalid JSON params: ${e}`);
+              process.exit(1);
+            }
+          }
 
-        const templateResult = Mustache.MustacheTemplate.create(task.template);
-        if (templateResult.isFailure()) {
-          console.error(`Failed to parse template: ${templateResult.message}`);
-          process.exit(1);
+          // Merge with defaults
+          const mergedParams = { ...task.defaults, ...params };
+
+          const templateResult = Mustache.MustacheTemplate.create(task.template);
+          if (templateResult.isFailure()) {
+            console.error(`Failed to parse template: ${templateResult.message}`);
+            process.exit(1);
+          }
+          const renderResult = templateResult.value.render(mergedParams);
+          if (renderResult.isFailure()) {
+            console.error(`Failed to render template: ${renderResult.message}`);
+            process.exit(1);
+          }
+          renderedDescription = renderResult.value;
         }
-        const renderResult = templateResult.value.render(mergedParams);
-        if (renderResult.isFailure()) {
-          console.error(`Failed to render template: ${renderResult.message}`);
-          process.exit(1);
+
+        const format = (options.format ?? 'human') as OutputFormat;
+
+        // Format and output
+        switch (format) {
+          case 'json':
+            console.log(JSON.stringify(task, null, 2));
+            break;
+          case 'yaml':
+            console.log(yaml.stringify(task));
+            break;
+          case 'table':
+          case 'human':
+          default:
+            console.log(formatTaskHuman(task, taskId, renderedDescription));
+            break;
         }
-        renderedDescription = renderResult.value;
       }
-
-      const format = (options.format ?? 'human') as OutputFormat;
-
-      // Format and output
-      switch (format) {
-        case 'json':
-          console.log(JSON.stringify(task, null, 2));
-          break;
-        case 'yaml':
-          console.log(yaml.stringify(task));
-          break;
-        case 'table':
-        case 'human':
-        default:
-          console.log(formatTaskHuman(task, taskId, renderedDescription));
-          break;
-      }
-    });
+    );
 
   return cmd;
 }

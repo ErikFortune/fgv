@@ -24,25 +24,36 @@ import { Converters, Entities, IngredientId } from '@fgv/ts-chocolate';
 
 import {
   IEntityBaseOptions,
+  ISelectableItem,
   OutputFormat,
   loadIngredientsLibrary,
   formatNumber,
   formatUrls,
-  padRight
+  padRight,
+  interactiveSelect
 } from '../shared';
 
 /**
  * Options for ingredient show command
  */
 interface IIngredientShowOptions extends IEntityBaseOptions {
+  interactive?: boolean;
   ganache?: boolean;
   tempering?: boolean;
 }
 
 /**
+ * Ingredient selectable item for interactive mode
+ */
+interface IIngredientSelectableItem extends ISelectableItem {
+  id: IngredientId;
+  ingredient: Entities.Ingredients.Ingredient;
+}
+
+/**
  * Formats an ingredient for human-readable output
  */
-function formatIngredientHuman(
+export function formatIngredientHuman(
   ingredient: Entities.Ingredients.Ingredient,
   ingredientId: IngredientId,
   options: IIngredientShowOptions
@@ -197,59 +208,114 @@ export function createShowSubcommand(): Command {
 
   cmd
     .description('Display details of a specific ingredient')
-    .argument('<ingredientId>', 'Ingredient ID (e.g., "felchlin.maracaibo-65")')
+    .argument('[ingredientId]', 'Ingredient ID (e.g., "felchlin.maracaibo-65")')
+    .option('-i, --interactive', 'Interactively select an ingredient')
     .option('--ganache', 'Show ganache characteristics (default: true)')
     .option('--no-ganache', 'Hide ganache characteristics')
     .option('--tempering', 'Show tempering curve for chocolate (default: true)')
-    .action(async (ingredientIdArg: string, localOptions: { ganache?: boolean; tempering?: boolean }) => {
-      // Merge with parent options
-      const parentOptions = cmd.optsWithGlobals() as IIngredientShowOptions;
-      const options: IIngredientShowOptions = {
-        ...parentOptions,
-        ...localOptions
-      };
+    .action(
+      async (
+        ingredientIdArg: string | undefined,
+        localOptions: { interactive?: boolean; ganache?: boolean; tempering?: boolean }
+      ) => {
+        // Merge with parent options
+        const parentOptions = cmd.optsWithGlobals() as IIngredientShowOptions;
+        const options: IIngredientShowOptions = {
+          ...parentOptions,
+          ...localOptions
+        };
 
-      // Validate ingredient ID
-      const ingredientIdResult = Converters.ingredientId.convert(ingredientIdArg);
-      if (ingredientIdResult.isFailure()) {
-        console.error(`Invalid ingredient ID "${ingredientIdArg}": ${ingredientIdResult.message}`);
-        process.exit(1);
+        // Load the ingredients library
+        const libraryResult = await loadIngredientsLibrary(options);
+        if (libraryResult.isFailure()) {
+          console.error(`Error loading ingredients: ${libraryResult.message}`);
+          process.exit(1);
+        }
+        const library = libraryResult.value;
+
+        // Determine ingredient ID - either from argument or interactive selection
+        let ingredientId: IngredientId;
+        let ingredient: Entities.Ingredients.Ingredient;
+
+        if (localOptions.interactive || !ingredientIdArg) {
+          if (!localOptions.interactive && !ingredientIdArg) {
+            console.error('Error: Either provide an ingredient ID or use --interactive (-i) to select one');
+            process.exit(1);
+          }
+
+          // Build selectable items
+          const selectableItems: IIngredientSelectableItem[] = [];
+          for (const [id, ing] of library.entries()) {
+            const categoryInfo = Entities.Ingredients.isChocolateIngredient(ing)
+              ? `${ing.category}:${ing.chocolateType}`
+              : ing.category;
+            selectableItems.push({
+              id,
+              name: ing.name,
+              description: `[${categoryInfo}] ${ing.manufacturer ?? ''}`,
+              ingredient: ing
+            });
+          }
+          selectableItems.sort((a, b) => a.id.localeCompare(b.id));
+
+          // Show interactive selector
+          const selectionResult = await interactiveSelect({
+            items: selectableItems,
+            prompt: 'Select an ingredient:',
+            formatName: (item) => {
+              const mfg = item.ingredient.manufacturer ? ` (${item.ingredient.manufacturer})` : '';
+              return `${item.id} - ${item.name}${mfg}`;
+            }
+          });
+
+          if (selectionResult.isFailure()) {
+            console.error(`Selection error: ${selectionResult.message}`);
+            process.exit(1);
+          }
+
+          if (selectionResult.value === 'cancelled') {
+            process.exit(0);
+          }
+
+          ingredientId = selectionResult.value.id;
+          ingredient = selectionResult.value.ingredient;
+          console.log(''); // Blank line after selection
+        } else {
+          // Validate ingredient ID from argument
+          const ingredientIdResult = Converters.ingredientId.convert(ingredientIdArg);
+          if (ingredientIdResult.isFailure()) {
+            console.error(`Invalid ingredient ID "${ingredientIdArg}": ${ingredientIdResult.message}`);
+            process.exit(1);
+          }
+          ingredientId = ingredientIdResult.value;
+
+          // Get the ingredient
+          const ingredientResult = library.get(ingredientId);
+          if (ingredientResult.isFailure()) {
+            console.error(`Ingredient not found: ${ingredientId}`);
+            process.exit(1);
+          }
+          ingredient = ingredientResult.value;
+        }
+
+        const format = (options.format ?? 'human') as OutputFormat;
+
+        // Format and output
+        switch (format) {
+          case 'json':
+            console.log(JSON.stringify(ingredient, null, 2));
+            break;
+          case 'yaml':
+            console.log(yaml.stringify(ingredient));
+            break;
+          case 'table':
+          case 'human':
+          default:
+            console.log(formatIngredientHuman(ingredient, ingredientId, options));
+            break;
+        }
       }
-      const ingredientId = ingredientIdResult.value;
-
-      // Load the ingredients library
-      const libraryResult = await loadIngredientsLibrary(options);
-      if (libraryResult.isFailure()) {
-        console.error(`Error loading ingredients: ${libraryResult.message}`);
-        process.exit(1);
-      }
-      const library = libraryResult.value;
-
-      // Get the ingredient
-      const ingredientResult = library.get(ingredientId);
-      if (ingredientResult.isFailure()) {
-        console.error(`Ingredient not found: ${ingredientId}`);
-        process.exit(1);
-      }
-      const ingredient = ingredientResult.value;
-
-      const format = (options.format ?? 'human') as OutputFormat;
-
-      // Format and output
-      switch (format) {
-        case 'json':
-          console.log(JSON.stringify(ingredient, null, 2));
-          break;
-        case 'yaml':
-          console.log(yaml.stringify(ingredient));
-          break;
-        case 'table':
-        case 'human':
-        default:
-          console.log(formatIngredientHuman(ingredient, ingredientId, options));
-          break;
-      }
-    });
+    );
 
   return cmd;
 }

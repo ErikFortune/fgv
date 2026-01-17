@@ -22,19 +22,35 @@ import { Command } from 'commander';
 import * as yaml from 'yaml';
 import { ConfectionId, ConfectionVersionSpec, Converters, Entities } from '@fgv/ts-chocolate';
 
-import { IEntityBaseOptions, OutputFormat, loadConfectionsLibrary, formatUrls } from '../shared';
+import {
+  IEntityBaseOptions,
+  ISelectableItem,
+  OutputFormat,
+  loadConfectionsLibrary,
+  formatUrls,
+  interactiveSelect
+} from '../shared';
 
 /**
  * Options for confection show command
  */
 interface IConfectionShowOptions extends IEntityBaseOptions {
+  interactive?: boolean;
   version?: string;
+}
+
+/**
+ * Confection selectable item for interactive mode
+ */
+interface IConfectionSelectableItem extends ISelectableItem {
+  id: ConfectionId;
+  confection: Entities.Confections.ConfectionData;
 }
 
 /**
  * Formats a confection for human-readable output
  */
-function formatConfectionHuman(
+export function formatConfectionHuman(
   confection: Entities.Confections.ConfectionData,
   confectionId: ConfectionId,
   versionSpec?: ConfectionVersionSpec
@@ -228,76 +244,125 @@ export function createShowSubcommand(): Command {
 
   cmd
     .description('Display details of a specific confection')
-    .argument('<confectionId>', 'Confection ID (e.g., "myshop.dark-ganache-bonbon")')
+    .argument('[confectionId]', 'Confection ID (e.g., "myshop.dark-ganache-bonbon")')
+    .option('-i, --interactive', 'Interactively select a confection')
     .option('--version <spec>', 'Show a specific version (default: golden version)')
-    .action(async (confectionIdArg: string, localOptions: { version?: string }) => {
-      // Merge with parent options
-      const parentOptions = cmd.optsWithGlobals() as IConfectionShowOptions;
-      const options: IConfectionShowOptions = {
-        ...parentOptions,
-        ...localOptions
-      };
+    .action(
+      async (
+        confectionIdArg: string | undefined,
+        localOptions: { interactive?: boolean; version?: string }
+      ) => {
+        // Merge with parent options
+        const parentOptions = cmd.optsWithGlobals() as IConfectionShowOptions;
+        const options: IConfectionShowOptions = {
+          ...parentOptions,
+          ...localOptions
+        };
 
-      // Validate confection ID
-      const confectionIdResult = Converters.confectionId.convert(confectionIdArg);
-      if (confectionIdResult.isFailure()) {
-        console.error(`Invalid confection ID "${confectionIdArg}": ${confectionIdResult.message}`);
-        process.exit(1);
-      }
-      const confectionId = confectionIdResult.value;
-
-      // Load the confections library
-      const libraryResult = await loadConfectionsLibrary(options);
-      if (libraryResult.isFailure()) {
-        console.error(`Error loading confections: ${libraryResult.message}`);
-        process.exit(1);
-      }
-      const library = libraryResult.value;
-
-      // Get the confection
-      const confectionResult = library.get(confectionId);
-      if (confectionResult.isFailure()) {
-        console.error(`Confection not found: ${confectionId}`);
-        process.exit(1);
-      }
-      const confection = confectionResult.value;
-
-      // Validate version spec if provided
-      let versionSpec: ConfectionVersionSpec | undefined;
-      if (options.version) {
-        const versionResult = Converters.confectionVersionSpec.convert(options.version);
-        if (versionResult.isFailure()) {
-          console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
+        // Load the confections library
+        const libraryResult = await loadConfectionsLibrary(options);
+        if (libraryResult.isFailure()) {
+          console.error(`Error loading confections: ${libraryResult.message}`);
           process.exit(1);
         }
-        versionSpec = versionResult.value;
+        const library = libraryResult.value;
 
-        // Check that the version exists
-        const version = confection.versions.find((v) => v.versionSpec === versionSpec);
-        if (!version) {
-          console.error(`Version ${versionSpec} not found in confection ${confectionId}`);
-          console.error(`Available versions: ${confection.versions.map((v) => v.versionSpec).join(', ')}`);
-          process.exit(1);
+        // Determine confection ID - either from argument or interactive selection
+        let confectionId: ConfectionId;
+        let confection: Entities.Confections.ConfectionData;
+
+        if (localOptions.interactive || !confectionIdArg) {
+          if (!localOptions.interactive && !confectionIdArg) {
+            console.error('Error: Either provide a confection ID or use --interactive (-i) to select one');
+            process.exit(1);
+          }
+
+          // Build selectable items
+          const selectableItems: IConfectionSelectableItem[] = [];
+          for (const [id, c] of library.entries()) {
+            selectableItems.push({
+              id,
+              name: c.name,
+              description: `[${c.confectionType}]`,
+              confection: c
+            });
+          }
+          selectableItems.sort((a, b) => a.id.localeCompare(b.id));
+
+          // Show interactive selector
+          const selectionResult = await interactiveSelect({
+            items: selectableItems,
+            prompt: 'Select a confection:',
+            formatName: (item) => `${item.id} - ${item.name}`
+          });
+
+          if (selectionResult.isFailure()) {
+            console.error(`Selection error: ${selectionResult.message}`);
+            process.exit(1);
+          }
+
+          if (selectionResult.value === 'cancelled') {
+            process.exit(0);
+          }
+
+          confectionId = selectionResult.value.id;
+          confection = selectionResult.value.confection;
+          console.log(''); // Blank line after selection
+        } else {
+          // Validate confection ID from argument
+          const confectionIdResult = Converters.confectionId.convert(confectionIdArg);
+          if (confectionIdResult.isFailure()) {
+            console.error(`Invalid confection ID "${confectionIdArg}": ${confectionIdResult.message}`);
+            process.exit(1);
+          }
+          confectionId = confectionIdResult.value;
+
+          // Get the confection
+          const confectionResult = library.get(confectionId);
+          if (confectionResult.isFailure()) {
+            console.error(`Confection not found: ${confectionId}`);
+            process.exit(1);
+          }
+          confection = confectionResult.value;
+        }
+
+        // Validate version spec if provided
+        let versionSpec: ConfectionVersionSpec | undefined;
+        if (options.version) {
+          const versionResult = Converters.confectionVersionSpec.convert(options.version);
+          if (versionResult.isFailure()) {
+            console.error(`Invalid version spec "${options.version}": ${versionResult.message}`);
+            process.exit(1);
+          }
+          versionSpec = versionResult.value;
+
+          // Check that the version exists
+          const version = confection.versions.find((v) => v.versionSpec === versionSpec);
+          if (!version) {
+            console.error(`Version ${versionSpec} not found in confection ${confectionId}`);
+            console.error(`Available versions: ${confection.versions.map((v) => v.versionSpec).join(', ')}`);
+            process.exit(1);
+          }
+        }
+
+        const format = (options.format ?? 'human') as OutputFormat;
+
+        // Format and output
+        switch (format) {
+          case 'json':
+            console.log(JSON.stringify(confection, null, 2));
+            break;
+          case 'yaml':
+            console.log(yaml.stringify(confection));
+            break;
+          case 'table':
+          case 'human':
+          default:
+            console.log(formatConfectionHuman(confection, confectionId, versionSpec));
+            break;
         }
       }
-
-      const format = (options.format ?? 'human') as OutputFormat;
-
-      // Format and output
-      switch (format) {
-        case 'json':
-          console.log(JSON.stringify(confection, null, 2));
-          break;
-        case 'yaml':
-          console.log(yaml.stringify(confection));
-          break;
-        case 'table':
-        case 'human':
-        default:
-          console.log(formatConfectionHuman(confection, confectionId, versionSpec));
-          break;
-      }
-    });
+    );
 
   return cmd;
 }
