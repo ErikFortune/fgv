@@ -3,17 +3,21 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  ArrowDownTrayIcon,
+  ArrowDownOnSquareIcon,
+  ArrowDownOnSquareStackIcon,
   ArrowUpTrayIcon,
   ExclamationTriangleIcon,
   LockClosedIcon,
   LockOpenIcon,
   DocumentPlusIcon,
   KeyIcon,
-  StarIcon
+  StarIcon,
+  ArrowDownTrayIcon,
+  ArrowUpOnSquareIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
+import { safeShowDirectoryPicker } from '@fgv/ts-web-extras';
 import { ProvideSecretModal, UnlockCollectionModal } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useSecrets } from '../../contexts/SecretsContext';
@@ -212,6 +216,7 @@ export function CollectionManagementPanelBase({
   const [isImportFolderLoading, setIsImportFolderLoading] = useState(false);
   const [isZipLibraryLoading, setIsZipLibraryLoading] = useState(false);
   const [isZipExportLoading, setIsZipExportLoading] = useState(false);
+  const [isFolderExportLoading, setIsFolderExportLoading] = useState(false);
 
   const handleDelete = useCallback(
     (collectionId: SourceId) => {
@@ -363,7 +368,7 @@ export function CollectionManagementPanelBase({
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
               title="Import (zip or collection file)"
             >
-              <ArrowUpTrayIcon className="w-4 h-4" />
+              <ArrowDownTrayIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -382,7 +387,7 @@ export function CollectionManagementPanelBase({
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
               title="Import from folder"
             >
-              <ArrowUpTrayIcon className="w-4 h-4" />
+              <ArrowDownOnSquareIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -391,7 +396,7 @@ export function CollectionManagementPanelBase({
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
               title="Load full library from zip"
             >
-              <ArrowDownTrayIcon className="w-4 h-4" />
+              <ArrowDownOnSquareStackIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -447,7 +452,74 @@ export function CollectionManagementPanelBase({
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
               title="Export sublibrary as zip"
             >
-              <ArrowDownTrayIcon className="w-4 h-4" />
+              <ArrowUpTrayIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setIsFolderExportLoading(true);
+                void (async () => {
+                  try {
+                    let dirHandle: Awaited<ReturnType<typeof safeShowDirectoryPicker>>;
+                    try {
+                      dirHandle = await safeShowDirectoryPicker(globalThis.window, {
+                        id: `choco-${toolId}-exp-folder`,
+                        mode: 'readwrite'
+                      });
+                    } catch (e) {
+                      const name = e instanceof Error ? e.name : '';
+                      if (name === 'AbortError') {
+                        setIsFolderExportLoading(false);
+                        return;
+                      }
+                      const message = e instanceof Error ? e.message : String(e);
+                      setError(`Failed to open folder picker: ${message}`);
+                      setIsFolderExportLoading(false);
+                      return;
+                    }
+
+                    if (!dirHandle) {
+                      setError('Folder export is not supported in this browser');
+                      setIsFolderExportLoading(false);
+                      return;
+                    }
+
+                    const exportable = collectionInfos.filter((c) => c.isLoaded && !c.isLocked);
+                    if (exportable.length === 0) {
+                      setError('No unlocked collections to export');
+                      setIsFolderExportLoading(false);
+                      return;
+                    }
+
+                    const dataDir = await dirHandle.getDirectoryHandle('data', { create: true });
+                    const subDir = await dataDir.getDirectoryHandle(toolId, { create: true });
+
+                    for (const c of exportable) {
+                      const contentResult = await exportCollection({ collectionId: c.id, format: 'json' });
+                      if (contentResult.isFailure()) {
+                        setError(contentResult.message);
+                        setIsFolderExportLoading(false);
+                        return;
+                      }
+
+                      const fileHandle = await subDir.getFileHandle(`${c.id as string}.json`, {
+                        create: true
+                      });
+                      const writable = await fileHandle.createWritable({ keepExistingData: false });
+                      await writable.write(contentResult.value);
+                      await writable.close();
+                    }
+                  } finally {
+                    setIsFolderExportLoading(false);
+                  }
+                })();
+              }}
+              disabled={isFolderExportLoading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Export sublibrary to folder"
+            >
+              <ArrowUpOnSquareIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -742,7 +814,7 @@ function CollectionListItem({
           className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
           title="Export"
         >
-          <ArrowDownTrayIcon className="w-4 h-4" />
+          <ArrowDownOnSquareIcon className="w-4 h-4" />
         </button>
 
         {info.isMutable && (
