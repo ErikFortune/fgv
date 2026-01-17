@@ -22,12 +22,29 @@ import { Command } from 'commander';
 import * as yaml from 'yaml';
 import { Converters, Entities, MoldId } from '@fgv/ts-chocolate';
 
-import { IEntityBaseOptions, OutputFormat, loadMoldsLibrary, formatUrls } from '../shared';
+import {
+  IEntityBaseOptions,
+  ISelectableItem,
+  OutputFormat,
+  loadMoldsLibrary,
+  formatUrls,
+  interactiveSelect
+} from '../shared';
 
 /**
  * Options for mold show command
  */
-type IMoldShowOptions = IEntityBaseOptions;
+interface IMoldShowOptions extends IEntityBaseOptions {
+  interactive?: boolean;
+}
+
+/**
+ * Mold selectable item for interactive mode
+ */
+interface IMoldSelectableItem extends ISelectableItem {
+  id: MoldId;
+  mold: Entities.Molds.IMold;
+}
 
 /**
  * Gets the cavity count from a mold
@@ -42,7 +59,7 @@ function getCavityCount(mold: Entities.Molds.IMold): number {
 /**
  * Formats a mold for human-readable output
  */
-function formatMoldHuman(mold: Entities.Molds.IMold, moldId: MoldId): string {
+export function formatMoldHuman(mold: Entities.Molds.IMold, moldId: MoldId): string {
   const lines: string[] = [];
 
   lines.push(`Mold: ${mold.description ?? mold.productNumber}`);
@@ -112,21 +129,15 @@ export function createShowSubcommand(): Command {
 
   cmd
     .description('Display details of a specific mold')
-    .argument('<moldId>', 'Mold ID (e.g., "chocolateworld.cw1000")')
-    .action(async (moldIdArg: string) => {
+    .argument('[moldId]', 'Mold ID (e.g., "chocolateworld.cw1000")')
+    .option('-i, --interactive', 'Interactively select a mold')
+    .action(async (moldIdArg: string | undefined, localOptions: { interactive?: boolean }) => {
       // Merge with parent options
       const parentOptions = cmd.optsWithGlobals() as IMoldShowOptions;
       const options: IMoldShowOptions = {
-        ...parentOptions
+        ...parentOptions,
+        ...localOptions
       };
-
-      // Validate mold ID
-      const moldIdResult = Converters.moldId.convert(moldIdArg);
-      if (moldIdResult.isFailure()) {
-        console.error(`Invalid mold ID "${moldIdArg}": ${moldIdResult.message}`);
-        process.exit(1);
-      }
-      const moldId = moldIdResult.value;
 
       // Load the molds library
       const libraryResult = await loadMoldsLibrary(options);
@@ -136,13 +147,68 @@ export function createShowSubcommand(): Command {
       }
       const library = libraryResult.value;
 
-      // Get the mold
-      const moldResult = library.get(moldId);
-      if (moldResult.isFailure()) {
-        console.error(`Mold not found: ${moldId}`);
-        process.exit(1);
+      // Determine mold ID - either from argument or interactive selection
+      let moldId: MoldId;
+      let mold: Entities.Molds.IMold;
+
+      if (localOptions.interactive || !moldIdArg) {
+        if (!localOptions.interactive && !moldIdArg) {
+          console.error('Error: Either provide a mold ID or use --interactive (-i) to select one');
+          process.exit(1);
+        }
+
+        // Build selectable items
+        const selectableItems: IMoldSelectableItem[] = [];
+        for (const [id, m] of library.entries()) {
+          const cavities = getCavityCount(m);
+          selectableItems.push({
+            id,
+            name: m.description ?? m.productNumber,
+            description: `[${m.manufacturer}] ${cavities} cavities`,
+            mold: m
+          });
+        }
+        selectableItems.sort((a, b) => a.id.localeCompare(b.id));
+
+        // Show interactive selector
+        const selectionResult = await interactiveSelect({
+          items: selectableItems,
+          prompt: 'Select a mold:',
+          formatName: (item) => {
+            const desc = item.mold.description ? ` - ${item.mold.description}` : '';
+            return `${item.id}${desc}`;
+          }
+        });
+
+        if (selectionResult.isFailure()) {
+          console.error(`Selection error: ${selectionResult.message}`);
+          process.exit(1);
+        }
+
+        if (selectionResult.value === 'cancelled') {
+          process.exit(0);
+        }
+
+        moldId = selectionResult.value.id;
+        mold = selectionResult.value.mold;
+        console.log(''); // Blank line after selection
+      } else {
+        // Validate mold ID from argument
+        const moldIdResult = Converters.moldId.convert(moldIdArg);
+        if (moldIdResult.isFailure()) {
+          console.error(`Invalid mold ID "${moldIdArg}": ${moldIdResult.message}`);
+          process.exit(1);
+        }
+        moldId = moldIdResult.value;
+
+        // Get the mold
+        const moldResult = library.get(moldId);
+        if (moldResult.isFailure()) {
+          console.error(`Mold not found: ${moldId}`);
+          process.exit(1);
+        }
+        mold = moldResult.value;
       }
-      const mold = moldResult.value;
 
       const format = (options.format ?? 'human') as OutputFormat;
 

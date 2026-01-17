@@ -29,3 +29,6 @@ export * from './commandBuilder';
 
 // Output formatting
 export * from './outputFormatter';
+
+// Interactive selection
+export * from './interactiveSelect';
