@@ -24,7 +24,6 @@ import {
   FillingId,
   FillingName,
   FillingVersionSpec,
-  ICategorizedUrl,
   IOptionsWithPreferred,
   IRefWithNotes,
   Measurement,
@@ -33,6 +32,7 @@ import {
 } from '@fgv/ts-chocolate';
 
 import { OutputFormat } from './types';
+import { formatNumber, formatUrls, padRight, getPreferredId as getPreferredIdGeneric } from '../../shared';
 
 /**
  * Context for rendering procedures (prepared for future templating support)
@@ -64,20 +64,6 @@ export interface IFillingListItem {
 }
 
 /**
- * Formats a number with a specified precision
- */
-function formatNumber(value: number, precision: number = 1): string {
-  return value.toFixed(precision);
-}
-
-/**
- * Pads a string to a given length
- */
-function padRight(str: string, length: number): string {
-  return str.padEnd(length);
-}
-
-/**
  * Calculates the percentage of an ingredient amount
  */
 function calculatePercentage(amount: Measurement, baseWeight: Measurement): string {
@@ -100,10 +86,7 @@ function getIngredientDisplayId(ingredient: Entities.Fillings.IFillingIngredient
 function getPreferredId<TOption extends { id: TId }, TId extends string>(
   options: IOptionsWithPreferred<TOption, TId>
 ): TId | undefined {
-  if (options.preferredId) {
-    return options.preferredId;
-  }
-  return options.options.length > 0 ? options.options[0].id : undefined;
+  return getPreferredIdGeneric(options);
 }
 
 /**
@@ -128,18 +111,6 @@ function formatProcedureRefs(
 
   // TODO: When context.procedureLibrary is available, resolve and display
   // the full procedure with rendered steps
-}
-
-/**
- * Formats categorized URLs for human output
- */
-function formatUrls(urls: ReadonlyArray<ICategorizedUrl>, lines: string[]): void {
-  lines.push('');
-  lines.push('URLs:');
-
-  for (const url of urls) {
-    lines.push(`  [${url.category}] ${url.url}`);
-  }
 }
 
 // ============================================================================

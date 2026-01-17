@@ -20,36 +20,9 @@
 
 import { Command } from 'commander';
 
+import { addDataSourceOptions, addOutputFormatOption } from '../shared';
 import { createListSubcommand } from './listCommand';
 import { createShowSubcommand } from './showCommand';
-
-/**
- * Adds shared data source options to a command.
- * These options are inherited by all subcommands.
- */
-function addDataSourceOptions(cmd: Command): void {
-  cmd
-    .option(
-      '--library <path>',
-      'Add file path to filling library (can be repeated)',
-      (val, prev: string[]) => [...prev, val],
-      []
-    )
-    .option('--no-builtin', 'Exclude built-in fillings')
-    .option(
-      '-k, --key <base64>',
-      'Base64-encoded 32-byte encryption key (or use CHOCO_ENCRYPTION_KEY env var)'
-    )
-    .option('-s, --secret-name <name>', 'Secret name for single-key mode')
-    .option('--secrets-file <path>', 'Path to secrets file (YAML/JSON) mapping secret names to base64 keys');
-}
-
-/**
- * Adds output format option to a command.
- */
-function addOutputFormatOption(cmd: Command): void {
-  cmd.option('-f, --format <format>', 'Output format: json, yaml, table, human', 'human');
-}
 
 /**
  * Creates the main filling command with all subcommands
@@ -60,7 +33,7 @@ export function createFillingCommand(): Command {
   cmd.description('Manage and display chocolate filling recipes');
 
   // Add shared options at the parent level (inherited by subcommands)
-  addDataSourceOptions(cmd);
+  addDataSourceOptions(cmd, 'filling');
   addOutputFormatOption(cmd);
 
   // Add subcommands

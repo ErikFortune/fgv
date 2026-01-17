@@ -36,7 +36,8 @@
     "commander": "^11.0.0",
     "chalk": "^5.3.0",
     "@fgv/ts-json-base": "workspace:*",
-    "yaml": "~2.8.2"
+    "yaml": "~2.8.2",
+    "@fgv/ts-extras": "workspace:*"
   },
   "devDependencies": {
     "@fgv/ts-utils-jest": "workspace:*",

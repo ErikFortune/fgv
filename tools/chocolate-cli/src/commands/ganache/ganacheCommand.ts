@@ -18,5 +18,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Re-export from centralized shared location
-export { loadFillingsLibrary } from '../../shared';
+import { Command } from 'commander';
+
+import { addDataSourceOptions, addOutputFormatOption } from '../shared';
+import { createAnalyzeSubcommand } from './analyzeCommand';
+
+/**
+ * Creates the main ganache command with all subcommands
+ */
+export function createGanacheCommand(): Command {
+  const cmd = new Command('ganache');
+
+  cmd.description('Ganache analysis and calculations');
+
+  // Add shared options at the parent level (inherited by subcommands)
+  addDataSourceOptions(cmd, 'library');
+  addOutputFormatOption(cmd);
+
+  // Add subcommands
+  cmd.addCommand(createAnalyzeSubcommand());
+
+  return cmd;
+}

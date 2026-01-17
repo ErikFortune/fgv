@@ -25,19 +25,35 @@ import {
   createKeygenCommand,
   createPublishDataCommand,
   createFetchDataCommand,
-  createFillingCommand
+  createFillingCommand,
+  createIngredientCommand,
+  createMoldCommand,
+  createConfectionCommand,
+  createTaskCommand,
+  createProcedureCommand,
+  createGanacheCommand
 } from './commands';
 
 const program: Command = new Command();
 
 program.name('choco').description('Chocolate recipe management CLI').version('0.1.0');
 
-// Register commands
+// Register encryption commands
 program.addCommand(createEncryptCommand());
 program.addCommand(createDecryptCommand());
 program.addCommand(createKeygenCommand());
 program.addCommand(createPublishDataCommand());
 program.addCommand(createFetchDataCommand());
+
+// Register entity commands
 program.addCommand(createFillingCommand());
+program.addCommand(createIngredientCommand());
+program.addCommand(createMoldCommand());
+program.addCommand(createConfectionCommand());
+program.addCommand(createTaskCommand());
+program.addCommand(createProcedureCommand());
+
+// Register analysis commands
+program.addCommand(createGanacheCommand());
 
 program.parse();
