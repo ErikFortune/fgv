@@ -18,5 +18,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Re-export from centralized shared location
-export { loadFillingsLibrary } from '../../shared';
+// Types
+export * from './types';
+
+// Data source loading
+export * from './dataSourceLoader';
+
+// Command building
+export * from './commandBuilder';
+
+// Output formatting
+export * from './outputFormatter';

@@ -18,5 +18,4 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Re-export from centralized shared location
-export { loadFillingsLibrary } from '../../shared';
+export { createMoldCommand } from './moldCommand';

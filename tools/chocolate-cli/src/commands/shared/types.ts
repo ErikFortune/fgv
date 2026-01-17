@@ -18,28 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Re-export common types from shared
-export { OutputFormat, IDataSourceOptions, IEntityBaseOptions, IEntityListOptions } from '../../shared';
-
-// Import for local use
-import { OutputFormat } from '../../shared';
+/**
+ * Output format options for CLI commands
+ */
+export type OutputFormat = 'json' | 'yaml' | 'table' | 'human';
 
 /**
- * Base options shared by all filling subcommands
+ * Data source options shared across entity subcommands
  */
-export interface IFillingBaseOptions {
+export interface IDataSourceOptions {
   /**
-   * Output format
-   */
-  format?: OutputFormat;
-
-  /**
-   * File paths to additional filling libraries (can be repeated)
+   * File paths to additional libraries (can be repeated)
    */
   library?: string[];
 
   /**
-   * Exclude built-in fillings
+   * Exclude built-in data
    */
   noBuiltin?: boolean;
 
@@ -60,9 +54,19 @@ export interface IFillingBaseOptions {
 }
 
 /**
- * Options for the filling list command
+ * Base options shared by all entity subcommands
  */
-export interface IFillingListOptions extends IFillingBaseOptions {
+export interface IEntityBaseOptions extends IDataSourceOptions {
+  /**
+   * Output format
+   */
+  format?: OutputFormat;
+}
+
+/**
+ * Common list options for filtering
+ */
+export interface IEntityListOptions extends IEntityBaseOptions {
   /**
    * Filter by tag (can be repeated, AND logic)
    */
@@ -77,24 +81,4 @@ export interface IFillingListOptions extends IFillingBaseOptions {
    * Filter by name (case-insensitive substring match)
    */
   name?: string;
-}
-
-/**
- * Options for the filling show command
- */
-export interface IFillingShowOptions extends IFillingBaseOptions {
-  /**
-   * Specific version to show (default: golden)
-   */
-  version?: string;
-
-  /**
-   * Scale target: weight in grams or multiplier with 'x' suffix
-   */
-  scale?: string;
-
-  /**
-   * Decimal places for scaled amounts (default: 1)
-   */
-  precision?: string;
 }

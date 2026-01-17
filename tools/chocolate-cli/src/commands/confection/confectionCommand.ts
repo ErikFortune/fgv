@@ -18,5 +18,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Re-export from centralized shared location
-export { loadFillingsLibrary } from '../../shared';
+import { Command } from 'commander';
+
+import { addDataSourceOptions, addOutputFormatOption } from '../shared';
+import { createListSubcommand } from './listCommand';
+import { createShowSubcommand } from './showCommand';
+
+/**
+ * Creates the main confection command with all subcommands
+ */
+export function createConfectionCommand(): Command {
+  const cmd = new Command('confection');
+
+  cmd.description('Manage and display chocolate confections');
+
+  // Add shared options at the parent level (inherited by subcommands)
+  addDataSourceOptions(cmd, 'confection');
+  addOutputFormatOption(cmd);
+
+  // Add subcommands
+  cmd.addCommand(createListSubcommand());
+  cmd.addCommand(createShowSubcommand());
+
+  return cmd;
+}
