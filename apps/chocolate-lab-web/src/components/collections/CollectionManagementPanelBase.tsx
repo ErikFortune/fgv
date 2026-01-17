@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   PlusIcon,
   PencilIcon,
@@ -164,9 +164,15 @@ export interface ICollectionManagementPanelBaseProps {
 type ICollectionCreateParamsWithSecret = ICreateCollectionParams & { secretName?: string };
 
 export function CollectionManagementPanelBase({
-  className = '',
   toolId,
   collectionInfos,
+  itemLabelSingular,
+  itemLabelPlural,
+  addItemTitle,
+  canAddItem,
+  onAddItem,
+  className = '',
+  headerTitle,
   createCollection,
   deleteCollection,
   renameCollection,
@@ -174,17 +180,11 @@ export function CollectionManagementPanelBase({
   importCollection,
   selectedCollectionIds,
   onToggleSelected,
-  showHeader = true,
-  headerTitle = 'Collections',
-  itemLabelSingular = 'item',
-  itemLabelPlural = 'items',
-  canAddItem,
-  onAddItem,
-  addItemTitle = 'Add item'
+  showHeader = true
 }: ICollectionManagementPanelBaseProps): React.ReactElement {
   const { settings, setDefaultCollection } = useSettings();
   const { getSecretKeyBase64 } = useSecrets();
-  const { loadSubLibraryFromZip, loadLibraryFromZip } = useChocolate();
+  const { loadSubLibraryFromZip, loadSubLibraryFromFolder, loadLibraryFromZip } = useChocolate();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<SourceId | null>(null);
@@ -195,6 +195,7 @@ export function CollectionManagementPanelBase({
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
   const [secretToProvide, setSecretToProvide] = useState<string | null>(null);
+  const [importInitialFile, setImportInitialFile] = useState<File | null>(null);
 
   const pendingRenameRef = useRef<{
     collectionId: SourceId;
@@ -204,9 +205,10 @@ export function CollectionManagementPanelBase({
   } | null>(null);
   const pendingCreateRef = useRef<ICollectionCreateParamsWithSecret | null>(null);
 
-  const zipLoadInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const zipLoadLibraryInputRef = useRef<HTMLInputElement>(null);
-  const [isZipLoading, setIsZipLoading] = useState(false);
+  const [isImportLoading, setIsImportLoading] = useState(false);
+  const [isImportFolderLoading, setIsImportFolderLoading] = useState(false);
   const [isZipLibraryLoading, setIsZipLibraryLoading] = useState(false);
 
   const handleDelete = useCallback(
@@ -302,9 +304,9 @@ export function CollectionManagementPanelBase({
           ) : null}
           <div className="flex gap-2">
             <input
-              ref={zipLoadInputRef}
+              ref={importInputRef}
               type="file"
-              accept=".zip,application/zip"
+              accept=".zip,application/zip,.yaml,.yml,.json"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
@@ -313,14 +315,21 @@ export function CollectionManagementPanelBase({
                   return;
                 }
                 setError(null);
-                setIsZipLoading(true);
-                void (async () => {
-                  const result = await loadSubLibraryFromZip(toolId as SubLibraryType, file);
-                  if (result.isFailure()) {
-                    setError(result.message);
-                  }
-                  setIsZipLoading(false);
-                })();
+
+                if (file.name.toLowerCase().endsWith('.zip')) {
+                  setIsImportLoading(true);
+                  void (async () => {
+                    const result = await loadSubLibraryFromZip(toolId as SubLibraryType, file);
+                    if (result.isFailure()) {
+                      setError(result.message);
+                    }
+                    setIsImportLoading(false);
+                  })();
+                  return;
+                }
+
+                setImportInitialFile(file);
+                setShowImportDialog(true);
               }}
             />
             <input
@@ -347,12 +356,31 @@ export function CollectionManagementPanelBase({
             />
             <button
               type="button"
-              onClick={() => zipLoadInputRef.current?.click()}
-              disabled={isZipLoading}
+              onClick={() => importInputRef.current?.click()}
+              disabled={isImportLoading}
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
-              title="Load sublibrary from zip"
+              title="Import (zip or collection file)"
             >
-              <DocumentPlusIcon className="w-4 h-4" />
+              <ArrowUpTrayIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setIsImportFolderLoading(true);
+                void (async () => {
+                  const result = await loadSubLibraryFromFolder(toolId as SubLibraryType);
+                  if (result.isFailure()) {
+                    setError(result.message);
+                  }
+                  setIsImportFolderLoading(false);
+                })();
+              }}
+              disabled={isImportFolderLoading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Import from folder"
+            >
+              <ArrowUpTrayIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -362,14 +390,6 @@ export function CollectionManagementPanelBase({
               title="Load full library from zip"
             >
               <ArrowDownTrayIcon className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowImportDialog(true)}
-              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              title="Import collection"
-            >
-              <ArrowUpTrayIcon className="w-4 h-4" />
             </button>
             <button
               type="button"
@@ -405,8 +425,8 @@ export function CollectionManagementPanelBase({
                 info={info}
                 isSelected={selectedCollectionIds ? selectedCollectionIds.includes(info.id as string) : false}
                 isDefault={isDefault}
-                itemLabelSingular={itemLabelSingular}
-                itemLabelPlural={itemLabelPlural}
+                itemLabelSingular={itemLabelSingular ?? 'item'}
+                itemLabelPlural={itemLabelPlural ?? 'items'}
                 onToggleSelected={() => {
                   if (!onToggleSelected) {
                     return;
@@ -435,7 +455,7 @@ export function CollectionManagementPanelBase({
                   onAddItem(info.id);
                 }}
                 canAddItem={canAddItem ? canAddItem(info) : !!onAddItem && info.isMutable && !info.isLocked}
-                addItemTitle={addItemTitle}
+                addItemTitle={addItemTitle ?? ''}
               />
             );
           })
@@ -475,7 +495,11 @@ export function CollectionManagementPanelBase({
 
       {showImportDialog && (
         <ImportDialog
-          onClose={() => setShowImportDialog(false)}
+          initialFile={importInitialFile}
+          onClose={() => {
+            setShowImportDialog(false);
+            setImportInitialFile(null);
+          }}
           onImport={(params) => {
             setError(null);
             const result = importCollection(params);
@@ -483,6 +507,7 @@ export function CollectionManagementPanelBase({
               setError(result.message);
             } else {
               setShowImportDialog(false);
+              setImportInitialFile(null);
             }
           }}
         />
@@ -878,9 +903,11 @@ function ExportDialog({
 }
 
 function ImportDialog({
+  initialFile,
   onClose,
   onImport
 }: {
+  initialFile: File | null;
   onClose: () => void;
   onImport: (params: { content: string; mode: 'replace' | 'create-new'; collectionId: SourceId }) => void;
 }): React.ReactElement {
@@ -888,6 +915,28 @@ function ImportDialog({
   const [mode, setMode] = useState<'create-new' | 'replace'>('create-new');
   const [content, setContent] = useState('');
   const [fileName, setFileName] = useState('');
+
+  useEffect(() => {
+    if (!initialFile) {
+      return;
+    }
+
+    setFileName(initialFile.name);
+
+    const baseName = initialFile.name.replace(/\.(yaml|yml|json)$/i, '');
+    if (!collectionId && /^[a-z0-9-]+$/i.test(baseName)) {
+      setCollectionId(baseName.toLowerCase());
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result;
+      if (typeof text === 'string') {
+        setContent(text);
+      }
+    };
+    reader.readAsText(initialFile);
+  }, [collectionId, initialFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0];

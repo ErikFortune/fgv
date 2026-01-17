@@ -12,16 +12,10 @@ import React, {
   useMemo,
   ReactNode
 } from 'react';
-import {
-  BuiltIn,
-  Crypto,
-  Runtime,
-  type IngredientId,
-  type FillingId,
-  type LibraryData
-} from '@fgv/ts-chocolate';
+import { BuiltIn, Crypto, Runtime, type IngredientId, type FillingId, LibraryData } from '@fgv/ts-chocolate';
 import { FileTree, type JsonObject } from '@fgv/ts-json-base';
 import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
+import { FileApiTreeAccessors, safeShowDirectoryPicker } from '@fgv/ts-web-extras';
 
 // Aliases for cleaner code
 type ChocolateRuntimeContext = Runtime.RuntimeContext;
@@ -353,6 +347,7 @@ export interface IChocolateContext {
   dataVersion: number;
 
   loadSubLibraryFromZip: (subLibrary: SubLibraryType, file: File) => Promise<Result<void>>;
+  loadSubLibraryFromFolder: (subLibrary: SubLibraryType) => Promise<Result<void>>;
   loadLibraryFromZip: (file: File) => Promise<Result<void>>;
 }
 
@@ -374,6 +369,7 @@ const defaultChocolateContext: IChocolateContext = {
   confectionCount: 0,
   dataVersion: 0,
   loadSubLibraryFromZip: async () => fail('No ChocolateProvider'),
+  loadSubLibraryFromFolder: async () => fail('No ChocolateProvider'),
   loadLibraryFromZip: async () => fail('No ChocolateProvider')
 };
 
@@ -772,92 +768,24 @@ export function ChocolateProvider({
       // ZipFileTreeAccessors does not materialize '/' as an item, so we create a synthetic root.
       const zipRoot: FileTree.IFileTreeDirectoryItem = new ZipFileTreeModule.ZipDirectoryItem('', accessors);
 
-      const getLibraryRoot = (
-        dir: FileTree.IFileTreeDirectoryItem
-      ): FileTree.IFileTreeDirectoryItem | undefined => {
-        const childrenResult = dir.getChildren();
-        if (childrenResult.isFailure()) {
-          return undefined;
-        }
-
-        const dataDir = childrenResult.value.find(
-          (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'data'
-        );
-
-        if (dataDir) {
-          const dataChildrenResult = dataDir.getChildren();
-          if (dataChildrenResult.isFailure()) {
-            return undefined;
-          }
-          const hasExpected = dataChildrenResult.value.some(
-            (c) => c.type === 'directory' && c.name === expectedSubDirName
-          );
-          if (hasExpected) {
-            return dir;
-          }
-        }
-
-        const directSubDir = childrenResult.value.find(
-          (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === expectedSubDirName
-        );
-        if (!directSubDir) {
-          return undefined;
-        }
-
-        const virtualData = new VirtualDirectoryItem('data', '/data', () => succeed([directSubDir]));
-        const virtualRoot = new VirtualDirectoryItem('', '/', () => succeed([virtualData]));
-        return virtualRoot;
-      };
-
-      const matchingRoots: FileTree.IFileTreeDirectoryItem[] = [];
-      const queue: FileTree.IFileTreeDirectoryItem[] = [zipRoot];
-      let visited = 0;
-      const VISIT_LIMIT = 500;
-
-      while (queue.length > 0 && visited < VISIT_LIMIT && matchingRoots.length < 10) {
-        const current = queue.shift();
-        if (!current) {
-          break;
-        }
-        visited += 1;
-
-        const libraryRoot = getLibraryRoot(current);
-        if (libraryRoot) {
-          matchingRoots.push(libraryRoot);
-          continue;
-        }
-
-        const childrenResult = current.getChildren();
-        if (childrenResult.isFailure()) {
-          continue;
-        }
-        for (const child of childrenResult.value) {
-          if (child.type === 'directory') {
-            queue.push(child);
-          }
-        }
+      const resolveResult = LibraryData.resolveImportRootForSubLibrary(
+        zipRoot,
+        expectedSubDirName as LibraryData.SubLibraryId,
+        { maxDepth: 2, visitLimit: 500, matchLimit: 10, allowLooseFiles: true }
+      );
+      if (resolveResult.isFailure()) {
+        return fail(resolveResult.message);
       }
 
-      if (matchingRoots.length === 0) {
-        return fail(
-          `Zip does not contain a library root with data/${expectedSubDirName} (zip may be missing that folder or be nested unexpectedly)`
-        );
-      }
-
-      if (matchingRoots.length > 1) {
-        diag.info(
-          `Zip contains multiple possible roots for data/${expectedSubDirName}; selecting first match. matches=${matchingRoots
-            .map((r) => r.absolutePath || '/')
-            .join(', ')}`
-        );
+      if (resolveResult.value.matches > 1) {
         user.warn(`Multiple possible roots found for ${subLibrary}; using the first match`);
       }
 
-      const libraryRoot = matchingRoots[0];
+      const libraryRoot = resolveResult.value.root;
       diag.info(
-        `Selected zip library root for ${subLibrary}: ${
+        `Resolved import root for ${subLibrary}: kind=${resolveResult.value.kind} path=${
           libraryRoot.absolutePath || '/'
-        } (visited=${visited}, matches=${matchingRoots.length})`
+        } (visited=${resolveResult.value.visited}, matches=${resolveResult.value.matches})`
       );
 
       const nextSource: LibraryData.ILibraryFileTreeSource = {
@@ -880,6 +808,105 @@ export function ChocolateProvider({
       return succeed(undefined);
     },
     [externalFileSources, loadLibrary]
+  );
+
+  const loadSubLibraryFromFolder = useCallback(
+    async (subLibrary: SubLibraryType): Promise<Result<void>> => {
+      diag.info(`Loading sublibrary from folder: ${subLibrary}`);
+
+      let dirHandle: Awaited<ReturnType<typeof safeShowDirectoryPicker>>;
+      try {
+        dirHandle = await safeShowDirectoryPicker(globalThis.window, {
+          id: `choco-${subLibrary}-imp-folder`,
+          mode: 'read'
+        });
+      } catch (e) {
+        const name = e instanceof Error ? e.name : '';
+        if (name === 'AbortError') {
+          user.info('Folder import canceled');
+          return succeed(undefined);
+        }
+        const message = e instanceof Error ? e.message : String(e);
+        user.error(`Failed to open folder picker: ${message}`);
+        return fail(`Failed to open folder picker: ${message}`);
+      }
+
+      if (!dirHandle) {
+        user.error('Folder import is not supported in this browser');
+        return fail('Folder import is not supported in this browser');
+      }
+
+      user.info(`Importing ${subLibrary} from folder: ${dirHandle.name}`);
+
+      const treeResult = await FileApiTreeAccessors.create([{ dirHandles: [dirHandle] }], {
+        inferContentType: FileTree.FileItem.defaultAcceptContentType
+      });
+      if (treeResult.isFailure()) {
+        user.error(`Failed to read folder: ${treeResult.message}`);
+        return fail(treeResult.message);
+      }
+
+      const rootResult = treeResult.value.getItem('/');
+      if (rootResult.isFailure() || rootResult.value.type !== 'directory') {
+        const msg = rootResult.isFailure() ? rootResult.message : 'Root is not a directory';
+        user.error(`Failed to resolve folder root: ${msg}`);
+        return fail(`Failed to resolve folder root: ${msg}`);
+      }
+
+      const expectedSubDirName: string =
+        subLibrary === 'ingredients'
+          ? 'ingredients'
+          : subLibrary === 'fillings'
+          ? 'fillings'
+          : subLibrary === 'molds'
+          ? 'molds'
+          : subLibrary === 'procedures'
+          ? 'procedures'
+          : subLibrary === 'tasks'
+          ? 'tasks'
+          : 'confections';
+
+      const resolveResult = LibraryData.resolveImportRootForSubLibrary(
+        rootResult.value,
+        expectedSubDirName as LibraryData.SubLibraryId,
+        { maxDepth: 2, visitLimit: 800, matchLimit: 10, allowLooseFiles: true }
+      );
+      if (resolveResult.isFailure()) {
+        user.error(`Folder import failed: ${resolveResult.message}`);
+        return fail(resolveResult.message);
+      }
+
+      if (resolveResult.value.matches > 1) {
+        user.warn(`Multiple possible roots found for ${subLibrary}; using the first match`);
+      }
+
+      const libraryRoot = resolveResult.value.root;
+      diag.info(
+        `Resolved folder import root for ${subLibrary}: kind=${resolveResult.value.kind} path=${
+          libraryRoot.absolutePath || '/'
+        } (visited=${resolveResult.value.visited}, matches=${resolveResult.value.matches})`
+      );
+
+      const nextSource: LibraryData.ILibraryFileTreeSource = {
+        directory: libraryRoot,
+        load: {
+          default: false,
+          ingredients: subLibrary === 'ingredients',
+          fillings: subLibrary === 'fillings',
+          molds: subLibrary === 'molds',
+          procedures: subLibrary === 'procedures',
+          tasks: subLibrary === 'tasks'
+        },
+        mutable: true
+      };
+
+      const nextExternal = [...externalFileSources, nextSource];
+      await loadLibrary(nextExternal);
+      setExternalFileSources(nextExternal);
+      user.success(`Imported ${subLibrary} from folder: ${dirHandle.name}`);
+      return succeed(undefined);
+    },
+    [diag, user, externalFileSources, loadLibrary]
   );
 
   const loadLibraryFromZip = useCallback(
@@ -1438,6 +1465,7 @@ export function ChocolateProvider({
       confectionCount,
       dataVersion,
       loadSubLibraryFromZip,
+      loadSubLibraryFromFolder,
       loadLibraryFromZip
     }),
     [
@@ -1456,6 +1484,7 @@ export function ChocolateProvider({
       confectionCount,
       dataVersion,
       loadSubLibraryFromZip,
+      loadSubLibraryFromFolder,
       loadLibraryFromZip
     ]
   );

@@ -2604,6 +2604,9 @@ type IMoldsLibraryAsyncParams = ISubLibraryAsyncParams<MoldsLibrary, MoldCollect
 type IMoldsLibraryParams = ISubLibraryParams<MoldsLibrary, MoldCollectionEntryInit>;
 
 // @public
+type ImportRootKind = 'canonical' | 'data-dir' | 'direct-subdir' | 'loose-files';
+
+// @public
 interface INamedSecret {
     readonly key: Uint8Array;
     readonly name: string;
@@ -3080,6 +3083,14 @@ interface IResolvedFillingSlot {
 }
 
 // @public
+interface IResolvedImportRoot {
+    readonly kind: ImportRootKind;
+    readonly matches: number;
+    readonly root: FileTree.IFileTreeDirectoryItem;
+    readonly visited: number;
+}
+
+// @public
 interface IResolvedIngredient {
     // (undocumented)
     readonly amount: Measurement;
@@ -3127,6 +3138,14 @@ interface IResolvedSubLibrarySource {
     readonly directory: FileTree.IFileTreeDirectoryItem;
     readonly loadParams: ILoadCollectionFromFileTreeParams<string>;
     readonly subLibraryId: SubLibraryId;
+}
+
+// @public
+interface IResolveImportRootOptions {
+    readonly allowLooseFiles?: boolean;
+    readonly matchLimit?: number;
+    readonly maxDepth?: number;
+    readonly visitLimit?: number;
 }
 
 // @public
@@ -4087,6 +4106,10 @@ declare namespace LibraryData {
         IResolvedSubLibrarySource,
         ICollectionSet,
         INormalizedMergeSource,
+        resolveImportRootForSubLibrary,
+        ImportRootKind,
+        IResolvedImportRoot,
+        IResolveImportRootOptions,
         SubLibraryCollectionEntry,
         SubLibraryEntryInit,
         SubLibraryCollectionValidator,
@@ -4663,6 +4686,9 @@ function resolveFileTreeSource(source: ILibraryFileTreeSource): Result<ReadonlyA
 
 // @public
 function resolveFileTreeSourceForSubLibrary(source: ILibraryFileTreeSource, subLibraryId: SubLibraryId): Result<IResolvedSubLibrarySource | undefined>;
+
+// @public
+function resolveImportRootForSubLibrary(root: FileTree.IFileTreeDirectoryItem, subLibraryId: SubLibraryId, options?: IResolveImportRootOptions): Result<IResolvedImportRoot>;
 
 // @public
 function resolveSubLibraryLoadSpec(spec: FullLibraryLoadSpec, subLibraryId: SubLibraryId): LibraryLoadSpec;

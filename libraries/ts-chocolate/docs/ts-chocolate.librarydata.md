@@ -288,6 +288,21 @@ Resolves a file tree source for a specific sub-library.
 </td></tr>
 <tr><td>
 
+[resolveImportRootForSubLibrary(root, subLibraryId, options)](./ts-chocolate.librarydata.resolveimportrootforsublibrary.md)
+
+
+</td><td>
+
+Resolves a directory that can be treated as a library root for a specific sub-library.
+
+The returned directory is guaranteed (if successful) to contain a navigable `data/<subLibraryId>` directory, even if the input is shaped as `<subLibraryId>/...`<!-- -->, `data/...`<!-- -->, or a set of loose collection files.
+
+This is intended to unify import behavior across zip, filesystem, and in-memory sources.
+
+
+</td></tr>
+<tr><td>
+
 [resolveSubLibraryLoadSpec(spec, subLibraryId)](./ts-chocolate.librarydata.resolvesublibraryloadspec.md)
 
 
@@ -520,12 +535,34 @@ Contains only metadata that was stored unencrypted in the collection file. The a
 </td></tr>
 <tr><td>
 
+[IResolvedImportRoot](./ts-chocolate.librarydata.iresolvedimportroot.md)
+
+
+</td><td>
+
+Result of importing a directory for a specific sub-library.
+
+
+</td></tr>
+<tr><td>
+
 [IResolvedSubLibrarySource](./ts-chocolate.librarydata.iresolvedsublibrarysource.md)
 
 
 </td><td>
 
 Result of resolving a file tree source for a specific sub-library.
+
+
+</td></tr>
+<tr><td>
+
+[IResolveImportRootOptions](./ts-chocolate.librarydata.iresolveimportrootoptions.md)
+
+
+</td><td>
+
+Options for importing a directory for a specific sub-library.
 
 
 </td></tr>
@@ -687,6 +724,17 @@ A pattern for matching collection or item names. Can be a string (exact match) o
 Controls loading for each sub-library within a library source.
 
 - `true`<!-- -->: Load all sub-libraries with default settings (all collections) - `false`<!-- -->: Load no sub-libraries - `Record<SubLibraryId | 'default', LibraryLoadSpec>`<!-- -->: Per-sub-library control - Named sub-libraries get their specific spec - 'default' applies to unspecified sub-libraries
+
+
+</td></tr>
+<tr><td>
+
+[ImportRootKind](./ts-chocolate.librarydata.importrootkind.md)
+
+
+</td><td>
+
+Specifies how a directory was resolved for import.
 
 
 </td></tr>
