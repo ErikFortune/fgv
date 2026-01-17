@@ -16,6 +16,7 @@ import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { ProvideSecretModal, UnlockCollectionModal } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useSecrets } from '../../contexts/SecretsContext';
+import { useChocolate, type SubLibraryType } from '../../contexts/ChocolateContext';
 import type { SourceId } from '@fgv/ts-chocolate';
 import type { Result } from '@fgv/ts-utils';
 import type { ICreateCollectionParams, IExportParams, IImportParams } from '../../contexts/EditingContext';
@@ -183,6 +184,7 @@ export function CollectionManagementPanelBase({
 }: ICollectionManagementPanelBaseProps): React.ReactElement {
   const { settings, setDefaultCollection } = useSettings();
   const { getSecretKeyBase64 } = useSecrets();
+  const { loadSubLibraryFromZip, loadLibraryFromZip } = useChocolate();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<SourceId | null>(null);
@@ -193,6 +195,7 @@ export function CollectionManagementPanelBase({
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
   const [secretToProvide, setSecretToProvide] = useState<string | null>(null);
+
   const pendingRenameRef = useRef<{
     collectionId: SourceId;
     name: string;
@@ -200,6 +203,11 @@ export function CollectionManagementPanelBase({
     secretName?: string;
   } | null>(null);
   const pendingCreateRef = useRef<ICollectionCreateParamsWithSecret | null>(null);
+
+  const zipLoadInputRef = useRef<HTMLInputElement>(null);
+  const zipLoadLibraryInputRef = useRef<HTMLInputElement>(null);
+  const [isZipLoading, setIsZipLoading] = useState(false);
+  const [isZipLibraryLoading, setIsZipLibraryLoading] = useState(false);
 
   const handleDelete = useCallback(
     (collectionId: SourceId) => {
@@ -293,6 +301,68 @@ export function CollectionManagementPanelBase({
             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{headerTitle}</h3>
           ) : null}
           <div className="flex gap-2">
+            <input
+              ref={zipLoadInputRef}
+              type="file"
+              accept=".zip,application/zip"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) {
+                  return;
+                }
+                setError(null);
+                setIsZipLoading(true);
+                void (async () => {
+                  const result = await loadSubLibraryFromZip(toolId as SubLibraryType, file);
+                  if (result.isFailure()) {
+                    setError(result.message);
+                  }
+                  setIsZipLoading(false);
+                })();
+              }}
+            />
+            <input
+              ref={zipLoadLibraryInputRef}
+              type="file"
+              accept=".zip,application/zip"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = '';
+                if (!file) {
+                  return;
+                }
+                setError(null);
+                setIsZipLibraryLoading(true);
+                void (async () => {
+                  const result = await loadLibraryFromZip(file);
+                  if (result.isFailure()) {
+                    setError(result.message);
+                  }
+                  setIsZipLibraryLoading(false);
+                })();
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => zipLoadInputRef.current?.click()}
+              disabled={isZipLoading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Load sublibrary from zip"
+            >
+              <DocumentPlusIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => zipLoadLibraryInputRef.current?.click()}
+              disabled={isZipLibraryLoading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Load full library from zip"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4" />
+            </button>
             <button
               type="button"
               onClick={() => setShowImportDialog(true)}

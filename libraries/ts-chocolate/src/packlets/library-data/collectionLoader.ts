@@ -18,8 +18,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import { Converter, fail, Logging, mapResults, pick, Result, succeed, Validator } from '@fgv/ts-utils';
-import { FileTree, JsonObject } from '@fgv/ts-json-base';
+import {
+  captureResult,
+  Converter,
+  fail,
+  Logging,
+  mapResults,
+  pick,
+  Result,
+  succeed,
+  Validator
+} from '@fgv/ts-utils';
+import { FileTree, type JsonObject, type JsonValue } from '@fgv/ts-json-base';
+import * as yaml from 'js-yaml';
 import { CollectionFilter, ICollectionFilterInitParams, IFilterDirectoryParams } from './collectionFilter';
 import {
   ICollection,
@@ -132,8 +143,9 @@ export class CollectionLoader<
 
   public constructor(params: ICollectionLoaderInitParams<T, TCOLLECTIONID, TITEMID>) {
     this._collectionIdConverter = params.collectionIdConverter;
-    // For file names, first apply file name converter (default: remove .json), then collection ID converter
-    const fileNameConverter = params.fileNameConverter ?? LibraryConverters.removeJsonExtension;
+    // For file names, first apply file name converter (default: remove common collection extensions), then collection ID converter
+    const fileNameConverter =
+      params.fileNameConverter ?? LibraryConverters.removeExtension(['.json', '.yaml', '.yml']);
     this._fileNameToCollectionIdConverter = fileNameConverter.mapConvert(this._collectionIdConverter);
     this._itemIdConverter = params.itemIdConverter;
     this._itemConverter = params.itemConverter;
@@ -185,8 +197,25 @@ export class CollectionLoader<
 
     return filter.filterDirectory(fileTree, dirParams).onSuccess((filteredItems) => {
       const results = filteredItems.map((item) => {
+        const parseContents = (content: string): Result<JsonValue> => {
+          const trimmed = content.trim();
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            return captureResult(() => JSON.parse(content) as JsonValue).onFailure(() => {
+              return captureResult(() => yaml.load(content) as JsonValue).withErrorFormat(
+                (e) => `Failed to parse YAML: ${e}`
+              );
+            });
+          }
+          return captureResult(() => yaml.load(content) as JsonValue).onFailure(() => {
+            return captureResult(() => JSON.parse(content) as JsonValue).withErrorFormat(
+              (e) => `Failed to parse JSON: ${e}`
+            );
+          });
+        };
+
         return item.item
-          .getContents()
+          .getRawContents()
+          .onSuccess((raw) => parseContents(raw))
           .onSuccess((json): Result<ICollection<T, TCOLLECTIONID, TITEMID> | undefined> => {
             // Check if this is an encrypted collection file
             if (isEncryptedCollectionFile(json)) {
@@ -279,7 +308,30 @@ export class CollectionLoader<
     const protectedCollections: IProtectedCollectionInternal<TCOLLECTIONID>[] = [];
 
     for (const item of filteredItems) {
-      const contentsResult = item.item.getContents();
+      const rawResult = item.item.getRawContents();
+      if (rawResult.isFailure()) {
+        return fail(rawResult.message);
+      }
+
+      const content = rawResult.value;
+
+      const parseContents = (c: string): Result<JsonValue> => {
+        const trimmed = c.trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          return captureResult(() => JSON.parse(c) as JsonValue).onFailure(() => {
+            return captureResult(() => yaml.load(c) as JsonValue).withErrorFormat(
+              (e) => `Failed to parse YAML: ${e}`
+            );
+          });
+        }
+        return captureResult(() => yaml.load(c) as JsonValue).onFailure(() => {
+          return captureResult(() => JSON.parse(c) as JsonValue).withErrorFormat(
+            (e) => `Failed to parse JSON: ${e}`
+          );
+        });
+      };
+
+      const contentsResult = parseContents(content);
       if (contentsResult.isFailure()) {
         return fail(contentsResult.message);
       }

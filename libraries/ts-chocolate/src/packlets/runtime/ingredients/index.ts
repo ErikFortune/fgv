@@ -36,6 +36,7 @@ export { RuntimeDairyIngredient } from './runtimeDairyIngredient';
 export { RuntimeSugarIngredient } from './runtimeSugarIngredient';
 export { RuntimeFatIngredient } from './runtimeFatIngredient';
 export { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
+export { RuntimeGenericIngredient } from './runtimeGenericIngredient';
 
 // Static factory and union type
 export { RuntimeIngredient, AnyRuntimeIngredient } from './runtimeIngredient';

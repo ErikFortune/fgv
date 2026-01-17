@@ -40,6 +40,7 @@ import { RuntimeDairyIngredient } from './runtimeDairyIngredient';
 import { RuntimeSugarIngredient } from './runtimeSugarIngredient';
 import { RuntimeFatIngredient } from './runtimeFatIngredient';
 import { RuntimeAlcoholIngredient } from './runtimeAlcoholIngredient';
+import { RuntimeGenericIngredient } from './runtimeGenericIngredient';
 
 // ============================================================================
 // AnyRuntimeIngredient Union Type
@@ -55,7 +56,8 @@ export type AnyRuntimeIngredient =
   | RuntimeDairyIngredient
   | RuntimeSugarIngredient
   | RuntimeFatIngredient
-  | RuntimeAlcoholIngredient;
+  | RuntimeAlcoholIngredient
+  | RuntimeGenericIngredient;
 
 // ============================================================================
 // RuntimeIngredient Static Factory
@@ -106,9 +108,15 @@ export abstract class RuntimeIngredient {
         return RuntimeFatIngredient.create(context, id, ingredient as IFatIngredient);
       case 'alcohol':
         return RuntimeAlcoholIngredient.create(context, id, ingredient as IAlcoholIngredient);
+      case 'liquid':
+      case 'flavor':
+      case 'other':
+        return RuntimeGenericIngredient.create(context, id, ingredient);
       /* c8 ignore next 2 - defensive coding: Ingredient union type ensures all categories are handled */
       default:
-        return Failure.with(`Unknown ingredient category: ${ingredient.category}`);
+        return Failure.with(
+          `Unknown ingredient category: ${(ingredient as unknown as { category: string }).category}`
+        );
     }
   }
 }

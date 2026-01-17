@@ -144,8 +144,10 @@ const anyJournalRecord: Converter<AnyJournalRecord>;
 // @public
 type AnyRuntimeConfection = RuntimeMoldedBonBon | RuntimeBarTruffle | RuntimeRolledTruffle;
 
+// Warning: (ae-forgotten-export) The symbol "RuntimeGenericIngredient" needs to be exported by the entry point index.d.ts
+//
 // @public
-type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient;
+type AnyRuntimeIngredient = RuntimeChocolateIngredient | RuntimeDairyIngredient | RuntimeSugarIngredient | RuntimeFatIngredient | RuntimeAlcoholIngredient | RuntimeGenericIngredient;
 
 // @public
 function atLeast<T>(min: number, getter: (item: T) => number | undefined): FilterPredicate<T>;

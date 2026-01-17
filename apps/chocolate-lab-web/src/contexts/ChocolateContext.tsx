@@ -21,6 +21,7 @@ import {
   type LibraryData
 } from '@fgv/ts-chocolate';
 import { FileTree, type JsonObject } from '@fgv/ts-json-base';
+import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
 
 // Aliases for cleaner code
 type ChocolateRuntimeContext = Runtime.RuntimeContext;
@@ -40,6 +41,45 @@ const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
+
+function getStartupLoadFlags(): { suppressBuiltIn: boolean; suppressLocal: boolean } {
+  const params = new URLSearchParams(window.location.search);
+
+  const suppressBuiltIn =
+    params.get('noBuiltin') === '1' ||
+    params.get('noBuiltin') === 'true' ||
+    params.get('builtin') === '0' ||
+    params.get('builtin') === 'false';
+
+  const suppressLocal =
+    params.get('noLocal') === '1' ||
+    params.get('noLocal') === 'true' ||
+    params.get('local') === '0' ||
+    params.get('local') === 'false';
+
+  return { suppressBuiltIn, suppressLocal };
+}
+
+class VirtualDirectoryItem implements FileTree.IFileTreeDirectoryItem {
+  public readonly type: 'directory' = 'directory';
+  public readonly absolutePath: string;
+  public readonly name: string;
+  private readonly _getChildren: () => Result<ReadonlyArray<FileTree.FileTreeItem>>;
+
+  public constructor(
+    name: string,
+    absolutePath: string,
+    getChildren: () => Result<ReadonlyArray<FileTree.FileTreeItem>>
+  ) {
+    this.name = name;
+    this.absolutePath = absolutePath;
+    this._getChildren = getChildren;
+  }
+
+  public getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>> {
+    return this._getChildren();
+  }
+}
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -311,6 +351,9 @@ export interface IChocolateContext {
   confectionCount: number;
   /** Data version - changes when library data is modified (e.g., after unlock) */
   dataVersion: number;
+
+  loadSubLibraryFromZip: (subLibrary: SubLibraryType, file: File) => Promise<Result<void>>;
+  loadLibraryFromZip: (file: File) => Promise<Result<void>>;
 }
 
 /**
@@ -329,7 +372,9 @@ const defaultChocolateContext: IChocolateContext = {
   procedureCount: 0,
   taskCount: 0,
   confectionCount: 0,
-  dataVersion: 0
+  dataVersion: 0,
+  loadSubLibraryFromZip: async () => fail('No ChocolateProvider'),
+  loadLibraryFromZip: async () => fail('No ChocolateProvider')
 };
 
 /**
@@ -379,253 +424,594 @@ export function ChocolateProvider({
   const [collections, setCollections] = useState<ICollectionMetadata[]>([]);
   // Version counter to force re-render when library data changes (e.g., after unlock)
   const [dataVersion, setDataVersion] = useState(0);
+  const [externalFileSources, setExternalFileSources] = useState<
+    ReadonlyArray<LibraryData.ILibraryFileTreeSource>
+  >([]);
 
   // Load the library
-  const loadLibrary = useCallback(async () => {
-    setLoadingState('loading');
-    setError(undefined);
-    diag.info('Loading chocolate library...');
+  const loadLibrary = useCallback(
+    async (externalOverride?: ReadonlyArray<LibraryData.ILibraryFileTreeSource>) => {
+      setLoadingState('loading');
+      setError(undefined);
+      diag.info('Loading chocolate library...');
+      user.info('Loading library...');
 
-    try {
-      // Get the built-in library tree
-      const treeResult = BuiltIn.BuiltInData.getLibraryTree();
-      if (treeResult.isFailure()) {
-        throw new Error(`Failed to get library tree: ${treeResult.message}`);
-      }
+      try {
+        const { suppressBuiltIn, suppressLocal } = getStartupLoadFlags();
+        diag.info(
+          `Library load flags: suppressBuiltIn=${suppressBuiltIn ? 'true' : 'false'}, suppressLocal=${
+            suppressLocal ? 'true' : 'false'
+          }`
+        );
+        user.info(
+          `Load flags: built-ins ${suppressBuiltIn ? 'disabled' : 'enabled'}, local ${
+            suppressLocal ? 'disabled' : 'enabled'
+          }`
+        );
 
-      const localFiles = [
-        ...readLocalIngredientCollectionFiles(),
-        ...readLocalFillingCollectionFiles(),
-        ...readLocalMoldCollectionFiles(),
-        ...readLocalTaskCollectionFiles(),
-        ...readLocalProcedureCollectionFiles()
-      ];
-
-      const localTreeResult = localFiles.length > 0 ? FileTree.inMemory(localFiles) : undefined;
-      let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
-      let localHasIngredients = false;
-      let localHasFillings = false;
-      let localHasMolds = false;
-      let localHasTasks = false;
-      let localHasProcedures = false;
-      if (localTreeResult?.isSuccess() === true) {
-        const ingredientsDirResult = localTreeResult.value.getItem('/data/ingredients');
-        localHasIngredients =
-          ingredientsDirResult.isSuccess() && ingredientsDirResult.value.type === 'directory';
-
-        const fillingsDirResult = localTreeResult.value.getItem('/data/fillings');
-        localHasFillings = fillingsDirResult.isSuccess() && fillingsDirResult.value.type === 'directory';
-
-        const moldsDirResult = localTreeResult.value.getItem('/data/molds');
-        localHasMolds = moldsDirResult.isSuccess() && moldsDirResult.value.type === 'directory';
-
-        const tasksDirResult = localTreeResult.value.getItem('/data/tasks');
-        localHasTasks = tasksDirResult.isSuccess() && tasksDirResult.value.type === 'directory';
-
-        const proceduresDirResult = localTreeResult.value.getItem('/data/procedures');
-        localHasProcedures =
-          proceduresDirResult.isSuccess() && proceduresDirResult.value.type === 'directory';
-
-        const rootResult = localTreeResult.value.getItem('/');
-        if (rootResult.isSuccess() && rootResult.value.type === 'directory') {
-          localRootDir = rootResult.value;
+        // Get the built-in library tree
+        const treeResult = !suppressBuiltIn ? BuiltIn.BuiltInData.getLibraryTree() : undefined;
+        if (treeResult?.isFailure() === true) {
+          throw new Error(`Failed to get library tree: ${treeResult.message}`);
         }
-      }
 
-      const fileSources: ReadonlyArray<LibraryData.ILibraryFileTreeSource> = [
-        {
-          directory: treeResult.value
-        },
-        ...(localRootDir &&
-        (localHasIngredients || localHasFillings || localHasMolds || localHasTasks || localHasProcedures)
-          ? [
-              {
-                directory: localRootDir,
-                load: {
-                  default: false,
-                  ingredients: localHasIngredients,
-                  fillings: localHasFillings,
-                  molds: localHasMolds,
-                  procedures: localHasProcedures,
-                  tasks: localHasTasks
-                },
-                mutable: true
-              }
-            ]
-          : [])
-      ];
+        const localFiles = suppressLocal
+          ? []
+          : [
+              ...readLocalIngredientCollectionFiles(),
+              ...readLocalFillingCollectionFiles(),
+              ...readLocalMoldCollectionFiles(),
+              ...readLocalTaskCollectionFiles(),
+              ...readLocalProcedureCollectionFiles()
+            ];
 
-      // Create RuntimeContext with built-in data
-      const runtimeResult = Runtime.RuntimeContext.create({
-        libraryParams: {
-          builtin: false,
-          fileSources
-        },
-        preWarm
-      });
+        diag.info(`Local collection files: ${localFiles.length}`);
 
-      if (runtimeResult.isFailure()) {
-        throw new Error(`Failed to create runtime: ${runtimeResult.message}`);
-      }
+        const localTreeResult = localFiles.length > 0 ? FileTree.inMemory(localFiles) : undefined;
+        let localRootDir: FileTree.IFileTreeDirectoryItem | undefined;
+        let localHasIngredients = false;
+        let localHasFillings = false;
+        let localHasMolds = false;
+        let localHasTasks = false;
+        let localHasProcedures = false;
+        if (localTreeResult?.isSuccess() === true) {
+          const ingredientsDirResult = localTreeResult.value.getItem('/data/ingredients');
+          localHasIngredients =
+            ingredientsDirResult.isSuccess() && ingredientsDirResult.value.type === 'directory';
 
-      const ctx = runtimeResult.value;
-      setRuntime(ctx);
+          const fillingsDirResult = localTreeResult.value.getItem('/data/fillings');
+          localHasFillings = fillingsDirResult.isSuccess() && fillingsDirResult.value.type === 'directory';
 
-      // Extract collection metadata from the library
-      // Track which sub-libraries each collection ID belongs to
-      const collectionSubLibraries = new Map<string, Set<SubLibraryType>>();
+          const moldsDirResult = localTreeResult.value.getItem('/data/molds');
+          localHasMolds = moldsDirResult.isSuccess() && moldsDirResult.value.type === 'directory';
 
-      // Helper to add a sub-library type to a collection
-      const addSubLibrary = (collectionId: string, subLib: SubLibraryType): void => {
-        if (!collectionSubLibraries.has(collectionId)) {
-          collectionSubLibraries.set(collectionId, new Set());
+          const tasksDirResult = localTreeResult.value.getItem('/data/tasks');
+          localHasTasks = tasksDirResult.isSuccess() && tasksDirResult.value.type === 'directory';
+
+          const proceduresDirResult = localTreeResult.value.getItem('/data/procedures');
+          localHasProcedures =
+            proceduresDirResult.isSuccess() && proceduresDirResult.value.type === 'directory';
+
+          const rootResult = localTreeResult.value.getItem('/');
+          if (rootResult.isSuccess() && rootResult.value.type === 'directory') {
+            localRootDir = rootResult.value;
+          }
         }
-        collectionSubLibraries.get(collectionId)!.add(subLib);
+
+        const baseFileSources: ReadonlyArray<LibraryData.ILibraryFileTreeSource> = [
+          ...(!suppressBuiltIn && treeResult?.isSuccess() === true
+            ? [
+                {
+                  directory: treeResult.value
+                }
+              ]
+            : []),
+          ...(localRootDir &&
+          (localHasIngredients || localHasFillings || localHasMolds || localHasTasks || localHasProcedures)
+            ? [
+                {
+                  directory: localRootDir,
+                  load: {
+                    default: false,
+                    ingredients: localHasIngredients,
+                    fillings: localHasFillings,
+                    molds: localHasMolds,
+                    procedures: localHasProcedures,
+                    tasks: localHasTasks
+                  },
+                  mutable: true
+                }
+              ]
+            : [])
+        ];
+
+        const fileSources: ReadonlyArray<LibraryData.ILibraryFileTreeSource> = [
+          ...baseFileSources,
+          ...(externalOverride ?? externalFileSources)
+        ];
+
+        diag.info(
+          `File sources: ${fileSources.length} (external: ${
+            (externalOverride ?? externalFileSources).length
+          })`
+        );
+        fileSources.forEach((s, i) => {
+          diag.info(
+            `  source[${i}]: dir=${s.directory.absolutePath || '/'} load=${JSON.stringify(
+              s.load ?? true
+            )} mutable=${JSON.stringify(s.mutable ?? false)}`
+          );
+        });
+
+        // Create RuntimeContext with built-in data
+        const runtimeResult = Runtime.RuntimeContext.create({
+          libraryParams: {
+            builtin: false,
+            fileSources
+          },
+          preWarm
+        });
+
+        if (runtimeResult.isFailure()) {
+          throw new Error(`Failed to create runtime: ${runtimeResult.message}`);
+        }
+
+        const ctx = runtimeResult.value;
+        setRuntime(ctx);
+
+        // Extract collection metadata from the library
+        // Track which sub-libraries each collection ID belongs to
+        const collectionSubLibraries = new Map<string, Set<SubLibraryType>>();
+
+        // Helper to add a sub-library type to a collection
+        const addSubLibrary = (collectionId: string, subLib: SubLibraryType): void => {
+          if (!collectionSubLibraries.has(collectionId)) {
+            collectionSubLibraries.set(collectionId, new Set());
+          }
+          collectionSubLibraries.get(collectionId)!.add(subLib);
+        };
+
+        // Get source IDs from loaded ingredients
+        for (const [id] of ctx.ingredients.entries()) {
+          const sourceId = id.split('.')[0];
+          if (sourceId) {
+            addSubLibrary(sourceId, 'ingredients');
+          }
+        }
+
+        // Include empty ingredient collections
+        for (const collectionId of ctx.library.ingredients.collections.keys()) {
+          addSubLibrary(collectionId, 'ingredients');
+        }
+
+        // Get source IDs from loaded fillings
+        for (const [id] of ctx.fillings.entries()) {
+          const sourceId = id.split('.')[0];
+          if (sourceId) {
+            addSubLibrary(sourceId, 'fillings');
+          }
+        }
+
+        // Include empty filling collections
+        for (const collectionId of ctx.library.fillings.collections.keys()) {
+          addSubLibrary(collectionId, 'fillings');
+        }
+
+        // Include empty mold collections
+        for (const collectionId of ctx.library.molds.collections.keys()) {
+          addSubLibrary(collectionId, 'molds');
+        }
+
+        // Include empty procedure collections
+        for (const collectionId of ctx.library.procedures.collections.keys()) {
+          addSubLibrary(collectionId, 'procedures');
+        }
+
+        // Include empty task collections
+        for (const collectionId of ctx.library.tasks.collections.keys()) {
+          addSubLibrary(collectionId, 'tasks');
+        }
+
+        // Track which collections are protected (per sub-library)
+        // The library now properly captures protected collection metadata during synchronous loading
+        const protectedIngredientIds = new Set<string>(
+          ctx.library.ingredients.protectedCollections.map((pc) => pc.collectionId as string)
+        );
+        const protectedFillingIds = new Set<string>(
+          ctx.library.fillings.protectedCollections.map((pc) => pc.collectionId as string)
+        );
+        const protectedMoldIds = new Set<string>(
+          ctx.library.molds.protectedCollections.map((pc) => pc.collectionId as string)
+        );
+
+        const protectedProcedureIds = new Set<string>(
+          ctx.library.procedures.protectedCollections.map((pc) => pc.collectionId as string)
+        );
+
+        const protectedTaskIds = new Set<string>(
+          ctx.library.tasks.protectedCollections.map((pc) => pc.collectionId as string)
+        );
+
+        // Debug: log protected collections found
+        diag.info(`Protected ingredients: ${Array.from(protectedIngredientIds).join(', ') || 'none'}`);
+        diag.info(`Protected fillings: ${Array.from(protectedFillingIds).join(', ') || 'none'}`);
+
+        // Add protected ingredient collections (not yet loaded)
+        for (const collectionId of protectedIngredientIds) {
+          addSubLibrary(collectionId, 'ingredients');
+        }
+
+        // Add protected filling collections (not yet loaded)
+        for (const collectionId of protectedFillingIds) {
+          addSubLibrary(collectionId, 'fillings');
+        }
+
+        // Add protected mold collections (not yet loaded)
+        for (const collectionId of protectedMoldIds) {
+          addSubLibrary(collectionId, 'molds');
+        }
+
+        // Add protected procedure collections (not yet loaded)
+        for (const collectionId of protectedProcedureIds) {
+          addSubLibrary(collectionId, 'procedures');
+        }
+
+        // Add protected task collections (not yet loaded)
+        for (const collectionId of protectedTaskIds) {
+          addSubLibrary(collectionId, 'tasks');
+        }
+
+        // Build collection metadata from the map
+        const collectionMeta: ICollectionMetadata[] = [];
+        for (const [collectionId, subLibs] of collectionSubLibraries) {
+          const isProtectedIngredients = protectedIngredientIds.has(collectionId);
+          const isProtectedFillings = protectedFillingIds.has(collectionId);
+          const isProtectedMolds = protectedMoldIds.has(collectionId);
+          const isProtectedProcedures = protectedProcedureIds.has(collectionId);
+          const isProtectedTasks = protectedTaskIds.has(collectionId);
+          const isProtected =
+            isProtectedIngredients ||
+            isProtectedFillings ||
+            isProtectedMolds ||
+            isProtectedProcedures ||
+            isProtectedTasks;
+
+          // A collection is loaded if it has items in the runtime (not just protected entries)
+          const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
+          const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
+          const hasLoadedMolds = !isProtectedMolds && subLibs.has('molds');
+          const hasLoadedProcedures = !isProtectedProcedures && subLibs.has('procedures');
+          const hasLoadedTasks = !isProtectedTasks && subLibs.has('tasks');
+          const isLoaded =
+            hasLoadedIngredients ||
+            hasLoadedFillings ||
+            hasLoadedMolds ||
+            hasLoadedProcedures ||
+            hasLoadedTasks;
+
+          collectionMeta.push({
+            id: collectionId,
+            name: formatCollectionName(collectionId),
+            isProtected,
+            isUnlocked: !isProtected || isLoaded,
+            isLoaded,
+            subLibraries: Array.from(subLibs)
+          });
+        }
+
+        setCollections(collectionMeta);
+        setLoadingState('ready');
+
+        const ingredientCount = ctx.ingredients.size;
+        const fillingCount = ctx.fillings.size;
+        const moldCount = ctx.library.molds.size;
+        const procedureCount = ctx.library.procedures.size;
+        const taskCount = ctx.library.tasks.size;
+        const confectionCount = ctx.confections.size;
+
+        const ingredientCollectionCount = ctx.library.ingredients.collections.size;
+        const fillingCollectionCount = ctx.library.fillings.collections.size;
+        const moldCollectionCount = ctx.library.molds.collections.size;
+        const procedureCollectionCount = ctx.library.procedures.collections.size;
+        const taskCollectionCount = ctx.library.tasks.collections.size;
+
+        const protectedIngredientCount = ctx.library.ingredients.protectedCollections.length;
+        const protectedFillingCount = ctx.library.fillings.protectedCollections.length;
+        const protectedMoldCount = ctx.library.molds.protectedCollections.length;
+        const protectedProcedureCount = ctx.library.procedures.protectedCollections.length;
+        const protectedTaskCount = ctx.library.tasks.protectedCollections.length;
+
+        user.success(
+          `Loaded ${ingredientCount} ingredients, ${fillingCount} fillings, ${moldCount} molds, ${procedureCount} procedures, ${taskCount} tasks`
+        );
+        diag.info(
+          `Library loaded: ingredients=${ingredientCount}, fillings=${fillingCount}, molds=${moldCount}, procedures=${procedureCount}, tasks=${taskCount}, confections=${confectionCount}`
+        );
+        diag.info(
+          `Collection sets: ingredients=${ingredientCollectionCount}, fillings=${fillingCollectionCount}, molds=${moldCollectionCount}, procedures=${procedureCollectionCount}, tasks=${taskCollectionCount}`
+        );
+        diag.info(
+          `Protected collections: ingredients=${protectedIngredientCount}, fillings=${protectedFillingCount}, molds=${protectedMoldCount}, procedures=${protectedProcedureCount}, tasks=${protectedTaskCount}`
+        );
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        setError(message);
+        setLoadingState('error');
+        user.error(`Failed to load library: ${message}`);
+        diag.error('Library load failed:', e);
+      }
+    },
+    [externalFileSources, preWarm, user, diag]
+  );
+
+  const loadSubLibraryFromZip = useCallback(
+    async (subLibrary: SubLibraryType, file: File): Promise<Result<void>> => {
+      diag.info(`Loading sublibrary from zip: ${subLibrary}, file=${file.name} (${file.size} bytes)`);
+      user.info(`Importing ${subLibrary} from zip: ${file.name}`);
+      const accessorsResult = await ZipFileTreeModule.ZipFileTreeAccessors.fromFile(file);
+      if (accessorsResult.isFailure()) {
+        user.error(`Failed to open zip: ${accessorsResult.message}`);
+        return fail(accessorsResult.message);
+      }
+
+      const accessors = accessorsResult.value;
+
+      const expectedSubDirName: string =
+        subLibrary === 'ingredients'
+          ? 'ingredients'
+          : subLibrary === 'fillings'
+          ? 'fillings'
+          : subLibrary === 'molds'
+          ? 'molds'
+          : subLibrary === 'procedures'
+          ? 'procedures'
+          : subLibrary === 'tasks'
+          ? 'tasks'
+          : 'confections';
+
+      // ZipFileTreeAccessors does not materialize '/' as an item, so we create a synthetic root.
+      const zipRoot: FileTree.IFileTreeDirectoryItem = new ZipFileTreeModule.ZipDirectoryItem('', accessors);
+
+      const getLibraryRoot = (
+        dir: FileTree.IFileTreeDirectoryItem
+      ): FileTree.IFileTreeDirectoryItem | undefined => {
+        const childrenResult = dir.getChildren();
+        if (childrenResult.isFailure()) {
+          return undefined;
+        }
+
+        const dataDir = childrenResult.value.find(
+          (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'data'
+        );
+
+        if (dataDir) {
+          const dataChildrenResult = dataDir.getChildren();
+          if (dataChildrenResult.isFailure()) {
+            return undefined;
+          }
+          const hasExpected = dataChildrenResult.value.some(
+            (c) => c.type === 'directory' && c.name === expectedSubDirName
+          );
+          if (hasExpected) {
+            return dir;
+          }
+        }
+
+        const directSubDir = childrenResult.value.find(
+          (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === expectedSubDirName
+        );
+        if (!directSubDir) {
+          return undefined;
+        }
+
+        const virtualData = new VirtualDirectoryItem('data', '/data', () => succeed([directSubDir]));
+        const virtualRoot = new VirtualDirectoryItem('', '/', () => succeed([virtualData]));
+        return virtualRoot;
       };
 
-      // Get source IDs from loaded ingredients
-      for (const [id] of ctx.ingredients.entries()) {
-        const sourceId = id.split('.')[0];
-        if (sourceId) {
-          addSubLibrary(sourceId, 'ingredients');
+      const matchingRoots: FileTree.IFileTreeDirectoryItem[] = [];
+      const queue: FileTree.IFileTreeDirectoryItem[] = [zipRoot];
+      let visited = 0;
+      const VISIT_LIMIT = 500;
+
+      while (queue.length > 0 && visited < VISIT_LIMIT && matchingRoots.length < 10) {
+        const current = queue.shift();
+        if (!current) {
+          break;
+        }
+        visited += 1;
+
+        const libraryRoot = getLibraryRoot(current);
+        if (libraryRoot) {
+          matchingRoots.push(libraryRoot);
+          continue;
+        }
+
+        const childrenResult = current.getChildren();
+        if (childrenResult.isFailure()) {
+          continue;
+        }
+        for (const child of childrenResult.value) {
+          if (child.type === 'directory') {
+            queue.push(child);
+          }
         }
       }
 
-      // Include empty ingredient collections
-      for (const collectionId of ctx.library.ingredients.collections.keys()) {
-        addSubLibrary(collectionId, 'ingredients');
+      if (matchingRoots.length === 0) {
+        return fail(
+          `Zip does not contain a library root with data/${expectedSubDirName} (zip may be missing that folder or be nested unexpectedly)`
+        );
       }
 
-      // Get source IDs from loaded fillings
-      for (const [id] of ctx.fillings.entries()) {
-        const sourceId = id.split('.')[0];
-        if (sourceId) {
-          addSubLibrary(sourceId, 'fillings');
+      if (matchingRoots.length > 1) {
+        diag.info(
+          `Zip contains multiple possible roots for data/${expectedSubDirName}; selecting first match. matches=${matchingRoots
+            .map((r) => r.absolutePath || '/')
+            .join(', ')}`
+        );
+        user.warn(`Multiple possible roots found for ${subLibrary}; using the first match`);
+      }
+
+      const libraryRoot = matchingRoots[0];
+      diag.info(
+        `Selected zip library root for ${subLibrary}: ${
+          libraryRoot.absolutePath || '/'
+        } (visited=${visited}, matches=${matchingRoots.length})`
+      );
+
+      const nextSource: LibraryData.ILibraryFileTreeSource = {
+        directory: libraryRoot,
+        load: {
+          default: false,
+          ingredients: subLibrary === 'ingredients',
+          fillings: subLibrary === 'fillings',
+          molds: subLibrary === 'molds',
+          procedures: subLibrary === 'procedures',
+          tasks: subLibrary === 'tasks'
+        },
+        mutable: true
+      };
+
+      const nextExternal = [...externalFileSources, nextSource];
+      await loadLibrary(nextExternal);
+      setExternalFileSources(nextExternal);
+      user.success(`Imported ${subLibrary} from zip: ${file.name}`);
+      return succeed(undefined);
+    },
+    [externalFileSources, loadLibrary]
+  );
+
+  const loadLibraryFromZip = useCallback(
+    async (file: File): Promise<Result<void>> => {
+      diag.info(`Loading full library from zip: file=${file.name} (${file.size} bytes)`);
+      user.info(`Importing library from zip: ${file.name}`);
+
+      const accessorsResult = await ZipFileTreeModule.ZipFileTreeAccessors.fromFile(file);
+      if (accessorsResult.isFailure()) {
+        diag.error(`Failed to open zip: ${accessorsResult.message}`);
+        user.error(`Failed to open zip: ${accessorsResult.message}`);
+        return fail(accessorsResult.message);
+      }
+
+      const accessors = accessorsResult.value;
+      const zipRoot: FileTree.IFileTreeDirectoryItem = new ZipFileTreeModule.ZipDirectoryItem('', accessors);
+
+      const expectedSubDirNames = [
+        'ingredients',
+        'fillings',
+        'molds',
+        'procedures',
+        'tasks',
+        'confections',
+        'journals'
+      ];
+
+      const getLibraryRoot = (
+        dir: FileTree.IFileTreeDirectoryItem
+      ): FileTree.IFileTreeDirectoryItem | undefined => {
+        const childrenResult = dir.getChildren();
+        if (childrenResult.isFailure()) {
+          return undefined;
+        }
+
+        const dataDir = childrenResult.value.find(
+          (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'data'
+        );
+
+        if (dataDir) {
+          const dataChildrenResult = dataDir.getChildren();
+          if (dataChildrenResult.isFailure()) {
+            return undefined;
+          }
+          const hasAnyExpected = dataChildrenResult.value.some(
+            (c) => c.type === 'directory' && expectedSubDirNames.includes(c.name)
+          );
+          if (hasAnyExpected) {
+            return dir;
+          }
+        }
+
+        const directSubDirs = childrenResult.value.filter(
+          (c): c is FileTree.IFileTreeDirectoryItem =>
+            c.type === 'directory' && expectedSubDirNames.includes(c.name)
+        );
+
+        if (directSubDirs.length === 0) {
+          return undefined;
+        }
+
+        const virtualData = new VirtualDirectoryItem('data', '/data', () => succeed(directSubDirs));
+        const virtualRoot = new VirtualDirectoryItem('', '/', () => succeed([virtualData]));
+        return virtualRoot;
+      };
+
+      const matchingRoots: FileTree.IFileTreeDirectoryItem[] = [];
+      const queue: FileTree.IFileTreeDirectoryItem[] = [zipRoot];
+      let visited = 0;
+      const VISIT_LIMIT = 800;
+
+      while (queue.length > 0 && visited < VISIT_LIMIT && matchingRoots.length < 10) {
+        const current = queue.shift();
+        if (!current) {
+          break;
+        }
+        visited += 1;
+
+        const libraryRoot = getLibraryRoot(current);
+        if (libraryRoot) {
+          matchingRoots.push(libraryRoot);
+          continue;
+        }
+
+        const childrenResult = current.getChildren();
+        if (childrenResult.isFailure()) {
+          continue;
+        }
+        for (const child of childrenResult.value) {
+          if (child.type === 'directory') {
+            queue.push(child);
+          }
         }
       }
 
-      // Include empty filling collections
-      for (const collectionId of ctx.library.fillings.collections.keys()) {
-        addSubLibrary(collectionId, 'fillings');
+      if (matchingRoots.length === 0) {
+        user.error('Zip import failed: could not find a library root');
+        return fail(
+          'Zip does not contain a recognizable library root (expected data/<sublibrary> folders or direct sublibrary folders)'
+        );
       }
 
-      // Include empty mold collections
-      for (const collectionId of ctx.library.molds.collections.keys()) {
-        addSubLibrary(collectionId, 'molds');
+      if (matchingRoots.length > 1) {
+        diag.info(
+          `Zip contains multiple possible library roots; selecting first match. matches=${matchingRoots
+            .map((r) => r.absolutePath || '/')
+            .join(', ')}`
+        );
+        user.warn('Multiple possible library roots found; using the first match');
       }
 
-      // Include empty procedure collections
-      for (const collectionId of ctx.library.procedures.collections.keys()) {
-        addSubLibrary(collectionId, 'procedures');
-      }
-
-      // Include empty task collections
-      for (const collectionId of ctx.library.tasks.collections.keys()) {
-        addSubLibrary(collectionId, 'tasks');
-      }
-
-      // Track which collections are protected (per sub-library)
-      // The library now properly captures protected collection metadata during synchronous loading
-      const protectedIngredientIds = new Set<string>(
-        ctx.library.ingredients.protectedCollections.map((pc) => pc.collectionId as string)
-      );
-      const protectedFillingIds = new Set<string>(
-        ctx.library.fillings.protectedCollections.map((pc) => pc.collectionId as string)
-      );
-      const protectedMoldIds = new Set<string>(
-        ctx.library.molds.protectedCollections.map((pc) => pc.collectionId as string)
+      const libraryRoot = matchingRoots[0];
+      diag.info(
+        `Selected zip library root: ${libraryRoot.absolutePath || '/'} (visited=${visited}, matches=${
+          matchingRoots.length
+        })`
       );
 
-      const protectedProcedureIds = new Set<string>(
-        ctx.library.procedures.protectedCollections.map((pc) => pc.collectionId as string)
-      );
+      const nextSource: LibraryData.ILibraryFileTreeSource = {
+        directory: libraryRoot,
+        load: true,
+        mutable: true
+      };
 
-      const protectedTaskIds = new Set<string>(
-        ctx.library.tasks.protectedCollections.map((pc) => pc.collectionId as string)
-      );
-
-      // Debug: log protected collections found
-      diag.info(`Protected ingredients: ${Array.from(protectedIngredientIds).join(', ') || 'none'}`);
-      diag.info(`Protected fillings: ${Array.from(protectedFillingIds).join(', ') || 'none'}`);
-
-      // Add protected ingredient collections (not yet loaded)
-      for (const collectionId of protectedIngredientIds) {
-        addSubLibrary(collectionId, 'ingredients');
-      }
-
-      // Add protected filling collections (not yet loaded)
-      for (const collectionId of protectedFillingIds) {
-        addSubLibrary(collectionId, 'fillings');
-      }
-
-      // Add protected mold collections (not yet loaded)
-      for (const collectionId of protectedMoldIds) {
-        addSubLibrary(collectionId, 'molds');
-      }
-
-      // Add protected procedure collections (not yet loaded)
-      for (const collectionId of protectedProcedureIds) {
-        addSubLibrary(collectionId, 'procedures');
-      }
-
-      // Add protected task collections (not yet loaded)
-      for (const collectionId of protectedTaskIds) {
-        addSubLibrary(collectionId, 'tasks');
-      }
-
-      // Build collection metadata from the map
-      const collectionMeta: ICollectionMetadata[] = [];
-      for (const [collectionId, subLibs] of collectionSubLibraries) {
-        const isProtectedIngredients = protectedIngredientIds.has(collectionId);
-        const isProtectedFillings = protectedFillingIds.has(collectionId);
-        const isProtectedMolds = protectedMoldIds.has(collectionId);
-        const isProtectedProcedures = protectedProcedureIds.has(collectionId);
-        const isProtectedTasks = protectedTaskIds.has(collectionId);
-        const isProtected =
-          isProtectedIngredients ||
-          isProtectedFillings ||
-          isProtectedMolds ||
-          isProtectedProcedures ||
-          isProtectedTasks;
-
-        // A collection is loaded if it has items in the runtime (not just protected entries)
-        const hasLoadedIngredients = !isProtectedIngredients && subLibs.has('ingredients');
-        const hasLoadedFillings = !isProtectedFillings && subLibs.has('fillings');
-        const hasLoadedMolds = !isProtectedMolds && subLibs.has('molds');
-        const hasLoadedProcedures = !isProtectedProcedures && subLibs.has('procedures');
-        const hasLoadedTasks = !isProtectedTasks && subLibs.has('tasks');
-        const isLoaded =
-          hasLoadedIngredients ||
-          hasLoadedFillings ||
-          hasLoadedMolds ||
-          hasLoadedProcedures ||
-          hasLoadedTasks;
-
-        collectionMeta.push({
-          id: collectionId,
-          name: formatCollectionName(collectionId),
-          isProtected,
-          isUnlocked: !isProtected || isLoaded,
-          isLoaded,
-          subLibraries: Array.from(subLibs)
-        });
-      }
-
-      setCollections(collectionMeta);
-      setLoadingState('ready');
-
-      const ingredientCount = ctx.ingredients.size;
-      const fillingCount = ctx.fillings.size;
-      user.success(`Loaded ${ingredientCount} ingredients and ${fillingCount} fillings`);
-      diag.info(`Library loaded: ${ingredientCount} ingredients, ${fillingCount} fillings`);
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      setError(message);
-      setLoadingState('error');
-      user.error(`Failed to load library: ${message}`);
-      diag.error('Library load failed:', e);
-    }
-  }, [preWarm, user, diag]);
+      const nextExternal = [...externalFileSources, nextSource];
+      await loadLibrary(nextExternal);
+      setExternalFileSources(nextExternal);
+      user.success(`Imported library from zip: ${file.name}`);
+      return succeed(undefined);
+    },
+    [externalFileSources, loadLibrary]
+  );
 
   // Rebuild collections list from current runtime (for editing updates)
   const rebuildCollectionsList = useCallback(() => {
@@ -1050,7 +1436,9 @@ export function ChocolateProvider({
       procedureCount,
       taskCount,
       confectionCount,
-      dataVersion
+      dataVersion,
+      loadSubLibraryFromZip,
+      loadLibraryFromZip
     }),
     [
       loadingState,
@@ -1066,7 +1454,9 @@ export function ChocolateProvider({
       procedureCount,
       taskCount,
       confectionCount,
-      dataVersion
+      dataVersion,
+      loadSubLibraryFromZip,
+      loadLibraryFromZip
     ]
   );
 
