@@ -13,6 +13,7 @@ import {
   StarIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
+import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
 import { ProvideSecretModal, UnlockCollectionModal } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useSecrets } from '../../contexts/SecretsContext';
@@ -210,6 +211,7 @@ export function CollectionManagementPanelBase({
   const [isImportLoading, setIsImportLoading] = useState(false);
   const [isImportFolderLoading, setIsImportFolderLoading] = useState(false);
   const [isZipLibraryLoading, setIsZipLibraryLoading] = useState(false);
+  const [isZipExportLoading, setIsZipExportLoading] = useState(false);
 
   const handleDelete = useCallback(
     (collectionId: SourceId) => {
@@ -388,6 +390,62 @@ export function CollectionManagementPanelBase({
               disabled={isZipLibraryLoading}
               className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
               title="Load full library from zip"
+            >
+              <ArrowDownTrayIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setIsZipExportLoading(true);
+                void (async () => {
+                  try {
+                    const exportable = collectionInfos.filter((c) => c.isLoaded && !c.isLocked);
+                    if (exportable.length === 0) {
+                      setError('No unlocked collections to export');
+                      setIsZipExportLoading(false);
+                      return;
+                    }
+
+                    const files: Array<{ path: string; contents: string }> = [];
+                    for (const c of exportable) {
+                      const contentResult = await exportCollection({ collectionId: c.id, format: 'json' });
+                      if (contentResult.isFailure()) {
+                        setError(contentResult.message);
+                        setIsZipExportLoading(false);
+                        return;
+                      }
+                      files.push({
+                        path: `data/${toolId}/${c.id as string}.json`,
+                        contents: contentResult.value
+                      });
+                    }
+
+                    const zipResult = ZipFileTreeModule.createZipFromTextFiles(files);
+                    if (zipResult.isFailure()) {
+                      setError(zipResult.message);
+                      setIsZipExportLoading(false);
+                      return;
+                    }
+
+                    const zipBytes = new Uint8Array(zipResult.value);
+                    const blob = new Blob([zipBytes], { type: 'application/zip' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${toolId}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  } finally {
+                    setIsZipExportLoading(false);
+                  }
+                })();
+              }}
+              disabled={isZipExportLoading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Export sublibrary as zip"
             >
               <ArrowDownTrayIcon className="w-4 h-4" />
             </button>

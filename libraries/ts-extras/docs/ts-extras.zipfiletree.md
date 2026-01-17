@@ -52,3 +52,92 @@ File tree accessors for ZIP archives.
 </td></tr>
 </tbody></table>
 
+## Functions
+
+<table><thead><tr><th>
+
+Function
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[createZipFromTextFiles(files, options)](./ts-extras.zipfiletree.createzipfromtextfiles.md)
+
+
+</td><td>
+
+Creates a zip file from an array of text files.
+
+
+</td></tr>
+</tbody></table>
+
+## Interfaces
+
+<table><thead><tr><th>
+
+Interface
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ICreateZipOptions](./ts-extras.zipfiletree.icreatezipoptions.md)
+
+
+</td><td>
+
+Options for creating a zip file from text files.
+
+
+</td></tr>
+<tr><td>
+
+[IZipTextFile](./ts-extras.zipfiletree.iziptextfile.md)
+
+
+</td><td>
+
+Simple interface for a file to be added to a zip file.
+
+
+</td></tr>
+</tbody></table>
+
+## Type Aliases
+
+<table><thead><tr><th>
+
+Type Alias
+
+
+</th><th>
+
+Description
+
+
+</th></tr></thead>
+<tbody><tr><td>
+
+[ZipCompressionLevel](./ts-extras.zipfiletree.zipcompressionlevel.md)
+
+
+</td><td>
+
+Supported compression levels for zip files.
+
+
+</td></tr>
+</tbody></table>
+

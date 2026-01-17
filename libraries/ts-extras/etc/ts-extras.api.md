@@ -23,6 +23,9 @@ declare namespace Converters {
 }
 export { Converters }
 
+// @public
+function createZipFromTextFiles(files: ReadonlyArray<IZipTextFile>, options?: ICreateZipOptions): Result<Uint8Array>;
+
 declare namespace Csv {
     export {
         parseCsvString,
@@ -141,6 +144,12 @@ interface IContextValidationResult {
 }
 
 // @public
+interface ICreateZipOptions {
+    // (undocumented)
+    readonly level?: ZipCompressionLevel;
+}
+
+// @public
 interface IMissingVariableDetail {
     readonly existingPath: readonly string[];
     readonly failedAtSegment?: string;
@@ -163,6 +172,14 @@ interface IVariableRef {
     readonly name: string;
     readonly path: readonly string[];
     readonly tokenType: MustacheTokenType;
+}
+
+// @public
+interface IZipTextFile {
+    // (undocumented)
+    readonly contents: string;
+    // (undocumented)
+    readonly path: string;
 }
 
 // @public (undocumented)
@@ -309,6 +326,9 @@ export { RecordJar }
 function templateString(defaultContext?: unknown): Conversion.StringConverter<string, unknown>;
 
 // @public
+type ZipCompressionLevel = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+// @public
 class ZipDirectoryItem<TCT extends string = string> implements FileTree.IFileTreeDirectoryItem<TCT> {
     constructor(directoryPath: string, accessors: ZipFileTreeAccessors<TCT>);
     readonly absolutePath: string;
@@ -337,7 +357,11 @@ declare namespace ZipFileTree {
     export {
         ZipFileTreeAccessors,
         ZipFileItem,
-        ZipDirectoryItem
+        ZipDirectoryItem,
+        createZipFromTextFiles,
+        IZipTextFile,
+        ZipCompressionLevel,
+        ICreateZipOptions
     }
 }
 export { ZipFileTree }

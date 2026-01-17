@@ -31,3 +31,4 @@
  */
 
 export { ZipFileTreeAccessors, ZipFileItem, ZipDirectoryItem } from './zipFileTreeAccessors';
+export * from './zipFileTreeWriter';
