@@ -263,13 +263,21 @@ describe('SubLibraryBase Collection Management', () => {
       expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
     });
 
-    test('validates secretName when empty', () => {
+    test('treats empty secretName as removal (no validation error)', () => {
       const metadata: Partial<ICollectionSourceMetadata> = {
         secretName: ''
       };
 
+      expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+    });
+
+    test('validates secretName with leading/trailing whitespace when set', () => {
+      const metadata: Partial<ICollectionSourceMetadata> = {
+        secretName: '  my-secret '
+      };
+
       expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toFailWith(
-        /secret name cannot be empty/i
+        /leading or trailing whitespace/i
       );
     });
 
@@ -289,6 +297,20 @@ describe('SubLibraryBase Collection Management', () => {
       };
 
       expect(library.updateCollectionMetadata('test-collection' as SourceId, metadata)).toSucceed();
+    });
+
+    test('can set and then remove secretName', () => {
+      expect(
+        library.updateCollectionMetadata('test-collection' as SourceId, { secretName: 'my-secret' })
+      ).toSucceed();
+      expect(library.collections.get('test-collection' as SourceId).asResult).toSucceedAndSatisfy((entry) => {
+        expect(entry.metadata?.secretName).toBe('my-secret');
+      });
+
+      expect(library.updateCollectionMetadata('test-collection' as SourceId, { secretName: '' })).toSucceed();
+      expect(library.collections.get('test-collection' as SourceId).asResult).toSucceedAndSatisfy((entry) => {
+        expect(entry.metadata?.secretName).toBeUndefined();
+      });
     });
   });
 

@@ -65,7 +65,7 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
 
   // Handle save
   const handleSave = useCallback(
-    (formData: IIngredientFormData) => {
+    async (formData: IIngredientFormData) => {
       if (!editor) {
         return fail<void>('Editor not available');
       }
@@ -185,7 +185,7 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
 
         markDirty();
 
-        const commitResult = commitCollection(sourceId);
+        const commitResult = await commitCollection(sourceId);
         if (commitResult.isFailure()) {
           setIsSaving(false);
           return fail<void>(commitResult.message);
@@ -226,16 +226,18 @@ export function EditableDetailView({ ingredientId, onBack }: IEditableDetailView
 
       markDirty();
 
-      const commitResult = commitCollection(sourceId);
-      if (commitResult.isFailure()) {
-        setIsDeleting(false);
-        setDeleteError(commitResult.message);
-        return;
-      }
+      void (async () => {
+        const commitResult = await commitCollection(sourceId);
+        if (commitResult.isFailure()) {
+          setIsDeleting(false);
+          setDeleteError(commitResult.message);
+          return;
+        }
 
-      setIsDeleting(false);
-      setShowDeleteConfirm(false);
-      onBack();
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+        onBack();
+      })();
     } catch (e) {
       setIsDeleting(false);
       setDeleteError(`Delete failed: ${e instanceof Error ? e.message : String(e)}`);

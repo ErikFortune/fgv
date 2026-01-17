@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Failure, Result, Success } from '@fgv/ts-utils';
 import {
   Editing,
   Entities,
@@ -156,21 +155,31 @@ export function AddProcedureDialog({
         newProcedure.notes = notes.trim();
       }
 
-      Entities.Procedures.Converters.procedureData
-        .convert(newProcedure)
-        .onSuccess((validated) =>
-          collectionEntry.items.validating.add(validatedBaseId, validated).asResult.onSuccess((__added) =>
-            commitProcedureCollection(targetCollectionId).onSuccess(() => {
-              onClose();
-              return Success.with(targetCollectionId);
-            })
-          )
-        )
-        .onFailure((message) => {
-          setSaveError(message);
+      const validatedResult = Entities.Procedures.Converters.procedureData.convert(newProcedure);
+      if (validatedResult.isFailure()) {
+        setSaveError(validatedResult.message);
+        setIsSaving(false);
+        return;
+      }
+
+      const addResult = collectionEntry.items.validating.add(validatedBaseId, validatedResult.value).asResult;
+      if (addResult.isFailure()) {
+        setSaveError(addResult.message);
+        setIsSaving(false);
+        return;
+      }
+
+      void (async () => {
+        const commitResult = await commitProcedureCollection(targetCollectionId);
+        if (commitResult.isFailure()) {
+          setSaveError(commitResult.message);
           setIsSaving(false);
-          return Failure.with(message);
-        });
+          return;
+        }
+
+        setIsSaving(false);
+        onClose();
+      })();
     },
     [baseId, commitProcedureCollection, description, name, notes, onClose, runtime, tags, targetCollectionId]
   );
@@ -397,6 +406,7 @@ export function ProcedureCollectionManagementPanel({
         id: collectionId,
         name: metadata?.name ?? collectionCtx?.name ?? collectionId,
         description: metadata?.description,
+        secretName: metadata?.secretName,
         isMutable: runtimeCollection?.isMutable ?? false,
         isProtected,
         isLocked,

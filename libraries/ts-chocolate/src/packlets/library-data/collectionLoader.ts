@@ -399,7 +399,12 @@ export class CollectionLoader<
     return this._collectionConverter.convert({
       id: collectionName,
       isMutable: this._isMutable(collectionName, mutabilitySpec),
-      items: decryptResult.value
+      items: decryptResult.value,
+      metadata: {
+        secretName: encryptedFile.secretName,
+        /* c8 ignore next 1 - defense in depth */
+        ...(encryptedFile.metadata?.description ? { description: encryptedFile.metadata.description } : {})
+      }
     });
   }
 

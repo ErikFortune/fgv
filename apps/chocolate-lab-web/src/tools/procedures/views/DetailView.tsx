@@ -444,16 +444,18 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
         return;
       }
 
-      const commitResult = commitProcedureCollection(sourceId);
-      if (commitResult.isFailure()) {
-        setSaveError(commitResult.message);
-        setIsSaving(false);
-        return;
-      }
+      void (async () => {
+        const commitResult = await commitProcedureCollection(sourceId);
+        if (commitResult.isFailure()) {
+          setSaveError(commitResult.message);
+          setIsSaving(false);
+          return;
+        }
 
-      setIsSaving(false);
-      setIsEditing(false);
-      setDraftProcedure(null);
+        setIsSaving(false);
+        setIsEditing(false);
+        setDraftProcedure(null);
+      })();
     } catch (e) {
       setSaveError(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
       setIsSaving(false);
@@ -563,15 +565,17 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
         return;
       }
 
-      const commitResult = commitProcedureCollection(cloneTargetCollectionId);
-      if (commitResult.isFailure()) {
-        setCloneError(commitResult.message);
-        setIsCloning(false);
-        return;
-      }
+      void (async () => {
+        const commitResult = await commitProcedureCollection(cloneTargetCollectionId);
+        if (commitResult.isFailure()) {
+          setCloneError(commitResult.message);
+          setIsCloning(false);
+          return;
+        }
 
-      setIsCloning(false);
-      setShowCloneModal(false);
+        setIsCloning(false);
+        setShowCloneModal(false);
+      })();
     } catch (e) {
       setCloneError(`Clone failed: ${e instanceof Error ? e.message : String(e)}`);
       setIsCloning(false);
@@ -1095,31 +1099,35 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
         return;
       }
 
-      const commitResult = commitTaskCollection(promoteTaskTargetCollectionId);
-      if (commitResult.isFailure()) {
-        setPromoteTaskError(commitResult.message);
+      void (async () => {
+        const commitResult = await commitTaskCollection(promoteTaskTargetCollectionId);
+        if (commitResult.isFailure()) {
+          setPromoteTaskError(commitResult.message);
+          setIsPromotingTask(false);
+          return;
+        }
+
+        const newTaskId = `${promoteTaskTargetCollectionId}.${
+          validatedBaseId as unknown as string
+        }` as TaskId;
+        updateDraftStep(selectedStepOrder, (prev) => {
+          const invocation = (prev.task as unknown) ?? {};
+          const invocationRecord = isRecord(invocation) ? (invocation as Record<string, unknown>) : {};
+          const params = (invocationRecord.params as Record<string, unknown>) ?? {};
+          return {
+            ...prev,
+            task: {
+              ...invocationRecord,
+              taskId: newTaskId,
+              params
+            }
+          };
+        });
+        setStepTaskId(newTaskId as unknown as string);
+
         setIsPromotingTask(false);
-        return;
-      }
-
-      const newTaskId = `${promoteTaskTargetCollectionId}.${validatedBaseId as unknown as string}` as TaskId;
-      updateDraftStep(selectedStepOrder, (prev) => {
-        const invocation = (prev.task as unknown) ?? {};
-        const invocationRecord = isRecord(invocation) ? (invocation as Record<string, unknown>) : {};
-        const params = (invocationRecord.params as Record<string, unknown>) ?? {};
-        return {
-          ...prev,
-          task: {
-            ...invocationRecord,
-            taskId: newTaskId,
-            params
-          }
-        };
-      });
-      setStepTaskId(newTaskId as unknown as string);
-
-      setIsPromotingTask(false);
-      setShowPromoteTaskModal(false);
+        setShowPromoteTaskModal(false);
+      })();
     } catch (e) {
       setPromoteTaskError(`Promotion failed: ${e instanceof Error ? e.message : String(e)}`);
       setIsPromotingTask(false);
@@ -1227,34 +1235,36 @@ export function DetailView({ procedureId, onBack }: IDetailViewProps): React.Rea
         return;
       }
 
-      const commitResult = commitTaskCollection(promoteInlineTargetCollectionId);
-      if (commitResult.isFailure()) {
-        setPromoteInlineError(commitResult.message);
+      void (async () => {
+        const commitResult = await commitTaskCollection(promoteInlineTargetCollectionId);
+        if (commitResult.isFailure()) {
+          setPromoteInlineError(commitResult.message);
+          setIsPromotingInline(false);
+          return;
+        }
+
+        const newTaskId = `${promoteInlineTargetCollectionId}.${
+          validatedBaseId as unknown as string
+        }` as TaskId;
+        updateDraftStep(selectedStepOrder, (prev) => {
+          const invocation = (prev.task as unknown) ?? {};
+          const invocationRecord = isRecord(invocation) ? (invocation as Record<string, unknown>) : {};
+          const params = (invocationRecord.params as Record<string, unknown>) ?? {};
+          return {
+            ...prev,
+            task: {
+              taskId: newTaskId,
+              params
+            }
+          };
+        });
+
+        setStepTaskId(newTaskId as unknown as string);
+        setStepTemplate('');
+
         setIsPromotingInline(false);
-        return;
-      }
-
-      const newTaskId = `${promoteInlineTargetCollectionId}.${
-        validatedBaseId as unknown as string
-      }` as TaskId;
-      updateDraftStep(selectedStepOrder, (prev) => {
-        const invocation = (prev.task as unknown) ?? {};
-        const invocationRecord = isRecord(invocation) ? (invocation as Record<string, unknown>) : {};
-        const params = (invocationRecord.params as Record<string, unknown>) ?? {};
-        return {
-          ...prev,
-          task: {
-            taskId: newTaskId,
-            params
-          }
-        };
-      });
-
-      setStepTaskId(newTaskId as unknown as string);
-      setStepTemplate('');
-
-      setIsPromotingInline(false);
-      setShowPromoteInlineModal(false);
+        setShowPromoteInlineModal(false);
+      })();
     } catch (e) {
       setPromoteInlineError(`Promotion failed: ${e instanceof Error ? e.message : String(e)}`);
       setIsPromotingInline(false);

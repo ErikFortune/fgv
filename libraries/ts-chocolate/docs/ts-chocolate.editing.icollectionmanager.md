@@ -173,7 +173,7 @@ Check if a collection is mutable.
 
 </td><td>
 
-(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->, metadata: Partial&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;) =&gt; Result&lt;void&gt;
+(collectionId: [SourceId](./ts-chocolate.sourceid.md)<!-- -->, metadata: Partial&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;) =&gt; Result&lt;[ICollectionSourceMetadata](./ts-chocolate.librarydata.icollectionsourcemetadata.md)<!-- -->&gt;
 
 
 </td><td>

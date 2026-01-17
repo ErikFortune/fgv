@@ -87,7 +87,7 @@ export interface IIngredientEditFormProps {
   /** Initial ingredient data */
   ingredient: Ingredient;
   /** Save handler - returns Result with validation errors */
-  onSave: (data: IIngredientFormData) => Result<void>;
+  onSave: (data: IIngredientFormData) => Result<void> | Promise<Result<void>>;
   /** Cancel handler */
   onCancel: () => void;
   /** Whether save is in progress */
@@ -390,12 +390,12 @@ export function IngredientEditForm({
   }, [formData]);
 
   // Handle save
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!validate()) {
       return;
     }
 
-    const result = onSave(formData);
+    const result = await onSave(formData);
     if (result.isFailure()) {
       setSaveError(result.message);
     }
@@ -424,7 +424,7 @@ export function IngredientEditForm({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          handleSave();
+          void handleSave();
         }}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

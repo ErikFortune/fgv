@@ -29,6 +29,8 @@ type RuntimeFillingRecipe = Runtime.RuntimeRecipe;
 import type { Result } from '@fgv/ts-utils';
 import { fail, succeed } from '@fgv/ts-utils';
 import { useObservability } from '@fgv/ts-chocolate-ui';
+import { useSettings } from './SettingsContext';
+import { useSecrets } from './SecretsContext';
 
 // Default PBKDF2 iterations for password derivation (used only if keyDerivation is missing)
 const DEFAULT_PBKDF2_ITERATIONS = 100000;
@@ -61,11 +63,14 @@ function readLocalIngredientCollectionFiles(): FileTree.IInMemoryFile[] {
         continue;
       }
 
-      if (!('items' in contents) || !isJsonObject(contents.items)) {
-        continue;
-      }
-      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-        continue;
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
       }
       files.push({
         path: `/data/ingredients/${collectionId}.json`,
@@ -96,11 +101,14 @@ function readLocalFillingCollectionFiles(): FileTree.IInMemoryFile[] {
         continue;
       }
 
-      if (!('items' in contents) || !isJsonObject(contents.items)) {
-        continue;
-      }
-      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-        continue;
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
       }
       files.push({
         path: `/data/fillings/${collectionId}.json`,
@@ -131,11 +139,14 @@ function readLocalProcedureCollectionFiles(): FileTree.IInMemoryFile[] {
         continue;
       }
 
-      if (!('items' in contents) || !isJsonObject(contents.items)) {
-        continue;
-      }
-      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-        continue;
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
       }
       files.push({
         path: `/data/procedures/${collectionId}.json`,
@@ -166,11 +177,14 @@ function readLocalTaskCollectionFiles(): FileTree.IInMemoryFile[] {
         continue;
       }
 
-      if (!('items' in contents) || !isJsonObject(contents.items)) {
-        continue;
-      }
-      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-        continue;
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
       }
       files.push({
         path: `/data/tasks/${collectionId}.json`,
@@ -201,11 +215,14 @@ function readLocalMoldCollectionFiles(): FileTree.IInMemoryFile[] {
         continue;
       }
 
-      if (!('items' in contents) || !isJsonObject(contents.items)) {
-        continue;
-      }
-      if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
-        continue;
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
       }
       files.push({
         path: `/data/molds/${collectionId}.json`,
@@ -353,6 +370,8 @@ export function ChocolateProvider({
   preWarm = false
 }: IChocolateProviderProps): React.ReactElement {
   const { user, diag } = useObservability();
+  const { settings } = useSettings();
+  const { setSecret } = useSecrets();
 
   const [loadingState, setLoadingState] = useState<LoadingState>('idle');
   const [error, setError] = useState<string | undefined>();
@@ -768,6 +787,32 @@ export function ChocolateProvider({
       }
       const cryptoProvider = cryptoResult.value;
 
+      // Identify the protected collection and its secret
+      const ingredientProtected = runtime.library.ingredients.protectedCollections.find(
+        (pc) => pc.collectionId === collectionId
+      );
+      const fillingProtected = runtime.library.fillings.protectedCollections.find(
+        (pc) => pc.collectionId === collectionId
+      );
+      const moldProtected = runtime.library.molds.protectedCollections.find(
+        (pc) => pc.collectionId === collectionId
+      );
+      const taskProtected = runtime.library.tasks.protectedCollections.find(
+        (pc) => pc.collectionId === collectionId
+      );
+      const procedureProtected = runtime.library.procedures.protectedCollections.find(
+        (pc) => pc.collectionId === collectionId
+      );
+
+      const protectedInfo =
+        ingredientProtected ?? fillingProtected ?? moldProtected ?? taskProtected ?? procedureProtected;
+
+      if (!protectedInfo) {
+        return fail(`Collection "${collectionId}" is not a protected collection or is already unlocked`);
+      }
+
+      const secretName = protectedInfo.secretName;
+
       // Get the key
       let key: Uint8Array;
 
@@ -793,30 +838,7 @@ export function ChocolateProvider({
 
         const password = options.password;
 
-        // Look for keyDerivation params from the protected collection metadata
-        // Check all libraries for this collection
-        const ingredientProtected = runtime.library.ingredients.protectedCollections.find(
-          (pc) => pc.collectionId === collectionId
-        );
-        const fillingProtected = runtime.library.fillings.protectedCollections.find(
-          (pc) => pc.collectionId === collectionId
-        );
-        const moldProtected = runtime.library.molds.protectedCollections.find(
-          (pc) => pc.collectionId === collectionId
-        );
-        const taskProtected = runtime.library.tasks.protectedCollections.find(
-          (pc) => pc.collectionId === collectionId
-        );
-        const procedureProtected = runtime.library.procedures.protectedCollections.find(
-          (pc) => pc.collectionId === collectionId
-        );
-
-        const keyDerivation =
-          ingredientProtected?.keyDerivation ??
-          fillingProtected?.keyDerivation ??
-          moldProtected?.keyDerivation ??
-          taskProtected?.keyDerivation ??
-          procedureProtected?.keyDerivation;
+        const keyDerivation = protectedInfo.keyDerivation;
 
         if (!keyDerivation || keyDerivation.kdf !== 'pbkdf2' || !keyDerivation.salt) {
           return fail(
@@ -849,7 +871,7 @@ export function ChocolateProvider({
 
       // Create encryption config
       const encryptionConfig: LibraryData.IEncryptionConfig = {
-        secrets: [{ name: collectionId, key }],
+        secrets: [{ name: secretName, key }],
         cryptoProvider,
         onMissingKey: 'fail',
         onDecryptionError: 'fail'
@@ -858,28 +880,31 @@ export function ChocolateProvider({
       // Try to unlock in ingredients library
       const ingredientsResult = await runtime.library.ingredients.loadProtectedCollectionAsync(
         encryptionConfig,
-        [collectionId]
+        [collectionId, secretName]
       );
 
       // Try to unlock in fillings library
       const fillingsResult = await runtime.library.fillings.loadProtectedCollectionAsync(encryptionConfig, [
-        collectionId
+        collectionId,
+        secretName
       ]);
 
       // Try to unlock in molds library
       const moldsResult = await runtime.library.molds.loadProtectedCollectionAsync(encryptionConfig, [
-        collectionId
+        collectionId,
+        secretName
       ]);
 
       // Try to unlock in procedures library
       const proceduresResult = await runtime.library.procedures.loadProtectedCollectionAsync(
         encryptionConfig,
-        [collectionId]
+        [collectionId, secretName]
       );
 
       // Try to unlock in tasks library
       const tasksResult = await runtime.library.tasks.loadProtectedCollectionAsync(encryptionConfig, [
-        collectionId
+        collectionId,
+        secretName
       ]);
 
       // Check results and get counts
@@ -955,6 +980,24 @@ export function ChocolateProvider({
       // Clear the RuntimeContext cache so it rebuilds with the newly loaded data
       runtime.clearCache();
 
+      // Store the key for future encrypted writes
+      try {
+        const raw = Array.from(key)
+          .map((b) => String.fromCharCode(b))
+          .join('');
+        const keyBase64 = btoa(raw);
+
+        // Store session-only (we don't want to persist keys in cleartext).
+        setSecret(secretName, {
+          keyBase64,
+          ...(options.mode === 'password' && protectedInfo.keyDerivation
+            ? { keyDerivation: protectedInfo.keyDerivation }
+            : {})
+        });
+      } catch {
+        // ignore
+      }
+
       // Increment data version to trigger re-render with new counts
       setDataVersion((v) => v + 1);
 
@@ -974,7 +1017,7 @@ export function ChocolateProvider({
 
       return succeed(undefined);
     },
-    [runtime, user, diag]
+    [runtime, settings.secrets, setSecret, user, diag]
   );
 
   // Calculate counts - dataVersion dependency ensures recalculation after unlock

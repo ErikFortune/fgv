@@ -3,7 +3,7 @@
  * Copyright (c) 2025 Erik Fortune
  */
 
-import React, { createContext, useContext, useMemo, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, useCallback, ReactNode, useEffect } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 
 /**
@@ -38,6 +38,8 @@ export interface IAppSettings {
   showCollectionBadges: boolean;
   /** Whether to show the messages pane */
   showMessagesPane: boolean;
+  /** Stored encryption keys by secret name (base64-encoded 32-byte keys) */
+  secrets: Record<string, string>;
   /** Per-collection settings */
   collections: Record<string, ICollectionSettings>;
   /** Sidebar collapsed state per tool */
@@ -53,6 +55,7 @@ const defaultSettings: IAppSettings = {
   defaultSortDirection: 'asc',
   showCollectionBadges: true,
   showMessagesPane: true,
+  secrets: {},
   collections: {},
   sidebarCollapsed: {},
   defaultCollections: {}
@@ -107,6 +110,20 @@ export interface ISettingsProviderProps {
  */
 export function SettingsProvider({ children }: ISettingsProviderProps): React.ReactElement {
   const [settings, setSettings, resetStorage] = useLocalStorage<IAppSettings>(STORAGE_KEY, defaultSettings);
+
+  useEffect(() => {
+    const anySettings = settings as unknown as Record<string, unknown>;
+    if (anySettings.secrets === undefined) {
+      setSettings(
+        (prev) =>
+          ({
+            ...defaultSettings,
+            ...(prev as unknown as Record<string, unknown>),
+            secrets: {}
+          } as IAppSettings)
+      );
+    }
+  }, [setSettings, settings]);
 
   // Update a single setting
   const updateSetting = useCallback(

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   PlusIcon,
   PencilIcon,
@@ -13,8 +13,9 @@ import {
   StarIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
-import { UnlockCollectionModal } from '../common';
+import { ProvideSecretModal, UnlockCollectionModal } from '../common';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useSecrets } from '../../contexts/SecretsContext';
 import type { SourceId } from '@fgv/ts-chocolate';
 import type { Result } from '@fgv/ts-utils';
 import type { ICreateCollectionParams, IExportParams, IImportParams } from '../../contexts/EditingContext';
@@ -23,6 +24,7 @@ export interface ICollectionInfo {
   id: SourceId;
   name: string;
   description?: string;
+  secretName?: string;
   isMutable: boolean;
   isProtected: boolean;
   isLocked: boolean;
@@ -39,16 +41,19 @@ function RenameDialog({
 }: {
   collectionId: SourceId;
   info: ICollectionInfo | null;
-  onRename: (name: string, description?: string) => void;
+  onRename: (name: string, description?: string, secretName?: string) => void;
   onCancel: () => void;
 }): React.ReactElement {
   const [name, setName] = useState(info?.name ?? (collectionId as string));
   const [description, setDescription] = useState(info?.description ?? '');
+  const [secretName, setSecretName] = useState(info?.secretName ?? '');
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     const nextDesc = description.trim().length > 0 ? description : undefined;
-    onRename(name.trim().length > 0 ? name.trim() : (collectionId as string), nextDesc);
+    const trimmedSecret = secretName.trim();
+    const nextSecret = trimmedSecret.length > 0 ? trimmedSecret : '';
+    onRename(name.trim().length > 0 ? name.trim() : (collectionId as string), nextDesc, nextSecret);
   };
 
   return (
@@ -67,6 +72,32 @@ function RenameDialog({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Secret Name
+            </label>
+            <input
+              type="text"
+              value={secretName}
+              onChange={(e) => setSecretName(e.target.value)}
+              placeholder="Optional secret name..."
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Secret Name
+            </label>
+            <input
+              type="text"
+              value={secretName}
+              onChange={(e) => setSecretName(e.target.value)}
+              placeholder="Optional secret name..."
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500"
             />
           </div>
@@ -108,10 +139,15 @@ export interface ICollectionManagementPanelBaseProps {
   className?: string;
   toolId: string;
   collectionInfos: ReadonlyArray<ICollectionInfo>;
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportCollection: (params: IExportParams) => Result<string>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
   selectedCollectionIds?: ReadonlyArray<string>;
   onToggleSelected?: (collectionId: string) => void;
@@ -123,6 +159,8 @@ export interface ICollectionManagementPanelBaseProps {
   onAddItem?: (collectionId: SourceId) => void;
   addItemTitle?: string;
 }
+
+type ICollectionCreateParamsWithSecret = ICreateCollectionParams & { secretName?: string };
 
 export function CollectionManagementPanelBase({
   className = '',
@@ -144,6 +182,7 @@ export function CollectionManagementPanelBase({
   addItemTitle = 'Add item'
 }: ICollectionManagementPanelBaseProps): React.ReactElement {
   const { settings, setDefaultCollection } = useSettings();
+  const { getSecretKeyBase64 } = useSecrets();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<SourceId | null>(null);
@@ -153,6 +192,14 @@ export function CollectionManagementPanelBase({
   const [error, setError] = useState<string | null>(null);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const [collectionToUnlock, setCollectionToUnlock] = useState<string | null>(null);
+  const [secretToProvide, setSecretToProvide] = useState<string | null>(null);
+  const pendingRenameRef = useRef<{
+    collectionId: SourceId;
+    name: string;
+    description?: string;
+    secretName?: string;
+  } | null>(null);
+  const pendingCreateRef = useRef<ICollectionCreateParamsWithSecret | null>(null);
 
   const handleDelete = useCallback(
     (collectionId: SourceId) => {
@@ -170,38 +217,72 @@ export function CollectionManagementPanelBase({
   const handleExport = useCallback(
     (collectionId: SourceId, format: 'yaml' | 'json') => {
       setError(null);
-      const result = exportCollection({ collectionId, format });
-      if (result.isFailure()) {
-        setError(result.message);
-        return;
-      }
+      void (async () => {
+        const result = await exportCollection({ collectionId, format });
+        if (result.isFailure()) {
+          setError(result.message);
+          return;
+        }
 
-      const blob = new Blob([result.value], { type: format === 'yaml' ? 'text/yaml' : 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${collectionId}.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+        const blob = new Blob([result.value], { type: format === 'yaml' ? 'text/yaml' : 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${collectionId}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-      setShowExportDialog(null);
+        setShowExportDialog(null);
+      })();
     },
     [exportCollection]
   );
 
   const handleRename = useCallback(
-    (collectionId: SourceId, name: string, description?: string) => {
+    (collectionId: SourceId, name: string, description?: string, secretName?: string) => {
       setError(null);
-      const result = renameCollection(collectionId, name, description);
-      if (result.isFailure()) {
-        setError(result.message);
-      } else {
-        setShowRenameDialog(null);
+
+      const trimmedSecret = secretName?.trim();
+      if (trimmedSecret && !getSecretKeyBase64(trimmedSecret)) {
+        pendingRenameRef.current = { collectionId, name, description, secretName: trimmedSecret };
+        setSecretToProvide(trimmedSecret);
+        return;
       }
+
+      void (async () => {
+        const result = await renameCollection(collectionId, name, description, secretName);
+        if (result.isFailure()) {
+          setError(result.message);
+        } else {
+          setShowRenameDialog(null);
+        }
+      })();
     },
-    [renameCollection]
+    [getSecretKeyBase64, renameCollection]
+  );
+
+  const handleCreate = useCallback(
+    (params: ICollectionCreateParamsWithSecret) => {
+      setError(null);
+      const trimmedSecret = params.secretName?.trim();
+      if (trimmedSecret && !getSecretKeyBase64(trimmedSecret)) {
+        pendingCreateRef.current = { ...params, secretName: trimmedSecret };
+        setSecretToProvide(trimmedSecret);
+        return;
+      }
+
+      void (async () => {
+        const result = await createCollection(params);
+        if (result.isFailure()) {
+          setError(result.message);
+        } else {
+          setShowCreateDialog(false);
+        }
+      })();
+    },
+    [createCollection, getSecretKeyBase64]
   );
 
   return (
@@ -292,18 +373,7 @@ export function CollectionManagementPanelBase({
       </div>
 
       {showCreateDialog && (
-        <CreateCollectionDialog
-          onClose={() => setShowCreateDialog(false)}
-          onCreate={(params) => {
-            setError(null);
-            const result = createCollection(params);
-            if (result.isFailure()) {
-              setError(result.message);
-            } else {
-              setShowCreateDialog(false);
-            }
-          }}
-        />
+        <CreateCollectionDialog onClose={() => setShowCreateDialog(false)} onCreate={handleCreate} />
       )}
 
       {showDeleteConfirm && (
@@ -318,7 +388,9 @@ export function CollectionManagementPanelBase({
         <RenameDialog
           collectionId={showRenameDialog}
           info={collectionInfos.find((c) => c.id === showRenameDialog) ?? null}
-          onRename={(name, description) => handleRename(showRenameDialog, name, description)}
+          onRename={(name, description, secretName) =>
+            handleRename(showRenameDialog, name, description, secretName)
+          }
           onCancel={() => setShowRenameDialog(null)}
         />
       )}
@@ -354,6 +426,35 @@ export function CollectionManagementPanelBase({
             setCollectionToUnlock(null);
           }}
           collectionId={collectionToUnlock}
+        />
+      )}
+
+      {secretToProvide && (
+        <ProvideSecretModal
+          isOpen={true}
+          secretName={secretToProvide}
+          onClose={() => setSecretToProvide(null)}
+          onProvided={() => {
+            const pendingRename = pendingRenameRef.current;
+            if (pendingRename) {
+              pendingRenameRef.current = null;
+              setSecretToProvide(null);
+              handleRename(
+                pendingRename.collectionId,
+                pendingRename.name,
+                pendingRename.description,
+                pendingRename.secretName
+              );
+              return;
+            }
+
+            const pendingCreate = pendingCreateRef.current;
+            if (pendingCreate) {
+              pendingCreateRef.current = null;
+              setSecretToProvide(null);
+              handleCreate(pendingCreate);
+            }
+          }}
         />
       )}
     </div>
@@ -491,7 +592,7 @@ function CollectionListItem({
           <ArrowDownTrayIcon className="w-4 h-4" />
         </button>
 
-        {info.isMutable && !info.isLocked && (
+        {info.isMutable && (
           <button
             type="button"
             onClick={(e) => {
@@ -514,18 +615,20 @@ function CreateCollectionDialog({
   onCreate
 }: {
   onClose: () => void;
-  onCreate: (params: ICreateCollectionParams) => void;
+  onCreate: (params: ICollectionCreateParamsWithSecret) => void;
 }): React.ReactElement {
   const [collectionId, setCollectionId] = useState('');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [secretName, setSecretName] = useState('');
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault();
     onCreate({
       collectionId: collectionId as SourceId,
       name: name || collectionId,
-      description: description || undefined
+      description: description || undefined,
+      secretName: secretName.trim().length > 0 ? secretName.trim() : undefined
     });
   };
 
@@ -575,6 +678,19 @@ function CreateCollectionDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Optional description..."
               rows={2}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Secret Name
+            </label>
+            <input
+              type="text"
+              value={secretName}
+              onChange={(e) => setSecretName(e.target.value)}
+              placeholder="Optional secret name..."
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-chocolate-500 focus:border-chocolate-500"
             />
           </div>

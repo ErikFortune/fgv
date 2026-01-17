@@ -632,15 +632,17 @@ export function DetailView({ fillingId, onBack }: IDetailViewProps): React.React
       return;
     }
 
-    const commitResult = commitFillingCollection(sourceId as SourceId);
-    if (commitResult.isFailure()) {
-      setSaveError(commitResult.message);
-      setIsSaving(false);
-      return;
-    }
+    void (async () => {
+      const commitResult = await commitFillingCollection(sourceId as SourceId);
+      if (commitResult.isFailure()) {
+        setSaveError(commitResult.message);
+        setIsSaving(false);
+        return;
+      }
 
-    setIsSaving(false);
-    setIsEditing(false);
+      setIsSaving(false);
+      setIsEditing(false);
+    })();
   };
 
   return (

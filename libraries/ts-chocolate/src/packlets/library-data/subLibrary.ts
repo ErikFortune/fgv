@@ -32,6 +32,7 @@ import {
   Logging,
   mapResults,
   MessageAggregator,
+  omit,
   recordFromEntries,
   Result,
   succeed,
@@ -1109,7 +1110,7 @@ export abstract class SubLibraryBase<
 
     // If no items were converted (but no explicit errors), that's also a problem
     /* c8 ignore next 5 - defensive: empty collection path only with malformed encrypted data */
-    if (convertedCount === 0) {
+    if (itemKeys.length > 0 && convertedCount === 0) {
       const errorMsg = `No items were converted from collection ${internal.ref.collectionId}`;
       this._logger.error(errorMsg);
       return fail(errorMsg);
@@ -1185,7 +1186,7 @@ export abstract class SubLibraryBase<
   public updateCollectionMetadata(
     collectionId: SourceId,
     metadata: Partial<ICollectionSourceMetadata>
-  ): Result<void> {
+  ): Result<ICollectionSourceMetadata> {
     // Validation - collections.get returns a DetailedResult, use .asResult to convert
     const collectionResult = this.collections.get(collectionId).asResult;
     if (collectionResult.isFailure()) {
@@ -1199,15 +1200,26 @@ export abstract class SubLibraryBase<
 
     // Validate metadata
     return this._validateMetadataUpdate(metadata).onSuccess(() => {
+      // If secretName is an empty string, treat it as a request to remove the secret
+      const omitSecret = metadata.secretName?.trim() === '';
+
       // Merge new metadata with existing metadata
       const existingMetadata = collection.metadata ?? {};
-      const mergedMetadata: ICollectionSourceMetadata = {
-        ...existingMetadata,
-        ...metadata
-      };
+      const mergedMetadata: ICollectionSourceMetadata = omitSecret
+        ? omit(
+            {
+              ...existingMetadata,
+              ...metadata
+            },
+            ['secretName']
+          )
+        : {
+            ...existingMetadata,
+            ...metadata
+          };
 
       // Use parent's setCollectionMetadata to persist the metadata
-      return this.setCollectionMetadata(collectionId, mergedMetadata).onSuccess(() => succeed(undefined));
+      return this.setCollectionMetadata(collectionId, mergedMetadata);
     });
   }
 
@@ -1237,10 +1249,14 @@ export abstract class SubLibraryBase<
 
     // Validate secretName if provided
     if (metadata.secretName !== undefined) {
-      if (metadata.secretName.trim() === '') {
-        aggregator.addMessage('Secret name cannot be empty');
-      } else if (metadata.secretName.length > 100) {
-        aggregator.addMessage('Secret name exceeds 100 characters');
+      const trimmed = metadata.secretName.trim();
+      // An empty secretName is treated as "remove the secret".
+      if (trimmed !== '') {
+        if (metadata.secretName.length > 100) {
+          aggregator.addMessage('Secret name exceeds 100 characters');
+        } else if (metadata.secretName !== trimmed) {
+          aggregator.addMessage('Secret name cannot have leading or trailing whitespace');
+        }
       }
     }
 

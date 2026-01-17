@@ -81,6 +81,7 @@ export function CollectionManagementPanel({
         id: collectionId,
         name: metadata?.name ?? collectionCtx?.name ?? collectionId,
         description: metadata?.description,
+        secretName: metadata?.secretName,
         isMutable: runtimeCollection?.isMutable ?? false,
         isProtected,
         isLocked,
@@ -672,15 +673,17 @@ export function AddIngredientDialog({
 
     markDirty(targetCollectionId);
 
-    const commitResult = commitCollection(targetCollectionId);
-    if (commitResult.isFailure()) {
-      setSaveError(commitResult.message);
-      setIsSaving(false);
-      return;
-    }
+    void (async () => {
+      const commitResult = await commitCollection(targetCollectionId);
+      if (commitResult.isFailure()) {
+        setSaveError(commitResult.message);
+        setIsSaving(false);
+        return;
+      }
 
-    setIsSaving(false);
-    onClose();
+      setIsSaving(false);
+      onClose();
+    })();
   };
 
   const ganacheTotalValue = ganacheTotal(ganache);

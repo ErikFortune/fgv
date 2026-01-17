@@ -7,6 +7,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ObservabilityProvider } from '@fgv/ts-chocolate-ui';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { SecretsProvider } from './contexts/SecretsContext';
 import { ChocolateProvider } from './contexts/ChocolateContext';
 import { EditingProvider } from './contexts/EditingContext';
 import { AppShell } from './components/layout';
@@ -164,13 +165,15 @@ function App(): React.ReactElement {
   return (
     <ThemeProvider>
       <SettingsProvider>
-        <ObservabilityProvider>
-          <ChocolateProvider>
-            <EditingProvider>
-              <AppContent />
-            </EditingProvider>
-          </ChocolateProvider>
-        </ObservabilityProvider>
+        <SecretsProvider>
+          <ObservabilityProvider>
+            <ChocolateProvider>
+              <EditingProvider>
+                <AppContent />
+              </EditingProvider>
+            </ChocolateProvider>
+          </ObservabilityProvider>
+        </SecretsProvider>
       </SettingsProvider>
     </ThemeProvider>
   );

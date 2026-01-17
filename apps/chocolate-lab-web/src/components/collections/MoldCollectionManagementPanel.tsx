@@ -387,15 +387,17 @@ export function AddMoldDialog({
         return;
       }
 
-      const commitResult = commitMoldCollection(targetCollectionId);
-      if (commitResult.isFailure()) {
-        setSaveError(commitResult.message);
-        setIsSaving(false);
-        return;
-      }
+      void (async () => {
+        const commitResult = await commitMoldCollection(targetCollectionId);
+        if (commitResult.isFailure()) {
+          setSaveError(commitResult.message);
+          setIsSaving(false);
+          return;
+        }
 
-      setIsSaving(false);
-      onClose();
+        setIsSaving(false);
+        onClose();
+      })();
     },
     [
       baseId,
@@ -949,6 +951,7 @@ export function MoldCollectionManagementPanel({
         id: collectionId,
         name: metadata?.name ?? collectionCtx?.name ?? collectionId,
         description: metadata?.description,
+        secretName: metadata?.secretName,
         isMutable: runtimeCollection?.isMutable ?? false,
         isProtected,
         isLocked,

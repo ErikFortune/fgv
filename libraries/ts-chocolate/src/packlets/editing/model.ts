@@ -301,7 +301,7 @@ export interface ICollectionManager<TBaseId extends string = string, TItem = unk
   readonly updateMetadata: (
     collectionId: SourceId,
     metadata: Partial<ICollectionSourceMetadata>
-  ) => Result<void>;
+  ) => Result<ICollectionSourceMetadata>;
 
   /**
    * Check if a collection exists.

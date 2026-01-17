@@ -169,7 +169,10 @@ export class CollectionManager<TCompositeId extends string, TBaseId extends stri
   /**
    * Update collection metadata.
    */
-  public updateMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<void> {
+  public updateMetadata(
+    collectionId: SourceId,
+    metadata: Partial<ICollectionSourceMetadata>
+  ): Result<ICollectionSourceMetadata> {
     // Delegate to public method
     return this._library.updateCollectionMetadata(collectionId, metadata);
   }

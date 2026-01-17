@@ -234,15 +234,17 @@ export function AddTaskDialog({
         return;
       }
 
-      const commitResult = commitTaskCollection(targetCollectionId);
-      if (commitResult.isFailure()) {
-        setSaveError(commitResult.message);
-        setIsSaving(false);
-        return;
-      }
+      void (async () => {
+        const commitResult = await commitTaskCollection(targetCollectionId);
+        if (commitResult.isFailure()) {
+          setSaveError(commitResult.message);
+          setIsSaving(false);
+          return;
+        }
 
-      setIsSaving(false);
-      onClose();
+        setIsSaving(false);
+        onClose();
+      })();
     },
     [
       baseId,
@@ -494,6 +496,7 @@ export function TaskCollectionManagementPanel({
         id: collectionId,
         name: metadata?.name ?? collectionCtx?.name ?? collectionId,
         description: metadata?.description,
+        secretName: metadata?.secretName,
         isMutable: runtimeCollection?.isMutable ?? false,
         isProtected,
         isLocked,

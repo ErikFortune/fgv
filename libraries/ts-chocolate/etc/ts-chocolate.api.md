@@ -543,7 +543,7 @@ class CollectionManager<TCompositeId extends string, TBaseId extends string, TIt
     get(collectionId: SourceId): Result<ICollectionSourceMetadata>;
     getAll(): ReadonlyArray<SourceId>;
     isMutable(collectionId: SourceId): Result<boolean>;
-    updateMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<void>;
+    updateMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
 }
 
 // @public
@@ -1794,7 +1794,7 @@ interface ICollectionManager<TBaseId extends string = string, TItem = unknown> {
     readonly get: (collectionId: SourceId) => Result<ICollectionSourceMetadata>;
     readonly getAll: () => ReadonlyArray<SourceId>;
     readonly isMutable: (collectionId: SourceId) => Result<boolean>;
-    readonly updateMetadata: (collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>) => Result<void>;
+    readonly updateMetadata: (collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>) => Result<ICollectionSourceMetadata>;
 }
 
 // @public
@@ -5411,7 +5411,7 @@ abstract class SubLibraryBase<TCompositeId extends string, TBaseId extends strin
     // Warning: (ae-unresolved-link) The @link reference could not be resolved: This type of declaration is not supported yet by the resolver
     //
     // @internal
-    updateCollectionMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<void>;
+    updateCollectionMetadata(collectionId: SourceId, metadata: Partial<ICollectionSourceMetadata>): Result<ICollectionSourceMetadata>;
 }
 
 // @public

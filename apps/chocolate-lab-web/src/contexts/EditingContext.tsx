@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useRef, ReactNode } from 'react';
 import {
+  Crypto,
   Editing,
   Entities,
   Converters as ChocolateConverters,
@@ -21,15 +22,23 @@ import {
   type SourceId,
   type LibraryData
 } from '@fgv/ts-chocolate';
+import type { JsonObject } from '@fgv/ts-json-base';
 import type { Result } from '@fgv/ts-utils';
 import { fail, recordFromEntries, succeed } from '@fgv/ts-utils';
 import { useChocolate } from './ChocolateContext';
+import { useSettings } from './SettingsContext';
+import { useSecrets } from './SecretsContext';
 
 const LOCAL_INGREDIENT_COLLECTIONS_KEY = 'chocolate-lab-web:ingredients:collections:v1';
 const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1';
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
+
+type ResolvedSecret = {
+  keyBase64: string;
+  keyDerivation?: Crypto.IKeyDerivationParams;
+};
 
 function readLocalIngredientCollections(): Record<string, unknown> {
   try {
@@ -44,6 +53,54 @@ function readLocalIngredientCollections(): Record<string, unknown> {
     return parsed as Record<string, unknown>;
   } catch {
     return {};
+  }
+}
+
+async function exportItemsToEncryptedJsonIfNeeded(
+  items: JsonObject,
+  sourceMetadata: LibraryData.ICollectionSourceMetadata | undefined,
+  collectionId: SourceId,
+  cryptoProvider: Crypto.BrowserCryptoProvider,
+  secrets: Record<string, ResolvedSecret>
+): Promise<Result<string | undefined>> {
+  const secretName = sourceMetadata?.secretName;
+  if (!secretName) {
+    return succeed(undefined);
+  }
+
+  const secret = secrets[secretName];
+  const keyBase64 = secret?.keyBase64;
+  if (!keyBase64) {
+    return fail(
+      `Collection is protected with secret "${secretName}" but no key is available. Unlock the collection to store its key, or add the key in settings.`
+    );
+  }
+
+  const keyResult = decodeBase64Key(keyBase64);
+  if (keyResult.isFailure()) {
+    return fail(`Invalid stored key for secret "${secretName}": ${keyResult.message}`);
+  }
+
+  const encryptResult = await Crypto.createEncryptedCollectionFile({
+    content: items,
+    secretName,
+    key: keyResult.value,
+    metadata: {
+      collectionId: collectionId as unknown as string,
+      description: sourceMetadata?.description,
+      itemCount: Object.keys(items).length
+    },
+    ...(secret?.keyDerivation ? { keyDerivation: secret.keyDerivation } : {}),
+    cryptoProvider
+  });
+  if (encryptResult.isFailure()) {
+    return fail(encryptResult.message);
+  }
+
+  try {
+    return succeed(JSON.stringify(encryptResult.value));
+  } catch (e) {
+    return fail(`Failed to serialize encrypted export: ${e instanceof Error ? e.message : String(e)}`);
   }
 }
 
@@ -131,6 +188,95 @@ function writeLocalTaskCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_TASK_COLLECTIONS_KEY, JSON.stringify(next));
 }
 
+function decodeBase64Key(value: string): Result<Uint8Array> {
+  try {
+    const bytes = Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
+    if (bytes.length !== 32) {
+      return fail(`Key must be 32 bytes (got ${bytes.length})`);
+    }
+    return succeed(bytes);
+  } catch (e) {
+    return fail(`Invalid base64 key: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+async function encryptItemsIfNeeded(
+  items: JsonObject,
+  sourceMetadata: LibraryData.ICollectionSourceMetadata | undefined,
+  collectionId: SourceId,
+  existingRecord: unknown,
+  cryptoProvider: Crypto.BrowserCryptoProvider,
+  secrets: Record<string, ResolvedSecret>
+): Promise<Result<unknown>> {
+  const newSecretName = sourceMetadata?.secretName;
+
+  // If the existing record is encrypted, verify we can decrypt it using its own secretName
+  // (this protects against data loss and also enables re-keying).
+  if (existingRecord && typeof existingRecord === 'object' && existingRecord !== null) {
+    const asObj = existingRecord as Record<string, unknown>;
+    if (Crypto.isEncryptedCollectionFile(asObj)) {
+      const existingSecretName = (asObj.secretName as unknown as string) ?? '';
+      const existingKeyBase64 = secrets[existingSecretName]?.keyBase64;
+      if (!existingKeyBase64) {
+        return fail(
+          `Refusing to overwrite existing encrypted collection: no key is available for secret "${existingSecretName}". Unlock the collection to store its key, or add the key in settings.`
+        );
+      }
+
+      const existingKeyResult = decodeBase64Key(existingKeyBase64);
+      if (existingKeyResult.isFailure()) {
+        return fail(
+          `Refusing to overwrite existing encrypted collection: invalid stored key for secret "${existingSecretName}": ${existingKeyResult.message}`
+        );
+      }
+
+      const verifyResult = await Crypto.tryDecryptCollectionFile(
+        asObj as unknown as JsonObject,
+        existingKeyResult.value,
+        cryptoProvider
+      );
+      if (verifyResult.isFailure()) {
+        return fail(
+          `Refusing to overwrite existing encrypted collection: could not decrypt with secret "${existingSecretName}": ${verifyResult.message}`
+        );
+      }
+    }
+  }
+
+  // If there is no new secretName, we are writing plaintext.
+  if (!newSecretName) {
+    return succeed(undefined);
+  }
+
+  const newSecret = secrets[newSecretName];
+  const newKeyBase64 = newSecret?.keyBase64;
+  if (!newKeyBase64) {
+    return fail(
+      `Collection is protected with secret "${newSecretName}" but no key is available. Unlock the collection to store its key, or add the key in settings.`
+    );
+  }
+
+  const newKeyResult = decodeBase64Key(newKeyBase64);
+  if (newKeyResult.isFailure()) {
+    return fail(`Invalid stored key for secret "${newSecretName}": ${newKeyResult.message}`);
+  }
+
+  const encryptResult = await Crypto.createEncryptedCollectionFile({
+    content: items,
+    secretName: newSecretName,
+    key: newKeyResult.value,
+    metadata: {
+      collectionId: collectionId as unknown as string,
+      description: sourceMetadata?.description,
+      itemCount: Object.keys(items).length
+    },
+    ...(newSecret?.keyDerivation ? { keyDerivation: newSecret.keyDerivation } : {}),
+    cryptoProvider
+  });
+
+  return encryptResult.isSuccess() ? succeed(encryptResult.value as unknown) : fail(encryptResult.message);
+}
+
 function getAllLocalCollectionIds(): SourceId[] {
   const ids = new Set<string>();
   for (const k of Object.keys(readLocalIngredientCollections())) {
@@ -172,6 +318,7 @@ export interface ICreateCollectionParams {
   name: string;
   /** Optional description */
   description?: string;
+  secretName?: string;
 }
 
 /**
@@ -239,66 +386,87 @@ export interface IEditingContext {
 
   // Collection management
   /** Create a new mutable collection */
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   /** Delete a mutable collection */
   deleteCollection: (collectionId: SourceId) => Result<void>;
   /** Rename a collection (update metadata) */
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
   /** Check if a collection is mutable */
   isCollectionMutable: (collectionId: SourceId) => boolean;
 
   // Export/Import
   /** Export a collection to string */
-  exportCollection: (params: IExportParams) => Result<string>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   /** Import a collection from string */
   importCollection: (params: IImportParams) => Result<void>;
 
   // Mold collection management
-  createMoldCollection: (params: ICreateCollectionParams) => Result<void>;
+  createMoldCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteMoldCollection: (collectionId: SourceId) => Result<void>;
-  renameMoldCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportMoldCollection: (params: IExportParams) => Result<string>;
+  renameMoldCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportMoldCollection: (params: IExportParams) => Promise<Result<string>>;
   importMoldCollection: (params: IImportParams) => Result<void>;
 
   // Filling collection management
-  createFillingCollection: (params: ICreateCollectionParams) => Result<void>;
+  createFillingCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteFillingCollection: (collectionId: SourceId) => Result<void>;
-  renameFillingCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportFillingCollection: (params: IExportParams) => Result<string>;
+  renameFillingCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportFillingCollection: (params: IExportParams) => Promise<Result<string>>;
   importFillingCollection: (params: IImportParams) => Result<void>;
 
   // Procedure collection management
-  createProcedureCollection: (params: ICreateCollectionParams) => Result<void>;
+  createProcedureCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteProcedureCollection: (collectionId: SourceId) => Result<void>;
   renameProcedureCollection: (
     collectionId: SourceId,
     newName: string,
-    newDescription?: string
-  ) => Result<void>;
-  exportProcedureCollection: (params: IExportParams) => Result<string>;
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportProcedureCollection: (params: IExportParams) => Promise<Result<string>>;
   importProcedureCollection: (params: IImportParams) => Result<void>;
 
   // Task collection management
-  createTaskCollection: (params: ICreateCollectionParams) => Result<void>;
+  createTaskCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteTaskCollection: (collectionId: SourceId) => Result<void>;
-  renameTaskCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportTaskCollection: (params: IExportParams) => Result<string>;
+  renameTaskCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportTaskCollection: (params: IExportParams) => Promise<Result<string>>;
   importTaskCollection: (params: IImportParams) => Result<void>;
 
   /** Commit current editor state back into the runtime library and refresh runtime caches */
-  commitCollection: (collectionId: SourceId) => Result<void>;
+  commitCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
   /** Persist a mutable mold collection to localStorage and refresh runtime caches */
-  commitMoldCollection: (collectionId: SourceId) => Result<void>;
+  commitMoldCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
   /** Persist a mutable filling collection to localStorage and refresh runtime caches */
-  commitFillingCollection: (collectionId: SourceId) => Result<void>;
+  commitFillingCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
   /** Persist a mutable procedure collection to localStorage and refresh runtime caches */
-  commitProcedureCollection: (collectionId: SourceId) => Result<void>;
+  commitProcedureCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
   /** Persist a mutable task collection to localStorage and refresh runtime caches */
-  commitTaskCollection: (collectionId: SourceId) => Result<void>;
+  commitTaskCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
   // Data version - increments when editing operations complete
   editingVersion: number;
@@ -318,37 +486,37 @@ const defaultEditingContext: IEditingContext = {
   markClean: () => undefined,
   localCollections: [],
   hasLocalChanges: false,
-  createCollection: () => fail('No EditingProvider'),
-  deleteCollection: () => fail('No EditingProvider'),
-  renameCollection: () => fail('No EditingProvider'),
+  createCollection: async () => fail('Editing context not initialized'),
+  deleteCollection: () => fail('Editing context not initialized'),
+  renameCollection: async () => fail('Editing context not initialized'),
   isCollectionMutable: () => false,
-  exportCollection: () => fail('No EditingProvider'),
+  exportCollection: async () => fail('No EditingProvider'),
   importCollection: () => fail('No EditingProvider'),
-  createMoldCollection: () => fail('No EditingProvider'),
-  deleteMoldCollection: () => fail('No EditingProvider'),
-  renameMoldCollection: () => fail('No EditingProvider'),
-  exportMoldCollection: () => fail('No EditingProvider'),
-  importMoldCollection: () => fail('No EditingProvider'),
-  createFillingCollection: () => fail('No EditingProvider'),
-  deleteFillingCollection: () => fail('No EditingProvider'),
-  renameFillingCollection: () => fail('No EditingProvider'),
-  exportFillingCollection: () => fail('No EditingProvider'),
-  importFillingCollection: () => fail('No EditingProvider'),
-  createProcedureCollection: () => fail('No EditingProvider'),
-  deleteProcedureCollection: () => fail('No EditingProvider'),
-  renameProcedureCollection: () => fail('No EditingProvider'),
-  exportProcedureCollection: () => fail('No EditingProvider'),
-  importProcedureCollection: () => fail('No EditingProvider'),
-  createTaskCollection: () => fail('No EditingProvider'),
-  deleteTaskCollection: () => fail('No EditingProvider'),
-  renameTaskCollection: () => fail('No EditingProvider'),
-  exportTaskCollection: () => fail('No EditingProvider'),
-  importTaskCollection: () => fail('No EditingProvider'),
-  commitCollection: () => fail('No EditingProvider'),
-  commitMoldCollection: () => fail('No EditingProvider'),
-  commitFillingCollection: () => fail('No EditingProvider'),
-  commitProcedureCollection: () => fail('No EditingProvider'),
-  commitTaskCollection: () => fail('No EditingProvider'),
+  createMoldCollection: async () => fail('Editing context not initialized'),
+  deleteMoldCollection: () => fail('Editing context not initialized'),
+  renameMoldCollection: async () => fail('Editing context not initialized'),
+  exportMoldCollection: async () => fail('Editing context not initialized'),
+  importMoldCollection: () => fail('Editing context not initialized'),
+  createFillingCollection: async () => fail('Editing context not initialized'),
+  deleteFillingCollection: () => fail('Editing context not initialized'),
+  renameFillingCollection: async () => fail('Editing context not initialized'),
+  exportFillingCollection: async () => fail('Editing context not initialized'),
+  importFillingCollection: () => fail('Editing context not initialized'),
+  createProcedureCollection: async () => fail('Editing context not initialized'),
+  deleteProcedureCollection: () => fail('Editing context not initialized'),
+  renameProcedureCollection: async () => fail('Editing context not initialized'),
+  exportProcedureCollection: async () => fail('Editing context not initialized'),
+  importProcedureCollection: () => fail('Editing context not initialized'),
+  createTaskCollection: async () => fail('Editing context not initialized'),
+  deleteTaskCollection: () => fail('Editing context not initialized'),
+  renameTaskCollection: async () => fail('Editing context not initialized'),
+  exportTaskCollection: async () => fail('Editing context not initialized'),
+  importTaskCollection: () => fail('Editing context not initialized'),
+  commitCollection: async () => fail('No EditingProvider'),
+  commitMoldCollection: async () => fail('No EditingProvider'),
+  commitFillingCollection: async () => fail('No EditingProvider'),
+  commitProcedureCollection: async () => fail('No EditingProvider'),
+  commitTaskCollection: async () => fail('No EditingProvider'),
   editingVersion: 0
 };
 
@@ -371,8 +539,24 @@ export interface IEditingProviderProps {
 /**
  * Provider component that manages editing state
  */
-export function EditingProvider({ children }: IEditingProviderProps): React.ReactElement {
+export function EditingProvider({ children }: { children: ReactNode }): React.ReactElement {
   const { runtime, notifyLibraryChanged } = useChocolate();
+  const { settings } = useSettings();
+  const { secrets: sessionSecrets } = useSecrets();
+
+  const resolvedSecrets = useMemo((): Record<string, ResolvedSecret> => {
+    const merged: Record<string, ResolvedSecret> = {};
+    for (const [name, keyBase64] of Object.entries(settings.secrets)) {
+      merged[name] = { keyBase64 };
+    }
+    for (const [name, secret] of Object.entries(sessionSecrets)) {
+      merged[name] = {
+        keyBase64: secret.keyBase64,
+        ...(secret.keyDerivation ? { keyDerivation: secret.keyDerivation } : {})
+      };
+    }
+    return merged;
+  }, [sessionSecrets, settings.secrets]);
 
   // Track active editors by collection ID
   const editorsRef = useRef<Map<SourceId, IEditorState>>(new Map());
@@ -389,7 +573,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
   }, []);
 
   const commitCollection = useCallback(
-    (collectionId: SourceId): Result<void> => {
+    async (collectionId: SourceId): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -430,8 +614,27 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items
         };
 
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
         const existing = readLocalIngredientCollections();
-        existing[collectionId] = sourceFile as unknown;
+        const prior = existing[collectionId as unknown as string];
+        const encryptedResult = await encryptItemsIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          collectionId,
+          prior,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encryptedResult.isFailure()) {
+          return fail(encryptedResult.message);
+        }
+
+        existing[collectionId] =
+          encryptedResult.value !== undefined ? encryptedResult.value : (sourceFile as unknown);
         writeLocalIngredientCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
@@ -446,11 +649,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
       return notifyLibraryChanged();
     },
-    [notifyLibraryChanged, runtime]
+    [notifyLibraryChanged, runtime, resolvedSecrets]
   );
 
   const commitMoldCollection = useCallback(
-    (collectionId: SourceId): Result<void> => {
+    async (collectionId: SourceId): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -472,8 +675,27 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items
         };
 
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
         const existing = readLocalMoldCollections();
-        existing[collectionId] = sourceFile as unknown;
+        const prior = existing[collectionId as unknown as string];
+        const encryptedResult = await encryptItemsIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          collectionId,
+          prior,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encryptedResult.isFailure()) {
+          return fail(encryptedResult.message);
+        }
+
+        existing[collectionId] =
+          encryptedResult.value !== undefined ? encryptedResult.value : (sourceFile as unknown);
         writeLocalMoldCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
@@ -485,11 +707,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
   );
 
   const createFillingCollection = useCallback(
-    (params: ICreateCollectionParams): Result<void> => {
+    async (params: ICreateCollectionParams): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -497,30 +719,64 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
         runtime.library.fillings
       );
-      const metadata: LibraryData.ICollectionSourceMetadata =
-        params.description !== undefined
-          ? { name: params.name, description: params.description }
-          : { name: params.name };
+      const secretName = params.secretName?.trim();
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: params.name,
+        ...(params.description !== undefined ? { description: params.description } : {}),
+        ...(secretName ? { secretName } : {})
+      };
 
-      return manager.create(params.collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalFillingCollections();
-          const sourceFile: LibraryData.ICollectionSourceFile<Filling> = {
+      const createResult = manager.create(params.collectionId, metadata);
+      if (createResult.isFailure()) {
+        return fail(createResult.message);
+      }
+
+      try {
+        const existing = readLocalFillingCollections();
+        const items = {} as unknown as JsonObject;
+        const sourceFile: LibraryData.ICollectionSourceFile<Filling> = {
+          metadata,
+          items: {}
+        };
+
+        if (metadata.secretName) {
+          const cryptoResult = Crypto.createBrowserCryptoProvider();
+          if (cryptoResult.isFailure()) {
+            return fail(`Crypto not available: ${cryptoResult.message}`);
+          }
+          const encrypted = await encryptItemsIfNeeded(
+            items,
             metadata,
-            items: {}
-          };
+            params.collectionId,
+            undefined,
+            cryptoResult.value,
+            resolvedSecrets
+          );
+          if (encrypted.isFailure()) {
+            return fail(encrypted.message);
+          }
+          if (encrypted.value === undefined) {
+            return fail('Failed to encrypt protected collection');
+          }
+          existing[params.collectionId] = encrypted.value;
+        } else {
           existing[params.collectionId] = sourceFile as unknown;
-          writeLocalFillingCollections(existing);
-          setLocalCollections(getAllLocalCollectionIds());
-        } catch {
-          // ignore
         }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+        writeLocalFillingCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${params.collectionId}": ${
+            e instanceof Error ? e.message : String(e)
+          }`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, resolvedSecrets, runtime]
   );
 
   const deleteFillingCollection = useCallback(
@@ -534,7 +790,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       );
       const result = manager.delete(collectionId);
 
-      return result.onSuccess(() => {
+      if (result.isSuccess()) {
         try {
           const existing = readLocalFillingCollections();
           if (collectionId in existing) {
@@ -548,57 +804,30 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
         incrementVersion();
         return notifyLibraryChanged();
-      });
-    },
-    [incrementVersion, notifyLibraryChanged, runtime]
-  );
-
-  const renameFillingCollection = useCallback(
-    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
-      if (!runtime) {
-        return fail('Runtime not loaded');
       }
 
-      const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
-        runtime.library.fillings
-      );
-      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
-        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
-
-      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalFillingCollections();
-          const stored = existing[collectionId];
-          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
-            const record = stored as Record<string, unknown>;
-            const existingMetadata = record.metadata;
-            const mergedMetadata =
-              typeof existingMetadata === 'object' &&
-              existingMetadata !== null &&
-              !Array.isArray(existingMetadata)
-                ? {
-                    ...(existingMetadata as Record<string, unknown>),
-                    ...(metadata as Record<string, unknown>)
-                  }
-                : (metadata as unknown);
-            record.metadata = mergedMetadata;
-            existing[collectionId] = stored;
-            writeLocalFillingCollections(existing);
-            setLocalCollections(getAllLocalCollectionIds());
-          }
-        } catch {
-          // ignore
+      // If the collection isn't loaded (e.g. locked protected collection), still allow deleting the
+      // persisted local override so you can recover from unknown keys/bad data.
+      try {
+        const existing = readLocalFillingCollections();
+        if (collectionId in existing) {
+          delete existing[collectionId];
+          writeLocalFillingCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+          incrementVersion();
+          return notifyLibraryChanged();
         }
+      } catch {
+        // ignore
+      }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+      return fail(result.message);
     },
     [incrementVersion, notifyLibraryChanged, runtime]
   );
 
   const exportFillingCollection = useCallback(
-    (params: IExportParams): Result<string> => {
+    async (params: IExportParams): Promise<Result<string>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -616,9 +845,35 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         items
       };
 
+      if (sourceFile.metadata?.secretName) {
+        if (params.format !== 'json') {
+          return fail('Protected collections can only be exported as encrypted JSON');
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          params.collectionId,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encrypted.isFailure()) {
+          return fail(encrypted.message);
+        }
+        if (encrypted.value === undefined) {
+          return fail('Failed to export protected collection');
+        }
+        return succeed(encrypted.value);
+      }
+
       return Editing.serializeCollection(sourceFile, params.format);
     },
-    [runtime]
+    [runtime, resolvedSecrets]
   );
 
   const importFillingCollection = useCallback(
@@ -685,7 +940,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
   );
 
   const commitFillingCollection = useCallback(
-    (collectionId: SourceId): Result<void> => {
+    async (collectionId: SourceId): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -707,8 +962,27 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items
         };
 
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
         const existing = readLocalFillingCollections();
-        existing[collectionId] = sourceFile as unknown;
+        const prior = existing[collectionId as unknown as string];
+        const encryptedResult = await encryptItemsIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          collectionId,
+          prior,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encryptedResult.isFailure()) {
+          return fail(encryptedResult.message);
+        }
+
+        existing[collectionId] =
+          encryptedResult.value !== undefined ? encryptedResult.value : (sourceFile as unknown);
         writeLocalFillingCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
@@ -720,11 +994,64 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
+  );
+
+  const renameFillingCollection = useCallback(
+    async (
+      collectionId: SourceId,
+      newName: string,
+      newDescription?: string,
+      secretName?: string
+    ): Promise<Result<void>> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.fillings.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+      if (!collectionResult.value.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+      const prevSecretName = collectionResult.value.metadata?.secretName;
+
+      const manager = new Editing.CollectionManager<FillingId, BaseFillingId, Filling>(
+        runtime.library.fillings
+      );
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> = {
+        name: newName,
+        ...(newDescription !== undefined ? { description: newDescription } : {}),
+        ...(secretName !== undefined ? { secretName } : {})
+      };
+
+      const updateResult = manager.updateMetadata(collectionId, metadata);
+      if (updateResult.isFailure()) {
+        return fail(updateResult.message);
+      }
+
+      const commitResult = await commitFillingCollection(collectionId);
+      if (commitResult.isFailure()) {
+        try {
+          const rollback: Partial<LibraryData.ICollectionSourceMetadata> = {
+            name: collectionResult.value.metadata?.name ?? newName,
+            ...(prevSecretName !== undefined ? { secretName: prevSecretName } : { secretName: '' })
+          };
+          manager.updateMetadata(collectionId, rollback);
+        } catch {
+          // ignore
+        }
+        return fail(commitResult.message);
+      }
+
+      return succeed(undefined);
+    },
+    [commitFillingCollection, runtime]
   );
 
   const commitProcedureCollection = useCallback(
-    (collectionId: SourceId): Result<void> => {
+    async (collectionId: SourceId): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -746,8 +1073,27 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items
         };
 
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
         const existing = readLocalProcedureCollections();
-        existing[collectionId] = sourceFile as unknown;
+        const prior = existing[collectionId as unknown as string];
+        const encryptedResult = await encryptItemsIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          collectionId,
+          prior,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encryptedResult.isFailure()) {
+          return fail(encryptedResult.message);
+        }
+
+        existing[collectionId] =
+          encryptedResult.value !== undefined ? encryptedResult.value : (sourceFile as unknown);
         writeLocalProcedureCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
@@ -759,11 +1105,11 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
   );
 
   const commitTaskCollection = useCallback(
-    (collectionId: SourceId): Result<void> => {
+    async (collectionId: SourceId): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -785,8 +1131,27 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
           items
         };
 
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
         const existing = readLocalTaskCollections();
-        existing[collectionId] = sourceFile as unknown;
+        const prior = existing[collectionId as unknown as string];
+        const encryptedResult = await encryptItemsIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          collectionId,
+          prior,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encryptedResult.isFailure()) {
+          return fail(encryptedResult.message);
+        }
+
+        existing[collectionId] =
+          encryptedResult.value !== undefined ? encryptedResult.value : (sourceFile as unknown);
         writeLocalTaskCollections(existing);
         setLocalCollections(getAllLocalCollectionIds());
       } catch (e) {
@@ -798,40 +1163,74 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
   );
 
   const createMoldCollection = useCallback(
-    (params: ICreateCollectionParams): Result<void> => {
+    async (params: ICreateCollectionParams): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
 
       const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
-      const metadata: LibraryData.ICollectionSourceMetadata =
-        params.description !== undefined
-          ? { name: params.name, description: params.description }
-          : { name: params.name };
+      const secretName = params.secretName?.trim();
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: params.name,
+        ...(params.description !== undefined ? { description: params.description } : {}),
+        ...(secretName ? { secretName } : {})
+      };
 
-      return manager.create(params.collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalMoldCollections();
-          const sourceFile: LibraryData.ICollectionSourceFile<Mold> = {
+      const createResult = manager.create(params.collectionId, metadata);
+      if (createResult.isFailure()) {
+        return fail(createResult.message);
+      }
+
+      try {
+        const existing = readLocalMoldCollections();
+        const items = {} as unknown as JsonObject;
+        const sourceFile: LibraryData.ICollectionSourceFile<Mold> = {
+          metadata,
+          items: {}
+        };
+
+        if (metadata.secretName) {
+          const cryptoResult = Crypto.createBrowserCryptoProvider();
+          if (cryptoResult.isFailure()) {
+            return fail(`Crypto not available: ${cryptoResult.message}`);
+          }
+          const encrypted = await encryptItemsIfNeeded(
+            items,
             metadata,
-            items: {}
-          };
+            params.collectionId,
+            undefined,
+            cryptoResult.value,
+            resolvedSecrets
+          );
+          if (encrypted.isFailure()) {
+            return fail(encrypted.message);
+          }
+          if (encrypted.value === undefined) {
+            return fail('Failed to encrypt protected collection');
+          }
+          existing[params.collectionId] = encrypted.value;
+        } else {
           existing[params.collectionId] = sourceFile as unknown;
-          writeLocalMoldCollections(existing);
-          setLocalCollections(getAllLocalCollectionIds());
-        } catch {
-          // ignore
         }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+        writeLocalMoldCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${params.collectionId}": ${
+            e instanceof Error ? e.message : String(e)
+          }`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, resolvedSecrets, runtime]
   );
 
   const deleteMoldCollection = useCallback(
@@ -843,7 +1242,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
       const result = manager.delete(collectionId);
 
-      return result.onSuccess(() => {
+      if (result.isSuccess()) {
         try {
           const existing = readLocalMoldCollections();
           if (collectionId in existing) {
@@ -857,55 +1256,56 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
         incrementVersion();
         return notifyLibraryChanged();
-      });
+      }
+
+      try {
+        const existing = readLocalMoldCollections();
+        if (collectionId in existing) {
+          delete existing[collectionId];
+          writeLocalMoldCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+          incrementVersion();
+          return notifyLibraryChanged();
+        }
+      } catch {
+        // ignore
+      }
+
+      return fail(result.message);
     },
     [incrementVersion, notifyLibraryChanged, runtime]
   );
 
   const renameMoldCollection = useCallback(
-    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+    async (
+      collectionId: SourceId,
+      newName: string,
+      newDescription?: string,
+      secretName?: string
+    ): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
 
       const manager = new Editing.CollectionManager<MoldId, BaseMoldId, Mold>(runtime.library.molds);
-      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
-        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> = {
+        name: newName,
+        ...(newDescription !== undefined ? { description: newDescription } : {}),
+        ...(secretName !== undefined ? { secretName } : {})
+      };
 
-      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalMoldCollections();
-          const stored = existing[collectionId];
-          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
-            const record = stored as Record<string, unknown>;
-            const existingMetadata = record.metadata;
-            const mergedMetadata =
-              typeof existingMetadata === 'object' &&
-              existingMetadata !== null &&
-              !Array.isArray(existingMetadata)
-                ? {
-                    ...(existingMetadata as Record<string, unknown>),
-                    ...(metadata as Record<string, unknown>)
-                  }
-                : (metadata as unknown);
-            record.metadata = mergedMetadata;
-            existing[collectionId] = stored;
-            writeLocalMoldCollections(existing);
-            setLocalCollections(getAllLocalCollectionIds());
-          }
-        } catch {
-          // ignore
-        }
+      const updateResult = manager.updateMetadata(collectionId, metadata);
+      if (updateResult.isFailure()) {
+        return fail(updateResult.message);
+      }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+      return await commitMoldCollection(collectionId);
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [commitMoldCollection, runtime]
   );
 
   const exportMoldCollection = useCallback(
-    (params: IExportParams): Result<string> => {
+    async (params: IExportParams): Promise<Result<string>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -923,9 +1323,35 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         items
       };
 
+      if (sourceFile.metadata?.secretName) {
+        if (params.format !== 'json') {
+          return fail('Protected collections can only be exported as encrypted JSON');
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          params.collectionId,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encrypted.isFailure()) {
+          return fail(encrypted.message);
+        }
+        if (encrypted.value === undefined) {
+          return fail('Failed to export protected collection');
+        }
+        return succeed(encrypted.value);
+      }
+
       return Editing.serializeCollection(sourceFile, params.format);
     },
-    [runtime]
+    [runtime, resolvedSecrets]
   );
 
   const importMoldCollection = useCallback(
@@ -990,7 +1416,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
   );
 
   const createProcedureCollection = useCallback(
-    (params: ICreateCollectionParams): Result<void> => {
+    async (params: ICreateCollectionParams): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -998,30 +1424,64 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       const manager = new Editing.CollectionManager<ProcedureId, BaseProcedureId, Procedure>(
         runtime.library.procedures
       );
-      const metadata: LibraryData.ICollectionSourceMetadata =
-        params.description !== undefined
-          ? { name: params.name, description: params.description }
-          : { name: params.name };
+      const secretName = params.secretName?.trim();
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: params.name,
+        ...(params.description !== undefined ? { description: params.description } : {}),
+        ...(secretName ? { secretName } : {})
+      };
 
-      return manager.create(params.collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalProcedureCollections();
-          const sourceFile: LibraryData.ICollectionSourceFile<Procedure> = {
+      const createResult = manager.create(params.collectionId, metadata);
+      if (createResult.isFailure()) {
+        return fail(createResult.message);
+      }
+
+      try {
+        const existing = readLocalProcedureCollections();
+        const items = {} as unknown as JsonObject;
+        const sourceFile: LibraryData.ICollectionSourceFile<Procedure> = {
+          metadata,
+          items: {}
+        };
+
+        if (metadata.secretName) {
+          const cryptoResult = Crypto.createBrowserCryptoProvider();
+          if (cryptoResult.isFailure()) {
+            return fail(`Crypto not available: ${cryptoResult.message}`);
+          }
+          const encrypted = await encryptItemsIfNeeded(
+            items,
             metadata,
-            items: {}
-          };
+            params.collectionId,
+            undefined,
+            cryptoResult.value,
+            resolvedSecrets
+          );
+          if (encrypted.isFailure()) {
+            return fail(encrypted.message);
+          }
+          if (encrypted.value === undefined) {
+            return fail('Failed to encrypt protected collection');
+          }
+          existing[params.collectionId] = encrypted.value;
+        } else {
           existing[params.collectionId] = sourceFile as unknown;
-          writeLocalProcedureCollections(existing);
-          setLocalCollections(getAllLocalCollectionIds());
-        } catch {
-          // ignore
         }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+        writeLocalProcedureCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${params.collectionId}": ${
+            e instanceof Error ? e.message : String(e)
+          }`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, resolvedSecrets, runtime]
   );
 
   const deleteProcedureCollection = useCallback(
@@ -1035,7 +1495,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       );
       const result = manager.delete(collectionId);
 
-      return result.onSuccess(() => {
+      if (result.isSuccess()) {
         try {
           const existing = readLocalProcedureCollections();
           if (collectionId in existing) {
@@ -1049,57 +1509,81 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
         incrementVersion();
         return notifyLibraryChanged();
-      });
+      }
+
+      try {
+        const existing = readLocalProcedureCollections();
+        if (collectionId in existing) {
+          delete existing[collectionId];
+          writeLocalProcedureCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+          incrementVersion();
+          return notifyLibraryChanged();
+        }
+      } catch {
+        // ignore
+      }
+
+      return fail(result.message);
     },
     [incrementVersion, notifyLibraryChanged, runtime]
   );
 
   const renameProcedureCollection = useCallback(
-    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+    async (
+      collectionId: SourceId,
+      newName: string,
+      newDescription?: string,
+      secretName?: string
+    ): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
 
+      const collectionResult = runtime.library.procedures.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+      if (!collectionResult.value.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+      const prevSecretName = collectionResult.value.metadata?.secretName;
+
       const manager = new Editing.CollectionManager<ProcedureId, BaseProcedureId, Procedure>(
         runtime.library.procedures
       );
-      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
-        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> = {
+        name: newName,
+        ...(newDescription !== undefined ? { description: newDescription } : {}),
+        ...(secretName !== undefined ? { secretName } : {})
+      };
 
-      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
+      const updateResult = manager.updateMetadata(collectionId, metadata);
+      if (updateResult.isFailure()) {
+        return fail(updateResult.message);
+      }
+
+      const commitResult = await commitProcedureCollection(collectionId);
+      if (commitResult.isFailure()) {
         try {
-          const existing = readLocalProcedureCollections();
-          const stored = existing[collectionId];
-          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
-            const record = stored as Record<string, unknown>;
-            const existingMetadata = record.metadata;
-            const mergedMetadata =
-              typeof existingMetadata === 'object' &&
-              existingMetadata !== null &&
-              !Array.isArray(existingMetadata)
-                ? {
-                    ...(existingMetadata as Record<string, unknown>),
-                    ...(metadata as Record<string, unknown>)
-                  }
-                : (metadata as unknown);
-            record.metadata = mergedMetadata;
-            existing[collectionId] = stored;
-            writeLocalProcedureCollections(existing);
-            setLocalCollections(getAllLocalCollectionIds());
-          }
+          const rollback: Partial<LibraryData.ICollectionSourceMetadata> = {
+            name: collectionResult.value.metadata?.name ?? newName,
+            ...(prevSecretName !== undefined ? { secretName: prevSecretName } : { secretName: '' })
+          };
+          manager.updateMetadata(collectionId, rollback);
         } catch {
           // ignore
         }
+        return fail(commitResult.message);
+      }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+      return succeed(undefined);
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [commitProcedureCollection, runtime]
   );
 
   const exportProcedureCollection = useCallback(
-    (params: IExportParams): Result<string> => {
+    async (params: IExportParams): Promise<Result<string>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -1117,9 +1601,35 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         items
       };
 
+      if (sourceFile.metadata?.secretName) {
+        if (params.format !== 'json') {
+          return fail('Protected collections can only be exported as encrypted JSON');
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          params.collectionId,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encrypted.isFailure()) {
+          return fail(encrypted.message);
+        }
+        if (encrypted.value === undefined) {
+          return fail('Failed to export protected collection');
+        }
+        return succeed(encrypted.value);
+      }
+
       return Editing.serializeCollection(sourceFile, params.format);
     },
-    [runtime]
+    [runtime, resolvedSecrets]
   );
 
   const importProcedureCollection = useCallback(
@@ -1186,36 +1696,70 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
   );
 
   const createTaskCollection = useCallback(
-    (params: ICreateCollectionParams): Result<void> => {
+    async (params: ICreateCollectionParams): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
 
       const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
-      const metadata: LibraryData.ICollectionSourceMetadata =
-        params.description !== undefined
-          ? { name: params.name, description: params.description }
-          : { name: params.name };
+      const secretName = params.secretName?.trim();
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: params.name,
+        ...(params.description !== undefined ? { description: params.description } : {}),
+        ...(secretName ? { secretName } : {})
+      };
 
-      return manager.create(params.collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalTaskCollections();
-          const sourceFile: LibraryData.ICollectionSourceFile<Task> = {
+      const createResult = manager.create(params.collectionId, metadata);
+      if (createResult.isFailure()) {
+        return fail(createResult.message);
+      }
+
+      try {
+        const existing = readLocalTaskCollections();
+        const items = {} as unknown as JsonObject;
+        const sourceFile: LibraryData.ICollectionSourceFile<Task> = {
+          metadata,
+          items: {}
+        };
+
+        if (metadata.secretName) {
+          const cryptoResult = Crypto.createBrowserCryptoProvider();
+          if (cryptoResult.isFailure()) {
+            return fail(`Crypto not available: ${cryptoResult.message}`);
+          }
+          const encrypted = await encryptItemsIfNeeded(
+            items,
             metadata,
-            items: {}
-          };
+            params.collectionId,
+            undefined,
+            cryptoResult.value,
+            resolvedSecrets
+          );
+          if (encrypted.isFailure()) {
+            return fail(encrypted.message);
+          }
+          if (encrypted.value === undefined) {
+            return fail('Failed to encrypt protected collection');
+          }
+          existing[params.collectionId] = encrypted.value;
+        } else {
           existing[params.collectionId] = sourceFile as unknown;
-          writeLocalTaskCollections(existing);
-          setLocalCollections(getAllLocalCollectionIds());
-        } catch {
-          // ignore
         }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+        writeLocalTaskCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${params.collectionId}": ${
+            e instanceof Error ? e.message : String(e)
+          }`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [incrementVersion, notifyLibraryChanged, resolvedSecrets, runtime]
   );
 
   const deleteTaskCollection = useCallback(
@@ -1227,7 +1771,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
       const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
       const result = manager.delete(collectionId);
 
-      return result.onSuccess(() => {
+      if (result.isSuccess()) {
         try {
           const existing = readLocalTaskCollections();
           if (collectionId in existing) {
@@ -1241,55 +1785,56 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
         incrementVersion();
         return notifyLibraryChanged();
-      });
+      }
+
+      try {
+        const existing = readLocalTaskCollections();
+        if (collectionId in existing) {
+          delete existing[collectionId];
+          writeLocalTaskCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+          incrementVersion();
+          return notifyLibraryChanged();
+        }
+      } catch {
+        // ignore
+      }
+
+      return fail(result.message);
     },
     [incrementVersion, notifyLibraryChanged, runtime]
   );
 
   const renameTaskCollection = useCallback(
-    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+    async (
+      collectionId: SourceId,
+      newName: string,
+      newDescription?: string,
+      secretName?: string
+    ): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
 
       const manager = new Editing.CollectionManager<TaskId, BaseTaskId, Task>(runtime.library.tasks);
-      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
-        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> = {
+        name: newName,
+        ...(newDescription !== undefined ? { description: newDescription } : {}),
+        ...(secretName !== undefined ? { secretName } : {})
+      };
 
-      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
-        try {
-          const existing = readLocalTaskCollections();
-          const stored = existing[collectionId];
-          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
-            const record = stored as Record<string, unknown>;
-            const existingMetadata = record.metadata;
-            const mergedMetadata =
-              typeof existingMetadata === 'object' &&
-              existingMetadata !== null &&
-              !Array.isArray(existingMetadata)
-                ? {
-                    ...(existingMetadata as Record<string, unknown>),
-                    ...(metadata as Record<string, unknown>)
-                  }
-                : (metadata as unknown);
-            record.metadata = mergedMetadata;
-            existing[collectionId] = stored;
-            writeLocalTaskCollections(existing);
-            setLocalCollections(getAllLocalCollectionIds());
-          }
-        } catch {
-          // ignore
-        }
+      const updateResult = manager.updateMetadata(collectionId, metadata);
+      if (updateResult.isFailure()) {
+        return fail(updateResult.message);
+      }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+      return await commitTaskCollection(collectionId);
     },
-    [incrementVersion, notifyLibraryChanged, runtime]
+    [commitTaskCollection, runtime]
   );
 
   const exportTaskCollection = useCallback(
-    (params: IExportParams): Result<string> => {
+    async (params: IExportParams): Promise<Result<string>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -1307,9 +1852,35 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         items
       };
 
+      if (sourceFile.metadata?.secretName) {
+        if (params.format !== 'json') {
+          return fail('Protected collections can only be exported as encrypted JSON');
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          params.collectionId,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encrypted.isFailure()) {
+          return fail(encrypted.message);
+        }
+        if (encrypted.value === undefined) {
+          return fail('Failed to export protected collection');
+        }
+        return succeed(encrypted.value);
+      }
+
       return Editing.serializeCollection(sourceFile, params.format);
     },
-    [runtime]
+    [runtime, resolvedSecrets]
   );
 
   const importTaskCollection = useCallback(
@@ -1481,7 +2052,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
   // Create a new collection
   const createCollection = useCallback(
-    (params: ICreateCollectionParams): Result<void> => {
+    async (params: ICreateCollectionParams): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -1490,31 +2061,65 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         runtime.library.ingredients
       );
 
-      const metadata: LibraryData.ICollectionSourceMetadata =
-        params.description !== undefined
-          ? { name: params.name, description: params.description }
-          : { name: params.name };
+      const secretName = params.secretName?.trim();
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: params.name,
+        ...(params.description !== undefined ? { description: params.description } : {}),
+        ...(secretName ? { secretName } : {})
+      };
 
-      return manager.create(params.collectionId, metadata).onSuccess(() => {
-        // Persist empty collection file immediately so it survives reload
-        try {
-          const existing = readLocalIngredientCollections();
-          const sourceFile: LibraryData.ICollectionSourceFile<Ingredient> = {
+      const createResult = manager.create(params.collectionId, metadata);
+      if (createResult.isFailure()) {
+        return fail(createResult.message);
+      }
+
+      // Persist empty collection file immediately so it survives reload
+      try {
+        const existing = readLocalIngredientCollections();
+        const items = {} as unknown as JsonObject;
+        const sourceFile: LibraryData.ICollectionSourceFile<Ingredient> = {
+          metadata,
+          items: {}
+        };
+
+        if (metadata.secretName) {
+          const cryptoResult = Crypto.createBrowserCryptoProvider();
+          if (cryptoResult.isFailure()) {
+            return fail(`Crypto not available: ${cryptoResult.message}`);
+          }
+          const encrypted = await encryptItemsIfNeeded(
+            items,
             metadata,
-            items: {}
-          };
+            params.collectionId,
+            undefined,
+            cryptoResult.value,
+            resolvedSecrets
+          );
+          if (encrypted.isFailure()) {
+            return fail(encrypted.message);
+          }
+          if (encrypted.value === undefined) {
+            return fail('Failed to encrypt protected collection');
+          }
+          existing[params.collectionId] = encrypted.value;
+        } else {
           existing[params.collectionId] = sourceFile as unknown;
-          writeLocalIngredientCollections(existing);
-          setLocalCollections(getAllLocalCollectionIds());
-        } catch {
-          // ignore persistence errors here; collection still exists in runtime
         }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+        writeLocalIngredientCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${params.collectionId}": ${
+            e instanceof Error ? e.message : String(e)
+          }`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
     },
-    [notifyLibraryChanged, runtime, incrementVersion]
+    [incrementVersion, notifyLibraryChanged, resolvedSecrets, runtime]
   );
 
   // Delete a collection
@@ -1533,7 +2138,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
       const result = manager.delete(collectionId);
 
-      return result.onSuccess(() => {
+      if (result.isSuccess()) {
         // Remove local persisted override (if any)
         try {
           const existing = readLocalIngredientCollections();
@@ -1548,14 +2153,36 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
         incrementVersion();
         return notifyLibraryChanged();
-      });
+      }
+
+      // If the collection isn't loaded (e.g. locked protected collection), still allow deleting the
+      // persisted local override so you can recover from unknown keys/bad data.
+      try {
+        const existing = readLocalIngredientCollections();
+        if (collectionId in existing) {
+          delete existing[collectionId];
+          writeLocalIngredientCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+          incrementVersion();
+          return notifyLibraryChanged();
+        }
+      } catch {
+        // ignore
+      }
+
+      return fail(result.message);
     },
     [runtime, closeEditor, incrementVersion, notifyLibraryChanged]
   );
 
   // Rename a collection
   const renameCollection = useCallback(
-    (collectionId: SourceId, newName: string, newDescription?: string): Result<void> => {
+    async (
+      collectionId: SourceId,
+      newName: string,
+      newDescription?: string,
+      secretName?: string
+    ): Promise<Result<void>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -1564,40 +2191,20 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         runtime.library.ingredients
       );
 
-      const metadata: Partial<LibraryData.ICollectionSourceMetadata> =
-        newDescription !== undefined ? { name: newName, description: newDescription } : { name: newName };
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> = {
+        name: newName,
+        ...(newDescription !== undefined ? { description: newDescription } : {}),
+        ...(secretName !== undefined ? { secretName } : {})
+      };
 
-      return manager.updateMetadata(collectionId, metadata).onSuccess(() => {
-        // If locally persisted, update stored metadata
-        try {
-          const existing = readLocalIngredientCollections();
-          const stored = existing[collectionId];
-          if (typeof stored === 'object' && stored !== null && !Array.isArray(stored)) {
-            const record = stored as Record<string, unknown>;
-            const existingMetadata = record.metadata;
-            const mergedMetadata =
-              typeof existingMetadata === 'object' &&
-              existingMetadata !== null &&
-              !Array.isArray(existingMetadata)
-                ? {
-                    ...(existingMetadata as Record<string, unknown>),
-                    ...(metadata as Record<string, unknown>)
-                  }
-                : (metadata as unknown);
-            record.metadata = mergedMetadata;
-            existing[collectionId] = stored;
-            writeLocalIngredientCollections(existing);
-            setLocalCollections(getAllLocalCollectionIds());
-          }
-        } catch {
-          // ignore
-        }
+      const updateResult = manager.updateMetadata(collectionId, metadata);
+      if (updateResult.isFailure()) {
+        return fail(updateResult.message);
+      }
 
-        incrementVersion();
-        return notifyLibraryChanged();
-      });
+      return await commitCollection(collectionId);
     },
-    [notifyLibraryChanged, runtime, incrementVersion]
+    [commitCollection, runtime]
   );
 
   // Check if collection is mutable
@@ -1615,7 +2222,7 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
 
   // Export a collection
   const exportCollection = useCallback(
-    (params: IExportParams): Result<string> => {
+    async (params: IExportParams): Promise<Result<string>> => {
       if (!runtime) {
         return fail('Runtime not loaded');
       }
@@ -1635,10 +2242,36 @@ export function EditingProvider({ children }: IEditingProviderProps): React.Reac
         items
       };
 
+      if (sourceFile.metadata?.secretName) {
+        if (params.format !== 'json') {
+          return fail('Protected collections can only be exported as encrypted JSON');
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          params.collectionId,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encrypted.isFailure()) {
+          return fail(encrypted.message);
+        }
+        if (encrypted.value === undefined) {
+          return fail('Failed to export protected collection');
+        }
+        return succeed(encrypted.value);
+      }
+
       // Serialize based on format
       return Editing.serializeCollection(sourceFile, params.format);
     },
-    [runtime]
+    [runtime, resolvedSecrets]
   );
 
   // Import a collection
@@ -1870,11 +2503,16 @@ export function useIngredientEditor(collectionId: SourceId | null): {
  * Hook for collection management operations
  */
 export function useCollectionManager(): {
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
   isCollectionMutable: (collectionId: SourceId) => boolean;
-  exportCollection: (params: IExportParams) => Result<string>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
 } {
   const {
@@ -1897,10 +2535,15 @@ export function useCollectionManager(): {
 }
 
 export function useMoldCollectionManager(): {
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportCollection: (params: IExportParams) => Result<string>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
 } {
   const {
@@ -1921,10 +2564,15 @@ export function useMoldCollectionManager(): {
 }
 
 export function useTaskCollectionManager(): {
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportCollection: (params: IExportParams) => Result<string>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
 } {
   const {
@@ -1945,10 +2593,15 @@ export function useTaskCollectionManager(): {
 }
 
 export function useFillingCollectionManager(): {
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportCollection: (params: IExportParams) => Result<string>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
 } {
   const {
@@ -1969,10 +2622,15 @@ export function useFillingCollectionManager(): {
 }
 
 export function useProcedureCollectionManager(): {
-  createCollection: (params: ICreateCollectionParams) => Result<void>;
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
-  renameCollection: (collectionId: SourceId, newName: string, newDescription?: string) => Result<void>;
-  exportCollection: (params: IExportParams) => Result<string>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
 } {
   const {

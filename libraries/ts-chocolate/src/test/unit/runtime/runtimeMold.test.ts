@@ -59,6 +59,23 @@ describe('RuntimeMold', () => {
     format: 'custom' as MoldFormat
   };
 
+  const gridMold: IMold = {
+    baseId: 'grid-mold' as BaseMoldId,
+    manufacturer: 'Polycarbonate',
+    productNumber: 'PC-GRID-001',
+    description: 'Grid layout mold',
+    cavities: {
+      kind: 'grid',
+      columns: 4,
+      rows: 3,
+      info: {
+        weight: 5 as Measurement
+      }
+    },
+    format: 'polycarbonate-275x175' as MoldFormat,
+    related: ['cw.cw-2227' as MoldId, 'cw.cw-2228' as MoldId]
+  };
+
   describe('create', () => {
     test('should create RuntimeMold from IMold', () => {
       const moldId = 'cw.cw-2227' as MoldId;
@@ -139,8 +156,44 @@ describe('RuntimeMold', () => {
           expect(runtimeMold.cavityDimensions).toBeUndefined();
           expect(runtimeMold.tags).toBeUndefined();
           expect(runtimeMold.notes).toBeUndefined();
+          expect(runtimeMold.related).toBeUndefined();
         }
       );
+    });
+  });
+
+  describe('cavities', () => {
+    test('should expose cavities definition directly', () => {
+      const moldId = 'cw.cw-2227' as MoldId;
+      const runtimeMold = RuntimeMold.create(mockContext, moldId, simpleMold).orThrow();
+
+      expect(runtimeMold.cavities).toBe(simpleMold.cavities);
+      expect(runtimeMold.cavities.kind).toBe('count');
+    });
+  });
+
+  describe('grid mold support', () => {
+    test('should calculate cavityCount for grid-type molds', () => {
+      const moldId = 'pc.grid-mold' as MoldId;
+      const runtimeMold = RuntimeMold.create(mockContext, moldId, gridMold).orThrow();
+
+      // 4 columns * 3 rows = 12 cavities
+      expect(runtimeMold.cavityCount).toBe(12);
+    });
+
+    test('should calculate totalCapacity for grid-type molds', () => {
+      const moldId = 'pc.grid-mold' as MoldId;
+      const runtimeMold = RuntimeMold.create(mockContext, moldId, gridMold).orThrow();
+
+      // 12 cavities * 5g each = 60g
+      expect(runtimeMold.totalCapacity).toBe(60);
+    });
+
+    test('should expose related molds', () => {
+      const moldId = 'pc.grid-mold' as MoldId;
+      const runtimeMold = RuntimeMold.create(mockContext, moldId, gridMold).orThrow();
+
+      expect(runtimeMold.related).toEqual(['cw.cw-2227', 'cw.cw-2228']);
     });
   });
 });
