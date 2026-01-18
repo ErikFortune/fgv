@@ -13,7 +13,8 @@ import {
   KeyIcon,
   StarIcon,
   ArrowDownTrayIcon,
-  ArrowUpOnSquareIcon
+  ArrowUpOnSquareIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
@@ -144,7 +145,7 @@ function RenameDialog({
 export interface ICollectionManagementPanelBaseProps {
   className?: string;
   toolId: string;
-  collectionInfos: ReadonlyArray<ICollectionInfo>;
+  collectionInfos: ICollectionInfo[];
   createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
   deleteCollection: (collectionId: SourceId) => Result<void>;
   renameCollection: (
@@ -155,6 +156,8 @@ export interface ICollectionManagementPanelBaseProps {
   ) => Promise<Result<void>>;
   exportCollection: (params: IExportParams) => Promise<Result<string>>;
   importCollection: (params: IImportParams) => Result<void>;
+  saveCollection?: (collectionId: SourceId) => Promise<Result<void>>;
+  saveAll?: () => Promise<Result<void>>;
   selectedCollectionIds?: ReadonlyArray<string>;
   onToggleSelected?: (collectionId: string) => void;
   showHeader?: boolean;
@@ -183,13 +186,21 @@ export function CollectionManagementPanelBase({
   renameCollection,
   exportCollection,
   importCollection,
+  saveCollection,
+  saveAll,
   selectedCollectionIds,
   onToggleSelected,
   showHeader = true
 }: ICollectionManagementPanelBaseProps): React.ReactElement {
   const { settings, setDefaultCollection } = useSettings();
   const { getSecretKeyBase64 } = useSecrets();
-  const { loadSubLibraryFromZip, loadSubLibraryFromFolder, loadLibraryFromZip } = useChocolate();
+  const {
+    loadSubLibraryFromZip,
+    loadSubLibraryFromFolder,
+    loadLibraryFromZip,
+    loadLibraryFromFolder,
+    clearExternalSources
+  } = useChocolate();
 
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<SourceId | null>(null);
@@ -215,8 +226,12 @@ export function CollectionManagementPanelBase({
   const [isImportLoading, setIsImportLoading] = useState(false);
   const [isImportFolderLoading, setIsImportFolderLoading] = useState(false);
   const [isZipLibraryLoading, setIsZipLibraryLoading] = useState(false);
+  const [isFolderLibraryLoading, setIsFolderLibraryLoading] = useState(false);
+  const [isDetachingExternal, setIsDetachingExternal] = useState(false);
   const [isZipExportLoading, setIsZipExportLoading] = useState(false);
   const [isFolderExportLoading, setIsFolderExportLoading] = useState(false);
+  const [isSaveAllLoading, setIsSaveAllLoading] = useState(false);
+  const [saveLoadingId, setSaveLoadingId] = useState<SourceId | null>(null);
 
   const handleDelete = useCallback(
     (collectionId: SourceId) => {
@@ -305,11 +320,37 @@ export function CollectionManagementPanelBase({
   return (
     <div className={`space-y-4 ${className}`}>
       {showHeader && (
-        <div className={`flex items-center ${headerTitle ? 'justify-between' : 'justify-end'}`}>
+        <div className={`flex items-center gap-2 ${headerTitle ? '' : 'justify-end'}`}>
           {headerTitle ? (
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{headerTitle}</h3>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 min-w-0 flex-1 truncate">
+              {headerTitle}
+            </h3>
           ) : null}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2 ml-auto">
+            {saveAll && (
+              <button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setIsSaveAllLoading(true);
+                  void (async () => {
+                    try {
+                      const result = await saveAll();
+                      if (result.isFailure()) {
+                        setError(result.message);
+                      }
+                    } finally {
+                      setIsSaveAllLoading(false);
+                    }
+                  })();
+                }}
+                disabled={isSaveAllLoading || collectionInfos.every((c) => !c.isDirty)}
+                className="px-2 py-1 text-xs font-medium rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                title="Save all dirty collections"
+              >
+                Save All
+              </button>
+            )}
             <input
               ref={importInputRef}
               type="file"
@@ -402,6 +443,50 @@ export function CollectionManagementPanelBase({
               type="button"
               onClick={() => {
                 setError(null);
+                setIsFolderLibraryLoading(true);
+                void (async () => {
+                  try {
+                    const result = await loadLibraryFromFolder();
+                    if (result.isFailure()) {
+                      setError(result.message);
+                    }
+                  } finally {
+                    setIsFolderLibraryLoading(false);
+                  }
+                })();
+              }}
+              disabled={isFolderLibraryLoading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Load full library from folder"
+            >
+              <ArrowDownOnSquareIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setIsDetachingExternal(true);
+                void (async () => {
+                  try {
+                    const result = await clearExternalSources();
+                    if (result.isFailure()) {
+                      setError(result.message);
+                    }
+                  } finally {
+                    setIsDetachingExternal(false);
+                  }
+                })();
+              }}
+              disabled={isDetachingExternal}
+              className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 disabled:opacity-50"
+              title="Detach external imports"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
                 setIsZipExportLoading(true);
                 void (async () => {
                   try {
@@ -414,14 +499,23 @@ export function CollectionManagementPanelBase({
 
                     const files: Array<{ path: string; contents: string }> = [];
                     for (const c of exportable) {
-                      const contentResult = await exportCollection({ collectionId: c.id, format: 'json' });
+                      const requestedFormat = c.isProtected
+                        ? settings.preferredProtectedExportFormat
+                        : settings.preferredRawExportFormat;
+                      const exportFormat = c.isProtected ? 'json' : requestedFormat;
+                      const extension = exportFormat === 'yaml' ? 'yaml' : 'json';
+
+                      const contentResult = await exportCollection({
+                        collectionId: c.id,
+                        format: exportFormat
+                      });
                       if (contentResult.isFailure()) {
                         setError(contentResult.message);
                         setIsZipExportLoading(false);
                         return;
                       }
                       files.push({
-                        path: `data/${toolId}/${c.id as string}.json`,
+                        path: `data/${toolId}/${c.id as string}.${extension}`,
                         contents: contentResult.value
                       });
                     }
@@ -496,14 +590,23 @@ export function CollectionManagementPanelBase({
                     const subDir = await dataDir.getDirectoryHandle(toolId, { create: true });
 
                     for (const c of exportable) {
-                      const contentResult = await exportCollection({ collectionId: c.id, format: 'json' });
+                      const requestedFormat = c.isProtected
+                        ? settings.preferredProtectedExportFormat
+                        : settings.preferredRawExportFormat;
+                      const exportFormat = c.isProtected ? 'json' : requestedFormat;
+                      const extension = exportFormat === 'yaml' ? 'yaml' : 'json';
+
+                      const contentResult = await exportCollection({
+                        collectionId: c.id,
+                        format: exportFormat
+                      });
                       if (contentResult.isFailure()) {
                         setError(contentResult.message);
                         setIsFolderExportLoading(false);
                         return;
                       }
 
-                      const fileHandle = await subDir.getFileHandle(`${c.id as string}.json`, {
+                      const fileHandle = await subDir.getFileHandle(`${c.id as string}.${extension}`, {
                         create: true
                       });
                       const writable = await fileHandle.createWritable({ keepExistingData: false });
@@ -578,6 +681,27 @@ export function CollectionManagementPanelBase({
                 onRename={() => setShowRenameDialog(info.id)}
                 onDelete={() => setShowDeleteConfirm(info.id)}
                 onExport={() => setShowExportDialog(info.id)}
+                onSave={
+                  saveCollection
+                    ? () => {
+                        if (saveLoadingId) {
+                          return;
+                        }
+                        setError(null);
+                        setSaveLoadingId(info.id);
+                        void (async () => {
+                          try {
+                            const result = await saveCollection(info.id);
+                            if (result.isFailure()) {
+                              setError(result.message);
+                            }
+                          } finally {
+                            setSaveLoadingId(null);
+                          }
+                        })();
+                      }
+                    : undefined
+                }
                 onAddItem={() => {
                   if (!onAddItem) {
                     return;
@@ -697,6 +821,7 @@ function CollectionListItem({
   onRename,
   onDelete,
   onExport,
+  onSave,
   canAddItem,
   onAddItem,
   addItemTitle
@@ -711,15 +836,23 @@ function CollectionListItem({
   onRename: () => void;
   onDelete: () => void;
   onExport: () => void;
+  onSave?: () => void;
   canAddItem: boolean;
   onAddItem: () => void;
   addItemTitle: string;
 }): React.ReactElement {
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onToggleSelected}
-      className={`w-full flex items-center justify-between p-2 rounded-lg border text-left transition-colors ${
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onToggleSelected();
+        }
+      }}
+      className={`w-full flex flex-wrap items-center gap-2 p-2 rounded-lg border text-left transition-colors ${
         info.isLocked
           ? 'opacity-60 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
           : isSelected
@@ -728,7 +861,7 @@ function CollectionListItem({
       }`}
       title={info.isLocked ? `Click to unlock ${info.name}` : info.name}
     >
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 flex-auto">
         {info.isLocked ? (
           <LockClosedIcon className="w-4 h-4 text-gray-400 flex-shrink-0" title="Locked" />
         ) : info.isMutable ? (
@@ -744,12 +877,25 @@ function CollectionListItem({
           />
         )}
 
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{info.name}</span>
-            {info.isDirty && (
-              <span className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full" title="Unsaved changes" />
-            )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate min-w-0 flex-1">
+              {info.name}
+            </span>
+            {info.isDirty &&
+              (onSave && info.isMutable && !info.isLocked ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSave();
+                  }}
+                  className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full"
+                  title="Unsaved changes (click to save)"
+                />
+              ) : (
+                <span className="flex-shrink-0 w-2 h-2 bg-amber-500 rounded-full" title="Unsaved changes" />
+              ))}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">
             {info.itemCount} {info.itemCount === 1 ? itemLabelSingular : itemLabelPlural}
@@ -757,7 +903,7 @@ function CollectionListItem({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-1 flex-shrink-0 justify-end">
         {info.isMutable && !info.isLocked && (
           <button
             type="button"
@@ -817,6 +963,21 @@ function CollectionListItem({
           <ArrowDownOnSquareIcon className="w-4 h-4" />
         </button>
 
+        {onSave && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSave();
+            }}
+            disabled={!info.isDirty || info.isLocked || !info.isMutable}
+            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-50"
+            title="Save"
+          >
+            <ArrowUpOnSquareIcon className="w-4 h-4" />
+          </button>
+        )}
+
         {info.isMutable && (
           <button
             type="button"
@@ -831,7 +992,7 @@ function CollectionListItem({
           </button>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 

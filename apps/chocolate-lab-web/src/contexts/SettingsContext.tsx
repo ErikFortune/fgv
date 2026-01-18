@@ -16,6 +16,8 @@ export type ViewMode = 'grid' | 'list';
  */
 export type SortDirection = 'asc' | 'desc';
 
+export type ExportFormat = 'yaml' | 'json';
+
 /**
  * Collection settings
  */
@@ -38,6 +40,8 @@ export interface IAppSettings {
   showCollectionBadges: boolean;
   /** Whether to show the messages pane */
   showMessagesPane: boolean;
+  preferredRawExportFormat: ExportFormat;
+  preferredProtectedExportFormat: ExportFormat;
   /** Stored encryption keys by secret name (base64-encoded 32-byte keys) */
   secrets: Record<string, string>;
   /** Per-collection settings */
@@ -55,6 +59,8 @@ const defaultSettings: IAppSettings = {
   defaultSortDirection: 'asc',
   showCollectionBadges: true,
   showMessagesPane: true,
+  preferredRawExportFormat: 'yaml',
+  preferredProtectedExportFormat: 'json',
   secrets: {},
   collections: {},
   sidebarCollapsed: {},
@@ -113,13 +119,17 @@ export function SettingsProvider({ children }: ISettingsProviderProps): React.Re
 
   useEffect(() => {
     const anySettings = settings as unknown as Record<string, unknown>;
-    if (anySettings.secrets === undefined) {
+    if (
+      anySettings.secrets === undefined ||
+      anySettings.preferredRawExportFormat === undefined ||
+      anySettings.preferredProtectedExportFormat === undefined
+    ) {
       setSettings(
         (prev) =>
           ({
             ...defaultSettings,
             ...(prev as unknown as Record<string, unknown>),
-            secrets: {}
+            secrets: (anySettings.secrets as Record<string, string>) ?? {}
           } as IAppSettings)
       );
     }

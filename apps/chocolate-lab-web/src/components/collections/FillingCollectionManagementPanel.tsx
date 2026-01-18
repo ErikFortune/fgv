@@ -11,6 +11,7 @@ import { useChocolate } from '../../contexts/ChocolateContext';
 import { useEditing, useFillingCollectionManager } from '../../contexts/EditingContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
+import { succeed, type Result } from '@fgv/ts-utils';
 
 export interface IFillingCollectionManagementPanelProps {
   className?: string;
@@ -422,7 +423,7 @@ export function FillingCollectionManagementPanel({
   headerTitle = toolId === 'fillings' ? 'Filling Collections' : 'Collections'
 }: IFillingCollectionManagementPanelProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
-  const { editingVersion } = useEditing();
+  const { dirtyCollections, editingVersion, commitFillingCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useFillingCollectionManager();
 
@@ -463,7 +464,7 @@ export function FillingCollectionManagementPanel({
         isProtected,
         isLocked,
         isLoaded,
-        isDirty: false,
+        isDirty: dirtyCollections.includes(collectionId),
         itemCount: runtimeCollection?.items.size ?? 0
       });
     }
@@ -472,7 +473,21 @@ export function FillingCollectionManagementPanel({
       if (a.isMutable !== b.isMutable) return a.isMutable ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
-  }, [runtime, collections, editingVersion]);
+  }, [runtime, collections, dirtyCollections, editingVersion]);
+
+  const saveAll = useCallback(async (): Promise<Result<void>> => {
+    const visibleIds = new Set(collectionInfos.map((c) => c.id));
+    for (const id of dirtyCollections) {
+      if (!visibleIds.has(id)) {
+        continue;
+      }
+      const result = await commitFillingCollection(id);
+      if (result.isFailure()) {
+        return result;
+      }
+    }
+    return succeed(undefined);
+  }, [collectionInfos, commitFillingCollection, dirtyCollections]);
 
   return (
     <>
@@ -485,6 +500,8 @@ export function FillingCollectionManagementPanel({
         renameCollection={renameCollection}
         exportCollection={exportCollection}
         importCollection={importCollection}
+        saveCollection={commitFillingCollection}
+        saveAll={saveAll}
         selectedCollectionIds={selectedCollectionIds}
         onToggleSelected={onToggleSelected}
         showHeader={showHeader}

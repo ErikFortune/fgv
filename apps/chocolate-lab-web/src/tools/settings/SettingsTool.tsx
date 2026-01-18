@@ -4,7 +4,7 @@
  */
 
 import * as React from 'react';
-import { useTheme, type ThemeMode } from '../../contexts/ThemeContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useChocolate } from '../../contexts/ChocolateContext';
 import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline';
@@ -13,9 +13,10 @@ import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outl
  * Settings tool for app configuration
  */
 export function SettingsTool(): React.ReactElement {
-  const { mode, setMode, resolvedTheme } = useTheme();
+  const { mode, setMode } = useTheme();
   const { settings, updateSetting } = useSettings();
-  const { ingredientCount, recipeCount, moldCount, confectionCount } = useChocolate();
+  const { ingredientCount, fillingCount, moldCount, procedureCount, taskCount, confectionCount } =
+    useChocolate();
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
@@ -49,6 +50,45 @@ export function SettingsTool(): React.ReactElement {
               </button>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Export</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-4">
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Preferred format (raw collections)
+            </span>
+            <select
+              value={settings.preferredRawExportFormat}
+              onChange={(e) => updateSetting('preferredRawExportFormat', e.target.value as 'yaml' | 'json')}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+            >
+              <option value="yaml">YAML</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
+
+          <label className="flex items-center justify-between gap-4">
+            <span className="text-sm text-gray-700 dark:text-gray-300">
+              Preferred format (protected collections)
+            </span>
+            <select
+              value={settings.preferredProtectedExportFormat}
+              onChange={(e) =>
+                updateSetting('preferredProtectedExportFormat', e.target.value as 'yaml' | 'json')
+              }
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+            >
+              <option value="json">JSON</option>
+              <option value="yaml">YAML</option>
+            </select>
+          </label>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Protected collections currently export as encrypted JSON.
+          </p>
         </div>
       </section>
 
@@ -89,12 +129,20 @@ export function SettingsTool(): React.ReactElement {
               <dd className="text-2xl font-bold text-gray-900 dark:text-gray-100">{ingredientCount}</dd>
             </div>
             <div>
-              <dt className="text-sm text-gray-500 dark:text-gray-400">Recipes</dt>
-              <dd className="text-2xl font-bold text-gray-900 dark:text-gray-100">{recipeCount}</dd>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Fillings</dt>
+              <dd className="text-2xl font-bold text-gray-900 dark:text-gray-100">{fillingCount}</dd>
             </div>
             <div>
               <dt className="text-sm text-gray-500 dark:text-gray-400">Molds</dt>
               <dd className="text-2xl font-bold text-gray-900 dark:text-gray-100">{moldCount}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Procedures</dt>
+              <dd className="text-2xl font-bold text-gray-900 dark:text-gray-100">{procedureCount}</dd>
+            </div>
+            <div>
+              <dt className="text-sm text-gray-500 dark:text-gray-400">Tasks</dt>
+              <dd className="text-2xl font-bold text-gray-900 dark:text-gray-100">{taskCount}</dd>
             </div>
             <div>
               <dt className="text-sm text-gray-500 dark:text-gray-400">Confections</dt>

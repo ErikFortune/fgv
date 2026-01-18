@@ -12,6 +12,7 @@ import {
   type MoldFormat,
   type SourceId
 } from '@fgv/ts-chocolate';
+import { succeed, type Result } from '@fgv/ts-utils';
 import { useChocolate } from '../../contexts/ChocolateContext';
 import { useEditing, useMoldCollectionManager } from '../../contexts/EditingContext';
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
@@ -915,7 +916,7 @@ export function MoldCollectionManagementPanel({
   headerTitle = toolId === 'molds' ? 'Mold Collections' : 'Collections'
 }: IMoldCollectionManagementPanelProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
-  const { editingVersion } = useEditing();
+  const { dirtyCollections, editingVersion, commitMoldCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useMoldCollectionManager();
 
@@ -956,7 +957,7 @@ export function MoldCollectionManagementPanel({
         isProtected,
         isLocked,
         isLoaded,
-        isDirty: false,
+        isDirty: dirtyCollections.includes(collectionId),
         itemCount: runtimeCollection?.items.size ?? 0
       });
     }
@@ -965,7 +966,21 @@ export function MoldCollectionManagementPanel({
       if (a.isMutable !== b.isMutable) return a.isMutable ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
-  }, [runtime, collections, editingVersion]);
+  }, [runtime, collections, dirtyCollections, editingVersion]);
+
+  const saveAll = useCallback(async (): Promise<Result<void>> => {
+    const visibleIds = new Set(collectionInfos.map((c) => c.id));
+    for (const id of dirtyCollections) {
+      if (!visibleIds.has(id)) {
+        continue;
+      }
+      const result = await commitMoldCollection(id);
+      if (result.isFailure()) {
+        return result;
+      }
+    }
+    return succeed(undefined);
+  }, [collectionInfos, commitMoldCollection, dirtyCollections]);
 
   return (
     <>
@@ -978,6 +993,8 @@ export function MoldCollectionManagementPanel({
         renameCollection={renameCollection}
         exportCollection={exportCollection}
         importCollection={importCollection}
+        saveCollection={commitMoldCollection}
+        saveAll={saveAll}
         selectedCollectionIds={selectedCollectionIds}
         onToggleSelected={onToggleSelected}
         showHeader={showHeader}

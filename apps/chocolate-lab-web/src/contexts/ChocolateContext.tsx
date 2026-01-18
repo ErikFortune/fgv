@@ -15,7 +15,12 @@ import React, {
 import { BuiltIn, Crypto, Runtime, type IngredientId, type FillingId, LibraryData } from '@fgv/ts-chocolate';
 import { FileTree, type JsonObject } from '@fgv/ts-json-base';
 import { ZipFileTree as ZipFileTreeModule } from '@fgv/ts-extras';
-import { FileApiTreeAccessors, safeShowDirectoryPicker } from '@fgv/ts-web-extras';
+import {
+  FileApiTreeAccessors,
+  safeShowDirectoryPicker,
+  type FileSystemDirectoryHandle,
+  type FileSystemFileHandle
+} from '@fgv/ts-web-extras';
 
 // Aliases for cleaner code
 type ChocolateRuntimeContext = Runtime.RuntimeContext;
@@ -39,17 +44,37 @@ const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collection
 function getStartupLoadFlags(): { suppressBuiltIn: boolean; suppressLocal: boolean } {
   const params = new URLSearchParams(window.location.search);
 
+  const isTruthy = (value: string | null): boolean => {
+    if (value === null) {
+      return false;
+    }
+    const v = value.trim().toLowerCase();
+    return v === '' || v === '1' || v === 'true' || v === 'yes' || v === 'on';
+  };
+
+  const isFalsy = (value: string | null): boolean => {
+    if (value === null) {
+      return false;
+    }
+    const v = value.trim().toLowerCase();
+    return v === '0' || v === 'false' || v === 'no' || v === 'off';
+  };
+
+  const hasTruthyFlag = (key: string): boolean => {
+    if (!params.has(key)) {
+      return false;
+    }
+    return isTruthy(params.get(key));
+  };
+
   const suppressBuiltIn =
-    params.get('noBuiltin') === '1' ||
-    params.get('noBuiltin') === 'true' ||
-    params.get('builtin') === '0' ||
-    params.get('builtin') === 'false';
+    hasTruthyFlag('noBuiltin') || hasTruthyFlag('noBuiltIn') || isFalsy(params.get('builtin'));
 
   const suppressLocal =
-    params.get('noLocal') === '1' ||
-    params.get('noLocal') === 'true' ||
-    params.get('local') === '0' ||
-    params.get('local') === 'false';
+    hasTruthyFlag('noLocal') ||
+    hasTruthyFlag('nolocal') ||
+    hasTruthyFlag('no_local') ||
+    isFalsy(params.get('local'));
 
   return { suppressBuiltIn, suppressLocal };
 }
@@ -274,6 +299,53 @@ function readLocalMoldCollectionFiles(): FileTree.IInMemoryFile[] {
  */
 export type SubLibraryType = 'ingredients' | 'fillings' | 'procedures' | 'tasks' | 'molds' | 'confections';
 
+interface IFileBackedCollectionTarget {
+  readonly baseDir: FileSystemDirectoryHandle;
+  readonly relativePath: string;
+  readonly exportFormat: 'yaml' | 'json';
+}
+
+function getFileBackedTargetKey(subLibrary: SubLibraryType, collectionId: string): string {
+  return `${subLibrary}:${collectionId}`;
+}
+
+async function getDirectoryHandleAtPath(
+  root: FileSystemDirectoryHandle,
+  relativePath: string
+): Promise<FileSystemDirectoryHandle> {
+  const trimmed = relativePath.replace(/^\/+/, '').replace(/\/+$/, '');
+  if (trimmed.length === 0) {
+    return root;
+  }
+  const parts = trimmed.split('/').filter((p) => p.length > 0);
+  let cur = root;
+  for (const p of parts) {
+    cur = await cur.getDirectoryHandle(p, { create: false });
+  }
+  return cur;
+}
+
+async function writeTextFileAtRelativePath(
+  baseDir: FileSystemDirectoryHandle,
+  relativePath: string,
+  contents: string
+): Promise<void> {
+  const trimmed = relativePath.replace(/^\/+/, '');
+  const parts = trimmed.split('/').filter((p) => p.length > 0);
+  const fileName = parts.pop();
+  if (!fileName) {
+    throw new Error(`Invalid file path: "${relativePath}"`);
+  }
+  let dir = baseDir;
+  for (const p of parts) {
+    dir = await dir.getDirectoryHandle(p, { create: false });
+  }
+  const fileHandle: FileSystemFileHandle = await dir.getFileHandle(fileName, { create: true });
+  const writable = await fileHandle.createWritable({ keepExistingData: false });
+  await writable.write(contents);
+  await writable.close();
+}
+
 /**
  * Collection metadata for UI display
  */
@@ -349,6 +421,18 @@ export interface IChocolateContext {
   loadSubLibraryFromZip: (subLibrary: SubLibraryType, file: File) => Promise<Result<void>>;
   loadSubLibraryFromFolder: (subLibrary: SubLibraryType) => Promise<Result<void>>;
   loadLibraryFromZip: (file: File) => Promise<Result<void>>;
+  loadLibraryFromFolder: () => Promise<Result<void>>;
+  clearExternalSources: () => Promise<Result<void>>;
+
+  getFileBackedCollectionExportFormat: (
+    subLibrary: SubLibraryType,
+    collectionId: string
+  ) => 'yaml' | 'json' | undefined;
+  tryWriteFileBackedCollection: (
+    subLibrary: SubLibraryType,
+    collectionId: string,
+    contents: string
+  ) => Promise<Result<boolean>>;
 }
 
 /**
@@ -370,7 +454,11 @@ const defaultChocolateContext: IChocolateContext = {
   dataVersion: 0,
   loadSubLibraryFromZip: async () => fail('No ChocolateProvider'),
   loadSubLibraryFromFolder: async () => fail('No ChocolateProvider'),
-  loadLibraryFromZip: async () => fail('No ChocolateProvider')
+  loadLibraryFromZip: async () => fail('No ChocolateProvider'),
+  loadLibraryFromFolder: async () => fail('No ChocolateProvider'),
+  clearExternalSources: async () => fail('No ChocolateProvider'),
+  getFileBackedCollectionExportFormat: () => undefined,
+  tryWriteFileBackedCollection: async () => fail('No ChocolateProvider')
 };
 
 /**
@@ -424,6 +512,42 @@ export function ChocolateProvider({
     ReadonlyArray<LibraryData.ILibraryFileTreeSource>
   >([]);
 
+  const fileBackedTargetsRef = useMemo(() => new Map<string, IFileBackedCollectionTarget>(), []);
+
+  const getFileBackedCollectionExportFormat = useCallback(
+    (subLibrary: SubLibraryType, collectionId: string): 'yaml' | 'json' | undefined => {
+      const key = getFileBackedTargetKey(subLibrary, collectionId);
+      return fileBackedTargetsRef.get(key)?.exportFormat;
+    },
+    [fileBackedTargetsRef]
+  );
+
+  const tryWriteFileBackedCollection = useCallback(
+    async (subLibrary: SubLibraryType, collectionId: string, contents: string): Promise<Result<boolean>> => {
+      const key = getFileBackedTargetKey(subLibrary, collectionId);
+      const target = fileBackedTargetsRef.get(key);
+      if (!target) {
+        return succeed(false);
+      }
+
+      try {
+        const perm = await target.baseDir.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted') {
+          const requested = await target.baseDir.requestPermission({ mode: 'readwrite' });
+          if (requested !== 'granted') {
+            return fail(`Permission denied to write to folder for "${subLibrary}"`);
+          }
+        }
+
+        await writeTextFileAtRelativePath(target.baseDir, target.relativePath, contents);
+        return succeed(true);
+      } catch (e) {
+        return fail(`Failed to write file-backed collection: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    },
+    [fileBackedTargetsRef]
+  );
+
   // Load the library
   const loadLibrary = useCallback(
     async (externalOverride?: ReadonlyArray<LibraryData.ILibraryFileTreeSource>) => {
@@ -451,7 +575,7 @@ export function ChocolateProvider({
           throw new Error(`Failed to get library tree: ${treeResult.message}`);
         }
 
-        const localFiles = suppressLocal
+        let localFiles = suppressLocal
           ? []
           : [
               ...readLocalIngredientCollectionFiles(),
@@ -460,6 +584,87 @@ export function ChocolateProvider({
               ...readLocalTaskCollectionFiles(),
               ...readLocalProcedureCollectionFiles()
             ];
+
+        // If built-ins are enabled, evict only local collections that conflict by collectionId.
+        if (!suppressBuiltIn && treeResult?.isSuccess() === true && localFiles.length > 0) {
+          try {
+            const builtInRoot = treeResult.value;
+
+            const subLibraries: ReadonlyArray<{ id: SubLibraryType; folder: string }> = [
+              { id: 'ingredients', folder: 'ingredients' },
+              { id: 'fillings', folder: 'fillings' },
+              { id: 'molds', folder: 'molds' },
+              { id: 'procedures', folder: 'procedures' },
+              { id: 'tasks', folder: 'tasks' },
+              { id: 'confections', folder: 'confections' }
+            ];
+
+            const rootChildrenResult = builtInRoot.getChildren();
+            const dataDir = rootChildrenResult.isSuccess()
+              ? rootChildrenResult.value.find(
+                  (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                    c.type === 'directory' && c.name === 'data'
+                )
+              : undefined;
+
+            const dataChildrenResult = dataDir?.getChildren();
+            const dataChildren = dataChildrenResult?.isSuccess() ? dataChildrenResult.value : [];
+
+            const builtInIdsBySub = new Map<string, Set<string>>();
+            for (const sub of subLibraries) {
+              const ids = new Set<string>();
+
+              const subDir = dataChildren.find(
+                (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                  c.type === 'directory' && c.name === sub.folder
+              );
+              if (subDir) {
+                const childrenResult = subDir.getChildren();
+                if (childrenResult.isSuccess()) {
+                  for (const child of childrenResult.value) {
+                    if (child.type !== 'file') {
+                      continue;
+                    }
+
+                    // Be defensive: not all FileTree implementations populate `extension`/`baseName`.
+                    const name = child.name;
+                    const dot = name.lastIndexOf('.');
+                    const ext = dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
+                    if (ext !== 'json' && ext !== 'yaml' && ext !== 'yml') {
+                      continue;
+                    }
+                    const id = dot >= 0 ? name.slice(0, dot) : name;
+                    if (id.length > 0) {
+                      ids.add(id);
+                    }
+                  }
+                }
+              }
+
+              builtInIdsBySub.set(sub.folder, ids);
+            }
+
+            const before = localFiles.length;
+            localFiles = localFiles.filter((f) => {
+              const m = /^\/data\/([^/]+)\/([^/.]+)\./.exec(f.path);
+              if (!m) {
+                return true;
+              }
+              const folder = m[1];
+              const id = m[2];
+              const builtInIds = builtInIdsBySub.get(folder);
+              return !(builtInIds && builtInIds.has(id));
+            });
+
+            const evicted = before - localFiles.length;
+            if (evicted > 0) {
+              diag.info(`Evicted ${evicted} local collection file(s) due to built-in conflicts`);
+              user.warn(`Ignored ${evicted} local collection(s) because built-ins are enabled`);
+            }
+          } catch (e) {
+            diag.warn(`Failed to evict conflicting locals: ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }
 
         diag.info(`Local collection files: ${localFiles.length}`);
 
@@ -740,6 +945,18 @@ export function ChocolateProvider({
     [externalFileSources, preWarm, user, diag]
   );
 
+  const clearExternalSources = useCallback(async (): Promise<Result<void>> => {
+    try {
+      fileBackedTargetsRef.clear();
+      setExternalFileSources([]);
+      await loadLibrary([]);
+      user.success('Detached external imports');
+      return succeed(undefined);
+    } catch (e) {
+      return fail(`Failed to detach external imports: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }, [fileBackedTargetsRef, loadLibrary, user]);
+
   const loadSubLibraryFromZip = useCallback(
     async (subLibrary: SubLibraryType, file: File): Promise<Result<void>> => {
       diag.info(`Loading sublibrary from zip: ${subLibrary}, file=${file.name} (${file.size} bytes)`);
@@ -810,6 +1027,264 @@ export function ChocolateProvider({
     [externalFileSources, loadLibrary]
   );
 
+  const loadLibraryFromFolder = useCallback(async (): Promise<Result<void>> => {
+    diag.info('Loading full library from folder');
+
+    let dirHandle: Awaited<ReturnType<typeof safeShowDirectoryPicker>>;
+    try {
+      dirHandle = await safeShowDirectoryPicker(globalThis.window, {
+        id: 'choco-library-imp-folder',
+        mode: 'readwrite'
+      });
+    } catch (e) {
+      const name = e instanceof Error ? e.name : '';
+      if (name === 'AbortError') {
+        user.info('Folder import canceled');
+        return succeed(undefined);
+      }
+      const message = e instanceof Error ? e.message : String(e);
+      user.error(`Failed to open folder picker: ${message}`);
+      return fail(`Failed to open folder picker: ${message}`);
+    }
+
+    if (!dirHandle) {
+      user.error('Folder import is not supported in this browser');
+      return fail('Folder import is not supported in this browser');
+    }
+
+    user.info(`Importing library from folder: ${dirHandle.name}`);
+
+    const treeResult = await FileApiTreeAccessors.create([{ dirHandles: [dirHandle] }], {
+      inferContentType: FileTree.FileItem.defaultAcceptContentType
+    });
+    if (treeResult.isFailure()) {
+      user.error(`Failed to read folder: ${treeResult.message}`);
+      return fail(treeResult.message);
+    }
+
+    const rootResult = treeResult.value.getItem('/');
+    if (rootResult.isFailure() || rootResult.value.type !== 'directory') {
+      const msg = rootResult.isFailure() ? rootResult.message : 'Root is not a directory';
+      user.error(`Failed to resolve folder root: ${msg}`);
+      return fail(`Failed to resolve folder root: ${msg}`);
+    }
+
+    const expectedSubDirNames = [
+      'ingredients',
+      'fillings',
+      'molds',
+      'procedures',
+      'tasks',
+      'confections',
+      'journals'
+    ];
+
+    const getLibraryRoot = (
+      dir: FileTree.IFileTreeDirectoryItem
+    ): { root: FileTree.IFileTreeDirectoryItem; matchDir: FileTree.IFileTreeDirectoryItem } | undefined => {
+      const childrenResult = dir.getChildren();
+      if (childrenResult.isFailure()) {
+        return undefined;
+      }
+
+      const dataDir = childrenResult.value.find(
+        (c): c is FileTree.IFileTreeDirectoryItem => c.type === 'directory' && c.name === 'data'
+      );
+
+      if (dataDir) {
+        const dataChildrenResult = dataDir.getChildren();
+        if (dataChildrenResult.isFailure()) {
+          return undefined;
+        }
+        const hasAnyExpected = dataChildrenResult.value.some(
+          (c) => c.type === 'directory' && expectedSubDirNames.includes(c.name)
+        );
+        if (hasAnyExpected) {
+          return { root: dir, matchDir: dir };
+        }
+      }
+
+      const directSubDirs = childrenResult.value.filter(
+        (c): c is FileTree.IFileTreeDirectoryItem =>
+          c.type === 'directory' && expectedSubDirNames.includes(c.name)
+      );
+
+      if (directSubDirs.length === 0) {
+        return undefined;
+      }
+
+      const virtualData = new VirtualDirectoryItem('data', '/data', () => succeed(directSubDirs));
+      const virtualRoot = new VirtualDirectoryItem('', '/', () => succeed([virtualData]));
+      return { root: virtualRoot, matchDir: dir };
+    };
+
+    const matchingRoots: Array<{
+      root: FileTree.IFileTreeDirectoryItem;
+      matchDir: FileTree.IFileTreeDirectoryItem;
+    }> = [];
+    const queue: FileTree.IFileTreeDirectoryItem[] = [rootResult.value];
+    let visited = 0;
+    const VISIT_LIMIT = 800;
+
+    while (queue.length > 0 && visited < VISIT_LIMIT && matchingRoots.length < 10) {
+      const current = queue.shift();
+      if (!current) {
+        break;
+      }
+      visited += 1;
+
+      const libraryRoot = getLibraryRoot(current);
+      if (libraryRoot) {
+        matchingRoots.push(libraryRoot);
+        continue;
+      }
+
+      const childrenResult = current.getChildren();
+      if (childrenResult.isFailure()) {
+        continue;
+      }
+      for (const child of childrenResult.value) {
+        if (child.type === 'directory') {
+          queue.push(child);
+        }
+      }
+    }
+
+    if (matchingRoots.length === 0) {
+      user.error('Folder import failed: could not find a library root');
+      return fail(
+        'Folder does not contain a recognizable library root (expected data/<sublibrary> folders or direct sublibrary folders)'
+      );
+    }
+
+    if (matchingRoots.length > 1) {
+      diag.info(
+        `Folder contains multiple possible library roots; selecting first match. matches=${matchingRoots
+          .map((r) => r.matchDir.absolutePath || '/')
+          .join(', ')}`
+      );
+      user.warn('Multiple possible library roots found; using the first match');
+    }
+
+    const selected = matchingRoots[0];
+    diag.info(
+      `Selected folder library root: ${selected.matchDir.absolutePath || '/'} (visited=${visited}, matches=${
+        matchingRoots.length
+      })`
+    );
+
+    try {
+      // Clear existing file-backed targets (full library import replaces prior mapping)
+      fileBackedTargetsRef.clear();
+
+      const matchAbs = selected.matchDir.absolutePath || '';
+      const basePrefix = `/${dirHandle.name}`;
+      const withoutBase = matchAbs.startsWith(basePrefix) ? matchAbs.slice(basePrefix.length) : matchAbs;
+      const matchRel = withoutBase.replace(/^\/+/, '');
+
+      const matchChildrenResult = selected.matchDir.getChildren();
+      if (matchChildrenResult.isSuccess()) {
+        const matchChildren = matchChildrenResult.value;
+        const dataDir = matchChildren.find(
+          (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+            c.type === 'directory' && c.name === 'data'
+        );
+
+        const subLibrarySpecs: Array<{ id: SubLibraryType; folderName: string }> = [
+          { id: 'ingredients', folderName: 'ingredients' },
+          { id: 'fillings', folderName: 'fillings' },
+          { id: 'molds', folderName: 'molds' },
+          { id: 'procedures', folderName: 'procedures' },
+          { id: 'tasks', folderName: 'tasks' },
+          { id: 'confections', folderName: 'confections' }
+        ];
+
+        for (const spec of subLibrarySpecs) {
+          let fileDir: FileTree.IFileTreeDirectoryItem | undefined;
+          let fileDirRel = '';
+
+          if (dataDir) {
+            const dataChildrenResult = dataDir.getChildren();
+            if (dataChildrenResult.isSuccess()) {
+              const subDir = dataChildrenResult.value.find(
+                (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                  c.type === 'directory' && c.name === spec.folderName
+              );
+              if (subDir) {
+                fileDir = subDir;
+                fileDirRel = [matchRel, 'data', spec.folderName].filter((p) => p.length > 0).join('/');
+              }
+            }
+          }
+
+          if (!fileDir) {
+            const subDir = matchChildren.find(
+              (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                c.type === 'directory' && c.name === spec.folderName
+            );
+            if (subDir) {
+              fileDir = subDir;
+              fileDirRel = [matchRel, spec.folderName].filter((p) => p.length > 0).join('/');
+            }
+          }
+
+          if (!fileDir) {
+            continue;
+          }
+
+          // Verify we can resolve the directory in the underlying FS handle (defensive)
+          void (await getDirectoryHandleAtPath(dirHandle, fileDirRel));
+
+          const fileChildrenResult = fileDir.getChildren();
+          if (fileChildrenResult.isFailure()) {
+            continue;
+          }
+
+          for (const child of fileChildrenResult.value) {
+            if (child.type !== 'file') {
+              continue;
+            }
+
+            // Be defensive: not all FileTree implementations populate `extension`/`baseName`.
+            const name = child.name;
+            const dot = name.lastIndexOf('.');
+            const ext = dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
+            if (ext !== 'json' && ext !== 'yaml' && ext !== 'yml') {
+              continue;
+            }
+            const exportFormat: 'yaml' | 'json' = ext === 'yaml' || ext === 'yml' ? 'yaml' : 'json';
+            const collectionId = dot >= 0 ? name.slice(0, dot) : name;
+            if (collectionId.length === 0) {
+              continue;
+            }
+            const relativePath = [fileDirRel, name].filter((p) => p.length > 0).join('/');
+            fileBackedTargetsRef.set(getFileBackedTargetKey(spec.id, collectionId), {
+              baseDir: dirHandle,
+              relativePath,
+              exportFormat
+            });
+          }
+        }
+      }
+    } catch (e) {
+      diag.warn(
+        `Failed to record file-backed library import targets: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+
+    const nextSource: LibraryData.ILibraryFileTreeSource = {
+      directory: selected.root,
+      load: true,
+      mutable: true
+    };
+
+    const nextExternal = [...externalFileSources, nextSource];
+    await loadLibrary(nextExternal);
+    setExternalFileSources(nextExternal);
+    user.success(`Imported library from folder: ${dirHandle.name}`);
+    return succeed(undefined);
+  }, [diag, externalFileSources, fileBackedTargetsRef, loadLibrary, user]);
+
   const loadSubLibraryFromFolder = useCallback(
     async (subLibrary: SubLibraryType): Promise<Result<void>> => {
       diag.info(`Loading sublibrary from folder: ${subLibrary}`);
@@ -818,7 +1293,7 @@ export function ChocolateProvider({
       try {
         dirHandle = await safeShowDirectoryPicker(globalThis.window, {
           id: `choco-${subLibrary}-imp-folder`,
-          mode: 'read'
+          mode: 'readwrite'
         });
       } catch (e) {
         const name = e instanceof Error ? e.name : '';
@@ -881,11 +1356,111 @@ export function ChocolateProvider({
       }
 
       const libraryRoot = resolveResult.value.root;
+      const matchDir = resolveResult.value.matchDir;
       diag.info(
         `Resolved folder import root for ${subLibrary}: kind=${resolveResult.value.kind} path=${
           libraryRoot.absolutePath || '/'
         } (visited=${resolveResult.value.visited}, matches=${resolveResult.value.matches})`
       );
+
+      try {
+        // Clear existing file-backed targets for this sublibrary
+        for (const k of Array.from(fileBackedTargetsRef.keys())) {
+          if (k.startsWith(`${subLibrary}:`)) {
+            fileBackedTargetsRef.delete(k);
+          }
+        }
+
+        const matchAbs = matchDir.absolutePath || '';
+        const basePrefix = `/${dirHandle.name}`;
+        const withoutBase = matchAbs.startsWith(basePrefix) ? matchAbs.slice(basePrefix.length) : matchAbs;
+        const matchRel = withoutBase.replace(/^\/+/, '');
+
+        let fileDir: FileTree.IFileTreeDirectoryItem | undefined;
+        let fileDirRel = matchRel;
+
+        const matchChildrenResult = matchDir.getChildren();
+        if (matchChildrenResult.isSuccess()) {
+          const matchChildren = matchChildrenResult.value;
+          if (resolveResult.value.kind === 'canonical') {
+            const dataDir = matchChildren.find(
+              (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                c.type === 'directory' && c.name === 'data'
+            );
+            if (dataDir) {
+              const dataChildrenResult = dataDir.getChildren();
+              if (dataChildrenResult.isSuccess()) {
+                const subDir = dataChildrenResult.value.find(
+                  (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                    c.type === 'directory' && c.name === expectedSubDirName
+                );
+                if (subDir) {
+                  fileDir = subDir;
+                  fileDirRel = [matchRel, 'data', expectedSubDirName].filter((p) => p.length > 0).join('/');
+                }
+              }
+            }
+          } else if (resolveResult.value.kind === 'data-dir') {
+            const subDir = matchChildren.find(
+              (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                c.type === 'directory' && c.name === expectedSubDirName
+            );
+            if (subDir) {
+              fileDir = subDir;
+              fileDirRel = [matchRel, expectedSubDirName].filter((p) => p.length > 0).join('/');
+            }
+          } else if (resolveResult.value.kind === 'direct-subdir') {
+            const subDir = matchChildren.find(
+              (c: FileTree.FileTreeItem): c is FileTree.IFileTreeDirectoryItem =>
+                c.type === 'directory' && c.name === expectedSubDirName
+            );
+            if (subDir) {
+              fileDir = subDir;
+              fileDirRel = [matchRel, expectedSubDirName].filter((p) => p.length > 0).join('/');
+            }
+          } else if (resolveResult.value.kind === 'loose-files') {
+            fileDir = matchDir;
+            fileDirRel = matchRel;
+          }
+        }
+
+        if (fileDir) {
+          // Verify we can resolve the directory in the underlying FS handle (defensive)
+          void (await getDirectoryHandleAtPath(dirHandle, fileDirRel));
+
+          const fileChildrenResult = fileDir.getChildren();
+          if (fileChildrenResult.isSuccess()) {
+            for (const child of fileChildrenResult.value) {
+              if (child.type !== 'file') {
+                continue;
+              }
+
+              // Be defensive: not all FileTree implementations populate `extension`/`baseName`.
+              const name = child.name;
+              const dot = name.lastIndexOf('.');
+              const ext = dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
+              if (ext !== 'json' && ext !== 'yaml' && ext !== 'yml') {
+                continue;
+              }
+              const exportFormat: 'yaml' | 'json' = ext === 'yaml' || ext === 'yml' ? 'yaml' : 'json';
+              const collectionId = dot >= 0 ? name.slice(0, dot) : name;
+              if (collectionId.length === 0) {
+                continue;
+              }
+              const relativePath = [fileDirRel, name].filter((p) => p.length > 0).join('/');
+              fileBackedTargetsRef.set(getFileBackedTargetKey(subLibrary, collectionId), {
+                baseDir: dirHandle,
+                relativePath,
+                exportFormat
+              });
+            }
+          }
+        }
+      } catch (e) {
+        diag.warn(
+          `Failed to record file-backed import targets: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
 
       const nextSource: LibraryData.ILibraryFileTreeSource = {
         directory: libraryRoot,
@@ -906,7 +1481,7 @@ export function ChocolateProvider({
       user.success(`Imported ${subLibrary} from folder: ${dirHandle.name}`);
       return succeed(undefined);
     },
-    [diag, user, externalFileSources, loadLibrary]
+    [diag, user, externalFileSources, loadLibrary, fileBackedTargetsRef]
   );
 
   const loadLibraryFromZip = useCallback(
@@ -1466,7 +2041,11 @@ export function ChocolateProvider({
       dataVersion,
       loadSubLibraryFromZip,
       loadSubLibraryFromFolder,
-      loadLibraryFromZip
+      loadLibraryFromZip,
+      loadLibraryFromFolder,
+      clearExternalSources,
+      getFileBackedCollectionExportFormat,
+      tryWriteFileBackedCollection
     }),
     [
       loadingState,
@@ -1485,7 +2064,11 @@ export function ChocolateProvider({
       dataVersion,
       loadSubLibraryFromZip,
       loadSubLibraryFromFolder,
-      loadLibraryFromZip
+      loadLibraryFromZip,
+      loadLibraryFromFolder,
+      clearExternalSources,
+      getFileBackedCollectionExportFormat,
+      tryWriteFileBackedCollection
     ]
   );
 

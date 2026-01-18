@@ -540,7 +540,8 @@ export interface IEditingProviderProps {
  * Provider component that manages editing state
  */
 export function EditingProvider({ children }: { children: ReactNode }): React.ReactElement {
-  const { runtime, notifyLibraryChanged } = useChocolate();
+  const { runtime, notifyLibraryChanged, getFileBackedCollectionExportFormat, tryWriteFileBackedCollection } =
+    useChocolate();
   const { settings } = useSettings();
   const { secrets: sessionSecrets } = useSecrets();
 
@@ -604,7 +605,6 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
         }
       }
 
-      // Persist to localStorage
       try {
         const items: Record<BaseIngredientId, Ingredient> = recordFromEntries(
           collectionEntry.items.entries()
@@ -613,6 +613,74 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
           metadata: collectionEntry.metadata ?? { name: collectionId },
           items
         };
+
+        const fileFormat = getFileBackedCollectionExportFormat(
+          'ingredients',
+          collectionId as unknown as string
+        );
+        if (fileFormat) {
+          if (sourceFile.metadata?.secretName && fileFormat !== 'json') {
+            return fail('Protected collections can only be exported as encrypted JSON');
+          }
+
+          let contents: string | undefined;
+          if (sourceFile.metadata?.secretName) {
+            const cryptoResult = Crypto.createBrowserCryptoProvider();
+            if (cryptoResult.isFailure()) {
+              return fail(`Crypto not available: ${cryptoResult.message}`);
+            }
+
+            const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+              items as unknown as JsonObject,
+              sourceFile.metadata,
+              collectionId,
+              cryptoResult.value,
+              resolvedSecrets
+            );
+            if (encrypted.isFailure()) {
+              return fail(encrypted.message);
+            }
+            if (encrypted.value === undefined) {
+              return fail('Failed to export protected collection');
+            }
+            contents = encrypted.value;
+          } else {
+            const serialized = Editing.serializeCollection(sourceFile, fileFormat);
+            if (serialized.isFailure()) {
+              return fail(serialized.message);
+            }
+            contents = serialized.value;
+          }
+
+          const writeResult = await tryWriteFileBackedCollection(
+            'ingredients',
+            collectionId as unknown as string,
+            contents
+          );
+          if (writeResult.isFailure()) {
+            return fail(writeResult.message);
+          }
+
+          // If we successfully wrote to the backing file, this is a real save.
+          if (writeResult.value) {
+            try {
+              const existing = readLocalIngredientCollections();
+              if (sourceFile.metadata?.secretName) {
+                existing[collectionId as unknown as string] = JSON.parse(contents) as unknown;
+              } else {
+                existing[collectionId as unknown as string] = sourceFile as unknown;
+              }
+              writeLocalIngredientCollections(existing);
+              setLocalCollections(getAllLocalCollectionIds());
+            } catch {
+              // ignore
+            }
+
+            editorState.isDirty = false;
+            setDirtyCollections((prev) => prev.filter((id) => id !== collectionId));
+            return notifyLibraryChanged();
+          }
+        }
 
         const cryptoResult = Crypto.createBrowserCryptoProvider();
         if (cryptoResult.isFailure()) {
@@ -649,7 +717,13 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
 
       return notifyLibraryChanged();
     },
-    [notifyLibraryChanged, runtime, resolvedSecrets]
+    [
+      getFileBackedCollectionExportFormat,
+      notifyLibraryChanged,
+      resolvedSecrets,
+      runtime,
+      tryWriteFileBackedCollection
+    ]
   );
 
   const commitMoldCollection = useCallback(
@@ -674,6 +748,68 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
           metadata: collectionEntry.metadata ?? { name: collectionId },
           items
         };
+
+        const fileFormat = getFileBackedCollectionExportFormat('molds', collectionId as unknown as string);
+        if (fileFormat) {
+          if (sourceFile.metadata?.secretName && fileFormat !== 'json') {
+            return fail('Protected collections can only be exported as encrypted JSON');
+          }
+
+          let contents: string | undefined;
+          if (sourceFile.metadata?.secretName) {
+            const cryptoResult = Crypto.createBrowserCryptoProvider();
+            if (cryptoResult.isFailure()) {
+              return fail(`Crypto not available: ${cryptoResult.message}`);
+            }
+
+            const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+              items as unknown as JsonObject,
+              sourceFile.metadata,
+              collectionId,
+              cryptoResult.value,
+              resolvedSecrets
+            );
+            if (encrypted.isFailure()) {
+              return fail(encrypted.message);
+            }
+            if (encrypted.value === undefined) {
+              return fail('Failed to export protected collection');
+            }
+            contents = encrypted.value;
+          } else {
+            const serialized = Editing.serializeCollection(sourceFile, fileFormat);
+            if (serialized.isFailure()) {
+              return fail(serialized.message);
+            }
+            contents = serialized.value;
+          }
+
+          const writeResult = await tryWriteFileBackedCollection(
+            'molds',
+            collectionId as unknown as string,
+            contents
+          );
+          if (writeResult.isFailure()) {
+            return fail(writeResult.message);
+          }
+          if (writeResult.value) {
+            try {
+              const existing = readLocalMoldCollections();
+              if (sourceFile.metadata?.secretName) {
+                existing[collectionId as unknown as string] = JSON.parse(contents) as unknown;
+              } else {
+                existing[collectionId as unknown as string] = sourceFile as unknown;
+              }
+              writeLocalMoldCollections(existing);
+              setLocalCollections(getAllLocalCollectionIds());
+            } catch {
+              // ignore
+            }
+
+            incrementVersion();
+            return notifyLibraryChanged();
+          }
+        }
 
         const cryptoResult = Crypto.createBrowserCryptoProvider();
         if (cryptoResult.isFailure()) {
@@ -707,7 +843,14 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
+    [
+      getFileBackedCollectionExportFormat,
+      incrementVersion,
+      notifyLibraryChanged,
+      resolvedSecrets,
+      runtime,
+      tryWriteFileBackedCollection
+    ]
   );
 
   const createFillingCollection = useCallback(
@@ -962,6 +1105,67 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
           items
         };
 
+        const fileFormat = getFileBackedCollectionExportFormat('fillings', collectionId as unknown as string);
+        if (fileFormat) {
+          if (sourceFile.metadata?.secretName && fileFormat !== 'json') {
+            return fail('Protected collections can only be exported as encrypted JSON');
+          }
+
+          let contents: string | undefined;
+          if (sourceFile.metadata?.secretName) {
+            const cryptoResult = Crypto.createBrowserCryptoProvider();
+            if (cryptoResult.isFailure()) {
+              return fail(`Crypto not available: ${cryptoResult.message}`);
+            }
+            const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+              items as unknown as JsonObject,
+              sourceFile.metadata,
+              collectionId,
+              cryptoResult.value,
+              resolvedSecrets
+            );
+            if (encrypted.isFailure()) {
+              return fail(encrypted.message);
+            }
+            if (encrypted.value === undefined) {
+              return fail('Failed to export protected collection');
+            }
+            contents = encrypted.value;
+          } else {
+            const serialized = Editing.serializeCollection(sourceFile, fileFormat);
+            if (serialized.isFailure()) {
+              return fail(serialized.message);
+            }
+            contents = serialized.value;
+          }
+
+          const writeResult = await tryWriteFileBackedCollection(
+            'fillings',
+            collectionId as unknown as string,
+            contents
+          );
+          if (writeResult.isFailure()) {
+            return fail(writeResult.message);
+          }
+          if (writeResult.value) {
+            try {
+              const existing = readLocalFillingCollections();
+              if (sourceFile.metadata?.secretName) {
+                existing[collectionId as unknown as string] = JSON.parse(contents) as unknown;
+              } else {
+                existing[collectionId as unknown as string] = sourceFile as unknown;
+              }
+              writeLocalFillingCollections(existing);
+              setLocalCollections(getAllLocalCollectionIds());
+            } catch {
+              // ignore
+            }
+
+            incrementVersion();
+            return notifyLibraryChanged();
+          }
+        }
+
         const cryptoResult = Crypto.createBrowserCryptoProvider();
         if (cryptoResult.isFailure()) {
           return fail(`Crypto not available: ${cryptoResult.message}`);
@@ -994,7 +1198,14 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
+    [
+      getFileBackedCollectionExportFormat,
+      incrementVersion,
+      notifyLibraryChanged,
+      resolvedSecrets,
+      runtime,
+      tryWriteFileBackedCollection
+    ]
   );
 
   const renameFillingCollection = useCallback(
@@ -1073,6 +1284,70 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
           items
         };
 
+        const fileFormat = getFileBackedCollectionExportFormat(
+          'procedures',
+          collectionId as unknown as string
+        );
+        if (fileFormat) {
+          if (sourceFile.metadata?.secretName && fileFormat !== 'json') {
+            return fail('Protected collections can only be exported as encrypted JSON');
+          }
+
+          let contents: string | undefined;
+          if (sourceFile.metadata?.secretName) {
+            const cryptoResult = Crypto.createBrowserCryptoProvider();
+            if (cryptoResult.isFailure()) {
+              return fail(`Crypto not available: ${cryptoResult.message}`);
+            }
+            const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+              items as unknown as JsonObject,
+              sourceFile.metadata,
+              collectionId,
+              cryptoResult.value,
+              resolvedSecrets
+            );
+            if (encrypted.isFailure()) {
+              return fail(encrypted.message);
+            }
+            if (encrypted.value === undefined) {
+              return fail('Failed to export protected collection');
+            }
+            contents = encrypted.value;
+          } else {
+            const serialized = Editing.serializeCollection(sourceFile, fileFormat);
+            if (serialized.isFailure()) {
+              return fail(serialized.message);
+            }
+            contents = serialized.value;
+          }
+
+          const writeResult = await tryWriteFileBackedCollection(
+            'procedures',
+            collectionId as unknown as string,
+            contents
+          );
+          if (writeResult.isFailure()) {
+            return fail(writeResult.message);
+          }
+          if (writeResult.value) {
+            try {
+              const existing = readLocalProcedureCollections();
+              if (sourceFile.metadata?.secretName) {
+                existing[collectionId as unknown as string] = JSON.parse(contents) as unknown;
+              } else {
+                existing[collectionId as unknown as string] = sourceFile as unknown;
+              }
+              writeLocalProcedureCollections(existing);
+              setLocalCollections(getAllLocalCollectionIds());
+            } catch {
+              // ignore
+            }
+
+            incrementVersion();
+            return notifyLibraryChanged();
+          }
+        }
+
         const cryptoResult = Crypto.createBrowserCryptoProvider();
         if (cryptoResult.isFailure()) {
           return fail(`Crypto not available: ${cryptoResult.message}`);
@@ -1105,7 +1380,14 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
+    [
+      getFileBackedCollectionExportFormat,
+      incrementVersion,
+      notifyLibraryChanged,
+      resolvedSecrets,
+      runtime,
+      tryWriteFileBackedCollection
+    ]
   );
 
   const commitTaskCollection = useCallback(
@@ -1130,6 +1412,67 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
           metadata: collectionEntry.metadata ?? { name: collectionId },
           items
         };
+
+        const fileFormat = getFileBackedCollectionExportFormat('tasks', collectionId as unknown as string);
+        if (fileFormat) {
+          if (sourceFile.metadata?.secretName && fileFormat !== 'json') {
+            return fail('Protected collections can only be exported as encrypted JSON');
+          }
+
+          let contents: string | undefined;
+          if (sourceFile.metadata?.secretName) {
+            const cryptoResult = Crypto.createBrowserCryptoProvider();
+            if (cryptoResult.isFailure()) {
+              return fail(`Crypto not available: ${cryptoResult.message}`);
+            }
+            const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+              items as unknown as JsonObject,
+              sourceFile.metadata,
+              collectionId,
+              cryptoResult.value,
+              resolvedSecrets
+            );
+            if (encrypted.isFailure()) {
+              return fail(encrypted.message);
+            }
+            if (encrypted.value === undefined) {
+              return fail('Failed to export protected collection');
+            }
+            contents = encrypted.value;
+          } else {
+            const serialized = Editing.serializeCollection(sourceFile, fileFormat);
+            if (serialized.isFailure()) {
+              return fail(serialized.message);
+            }
+            contents = serialized.value;
+          }
+
+          const writeResult = await tryWriteFileBackedCollection(
+            'tasks',
+            collectionId as unknown as string,
+            contents
+          );
+          if (writeResult.isFailure()) {
+            return fail(writeResult.message);
+          }
+          if (writeResult.value) {
+            try {
+              const existing = readLocalTaskCollections();
+              if (sourceFile.metadata?.secretName) {
+                existing[collectionId as unknown as string] = JSON.parse(contents) as unknown;
+              } else {
+                existing[collectionId as unknown as string] = sourceFile as unknown;
+              }
+              writeLocalTaskCollections(existing);
+              setLocalCollections(getAllLocalCollectionIds());
+            } catch {
+              // ignore
+            }
+
+            incrementVersion();
+            return notifyLibraryChanged();
+          }
+        }
 
         const cryptoResult = Crypto.createBrowserCryptoProvider();
         if (cryptoResult.isFailure()) {
@@ -1163,7 +1506,14 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
       incrementVersion();
       return notifyLibraryChanged();
     },
-    [incrementVersion, notifyLibraryChanged, runtime, resolvedSecrets]
+    [
+      getFileBackedCollectionExportFormat,
+      incrementVersion,
+      notifyLibraryChanged,
+      resolvedSecrets,
+      runtime,
+      tryWriteFileBackedCollection
+    ]
   );
 
   const createMoldCollection = useCallback(

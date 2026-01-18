@@ -9,6 +9,7 @@ import { useEditing, useCollectionManager, useIngredientEditor } from '../../con
 import { CollectionManagementPanelBase, type ICollectionInfo } from './CollectionManagementPanelBase';
 import {
   type SourceId,
+  type IngredientId,
   type IngredientCategory,
   type Allergen,
   type Certification,
@@ -18,6 +19,7 @@ import {
   Converters as ChocolateConverters,
   Editing
 } from '@fgv/ts-chocolate';
+import { succeed, type Result } from '@fgv/ts-utils';
 
 /**
  * Props for CollectionManagementPanel
@@ -44,10 +46,20 @@ export function CollectionManagementPanel({
   headerTitle = toolId === 'ingredients' ? 'Ingredient Collections' : 'Collections'
 }: ICollectionManagementPanelProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
-  const { dirtyCollections, editingVersion } = useEditing();
+  const { dirtyCollections, editingVersion, commitCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useCollectionManager();
   const [showAddIngredient, setShowAddIngredient] = useState<SourceId | null>(null);
+
+  const saveAll = useCallback(async (): Promise<Result<void>> => {
+    for (const id of dirtyCollections) {
+      const result = await commitCollection(id);
+      if (result.isFailure()) {
+        return result;
+      }
+    }
+    return succeed(undefined);
+  }, [commitCollection, dirtyCollections]);
 
   // Get collection info directly from the runtime library
   // This ensures newly created collections are visible immediately
@@ -109,6 +121,8 @@ export function CollectionManagementPanel({
         renameCollection={renameCollection}
         exportCollection={exportCollection}
         importCollection={importCollection}
+        saveCollection={commitCollection}
+        saveAll={saveAll}
         selectedCollectionIds={selectedCollectionIds}
         onToggleSelected={onToggleSelected}
         showHeader={showHeader}
@@ -250,11 +264,10 @@ export function AddIngredientDialog({
   collectionId: SourceId;
   onClose: () => void;
 }): React.ReactElement {
-  const { runtime } = useChocolate();
-  const { markDirty, commitCollection } = useEditing();
+  const { runtime, notifyLibraryChanged } = useChocolate();
 
   const [targetCollectionId, setTargetCollectionId] = useState<SourceId>(collectionId);
-  const { editor, error: editorError } = useIngredientEditor(targetCollectionId);
+  const { editor, error: editorError, markDirty } = useIngredientEditor(targetCollectionId);
 
   const mutableCollectionIds = useMemo((): ReadonlyArray<SourceId> => {
     if (!runtime) {
@@ -413,7 +426,7 @@ export function AddIngredientDialog({
 
       const baseIdRaw = obj.baseId;
       if (typeof baseIdRaw === 'string' && baseIdRaw.trim().length > 0) {
-        setIngredientId(baseIdRaw.trim().toLowerCase());
+        setIngredientId(baseIdRaw.trim().toLowerCase().replace(/\s+/g, '-'));
         setIsIdManuallyEdited(true);
       } else {
         setIsIdManuallyEdited(false);
@@ -671,22 +684,51 @@ export function AddIngredientDialog({
       return;
     }
 
-    markDirty(targetCollectionId);
-
-    void (async () => {
-      const commitResult = await commitCollection(targetCollectionId);
-      if (commitResult.isFailure()) {
-        setSaveError(commitResult.message);
-        setIsSaving(false);
-        return;
+    // Sync the newly created ingredient into the runtime collection so it is visible immediately.
+    // This does not persist to disk; it only updates the in-memory runtime library.
+    if (runtime) {
+      const runtimeCollectionResult =
+        runtime.library.ingredients.collections.get(targetCollectionId).asResult;
+      if (runtimeCollectionResult.isSuccess()) {
+        const runtimeCollection = runtimeCollectionResult.value;
+        if (runtimeCollection.isMutable) {
+          const created = editor.get(`${targetCollectionId}.${baseId}` as unknown as IngredientId);
+          if (created.isSuccess()) {
+            void runtimeCollection.items.set(baseId, created.value).asResult;
+            notifyLibraryChanged();
+          }
+        }
       }
+    }
 
-      setIsSaving(false);
-      onClose();
-    })();
+    markDirty();
+
+    setIsSaving(false);
+    onClose();
   };
 
   const ganacheTotalValue = ganacheTotal(ganache);
+  const validationIssues = useMemo((): string[] => {
+    const issues: string[] = [];
+
+    if (ingredientId.trim().length === 0) {
+      issues.push('Ingredient ID is required');
+    } else if (!/^[a-z0-9-]+$/.test(ingredientId)) {
+      issues.push('Ingredient ID must be kebab-case (lowercase letters, numbers, dashes)');
+    }
+
+    if (name.trim().length === 0) {
+      issues.push('Name is required');
+    } else if (name.trim().length > 200) {
+      issues.push('Name must be 200 characters or less');
+    }
+
+    if (ganacheTotalValue < 0 || ganacheTotalValue > 100) {
+      issues.push('Ganache characteristics must total between 0 and 100');
+    }
+
+    return issues;
+  }, [ganacheTotalValue, ingredientId, name]);
   const isValid =
     ingredientId.trim().length > 0 &&
     /^[a-z0-9-]+$/.test(ingredientId) &&
@@ -765,6 +807,19 @@ export function AddIngredientDialog({
         {saveError && (
           <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
             <p className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap">{saveError}</p>
+          </div>
+        )}
+
+        {!isSaving && !isValid && validationIssues.length > 0 && (
+          <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+            <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">
+              Cannot add ingredient yet:
+            </p>
+            <ul className="mt-1 text-sm text-amber-700 dark:text-amber-300 list-disc pl-5">
+              {validationIssues.map((issue) => (
+                <li key={issue}>{issue}</li>
+              ))}
+            </ul>
           </div>
         )}
 

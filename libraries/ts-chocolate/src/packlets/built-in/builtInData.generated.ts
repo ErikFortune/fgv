@@ -374,7 +374,6 @@ export const ingredientCollections: Record<string, JsonObject> = {
       'heavy-cream-35': {
         baseId: 'heavy-cream-35',
         name: 'Heavy Cream (35% fat)',
-        category: 'dairy',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 0,
@@ -383,15 +382,15 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 5,
           otherFats: 0
         },
-        fatContent: 35,
-        waterContent: 60,
         allergens: ['milk'],
-        vegan: false
+        vegan: false,
+        category: 'dairy',
+        fatContent: 35,
+        waterContent: 60
       },
       'heavy-cream-38': {
         baseId: 'heavy-cream-38',
         name: 'Heavy Cream (38% fat)',
-        category: 'dairy',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 0,
@@ -400,15 +399,15 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 5,
           otherFats: 0
         },
-        fatContent: 38,
-        waterContent: 57,
         allergens: ['milk'],
-        vegan: false
+        vegan: false,
+        category: 'dairy',
+        fatContent: 38,
+        waterContent: 57
       },
       'butter-82': {
         baseId: 'butter-82',
         name: 'Unsalted Butter (82% fat)',
-        category: 'fat',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 0,
@@ -417,14 +416,14 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 2,
           otherFats: 0
         },
-        meltingPoint: 32,
         allergens: ['milk'],
-        vegan: false
+        vegan: false,
+        category: 'fat',
+        meltingPoint: 32
       },
       'clarified-butter': {
         baseId: 'clarified-butter',
         name: 'Clarified Butter (Ghee)',
-        category: 'fat',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 0,
@@ -433,13 +432,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 0,
           otherFats: 0
         },
-        meltingPoint: 35,
-        allergens: ['milk']
+        allergens: ['milk'],
+        category: 'fat',
+        meltingPoint: 35
       },
       'coconut-oil': {
         baseId: 'coconut-oil',
         name: 'Coconut Oil',
-        category: 'fat',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 0,
@@ -448,13 +447,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 0,
           otherFats: 100
         },
-        meltingPoint: 24,
-        vegan: true
+        vegan: true,
+        category: 'fat',
+        meltingPoint: 24
       },
       'glucose-de43': {
         baseId: 'glucose-de43',
         name: 'Glucose Syrup (DE 43)',
-        category: 'sugar',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 80,
@@ -463,13 +462,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 0,
           otherFats: 0
         },
-        sweetnessPotency: 0.4,
-        vegan: true
+        vegan: true,
+        category: 'sugar',
+        sweetnessPotency: 0.4
       },
       'invert-sugar': {
         baseId: 'invert-sugar',
         name: 'Invert Sugar (Trimoline)',
-        category: 'sugar',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 77,
@@ -478,13 +477,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 0,
           otherFats: 0
         },
-        sweetnessPotency: 1.2,
-        vegan: true
+        vegan: true,
+        category: 'sugar',
+        sweetnessPotency: 1.2
       },
       sorbitol: {
         baseId: 'sorbitol',
         name: 'Sorbitol (70% solution)',
-        category: 'sugar',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 70,
@@ -493,13 +492,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 0,
           otherFats: 0
         },
-        sweetnessPotency: 0.6,
-        vegan: true
+        vegan: true,
+        category: 'sugar',
+        sweetnessPotency: 0.6
       },
       'granulated-sugar': {
         baseId: 'granulated-sugar',
         name: 'Granulated Sugar',
-        category: 'sugar',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 100,
@@ -508,13 +507,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 0,
           otherFats: 0
         },
-        sweetnessPotency: 1,
-        vegan: true
+        vegan: true,
+        category: 'sugar',
+        sweetnessPotency: 1
       },
       'muscovado-sugar': {
         baseId: 'muscovado-sugar',
         name: 'Muscovado Sugar',
-        category: 'sugar',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 95,
@@ -523,13 +522,13 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 2,
           otherFats: 0
         },
-        sweetnessPotency: 1,
-        vegan: true
+        vegan: true,
+        category: 'sugar',
+        sweetnessPotency: 1
       },
       'coconut-cream': {
         baseId: 'coconut-cream',
         name: 'Coconut Cream (Full Fat)',
-        category: 'fat',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 2,
@@ -538,17 +537,14 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 5,
           otherFats: 40
         },
-        meltingPoint: 24,
         vegan: true,
-        tags: ['vegan', 'dairy-free', 'coconut']
+        tags: ['vegan', 'dairy-free', 'coconut'],
+        category: 'fat',
+        meltingPoint: 24
       },
       'chocolate-dark-64': {
         baseId: 'chocolate-dark-64',
         name: 'Generic Dark Chocolate (64%)',
-        description: 'Reference dark chocolate for recipe substitution. Use any quality 64% dark couverture.',
-        category: 'chocolate',
-        chocolateType: 'dark',
-        cacaoPercentage: 64,
         ganacheCharacteristics: {
           cacaoFat: 38,
           sugar: 32,
@@ -557,15 +553,15 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 29,
           otherFats: 0
         },
-        tags: ['generic', 'dark', 'substitutable']
+        description: 'Reference dark chocolate for recipe substitution. Use any quality 64% dark couverture.',
+        tags: ['generic', 'dark', 'substitutable'],
+        category: 'chocolate',
+        chocolateType: 'dark',
+        cacaoPercentage: 64
       },
       'chocolate-milk-38': {
         baseId: 'chocolate-milk-38',
         name: 'Generic Milk Chocolate (38%)',
-        description: 'Reference milk chocolate for recipe substitution. Use any quality 38% milk couverture.',
-        category: 'chocolate',
-        chocolateType: 'milk',
-        cacaoPercentage: 38,
         ganacheCharacteristics: {
           cacaoFat: 22,
           sugar: 42,
@@ -574,17 +570,16 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 26,
           otherFats: 3
         },
+        description: 'Reference milk chocolate for recipe substitution. Use any quality 38% milk couverture.',
         allergens: ['milk'],
-        tags: ['generic', 'milk', 'substitutable']
+        tags: ['generic', 'milk', 'substitutable'],
+        category: 'chocolate',
+        chocolateType: 'milk',
+        cacaoPercentage: 38
       },
       'chocolate-white-34': {
         baseId: 'chocolate-white-34',
         name: 'Generic White Chocolate (34%)',
-        description:
-          'Reference white chocolate for recipe substitution. Use any quality 34% white couverture.',
-        category: 'chocolate',
-        chocolateType: 'white',
-        cacaoPercentage: 34,
         ganacheCharacteristics: {
           cacaoFat: 34,
           sugar: 40,
@@ -593,13 +588,17 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 18,
           otherFats: 2
         },
+        description:
+          'Reference white chocolate for recipe substitution. Use any quality 34% white couverture.',
         allergens: ['milk'],
-        tags: ['generic', 'white', 'substitutable']
+        tags: ['generic', 'white', 'substitutable'],
+        category: 'chocolate',
+        chocolateType: 'white',
+        cacaoPercentage: 34
       },
       'hazelnut-paste': {
         baseId: 'hazelnut-paste',
         name: 'Hazelnut Paste (100% Hazelnuts)',
-        category: 'fat',
         ganacheCharacteristics: {
           cacaoFat: 0,
           sugar: 4,
@@ -608,16 +607,15 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 38,
           otherFats: 55
         },
-        meltingPoint: 30,
-        vegan: true,
         allergens: ['nuts'],
-        tags: ['gianduja', 'praline', 'hazelnut']
+        vegan: true,
+        tags: ['gianduja', 'praline', 'hazelnut'],
+        category: 'fat',
+        meltingPoint: 30
       },
       'cocoa-powder': {
         baseId: 'cocoa-powder',
         name: 'Dutch-Process Cocoa Powder',
-        category: 'other',
-        description: 'Alkalized cocoa powder for truffle coating and finishing',
         ganacheCharacteristics: {
           cacaoFat: 12,
           sugar: 0,
@@ -626,8 +624,88 @@ export const ingredientCollections: Record<string, JsonObject> = {
           solids: 85,
           otherFats: 0
         },
+        description: 'Alkalized cocoa powder for truffle coating and finishing',
         vegan: true,
-        tags: ['coating', 'truffle', 'cocoa', 'finishing']
+        tags: ['coating', 'truffle', 'cocoa', 'finishing'],
+        category: 'other'
+      },
+      'soy-milk': {
+        baseId: 'soy-milk',
+        name: 'Soy Milk',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 92,
+          solids: 6,
+          otherFats: 2
+        },
+        description:
+          'Plant-based milk alternative made from soybeans and water, typically unsweetened with around 3-4% protein, low fat, and high water content. Used in vegan ganache as a dairy cream substitute.',
+        allergens: ['soy'],
+        certifications: ['vegan'],
+        vegan: true,
+        tags: ['plant-based', 'unsweetened'],
+        density: 1.03,
+        category: 'liquid'
+      },
+      'raspberry-puree-himbeermark': {
+        baseId: 'raspberry-puree-himbeermark',
+        name: 'Raspberry Puree (Himbeermark)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 5,
+          milkFat: 0,
+          water: 83,
+          solids: 12,
+          otherFats: 0
+        },
+        description:
+          'Seedless, finely pureed raspberries (Himbeermark in German), unsweetened fruit puree made by crushing and straining fresh or processed raspberries to remove seeds and fibers. Commonly used in German baking for fillings, mousses, sauces, tortes, or as a flavoring in creams and ganache.',
+        certifications: ['vegan'],
+        vegan: true,
+        tags: ['fruit', 'puree', 'unsweetened', 'seedless'],
+        density: 1.05,
+        category: 'liquid'
+      },
+      'corn-syrup': {
+        baseId: 'corn-syrup',
+        name: 'Corn Syrup',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 78,
+          milkFat: 0,
+          water: 22,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'Light corn syrup (also known as glucose syrup from corn starch hydrolysis) — a viscous, clear sweetener primarily composed of glucose, maltose, and higher oligosaccharides. Used in ganache and confections to inhibit sugar crystallization, improve smoothness, add body, and extend shelf life. Typically unsweetened beyond its own sugars, with no added flavors.',
+        certifications: ['vegan'],
+        vegan: true,
+        tags: ['sweetener', 'glucose-syrup', 'anti-crystallization', 'confectionery'],
+        density: 1.38,
+        category: 'liquid'
+      },
+      'cocoa-butter': {
+        baseId: 'cocoa-butter',
+        name: 'Cocoa Butter',
+        ganacheCharacteristics: {
+          cacaoFat: 100,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 0
+        },
+        description:
+          'Pure edible fat extracted from cocoa beans (Theobroma cacao), consisting almost entirely of triglycerides (primarily saturated and monounsaturated fats like stearic, oleic, and palmitic acids). Pale yellow, solid at room temperature with a melting point around 34-38°C, used in ganache to thin mixtures, enhance snap/crispness, add gloss, and stabilize emulsions. Neutral flavor (deodorized versions) or mild cocoa aroma.',
+        certifications: ['vegan'],
+        vegan: true,
+        tags: ['fat', 'cacao-fat', 'chocolate-making', 'tempering', 'vegan-fat'],
+        density: 0.9,
+        category: 'fat',
+        meltingPoint: 35
       }
     }
   },

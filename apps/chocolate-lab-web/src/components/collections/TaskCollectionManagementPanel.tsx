@@ -6,6 +6,7 @@ import {
   type BaseTaskId,
   type SourceId
 } from '@fgv/ts-chocolate';
+import { succeed, type Result } from '@fgv/ts-utils';
 import { Mustache as MustacheModule } from '@fgv/ts-extras';
 import { KeyValueTableEditor, type IKeyValueRow } from '../common';
 import { useChocolate } from '../../contexts/ChocolateContext';
@@ -460,7 +461,7 @@ export function TaskCollectionManagementPanel({
   headerTitle = toolId === 'tasks' ? 'Task Collections' : 'Collections'
 }: ITaskCollectionManagementPanelProps): React.ReactElement {
   const { runtime, collections } = useChocolate();
-  const { editingVersion } = useEditing();
+  const { dirtyCollections, editingVersion, commitTaskCollection } = useEditing();
   const { createCollection, deleteCollection, renameCollection, exportCollection, importCollection } =
     useTaskCollectionManager();
 
@@ -501,7 +502,7 @@ export function TaskCollectionManagementPanel({
         isProtected,
         isLocked,
         isLoaded,
-        isDirty: false,
+        isDirty: dirtyCollections.includes(collectionId),
         itemCount: runtimeCollection?.items.size ?? 0
       });
     }
@@ -510,7 +511,21 @@ export function TaskCollectionManagementPanel({
       if (a.isMutable !== b.isMutable) return a.isMutable ? -1 : 1;
       return a.name.localeCompare(b.name);
     });
-  }, [runtime, collections, editingVersion]);
+  }, [runtime, collections, dirtyCollections, editingVersion]);
+
+  const saveAll = useCallback(async (): Promise<Result<void>> => {
+    const visibleIds = new Set(collectionInfos.map((c) => c.id));
+    for (const id of dirtyCollections) {
+      if (!visibleIds.has(id)) {
+        continue;
+      }
+      const result = await commitTaskCollection(id);
+      if (result.isFailure()) {
+        return result;
+      }
+    }
+    return succeed(undefined);
+  }, [collectionInfos, commitTaskCollection, dirtyCollections]);
 
   return (
     <>
@@ -523,6 +538,8 @@ export function TaskCollectionManagementPanel({
         renameCollection={renameCollection}
         exportCollection={exportCollection}
         importCollection={importCollection}
+        saveCollection={commitTaskCollection}
+        saveAll={saveAll}
         selectedCollectionIds={selectedCollectionIds}
         onToggleSelected={onToggleSelected}
         showHeader={showHeader}
