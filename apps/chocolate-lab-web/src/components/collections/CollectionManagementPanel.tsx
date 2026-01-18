@@ -572,9 +572,19 @@ export function AddIngredientDialog({
       `Return a single JSON object for one ingredient.\n` +
       `Required: name, category, ganacheCharacteristics (all fields).\n` +
       `Optional: baseId (kebab-case), description, manufacturer, density, tags, vegan, certifications, allergens, traceAllergens, urls, and category-specific fields.\n` +
+      `Category-specific optional fields:\n` +
+      `- Chocolate: chocolateType, cacaoPercentage, fluidityStars, viscosityMcM, temperatureCurve, beanVarieties, applications, origins\n` +
+      `- Sugar: hydrationNumber, sweetnessPotency\n` +
+      `- Dairy: fatContent, waterContent\n` +
+      `- Fat: meltingPoint\n` +
+      `- Alcohol: alcoholByVolume, flavorProfile\n` +
       `Allowed categories: ${allIngredientCategories.join(', ')}\n` +
       `Allowed certifications: ${allCertifications.join(', ')}\n` +
       `Allowed allergens: ${allAllergens.join(', ')}\n\n` +
+      `IMPORTANT:\n` +
+      `- Translate all ingredient data to English if the source is in another language.\n` +
+      `- Ganache characteristics are percentages and must sum to exactly 100.\n` +
+      `- Include any estimates, guesses, or assumptions in the "note" field (create it if needed).\n\n` +
       JSON.stringify(template, null, 2);
 
     try {

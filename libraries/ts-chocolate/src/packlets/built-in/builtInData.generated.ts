@@ -371,23 +371,6 @@ export const ingredientCollections: Record<string, JsonObject> = {
       description: 'Dairy, fats, sugars, and generic chocolates for recipe substitution'
     },
     items: {
-      'heavy-cream-35': {
-        baseId: 'heavy-cream-35',
-        name: 'Heavy Cream (35% fat)',
-        ganacheCharacteristics: {
-          cacaoFat: 0,
-          sugar: 0,
-          milkFat: 35,
-          water: 60,
-          solids: 5,
-          otherFats: 0
-        },
-        allergens: ['milk'],
-        vegan: false,
-        category: 'dairy',
-        fatContent: 35,
-        waterContent: 60
-      },
       'heavy-cream-38': {
         baseId: 'heavy-cream-38',
         name: 'Heavy Cream (38% fat)',
@@ -420,36 +403,6 @@ export const ingredientCollections: Record<string, JsonObject> = {
         vegan: false,
         category: 'fat',
         meltingPoint: 32
-      },
-      'clarified-butter': {
-        baseId: 'clarified-butter',
-        name: 'Clarified Butter (Ghee)',
-        ganacheCharacteristics: {
-          cacaoFat: 0,
-          sugar: 0,
-          milkFat: 100,
-          water: 0,
-          solids: 0,
-          otherFats: 0
-        },
-        allergens: ['milk'],
-        category: 'fat',
-        meltingPoint: 35
-      },
-      'coconut-oil': {
-        baseId: 'coconut-oil',
-        name: 'Coconut Oil',
-        ganacheCharacteristics: {
-          cacaoFat: 0,
-          sugar: 0,
-          milkFat: 0,
-          water: 0,
-          solids: 0,
-          otherFats: 100
-        },
-        vegan: true,
-        category: 'fat',
-        meltingPoint: 24
       },
       'glucose-de43': {
         baseId: 'glucose-de43',
@@ -706,6 +659,200 @@ export const ingredientCollections: Record<string, JsonObject> = {
         density: 0.9,
         category: 'fat',
         meltingPoint: 35
+      },
+      'lemon-juice': {
+        baseId: 'lemon-juice',
+        name: 'Lemon Juice',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 3,
+          milkFat: 0,
+          water: 90,
+          solids: 7,
+          otherFats: 0
+        },
+        description:
+          'Freshly squeezed lemon juice, commonly used for acidity adjustment, flavor enhancement, and preservation in ganache and confectionery.',
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['citrus', 'acidic', 'fruit-juice'],
+        density: 1.03,
+        category: 'liquid'
+      },
+      'ghee-clarified-butter': {
+        baseId: 'ghee-clarified-butter',
+        name: 'Ghee (Clarified Butter)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 99,
+          water: 0,
+          solids: 1,
+          otherFats: 0
+        },
+        description:
+          'Ghee is clarified butter in which milk solids and water have been removed, resulting in a pure butterfat product with a rich, nutty flavor. Commonly used in confectionery and ganache for its high fat content and clean dairy notes.',
+        allergens: ['milk'],
+        tags: ['clarified-butter', 'butterfat', 'anhydrous-fat'],
+        density: 0.91,
+        category: 'fat',
+        meltingPoint: 32
+      },
+      'coconut-oil-deodorized': {
+        baseId: 'coconut-oil-deodorized',
+        name: 'Coconut Oil (Deodorized)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 0,
+          otherFats: 100
+        },
+        description:
+          'Refined and deodorized coconut oil with a neutral aroma and flavor, commonly used in confectionery and ganache for its clean fat profile and sharp melting behavior.',
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['coconut', 'refined-fat', 'neutral-oil'],
+        density: 0.92,
+        category: 'fat',
+        meltingPoint: 24
+      },
+      'heavy-cream-36': {
+        baseId: 'heavy-cream-36',
+        name: 'Heavy Cream (36%)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 3,
+          milkFat: 36,
+          water: 58,
+          solids: 3,
+          otherFats: 0
+        },
+        description:
+          'A rich dairy cream containing a high percentage of milk fat, commonly used in ganache for its emulsifying properties, smooth texture, and balanced water–fat ratio.',
+        allergens: ['milk'],
+        tags: ['cream', 'dairy', 'emulsion'],
+        density: 1.01,
+        category: 'dairy',
+        fatContent: 36,
+        waterContent: 58
+      },
+      'acid-powder': {
+        baseId: 'acid-powder',
+        name: 'Acid Powder (Säurepulver)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 100,
+          otherFats: 0
+        },
+        description:
+          'A powdered acid blend typically used in confectionery to adjust acidity, enhance fruit flavors, or provide tartness. Common formulations include citric acid, malic acid, or a mixture of food-grade acids.',
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['acidifier', 'citric-acid', 'malic-acid', 'powder'],
+        density: 1.66,
+        category: 'other'
+      },
+      'apple-pectin': {
+        baseId: 'apple-pectin',
+        name: 'Apple Pectin',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 100,
+          otherFats: 0
+        },
+        description:
+          'A gelling agent extracted from apples, commonly used in confectionery to stabilize fruit ganaches, jams, and pâte de fruits. Provides structure by forming a gel network in the presence of sugar and acid.',
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['pectin', 'gelling-agent', 'apple-derived', 'stabilizer'],
+        density: 1.45,
+        category: 'other'
+      },
+      'passion-fruit-juice': {
+        baseId: 'passion-fruit-juice',
+        name: 'Passion Fruit Juice',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 13,
+          milkFat: 0,
+          water: 82,
+          solids: 5,
+          otherFats: 0
+        },
+        description:
+          'Juice extracted from passion fruit, known for its intense tropical acidity and aromatic floral–fruity notes. Commonly used in ganache, fruit fillings, and sorbets for its bright flavor and natural tartness.',
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['fruit-juice', 'tropical', 'acidic'],
+        density: 1.05,
+        category: 'liquid'
+      },
+      salt: {
+        baseId: 'salt',
+        name: 'Salt',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 0,
+          milkFat: 0,
+          water: 0,
+          solids: 100,
+          otherFats: 0
+        },
+        description:
+          'Food‑grade sodium chloride used to enhance flavor, balance sweetness, and sharpen acidity in ganache and confectionery.',
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['sodium-chloride', 'seasoning', 'mineral'],
+        density: 2.16,
+        category: 'other'
+      },
+      'hazelnut-praline-70-30': {
+        baseId: 'hazelnut-praline-70-30',
+        name: 'Hazelnut Praliné 70:30',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 30,
+          milkFat: 0,
+          water: 0,
+          solids: 20,
+          otherFats: 50
+        },
+        description:
+          'A classic hazelnut praliné made from 70% roasted hazelnuts and 30% caramelized sugar, ground into a smooth paste. Commonly used in ganache, gianduja, and fillings for its rich nut flavor and natural fat–sugar balance.',
+        allergens: ['nuts'],
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['hazelnut', 'praline', 'nut-paste', 'gianduja-base'],
+        density: 1.05,
+        category: 'other'
+      },
+      'hazelnuts-roasted': {
+        baseId: 'hazelnuts-roasted',
+        name: 'Hazelnuts (Roasted)',
+        ganacheCharacteristics: {
+          cacaoFat: 0,
+          sugar: 4,
+          milkFat: 0,
+          water: 2,
+          solids: 34,
+          otherFats: 60
+        },
+        description:
+          'Whole hazelnuts that have been dry‑roasted to enhance aroma, deepen flavor, and reduce moisture. Commonly used in praliné, gianduja, nut pastes, and inclusions.',
+        allergens: ['nuts'],
+        certifications: ['all-natural'],
+        vegan: true,
+        tags: ['hazelnut', 'nut', 'roasted', 'inclusion'],
+        density: 0.64,
+        category: 'other'
       }
     }
   },
@@ -1140,8 +1287,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         description:
           'Traditional dark chocolate ganache with 64% couverture. Rich, intense chocolate flavor perfect for truffles and bonbon fillings.',
         tags: ['classic', 'dark', 'truffle', 'bonbon'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1156,13 +1301,15 @@ export const recipeCollections: Record<string, JsonObject> = {
               },
               {
                 ingredient: {
-                  ids: ['common.heavy-cream-35']
+                  ids: ['common.heavy-cream-36'],
+                  preferredId: 'common.heavy-cream-36'
                 },
                 amount: 200
               },
               {
                 ingredient: {
-                  ids: ['common.butter-82']
+                  ids: ['common.butter-82'],
+                  preferredId: 'common.butter-82'
                 },
                 amount: 20,
                 notes: 'Added at 35°C for shine'
@@ -1175,15 +1322,13 @@ export const recipeCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
-                },
-                {
-                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
             }
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       },
       'milk-ganache-classic': {
         baseId: 'milk-ganache-classic',
@@ -1192,8 +1337,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         description:
           'Smooth milk chocolate ganache with caramel notes. Higher chocolate ratio compensates for milk solids.',
         tags: ['classic', 'milk', 'truffle', 'bonbon'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1201,19 +1344,22 @@ export const recipeCollections: Record<string, JsonObject> = {
             ingredients: [
               {
                 ingredient: {
-                  ids: ['guittard.soleil-dor-38']
+                  ids: ['guittard.soleil-dor-38'],
+                  preferredId: 'guittard.soleil-dor-38'
                 },
                 amount: 350
               },
               {
                 ingredient: {
-                  ids: ['common.heavy-cream-35']
+                  ids: ['common.heavy-cream-36'],
+                  preferredId: 'common.heavy-cream-36'
                 },
                 amount: 200
               },
               {
                 ingredient: {
-                  ids: ['common.butter-82']
+                  ids: ['common.butter-82'],
+                  preferredId: 'common.butter-82'
                 },
                 amount: 20,
                 notes: 'Added at 35°C for shine'
@@ -1226,15 +1372,13 @@ export const recipeCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
-                },
-                {
-                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
             }
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       },
       'white-ganache-classic': {
         baseId: 'white-ganache-classic',
@@ -1243,8 +1387,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         description:
           'Delicate white chocolate ganache with creamy vanilla notes. Higher chocolate ratio needed for proper emulsion and set.',
         tags: ['classic', 'white', 'truffle', 'bonbon'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1252,19 +1394,22 @@ export const recipeCollections: Record<string, JsonObject> = {
             ingredients: [
               {
                 ingredient: {
-                  ids: ['cacao-barry.zephyr-white-34']
+                  ids: ['cacao-barry.zephyr-white-34'],
+                  preferredId: 'cacao-barry.zephyr-white-34'
                 },
                 amount: 500
               },
               {
                 ingredient: {
-                  ids: ['common.heavy-cream-35']
+                  ids: ['common.heavy-cream-36'],
+                  preferredId: 'common.heavy-cream-36'
                 },
                 amount: 200
               },
               {
                 ingredient: {
-                  ids: ['common.butter-82']
+                  ids: ['common.butter-82'],
+                  preferredId: 'common.butter-82'
                 },
                 amount: 15,
                 notes: 'Added at 32°C for shine'
@@ -1277,15 +1422,13 @@ export const recipeCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
-                },
-                {
-                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
             }
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       },
       'vegan-ganache-coconut-cream': {
         baseId: 'vegan-ganache-coconut-cream',
@@ -1294,8 +1437,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         description:
           'Dairy-free ganache using full-fat coconut cream. Subtle coconut undertones complement the dark chocolate.',
         tags: ['vegan', 'dairy-free', 'dark', 'coconut'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1319,7 +1460,8 @@ export const recipeCollections: Record<string, JsonObject> = {
             yield: '~48 bonbons',
             notes: 'Coconut cream provides fat and moisture similar to dairy cream'
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       },
       'vegan-ganache-coconut-oil': {
         baseId: 'vegan-ganache-coconut-oil',
@@ -1328,8 +1470,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         description:
           'Dairy-free ganache using coconut oil and water. Neutral flavor profile lets chocolate shine.',
         tags: ['vegan', 'dairy-free', 'dark', 'neutral'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1337,20 +1477,23 @@ export const recipeCollections: Record<string, JsonObject> = {
             ingredients: [
               {
                 ingredient: {
-                  ids: ['cacao-barry.guayaquil-64']
+                  ids: ['cacao-barry.guayaquil-64'],
+                  preferredId: 'cacao-barry.guayaquil-64'
                 },
                 amount: 400
               },
               {
                 ingredient: {
-                  ids: ['common.coconut-oil']
+                  ids: ['common.coconut-oil-deodorized'],
+                  preferredId: 'common.coconut-oil-deodorized'
                 },
                 amount: 150,
                 notes: 'Melted, at 35°C'
               },
               {
                 ingredient: {
-                  ids: ['common.glucose-de43']
+                  ids: ['common.glucose-de43'],
+                  preferredId: 'common.glucose-de43'
                 },
                 amount: 30,
                 notes: 'For texture and shelf life'
@@ -1360,7 +1503,8 @@ export const recipeCollections: Record<string, JsonObject> = {
             yield: '~46 bonbons',
             notes: 'Oil-based method gives firmer set and neutral flavor'
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       },
       'caramelized-ganache': {
         baseId: 'caramelized-ganache',
@@ -1369,8 +1513,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         description:
           'Luxurious ganache made with caramelized white chocolate. Notes of dulce de leche and salted caramel.',
         tags: ['caramelized', 'blonde', 'truffle', 'bonbon', 'salted-caramel'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1378,19 +1520,22 @@ export const recipeCollections: Record<string, JsonObject> = {
             ingredients: [
               {
                 ingredient: {
-                  ids: ['cacao-barry.zephyr-caramel-35']
+                  ids: ['cacao-barry.zephyr-caramel-35'],
+                  preferredId: 'cacao-barry.zephyr-caramel-35'
                 },
                 amount: 450
               },
               {
                 ingredient: {
-                  ids: ['common.heavy-cream-35']
+                  ids: ['common.heavy-cream-36'],
+                  preferredId: 'common.heavy-cream-36'
                 },
                 amount: 180
               },
               {
                 ingredient: {
-                  ids: ['common.butter-82']
+                  ids: ['common.butter-82'],
+                  preferredId: 'common.butter-82'
                 },
                 amount: 20,
                 notes: 'Salted butter works beautifully here'
@@ -1403,15 +1548,13 @@ export const recipeCollections: Record<string, JsonObject> = {
               options: [
                 {
                   id: 'common.ganache-cold-method'
-                },
-                {
-                  id: 'common.ganache-hot-method'
                 }
               ],
               preferredId: 'common.ganache-cold-method'
             }
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       },
       'gianduja-basic': {
         baseId: 'gianduja-basic',
@@ -1419,8 +1562,6 @@ export const recipeCollections: Record<string, JsonObject> = {
         category: 'gianduja',
         description: 'Classic Italian hazelnut-chocolate combination. Smooth, nutty, and luxurious.',
         tags: ['gianduja', 'hazelnut', 'italian', 'praline'],
-        goldenVersionSpec: '2026-01-01-01',
-        usage: [],
         versions: [
           {
             versionSpec: '2026-01-01-01',
@@ -1459,7 +1600,8 @@ export const recipeCollections: Record<string, JsonObject> = {
               preferredId: 'common.gianduja'
             }
           }
-        ]
+        ],
+        goldenVersionSpec: '2026-01-01-01'
       }
     }
   },
