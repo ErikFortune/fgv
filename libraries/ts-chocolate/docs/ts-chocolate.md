@@ -424,6 +424,17 @@ All possible mold formats
 </td></tr>
 <tr><td>
 
+[allProcedureTypes](./ts-chocolate.allproceduretypes.md)
+
+
+</td><td>
+
+All possible procedure types
+
+
+</td></tr>
+<tr><td>
+
 [allSpoonLevels](./ts-chocolate.allspoonlevels.md)
 
 
@@ -1006,6 +1017,17 @@ Percentage value (0-100)
 </td><td>
 
 Globally unique procedure identifier (composite) Format: "sourceId.baseProcedureId" Must contain exactly one dot separator Pattern: /^\[a-zA-Z0-9\_-\]+<!-- -->.<!-- -->\[a-zA-Z0-9\_-\]+$/
+
+
+</td></tr>
+<tr><td>
+
+[ProcedureType](./ts-chocolate.proceduretype.md)
+
+
+</td><td>
+
+Procedure type - can be a filling category, confection type, or other
 
 
 </td></tr>

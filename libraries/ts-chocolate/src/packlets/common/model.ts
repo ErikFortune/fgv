@@ -582,6 +582,18 @@ export type FillingCategory = 'ganache' | 'caramel' | 'gianduja';
  */
 export const allFillingCategories: FillingCategory[] = ['ganache', 'caramel', 'gianduja'];
 
+/**
+ * Procedure type - can be a filling category, confection type, or other
+ * @public
+ */
+export type ProcedureType = FillingCategory | ConfectionType | 'other';
+
+/**
+ * All possible procedure types
+ * @public
+ */
+export const allProcedureTypes: ProcedureType[] = [...allFillingCategories, ...allConfectionTypes, 'other'];
+
 // ============================================================================
 // URLs
 // ============================================================================

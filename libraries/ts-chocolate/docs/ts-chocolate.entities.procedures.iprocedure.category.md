@@ -4,10 +4,10 @@
 
 ## Entities.Procedures.IProcedure.category property
 
-Optional filling category this procedure applies to. If set, procedure is category-specific; if not, it's general/reusable.
+Optional procedure category this procedure applies to. Can be a filling category (ganache, caramel, gianduja), confection type, or 'other'. If set, procedure is category-specific; if not, it's general/reusable.
 
 **Signature:**
 
 ```typescript
-readonly category?: FillingCategory;
+readonly category?: ProcedureType;
 ```

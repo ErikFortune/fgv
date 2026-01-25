@@ -160,3 +160,201 @@ items:
           params: {}
         activeTime: 15
     tags: [gianduja, hazelnut, nut-paste]
+
+  # Confection assembly procedures
+  shell-bonbon-method:
+    baseId: shell-bonbon-method
+    name: Shell Bonbon Method
+    category: molded-bonbon
+    steps:
+      - order: 1
+        task:
+          task:
+            baseId: shell-bonbon-step-1
+            name: Temper Chocolate
+            template: Temper chocolate using preferred method
+          params: {}
+        activeTime: 15
+        temperature: 31
+      - order: 2
+        task:
+          task:
+            baseId: shell-bonbon-step-2
+            name: Fill Molds
+            template: Fill molds completely with tempered chocolate
+          params: {}
+        activeTime: 5
+      - order: 3
+        task:
+          task:
+            baseId: shell-bonbon-step-3
+            name: Invert and Drain
+            template: Invert molds over bowl, tap to drain excess
+          params: {}
+        activeTime: 3
+      - order: 4
+        task:
+          task:
+            baseId: shell-bonbon-step-4
+            name: Scrape and Chill
+            template: Scrape excess from mold surface, refrigerate until set
+          params: {}
+        activeTime: 2
+        waitTime: 10
+        temperature: 16
+      - order: 5
+        task:
+          task:
+            baseId: shell-bonbon-step-5
+            name: Pipe Filling
+            template: Pipe ganache filling to 2mm below rim
+          params: {}
+        activeTime: 10
+      - order: 6
+        task:
+          task:
+            baseId: shell-bonbon-step-6
+            name: Crystallize Filling
+            template: Allow filling to crystallize at room temperature
+          params: {}
+        waitTime: 60
+        temperature: 18
+      - order: 7
+        task:
+          task:
+            baseId: shell-bonbon-step-7
+            name: Seal Bonbons
+            template: Apply tempered chocolate to seal, scrape excess
+          params: {}
+        activeTime: 5
+      - order: 8
+        task:
+          task:
+            baseId: shell-bonbon-step-8
+            name: Final Set and Unmold
+            template: Refrigerate briefly, then unmold by inverting
+          params: {}
+        waitTime: 15
+        temperature: 16
+    tags: [molded, bonbon, shell, confection]
+
+  enrobe-truffle-method:
+    baseId: enrobe-truffle-method
+    name: Enrobe Truffle Method
+    category: bar-truffle
+    steps:
+      - order: 1
+        task:
+          task:
+            baseId: enrobe-truffle-step-1
+            name: Frame Ganache
+            template: Pour ganache into frame at proper temperature
+          params: {}
+        activeTime: 5
+        temperature: 28
+      - order: 2
+        task:
+          task:
+            baseId: enrobe-truffle-step-2
+            name: Level and Set
+            template: Level surface with offset spatula, allow to crystallize
+          params: {}
+        activeTime: 2
+        waitTime: 120
+        temperature: 18
+      - order: 3
+        task:
+          task:
+            baseId: enrobe-truffle-step-3
+            name: Pre-coat Bottom
+            template: Apply thin layer of tempered chocolate to bottom
+          params: {}
+        activeTime: 5
+        temperature: 31
+      - order: 4
+        task:
+          task:
+            baseId: enrobe-truffle-step-4
+            name: Cut Pieces
+            template: Cut ganache slab into uniform pieces with guitar cutter or knife
+          params: {}
+        activeTime: 10
+      - order: 5
+        task:
+          task:
+            baseId: enrobe-truffle-step-5
+            name: Enrobe
+            template: Dip pieces in tempered chocolate using dipping fork
+          params: {}
+        activeTime: 20
+        temperature: 31
+      - order: 6
+        task:
+          task:
+            baseId: enrobe-truffle-step-6
+            name: Decorate and Set
+            template: Apply decoration while coating is wet, allow to set
+          params: {}
+        activeTime: 5
+        waitTime: 15
+        temperature: 18
+    tags: [enrobed, truffle, bar, confection]
+
+  roll-and-coat-method:
+    baseId: roll-and-coat-method
+    name: Roll and Coat Truffle Method
+    category: rolled-truffle
+    steps:
+      - order: 1
+        task:
+          task:
+            baseId: roll-coat-step-1
+            name: Chill Ganache
+            template: Refrigerate ganache until firm but scoopable
+          params: {}
+        waitTime: 60
+        temperature: 14
+      - order: 2
+        task:
+          task:
+            baseId: roll-coat-step-2
+            name: Portion Ganache
+            template: Scoop uniform portions using small ice cream scoop or melon baller
+          params: {}
+        activeTime: 15
+      - order: 3
+        task:
+          task:
+            baseId: roll-coat-step-3
+            name: Roll into Balls
+            template: Roll portions between palms quickly to form spheres
+          params: {}
+        activeTime: 15
+        notes: Work quickly to prevent melting from hand heat
+      - order: 4
+        task:
+          task:
+            baseId: roll-coat-step-4
+            name: Chill Balls
+            template: Refrigerate rolled balls until firm
+          params: {}
+        waitTime: 30
+        temperature: 14
+      - order: 5
+        task:
+          task:
+            baseId: roll-coat-step-5
+            name: Apply Coating
+            template: Roll in coating (cocoa powder, nuts, etc.) to cover completely
+          params: {}
+        activeTime: 10
+      - order: 6
+        task:
+          task:
+            baseId: roll-coat-step-6
+            name: Final Rest
+            template: Allow to temper at room temperature before serving
+          params: {}
+        waitTime: 30
+        temperature: 18
+    tags: [rolled, truffle, coated, confection]

@@ -33,12 +33,12 @@ export interface ITool {
  * Available tools configuration
  */
 export const TOOLS: ITool[] = [
-  { id: 'ingredients', name: 'Ingredients', enabled: true },
   { id: 'fillings', name: 'Fillings', enabled: true },
+  { id: 'confections', name: 'Confections', enabled: true },
+  { id: 'ingredients', name: 'Ingredients', enabled: true },
+  { id: 'molds', name: 'Molds', enabled: true },
   { id: 'procedures', name: 'Procedures', enabled: true },
   { id: 'tasks', name: 'Tasks', enabled: true },
-  { id: 'molds', name: 'Molds', enabled: true },
-  { id: 'confections', name: 'Confections', enabled: true },
   { id: 'settings', name: 'Settings', enabled: true }
 ];
 

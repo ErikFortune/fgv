@@ -93,7 +93,9 @@ import {
   TaskId,
   UrlCategory,
   VERSION_ID_SEPARATOR,
-  WeightUnit
+  WeightUnit,
+  allProcedureTypes,
+  ProcedureType
 } from './model';
 import { validateIdsWithPreferred, validateOptionsWithPreferred } from './validation';
 import {
@@ -524,6 +526,12 @@ export const additionalChocolatePurpose: Converter<AdditionalChocolatePurpose> =
  * @public
  */
 export const fillingCategory: Converter<FillingCategory> = Converters.enumeratedValue(allFillingCategories);
+
+/**
+ * Converter for ProcedureType
+ * @public
+ */
+export const procedureType: Converter<ProcedureType> = Converters.enumeratedValue(allProcedureTypes);
 
 /**
  * Converter for MeasurementUnit

@@ -23,8 +23,7 @@
  * @packageDocumentation
  */
 
-import { BaseProcedureId, Celsius, Minutes } from '../../common';
-import { FillingCategory } from '../fillings';
+import { BaseProcedureId, Celsius, Minutes, ProcedureType } from '../../common';
 import { ITaskInvocation, TaskRefStatus } from '../tasks';
 
 /**
@@ -123,10 +122,11 @@ export interface IProcedure {
   readonly description?: string;
 
   /**
-   * Optional filling category this procedure applies to.
+   * Optional procedure category this procedure applies to.
+   * Can be a filling category (ganache, caramel, gianduja), confection type, or 'other'.
    * If set, procedure is category-specific; if not, it's general/reusable.
    */
-  readonly category?: FillingCategory;
+  readonly category?: ProcedureType;
 
   /**
    * Steps of the procedure in order

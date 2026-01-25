@@ -476,3 +476,62 @@ export interface ICollectionLoadResult<
    */
   readonly protectedCollections: ReadonlyArray<IProtectedCollectionInternal<TCollectionId>>;
 }
+
+// ============================================================================
+// Import Resolution Types
+// ============================================================================
+
+/**
+ * Specifies how a directory was resolved for import.
+ * @public
+ */
+export type ImportRootKind = 'canonical' | 'data-dir' | 'direct-subdir' | 'loose-files';
+
+/**
+ * A candidate import root with directory and resolution kind.
+ * Used internally during BFS search and as the result of tryResolveAt.
+ * @public
+ */
+export interface IImportRootCandidate {
+  /** The directory that can be treated as the library root. */
+  readonly root: FileTree.IFileTreeDirectoryItem;
+  /** How the resolution was achieved. */
+  readonly kind: ImportRootKind;
+}
+
+/**
+ * Result of importing a directory for a specific sub-library.
+ * @public
+ */
+export interface IResolvedImportRoot extends IImportRootCandidate {
+  /** Number of directories visited during search. */
+  readonly visited: number;
+  /** Number of matching candidates found. */
+  readonly matches: number;
+}
+
+/**
+ * Options for importing a directory for a specific sub-library.
+ * @public
+ */
+export interface IResolveImportRootOptions {
+  /** Maximum directory depth to search beneath the provided root. Default: 2 */
+  readonly maxDepth?: number;
+  /** Maximum directories to visit. Default: 800 */
+  readonly visitLimit?: number;
+  /** Maximum candidate matches to count before stopping. Default: 10 */
+  readonly matchLimit?: number;
+  /** Whether to treat loose *.json/*.yaml/*.yml files in a directory as collections. Default: true */
+  readonly allowLooseFiles?: boolean;
+}
+
+/**
+ * Queue item for BFS directory traversal during import resolution.
+ * @internal
+ */
+export interface IDirectorySearchQueueItem {
+  /** The directory to examine. */
+  readonly dir: FileTree.IFileTreeDirectoryItem;
+  /** Current depth in the search tree. */
+  readonly depth: number;
+}

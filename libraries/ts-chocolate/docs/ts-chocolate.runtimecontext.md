@@ -40,6 +40,27 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
+[cachedConfectionCount](./ts-chocolate.runtimecontext.cachedconfectioncount.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+number
+
+
+</td><td>
+
+Gets the number of cached confections.
+
+
+</td></tr>
+<tr><td>
+
 [cachedIngredientCount](./ts-chocolate.runtimecontext.cachedingredientcount.md)
 
 
@@ -205,6 +226,27 @@ Logger used by this runtime context and its libraries.
 
 
 </td></tr>
+<tr><td>
+
+[runtimeConfections](./ts-chocolate.runtimecontext.runtimeconfections.md)
+
+
+</td><td>
+
+`readonly`
+
+
+</td><td>
+
+ReadonlyMap&lt;[ConfectionId](./ts-chocolate.confectionid.md)<!-- -->, [AnyRuntimeConfection](./ts-chocolate.runtime.anyruntimeconfection.md)<!-- -->&gt;
+
+
+</td><td>
+
+Gets all runtime confections as an iterable map. Confections are resolved lazily and cached on first access.
+
+
+</td></tr>
 </tbody></table>
 
 ## Methods
@@ -282,6 +324,20 @@ Creates a weight calculation context for unit-aware weight calculations. The con
 </td><td>
 
 Creates a RuntimeContext wrapping an existing ChocolateLibrary. Use this when you already have a configured library instance.
+
+
+</td></tr>
+<tr><td>
+
+[getAllConfectionTags()](./ts-chocolate.runtimecontext.getallconfectiontags.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets all unique tags used across confections.
 
 
 </td></tr>
@@ -380,6 +436,20 @@ Gets all journal records for a specific filling version.
 </td><td>
 
 Gets a procedure by its composite ID. Used internally by RuntimeRecipe for procedure resolution.
+
+
+</td></tr>
+<tr><td>
+
+[getRuntimeConfection(id)](./ts-chocolate.runtimecontext.getruntimeconfection.md)
+
+
+</td><td>
+
+
+</td><td>
+
+Gets a runtime confection by ID (with lazy resolution and caching).
 
 
 </td></tr>

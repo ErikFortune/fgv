@@ -119,7 +119,7 @@ describe('BuiltInData', () => {
           if (commonFile?.type === 'file') {
             expect(commonFile.getContents()).toSucceedAndSatisfy((contents) => {
               const sourceFile = contents as { items: Record<string, unknown> };
-              expect(sourceFile.items['heavy-cream-35']).toBeDefined();
+              expect(sourceFile.items['heavy-cream-36']).toBeDefined();
               expect(sourceFile.items['butter-82']).toBeDefined();
               expect(sourceFile.items['glucose-de43']).toBeDefined();
             });

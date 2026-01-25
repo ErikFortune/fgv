@@ -40,5 +40,8 @@ export * from './packlets/layout';
 // Filling components
 export * from './packlets/fillings';
 
+// Confection components
+export * from './packlets/confections';
+
 // Observability (logging and messaging)
 export * from './packlets/observability';

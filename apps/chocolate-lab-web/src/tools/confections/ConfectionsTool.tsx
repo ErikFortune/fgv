@@ -4,19 +4,59 @@
  */
 
 import * as React from 'react';
-import { useChocolate } from '../../contexts/ChocolateContext';
+import { useEffect, useState } from 'react';
+import type { ConfectionId } from '@fgv/ts-chocolate';
+import { BrowseView } from './views/BrowseView';
+import { DetailView } from './views/DetailView';
+import type { IConfectionFilters } from './types';
 
 /**
- * Placeholder confections tool
+ * Props for the ConfectionsTool component
  */
-export function ConfectionsTool(): React.ReactElement {
-  const { confectionCount } = useChocolate();
+export interface IConfectionsToolProps {
+  /** Current filters (passed from App) */
+  filters: IConfectionFilters;
+}
 
-  return (
-    <div className="flex flex-col items-center justify-center h-64 text-center">
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Confections</h2>
-      <p className="text-gray-500 dark:text-gray-400 mb-4">{confectionCount} confections loaded</p>
-      <p className="text-sm text-gray-400 dark:text-gray-500">Confection planning and tracking coming soon</p>
-    </div>
-  );
+/**
+ * Confections tool with browse and detail views
+ */
+export function ConfectionsTool({ filters }: IConfectionsToolProps): React.ReactElement {
+  const [selectedId, setSelectedId] = useState<ConfectionId | null>(null);
+  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+
+  useEffect(() => {
+    const applyHashSelection = (): void => {
+      const hash = window.location.hash;
+      if (!hash.startsWith('#confections/')) {
+        return;
+      }
+      const rawId = hash.slice('#confections/'.length);
+      if (rawId.length === 0) {
+        return;
+      }
+      setSelectedId(rawId as ConfectionId);
+      setViewMode('detail');
+    };
+
+    applyHashSelection();
+    window.addEventListener('hashchange', applyHashSelection);
+    return () => window.removeEventListener('hashchange', applyHashSelection);
+  }, [filters]);
+
+  const handleSelect = (id: ConfectionId): void => {
+    setSelectedId(id);
+    setViewMode('detail');
+  };
+
+  const handleBack = (): void => {
+    setViewMode('browse');
+    setSelectedId(null);
+  };
+
+  if (viewMode === 'detail' && selectedId) {
+    return <DetailView confectionId={selectedId} onBack={handleBack} />;
+  }
+
+  return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
 }

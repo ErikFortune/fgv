@@ -584,6 +584,17 @@ Converter for ProcedureId (composite)
 </td></tr>
 <tr><td>
 
+[procedureType](./ts-chocolate.converters.proceduretype.md)
+
+
+</td><td>
+
+Converter for ProcedureType
+
+
+</td></tr>
+<tr><td>
+
 [ratingScore](./ts-chocolate.converters.ratingscore.md)
 
 

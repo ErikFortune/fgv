@@ -25,8 +25,7 @@
 
 import { Result, Success, fail, succeed } from '@fgv/ts-utils';
 
-import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
-import { FillingCategory } from '../../entities';
+import { BaseProcedureId, Minutes, ProcedureId, ProcedureType, TaskId } from '../../common';
 import { IProcedure, IProcedureStep } from '../../entities';
 import { isInlineTask, isTaskRef } from '../../entities';
 import { RuntimeTask } from '../tasks';
@@ -120,7 +119,7 @@ export class RuntimeProcedure implements IRuntimeProcedure {
   /**
    * Optional category this procedure applies to
    */
-  public get category(): FillingCategory | undefined {
+  public get category(): ProcedureType | undefined {
     return this._procedure.category;
   }
 

@@ -19,6 +19,8 @@ import {
   type TaskId,
   type BaseMoldId,
   type MoldId,
+  type BaseConfectionId,
+  type ConfectionId,
   type SourceId,
   type LibraryData
 } from '@fgv/ts-chocolate';
@@ -34,6 +36,7 @@ const LOCAL_FILLING_COLLECTIONS_KEY = 'chocolate-lab-web:fillings:collections:v1
 const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
+const LOCAL_CONFECTION_COLLECTIONS_KEY = 'chocolate-lab-web:confections:collections:v1';
 
 type ResolvedSecret = {
   keyBase64: string;
@@ -188,6 +191,26 @@ function writeLocalTaskCollections(next: Record<string, unknown>): void {
   window.localStorage.setItem(LOCAL_TASK_COLLECTIONS_KEY, JSON.stringify(next));
 }
 
+function readLocalConfectionCollections(): Record<string, unknown> {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_CONFECTION_COLLECTIONS_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      return {};
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalConfectionCollections(next: Record<string, unknown>): void {
+  window.localStorage.setItem(LOCAL_CONFECTION_COLLECTIONS_KEY, JSON.stringify(next));
+}
+
 function decodeBase64Key(value: string): Result<Uint8Array> {
   try {
     const bytes = Uint8Array.from(atob(value), (c) => c.charCodeAt(0));
@@ -294,6 +317,9 @@ function getAllLocalCollectionIds(): SourceId[] {
   for (const k of Object.keys(readLocalMoldCollections())) {
     ids.add(k);
   }
+  for (const k of Object.keys(readLocalConfectionCollections())) {
+    ids.add(k);
+  }
   return Array.from(ids) as SourceId[];
 }
 
@@ -303,6 +329,7 @@ type Filling = Entities.Fillings.IFillingRecipe;
 type Procedure = Entities.Procedures.IProcedure;
 type Task = Entities.Tasks.ITaskData;
 type Mold = Entities.Molds.IMold;
+type Confection = Entities.Confections.ConfectionData;
 
 // ============================================================================
 // Types
@@ -453,6 +480,18 @@ export interface IEditingContext {
   exportTaskCollection: (params: IExportParams) => Promise<Result<string>>;
   importTaskCollection: (params: IImportParams) => Result<void>;
 
+  // Confection collection management
+  createConfectionCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
+  deleteConfectionCollection: (collectionId: SourceId) => Result<void>;
+  renameConfectionCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportConfectionCollection: (params: IExportParams) => Promise<Result<string>>;
+  importConfectionCollection: (params: IImportParams) => Result<void>;
+
   /** Commit current editor state back into the runtime library and refresh runtime caches */
   commitCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
@@ -467,6 +506,9 @@ export interface IEditingContext {
 
   /** Persist a mutable task collection to localStorage and refresh runtime caches */
   commitTaskCollection: (collectionId: SourceId) => Promise<Result<void>>;
+
+  /** Persist a mutable confection collection to localStorage and refresh runtime caches */
+  commitConfectionCollection: (collectionId: SourceId) => Promise<Result<void>>;
 
   // Data version - increments when editing operations complete
   editingVersion: number;
@@ -512,11 +554,17 @@ const defaultEditingContext: IEditingContext = {
   renameTaskCollection: async () => fail('Editing context not initialized'),
   exportTaskCollection: async () => fail('Editing context not initialized'),
   importTaskCollection: () => fail('Editing context not initialized'),
+  createConfectionCollection: async () => fail('Editing context not initialized'),
+  deleteConfectionCollection: () => fail('Editing context not initialized'),
+  renameConfectionCollection: async () => fail('Editing context not initialized'),
+  exportConfectionCollection: async () => fail('Editing context not initialized'),
+  importConfectionCollection: () => fail('Editing context not initialized'),
   commitCollection: async () => fail('No EditingProvider'),
   commitMoldCollection: async () => fail('No EditingProvider'),
   commitFillingCollection: async () => fail('No EditingProvider'),
   commitProcedureCollection: async () => fail('No EditingProvider'),
   commitTaskCollection: async () => fail('No EditingProvider'),
+  commitConfectionCollection: async () => fail('No EditingProvider'),
   editingVersion: 0
 };
 
@@ -1516,6 +1564,137 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
     ]
   );
 
+  const commitConfectionCollection = useCallback(
+    async (collectionId: SourceId): Promise<Result<void>> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.confections.collections.get(collectionId).asResult;
+      if (collectionResult.isFailure()) {
+        return fail(`Collection "${collectionId}" not found`);
+      }
+
+      const collectionEntry = collectionResult.value;
+      if (!collectionEntry.isMutable) {
+        return fail(`Collection "${collectionId}" is immutable and cannot be modified`);
+      }
+
+      try {
+        const items: Record<BaseConfectionId, Confection> = recordFromEntries(
+          collectionEntry.items.entries()
+        );
+        const sourceFile: LibraryData.ICollectionSourceFile<Confection> = {
+          metadata: collectionEntry.metadata ?? { name: collectionId },
+          items
+        };
+
+        const fileFormat = getFileBackedCollectionExportFormat(
+          'confections',
+          collectionId as unknown as string
+        );
+        if (fileFormat) {
+          if (sourceFile.metadata?.secretName && fileFormat !== 'json') {
+            return fail('Protected collections can only be exported as encrypted JSON');
+          }
+
+          let contents: string | undefined;
+          if (sourceFile.metadata?.secretName) {
+            const cryptoResult = Crypto.createBrowserCryptoProvider();
+            if (cryptoResult.isFailure()) {
+              return fail(`Crypto not available: ${cryptoResult.message}`);
+            }
+            const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+              items as unknown as JsonObject,
+              sourceFile.metadata,
+              collectionId,
+              cryptoResult.value,
+              resolvedSecrets
+            );
+            if (encrypted.isFailure()) {
+              return fail(encrypted.message);
+            }
+            if (encrypted.value === undefined) {
+              return fail('Failed to export protected collection');
+            }
+            contents = encrypted.value;
+          } else {
+            const serialized = Editing.serializeCollection(sourceFile, fileFormat);
+            if (serialized.isFailure()) {
+              return fail(serialized.message);
+            }
+            contents = serialized.value;
+          }
+
+          const writeResult = await tryWriteFileBackedCollection(
+            'confections',
+            collectionId as unknown as string,
+            contents
+          );
+          if (writeResult.isFailure()) {
+            return fail(writeResult.message);
+          }
+          if (writeResult.value) {
+            try {
+              const existing = readLocalConfectionCollections();
+              if (sourceFile.metadata?.secretName) {
+                existing[collectionId as unknown as string] = JSON.parse(contents) as unknown;
+              } else {
+                existing[collectionId as unknown as string] = sourceFile as unknown;
+              }
+              writeLocalConfectionCollections(existing);
+              setLocalCollections(getAllLocalCollectionIds());
+            } catch {
+              // ignore
+            }
+
+            incrementVersion();
+            return notifyLibraryChanged();
+          }
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const existing = readLocalConfectionCollections();
+        const prior = existing[collectionId as unknown as string];
+        const encryptedResult = await encryptItemsIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          collectionId,
+          prior,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encryptedResult.isFailure()) {
+          return fail(encryptedResult.message);
+        }
+
+        existing[collectionId] =
+          encryptedResult.value !== undefined ? encryptedResult.value : (sourceFile as unknown);
+        writeLocalConfectionCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${collectionId}": ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [
+      getFileBackedCollectionExportFormat,
+      incrementVersion,
+      notifyLibraryChanged,
+      resolvedSecrets,
+      runtime,
+      tryWriteFileBackedCollection
+    ]
+  );
+
   const createMoldCollection = useCallback(
     async (params: ICreateCollectionParams): Promise<Result<void>> => {
       if (!runtime) {
@@ -2294,6 +2473,267 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
     [incrementVersion, notifyLibraryChanged, runtime]
   );
 
+  // ============================================================================
+  // Confection Collection Management
+  // ============================================================================
+
+  const createConfectionCollection = useCallback(
+    async (params: ICreateCollectionParams): Promise<Result<void>> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<ConfectionId, BaseConfectionId, Confection>(
+        runtime.library.confections
+      );
+      const secretName = params.secretName?.trim();
+      const metadata: LibraryData.ICollectionSourceMetadata = {
+        name: params.name,
+        ...(params.description !== undefined ? { description: params.description } : {}),
+        ...(secretName ? { secretName } : {})
+      };
+
+      const createResult = manager.create(params.collectionId, metadata);
+      if (createResult.isFailure()) {
+        return fail(createResult.message);
+      }
+
+      try {
+        const existing = readLocalConfectionCollections();
+        const items = {} as unknown as JsonObject;
+        const sourceFile: LibraryData.ICollectionSourceFile<Confection> = {
+          metadata,
+          items: {}
+        };
+
+        if (metadata.secretName) {
+          const cryptoResult = Crypto.createBrowserCryptoProvider();
+          if (cryptoResult.isFailure()) {
+            return fail(`Crypto not available: ${cryptoResult.message}`);
+          }
+          const encrypted = await encryptItemsIfNeeded(
+            items,
+            metadata,
+            params.collectionId,
+            undefined,
+            cryptoResult.value,
+            resolvedSecrets
+          );
+          if (encrypted.isFailure()) {
+            return fail(encrypted.message);
+          }
+          if (encrypted.value === undefined) {
+            return fail('Failed to encrypt protected collection');
+          }
+          existing[params.collectionId] = encrypted.value;
+        } else {
+          existing[params.collectionId] = sourceFile as unknown;
+        }
+
+        writeLocalConfectionCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch (e) {
+        return fail(
+          `Failed to persist collection "${params.collectionId}": ${
+            e instanceof Error ? e.message : String(e)
+          }`
+        );
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, resolvedSecrets, runtime]
+  );
+
+  const deleteConfectionCollection = useCallback(
+    (collectionId: SourceId): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<ConfectionId, BaseConfectionId, Confection>(
+        runtime.library.confections
+      );
+      const result = manager.delete(collectionId);
+
+      if (result.isSuccess()) {
+        try {
+          const existing = readLocalConfectionCollections();
+          if (collectionId in existing) {
+            delete existing[collectionId];
+            writeLocalConfectionCollections(existing);
+            setLocalCollections(getAllLocalCollectionIds());
+          }
+        } catch {
+          // ignore
+        }
+
+        incrementVersion();
+        return notifyLibraryChanged();
+      }
+
+      try {
+        const existing = readLocalConfectionCollections();
+        if (collectionId in existing) {
+          delete existing[collectionId];
+          writeLocalConfectionCollections(existing);
+          setLocalCollections(getAllLocalCollectionIds());
+          incrementVersion();
+          return notifyLibraryChanged();
+        }
+      } catch {
+        // ignore
+      }
+
+      return fail(result.message);
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const exportConfectionCollection = useCallback(
+    async (params: IExportParams): Promise<Result<string>> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const collectionResult = runtime.library.confections.collections.get(params.collectionId);
+      if (!collectionResult.isSuccess() || !collectionResult.value) {
+        return fail(`Collection "${params.collectionId}" not found`);
+      }
+
+      const collection = collectionResult.value;
+      const items: Record<BaseConfectionId, Confection> = recordFromEntries(collection.items.entries());
+
+      const sourceFile: LibraryData.ICollectionSourceFile<Confection> = {
+        metadata: collection.metadata ?? { name: params.collectionId },
+        items
+      };
+
+      if (sourceFile.metadata?.secretName) {
+        if (params.format !== 'json') {
+          return fail('Protected collections can only be exported as encrypted JSON');
+        }
+
+        const cryptoResult = Crypto.createBrowserCryptoProvider();
+        if (cryptoResult.isFailure()) {
+          return fail(`Crypto not available: ${cryptoResult.message}`);
+        }
+
+        const encrypted = await exportItemsToEncryptedJsonIfNeeded(
+          items as unknown as JsonObject,
+          sourceFile.metadata,
+          params.collectionId,
+          cryptoResult.value,
+          resolvedSecrets
+        );
+        if (encrypted.isFailure()) {
+          return fail(encrypted.message);
+        }
+        if (encrypted.value === undefined) {
+          return fail('Failed to export protected collection');
+        }
+        return succeed(encrypted.value);
+      }
+
+      return Editing.serializeCollection(sourceFile, params.format);
+    },
+    [runtime, resolvedSecrets]
+  );
+
+  const importConfectionCollection = useCallback(
+    (params: IImportParams): Result<void> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const parseResult = Editing.validateAndParseCollection<Confection>(params.content);
+      if (parseResult.isFailure()) {
+        return fail(`Invalid import file: ${parseResult.message}`);
+      }
+
+      const sourceFile = parseResult.value;
+      const manager = new Editing.CollectionManager<ConfectionId, BaseConfectionId, Confection>(
+        runtime.library.confections
+      );
+
+      if (params.mode === 'replace') {
+        if (!manager.exists(params.collectionId)) {
+          return fail(`Collection "${params.collectionId}" does not exist`);
+        }
+
+        const mutableResult = manager.isMutable(params.collectionId);
+        if (mutableResult.isFailure() || !mutableResult.value) {
+          return fail(`Collection "${params.collectionId}" is not mutable`);
+        }
+
+        const deleteResult = manager.delete(params.collectionId);
+        if (deleteResult.isFailure()) {
+          return fail(`Failed to delete existing collection: ${deleteResult.message}`);
+        }
+      } else if (manager.exists(params.collectionId)) {
+        return fail(`Collection "${params.collectionId}" already exists`);
+      }
+
+      const createResult = runtime.library.confections.addCollectionEntry({
+        id: params.collectionId,
+        isMutable: true,
+        items: sourceFile.items,
+        metadata: sourceFile.metadata
+      });
+
+      if (createResult.isFailure()) {
+        return fail(`Failed to create collection: ${createResult.message}`);
+      }
+
+      try {
+        const existing = readLocalConfectionCollections();
+        existing[params.collectionId] = {
+          metadata: sourceFile.metadata,
+          items: sourceFile.items
+        } as unknown;
+        writeLocalConfectionCollections(existing);
+        setLocalCollections(getAllLocalCollectionIds());
+      } catch {
+        // ignore
+      }
+
+      incrementVersion();
+      return notifyLibraryChanged();
+    },
+    [incrementVersion, notifyLibraryChanged, runtime]
+  );
+
+  const renameConfectionCollection = useCallback(
+    async (
+      collectionId: SourceId,
+      newName: string,
+      newDescription?: string,
+      secretName?: string
+    ): Promise<Result<void>> => {
+      if (!runtime) {
+        return fail('Runtime not loaded');
+      }
+
+      const manager = new Editing.CollectionManager<ConfectionId, BaseConfectionId, Confection>(
+        runtime.library.confections
+      );
+      const metadata: Partial<LibraryData.ICollectionSourceMetadata> = {
+        name: newName,
+        ...(newDescription !== undefined ? { description: newDescription } : {}),
+        ...(secretName !== undefined ? { secretName } : {})
+      };
+
+      const updateResult = manager.updateMetadata(collectionId, metadata);
+      if (updateResult.isFailure()) {
+        return fail(updateResult.message);
+      }
+
+      return await commitConfectionCollection(collectionId);
+    },
+    [commitConfectionCollection, runtime]
+  );
+
   // Get or create an ingredient editor
   const getIngredientEditor = useCallback(
     (collectionId: SourceId): Result<Editing.Ingredients.IngredientEditorContext> => {
@@ -2738,11 +3178,17 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
       renameTaskCollection,
       exportTaskCollection,
       importTaskCollection,
+      createConfectionCollection,
+      deleteConfectionCollection,
+      renameConfectionCollection,
+      exportConfectionCollection,
+      importConfectionCollection,
       commitCollection,
       commitMoldCollection,
       commitFillingCollection,
       commitProcedureCollection,
       commitTaskCollection,
+      commitConfectionCollection,
       editingVersion
     }),
     [
@@ -2782,11 +3228,17 @@ export function EditingProvider({ children }: { children: ReactNode }): React.Re
       renameTaskCollection,
       exportTaskCollection,
       importTaskCollection,
+      createConfectionCollection,
+      deleteConfectionCollection,
+      renameConfectionCollection,
+      exportConfectionCollection,
+      importConfectionCollection,
       commitCollection,
       commitMoldCollection,
       commitFillingCollection,
       commitProcedureCollection,
       commitTaskCollection,
+      commitConfectionCollection,
       editingVersion
     ]
   );
@@ -2997,6 +3449,35 @@ export function useProcedureCollectionManager(): {
     renameCollection: renameProcedureCollection,
     exportCollection: exportProcedureCollection,
     importCollection: importProcedureCollection
+  };
+}
+
+export function useConfectionCollectionManager(): {
+  createCollection: (params: ICreateCollectionParams) => Promise<Result<void>>;
+  deleteCollection: (collectionId: SourceId) => Result<void>;
+  renameCollection: (
+    collectionId: SourceId,
+    newName: string,
+    newDescription?: string,
+    secretName?: string
+  ) => Promise<Result<void>>;
+  exportCollection: (params: IExportParams) => Promise<Result<string>>;
+  importCollection: (params: IImportParams) => Result<void>;
+} {
+  const {
+    createConfectionCollection,
+    deleteConfectionCollection,
+    renameConfectionCollection,
+    exportConfectionCollection,
+    importConfectionCollection
+  } = useEditing();
+
+  return {
+    createCollection: createConfectionCollection,
+    deleteCollection: deleteConfectionCollection,
+    renameCollection: renameConfectionCollection,
+    exportCollection: exportConfectionCollection,
+    importCollection: importConfectionCollection
   };
 }
 

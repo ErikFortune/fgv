@@ -6,6 +6,7 @@
 export * from './CollectionManagementPanel';
 export * from './CollectionManagementPanelBase';
 export * from './CollectionSelectionPanel';
+export * from './ConfectionCollectionManagementPanel';
 export * from './FillingCollectionManagementPanel';
 export * from './MoldCollectionManagementPanel';
 export * from './ProcedureCollectionManagementPanel';

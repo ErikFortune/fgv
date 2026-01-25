@@ -4,6 +4,7 @@
 
 ```ts
 
+import type { ConfectionType } from '@fgv/ts-chocolate';
 import type { Entities } from '@fgv/ts-chocolate';
 import type { IngredientCategory } from '@fgv/ts-chocolate';
 import type { IngredientId } from '@fgv/ts-chocolate';
@@ -21,6 +22,12 @@ export function CategoryBadge({ category, className, iconOnly, size }: ICategory
 
 // @public
 export function CollectionBadge({ name, isProtected, isLocked, className, size, onClick }: ICollectionBadgeProps): React_2.ReactElement;
+
+// @public
+export function ConfectionCard({ confection, showCollection, className, onClick, isSelected }: IConfectionCardProps): React_2.ReactElement;
+
+// @public
+export function ConfectionTypeBadge({ confectionType, size, className }: IConfectionTypeBadgeProps): React_2.ReactElement;
 
 // @public
 export function DetailSection({ title, children, icon: Icon, collapsible, defaultCollapsed, className, badge }: IDetailSectionProps): React_2.ReactElement;
@@ -49,6 +56,22 @@ export interface ICollectionBadgeProps {
     isProtected?: boolean;
     name: string;
     onClick?: () => void;
+    size?: 'sm' | 'md' | 'lg';
+}
+
+// @public
+export interface IConfectionCardProps {
+    className?: string;
+    confection: Runtime.AnyRuntimeConfection;
+    isSelected?: boolean;
+    onClick?: () => void;
+    showCollection?: boolean;
+}
+
+// @public
+export interface IConfectionTypeBadgeProps {
+    className?: string;
+    confectionType: ConfectionType;
     size?: 'sm' | 'md' | 'lg';
 }
 

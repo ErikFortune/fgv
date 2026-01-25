@@ -22,7 +22,7 @@ import { TasksTool } from './tools/tasks/TasksTool';
 import { TasksToolSidebar, type ITaskFilters } from './tools/tasks/TasksToolSidebar';
 import { ProceduresTool, ProceduresToolSidebar, type IProcedureFilters } from './tools/procedures';
 import { MoldsTool, MoldsToolSidebar, type IMoldFilters } from './tools/molds';
-import { ConfectionsTool } from './tools/confections/ConfectionsTool';
+import { ConfectionsTool, ConfectionsToolSidebar, type IConfectionFilters } from './tools/confections';
 import { SettingsTool } from './tools/settings/SettingsTool';
 import type { IngredientId } from '@fgv/ts-chocolate';
 
@@ -30,7 +30,7 @@ import type { IngredientId } from '@fgv/ts-chocolate';
  * Main application component with tool routing
  */
 function AppContent(): React.ReactElement {
-  const [activeTool, setActiveTool] = useState<ToolId>('ingredients');
+  const [activeTool, setActiveTool] = useState<ToolId>('fillings');
 
   useEffect(() => {
     const applyHashNavigation = (): void => {
@@ -40,6 +40,9 @@ function AppContent(): React.ReactElement {
       }
       if (hash === '#fillings' || hash.startsWith('#fillings/')) {
         setActiveTool('fillings');
+      }
+      if (hash === '#confections' || hash.startsWith('#confections/')) {
+        setActiveTool('confections');
       }
     };
 
@@ -87,6 +90,13 @@ function AppContent(): React.ReactElement {
     tags: []
   });
 
+  const [confectionFilters, setConfectionFilters] = useState<IConfectionFilters>({
+    search: '',
+    confectionTypes: [],
+    collections: [],
+    tags: []
+  });
+
   // Render the active tool's sidebar
   const sidebar = useMemo(() => {
     switch (activeTool) {
@@ -100,10 +110,20 @@ function AppContent(): React.ReactElement {
         return <ProceduresToolSidebar filters={procedureFilters} onFiltersChange={setProcedureFilters} />;
       case 'molds':
         return <MoldsToolSidebar filters={moldFilters} onFiltersChange={setMoldFilters} />;
+      case 'confections':
+        return <ConfectionsToolSidebar filters={confectionFilters} onFiltersChange={setConfectionFilters} />;
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters, fillingFilters, moldFilters, procedureFilters, taskFilters]);
+  }, [
+    activeTool,
+    ingredientFilters,
+    fillingFilters,
+    moldFilters,
+    procedureFilters,
+    taskFilters,
+    confectionFilters
+  ]);
 
   // Render the active tool content
   const content = useMemo(() => {
@@ -119,13 +139,21 @@ function AppContent(): React.ReactElement {
       case 'molds':
         return <MoldsTool filters={moldFilters} />;
       case 'confections':
-        return <ConfectionsTool />;
+        return <ConfectionsTool filters={confectionFilters} />;
       case 'settings':
         return <SettingsTool />;
       default:
         return null;
     }
-  }, [activeTool, ingredientFilters, fillingFilters, moldFilters, procedureFilters, taskFilters]);
+  }, [
+    activeTool,
+    ingredientFilters,
+    fillingFilters,
+    moldFilters,
+    procedureFilters,
+    taskFilters,
+    confectionFilters
+  ]);
 
   return (
     <AppShell activeTool={activeTool} onToolChange={setActiveTool} sidebar={sidebar}>

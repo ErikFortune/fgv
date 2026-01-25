@@ -1,0 +1,79 @@
+# Common molds collection
+# Generic mold shapes and dimensions
+
+metadata:
+  name: Common Molds
+  description: Generic chocolate mold shapes
+
+items:
+  dome-25mm:
+    baseId: dome-25mm
+    manufacturer: Generic
+    productNumber: DOME-25
+    description: 25mm hemisphere dome
+    cavities:
+      kind: count
+      count: 24
+      info:
+        weight: 8
+        dimensions:
+          width: 25
+          length: 25
+          depth: 12
+    format: series-2000
+    tags: [dome, hemisphere, truffle]
+    notes: Standard 25mm dome for truffles
+
+  dome-30mm:
+    baseId: dome-30mm
+    manufacturer: Generic
+    productNumber: DOME-30
+    description: 30mm hemisphere dome
+    cavities:
+      kind: count
+      count: 15
+      info:
+        weight: 14
+        dimensions:
+          width: 30
+          length: 30
+          depth: 15
+    format: series-2000
+    tags: [dome, hemisphere, truffle]
+    notes: Standard 30mm dome for larger truffles
+
+  bullet-28mm:
+    baseId: bullet-28mm
+    manufacturer: Generic
+    productNumber: BULLET-28
+    description: 28mm bullet/ogive shape
+    cavities:
+      kind: count
+      count: 21
+      info:
+        weight: 10
+        dimensions:
+          width: 28
+          length: 28
+          depth: 18
+    format: series-2000
+    tags: [bullet, ogive, praline]
+    notes: Classic bullet shape for pralines
+
+  square-25mm:
+    baseId: square-25mm
+    manufacturer: Generic
+    productNumber: SQ-25
+    description: 25mm square
+    cavities:
+      kind: count
+      count: 24
+      info:
+        weight: 10
+        dimensions:
+          width: 25
+          length: 25
+          depth: 16
+    format: series-2000
+    tags: [square, geometric]
+    notes: Simple square mold for ganache

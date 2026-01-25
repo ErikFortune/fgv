@@ -101,6 +101,9 @@ export const allMeasurementUnits: MeasurementUnit[];
 export const allMoldFormats: MoldFormat[];
 
 // @public
+export const allProcedureTypes: ProcedureType[];
+
+// @public
 const allRatingCategories: RatingCategory[];
 
 // @public
@@ -846,6 +849,7 @@ declare namespace Converters {
         confectionType,
         additionalChocolatePurpose,
         fillingCategory_2 as fillingCategory,
+        procedureType,
         measurementUnit,
         spoonLevel,
         ingredientPhase,
@@ -2012,6 +2016,12 @@ interface IDairyIngredient extends IIngredient {
     readonly waterContent?: Percentage;
 }
 
+// @internal
+interface IDirectorySearchQueueItem {
+    readonly depth: number;
+    readonly dir: FileTree.IFileTreeDirectoryItem;
+}
+
 // @public
 function idsWithPreferred<TId extends string>(idConverter: Converter<TId>, context?: string): Converter<IIdsWithPreferred<TId>>;
 
@@ -2367,6 +2377,12 @@ export interface IIdsWithPreferred<TId extends string> {
 interface IImportOptions {
     readonly newCollectionId?: SourceId;
     readonly onCollisionMode: 'replace' | 'create-new' | 'fail';
+}
+
+// @public
+interface IImportRootCandidate {
+    readonly kind: ImportRootKind;
+    readonly root: FileTree.IFileTreeDirectoryItem;
 }
 
 // @public
@@ -2893,7 +2909,7 @@ export interface IOptionsWithPreferred<TOption extends IHasId<TId>, TId extends 
 // @public
 interface IProcedure {
     readonly baseId: BaseProcedureId;
-    readonly category?: FillingCategory_2;
+    readonly category?: ProcedureType;
     readonly description?: string;
     readonly name: string;
     readonly notes?: string;
@@ -3083,10 +3099,8 @@ interface IResolvedFillingSlot {
 }
 
 // @public
-interface IResolvedImportRoot {
-    readonly kind: ImportRootKind;
+interface IResolvedImportRoot extends IImportRootCandidate {
     readonly matches: number;
-    readonly root: FileTree.IFileTreeDirectoryItem;
     readonly visited: number;
 }
 
@@ -3372,7 +3386,7 @@ interface IRuntimeMoldedBonBon extends IRuntimeConfection {
 // @public
 interface IRuntimeProcedure {
     readonly baseId: BaseProcedureId;
-    readonly category?: FillingCategory_2;
+    readonly category?: ProcedureType;
     readonly description?: string;
     readonly id: ProcedureId;
     readonly isCategorySpecific: boolean;
@@ -4075,6 +4089,11 @@ declare namespace LibraryData {
         IProtectedCollectionInfo,
         IProtectedCollectionInternal,
         ICollectionLoadResult,
+        ImportRootKind,
+        IImportRootCandidate,
+        IResolvedImportRoot,
+        IResolveImportRootOptions,
+        IDirectorySearchQueueItem,
         createFilterFromSpec,
         ICollectionFilterInitParams,
         IFilterDirectoryParams,
@@ -4107,9 +4126,6 @@ declare namespace LibraryData {
         ICollectionSet,
         INormalizedMergeSource,
         resolveImportRootForSubLibrary,
-        ImportRootKind,
-        IResolvedImportRoot,
-        IResolveImportRootOptions,
         SubLibraryCollectionEntry,
         SubLibraryEntryInit,
         SubLibraryCollectionValidator,
@@ -4454,8 +4470,11 @@ type ProceduresMergeSource = SubLibraryMergeSource<ProceduresLibrary>;
 // @public
 const procedureStep: Converter<IProcedureStep>;
 
-// @public @deprecated (undocumented)
-const procedureStepTask: Converter<ITaskInvocation>;
+// @public
+export type ProcedureType = FillingCategory | ConfectionType | 'other';
+
+// @public
+const procedureType: Converter<ProcedureType>;
 
 // @public
 type RatingCategory = 'overall' | 'taste' | 'texture' | 'shelf-life' | 'appearance' | 'workability';
@@ -4935,6 +4954,7 @@ abstract class RuntimeConfectionBase implements IRuntimeConfection {
 //
 // @public
 export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IScaledVersionContext<AnyRuntimeIngredient>, IIngredientContext, ITaskContext, IProcedureContext, IMoldContext, IConfectionContext {
+    get cachedConfectionCount(): number;
     get cachedIngredientCount(): number;
     get cachedRecipeCount(): number;
     clearCache(): void;
@@ -4943,6 +4963,7 @@ export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     createWeightContext(): IWeightCalculationContext;
     get fillings(): IReadOnlyValidatingLibrary<FillingId, RuntimeRecipe, IFillingRecipeQuerySpec>;
     static fromLibrary(library: ChocolateLibrary, preWarm?: boolean): Result<RuntimeContext>;
+    getAllConfectionTags(): ReadonlyArray<string>;
     getAllFillingTags(): ReadonlyArray<string>;
     getAllIngredientTags(): ReadonlyArray<string>;
     getConfection(id: ConfectionId): Result<ConfectionData>;
@@ -4960,6 +4981,7 @@ export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     getProcedure(id: string): Result<IProcedure>;
     // @internal
     _getRecipe(id: FillingId): Result<RuntimeRecipe>;
+    getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection>;
     getRuntimeFilling(id: FillingId): Result<IRuntimeFillingRecipe>;
     getRuntimeIngredient(id: IngredientId): Result<IRuntimeIngredient>;
     getRuntimeMold(id: MoldId): Result<RuntimeMold>;
@@ -4977,6 +4999,7 @@ export class RuntimeContext implements IVersionContext<AnyRuntimeIngredient>, IS
     // (undocumented)
     get library(): ChocolateLibrary;
     readonly logger: Logging.LogReporter<unknown>;
+    get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection>;
     warmUp(): void;
 }
 
@@ -5102,7 +5125,7 @@ class RuntimeMoldedBonBon extends RuntimeConfectionBase implements IRuntimeMolde
 // @public
 class RuntimeProcedure implements IRuntimeProcedure {
     get baseId(): BaseProcedureId;
-    get category(): FillingCategory_2 | undefined;
+    get category(): ProcedureType | undefined;
     // @internal
     protected get context(): IProcedureContext;
     // Warning: (ae-incompatible-release-tags) The symbol "create" is marked as @public, but its signature references "IProcedureContext" which is marked as @internal
@@ -5519,7 +5542,6 @@ declare namespace Tasks {
         taskRefStatus,
         inlineTask,
         taskInvocation,
-        procedureStepTask,
         validationBehavior,
         renderOptions
     }

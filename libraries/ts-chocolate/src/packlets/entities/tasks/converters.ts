@@ -125,12 +125,6 @@ export const taskInvocation: Converter<ITaskInvocation> = Converters.oneOf<ITask
   taskRef
 ]).withFormattedError(() => 'Task invocation must have either task (inline) or taskId (ref).');
 
-/**
- * @deprecated Use taskInvocation instead
- * @public
- */
-export const procedureStepTask: Converter<ITaskInvocation> = taskInvocation;
-
 // ============================================================================
 // Render Options Converters
 // ============================================================================

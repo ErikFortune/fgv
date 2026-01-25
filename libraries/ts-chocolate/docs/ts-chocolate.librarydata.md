@@ -463,6 +463,17 @@ Result of filtering a collection of items.
 </td></tr>
 <tr><td>
 
+[IImportRootCandidate](./ts-chocolate.librarydata.iimportrootcandidate.md)
+
+
+</td><td>
+
+A candidate import root with directory and resolution kind. Used internally during BFS search and as the result of tryResolveAt.
+
+
+</td></tr>
+<tr><td>
+
 [ILibraryFileTreeSource](./ts-chocolate.librarydata.ilibraryfiletreesource.md)
 
 

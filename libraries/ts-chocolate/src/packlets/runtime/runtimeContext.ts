@@ -37,6 +37,7 @@ import {
   Validation
 } from '../common';
 import { ConfectionData, ConfectionsLibrary } from '../entities';
+import { AnyRuntimeConfection, RuntimeConfection } from './confections';
 import { IComputedScaledFillingRecipe } from '../entities';
 import { IWeightCalculationContext } from '../calculations';
 import { IFillingRecipeJournalRecord, JournalLibrary } from '../entities';
@@ -132,10 +133,11 @@ export class RuntimeContext
   private readonly _recipeOrchestrator: RecipeIndexerOrchestrator;
   private readonly _ingredientOrchestrator: IngredientIndexerOrchestrator;
 
-  // Cached runtime wrappers for tasks, procedures, and molds
+  // Cached runtime wrappers for tasks, procedures, molds, and confections
   private readonly _runtimeTasks: Map<TaskId, RuntimeTask> = new Map();
   private readonly _runtimeProcedures: Map<ProcedureId, RuntimeProcedure> = new Map();
   private readonly _runtimeMolds: Map<MoldId, RuntimeMold> = new Map();
+  private _runtimeConfections: Map<ConfectionId, AnyRuntimeConfection> | undefined;
 
   private constructor(library: ChocolateLibrary, preWarm: boolean) {
     this._library = library;
@@ -249,6 +251,62 @@ export class RuntimeContext
    */
   public hasConfection(id: ConfectionId): boolean {
     return this._library.hasConfection(id);
+  }
+
+  /**
+   * Gets a runtime confection by ID (with lazy resolution and caching).
+   * @param id - The confection ID
+   * @returns Success with runtime confection, or Failure if not found
+   */
+  public getRuntimeConfection(id: ConfectionId): Result<AnyRuntimeConfection> {
+    // Check cache first
+    const cached = this._runtimeConfections?.get(id);
+    if (cached) {
+      return succeed(cached);
+    }
+
+    // Resolve from library and cache
+    return this._library.getConfection(id).onSuccess((confection) => {
+      return RuntimeConfection.create(this, id, confection).onSuccess((runtimeConfection) => {
+        // Ensure cache exists
+        if (!this._runtimeConfections) {
+          this._runtimeConfections = new Map();
+        }
+        this._runtimeConfections.set(id, runtimeConfection);
+        return succeed(runtimeConfection);
+      });
+    });
+  }
+
+  /**
+   * Gets all runtime confections as an iterable map.
+   * Confections are resolved lazily and cached on first access.
+   * @returns Read-only map of confection IDs to runtime confections
+   * @throws Error if confection resolution fails (indicates library corruption)
+   */
+  public get runtimeConfections(): ReadonlyMap<ConfectionId, AnyRuntimeConfection> {
+    return this._resolveRuntimeConfections().orThrow();
+  }
+
+  /**
+   * Resolves and caches all confections from the library.
+   * @returns Success with the resolved map, or Failure if any confection fails to resolve
+   * @internal
+   */
+  private _resolveRuntimeConfections(): Result<Map<ConfectionId, AnyRuntimeConfection>> {
+    if (this._runtimeConfections === undefined) {
+      this._runtimeConfections = new Map();
+      // Populate from library - report and fail on any creation errors
+      for (const [id, confection] of this._library.confections.entries()) {
+        const createResult = RuntimeConfection.create(this, id, confection).report(this.logger);
+        /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
+        if (createResult.isFailure()) {
+          return Failure.with(`Failed to resolve confection ${id}: ${createResult.message}`);
+        }
+        this._runtimeConfections.set(id, createResult.value);
+      }
+    }
+    return Success.with(this._runtimeConfections);
   }
 
   // ============================================================================
@@ -569,6 +627,20 @@ export class RuntimeContext
     return this._reverseIndex.getAllIngredientTags();
   }
 
+  /**
+   * Gets all unique tags used across confections.
+   */
+  public getAllConfectionTags(): ReadonlyArray<string> {
+    const tagsSet = new Set<string>();
+    for (const confection of this.runtimeConfections.values()) {
+      const tags = confection.effectiveTags;
+      for (const tag of tags) {
+        tagsSet.add(tag);
+      }
+    }
+    return Array.from(tagsSet).sort();
+  }
+
   // ============================================================================
   // Cache Management
   // ============================================================================
@@ -588,12 +660,20 @@ export class RuntimeContext
   }
 
   /**
+   * Gets the number of cached confections.
+   */
+  public get cachedConfectionCount(): number {
+    return this._runtimeConfections?.size ?? 0;
+  }
+
+  /**
    * Clears all cached runtime objects.
    * Use if underlying library data has changed.
    */
   public clearCache(): void {
     this._ingredients = undefined;
     this._recipes = undefined;
+    this._runtimeConfections = undefined;
     this._runtimeTasks.clear();
     this._runtimeProcedures.clear();
     this._runtimeMolds.clear();

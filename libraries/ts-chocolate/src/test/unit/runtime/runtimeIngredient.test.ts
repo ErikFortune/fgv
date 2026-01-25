@@ -40,6 +40,7 @@ import {
   ISugarIngredient,
   IFatIngredient,
   IAlcoholIngredient,
+  IIngredient,
   IngredientsLibrary
 } from '../../../packlets/entities';
 import { IFillingRecipe, FillingsLibrary } from '../../../packlets/entities';
@@ -53,6 +54,8 @@ import {
   RuntimeFatIngredient,
   RuntimeAlcoholIngredient
 } from '../../../packlets/runtime';
+// eslint-disable-next-line @rushstack/packlets/mechanics
+import { RuntimeGenericIngredient } from '../../../packlets/runtime/ingredients/runtimeGenericIngredient';
 
 describe('RuntimeIngredient', () => {
   // ============================================================================
@@ -153,6 +156,52 @@ describe('RuntimeIngredient', () => {
     flavorProfile: 'Rich, sweet, with vanilla and caramel notes'
   };
 
+  // Generic ingredient categories (liquid, flavor, other)
+  const water: IIngredient = {
+    baseId: 'water' as BaseIngredientId,
+    name: 'Water',
+    category: 'liquid',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 100 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    }
+  };
+
+  const vanillaExtract: IIngredient = {
+    baseId: 'vanilla-extract' as BaseIngredientId,
+    name: 'Vanilla Extract',
+    category: 'flavor',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 35 as Percentage,
+      solids: 0 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    tags: ['natural', 'aroma']
+  };
+
+  const lecithin: IIngredient = {
+    baseId: 'lecithin' as BaseIngredientId,
+    name: 'Soy Lecithin',
+    category: 'other',
+    ganacheCharacteristics: {
+      cacaoFat: 0 as Percentage,
+      sugar: 0 as Percentage,
+      milkFat: 0 as Percentage,
+      water: 0 as Percentage,
+      solids: 100 as Percentage,
+      otherFats: 0 as Percentage
+    },
+    description: 'Emulsifier used in chocolate production',
+    allergens: ['soy']
+  };
+
   const testRecipe: IFillingRecipe = {
     baseId: 'ganache' as BaseFillingId,
     name: 'Test Ganache' as FillingName,
@@ -186,7 +235,11 @@ describe('RuntimeIngredient', () => {
             cream,
             sugar,
             butter,
-            rum
+            rum,
+            water,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            'vanilla-extract': vanillaExtract,
+            lecithin
           }
         }
       ]
@@ -578,6 +631,73 @@ describe('RuntimeIngredient', () => {
     test('raw returns underlying ingredient', () => {
       const ingredient = ctx.ingredients.get('test.dark-chocolate' as IngredientId).orThrow();
       expect(ingredient.raw.name).toBe('Dark Chocolate 70%');
+    });
+  });
+
+  // ============================================================================
+  // Generic Ingredient Tests (liquid, flavor, other categories)
+  // ============================================================================
+
+  describe('generic ingredients', () => {
+    describe('liquid category', () => {
+      test('creates RuntimeGenericIngredient for liquid category', () => {
+        const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
+        expect(ingredient).toBeInstanceOf(RuntimeGenericIngredient);
+        expect(ingredient.category).toBe('liquid');
+      });
+
+      test('liquid ingredient has correct raw data', () => {
+        const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
+        expect(ingredient.raw.name).toBe('Water');
+        expect(ingredient.raw.ganacheCharacteristics.water).toBe(100);
+      });
+    });
+
+    describe('flavor category', () => {
+      test('creates RuntimeGenericIngredient for flavor category', () => {
+        const ingredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
+        expect(ingredient).toBeInstanceOf(RuntimeGenericIngredient);
+        expect(ingredient.category).toBe('flavor');
+      });
+
+      test('flavor ingredient has correct raw data and tags', () => {
+        const ingredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
+        expect(ingredient.raw.name).toBe('Vanilla Extract');
+        expect(ingredient.raw.tags).toContain('natural');
+        expect(ingredient.raw.tags).toContain('aroma');
+      });
+    });
+
+    describe('other category', () => {
+      test('creates RuntimeGenericIngredient for other category', () => {
+        const ingredient = ctx.ingredients.get('test.lecithin' as IngredientId).orThrow();
+        expect(ingredient).toBeInstanceOf(RuntimeGenericIngredient);
+        expect(ingredient.category).toBe('other');
+      });
+
+      test('other ingredient has correct raw data and description', () => {
+        const ingredient = ctx.ingredients.get('test.lecithin' as IngredientId).orThrow();
+        expect(ingredient.raw.name).toBe('Soy Lecithin');
+        expect(ingredient.raw.description).toBe('Emulsifier used in chocolate production');
+        expect(ingredient.raw.allergens).toContain('soy');
+      });
+    });
+
+    describe('RuntimeGenericIngredient factory', () => {
+      test('create succeeds with valid parameters', () => {
+        const ingredient = ctx.ingredients.get('test.water' as IngredientId).orThrow();
+        expect(RuntimeGenericIngredient.create(ctx as never, ingredient.id, ingredient.raw)).toSucceed();
+      });
+
+      test('created instance has correct category and raw access', () => {
+        const originalIngredient = ctx.ingredients.get('test.vanilla-extract' as IngredientId).orThrow();
+        expect(
+          RuntimeGenericIngredient.create(ctx as never, originalIngredient.id, originalIngredient.raw)
+        ).toSucceedAndSatisfy((newIngredient) => {
+          expect(newIngredient.category).toBe('flavor');
+          expect(newIngredient.raw.name).toBe('Vanilla Extract');
+        });
+      });
     });
   });
 });

@@ -27,8 +27,8 @@
 
 import { Result } from '@fgv/ts-utils';
 
-import { BaseProcedureId, Minutes, ProcedureId, TaskId } from '../../common';
-import { FillingCategory, IComputedScaledFillingRecipe } from '../../entities';
+import { BaseProcedureId, Minutes, ProcedureId, ProcedureType, TaskId } from '../../common';
+import { IComputedScaledFillingRecipe } from '../../entities';
 import { IMold } from '../../entities';
 import { IProcedure, IProcedureStep } from '../../entities';
 import { ITaskData } from '../../entities';
@@ -188,7 +188,7 @@ export interface IRuntimeProcedure {
   readonly description?: string;
 
   /** Optional category this procedure applies to */
-  readonly category?: FillingCategory;
+  readonly category?: ProcedureType;
 
   /** Steps of the procedure in order */
   readonly steps: ReadonlyArray<IProcedureStep>;

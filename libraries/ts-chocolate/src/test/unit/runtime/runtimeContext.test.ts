@@ -21,6 +21,7 @@
 import '@fgv/ts-utils-jest';
 
 import {
+  BaseConfectionId,
   BaseIngredientId,
   BaseProcedureId,
   BaseFillingId,
@@ -48,7 +49,7 @@ import {
   IIngredient,
   IngredientsLibrary
 } from '../../../packlets/entities';
-import { IProcedure, ProceduresLibrary } from '../../../packlets/entities';
+import { IProcedure, ProceduresLibrary, ConfectionsLibrary } from '../../../packlets/entities';
 import { IFillingRecipe, IFillingRecipeVersion, FillingsLibrary } from '../../../packlets/entities';
 import { ChocolateLibrary, RuntimeContext } from '../../../packlets/runtime';
 import { ITaskInvocation } from '../../../packlets/entities';
@@ -1026,6 +1027,139 @@ describe('RuntimeContext', () => {
 
       test('fails for non-existent ID', () => {
         expect(ctx.getRuntimeMold('common.nonexistent' as MoldId)).toFail();
+      });
+    });
+
+    describe('getRuntimeConfection', () => {
+      test('returns RuntimeConfection for valid ID', () => {
+        expect(ctx.getRuntimeConfection('common.dark-dome-bonbon' as ConfectionId)).toSucceedAndSatisfy(
+          (runtimeConfection) => {
+            expect(runtimeConfection.id).toBe('common.dark-dome-bonbon');
+            expect(runtimeConfection.name).toBe('Classic Dark Dome Bonbon');
+          }
+        );
+      });
+
+      test('caches runtime confections', () => {
+        const result1 = ctx.getRuntimeConfection('common.dark-dome-bonbon' as ConfectionId).orThrow();
+        const result2 = ctx.getRuntimeConfection('common.dark-dome-bonbon' as ConfectionId).orThrow();
+        expect(result1).toBe(result2); // Same instance
+      });
+
+      test('fails for non-existent ID', () => {
+        expect(ctx.getRuntimeConfection('common.nonexistent' as ConfectionId)).toFail();
+      });
+    });
+
+    describe('runtimeConfections property', () => {
+      test('returns map of all confections', () => {
+        const confections = ctx.runtimeConfections;
+        expect(confections.size).toBeGreaterThan(0);
+        expect(confections.has('common.dark-dome-bonbon' as ConfectionId)).toBe(true);
+      });
+
+      test('returns same map on multiple accesses (cached)', () => {
+        const confections1 = ctx.runtimeConfections;
+        const confections2 = ctx.runtimeConfections;
+        expect(confections1).toBe(confections2);
+      });
+
+      test('confections in map are fully resolved RuntimeConfection instances', () => {
+        const confections = ctx.runtimeConfections;
+        const confection = confections.get('common.dark-dome-bonbon' as ConfectionId);
+        expect(confection).toBeDefined();
+        expect(confection?.id).toBe('common.dark-dome-bonbon');
+        expect(confection?.name).toBe('Classic Dark Dome Bonbon');
+      });
+    });
+
+    describe('getAllConfectionTags', () => {
+      test('returns array of unique tags from confections', () => {
+        const tags = ctx.getAllConfectionTags();
+        expect(Array.isArray(tags)).toBe(true);
+        // Tags should be sorted
+        const sorted = [...tags].sort();
+        expect(tags).toEqual(sorted);
+      });
+
+      test('returns empty array when no confections have tags', () => {
+        // Create a context with a confection that has no tags
+        const emptyTagsConfection = ConfectionsLibrary.create({
+          builtin: false,
+          collections: [
+            {
+              id: 'test' as SourceId,
+              isMutable: true,
+              items: {
+                /* eslint-disable @typescript-eslint/naming-convention */
+                'no-tags-confection': {
+                  baseId: 'no-tags-confection' as BaseConfectionId,
+                  name: 'No Tags Confection',
+                  confectionType: 'molded-bonbon',
+                  goldenVersionSpec: '2026-01-01-01',
+                  versions: [
+                    {
+                      versionSpec: '2026-01-01-01',
+                      createdDate: '2026-01-01',
+                      yield: { count: 24 },
+                      molds: {
+                        options: [{ id: 'common.dome-25mm' }]
+                      },
+                      shellChocolate: {
+                        ids: ['common.chocolate-dark-64']
+                      }
+                    }
+                  ],
+                  filling: {
+                    options: [{ id: 'test.dark-ganache' as FillingId }],
+                    preferredId: 'test.dark-ganache' as FillingId
+                  }
+                }
+                /* eslint-enable @typescript-eslint/naming-convention */
+              }
+            }
+          ]
+        }).orThrow();
+
+        const testLibrary = ChocolateLibrary.create({
+          builtin: false,
+          libraries: {
+            confections: emptyTagsConfection,
+            fillings: library.fillings,
+            ingredients: library.ingredients
+          }
+        }).orThrow();
+
+        const testCtx = RuntimeContext.fromLibrary(testLibrary).orThrow();
+        const tags = testCtx.getAllConfectionTags();
+        expect(tags).toEqual([]);
+      });
+    });
+
+    describe('cachedConfectionCount', () => {
+      test('returns 0 before confections are accessed', () => {
+        const freshCtx = RuntimeContext.create({ libraryParams: { builtin: true } }).orThrow();
+        expect(freshCtx.cachedConfectionCount).toBe(0);
+      });
+
+      test('returns count after confections are accessed', () => {
+        // Access a single confection
+        ctx.getRuntimeConfection('common.dark-dome-bonbon' as ConfectionId).orThrow();
+        expect(ctx.cachedConfectionCount).toBeGreaterThan(0);
+      });
+
+      test('returns full count after runtimeConfections property accessed', () => {
+        const confections = ctx.runtimeConfections;
+        expect(ctx.cachedConfectionCount).toBe(confections.size);
+      });
+
+      test('returns 0 after clearCache', () => {
+        const _confections = ctx.runtimeConfections; // Populate cache
+        expect(_confections.size).toBeGreaterThan(0);
+        expect(ctx.cachedConfectionCount).toBeGreaterThan(0);
+
+        ctx.clearCache();
+        expect(ctx.cachedConfectionCount).toBe(0);
       });
     });
 

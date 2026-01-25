@@ -9,5 +9,5 @@ Optional category this procedure applies to
 **Signature:**
 
 ```typescript
-get category(): FillingCategory | undefined;
+get category(): ProcedureType | undefined;
 ```

@@ -654,6 +654,100 @@ describe('CollectionLoader', () => {
         });
       });
     });
+
+    // ============================================================================
+    // Parse Fallback Tests
+    // ============================================================================
+
+    describe('parse fallback behavior', () => {
+      test('parses JSON-like content that is valid YAML flow mapping but invalid JSON', () => {
+        // Content starts with '{' (JSON-like) but uses YAML flow syntax without quotes
+        // This tests the fallback from JSON.parse to yaml.load (lines 203-206)
+        // YAML allows unquoted keys in flow mappings
+        const yamlFlowMapping = '{items: {item-1: {name: First Item, value: 42}}}';
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/test.yaml', contents: yamlFlowMapping }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = loader.loadFromFileTree(dir);
+
+        expect(result).toSucceedAndSatisfy((loadResult) => {
+          expect(loadResult.collections.length).toBe(1);
+          expect(loadResult.collections[0].id).toBe('test');
+          expect(Object.keys(loadResult.collections[0].items).length).toBe(1);
+          expect(loadResult.collections[0].items['item-1' as TestItemId].name).toBe('First Item');
+        });
+      });
+
+      test('parses array-starting content that is valid YAML but invalid JSON', () => {
+        // Content starts with '[' but uses YAML flow syntax
+        // This tests the '[' prefix check in line 202
+        const yamlArrayLike = `[{items: {item-1: {name: Test, value: 1}}}]`;
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.yaml', contents: yamlArrayLike }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = loader.loadFromFileTree(dir);
+
+        // Will fail because arrays aren't valid collections, but parsing should work
+        // The fallback path from JSON to YAML will be triggered
+        expect(result).toFail();
+      });
+
+      test('parses YAML content (non-JSON-like) successfully', () => {
+        // Standard YAML file that doesn't start with { or [
+        // This tests the YAML-first path (lines 209-213)
+        const yamlContent = `items:
+  item-1:
+    name: "First Item"
+    value: 100
+`;
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.yaml', contents: yamlContent }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = loader.loadFromFileTree(dir);
+
+        expect(result).toSucceedAndSatisfy((loadResult) => {
+          expect(loadResult.collections.length).toBe(1);
+          expect(loadResult.collections[0].id).toBe('test');
+        });
+      });
+
+      test('fails with meaningful error when both JSON and YAML parsing fail (JSON-like content)', () => {
+        // Content starts with '{' but has unclosed brackets - invalid for both
+        // Note: YAML is more permissive than JSON, so we need truly broken content
+        const brokenContent = '{ "unclosed';
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.json', contents: brokenContent }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = loader.loadFromFileTree(dir);
+
+        expect(result).toFailWith(/parse|unexpected/i);
+      });
+
+      test('fails with meaningful error when both YAML and JSON parsing fail (non-JSON-like content)', () => {
+        // Content doesn't start with '{' or '[' and is invalid YAML
+        // Use a tab character at the start which is invalid YAML indentation
+        const invalidYaml = '\t\titems: broken';
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.yaml', contents: invalidYaml }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = loader.loadFromFileTree(dir);
+
+        // Should fail with parse error
+        expect(result).toFail();
+      });
+    });
   });
 
   // ============================================================================
@@ -839,6 +933,99 @@ describe('CollectionLoader', () => {
       const result = await loader.loadFromFileTreeAsync(dir, { onEncryptedFile: 'fail' });
 
       expect(result).toFailWith(/no encryption config provided/i);
+    });
+
+    // ============================================================================
+    // Async Parse Fallback Behavior Tests
+    // ============================================================================
+
+    describe('async parse fallback behavior', () => {
+      test('parses JSON-like content that is valid YAML flow mapping but invalid JSON', async () => {
+        // Content starts with '{' (JSON-like) but uses YAML flow syntax without quotes
+        // This tests the fallback from JSON.parse to yaml.load (lines 321-324)
+        const yamlFlowMapping = '{items: {item-1: {name: First Item, value: 42}}}';
+
+        const files: FileTree.IInMemoryFile[] = [
+          { path: '/collections/test.yaml', contents: yamlFlowMapping }
+        ];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir);
+
+        expect(result).toSucceedAndSatisfy((loadResult) => {
+          expect(loadResult.collections.length).toBe(1);
+          expect(loadResult.collections[0].id).toBe('test');
+          expect(Object.keys(loadResult.collections[0].items).length).toBe(1);
+          expect(loadResult.collections[0].items['item-1' as TestItemId].name).toBe('First Item');
+        });
+      });
+
+      test('parses array-starting content that is valid YAML but invalid JSON', async () => {
+        // Content starts with '[' but uses YAML flow syntax
+        // This tests the '[' prefix check in line 320
+        const yamlArrayLike = `[{items: {item-1: {name: Test, value: 1}}}]`;
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.yaml', contents: yamlArrayLike }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir);
+
+        // Will fail because arrays aren't valid collections, but parsing should work
+        // The fallback path from JSON to YAML will be triggered
+        expect(result).toFail();
+      });
+
+      test('parses YAML content (non-JSON-like) successfully', async () => {
+        // Standard YAML file that doesn't start with { or [
+        // This tests the YAML-first path (lines 327-331)
+        const yamlContent = `items:
+  item-1:
+    name: "First Item"
+    value: 100
+`;
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.yaml', contents: yamlContent }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir);
+
+        expect(result).toSucceedAndSatisfy((loadResult) => {
+          expect(loadResult.collections.length).toBe(1);
+          expect(loadResult.collections[0].id).toBe('test');
+        });
+      });
+
+      test('fails with meaningful error when both JSON and YAML parsing fail (JSON-like content)', async () => {
+        // Content starts with '{' but has unclosed brackets - invalid for both
+        // Tests line 336-337 - parse failure propagation
+        const brokenContent = '{ "unclosed';
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.json', contents: brokenContent }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir);
+
+        expect(result).toFailWith(/parse|unexpected/i);
+      });
+
+      test('fails with meaningful error when both YAML and JSON parsing fail (non-JSON-like content)', async () => {
+        // Content doesn't start with '{' or '[' and is invalid YAML
+        // Use a tab character at the start which is invalid YAML indentation
+        const invalidYaml = '\t\titems: broken';
+
+        const files: FileTree.IInMemoryFile[] = [{ path: '/collections/test.yaml', contents: invalidYaml }];
+
+        const tree = FileTree.inMemory(files).orThrow();
+        const dir = tree.getItem('/collections').orThrow();
+        const result = await loader.loadFromFileTreeAsync(dir);
+
+        // Should fail with parse error
+        expect(result).toFail();
+      });
     });
 
     // ============================================================================

@@ -9,5 +9,5 @@ Optional category this procedure applies to
 **Signature:**
 
 ```typescript
-readonly category?: FillingCategory;
+readonly category?: ProcedureType;
 ```

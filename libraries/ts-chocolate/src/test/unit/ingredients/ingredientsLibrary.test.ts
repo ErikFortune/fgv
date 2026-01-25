@@ -115,7 +115,7 @@ describe('IngredientsLibrary', () => {
       expect(result).toSucceedAndSatisfy((lib) => {
         expect(lib.collectionCount).toBe(6); // 5 built-in + 1 custom
         expect(lib.validating.has('test.testChoco')).toBe(true);
-        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
+        expect(lib.validating.has('common.heavy-cream-36')).toBe(true);
       });
     });
   });
@@ -123,7 +123,7 @@ describe('IngredientsLibrary', () => {
   describe('builtin parameter', () => {
     test('includes common ingredients', () => {
       expect(IngredientsLibrary.create()).toSucceedAndSatisfy((lib) => {
-        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
+        expect(lib.validating.has('common.heavy-cream-36')).toBe(true);
       });
     });
 
@@ -140,7 +140,7 @@ describe('IngredientsLibrary', () => {
         })
       ).toSucceedAndSatisfy((lib) => {
         expect(lib.collectionCount).toBe(2);
-        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
+        expect(lib.validating.has('common.heavy-cream-36')).toBe(true);
         expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
       });
     });
@@ -154,7 +154,7 @@ describe('IngredientsLibrary', () => {
         })
       ).toSucceedAndSatisfy((lib) => {
         expect(lib.collectionCount).toBe(3);
-        expect(lib.validating.has('common.heavy-cream-35')).toBe(true);
+        expect(lib.validating.has('common.heavy-cream-36')).toBe(true);
         expect(lib.validating.has('felchlin.maracaibo-65')).toBe(true);
       });
     });

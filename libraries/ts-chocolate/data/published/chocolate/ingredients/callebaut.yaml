@@ -1,0 +1,213 @@
+# Callebaut chocolate couvertures
+# Barry Callebaut - Belgian chocolate manufacturer
+
+metadata:
+  name: Callebaut Chocolates
+  description: Belgian chocolate couvertures from Barry Callebaut
+
+items:
+  811-dark-54:
+    baseId: 811-dark-54
+    name: Callebaut Recipe N° 811 Dark 54.5%
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 54.5
+    ganacheCharacteristics:
+      cacaoFat: 37
+      sugar: 43
+      milkFat: 0
+      water: 1
+      solids: 19
+      otherFats: 0
+    fluidityStars: 3
+    description: >-
+      Iconic Belgian dark chocolate with full-bodied taste, solid cocoa body
+      and fine fruity notes. One of Octaaf Callebaut's original recipes,
+      loved by chefs worldwide for its exceptional versatility
+    manufacturer: Callebaut
+    tags: [dark, semisweet, versatile, fruity, roasted-cocoa, iconic]
+    origins: [Ivory Coast, Ghana, Ecuador]
+    beanVarieties: [Forastero, Trinitario]
+    applications: [confectionery, ganache, mousse, enrobing, molding, baking, sauces, drinks]
+    certifications: [halal, kosher-dairy, vegetarian, vegan, cocoa-horizons]
+    traceAllergens: [milk, soy]
+    temperingCurve:
+      meltingPoint: 45
+      workingTemperature: 31
+    vegan: true
+
+  823-milk-33:
+    baseId: 823-milk-33
+    name: Callebaut Recipe N° 823 Milk 33.6%
+    category: chocolate
+    chocolateType: milk
+    cacaoPercentage: 33.6
+    ganacheCharacteristics:
+      cacaoFat: 30
+      sugar: 42
+      milkFat: 6
+      water: 1
+      solids: 21
+      otherFats: 0
+    fluidityStars: 3
+    description: >-
+      Classic Belgian milk chocolate with deep warm color, smooth cocoa body
+      and sweet caramelly notes. Full-bodied taste and great workability,
+      pairs well with spicy, fruity, dairy or liqueur-like flavors
+    manufacturer: Callebaut
+    tags: [milk, caramel, smooth, versatile, classic, full-bodied]
+    origins: [Ivory Coast, Ghana, Ecuador]
+    beanVarieties: [Forastero]
+    applications: [molding, enrobing, ganache, mousse, confectionery]
+    certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
+    allergens: [milk, soy]
+    temperingCurve:
+      meltingPoint: 45
+      workingTemperature: 30
+    vegan: false
+
+  w2-white-28:
+    baseId: w2-white-28
+    name: Callebaut Recipe N° W2 White 28%
+    category: chocolate
+    chocolateType: white
+    cacaoPercentage: 28
+    ganacheCharacteristics:
+      cacaoFat: 30
+      sugar: 45
+      milkFat: 6
+      water: 1
+      solids: 18
+      otherFats: 0
+    fluidityStars: 3
+    description: >-
+      All-purpose white chocolate with pronounced milky, creamy, caramelly
+      and vanilla notes in perfect balance. Smooth and creamy mouthfeel with
+      elegant satin shine and crisp snap when tempered
+    manufacturer: Callebaut
+    tags: [white, creamy, vanilla, balanced, versatile, milky]
+    origins: [Belgium, West Africa]
+    applications: [ganache, mousse, confectionery, enrobing, glazes, ice-cream]
+    certifications: [halal, kosher-dairy, vegetarian, gluten-free, cocoa-horizons]
+    allergens: [milk, soy]
+    temperingCurve:
+      meltingPoint: 40
+      workingTemperature: 28
+    vegan: false
+
+  70-30-38-dark-70:
+    baseId: 70-30-38-dark-70
+    name: Callebaut Recipe N° 70-30-38 Extra Bitter 70.5%
+    category: chocolate
+    chocolateType: dark
+    cacaoPercentage: 70.5
+    ganacheCharacteristics:
+      cacaoFat: 38
+      sugar: 26
+      milkFat: 0
+      water: 1
+      solids: 33
+      otherFats: 2
+    fluidityStars: 2
+    description: >-
+      Intense yet balanced dark chocolate with solid body of roasted cocoa,
+      powerful bitter notes and fresh fruity hints. Lower fluidity makes it
+      ideal for flavoring cremeux, dessert sauces and baked goods
+    manufacturer: Callebaut
+    tags: [dark, extra-bitter, intense, roasted, fruity, powerful]
+    origins: [Ivory Coast, Ghana, Ecuador]
+    beanVarieties: [Forastero, Trinitario]
+    applications: [cremeux, sauces, baking, ganache, mousse, cookies]
+    certifications: [halal, kosher-dairy, vegetarian, vegan, cocoa-horizons]
+    traceAllergens: [soy]
+    temperingCurve:
+      meltingPoint: 45
+      workingTemperature: 32
+    vegan: true
+
+  gold-caramel-30:
+    baseId: gold-caramel-30
+    name: Callebaut Gold Caramelized White 30.4%
+    category: chocolate
+    chocolateType: caramelized
+    cacaoPercentage: 30.4
+    ganacheCharacteristics:
+      cacaoFat: 30
+      sugar: 38
+      milkFat: 7
+      water: 1
+      solids: 22
+      otherFats: 2
+    fluidityStars: 3
+    description: >-
+      Unique caramelized white chocolate with pale amber color and golden hue.
+      Rich notes of toffee, butter, cream and an exciting dash of salt.
+      Expertly crafted with caramelized sugar and caramelized milk
+    manufacturer: Callebaut
+    tags: [caramelized, white, toffee, buttery, salted, golden, unique]
+    applications: [confectionery, desserts, baking, ice-cream, ganache, mousse]
+    certifications: [halal, kosher-dairy, vegetarian, gluten-free, non-gmo, cocoa-horizons]
+    allergens: [milk, soy]
+    temperingCurve:
+      meltingPoint: 40
+      workingTemperature: 28
+    vegan: false
+
+  ruby-rb1-33:
+    baseId: ruby-rb1-33
+    name: Callebaut Ruby RB1 33.6%
+    category: chocolate
+    chocolateType: ruby
+    cacaoPercentage: 33.6
+    ganacheCharacteristics:
+      cacaoFat: 30
+      sugar: 36
+      milkFat: 6
+      water: 1
+      solids: 27
+      otherFats: 0
+    fluidityStars: 3
+    description: >-
+      Revolutionary ruby chocolate born from the ruby cocoa bean with intense
+      fruitiness and fresh sour notes. Natural pink color without added
+      colorants or fruit flavorings. A completely new chocolate experience
+    manufacturer: Callebaut
+    tags: [ruby, fruity, sour, pink, natural, innovative, unique]
+    origins: [Ivory Coast, Ghana, Ecuador]
+    applications: [pralines, frozen-desserts, mousse, glazes, confectionery]
+    certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
+    allergens: [milk, soy]
+    temperingCurve:
+      meltingPoint: 40
+      workingTemperature: 28
+    vegan: false
+
+  845-milk-32:
+    baseId: 845-milk-32
+    name: Callebaut Recipe N° 845 Milk 32.7%
+    category: chocolate
+    chocolateType: milk
+    cacaoPercentage: 32.7
+    ganacheCharacteristics:
+      cacaoFat: 30
+      sugar: 40
+      milkFat: 7
+      water: 1
+      solids: 22
+      otherFats: 0
+    fluidityStars: 3
+    description: >-
+      Intense milk chocolate with pronounced caramel notes and rich milky taste.
+      Special milk selection shapes the creamy notes after conching.
+      All-round chocolate for molded or enrobed confectionery and ganaches
+    manufacturer: Callebaut
+    tags: [milk, caramel, intense, creamy, rich, all-round]
+    origins: [Ivory Coast, Ghana, Ecuador]
+    beanVarieties: [Forastero]
+    applications: [molding, enrobing, ganache, confectionery, mousse]
+    certifications: [halal, kosher-dairy, vegetarian, cocoa-horizons]
+    allergens: [milk, soy]
+    temperingCurve:
+      meltingPoint: 45
+      workingTemperature: 30
+    vegan: false

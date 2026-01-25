@@ -9,8 +9,9 @@ Result of importing a directory for a specific sub-library.
 **Signature:**
 
 ```typescript
-export interface IResolvedImportRoot 
+export interface IResolvedImportRoot extends IImportRootCandidate 
 ```
+**Extends:** [IImportRootCandidate](./ts-chocolate.librarydata.iimportrootcandidate.md)
 
 ## Properties
 
@@ -37,27 +38,6 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[kind](./ts-chocolate.librarydata.iresolvedimportroot.kind.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[ImportRootKind](./ts-chocolate.librarydata.importrootkind.md)
-
-
-</td><td>
-
-How the resolution was achieved.
-
-
-</td></tr>
-<tr><td>
-
 [matches](./ts-chocolate.librarydata.iresolvedimportroot.matches.md)
 
 
@@ -74,27 +54,6 @@ number
 </td><td>
 
 Number of matching candidates found.
-
-
-</td></tr>
-<tr><td>
-
-[root](./ts-chocolate.librarydata.iresolvedimportroot.root.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-FileTree.IFileTreeDirectoryItem
-
-
-</td><td>
-
-The directory that should be treated as the library root (so data/<subLibraryId> exists).
 
 
 </td></tr>

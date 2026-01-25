@@ -73,7 +73,7 @@ The base procedure ID within the source
 
 </td><td>
 
-FillingCategory \| undefined
+[ProcedureType](./ts-chocolate.proceduretype.md) \| undefined
 
 
 </td><td>

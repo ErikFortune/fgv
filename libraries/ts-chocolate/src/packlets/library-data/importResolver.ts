@@ -26,43 +26,13 @@
 import { FileTree } from '@fgv/ts-json-base';
 import { Failure, Result, Success } from '@fgv/ts-utils';
 
-import type { SubLibraryId } from './model';
-
-/**
- * Specifies how a directory was resolved for import.
- * @public
- */
-export type ImportRootKind = 'canonical' | 'data-dir' | 'direct-subdir' | 'loose-files';
-
-/**
- * Result of importing a directory for a specific sub-library.
- * @public
- */
-export interface IResolvedImportRoot {
-  /** The directory that should be treated as the library root (so data/<subLibraryId> exists). */
-  readonly root: FileTree.IFileTreeDirectoryItem;
-  /** How the resolution was achieved. */
-  readonly kind: ImportRootKind;
-  /** Number of directories visited during search. */
-  readonly visited: number;
-  /** Number of matching candidates found. */
-  readonly matches: number;
-}
-
-/**
- * Options for importing a directory for a specific sub-library.
- * @public
- */
-export interface IResolveImportRootOptions {
-  /** Maximum directory depth to search beneath the provided root. Default: 2 */
-  readonly maxDepth?: number;
-  /** Maximum directories to visit. Default: 800 */
-  readonly visitLimit?: number;
-  /** Maximum candidate matches to count before stopping. Default: 10 */
-  readonly matchLimit?: number;
-  /** Whether to treat loose *.json/*.yaml/*.yml files in a directory as collections. Default: true */
-  readonly allowLooseFiles?: boolean;
-}
+import type {
+  IDirectorySearchQueueItem,
+  IImportRootCandidate,
+  IResolvedImportRoot,
+  IResolveImportRootOptions,
+  SubLibraryId
+} from './model';
 
 class VirtualDirectoryItem implements FileTree.IFileTreeDirectoryItem {
   public readonly type: 'directory' = 'directory';
@@ -101,7 +71,7 @@ function tryResolveAt(
   dir: FileTree.IFileTreeDirectoryItem,
   subLibraryId: SubLibraryId,
   options: Required<IResolveImportRootOptions>
-): Result<{ readonly root: FileTree.IFileTreeDirectoryItem; readonly kind: ImportRootKind } | undefined> {
+): Result<IImportRootCandidate | undefined> {
   const childrenResult = dir.getChildren();
   /* c8 ignore next 3 - defensive: would only fail if FileTree implementation is broken */
   if (childrenResult.isFailure()) {
@@ -190,16 +160,13 @@ export function resolveImportRootForSubLibrary(
   let visited = 0;
   let matches = 0;
 
-  interface IQItem {
-    readonly dir: FileTree.IFileTreeDirectoryItem;
-    readonly depth: number;
-  }
-  const queue: IQItem[] = [{ dir: root, depth: 0 }];
+  const queue: IDirectorySearchQueueItem[] = [{ dir: root, depth: 0 }];
 
-  let selected: { readonly root: FileTree.IFileTreeDirectoryItem; readonly kind: ImportRootKind } | undefined;
+  let selected: IImportRootCandidate | undefined;
 
   while (queue.length > 0 && visited < resolvedOptions.visitLimit && matches < resolvedOptions.matchLimit) {
     const current = queue.shift();
+    /* c8 ignore next 3 - defensive: while condition ensures queue.length > 0 before shift */
     if (!current) {
       break;
     }
@@ -207,6 +174,7 @@ export function resolveImportRootForSubLibrary(
     visited += 1;
 
     const resolvedResult = tryResolveAt(current.dir, subLibraryId, resolvedOptions);
+    /* c8 ignore next 3 - defensive: tryResolveAt only fails if FileTree implementation is broken */
     if (resolvedResult.isFailure()) {
       return Failure.with(resolvedResult.message);
     }

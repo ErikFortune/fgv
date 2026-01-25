@@ -30,15 +30,6 @@ Converter for IInlineTask (embedded task with full ITaskData definition).
 </td></tr>
 <tr><td>
 
-[procedureStepTask](./ts-chocolate.entities.tasks.converters.proceduresteptask.md)
-
-
-</td><td>
-
-
-</td></tr>
-<tr><td>
-
 [renderOptions](./ts-chocolate.entities.tasks.converters.renderoptions.md)
 
 

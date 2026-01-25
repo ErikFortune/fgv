@@ -58,7 +58,7 @@ describe('FillingsLibrary', () => {
     createdDate: '2026-01-01',
     ingredients: [
       { ingredient: { ids: ['felchlin.maracaibo-65' as IngredientId] }, amount: 100 as Measurement },
-      { ingredient: { ids: ['common.heavy-cream-35' as IngredientId] }, amount: 50 as Measurement }
+      { ingredient: { ids: ['common.heavy-cream-36' as IngredientId] }, amount: 50 as Measurement }
     ],
     baseWeight: 150 as Measurement,
     yield: '10 bonbons'

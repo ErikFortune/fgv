@@ -112,7 +112,7 @@ export abstract class RuntimeIngredient {
       case 'flavor':
       case 'other':
         return RuntimeGenericIngredient.create(context, id, ingredient);
-      /* c8 ignore next 2 - defensive coding: Ingredient union type ensures all categories are handled */
+      /* c8 ignore next 4 - defensive coding: Ingredient union type ensures all categories are handled */
       default:
         return Failure.with(
           `Unknown ingredient category: ${(ingredient as unknown as { category: string }).category}`

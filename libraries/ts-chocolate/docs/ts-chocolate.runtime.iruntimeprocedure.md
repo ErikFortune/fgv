@@ -70,7 +70,7 @@ The base procedure ID within the source.
 
 </td><td>
 
-FillingCategory
+[ProcedureType](./ts-chocolate.proceduretype.md)
 
 
 </td><td>

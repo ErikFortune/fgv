@@ -68,12 +68,12 @@ Base procedure identifier (unique within source)
 
 </td><td>
 
-FillingCategory
+[ProcedureType](./ts-chocolate.proceduretype.md)
 
 
 </td><td>
 
-_(Optional)_ Optional filling category this procedure applies to. If set, procedure is category-specific; if not, it's general/reusable.
+_(Optional)_ Optional procedure category this procedure applies to. Can be a filling category (ganache, caramel, gianduja), confection type, or 'other'. If set, procedure is category-specific; if not, it's general/reusable.
 
 
 </td></tr>

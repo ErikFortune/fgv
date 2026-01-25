@@ -21,16 +21,8 @@
 import '@fgv/ts-utils-jest';
 import { Converters } from '../../../packlets/entities';
 
-const {
-  taskData,
-  taskRef,
-  taskRefStatus,
-  inlineTask,
-  taskInvocation,
-  procedureStepTask,
-  validationBehavior,
-  renderOptions
-} = Converters.Tasks;
+const { taskData, taskRef, taskRefStatus, inlineTask, taskInvocation, validationBehavior, renderOptions } =
+  Converters.Tasks;
 
 describe('TaskConverters', () => {
   // ============================================================================
@@ -291,7 +283,7 @@ describe('TaskConverters', () => {
   });
 
   // ============================================================================
-  // taskInvocation (and deprecated procedureStepTask alias)
+  // taskInvocation
   // ============================================================================
   describe('taskInvocation', () => {
     test('converts task reference (discriminated by taskId)', () => {
@@ -344,26 +336,6 @@ describe('TaskConverters', () => {
 
     test('fails for object with other properties', () => {
       expect(taskInvocation.convert({ other: 'value' })).toFailWith(/invocation must/i);
-    });
-  });
-
-  // ============================================================================
-  // procedureStepTask (deprecated alias)
-  // ============================================================================
-  describe('procedureStepTask (deprecated)', () => {
-    test('is an alias for taskInvocation', () => {
-      const data = {
-        taskId: 'common.melt-chocolate',
-        params: { ingredient: 'chocolate' }
-      };
-
-      // Both should work identically
-      expect(procedureStepTask.convert(data)).toSucceedAndSatisfy((result) => {
-        expect('taskId' in result).toBe(true);
-        if ('taskId' in result) {
-          expect(result.taskId).toBe('common.melt-chocolate');
-        }
-      });
     });
   });
 

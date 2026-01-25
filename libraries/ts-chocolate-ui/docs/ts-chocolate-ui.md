@@ -69,6 +69,28 @@ Displays a collection identifier as a styled badge with optional lock indicator
 </td></tr>
 <tr><td>
 
+[ConfectionCard({ confection, showCollection, className, onClick, isSelected })](./ts-chocolate-ui.confectioncard.md)
+
+
+</td><td>
+
+Displays a confection as a summary card for browse views
+
+
+</td></tr>
+<tr><td>
+
+[ConfectionTypeBadge({ confectionType, size, className })](./ts-chocolate-ui.confectiontypebadge.md)
+
+
+</td><td>
+
+Badge displaying a confection type with appropriate styling
+
+
+</td></tr>
+<tr><td>
+
 [DetailSection({ title, children, icon: Icon, collapsible, defaultCollapsed, className, badge })](./ts-chocolate-ui.detailsection.md)
 
 
@@ -233,6 +255,28 @@ Props for the CategoryBadge component
 </td><td>
 
 Props for the CollectionBadge component
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionCardProps](./ts-chocolate-ui.iconfectioncardprops.md)
+
+
+</td><td>
+
+Props for the ConfectionCard component
+
+
+</td></tr>
+<tr><td>
+
+[IConfectionTypeBadgeProps](./ts-chocolate-ui.iconfectiontypebadgeprops.md)
+
+
+</td><td>
+
+Props for the ConfectionTypeBadge component
 
 
 </td></tr>
