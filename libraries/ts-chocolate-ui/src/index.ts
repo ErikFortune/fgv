@@ -52,5 +52,8 @@ export * from './packlets/hooks';
 // Filter components for sidebars
 export * from './packlets/filters';
 
+// Production hooks for session management
+export * from './packlets/production';
+
 // Organized tool namespaces
 export * from './namespaces';

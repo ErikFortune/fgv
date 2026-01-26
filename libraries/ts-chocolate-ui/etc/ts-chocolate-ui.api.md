@@ -173,6 +173,44 @@ export interface IFillingCategoryBadgeProps {
 }
 
 // @public
+export interface IFillingOption {
+    id: string;
+    notes?: string;
+    type: 'recipe' | 'ingredient';
+}
+
+// @public
+export interface IFillingSlotActions {
+    addFillingOption: (slotId: SlotId, option: IFillingOption) => void;
+    addSlot: (name: string) => SlotId;
+    removeFillingOption: (slotId: SlotId, fillingId: string) => void;
+    removeSlot: (slotId: SlotId) => void;
+    renameSlot: (slotId: SlotId, name: string) => void;
+    reset: () => void;
+    selectFilling: (slotId: SlotId, fillingId: string) => void;
+}
+
+// @public
+export interface IFillingSlotData {
+    filling: {
+        options: readonly IFillingOption[];
+        preferredId?: string;
+    };
+    name?: string;
+    slotId: string;
+}
+
+// @public
+export interface IFillingSlotState {
+    basePreferredId: string | undefined;
+    hasChanges: boolean;
+    name: string;
+    options: readonly IFillingOption[];
+    preferredId: string | undefined;
+    slotId: SlotId;
+}
+
+// @public
 export interface IFilterActions<TFilters extends IBaseFilterState> {
     clearFilters: () => void;
     hasActiveFilters: boolean;
@@ -238,6 +276,11 @@ export interface IMessagesPaneProps {
 }
 
 // @public
+export interface IMoldData {
+    cavityCount: number;
+}
+
+// @public
 export function IngredientCard({ ingredient, ingredientId, isProtected, showCollection, className, onClick, isSelected }: IIngredientCardProps): React_2.ReactElement;
 
 // @public
@@ -276,11 +319,100 @@ export interface IPercentageSegment {
 }
 
 // @public
+export interface IPersistedSessionData {
+    base: {
+        confectionId: string;
+        versionSpec: string;
+    };
+    draft?: {
+        draftVersion?: unknown;
+    };
+    label?: string;
+    production?: {
+        moldId?: string;
+        frames?: number;
+    };
+    sessionId: SessionId;
+    sessionType: 'confection';
+    status: PersistedSessionStatus;
+}
+
+// @public
+export interface IProcedureActions {
+    addOption: (option: IProcedureOption) => void;
+    removeOption: (id: string) => void;
+    reset: () => void;
+    select: (id: string) => void;
+}
+
+// @public
+export interface IProcedureOption {
+    id: string;
+    notes?: string;
+}
+
+// @public
+export interface IProcedureSpec {
+    options: readonly IProcedureOption[];
+    preferredId?: string;
+}
+
+// @public
+export interface IProcedureState {
+    basePreferredId: string | undefined;
+    effectivePreferredId: string | undefined;
+    hasChanges: boolean;
+    options: readonly IProcedureOption[];
+}
+
+// @public
+export interface IProductionSessionActions {
+    rename: (label: string) => void;
+    selectMold: (moldId: string | undefined) => void;
+    setFrames: (frames: number) => void;
+}
+
+// @public
+export interface IProductionSessionState {
+    confectionId: string | undefined;
+    frames: number;
+    hasDraftChanges: boolean;
+    label: string | undefined;
+    moldId: string | undefined;
+    scaledYieldCount: number | undefined;
+    sessionId: SessionId | undefined;
+    status: PersistedSessionStatus;
+    versionSpec: string | undefined;
+}
+
+// @public
 export interface ISearchInputProps {
     className?: string;
     onChange: (value: string) => void;
     placeholder?: string;
     value: string;
+}
+
+// @public
+export interface IShellChocolateActions {
+    addChoice: (id: string) => void;
+    removeChoice: (id: string) => void;
+    reset: () => void;
+    select: (id: string) => void;
+}
+
+// @public
+export interface IShellChocolateSpec {
+    ids: readonly string[];
+    preferredId?: string;
+}
+
+// @public
+export interface IShellChocolateState {
+    availableChoices: readonly string[];
+    basePreferredId: string | undefined;
+    effectivePreferredId: string | undefined;
+    hasChanges: boolean;
 }
 
 // @public
@@ -310,6 +442,22 @@ export interface IUseBrowseDetailStateResult<TId extends string> {
 }
 
 // @public
+export interface IUseFillingSlotManagementOptions {
+    baseSlots: readonly IFillingSlotData[] | undefined;
+    draftSlots: readonly IFillingSlotData[] | undefined;
+    generateSlotId?: () => string;
+    onResetDraft: () => void;
+    onUpdateDraft: (slots: IFillingSlotData[]) => void;
+}
+
+// @public
+export interface IUseFillingSlotManagementResult {
+    actions: IFillingSlotActions;
+    hasChanges: boolean;
+    slots: readonly IFillingSlotState[];
+}
+
+// @public
 export interface IUseFilterStateResult<TFilters extends IBaseFilterState> {
     // (undocumented)
     actions: IFilterActions<TFilters>;
@@ -324,12 +472,57 @@ export interface IUseHashNavigationResult<TId extends string> {
 }
 
 // @public
+export interface IUseProcedureSelectionOptions {
+    baseSpec: IProcedureSpec | undefined;
+    draftSpec: IProcedureSpec | undefined;
+    onResetDraft: () => void;
+    onUpdateDraft: (spec: IProcedureSpec) => void;
+}
+
+// @public
+export interface IUseProcedureSelectionResult {
+    actions: IProcedureActions;
+    state: IProcedureState;
+}
+
+// @public
+export interface IUseProductionSessionOptions {
+    getMold: (moldId: string) => IMoldData | undefined;
+    onUpdateLabel: (sessionId: SessionId, label: string | undefined) => void;
+    onUpdateProduction: (sessionId: SessionId, production: {
+        moldId?: string;
+        frames?: number;
+    }) => void;
+    session: IPersistedSessionData | undefined;
+}
+
+// @public
+export interface IUseProductionSessionResult {
+    actions: IProductionSessionActions;
+    state: IProductionSessionState;
+}
+
+// @public
 export interface IUserLogger extends Logging.ILogger {
     success(message?: unknown, ...parameters: unknown[]): Success<string | undefined>;
 }
 
 // @public
 export interface IUserLogReporter extends IUserLogger, IResultReporter<unknown> {
+}
+
+// @public
+export interface IUseShellChocolateSelectionOptions {
+    baseSpec: IShellChocolateSpec | undefined;
+    draftSpec: IShellChocolateSpec | undefined;
+    onResetDraft: () => void;
+    onUpdateDraft: (spec: IShellChocolateSpec) => void;
+}
+
+// @public
+export interface IUseShellChocolateSelectionResult {
+    actions: IShellChocolateActions;
+    state: IShellChocolateState;
 }
 
 // @public
@@ -362,7 +555,56 @@ export function ObservabilityProvider({ children, maxMessages, userLogLevel, dia
 export function PercentageBar({ segments, className, height, showLabels, showLegend }: IPercentageBarProps): React_2.ReactElement;
 
 // @public
+export type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
+
+declare namespace ProductionTools {
+    export {
+        SlotId,
+        SessionId,
+        PersistedSessionStatus,
+        IFillingOption,
+        IFillingSlotState,
+        IProcedureOption,
+        IShellChocolateState,
+        IProcedureState,
+        IProductionSessionState,
+        IProductionSessionActions,
+        IShellChocolateActions,
+        IFillingSlotActions,
+        IProcedureActions,
+        useProductionSession,
+        IPersistedSessionData,
+        IMoldData,
+        IUseProductionSessionOptions,
+        IUseProductionSessionResult,
+        useShellChocolateSelection,
+        IShellChocolateSpec,
+        IUseShellChocolateSelectionOptions,
+        IUseShellChocolateSelectionResult,
+        useFillingSlotManagement,
+        IFillingSlotData,
+        IUseFillingSlotManagementOptions,
+        IUseFillingSlotManagementResult,
+        useProcedureSelection,
+        IProcedureSpec,
+        IUseProcedureSelectionOptions,
+        IUseProcedureSelectionResult
+    }
+}
+export { ProductionTools }
+
+// @public
 export function SearchInput({ value, onChange, placeholder, className }: ISearchInputProps): React_2.ReactElement;
+
+// @public
+export type SessionId = string & {
+    readonly __brand: 'SessionId';
+};
+
+// @public
+export type SlotId = string & {
+    readonly __brand: 'SlotId';
+};
 
 // @public
 export function TagBadge({ tag, className, size, onClick, onRemove, isActive }: ITagBadgeProps): React_2.ReactElement;
@@ -372,6 +614,9 @@ export function TemperatureCurveDisplay({ curve, className, showFahrenheit, mode
 
 // @public
 export function useBrowseDetailState<TId extends string>(): IUseBrowseDetailStateResult<TId>;
+
+// @public
+export function useFillingSlotManagement(options: IUseFillingSlotManagementOptions): IUseFillingSlotManagementResult;
 
 // @public
 export function useFilterState<TFilters extends IBaseFilterState>(initialFilters: TFilters): IUseFilterStateResult<TFilters>;
@@ -389,5 +634,14 @@ export function useMessages(): {
 
 // @public
 export function useObservability(): IObservabilityContext;
+
+// @public
+export function useProcedureSelection(options: IUseProcedureSelectionOptions): IUseProcedureSelectionResult;
+
+// @public
+export function useProductionSession(options: IUseProductionSessionOptions): IUseProductionSessionResult;
+
+// @public
+export function useShellChocolateSelection(options: IUseShellChocolateSelectionOptions): IUseShellChocolateSelectionResult;
 
 ```

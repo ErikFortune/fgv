@@ -6,7 +6,7 @@
  *
  * @example
  * ```tsx
- * import { BrowseTools, FilterTools } from '@fgv/ts-chocolate-ui';
+ * import { BrowseTools, FilterTools, ProductionTools } from '@fgv/ts-chocolate-ui';
  *
  * // Use browse/detail state management
  * const { state, actions } = BrowseTools.useBrowseDetailState<ItemId>();
@@ -26,6 +26,10 @@
  *   tags={allTags}
  *   collectionsPanel={<MyCollectionPanel />}
  * />
+ *
+ * // Use production hooks
+ * const { state: sessionState } = ProductionTools.useProductionSession({...});
+ * const { slots, actions: slotActions } = ProductionTools.useFillingSlotManagement({...});
  * ```
  *
  * @public
@@ -33,5 +37,6 @@
 
 import * as BrowseTools from './BrowseTools';
 import * as FilterTools from './FilterTools';
+import * as ProductionTools from './ProductionTools';
 
-export { BrowseTools, FilterTools };
+export { BrowseTools, FilterTools, ProductionTools };

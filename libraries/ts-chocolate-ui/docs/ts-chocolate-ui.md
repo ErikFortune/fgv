@@ -260,6 +260,19 @@ Provides a consistent pattern for tools that have a list view (browse) and a det
 </td></tr>
 <tr><td>
 
+[useFillingSlotManagement(options)](./ts-chocolate-ui.usefillingslotmanagement.md)
+
+
+</td><td>
+
+Hook for managing filling slots.
+
+Supports full CRUD operations on filling slots including adding/removing slots, renaming slots, and managing filling options within each slot.
+
+
+</td></tr>
+<tr><td>
+
 [useFilterState(initialFilters)](./ts-chocolate-ui.usefilterstate.md)
 
 
@@ -303,6 +316,45 @@ Hook to access just the messages (for the message pane)
 </td><td>
 
 Hook to access observability context
+
+
+</td></tr>
+<tr><td>
+
+[useProcedureSelection(options)](./ts-chocolate-ui.useprocedureselection.md)
+
+
+</td><td>
+
+Hook for managing procedure selection.
+
+Supports selecting from available procedures, adding new options, and removing options from the list.
+
+
+</td></tr>
+<tr><td>
+
+[useProductionSession(options)](./ts-chocolate-ui.useproductionsession.md)
+
+
+</td><td>
+
+Hook for managing production session state.
+
+Provides computed state and actions for a production session including mold selection, frame count, and yield calculation.
+
+
+</td></tr>
+<tr><td>
+
+[useShellChocolateSelection(options)](./ts-chocolate-ui.useshellchocolateselection.md)
+
+
+</td><td>
+
+Hook for managing shell chocolate selection.
+
+Supports selecting from available chocolates, adding new options, and removing options from the list.
 
 
 </td></tr>
@@ -444,6 +496,50 @@ Props for the FillingCategoryBadge component
 </td></tr>
 <tr><td>
 
+[IFillingOption](./ts-chocolate-ui.ifillingoption.md)
+
+
+</td><td>
+
+Filling option type - can be a recipe or an ingredient
+
+
+</td></tr>
+<tr><td>
+
+[IFillingSlotActions](./ts-chocolate-ui.ifillingslotactions.md)
+
+
+</td><td>
+
+Actions for filling slot management
+
+
+</td></tr>
+<tr><td>
+
+[IFillingSlotData](./ts-chocolate-ui.ifillingslotdata.md)
+
+
+</td><td>
+
+Raw filling slot data from version
+
+
+</td></tr>
+<tr><td>
+
+[IFillingSlotState](./ts-chocolate-ui.ifillingslotstate.md)
+
+
+</td><td>
+
+State for a single filling slot
+
+
+</td></tr>
+<tr><td>
+
 [IFilterActions](./ts-chocolate-ui.ifilteractions.md)
 
 
@@ -521,6 +617,17 @@ Props for the MessagesPane component
 </td></tr>
 <tr><td>
 
+[IMoldData](./ts-chocolate-ui.imolddata.md)
+
+
+</td><td>
+
+Mold data needed for yield calculation
+
+
+</td></tr>
+<tr><td>
+
 [IObservabilityContext](./ts-chocolate-ui.iobservabilitycontext.md)
 
 
@@ -565,12 +672,122 @@ A segment in the percentage bar
 </td></tr>
 <tr><td>
 
+[IPersistedSessionData](./ts-chocolate-ui.ipersistedsessiondata.md)
+
+
+</td><td>
+
+Raw session data from scratchpad
+
+
+</td></tr>
+<tr><td>
+
+[IProcedureActions](./ts-chocolate-ui.iprocedureactions.md)
+
+
+</td><td>
+
+Actions for procedure selection
+
+
+</td></tr>
+<tr><td>
+
+[IProcedureOption](./ts-chocolate-ui.iprocedureoption.md)
+
+
+</td><td>
+
+Procedure option with optional notes
+
+
+</td></tr>
+<tr><td>
+
+[IProcedureSpec](./ts-chocolate-ui.iprocedurespec.md)
+
+
+</td><td>
+
+Procedure spec from version data
+
+
+</td></tr>
+<tr><td>
+
+[IProcedureState](./ts-chocolate-ui.iprocedurestate.md)
+
+
+</td><td>
+
+State for procedure selection
+
+
+</td></tr>
+<tr><td>
+
+[IProductionSessionActions](./ts-chocolate-ui.iproductionsessionactions.md)
+
+
+</td><td>
+
+Actions for production session management
+
+
+</td></tr>
+<tr><td>
+
+[IProductionSessionState](./ts-chocolate-ui.iproductionsessionstate.md)
+
+
+</td><td>
+
+Production session state for a confection
+
+
+</td></tr>
+<tr><td>
+
 [ISearchInputProps](./ts-chocolate-ui.isearchinputprops.md)
 
 
 </td><td>
 
 Props for the SearchInput component
+
+
+</td></tr>
+<tr><td>
+
+[IShellChocolateActions](./ts-chocolate-ui.ishellchocolateactions.md)
+
+
+</td><td>
+
+Actions for shell chocolate selection
+
+
+</td></tr>
+<tr><td>
+
+[IShellChocolateSpec](./ts-chocolate-ui.ishellchocolatespec.md)
+
+
+</td><td>
+
+Shell chocolate spec from version data
+
+
+</td></tr>
+<tr><td>
+
+[IShellChocolateState](./ts-chocolate-ui.ishellchocolatestate.md)
+
+
+</td><td>
+
+State for shell chocolate selection
 
 
 </td></tr>
@@ -609,6 +826,28 @@ Return type for useBrowseDetailState hook
 </td></tr>
 <tr><td>
 
+[IUseFillingSlotManagementOptions](./ts-chocolate-ui.iusefillingslotmanagementoptions.md)
+
+
+</td><td>
+
+Options for useFillingSlotManagement hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseFillingSlotManagementResult](./ts-chocolate-ui.iusefillingslotmanagementresult.md)
+
+
+</td><td>
+
+Result type for useFillingSlotManagement hook
+
+
+</td></tr>
+<tr><td>
+
 [IUseFilterStateResult](./ts-chocolate-ui.iusefilterstateresult.md)
 
 
@@ -631,6 +870,50 @@ Return type for useHashNavigation hook
 </td></tr>
 <tr><td>
 
+[IUseProcedureSelectionOptions](./ts-chocolate-ui.iuseprocedureselectionoptions.md)
+
+
+</td><td>
+
+Options for useProcedureSelection hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseProcedureSelectionResult](./ts-chocolate-ui.iuseprocedureselectionresult.md)
+
+
+</td><td>
+
+Result type for useProcedureSelection hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseProductionSessionOptions](./ts-chocolate-ui.iuseproductionsessionoptions.md)
+
+
+</td><td>
+
+Options for useProductionSession hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseProductionSessionResult](./ts-chocolate-ui.iuseproductionsessionresult.md)
+
+
+</td><td>
+
+Result type for useProductionSession hook
+
+
+</td></tr>
+<tr><td>
+
 [IUserLogger](./ts-chocolate-ui.iuserlogger.md)
 
 
@@ -648,6 +931,28 @@ User logger interface that extends ILogger with success method for UI feedback.
 </td><td>
 
 User log reporter interface that combines IUserLogger with IResultReporter.
+
+
+</td></tr>
+<tr><td>
+
+[IUseShellChocolateSelectionOptions](./ts-chocolate-ui.iuseshellchocolateselectionoptions.md)
+
+
+</td><td>
+
+Options for useShellChocolateSelection hook
+
+
+</td></tr>
+<tr><td>
+
+[IUseShellChocolateSelectionResult](./ts-chocolate-ui.iuseshellchocolateselectionresult.md)
+
+
+</td><td>
+
+Result type for useShellChocolateSelection hook
 
 
 </td></tr>
@@ -678,6 +983,15 @@ Description
 <tr><td>
 
 [FilterTools](./ts-chocolate-ui.filtertools.md)
+
+
+</td><td>
+
+
+</td></tr>
+<tr><td>
+
+[ProductionTools](./ts-chocolate-ui.productiontools.md)
 
 
 </td><td>
@@ -733,6 +1047,39 @@ Description
 </td><td>
 
 Message types for the message pane
+
+
+</td></tr>
+<tr><td>
+
+[PersistedSessionStatus](./ts-chocolate-ui.persistedsessionstatus.md)
+
+
+</td><td>
+
+Status values for persisted sessions
+
+
+</td></tr>
+<tr><td>
+
+[SessionId](./ts-chocolate-ui.sessionid.md)
+
+
+</td><td>
+
+Branded type alias for session IDs
+
+
+</td></tr>
+<tr><td>
+
+[SlotId](./ts-chocolate-ui.slotid.md)
+
+
+</td><td>
+
+Branded type alias for slot IDs
 
 
 </td></tr>
