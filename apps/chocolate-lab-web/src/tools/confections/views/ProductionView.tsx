@@ -102,6 +102,7 @@ export function ProductionView({
     deleteSession,
     setActiveSessionId,
     setSessionStatus,
+    updateSessionDestination,
     updateConfectionProduction,
     updateConfectionDraft,
     updateSessionLabel
@@ -209,6 +210,16 @@ export function ProductionView({
             const effectiveShellPreferredId = draftShellPreferredId ?? baseShellPreferredId;
             const shellChoices = rawShellSpec?.ids ?? [];
 
+            const mutableConfectionCollectionIds: SourceId[] = runtime
+              ? (Array.from(runtime.library.confections.collections.keys()) as SourceId[]).filter((id) => {
+                  const c = runtime.library.confections.collections.get(id).asResult;
+                  return c.isSuccess() && c.value.isMutable;
+                })
+              : [];
+
+            const destinationDefault = s.destination?.defaultCollectionId;
+            const destinationOverride = s.destination?.overrideCollectionId;
+
             const production = s.sessionType === 'confection' ? s.production : undefined;
             const selectedMoldId = production?.moldId;
             const selectedMold =
@@ -309,18 +320,33 @@ export function ProductionView({
                   }
 
                   const sourceId = getConfectionSourceId(baseConfectionId);
-                  const fallbackTargets = Array.from(
-                    runtime.library.confections.collections.keys()
-                  ) as SourceId[];
-                  const candidates = [sourceId, ...fallbackTargets];
+
+                  const isMutableConfectionCollection = (id: SourceId): boolean => {
+                    const c = runtime.library.confections.collections.get(id).asResult;
+                    return c.isSuccess() && c.value.isMutable;
+                  };
 
                   let destination: SourceId | undefined;
-                  for (const id of candidates) {
-                    const c = runtime.library.confections.collections.get(id).asResult;
-                    if (c.isSuccess() && c.value.isMutable) {
-                      destination = id;
-                      break;
+                  if (destinationOverride) {
+                    if (!isMutableConfectionCollection(destinationOverride)) {
+                      setError(
+                        `Override destination "${destinationOverride as unknown as string}" is not mutable`
+                      );
+                      return;
                     }
+                    destination = destinationOverride;
+                  } else if (destinationDefault) {
+                    if (!isMutableConfectionCollection(destinationDefault)) {
+                      setError(
+                        `Default destination "${destinationDefault as unknown as string}" is not mutable`
+                      );
+                      return;
+                    }
+                    destination = destinationDefault;
+                  } else if (isMutableConfectionCollection(sourceId)) {
+                    destination = sourceId;
+                  } else {
+                    destination = mutableConfectionCollectionIds[0];
                   }
 
                   if (!destination) {
@@ -550,17 +576,18 @@ export function ProductionView({
                       <div className="md:col-span-2">
                         <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Mold</label>
                         <select
-                          className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                          className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
                           value={(selectedMoldId as unknown as string) ?? ''}
                           onChange={(e) => {
                             const raw = e.target.value;
+                            const next = raw.length > 0 ? (raw as unknown as MoldId) : undefined;
                             updateConfectionProduction(s.sessionId, {
-                              moldId: raw.length > 0 ? (raw as unknown as MoldId) : undefined,
+                              moldId: next,
                               frames: production?.frames
                             });
                           }}
                         >
-                          <option value="">(none)</option>
+                          <option value="">Unspecified</option>
                           {moldOptions.map((opt) => {
                             const displayName =
                               (opt.mold as unknown as { displayName?: string })?.displayName ??
@@ -578,7 +605,7 @@ export function ProductionView({
                       <div>
                         <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Frames</label>
                         <input
-                          className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                          className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm"
                           type="number"
                           min={1}
                           step={1}
@@ -608,7 +635,7 @@ export function ProductionView({
                         </label>
                         <div className="flex items-center gap-2">
                           <select
-                            className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm"
+                            className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
                             value={(effectiveShellPreferredId as unknown as string) ?? ''}
                             onChange={(e) => {
                               const raw = e.target.value;
@@ -644,6 +671,64 @@ export function ProductionView({
                             Draft override (base: {baseShellPreferredId as unknown as string})
                           </div>
                         ) : null}
+                      </div>
+                    ) : null}
+
+                    {mutableConfectionCollectionIds.length > 0 ? (
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Destination collection
+                        </label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[11px] text-gray-500 dark:text-gray-500 mb-1">
+                              Default
+                            </label>
+                            <select
+                              className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
+                              value={(destinationDefault as unknown as string) ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const next = raw.length > 0 ? (raw as unknown as SourceId) : undefined;
+                                updateSessionDestination(s.sessionId, {
+                                  defaultCollectionId: next,
+                                  overrideCollectionId: destinationOverride
+                                });
+                              }}
+                            >
+                              <option value="">Auto</option>
+                              {mutableConfectionCollectionIds.map((id) => (
+                                <option key={id as unknown as string} value={id as unknown as string}>
+                                  {id as unknown as string}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] text-gray-500 dark:text-gray-500 mb-1">
+                              Override
+                            </label>
+                            <select
+                              className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
+                              value={(destinationOverride as unknown as string) ?? ''}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const next = raw.length > 0 ? (raw as unknown as SourceId) : undefined;
+                                updateSessionDestination(s.sessionId, {
+                                  defaultCollectionId: destinationDefault,
+                                  overrideCollectionId: next
+                                });
+                              }}
+                            >
+                              <option value="">None</option>
+                              {mutableConfectionCollectionIds.map((id) => (
+                                <option key={id as unknown as string} value={id as unknown as string}>
+                                  {id as unknown as string}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
                       </div>
                     ) : null}
                   </div>

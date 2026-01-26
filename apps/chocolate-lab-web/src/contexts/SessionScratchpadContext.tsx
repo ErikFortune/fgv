@@ -5,13 +5,15 @@ import {
   type ConfectionVersionSpec,
   type IngredientId,
   type MoldId,
-  type SessionId
+  type SessionId,
+  type SourceId
 } from '@fgv/ts-chocolate';
 
 type Scratchpad = Runtime.Scratchpad.ISessionScratchpad;
 type PersistedSessionStatus = Runtime.Scratchpad.PersistedSessionStatus;
 type ConfectionProduction = Runtime.Scratchpad.IPersistedConfectionSessionProduction;
 type ConfectionDraft = Runtime.Scratchpad.IPersistedConfectionSessionDraft;
+type SessionDestination = Runtime.Scratchpad.IPersistedSessionDestination;
 
 type SessionScratchpadContextValue = {
   scratchpad: Scratchpad;
@@ -24,6 +26,7 @@ type SessionScratchpadContextValue = {
   setActiveSessionId: (sessionId: SessionId | undefined) => void;
   updateSessionLabel: (sessionId: SessionId, label: string | undefined) => void;
   setSessionStatus: (sessionId: SessionId, status: PersistedSessionStatus) => void;
+  updateSessionDestination: (sessionId: SessionId, destination: SessionDestination | undefined) => void;
   updateConfectionProduction: (sessionId: SessionId, production: ConfectionProduction) => void;
   updateConfectionDraft: (sessionId: SessionId, draft: ConfectionDraft) => void;
 };
@@ -107,6 +110,43 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
         updatedAt: nowIso(),
         activeSessionId: sessionId
       }));
+    },
+    [updateScratchpad]
+  );
+
+  const updateSessionDestination = useCallback(
+    (sessionId: SessionId, destination: SessionDestination | undefined) => {
+      updateScratchpad((prev) => {
+        const existing = prev.sessions[sessionId];
+        if (!existing) {
+          return prev;
+        }
+
+        const ts = nowIso();
+        const cleaned: SessionDestination = {
+          ...(destination?.defaultCollectionId
+            ? { defaultCollectionId: destination.defaultCollectionId as SourceId }
+            : {}),
+          ...(destination?.overrideCollectionId
+            ? { overrideCollectionId: destination.overrideCollectionId as SourceId }
+            : {})
+        };
+
+        const nextSession = {
+          ...existing,
+          updatedAt: ts,
+          destination: Object.keys(cleaned).length > 0 ? cleaned : undefined
+        };
+
+        return {
+          ...prev,
+          updatedAt: ts,
+          sessions: {
+            ...prev.sessions,
+            [sessionId]: nextSession
+          }
+        };
+      });
     },
     [updateScratchpad]
   );
@@ -298,6 +338,7 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
       setActiveSessionId,
       updateSessionLabel,
       setSessionStatus,
+      updateSessionDestination,
       updateConfectionProduction,
       updateConfectionDraft
     }),
@@ -307,6 +348,7 @@ export function SessionScratchpadProvider({ children }: { children: React.ReactN
       scratchpad,
       setActiveSessionId,
       setSessionStatus,
+      updateSessionDestination,
       updateConfectionProduction,
       updateConfectionDraft,
       updateSessionLabel
