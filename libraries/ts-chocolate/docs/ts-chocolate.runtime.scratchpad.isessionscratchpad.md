@@ -70,7 +70,7 @@ _(Optional)_
 
 </td><td>
 
-[SessionScratchpadSchemaVersion](./ts-chocolate.runtime.scratchpad.sessionscratchpadschemaversion.md)
+[SessionScratchpadSchemaVersion](./ts-chocolate.runtime.session.scratchpad.sessionscratchpadschemaversion.md)
 
 
 </td><td>
@@ -89,7 +89,7 @@ _(Optional)_
 
 </td><td>
 
-Record&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.runtime.scratchpad.anypersistedsession.md)<!-- -->&gt;
+Record&lt;[SessionId](./ts-chocolate.sessionid.md)<!-- -->, [AnyPersistedSession](./ts-chocolate.runtime.session.scratchpad.anypersistedsession.md)<!-- -->&gt;
 
 
 </td><td>

@@ -32,3 +32,6 @@ export {
   getCurrentDateString,
   getCurrentTimestamp
 } from './sessionUtils';
+
+import * as Scratchpad from '../scratchpad';
+export { Scratchpad };

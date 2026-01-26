@@ -11,7 +11,7 @@ Persisted filling session.
 ```typescript
 export interface IPersistedFillingSession extends IPersistedSessionBase 
 ```
-**Extends:** [IPersistedSessionBase](./ts-chocolate.runtime.scratchpad.ipersistedsessionbase.md)
+**Extends:** [IPersistedSessionBase](./ts-chocolate.runtime.session.scratchpad.ipersistedsessionbase.md)
 
 ## Properties
 
@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-[IPersistedFillingSessionBasePointer](./ts-chocolate.runtime.scratchpad.ipersistedfillingsessionbasepointer.md)
+[IPersistedFillingSessionBasePointer](./ts-chocolate.runtime.session.scratchpad.ipersistedfillingsessionbasepointer.md)
 
 
 </td><td>

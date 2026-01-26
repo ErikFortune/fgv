@@ -66,7 +66,7 @@ string
 
 </td><td>
 
-[IPersistedSessionDestination](./ts-chocolate.runtime.scratchpad.ipersistedsessiondestination.md)
+[IPersistedSessionDestination](./ts-chocolate.runtime.session.scratchpad.ipersistedsessiondestination.md)
 
 
 </td><td>
@@ -127,7 +127,7 @@ _(Optional)_
 
 </td><td>
 
-[PersistedSessionType](./ts-chocolate.runtime.scratchpad.persistedsessiontype.md)
+[PersistedSessionType](./ts-chocolate.runtime.session.scratchpad.persistedsessiontype.md)
 
 
 </td><td>
@@ -146,7 +146,7 @@ _(Optional)_
 
 </td><td>
 
-[PersistedSessionStatus](./ts-chocolate.runtime.scratchpad.persistedsessionstatus.md)
+[PersistedSessionStatus](./ts-chocolate.runtime.session.scratchpad.persistedsessionstatus.md)
 
 
 </td><td>

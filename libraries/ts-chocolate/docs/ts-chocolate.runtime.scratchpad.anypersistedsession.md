@@ -11,5 +11,5 @@ Any persisted session type.
 ```typescript
 export type AnyPersistedSession = IPersistedConfectionSession | IPersistedFillingSession;
 ```
-**References:** [IPersistedConfectionSession](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsession.md)<!-- -->, [IPersistedFillingSession](./ts-chocolate.runtime.scratchpad.ipersistedfillingsession.md)
+**References:** [IPersistedConfectionSession](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsession.md)<!-- -->, [IPersistedFillingSession](./ts-chocolate.runtime.session.scratchpad.ipersistedfillingsession.md)
 

@@ -1122,6 +1122,15 @@ Description
 
 
 </td></tr>
+<tr><td>
+
+[SessionScratchpad](./ts-chocolate.runtime.sessionscratchpad.md)
+
+
+</td><td>
+
+
+</td></tr>
 </tbody></table>
 
 ## Type Aliases

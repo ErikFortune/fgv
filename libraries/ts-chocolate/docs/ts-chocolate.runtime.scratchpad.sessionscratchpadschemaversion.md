@@ -11,5 +11,5 @@ Schema version discriminator type.
 ```typescript
 export type SessionScratchpadSchemaVersion = typeof SESSION_SCRATCHPAD_SCHEMA_VERSION;
 ```
-**References:** [SESSION\_SCRATCHPAD\_SCHEMA\_VERSION](./ts-chocolate.runtime.scratchpad.session_scratchpad_schema_version.md)
+**References:** [SESSION\_SCRATCHPAD\_SCHEMA\_VERSION](./ts-chocolate.runtime.session.scratchpad.session_scratchpad_schema_version.md)
 

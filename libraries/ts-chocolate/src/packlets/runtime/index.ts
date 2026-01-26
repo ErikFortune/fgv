@@ -91,6 +91,10 @@ export { Session };
 import * as Scratchpad from './scratchpad';
 export { Scratchpad };
 
+// Alias to avoid overly-generic "Scratchpad" name
+import * as SessionScratchpad from './scratchpad';
+export { SessionScratchpad };
+
 // Runtime tasks
 export { ITaskContext, IRuntimeTask, RuntimeTask } from './tasks';
 

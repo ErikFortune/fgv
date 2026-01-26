@@ -88,10 +88,30 @@ export function ProductionView({
         ) : (
           sessions.map((s) => {
             const isActive = scratchpad.activeSessionId === s.sessionId;
-            const title =
+
+            const confectionId = s.sessionType === 'confection' ? s.base.confectionId : undefined;
+            const versionSpec = s.sessionType === 'confection' ? s.base.versionSpec : undefined;
+            const subtitle =
               s.sessionType === 'confection'
-                ? `${s.base.confectionId as unknown as string}@${s.base.versionSpec as unknown as string}`
-                : s.sessionId;
+                ? `${confectionId as unknown as string}@${versionSpec as unknown as string}`
+                : (s.sessionId as unknown as string);
+
+            let computedTitle: string;
+            if (s.sessionType === 'confection' && runtime && confectionId && versionSpec) {
+              const confectionResult = runtime.getRuntimeConfection(confectionId);
+              const confectionName = confectionResult.isSuccess()
+                ? (confectionResult.value.name as unknown as string)
+                : (confectionId as unknown as string);
+              const isGolden =
+                confectionResult.isSuccess() && confectionResult.value.goldenVersionSpec === versionSpec;
+
+              computedTitle = `${confectionName}${!isGolden ? ` (${versionSpec as unknown as string})` : ''}`;
+            } else {
+              computedTitle = s.sessionId as unknown as string;
+            }
+
+            const rowTitle = s.label?.trim().length ? s.label : computedTitle;
+
             return (
               <div
                 key={s.sessionId as unknown as string}
@@ -107,9 +127,11 @@ export function ProductionView({
                   onClick={() => setActiveSessionId(s.sessionId)}
                 >
                   <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {s.label?.trim().length ? s.label : title}
+                    {rowTitle}
                   </div>
-                  <div className="truncate text-xs text-gray-500 dark:text-gray-400 font-mono">{title}</div>
+                  <div className="truncate text-xs text-gray-500 dark:text-gray-400 font-mono">
+                    {subtitle}
+                  </div>
                 </button>
 
                 <button

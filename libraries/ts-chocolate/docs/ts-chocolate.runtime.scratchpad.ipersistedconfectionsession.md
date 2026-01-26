@@ -11,7 +11,7 @@ Persisted confection session.
 ```typescript
 export interface IPersistedConfectionSession extends IPersistedSessionBase 
 ```
-**Extends:** [IPersistedSessionBase](./ts-chocolate.runtime.scratchpad.ipersistedsessionbase.md)
+**Extends:** [IPersistedSessionBase](./ts-chocolate.runtime.session.scratchpad.ipersistedsessionbase.md)
 
 ## Properties
 
@@ -48,7 +48,7 @@ Description
 
 </td><td>
 
-[IPersistedConfectionSessionBasePointer](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessionbasepointer.md)
+[IPersistedConfectionSessionBasePointer](./ts-chocolate.runtime.session.scratchpad.ipersistedconfectionsessionbasepointer.md)
 
 
 </td><td>
