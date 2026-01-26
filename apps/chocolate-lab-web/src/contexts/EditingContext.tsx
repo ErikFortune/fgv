@@ -194,21 +194,39 @@ function writeLocalTaskCollections(next: Record<string, unknown>): void {
 function readLocalConfectionCollections(): Record<string, unknown> {
   try {
     const raw = window.localStorage.getItem(LOCAL_CONFECTION_COLLECTIONS_KEY);
+    console.log('[Confection Persistence] Reading from localStorage:', {
+      key: LOCAL_CONFECTION_COLLECTIONS_KEY,
+      hasData: !!raw,
+      dataLength: raw?.length ?? 0
+    });
     if (!raw) {
       return {};
     }
-    const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-      return {};
-    }
-    return parsed as Record<string, unknown>;
-  } catch {
+
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    console.log('[Confection Persistence] Parsed collections:', Object.keys(parsed));
+    return parsed;
+  } catch (e) {
+    console.error('[Confection Persistence] Read error:', e);
     return {};
   }
 }
 
 function writeLocalConfectionCollections(next: Record<string, unknown>): void {
-  window.localStorage.setItem(LOCAL_CONFECTION_COLLECTIONS_KEY, JSON.stringify(next));
+  const serialized = JSON.stringify(next);
+  console.log('[Confection Persistence] Writing to localStorage:', {
+    key: LOCAL_CONFECTION_COLLECTIONS_KEY,
+    collectionIds: Object.keys(next),
+    dataLength: serialized.length
+  });
+  window.localStorage.setItem(LOCAL_CONFECTION_COLLECTIONS_KEY, serialized);
+
+  // Verify write
+  const verify = window.localStorage.getItem(LOCAL_CONFECTION_COLLECTIONS_KEY);
+  console.log('[Confection Persistence] Write verification:', {
+    written: verify === serialized,
+    verifyLength: verify?.length ?? 0
+  });
 }
 
 function decodeBase64Key(value: string): Result<Uint8Array> {

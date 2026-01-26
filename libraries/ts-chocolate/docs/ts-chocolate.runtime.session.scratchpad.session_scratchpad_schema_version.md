@@ -9,5 +9,5 @@ Current schema version for the persisted session scratchpad.
 **Signature:**
 
 ```typescript
-SESSION_SCRATCHPAD_SCHEMA_VERSION: 1
+SESSION_SCRATCHPAD_SCHEMA_VERSION: 2
 ```

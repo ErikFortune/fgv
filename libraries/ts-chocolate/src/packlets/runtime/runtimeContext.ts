@@ -320,8 +320,11 @@ export class RuntimeContext
   private _resolveRuntimeConfections(): Result<Map<ConfectionId, AnyRuntimeConfection>> {
     if (this._runtimeConfections === undefined) {
       this._runtimeConfections = new Map();
-      // Populate from library - report and fail on any creation errors
-      for (const [id, confection] of this._library.confections.entries()) {
+    }
+
+    // Populate missing entries from library - report and fail on any creation errors
+    for (const [id, confection] of this._library.confections.entries()) {
+      if (!this._runtimeConfections.has(id)) {
         const createResult = RuntimeConfection.create(this, id, confection).report(this.logger);
         /* c8 ignore next 3 - defensive: creation only fails with corrupted library data */
         if (createResult.isFailure()) {
@@ -330,6 +333,14 @@ export class RuntimeContext
         this._runtimeConfections.set(id, createResult.value);
       }
     }
+
+    // Remove stale cached entries (if underlying library changed)
+    for (const id of this._runtimeConfections.keys()) {
+      if (!this._library.confections.has(id)) {
+        this._runtimeConfections.delete(id);
+      }
+    }
+
     return Success.with(this._runtimeConfections);
   }
 

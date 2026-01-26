@@ -41,6 +41,7 @@ const LOCAL_MOLD_COLLECTIONS_KEY = 'chocolate-lab-web:molds:collections:v1';
 const LOCAL_TASK_COLLECTIONS_KEY = 'chocolate-lab-web:tasks:collections:v1';
 const LOCAL_PROCEDURE_COLLECTIONS_KEY = 'chocolate-lab-web:procedures:collections:v1';
 const LOCAL_JOURNAL_COLLECTIONS_KEY = 'chocolate-lab-web:journals:collections:v1';
+const LOCAL_CONFECTION_COLLECTIONS_KEY = 'chocolate-lab-web:confections:collections:v1';
 
 function getStartupLoadFlags(): { suppressBuiltIn: boolean; suppressLocal: boolean } {
   const params = new URLSearchParams(window.location.search);
@@ -98,6 +99,44 @@ class VirtualDirectoryItem implements FileTree.IFileTreeDirectoryItem {
 
   public getChildren(): Result<ReadonlyArray<FileTree.FileTreeItem>> {
     return this._getChildren();
+  }
+}
+
+function readLocalConfectionCollectionFiles(): FileTree.IInMemoryFile[] {
+  try {
+    const raw = window.localStorage.getItem(LOCAL_CONFECTION_COLLECTIONS_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed: unknown = JSON.parse(raw);
+    if (!isJsonObject(parsed)) {
+      return [];
+    }
+
+    const files: FileTree.IInMemoryFile[] = [];
+    for (const [collectionId, contents] of Object.entries(parsed)) {
+      if (!isJsonObject(contents)) {
+        continue;
+      }
+
+      const isEncrypted = Crypto.isEncryptedCollectionFile(contents);
+      if (!isEncrypted) {
+        if (!('items' in contents) || !isJsonObject(contents.items)) {
+          continue;
+        }
+        if ('metadata' in contents && contents.metadata !== undefined && !isJsonObject(contents.metadata)) {
+          continue;
+        }
+      }
+      files.push({
+        path: `/data/confections/${collectionId}.json`,
+        contents
+      });
+    }
+    return files;
+  } catch {
+    return [];
   }
 }
 
@@ -630,7 +669,8 @@ export function ChocolateProvider({
               ...readLocalJournalCollectionFiles(),
               ...readLocalMoldCollectionFiles(),
               ...readLocalTaskCollectionFiles(),
-              ...readLocalProcedureCollectionFiles()
+              ...readLocalProcedureCollectionFiles(),
+              ...readLocalConfectionCollectionFiles()
             ];
 
         // If built-ins are enabled, evict only local collections that conflict by collectionId.
@@ -725,6 +765,7 @@ export function ChocolateProvider({
         let localHasMolds = false;
         let localHasTasks = false;
         let localHasProcedures = false;
+        let localHasConfections = false;
         if (localTreeResult?.isSuccess() === true) {
           const ingredientsDirResult = localTreeResult.value.getItem('/data/ingredients');
           localHasIngredients =
@@ -746,6 +787,10 @@ export function ChocolateProvider({
           localHasProcedures =
             proceduresDirResult.isSuccess() && proceduresDirResult.value.type === 'directory';
 
+          const confectionsDirResult = localTreeResult.value.getItem('/data/confections');
+          localHasConfections =
+            confectionsDirResult.isSuccess() && confectionsDirResult.value.type === 'directory';
+
           const rootResult = localTreeResult.value.getItem('/');
           if (rootResult.isSuccess() && rootResult.value.type === 'directory') {
             localRootDir = rootResult.value;
@@ -766,7 +811,8 @@ export function ChocolateProvider({
             localHasJournals ||
             localHasMolds ||
             localHasTasks ||
-            localHasProcedures)
+            localHasProcedures ||
+            localHasConfections)
             ? [
                 {
                   directory: localRootDir,
@@ -777,7 +823,8 @@ export function ChocolateProvider({
                     journals: localHasJournals,
                     molds: localHasMolds,
                     procedures: localHasProcedures,
-                    tasks: localHasTasks
+                    tasks: localHasTasks,
+                    confections: localHasConfections
                   },
                   mutable: true
                 }

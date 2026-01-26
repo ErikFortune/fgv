@@ -37,7 +37,7 @@ Description
 </th></tr></thead>
 <tbody><tr><td>
 
-[fillingPreferredOptionIds?](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessiondraft.fillingpreferredoptionids.md)
+[draftVersion?](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessiondraft.draftversion.md)
 
 
 </td><td>
@@ -47,28 +47,7 @@ Description
 
 </td><td>
 
-Readonly&lt;Record&lt;[SlotId](./ts-chocolate.slotid.md)<!-- -->, [FillingId](./ts-chocolate.fillingid.md) \| [IngredientId](./ts-chocolate.ingredientid.md)<!-- -->&gt;&gt;
-
-
-</td><td>
-
-_(Optional)_
-
-
-</td></tr>
-<tr><td>
-
-[shellPreferredChocolateId?](./ts-chocolate.runtime.scratchpad.ipersistedconfectionsessiondraft.shellpreferredchocolateid.md)
-
-
-</td><td>
-
-`readonly`
-
-
-</td><td>
-
-[IngredientId](./ts-chocolate.ingredientid.md)
+AnyConfectionVersion
 
 
 </td><td>

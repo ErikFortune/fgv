@@ -3136,9 +3136,7 @@ interface IPersistedConfectionSessionBasePointer {
 // @public
 interface IPersistedConfectionSessionDraft {
     // (undocumented)
-    readonly fillingPreferredOptionIds?: Readonly<Record<SlotId, FillingId | IngredientId>>;
-    // (undocumented)
-    readonly shellPreferredChocolateId?: IngredientId;
+    readonly draftVersion?: AnyConfectionVersion;
 }
 
 // @public
@@ -5659,7 +5657,7 @@ declare namespace Session {
 export const SESSION_ID_PATTERN: RegExp;
 
 // @public
-const SESSION_SCRATCHPAD_SCHEMA_VERSION: 1;
+const SESSION_SCRATCHPAD_SCHEMA_VERSION: 2;
 
 // @public
 export type SessionId = Brand<string, 'SessionId'>;

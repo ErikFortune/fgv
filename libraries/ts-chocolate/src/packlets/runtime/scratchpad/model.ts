@@ -32,12 +32,12 @@ import {
   ConfectionVersionSpec,
   FillingId,
   FillingVersionSpec,
-  IngredientId,
   MoldId,
   SessionId,
-  SlotId,
   SourceId
 } from '../../common';
+
+import { AnyConfectionVersion } from '../../entities';
 
 // ============================================================================
 // Schema Version
@@ -47,7 +47,7 @@ import {
  * Current schema version for the persisted session scratchpad.
  * @public
  */
-export const SESSION_SCRATCHPAD_SCHEMA_VERSION: 1 = 1;
+export const SESSION_SCRATCHPAD_SCHEMA_VERSION: 2 = 2;
 
 /**
  * Schema version discriminator type.
@@ -142,8 +142,7 @@ export interface IPersistedConfectionSessionProduction {
  * @public
  */
 export interface IPersistedConfectionSessionDraft {
-  readonly shellPreferredChocolateId?: IngredientId;
-  readonly fillingPreferredOptionIds?: Readonly<Record<SlotId, FillingId | IngredientId>>;
+  readonly draftVersion?: AnyConfectionVersion;
 }
 
 /**

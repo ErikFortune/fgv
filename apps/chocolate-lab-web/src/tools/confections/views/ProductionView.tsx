@@ -6,9 +6,11 @@ import type {
   FillingId,
   IngredientId,
   MoldId,
+  ProcedureId,
   SlotId
 } from '@fgv/ts-chocolate';
 import { Converters, Entities, Runtime, type JournalId, type SourceId } from '@fgv/ts-chocolate';
+import { useObservability } from '@fgv/ts-chocolate-ui';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useEditing } from '../../../contexts/EditingContext';
 import { useSessionScratchpad } from '../../../contexts/SessionScratchpadContext';
@@ -103,6 +105,7 @@ export function ProductionView({
 }): React.ReactElement {
   const { runtime, loadingState } = useChocolate();
   const { commitConfectionCollection } = useEditing();
+  const { user, diag } = useObservability();
   const {
     scratchpad,
     createConfectionSession,
@@ -116,6 +119,30 @@ export function ProductionView({
   } = useSessionScratchpad();
 
   const [error, setError] = useState<string | null>(null);
+
+  const cloneJson = <T,>(value: T): T => {
+    return JSON.parse(JSON.stringify(value)) as T;
+  };
+
+  const isJsonEqual = (a: unknown, b: unknown): boolean => {
+    const normalize = (value: unknown): unknown => {
+      if (Array.isArray(value)) {
+        return value.map((v) => normalize(v));
+      }
+      if (value && typeof value === 'object') {
+        const obj = value as Record<string, unknown>;
+        const keys = Object.keys(obj).sort();
+        const normalized: Record<string, unknown> = {};
+        for (const k of keys) {
+          normalized[k] = normalize(obj[k]);
+        }
+        return normalized;
+      }
+      return value;
+    };
+
+    return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
+  };
 
   const sessions = useMemo(() => {
     return Object.values(scratchpad.sessions)
@@ -205,16 +232,32 @@ export function ProductionView({
               s.sessionType === 'confection' && confectionForRow
                 ? confectionForRow.getVersion(s.base.versionSpec).orDefault(undefined)
                 : undefined;
-            const rawShellSpec = (
-              versionForRow as unknown as {
-                raw?: { shellChocolate?: { ids: IngredientId[]; preferredId?: IngredientId } };
-              }
-            )?.raw?.shellChocolate;
+            const baseRawVersion = (versionForRow as unknown as { raw?: unknown })?.raw as
+              | Record<string, unknown>
+              | undefined;
+            const draftRawVersion =
+              s.sessionType === 'confection'
+                ? (s.draft?.draftVersion as unknown as Record<string, unknown> | undefined) ?? undefined
+                : undefined;
+            const effectiveRawVersion = draftRawVersion ?? baseRawVersion;
 
-            const rawFillings = (
-              versionForRow as unknown as {
-                raw?: {
-                  fillings?: Array<{
+            const baseShellSpec =
+              (baseRawVersion?.shellChocolate as
+                | { ids: IngredientId[]; preferredId?: IngredientId }
+                | undefined) ?? undefined;
+            const effectiveShellSpec =
+              (effectiveRawVersion?.shellChocolate as
+                | { ids: IngredientId[]; preferredId?: IngredientId }
+                | undefined) ?? undefined;
+
+            const shellChoices = effectiveShellSpec?.ids ?? [];
+            const baseShellPreferredId = baseShellSpec?.preferredId ?? baseShellSpec?.ids?.[0];
+            const effectiveShellPreferredId =
+              effectiveShellSpec?.preferredId ?? effectiveShellSpec?.ids?.[0] ?? baseShellPreferredId;
+
+            const baseFillings =
+              (baseRawVersion?.fillings as
+                | Array<{
                     slotId: SlotId;
                     name?: string;
                     filling: {
@@ -225,18 +268,46 @@ export function ProductionView({
                       }>;
                       preferredId?: FillingId | IngredientId;
                     };
-                  }>;
-                };
-              }
-            )?.raw?.fillings;
+                  }>
+                | undefined) ?? undefined;
 
-            const draftShellPreferredId =
-              s.sessionType === 'confection' ? s.draft?.shellPreferredChocolateId : undefined;
-            const draftFillingPreferredOptionIds =
-              s.sessionType === 'confection' ? s.draft?.fillingPreferredOptionIds : undefined;
-            const baseShellPreferredId = rawShellSpec?.preferredId ?? rawShellSpec?.ids?.[0];
-            const effectiveShellPreferredId = draftShellPreferredId ?? baseShellPreferredId;
-            const shellChoices = rawShellSpec?.ids ?? [];
+            const effectiveFillings =
+              (effectiveRawVersion?.fillings as
+                | Array<{
+                    slotId: SlotId;
+                    name?: string;
+                    filling: {
+                      options: Array<{
+                        type: 'recipe' | 'ingredient';
+                        id: FillingId | IngredientId;
+                        notes?: string;
+                      }>;
+                      preferredId?: FillingId | IngredientId;
+                    };
+                  }>
+                | undefined) ?? undefined;
+
+            const baseProcedures =
+              (baseRawVersion?.procedures as
+                | {
+                    options: Array<{ id: ProcedureId; notes?: string }>;
+                    preferredId?: ProcedureId;
+                  }
+                | undefined) ?? undefined;
+
+            const effectiveProcedures =
+              (effectiveRawVersion?.procedures as
+                | {
+                    options: Array<{ id: ProcedureId; notes?: string }>;
+                    preferredId?: ProcedureId;
+                  }
+                | undefined) ?? undefined;
+
+            const baseProcedurePreferredId = baseProcedures?.preferredId ?? baseProcedures?.options?.[0]?.id;
+            const effectiveProcedurePreferredId =
+              effectiveProcedures?.preferredId ??
+              effectiveProcedures?.options?.[0]?.id ??
+              baseProcedurePreferredId;
 
             const mutableConfectionCollectionIds: SourceId[] = runtime
               ? (Array.from(runtime.library.confections.collections.keys()) as SourceId[]).filter((id) => {
@@ -303,15 +374,19 @@ export function ProductionView({
                 return;
               }
 
+              user.info(`Committing session ${s.sessionId as unknown as string}...`);
+
               const confectionResult = runtime.getRuntimeConfection(s.base.confectionId);
               if (confectionResult.isFailure()) {
                 setError(confectionResult.message);
+                user.error(confectionResult.message);
                 return;
               }
 
               const versionResult = confectionResult.value.getVersion(s.base.versionSpec);
               if (versionResult.isFailure()) {
                 setError(versionResult.message);
+                user.error(versionResult.message);
                 return;
               }
 
@@ -335,7 +410,7 @@ export function ProductionView({
                 let targetVersionSpec = baseVersionSpec;
 
                 const shellChanged =
-                  rawShellSpec &&
+                  baseShellSpec &&
                   effectiveShellPreferredId !== undefined &&
                   baseShellPreferredId !== undefined &&
                   effectiveShellPreferredId !== baseShellPreferredId;
@@ -348,19 +423,11 @@ export function ProductionView({
                   previousType?: 'recipe' | 'ingredient';
                 }> = [];
 
-                const fillingsForCommit = rawFillings ?? [];
-                const fillingOverrideMap = (draftFillingPreferredOptionIds ?? {}) as Record<
-                  string,
-                  FillingId | IngredientId
-                >;
-
-                for (const slot of fillingsForCommit) {
-                  const basePreferred = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
-                  const desired =
-                    (fillingOverrideMap[slot.slotId as unknown as string] as
-                      | FillingId
-                      | IngredientId
-                      | undefined) ?? basePreferred;
+                const effectiveFillingsForCommit = effectiveFillings ?? [];
+                for (const slot of effectiveFillingsForCommit) {
+                  const baseSlot = (baseFillings ?? []).find((b) => b.slotId === slot.slotId);
+                  const basePreferred = baseSlot?.filling.preferredId ?? baseSlot?.filling.options?.[0]?.id;
+                  const desired = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
 
                   if (!desired) {
                     continue;
@@ -373,7 +440,7 @@ export function ProductionView({
                   }
 
                   if (basePreferred && desired !== basePreferred) {
-                    const previousOpt = slot.filling.options.find((o) => o.id === basePreferred);
+                    const previousOpt = baseSlot?.filling.options.find((o) => o.id === basePreferred);
                     fillingChanges.push({
                       slotId: slot.slotId,
                       previousOptionId: basePreferred,
@@ -386,13 +453,40 @@ export function ProductionView({
 
                 const fillingsChanged = fillingChanges.length > 0;
 
-                const recipeChanged = shellChanged || fillingsChanged;
+                const procedureChanged =
+                  effectiveProcedures &&
+                  effectiveProcedurePreferredId !== undefined &&
+                  baseProcedurePreferredId !== undefined &&
+                  effectiveProcedurePreferredId !== baseProcedurePreferredId;
+
+                const recipeChanged = draftRawVersion !== undefined;
+
+                if (!recipeChanged) {
+                  diag.info(
+                    `Session ${
+                      s.sessionId as unknown as string
+                    } commit: no draftVersion present; commit will be journal-only.`
+                  );
+                }
 
                 if (recipeChanged) {
                   const desiredShell = effectiveShellPreferredId as IngredientId | undefined;
                   if (shellChanged) {
                     if (!desiredShell || !shellChoices.includes(desiredShell)) {
                       setError('Selected shell chocolate is not in the allowed options for this version');
+                      user.error('Selected shell chocolate is not in the allowed options for this version');
+                      return;
+                    }
+                  }
+
+                  const desiredProcedure = effectiveProcedurePreferredId as ProcedureId | undefined;
+                  if (procedureChanged) {
+                    if (
+                      !desiredProcedure ||
+                      !effectiveProcedures?.options?.some((o) => o.id === desiredProcedure)
+                    ) {
+                      setError('Selected procedure is not in the allowed options for this version');
+                      user.error('Selected procedure is not in the allowed options for this version');
                       return;
                     }
                   }
@@ -410,12 +504,18 @@ export function ProductionView({
                       setError(
                         `Override destination "${destinationOverride as unknown as string}" is not mutable`
                       );
+                      user.error(
+                        `Override destination "${destinationOverride as unknown as string}" is not mutable`
+                      );
                       return;
                     }
                     destination = destinationOverride;
                   } else if (destinationDefault) {
                     if (!isMutableConfectionCollection(destinationDefault)) {
                       setError(
+                        `Default destination "${destinationDefault as unknown as string}" is not mutable`
+                      );
+                      user.error(
                         `Default destination "${destinationDefault as unknown as string}" is not mutable`
                       );
                       return;
@@ -429,6 +529,7 @@ export function ProductionView({
 
                   if (!destination) {
                     setError('No mutable confection collection available to save a new version');
+                    user.error('No mutable confection collection available to save a new version');
                     return;
                   }
 
@@ -436,12 +537,14 @@ export function ProductionView({
                   const baseIdResult = Converters.baseConfectionId.convert(baseIdString);
                   if (baseIdResult.isFailure()) {
                     setError(baseIdResult.message);
+                    user.error(baseIdResult.message);
                     return;
                   }
 
                   const confectionResult = runtime.library.getConfection(baseConfectionId);
                   if (confectionResult.isFailure()) {
                     setError(confectionResult.message);
+                    user.error(confectionResult.message);
                     return;
                   }
 
@@ -452,6 +555,7 @@ export function ProductionView({
                   );
                   if (!rawVersion) {
                     setError(`Version ${baseVersionSpec as unknown as string} not found`);
+                    user.error(`Version ${baseVersionSpec as unknown as string} not found`);
                     return;
                   }
 
@@ -460,61 +564,33 @@ export function ProductionView({
                   );
 
                   const newVersion: Record<string, unknown> = {
-                    ...rawVersion,
+                    ...(draftRawVersion ? cloneJson(draftRawVersion) : cloneJson(rawVersion)),
                     versionSpec: newVersionSpec as unknown as string,
                     createdDate: new Date().toISOString()
                   };
 
-                  if (shellChanged && desiredShell) {
-                    newVersion.shellChocolate = {
-                      ...((rawVersion.shellChocolate as unknown as Record<string, unknown>) ?? {}),
-                      preferredId: desiredShell as unknown as string
-                    };
-                  }
-
-                  if (rawFillings && rawFillings.length > 0) {
-                    const fillingOverrideMapForVersion = (draftFillingPreferredOptionIds ?? {}) as Record<
-                      string,
-                      FillingId | IngredientId
-                    >;
-
-                    const updatedFillings = rawFillings.map((slot) => {
-                      const basePreferred = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
-                      const desired =
-                        (fillingOverrideMapForVersion[slot.slotId as unknown as string] as
-                          | FillingId
-                          | IngredientId
-                          | undefined) ?? basePreferred;
-                      return {
-                        ...slot,
-                        filling: {
-                          ...slot.filling,
-                          ...(desired ? { preferredId: desired as unknown as string } : {})
-                        }
-                      };
-                    });
-
-                    newVersion.fillings = updatedFillings;
-                  }
-
                   const updatedConfection: Record<string, unknown> = {
                     ...rawConfection,
+                    goldenVersionSpec: newVersionSpec as unknown as string,
                     versions: [...rawVersions, newVersion]
                   };
 
                   const validated = Entities.Confections.Converters.confectionData.convert(updatedConfection);
                   if (validated.isFailure()) {
                     setError(validated.message);
+                    user.error(validated.message);
                     return;
                   }
 
                   const collectionResult = runtime.library.confections.collections.get(destination).asResult;
                   if (collectionResult.isFailure()) {
                     setError(collectionResult.message);
+                    user.error(collectionResult.message);
                     return;
                   }
                   if (!collectionResult.value.isMutable) {
                     setError(`Collection "${destination as unknown as string}" is not mutable`);
+                    user.error(`Collection "${destination as unknown as string}" is not mutable`);
                     return;
                   }
 
@@ -529,12 +605,14 @@ export function ProductionView({
                   ).asResult;
                   if (setResult.isFailure()) {
                     setError(setResult.message);
+                    user.error(setResult.message);
                     return;
                   }
 
                   const persistResult = await commitConfectionCollection(destination);
                   if (persistResult.isFailure()) {
                     setError(persistResult.message);
+                    user.error(persistResult.message);
                     return;
                   }
 
@@ -543,7 +621,15 @@ export function ProductionView({
                   }` as unknown as ConfectionId;
                   targetVersionSpec = newVersionSpec;
 
-                  updateConfectionDraft(s.sessionId, {});
+                  user.success(
+                    `Saved new confection version ${targetConfectionId as unknown as string}@${
+                      targetVersionSpec as unknown as string
+                    }`
+                  );
+
+                  updateConfectionDraft(s.sessionId, { draftVersion: undefined });
+                } else {
+                  user.info('No recipe edits detected; recording production journal only.');
                 }
 
                 const journalId = Runtime.Session.generateJournalId().orThrow();
@@ -590,6 +676,15 @@ export function ProductionView({
                     entries.push(entry);
                   }
                 }
+
+                if (procedureChanged && effectiveProcedurePreferredId) {
+                  entries.push({
+                    timestamp: Runtime.Session.getCurrentTimestamp(),
+                    eventType: 'procedure-select',
+                    procedureId: effectiveProcedurePreferredId,
+                    previousProcedureId: baseProcedurePreferredId
+                  });
+                }
                 if (sessionMoldId) {
                   entries.push({
                     timestamp: Runtime.Session.getCurrentTimestamp(),
@@ -622,6 +717,7 @@ export function ProductionView({
                 const addResult = runtime.journals.addJournal(journal);
                 if (addResult.isFailure()) {
                   setError(addResult.message);
+                  user.error(addResult.message);
                   return;
                 }
 
@@ -630,6 +726,8 @@ export function ProductionView({
                   journalId,
                   journal
                 });
+
+                user.success(`Recorded journal ${journalId as unknown as string}`);
 
                 setSessionStatus(s.sessionId, 'committed');
               })();
@@ -672,7 +770,7 @@ export function ProductionView({
                   <button
                     type="button"
                     onClick={onCommit}
-                    disabled={s.status !== 'active'}
+                    disabled={s.status === 'committed' || s.status === 'abandoned'}
                     className="px-2 py-1 text-xs rounded-md bg-chocolate-600 text-white hover:bg-chocolate-700 disabled:opacity-50"
                   >
                     Commit
@@ -681,7 +779,7 @@ export function ProductionView({
                   <button
                     type="button"
                     onClick={onAbandon}
-                    disabled={s.status !== 'active'}
+                    disabled={s.status === 'committed' || s.status === 'abandoned'}
                     className="px-2 py-1 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                   >
                     Abandon
@@ -761,16 +859,15 @@ export function ProductionView({
                       </div>
                     ) : null}
 
-                    {rawFillings && rawFillings.length > 0 ? (
+                    {effectiveFillings && effectiveFillings.length > 0 ? (
                       <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
                         <label className="block text-xs text-gray-600 dark:text-gray-400">Fillings</label>
-                        {rawFillings.map((slot) => {
-                          const basePreferred = slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
+                        {effectiveFillings.map((slot) => {
+                          const baseSlot = (baseFillings ?? []).find((b) => b.slotId === slot.slotId);
+                          const basePreferred =
+                            baseSlot?.filling.preferredId ?? baseSlot?.filling.options?.[0]?.id;
                           const effectivePreferred =
-                            (draftFillingPreferredOptionIds?.[slot.slotId] as
-                              | FillingId
-                              | IngredientId
-                              | undefined) ?? basePreferred;
+                            slot.filling.preferredId ?? slot.filling.options?.[0]?.id;
 
                           const label = slot.name ?? (slot.slotId as unknown as string);
 
@@ -786,24 +883,41 @@ export function ProductionView({
                                   const raw = e.target.value;
                                   const next =
                                     raw.length > 0 ? (raw as unknown as FillingId | IngredientId) : undefined;
-                                  const prevMap =
-                                    (draftFillingPreferredOptionIds as unknown as Record<
-                                      string,
-                                      FillingId | IngredientId
-                                    >) ?? {};
-                                  const nextMap: Record<string, FillingId | IngredientId> = { ...prevMap };
-
-                                  if (next && basePreferred && next !== basePreferred) {
-                                    nextMap[slot.slotId as unknown as string] = next;
-                                  } else {
-                                    delete nextMap[slot.slotId as unknown as string];
+                                  if (!baseRawVersion) {
+                                    return;
                                   }
+                                  const nextDraft = cloneJson(draftRawVersion ?? baseRawVersion);
+                                  const nextFillings =
+                                    (nextDraft.fillings as unknown as Array<Record<string, unknown>>) ?? [];
+                                  const slotIx = nextFillings.findIndex(
+                                    (f) =>
+                                      (f.slotId as unknown as string) === (slot.slotId as unknown as string)
+                                  );
+                                  if (slotIx < 0) {
+                                    return;
+                                  }
+                                  const existingSlot = nextFillings[slotIx];
+                                  const filling =
+                                    (existingSlot.filling as unknown as Record<string, unknown>) ?? {};
+                                  const preferredId =
+                                    next ??
+                                    (filling.options as unknown as Array<{ id: unknown }> | undefined)?.[0]
+                                      ?.id;
+                                  nextFillings[slotIx] = {
+                                    ...existingSlot,
+                                    filling: {
+                                      ...filling,
+                                      ...(preferredId
+                                        ? { preferredId: preferredId as unknown as string }
+                                        : {})
+                                    }
+                                  };
+                                  nextDraft.fillings = nextFillings;
 
                                   updateConfectionDraft(s.sessionId, {
-                                    fillingPreferredOptionIds:
-                                      Object.keys(nextMap).length > 0
-                                        ? (nextMap as unknown as Record<SlotId, FillingId | IngredientId>)
-                                        : undefined
+                                    draftVersion: isJsonEqual(nextDraft, baseRawVersion)
+                                      ? undefined
+                                      : (nextDraft as any)
                                   });
                                 }}
                               >
@@ -832,6 +946,133 @@ export function ProductionView({
                             </div>
                           );
                         })}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!baseRawVersion || !runtime) {
+                              return;
+                            }
+                            const allFillings = Array.from(runtime.fillings.values());
+                            if (allFillings.length === 0) {
+                              return;
+                            }
+                            const firstFilling = allFillings[0];
+                            const nextDraft = cloneJson(draftRawVersion ?? baseRawVersion);
+                            const nextFillings =
+                              (nextDraft.fillings as unknown as Array<Record<string, unknown>>) ?? [];
+                            const newSlotId = `slot-${Date.now()}`;
+                            nextFillings.push({
+                              slotId: newSlotId,
+                              name: 'New Filling',
+                              filling: {
+                                options: [
+                                  {
+                                    type: 'recipe',
+                                    id: firstFilling.id as unknown as string
+                                  }
+                                ],
+                                preferredId: firstFilling.id as unknown as string
+                              }
+                            });
+                            nextDraft.fillings = nextFillings;
+                            updateConfectionDraft(s.sessionId, {
+                              draftVersion: nextDraft as any
+                            });
+                          }}
+                          className="w-full px-2 py-1.5 text-xs rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          + Add Filling Slot
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {effectiveProcedures && effectiveProcedures.options.length > 0 ? (
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                        <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                          Procedure
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <select
+                            className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
+                            value={(effectiveProcedurePreferredId as unknown as string) ?? ''}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const next = raw.length > 0 ? (raw as unknown as ProcedureId) : undefined;
+                              if (!baseRawVersion) {
+                                return;
+                              }
+                              const nextDraft = cloneJson(draftRawVersion ?? baseRawVersion);
+                              const existingProceduresObj = (nextDraft.procedures as unknown as Record<
+                                string,
+                                unknown
+                              >) ?? {
+                                options: []
+                              };
+                              nextDraft.procedures = {
+                                ...existingProceduresObj,
+                                ...(next ? { preferredId: next as unknown as string } : {})
+                              };
+                              updateConfectionDraft(s.sessionId, {
+                                draftVersion: isJsonEqual(nextDraft, baseRawVersion)
+                                  ? undefined
+                                  : (nextDraft as any)
+                              });
+                            }}
+                          >
+                            {effectiveProcedures.options.map((opt) => {
+                              const proc = runtime?.getRuntimeProcedure(opt.id).orDefault(undefined);
+                              const label = proc?.name ?? (opt.id as unknown as string);
+                              return (
+                                <option key={opt.id as unknown as string} value={opt.id as unknown as string}>
+                                  {label}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => updateConfectionDraft(s.sessionId, { draftVersion: undefined })}
+                            className="px-2 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                          >
+                            Reset
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!baseRawVersion || !runtime) {
+                              return;
+                            }
+                            const allProcedures = Array.from(runtime.procedures.values());
+                            if (allProcedures.length === 0) {
+                              return;
+                            }
+                            const firstProcedure = allProcedures[0];
+                            const nextDraft = cloneJson(draftRawVersion ?? baseRawVersion);
+                            const nextProcedures =
+                              (nextDraft.procedures as unknown as Record<string, unknown>) ?? {};
+                            const existingOptions =
+                              (nextProcedures.options as unknown as Array<Record<string, unknown>>) ?? [];
+                            const newOption = {
+                              id: firstProcedure.id as unknown as string,
+                              notes: 'Added in production'
+                            };
+                            const alreadyExists = existingOptions.some(
+                              (opt) =>
+                                (opt.id as unknown as string) === (firstProcedure.id as unknown as string)
+                            );
+                            if (!alreadyExists) {
+                              nextProcedures.options = [...existingOptions, newOption];
+                              nextDraft.procedures = nextProcedures;
+                              updateConfectionDraft(s.sessionId, {
+                                draftVersion: nextDraft as any
+                              });
+                            }
+                          }}
+                          className="w-full px-2 py-1.5 text-xs rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        >
+                          + Add Procedure Option
+                        </button>
                       </div>
                     ) : null}
 
@@ -847,11 +1088,24 @@ export function ProductionView({
                             onChange={(e) => {
                               const raw = e.target.value;
                               const next = raw.length > 0 ? (raw as unknown as IngredientId) : undefined;
+                              if (!baseRawVersion) {
+                                return;
+                              }
+                              const nextDraft = cloneJson(draftRawVersion ?? baseRawVersion);
+                              const existingShell = (nextDraft.shellChocolate as unknown as Record<
+                                string,
+                                unknown
+                              >) ?? {
+                                ids: []
+                              };
+                              nextDraft.shellChocolate = {
+                                ...existingShell,
+                                ...(next ? { preferredId: next as unknown as string } : {})
+                              };
                               updateConfectionDraft(s.sessionId, {
-                                shellPreferredChocolateId:
-                                  next && baseShellPreferredId && next !== baseShellPreferredId
-                                    ? next
-                                    : undefined
+                                draftVersion: isJsonEqual(nextDraft, baseRawVersion)
+                                  ? undefined
+                                  : (nextDraft as any)
                               });
                             }}
                           >
@@ -873,11 +1127,6 @@ export function ProductionView({
                             Reset
                           </button>
                         </div>
-                        {draftShellPreferredId && baseShellPreferredId ? (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            Draft override (base: {baseShellPreferredId as unknown as string})
-                          </div>
-                        ) : null}
                       </div>
                     ) : null}
 

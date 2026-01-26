@@ -25,7 +25,9 @@
 
 import { Converter, Converters } from '@fgv/ts-utils';
 
-import { Converters as CommonConverters, type FillingId, type IngredientId } from '../../common';
+import { Converters as CommonConverters } from '../../common';
+import type { AnyConfectionVersion } from '../../entities';
+import { Confections } from '../../entities';
 import {
   allPersistedSessionTypes,
   allPersistedSessionStatuses,
@@ -40,11 +42,6 @@ import {
   PersistedSessionType,
   SESSION_SCRATCHPAD_SCHEMA_VERSION
 } from './model';
-
-const fillingOptionId: Converter<FillingId | IngredientId> = Converters.oneOf<FillingId | IngredientId>([
-  CommonConverters.fillingId,
-  CommonConverters.ingredientId
-]);
 
 // ============================================================================
 // Basic Converters
@@ -92,10 +89,9 @@ export const persistedConfectionSessionProduction: Converter<IPersistedConfectio
  */
 export const persistedConfectionSessionDraft: Converter<IPersistedConfectionSessionDraft> =
   Converters.object<IPersistedConfectionSessionDraft>({
-    shellPreferredChocolateId: CommonConverters.ingredientId.optional(),
-    fillingPreferredOptionIds: Converters.recordOf(fillingOptionId, {
-      keyConverter: CommonConverters.slotId
-    }).optional()
+    draftVersion: (
+      Confections.Converters.anyConfectionVersion as unknown as Converter<AnyConfectionVersion>
+    ).optional()
   });
 
 // ============================================================================
