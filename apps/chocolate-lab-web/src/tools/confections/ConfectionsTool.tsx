@@ -6,6 +6,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import type { ConfectionId } from '@fgv/ts-chocolate';
+import { BrowseTools } from '@fgv/ts-chocolate-ui';
 import { BrowseView } from './views/BrowseView';
 import { DetailView } from './views/DetailView';
 import { ProductionView } from './views/ProductionView';
@@ -23,36 +24,25 @@ export interface IConfectionsToolProps {
  * Confections tool with browse and detail views
  */
 export function ConfectionsTool({ filters }: IConfectionsToolProps): React.ReactElement {
-  const [selectedId, setSelectedId] = useState<ConfectionId | null>(null);
-  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+  const { state, actions } = BrowseTools.useBrowseDetailState<ConfectionId>();
+  const { currentId, setId } = BrowseTools.useHashNavigation<ConfectionId>({ prefix: 'confections' });
   const [toolMode, setToolMode] = useState<'browse' | 'production'>('browse');
 
+  // Sync hash navigation to browse/detail state
   useEffect(() => {
-    const applyHashSelection = (): void => {
-      const hash = window.location.hash;
-      if (!hash.startsWith('#confections/')) {
-        return;
-      }
-      const rawId = hash.slice('#confections/'.length);
-      if (rawId.length === 0) {
-        return;
-      }
-      setSelectedId(rawId as ConfectionId);
-      setViewMode('detail');
-    };
-
-    applyHashSelection();
-    window.addEventListener('hashchange', applyHashSelection);
-    return () => window.removeEventListener('hashchange', applyHashSelection);
-  }, [filters]);
+    if (currentId) {
+      actions.select(currentId);
+    }
+  }, [currentId, actions]);
 
   const handleSelect = (id: ConfectionId): void => {
-    setSelectedId(id);
-    setViewMode('detail');
+    setId(id);
+    actions.select(id);
   };
 
   const handleBack = (): void => {
-    setViewMode('browse');
+    setId(null);
+    actions.back();
   };
 
   if (toolMode === 'production') {
@@ -77,13 +67,13 @@ export function ConfectionsTool({ filters }: IConfectionsToolProps): React.React
           </div>
         </div>
 
-        <ProductionView selectedConfectionId={selectedId} />
+        <ProductionView selectedConfectionId={state.selectedId} />
       </div>
     );
   }
 
-  if (viewMode === 'detail' && selectedId) {
-    return <DetailView confectionId={selectedId} onBack={handleBack} />;
+  if (state.viewMode === 'detail' && state.selectedId) {
+    return <DetailView confectionId={state.selectedId} onBack={handleBack} />;
   }
 
   return (
@@ -107,7 +97,7 @@ export function ConfectionsTool({ filters }: IConfectionsToolProps): React.React
         </div>
       </div>
 
-      <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />
+      <BrowseView filters={filters} selectedId={state.selectedId} onSelect={handleSelect} />
     </div>
   );
 }

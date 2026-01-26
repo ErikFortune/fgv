@@ -4,16 +4,12 @@
  */
 
 import * as React from 'react';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
+import type { IngredientId } from '@fgv/ts-chocolate';
+import { BrowseTools } from '@fgv/ts-chocolate-ui';
 import { IngredientsToolSidebar, type IIngredientFilters } from './IngredientsToolSidebar';
 import { BrowseView } from './views/BrowseView';
 import { DetailView } from './views/DetailView';
-import type { IngredientId } from '@fgv/ts-chocolate';
-
-/**
- * View mode for the ingredients tool
- */
-type ViewMode = 'browse' | 'detail';
 
 /**
  * Default filter state
@@ -29,68 +25,26 @@ const defaultFilters: IIngredientFilters = {
  * Props for the IngredientsTool component
  */
 export interface IIngredientsToolProps {
-  /** Additional CSS classes */
-  className?: string;
-}
-
-/**
- * State for the IngredientsTool
- */
-interface IIngredientsToolState {
-  viewMode: ViewMode;
-  selectedId: IngredientId | null;
+  /** Filter state */
   filters: IIngredientFilters;
 }
 
 /**
  * Main ingredients tool component
  */
-export function IngredientsTool({ className = '' }: IIngredientsToolProps): React.ReactElement {
-  const [state, setState] = useState<IIngredientsToolState>({
-    viewMode: 'browse',
-    selectedId: null,
-    filters: defaultFilters
-  });
+export function IngredientsTool({ filters }: IIngredientsToolProps): React.ReactElement {
+  const { state, actions } = BrowseTools.useBrowseDetailState<IngredientId>();
 
-  // Handle ingredient selection
-  const handleSelect = useCallback((id: IngredientId) => {
-    setState((prev) => ({
-      ...prev,
-      viewMode: 'detail',
-      selectedId: id
-    }));
-  }, []);
+  if (state.viewMode === 'detail' && state.selectedId) {
+    return <DetailView ingredientId={state.selectedId} onBack={actions.back} />;
+  }
 
-  // Handle back to browse
-  const handleBack = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      viewMode: 'browse',
-      selectedId: null
-    }));
-  }, []);
-
-  // Handle filter changes
-  const handleFiltersChange = useCallback((filters: IIngredientFilters) => {
-    setState((prev) => ({
-      ...prev,
-      filters
-    }));
-  }, []);
-
-  return (
-    <div className={className}>
-      {state.viewMode === 'browse' ? (
-        <BrowseView filters={state.filters} selectedId={state.selectedId} onSelect={handleSelect} />
-      ) : state.selectedId ? (
-        <DetailView ingredientId={state.selectedId} onBack={handleBack} />
-      ) : null}
-    </div>
-  );
+  return <BrowseView filters={filters} selectedId={state.selectedId} onSelect={actions.select} />;
 }
 
 /**
- * Get the sidebar component for the ingredients tool
+ * Get the sidebar component for the ingredients tool.
+ * This hook provides integrated filter state management for legacy usage patterns.
  */
 export function useIngredientsToolSidebar(): {
   sidebar: React.ReactElement;

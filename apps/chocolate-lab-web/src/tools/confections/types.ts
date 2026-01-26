@@ -4,17 +4,12 @@
  */
 
 import type { ConfectionType } from '@fgv/ts-chocolate';
+import type { IBaseFilterState } from '@fgv/ts-chocolate-ui';
 
 /**
  * Confection filter state
  */
-export interface IConfectionFilters {
-  /** Search text */
-  search: string;
+export interface IConfectionFilters extends IBaseFilterState {
   /** Selected confection types */
   confectionTypes: ConfectionType[];
-  /** Selected collections */
-  collections: string[];
-  /** Selected tags */
-  tags: string[];
 }

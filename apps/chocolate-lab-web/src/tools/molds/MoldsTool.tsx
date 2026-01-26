@@ -4,8 +4,8 @@
  */
 
 import * as React from 'react';
-import { useState } from 'react';
 import type { MoldId } from '@fgv/ts-chocolate';
+import { BrowseTools } from '@fgv/ts-chocolate-ui';
 import { BrowseView } from './views/BrowseView';
 import { DetailView } from './views/DetailView';
 import type { IMoldFilters } from './MoldsToolSidebar';
@@ -15,22 +15,11 @@ export interface IMoldsToolProps {
 }
 
 export function MoldsTool({ filters }: IMoldsToolProps): React.ReactElement {
-  const [selectedId, setSelectedId] = useState<MoldId | null>(null);
-  const [viewMode, setViewMode] = useState<'browse' | 'detail'>('browse');
+  const { state, actions } = BrowseTools.useBrowseDetailState<MoldId>();
 
-  const handleSelect = (id: MoldId): void => {
-    setSelectedId(id);
-    setViewMode('detail');
-  };
-
-  const handleBack = (): void => {
-    setViewMode('browse');
-    setSelectedId(null);
-  };
-
-  if (viewMode === 'detail' && selectedId) {
-    return <DetailView moldId={selectedId} onBack={handleBack} />;
+  if (state.viewMode === 'detail' && state.selectedId) {
+    return <DetailView moldId={state.selectedId} onBack={actions.back} />;
   }
 
-  return <BrowseView filters={filters} selectedId={selectedId} onSelect={handleSelect} />;
+  return <BrowseView filters={filters} selectedId={state.selectedId} onSelect={actions.select} />;
 }
