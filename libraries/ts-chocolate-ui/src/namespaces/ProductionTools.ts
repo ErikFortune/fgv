@@ -74,5 +74,13 @@ export {
   useProcedureSelection,
   type IProcedureSpec,
   type IUseProcedureSelectionOptions,
-  type IUseProcedureSelectionResult
+  type IUseProcedureSelectionResult,
+  // Components
+  ShellChocolateSelector,
+  type IShellChocolateSelectorProps,
+  FillingSlotManager,
+  type IFillingSlotManagerProps,
+  type IFillingOptionDisplayProps,
+  ProcedureSelector,
+  type IProcedureSelectorProps
 } from '../packlets/production';

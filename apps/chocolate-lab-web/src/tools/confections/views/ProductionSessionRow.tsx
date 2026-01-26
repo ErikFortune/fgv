@@ -20,7 +20,8 @@ import {
   ProductionTools,
   type IFillingSlotData,
   type IShellChocolateSpec,
-  type IProcedureSpec
+  type IProcedureSpec,
+  type IFillingOption
 } from '@fgv/ts-chocolate-ui';
 import { useChocolate } from '../../../contexts/ChocolateContext';
 import { useSessionScratchpad } from '../../../contexts/SessionScratchpadContext';
@@ -323,7 +324,11 @@ export function ProductionSessionRow({
     baseRawVersion,
     draftRawVersion
   );
-  const { slots, actions: slotActions } = useFillingSlotAdapter(session, baseRawVersion, draftRawVersion);
+  const {
+    slots,
+    actions: slotActions,
+    hasChanges: slotsHasChanges
+  } = useFillingSlotAdapter(session, baseRawVersion, draftRawVersion);
   const { state: procedureState, actions: procedureActions } = useProcedureAdapter(
     session,
     baseRawVersion,
@@ -497,140 +502,48 @@ export function ProductionSessionRow({
 
           {/* Fillings */}
           {slots.length > 0 && (
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
-              <label className="block text-xs text-gray-600 dark:text-gray-400">Fillings</label>
-              {slots.map((slot) => (
-                <div key={slot.slotId} className="space-y-1">
-                  <label className="block text-[11px] text-gray-500 dark:text-gray-500">{slot.name}</label>
-                  <select
-                    className="w-full px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
-                    value={slot.preferredId ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value) {
-                        slotActions.selectFilling(slot.slotId, value);
-                      }
-                    }}
-                  >
-                    {slot.options.map((opt) => {
-                      let name: string;
-                      if (opt.type === 'recipe') {
-                        name =
-                          runtime?.getRuntimeFilling(opt.id as FillingId).orDefault(undefined)?.name ??
-                          opt.id;
-                      } else {
-                        name =
-                          runtime?.getRuntimeIngredient(opt.id as IngredientId).orDefault(undefined)?.name ??
-                          opt.id;
-                      }
-                      return (
-                        <option key={opt.id} value={opt.id}>
-                          {name}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  const allFillings = runtime ? Array.from(runtime.fillings.values()) : [];
-                  if (allFillings.length === 0) return;
-                  const firstFilling = allFillings[0];
-                  const newSlotId = slotActions.addSlot('New Filling');
-                  slotActions.addFillingOption(newSlotId, {
-                    type: 'recipe',
-                    id: firstFilling.id as unknown as string
-                  });
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+              <ProductionTools.FillingSlotManager
+                slots={slots}
+                actions={slotActions}
+                hasChanges={slotsHasChanges}
+                getFillingName={(opt: IFillingOption) => {
+                  if (opt.type === 'recipe') {
+                    return (
+                      runtime?.getRuntimeFilling(opt.id as FillingId).orDefault(undefined)?.name ?? opt.id
+                    );
+                  }
+                  return (
+                    runtime?.getRuntimeIngredient(opt.id as IngredientId).orDefault(undefined)?.name ?? opt.id
+                  );
                 }}
-                className="w-full px-2 py-1.5 text-xs rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                + Add Filling Slot
-              </button>
+              />
             </div>
           )}
 
           {/* Procedures */}
           {procedureState.options.length > 0 && (
-            <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Procedure</label>
-              <div className="flex items-center gap-2">
-                <select
-                  className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
-                  value={procedureState.effectivePreferredId ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value) procedureActions.select(value);
-                  }}
-                >
-                  {procedureState.options.map((opt) => {
-                    const proc = runtime?.getRuntimeProcedure(opt.id as ProcedureId).orDefault(undefined);
-                    const label = proc?.name ?? opt.id;
-                    return (
-                      <option key={opt.id} value={opt.id}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => procedureActions.reset()}
-                  className="px-2 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  Reset
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  const allProcedures = runtime ? Array.from(runtime.procedures.values()) : [];
-                  if (allProcedures.length === 0) return;
-                  const firstProcedure = allProcedures[0];
-                  procedureActions.addOption({
-                    id: firstProcedure.id as unknown as string,
-                    notes: 'Added in production'
-                  });
-                }}
-                className="w-full px-2 py-1.5 text-xs rounded-md border border-dashed border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                + Add Procedure Option
-              </button>
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+              <ProductionTools.ProcedureSelector
+                state={procedureState}
+                actions={procedureActions}
+                getProcedureName={(id) =>
+                  runtime?.getRuntimeProcedure(id as ProcedureId).orDefault(undefined)?.name ?? id
+                }
+              />
             </div>
           )}
 
           {/* Shell Chocolate */}
           {shellState.availableChoices.length > 0 && (
             <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-              <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">Shell chocolate</label>
-              <div className="flex items-center gap-2">
-                <select
-                  className="flex-1 px-2 py-2 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 dark:[color-scheme:dark] text-sm"
-                  value={shellState.effectivePreferredId ?? ''}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value) shellActions.select(value);
-                  }}
-                >
-                  {shellState.availableChoices.map((id) => {
-                    const ingredient = runtime?.getRuntimeIngredient(id as IngredientId).orDefault(undefined);
-                    const label = ingredient?.name ?? id;
-                    return (
-                      <option key={id} value={id}>
-                        {label}
-                      </option>
-                    );
-                  })}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => shellActions.reset()}
-                  className="px-2 py-2 text-xs rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
-                  Reset
-                </button>
-              </div>
+              <ProductionTools.ShellChocolateSelector
+                state={shellState}
+                actions={shellActions}
+                getChocolateName={(id) =>
+                  runtime?.getRuntimeIngredient(id as IngredientId).orDefault(undefined)?.name ?? id
+                }
+              />
             </div>
           )}
 

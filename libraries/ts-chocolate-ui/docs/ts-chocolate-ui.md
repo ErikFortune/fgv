@@ -146,6 +146,19 @@ Badge displaying a filling category with appropriate styling
 </td></tr>
 <tr><td>
 
+[FillingSlotManager({ slots, actions, hasChanges, getFillingName, onAddFillingOption, onAddSlot, showRemoveSlot, showRemoveOption, allowRename, label, disabled })](./ts-chocolate-ui.fillingslotmanager.md)
+
+
+</td><td>
+
+Filling slot manager component with full CRUD support.
+
+Provides management of filling slots including: - Add/remove/rename slots - Select fillings within each slot - Add/remove filling options within each slot
+
+
+</td></tr>
+<tr><td>
+
 [FilterSidebar({ filters, actions, tags, collectionsPanel, children, searchPlaceholder, showTags, filtersLabel, tagsLabel, collectionsLabel })](./ts-chocolate-ui.filtersidebar.md)
 
 
@@ -214,12 +227,38 @@ Displays a horizontal stacked percentage bar with colored segments
 </td></tr>
 <tr><td>
 
+[ProcedureSelector({ state, actions, getProcedureName, onAddProcedure, showRemove, label, disabled })](./ts-chocolate-ui.procedureselector.md)
+
+
+</td><td>
+
+Procedure selector component with full CRUD support.
+
+Provides selection from available procedures, with optional ability to add new procedures and remove existing ones from the options.
+
+
+</td></tr>
+<tr><td>
+
 [SearchInput({ value, onChange, placeholder, className })](./ts-chocolate-ui.searchinput.md)
 
 
 </td><td>
 
 Search input with magnifying glass icon and clear button.
+
+
+</td></tr>
+<tr><td>
+
+[ShellChocolateSelector({ state, actions, getChocolateName, onAddChocolate, showRemove, label, disabled })](./ts-chocolate-ui.shellchocolateselector.md)
+
+
+</td><td>
+
+Shell chocolate selector component with full CRUD support.
+
+Provides selection from available chocolates, with optional ability to add new chocolates and remove existing ones from the choices.
 
 
 </td></tr>
@@ -507,6 +546,17 @@ Filling option type - can be a recipe or an ingredient
 </td></tr>
 <tr><td>
 
+[IFillingOptionDisplayProps](./ts-chocolate-ui.ifillingoptiondisplayprops.md)
+
+
+</td><td>
+
+Props for rendering a single filling option
+
+
+</td></tr>
+<tr><td>
+
 [IFillingSlotActions](./ts-chocolate-ui.ifillingslotactions.md)
 
 
@@ -524,6 +574,17 @@ Actions for filling slot management
 </td><td>
 
 Raw filling slot data from version
+
+
+</td></tr>
+<tr><td>
+
+[IFillingSlotManagerProps](./ts-chocolate-ui.ifillingslotmanagerprops.md)
+
+
+</td><td>
+
+Props for the FillingSlotManager component
 
 
 </td></tr>
@@ -705,6 +766,17 @@ Procedure option with optional notes
 </td></tr>
 <tr><td>
 
+[IProcedureSelectorProps](./ts-chocolate-ui.iprocedureselectorprops.md)
+
+
+</td><td>
+
+Props for the ProcedureSelector component
+
+
+</td></tr>
+<tr><td>
+
 [IProcedureSpec](./ts-chocolate-ui.iprocedurespec.md)
 
 
@@ -766,6 +838,17 @@ Props for the SearchInput component
 </td><td>
 
 Actions for shell chocolate selection
+
+
+</td></tr>
+<tr><td>
+
+[IShellChocolateSelectorProps](./ts-chocolate-ui.ishellchocolateselectorprops.md)
+
+
+</td><td>
+
+Props for the ShellChocolateSelector component
 
 
 </td></tr>

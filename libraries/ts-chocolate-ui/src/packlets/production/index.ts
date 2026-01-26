@@ -60,3 +60,12 @@ export {
   type IUseProcedureSelectionOptions,
   type IUseProcedureSelectionResult
 } from './useProcedureSelection';
+
+// Components
+export { ShellChocolateSelector, type IShellChocolateSelectorProps } from './ShellChocolateSelector';
+export {
+  FillingSlotManager,
+  type IFillingSlotManagerProps,
+  type IFillingOptionDisplayProps
+} from './FillingSlotManager';
+export { ProcedureSelector, type IProcedureSelectorProps } from './ProcedureSelector';

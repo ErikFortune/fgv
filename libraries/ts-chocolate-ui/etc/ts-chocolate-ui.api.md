@@ -58,6 +58,9 @@ export function FillingCard({ filling, showCollection, className, onClick, isSel
 export function FillingCategoryBadge({ category, size, className }: IFillingCategoryBadgeProps): React_2.ReactElement;
 
 // @public
+export function FillingSlotManager({ slots, actions, hasChanges, getFillingName, onAddFillingOption, onAddSlot, showRemoveSlot, showRemoveOption, allowRename, label, disabled }: IFillingSlotManagerProps): React_2.ReactElement | null;
+
+// @public
 export function FilterSidebar<TFilters extends IBaseFilterState>({ filters, actions, tags, collectionsPanel, children, searchPlaceholder, showTags, filtersLabel, tagsLabel, collectionsLabel }: IFilterSidebarProps<TFilters>): React_2.ReactElement;
 
 declare namespace FilterTools {
@@ -180,6 +183,12 @@ export interface IFillingOption {
 }
 
 // @public
+export interface IFillingOptionDisplayProps {
+    isSelected: boolean;
+    option: IFillingOption;
+}
+
+// @public
 export interface IFillingSlotActions {
     addFillingOption: (slotId: SlotId, option: IFillingOption) => void;
     addSlot: (name: string) => SlotId;
@@ -198,6 +207,21 @@ export interface IFillingSlotData {
     };
     name?: string;
     slotId: string;
+}
+
+// @public
+export interface IFillingSlotManagerProps {
+    actions: IFillingSlotActions;
+    allowRename?: boolean;
+    disabled?: boolean;
+    getFillingName: (option: IFillingOption) => string;
+    hasChanges: boolean;
+    label?: string;
+    onAddFillingOption?: (slotId: SlotId) => void;
+    onAddSlot?: () => void;
+    showRemoveOption?: boolean;
+    showRemoveSlot?: boolean;
+    slots: readonly IFillingSlotState[];
 }
 
 // @public
@@ -352,6 +376,17 @@ export interface IProcedureOption {
 }
 
 // @public
+export interface IProcedureSelectorProps {
+    actions: IProcedureActions;
+    disabled?: boolean;
+    getProcedureName: (id: string) => string;
+    label?: string;
+    onAddProcedure?: () => void;
+    showRemove?: boolean;
+    state: IProcedureState;
+}
+
+// @public
 export interface IProcedureSpec {
     options: readonly IProcedureOption[];
     preferredId?: string;
@@ -399,6 +434,17 @@ export interface IShellChocolateActions {
     removeChoice: (id: string) => void;
     reset: () => void;
     select: (id: string) => void;
+}
+
+// @public
+export interface IShellChocolateSelectorProps {
+    actions: IShellChocolateActions;
+    disabled?: boolean;
+    getChocolateName: (id: string) => string;
+    label?: string;
+    onAddChocolate?: () => void;
+    showRemove?: boolean;
+    state: IShellChocolateState;
 }
 
 // @public
@@ -557,6 +603,9 @@ export function PercentageBar({ segments, className, height, showLabels, showLeg
 // @public
 export type PersistedSessionStatus = 'active' | 'committing' | 'committed' | 'abandoned';
 
+// @public
+export function ProcedureSelector({ state, actions, getProcedureName, onAddProcedure, showRemove, label, disabled }: IProcedureSelectorProps): React_2.ReactElement | null;
+
 declare namespace ProductionTools {
     export {
         SlotId,
@@ -588,7 +637,14 @@ declare namespace ProductionTools {
         useProcedureSelection,
         IProcedureSpec,
         IUseProcedureSelectionOptions,
-        IUseProcedureSelectionResult
+        IUseProcedureSelectionResult,
+        ShellChocolateSelector,
+        IShellChocolateSelectorProps,
+        FillingSlotManager,
+        IFillingSlotManagerProps,
+        IFillingOptionDisplayProps,
+        ProcedureSelector,
+        IProcedureSelectorProps
     }
 }
 export { ProductionTools }
@@ -600,6 +656,9 @@ export function SearchInput({ value, onChange, placeholder, className }: ISearch
 export type SessionId = string & {
     readonly __brand: 'SessionId';
 };
+
+// @public
+export function ShellChocolateSelector({ state, actions, getChocolateName, onAddChocolate, showRemove, label, disabled }: IShellChocolateSelectorProps): React_2.ReactElement | null;
 
 // @public
 export type SlotId = string & {
