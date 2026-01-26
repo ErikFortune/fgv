@@ -1,0 +1,90 @@
+# Cursor Rules
+
+This repository uses unified AI assistant instructions located in `.ai/`.
+
+## Quick Reference
+
+Rush-based TypeScript monorepo. Key commands:
+- `rush install` - Install dependencies
+- `rush build` - Build all projects
+- `rush test` - Test all projects
+- `rushx build/test/coverage` - Current project commands
+
+## Critical Rules (Non-Negotiable)
+
+1. **Never use `any` type** - Use `unknown` or proper types. Will fail CI.
+2. **Use Result pattern** - Fallible operations return `Result<T>`, not exceptions
+3. **Use Converters/Validators** - No manual type checking with unsafe casts
+4. **100% test coverage** - Required for all code
+
+## Detailed Guidelines
+
+Read the instruction files in `.ai/instructions/` for complete guidance:
+
+### Coding Standards (.ai/instructions/CODING_STANDARDS.md)
+- Result pattern: Return `Result<T>` for fallible operations
+- Use `succeed()` and `fail()` to create Results
+- Chain with `.onSuccess()`, `.onFailure()`
+- Use `orThrow()` only in setup/initialization
+- Use Converters.object for type-safe data transformation
+- Use MessageAggregator for error collection
+
+### Testing Guidelines (.ai/instructions/TESTING_GUIDELINES.md)
+- Use Result matchers: `toSucceed()`, `toFail()`, `toSucceedWith()`, `toFailWith()`, `toSucceedAndSatisfy()`
+- Function-first testing, coverage-second
+- Never paper over test failures - report bugs
+
+### Code Review (.ai/instructions/CODE_REVIEW_CHECKLIST.md)
+Priority 1 (Blocking):
+- No `any` type
+- No manual type checking with unsafe casts
+- Result pattern violations
+
+Priority 2 (Should Fix):
+- Prefer chaining over intermediate variables
+- Use MessageAggregator for errors
+- Include context in error messages
+
+### Monorepo Guide (.ai/instructions/MONOREPO_GUIDE.md)
+- Use `rush add -p package` for dependencies (never npm)
+- Projects in `libraries/` and `tools/`
+- Use `workspace:*` for monorepo dependencies
+
+## Project Structure
+
+Libraries:
+- `@fgv/ts-utils` - Result pattern, utilities
+- `@fgv/ts-res` - Resource management
+- `@fgv/ts-bcp47` - Language tags
+- `@fgv/ts-json` - JSON validation
+- `@fgv/ts-utils-jest` - Test matchers
+
+## Common Patterns
+
+```typescript
+// Result pattern
+function parse(input: string): Result<Data> {
+  if (!valid) return fail('Invalid input');
+  return succeed(data);
+}
+
+// Chaining
+return parseInput(input)
+  .onSuccess(validate)
+  .onSuccess(transform);
+
+// Converters
+const converter = Converters.object<IConfig>({
+  name: Converters.string,
+  port: Converters.number
+});
+
+// Test matchers
+expect(operation()).toSucceedAndSatisfy((result) => {
+  expect(result.value).toBe(expected);
+});
+```
+
+## Webpack Note
+
+Webpack may not pick up library changes in dev mode. Kill and restart the dev server if a web app fails to load after editing a library.

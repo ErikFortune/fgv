@@ -1,0 +1,33 @@
+{
+  "task": {
+    "id": "task-20240924-001",
+    "description": "Implement delta CLI command in ts-res-cli for generating deltas between resource sets with runtime contexts",
+    "type": "feature",
+    "priority": "medium",
+    "complexity": "moderate",
+    "created": "2024-09-24T15:30:00Z"
+  },
+  "artifacts": {},
+  "state": {
+    "currentPhase": "requirements_confirmation",
+    "completedPhases": [],
+    "iterations": 0,
+    "blockers": [],
+    "decisions": []
+  },
+  "feedback": {},
+  "workflow": "standard-feature",
+  "context": {
+    "existing_implementation": "DeltaGenerator is implemented and tested in ts-res library",
+    "target_location": "ts-res-cli tool",
+    "user_availability": "Available for questions and clarifications",
+    "pending_clarifications": [
+      "Resource set input format specification",
+      "Runtime context specification approach",
+      "Output format and destination handling",
+      "CLI command structure preferences",
+      "Error handling strategy",
+      "Single vs chained delta operations"
+    ]
+  }
+}

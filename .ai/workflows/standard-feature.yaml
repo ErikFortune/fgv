@@ -1,0 +1,194 @@
+# Standard Feature Development Workflow
+# Used for new features that require full development lifecycle
+
+name: 'standard_feature'
+description: 'Complete feature development with requirements, design, implementation, review, and testing'
+
+triggers:
+  - task_type: 'feature'
+  - complexity: ['moderate', 'complex']
+  - user_request_type: 'new_functionality'
+
+phases:
+  - phase: requirements_confirmation
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    type: gate # Requires user approval before proceeding
+    dependencies: []
+    timeout_minutes: 30
+    description: 'Confirm understanding of requirements with user'
+
+  - phase: requirements_analysis
+    agent: tpm-agent
+    mode: workflow
+    required: true
+    type: gate
+    user_review: true # Requires user review of requirements before proceeding
+    dependencies: [requirements_confirmation]
+    max_iterations: 5
+    description: 'Analyze and document detailed requirements for user review'
+
+  - phase: ux_design
+    agent: ux-designer
+    mode: workflow
+    required: false
+    condition: 'if_ui_component OR user_interface_changes'
+    dependencies: [requirements_analysis]
+    max_iterations: 2
+    type: gate
+    user_review: true # Requires user review of UX design before proceeding
+    description: 'Design user experience with executive summary and detailed specifications'
+
+  - phase: design
+    agent: senior-developer
+    mode: workflow
+    required: true
+    type: gate
+    user_review: true # Requires user review of technical design before implementation
+    dependencies: [requirements_analysis, ux_design]
+    condition_dependencies: 'ux_design_if_applicable'
+    max_iterations: 5
+    description: 'Create architectural design and implementation plan for user review'
+
+  - phase: implementation
+    agent: code-monkey
+    mode: workflow
+    required: true
+    dependencies: [design]
+    max_iterations: 5
+    description: 'Implement the designed solution'
+
+  - phase: review
+    agent: code-reviewer
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    can_run_in_parallel: [] # Removed parallel with functional_test due to smoke test dependency
+    max_iterations: 5
+    includes_fixes: true # Review findings are fixed through iterations with code-monkey
+    description: 'Review code and iterate with fixes until quality standards are met'
+
+  - phase: manual_smoke_test
+    agent: task-master
+    mode: workflow
+    required: false
+    type: user_interaction
+    condition: 'if_ui_component OR user_interface_changes OR ux_design_completed'
+    dependencies: [review, ux_design]
+    max_iterations: 2
+    description: 'Coordinate manual smoke testing of UX functionality before comprehensive test creation'
+    smoke_test_checklist:
+      - visual_appearance_matches_design: 'User confirms visual design matches specifications'
+      - interaction_flows_work: 'User confirms all interaction flows work as expected'
+      - edge_cases_handled: 'User tests edge cases and error states'
+      - accessibility_verified: 'Basic accessibility checks performed'
+      - responsive_behavior: 'UI works correctly at different screen sizes'
+
+  - phase: functional_test
+    agent: sdet-functional
+    mode: workflow
+    required: true
+    dependencies: [design, manual_smoke_test] # Now depends on smoke test when applicable
+    condition_dependencies: 'manual_smoke_test_if_applicable'
+    max_iterations: 4
+    description: 'Create comprehensive functional tests based on requirements and smoke test findings'
+
+  - phase: coverage_analysis
+    agent: sdet-coverage
+    mode: workflow
+    required: true
+    dependencies: [functional_test, implementation]
+    max_iterations: 1
+    description: 'Analyze coverage gaps and add directives as needed'
+
+  - phase: test_architecture_review
+    agent: senior-sdet
+    mode: workflow
+    required: true
+    dependencies: [functional_test, coverage_analysis]
+    can_run_in_parallel: [review]
+    condition: 'if_test_complexity_high OR test_files_created >= 3'
+    max_iterations: 1
+    description: 'Review test architecture, quality, and patterns'
+
+  - phase: exit_criteria_validation
+    agent: task-master
+    mode: workflow
+    required: true
+    type: completion_gate
+    dependencies: [test_architecture_review, review]
+    max_iterations: 1
+    description: 'TPM, senior developer and senior sdet validate exit criteria'
+
+  - phase: archive_task
+    agent: task-master
+    mode: workflow
+    required: true
+    type: completion_gate
+    dependencies: [exit_criteria_validation]
+    max_iterations: 1
+    description: 'Task-master archives current task after gaining user approval'
+
+success_criteria:
+  - all_requirements_implemented: true
+  - ux_design_complete: true # if applicable
+  - ux_smoke_test_passed: true # if UI/UX changes
+  - design_followed: true
+  - code_quality_acceptable: true
+  - tests_comprehensive: true
+  - test_architecture_good: true
+  - coverage_100_percent: true
+
+escalation_rules:
+  - trigger: 'critical_blocking_issue'
+    action: 'immediate_escalation'
+  - trigger: 'design_requirements_conflict'
+    action: 'batch_with_related'
+  - trigger: 'implementation_complexity_higher_than_expected'
+    action: 'escalate_if_no_progress_in_30min'
+
+quality_gates:
+  after_requirements_analysis:
+    - requirements_complete: true
+    - ambiguities_resolved: true
+
+  after_ux_design:
+    - user_flows_defined: true
+    - accessibility_considered: true
+    - mobile_responsiveness_planned: true
+
+  after_design:
+    - architecture_defined: true
+    - patterns_identified: true
+    - interfaces_specified: true
+
+  after_implementation:
+    - builds_successfully: true
+    - follows_design: true
+    - patterns_correct: true
+
+  after_review:
+    - no_blocking_issues: true
+    - critical_patterns_followed: true
+
+  after_manual_smoke_test:
+    - user_interface_functional: true
+    - no_critical_ux_issues: true
+    - ready_for_test_automation: true
+
+  after_functional_test:
+    - requirements_tested: true
+    - acceptance_criteria_met: true
+
+  after_coverage_analysis:
+    - coverage_100_percent: true
+    - gaps_properly_classified: true
+
+  after_test_architecture_review:
+    - test_organization_good: true
+    - anti_patterns_addressed: true
+    - test_maintainability_acceptable: true
+
+estimated_duration: '2-4 hours'
+complexity_range: ['moderate', 'complex']

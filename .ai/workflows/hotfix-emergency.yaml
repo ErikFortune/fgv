@@ -1,0 +1,86 @@
+# Hotfix Emergency Workflow
+# Used for critical production issues requiring immediate attention
+
+name: 'hotfix_emergency'
+description: 'Emergency workflow for critical production fixes with streamlined review'
+
+triggers:
+  - task_type: 'hotfix'
+  - priority: 'critical'
+  - user_request_type: 'production_emergency'
+
+phases:
+  - phase: implementation
+    agent: code-monkey
+    mode: workflow
+    required: true
+    dependencies: []
+    max_iterations: 2
+    timeout_minutes: 15
+    description: 'Implement critical fix quickly'
+
+  - phase: review
+    agent: code-reviewer
+    mode: workflow
+    required: true
+    dependencies: [implementation]
+    max_iterations: 1
+    streamlined: true # Focus only on critical issues
+    timeout_minutes: 10
+    description: 'Streamlined review focusing on critical issues only'
+
+success_criteria:
+  - critical_issue_resolved: true
+  - no_security_vulnerabilities: true
+  - builds_and_deploys: true
+
+escalation_rules:
+  - trigger: 'any_blocking_issue'
+    action: 'immediate_escalation'
+  - trigger: 'timeout_exceeded'
+    action: 'escalate_with_partial_progress'
+
+quality_gates:
+  after_implementation:
+    - builds_successfully: true
+    - critical_path_works: true
+    - no_obvious_security_issues: true
+
+  after_review:
+    - no_critical_blocking_issues: true
+    - security_patterns_followed: true
+
+streamlined_review_criteria:
+  focus_only_on:
+    - security_vulnerabilities: true
+    - critical_type_safety_issues: true
+    - obvious_logic_errors: true
+    - build_breaking_changes: true
+
+  skip_in_emergency:
+    - style_consistency_checks: true
+    - minor_optimization_suggestions: true
+    - comprehensive_test_coverage: true
+    - documentation_completeness: true
+
+post_emergency_followup:
+  required_within: '24 hours'
+  actions:
+    - comprehensive_testing: true
+    - full_code_review: true
+    - documentation_update: true
+    - post_mortem_analysis: true
+
+estimated_duration: '15-30 minutes'
+risk_level: 'high'
+post_deployment_monitoring: 'required'
+
+emergency_protocols:
+  approval_required: false # Skip normal approval gates
+  notification_channels:
+    - engineering_leads: true
+    - on_call_team: true
+
+  rollback_plan:
+    must_be_defined: true
+    automated_rollback: 'preferred'

@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "created": "2024-01-20T15:30:00Z",
+    "last_updated": "2024-01-20T15:30:00Z",
+    "total_tasks": 0,
+    "log_file": "task-log.jsonl",
+    "schema_version": "1.0"
+  },
+  "indices": {
+    "by_date": {},
+    "by_type": {
+      "feature": [],
+      "bugfix": [],
+      "refactor": [],
+      "hotfix": [],
+      "documentation": []
+    },
+    "by_component": {},
+    "by_risk_level": {
+      "low": [],
+      "medium": [],
+      "high": [],
+      "critical": []
+    },
+    "by_tags": {}
+  },
+  "statistics": {
+    "tasks_by_month": {},
+    "risk_distribution": {
+      "low": 0,
+      "medium": 0,
+      "high": 0,
+      "critical": 0
+    },
+    "most_affected_components": [],
+    "recent_activity": []
+  }
+}

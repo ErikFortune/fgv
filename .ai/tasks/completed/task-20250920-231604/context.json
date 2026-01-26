@@ -1,0 +1,26 @@
+{
+  "task": {
+    "id": "task-20250920-231604",
+    "description": "Fix ts-res-browser import error: actions.importDirectory is not a function",
+    "type": "bugfix",
+    "priority": "high",
+    "complexity": "moderate"
+  },
+  "artifacts": {},
+  "state": {
+    "currentPhase": "requirements_confirmation",
+    "completedPhases": [],
+    "iterations": 0,
+    "blockers": [],
+    "decisions": []
+  },
+  "feedback": {},
+  "workflow": "bugfix_fast",
+  "context": {
+    "bug_description": "ts-res-browser fails with 'actions.importDirectory is not a function'",
+    "root_cause": "FileTree refactor broke backward compatibility - old import methods removed",
+    "needed_fix": "Update ts-res-browser to use FileTree-based import methods",
+    "affected_component": "ts-res-browser",
+    "error_location": "import functionality"
+  }
+}
